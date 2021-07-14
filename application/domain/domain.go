@@ -9,7 +9,6 @@ import (
 	"sync"
 
 	"github.com/gobuffalo/buffalo"
-	"github.com/gobuffalo/envy"
 	mwi18n "github.com/gobuffalo/mw-i18n"
 	"github.com/gobuffalo/packr/v2"
 	"github.com/kelseyhightower/envconfig"
@@ -61,7 +60,7 @@ func getBuffaloContext(ctx context.Context) buffalo.Context {
 
 // Env Holds the values of environment variables
 var Env struct {
-	ApiBaseURL        string `ignored:"true"`  // This will be set in readEnv based on the `HOST` env var
+	ApiBaseURL        string `required:"true"`
 	AppName           string `default:"Riskman"`
 	GoEnv             string `default:"development"`
 	RollbarServerRoot string `required:"true"`
@@ -83,7 +82,7 @@ func readEnv() {
 	if err != nil {
 		log.Fatal(errors.New("error loading env vars: " + err.Error()))
 	}
-	Env.ApiBaseURL = envy.Get("HOST", "")
+
 }
 
 // ErrLogProxy is a "tee" that sends to Rollbar and to the local logger,
