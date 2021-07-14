@@ -1,0 +1,106 @@
+version: "3.7"
+
+services:
+  proxy:
+    image: silintl/traefik-https-proxy
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./.cert/:/cert/
+    env_file:
+      - ./.env
+
+  buffalo:
+    build:
+      context: ./application
+      dockerfile: Dockerfile-dev
+    volumes:
+      - ./application:/riskman
+      - ./go-build:/root/.cache/go-build
+    ports:
+      - "3000:3000"
+      - "6060"
+    env_file:
+      - ./test.env
+      - ./.env
+    environment:
+      ADDR: 0.0.0.0
+      PORT: 3000
+      APP_NAME: Riskman
+      DATABASE_URL: postgres://riskman:riskman@db:5432/riskman?sslmode=disable
+      GO_ENV: development
+      SERVICE_INTEGRATION_TOKEN: abc123
+    depends_on:
+      - db
+      - proxy
+      - minio
+    command: buffalo dev
+
+  test:
+    build:
+      context: ./application
+      dockerfile: Dockerfile-dev
+    volumes:
+      - ./application:/riskman
+    env_file:
+      - ./test.env
+    environment:
+      GO_ENV: test
+      DOCKER_IP: testdb
+      HISTCONTROL: ignoreboth:erasedups
+      LOG_LEVEL: fatal
+      RISKMAN_API_BASE_URL: "localhost"
+      RISKMAN_GO_ENV: "test"
+    depends_on:
+      - testdb
+      - minio
+    working_dir: /riskman
+    command: buffalo test
+
+  db:
+    image: postgres:11.6
+    volumes:
+      - ./db-init.sh:/docker-entrypoint-initdb.d/db-init.sh
+    environment:
+      POSTGRES_USER: riskman
+      POSTGRES_PASSWORD: riskman
+      POSTGRES_DB: riskman_test
+
+  testdb:
+    image: postgres:11.6
+    volumes:
+      - ./db-init.sh:/docker-entrypoint-initdb.d/db-init.sh
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: riskman
+      POSTGRES_PASSWORD: riskman
+      POSTGRES_DB: riskman_test
+
+  # http://localhost:8080/?pgsql=db&username=riskman&db=riskman&ns=public
+  adminer:
+    image: adminer
+    depends_on:
+      - db
+    ports:
+      - 8080:8080
+
+  minio:
+    image: minio/minio
+    ports:
+      - "9000:9000"
+    command: server /data
+    env_file:
+      - test.env
+    environment:
+      MINIO_ACCESS_KEY: ${AWS_ACCESS_KEY_ID}
+      MINIO_SECRET_KEY: ${AWS_SECRET_ACCESS_KEY}
+
+  swagger:
+    image: quay.io/goswagger/swagger:latest
+    ports:
+      - "8082:8082"
+    volumes:
+      - ./application/:/app
+    working_dir: /app

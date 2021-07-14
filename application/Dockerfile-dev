@@ -1,0 +1,39 @@
+FROM gobuffalo/buffalo:v0.16.26
+
+# Set file permissions so non-root user can access them -- necessary if USER user is enabled below
+# RUN chmod -R o=,g=rwX $GOPATH/pkg
+
+RUN apt-get update && apt-get install -y \
+    nano \
+    curl \
+    netcat \
+    && apt-get clean
+
+RUN curl -o /usr/local/bin/whenavail https://bitbucket.org/silintl/docker-whenavail/raw/1.0.2/whenavail \
+     && chmod a+x /usr/local/bin/whenavail
+
+RUN mkdir -p /riskman
+WORKDIR /riskman
+
+#RUN useradd user && usermod -a -G root user && mkdir /home/user && chown user.user /home/user
+#USER user
+
+# Copy the Go Modules manifests
+# cache deps before building and copying source so that we don't need to re-download as much
+# and so that source changes don't invalidate our downloaded layer
+COPY go.mod go.mod
+COPY go.sum go.sum
+RUN go mod download
+
+# additional deps needed for running tests
+RUN go get github.com/gobuffalo/suite/v3
+RUN go get github.com/gobuffalo/httptest
+RUN go get github.com/markbates/grift
+RUN go get github.com/stretchr/testify
+RUN go get github.com/gorilla/pat
+RUN go get github.com/gorilla/context
+
+ADD . .
+
+EXPOSE 6060
+CMD ["buffalo", "dev"]

@@ -11,6 +11,7 @@ import (
 	"github.com/gobuffalo/buffalo"
 	mwi18n "github.com/gobuffalo/mw-i18n"
 	"github.com/gobuffalo/packr/v2"
+	uuid2 "github.com/gofrs/uuid"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/rollbar/rollbar-go"
 )
@@ -60,11 +61,11 @@ func getBuffaloContext(ctx context.Context) buffalo.Context {
 
 // Env Holds the values of environment variables
 var Env struct {
-	ApiBaseURL        string `required:"true"`
-	AppName           string `default:"Riskman"`
-	GoEnv             string `default:"development"`
-	RollbarServerRoot string `required:"true"`
-	RollbarToken      string `default:""`
+	ApiBaseURL        string `required:"true" split_words:"true"`
+	AppName           string `default:"Riskman" split_words:"true"`
+	GoEnv             string `default:"development" split_words:"true"`
+	RollbarServerRoot string `default:"" split_words:"true"`
+	RollbarToken      string `default:"" split_words:"true"`
 }
 
 func init() {
@@ -137,4 +138,14 @@ func getExtras(c buffalo.Context) map[string]interface{} {
 	}
 
 	return extras
+}
+
+// GetUUID creates a new, unique version 4 (random) UUID and returns it
+// as a uuid2.UUID. Errors are ignored.
+func GetUUID() uuid2.UUID {
+	uuid, err := uuid2.NewV4()
+	if err != nil {
+		ErrLogger.Printf("error creating new uuid2 ... %v", err)
+	}
+	return uuid
 }
