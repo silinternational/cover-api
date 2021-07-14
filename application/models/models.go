@@ -4,9 +4,10 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"fmt"
+	"log"
+
 	"github.com/gobuffalo/buffalo"
 	"github.com/gobuffalo/pop/v5"
-	"log"
 
 	"github.com/silinternational/riskman-api/domain"
 )
@@ -44,10 +45,7 @@ func getRandomToken() (string, error) {
 	return base64.URLEncoding.EncodeToString(rb), nil
 }
 
-
-
-// CurrentUser retrieves the current user from the context, which can be the context provided by the inner
-// "BuffaloContext" assigned to the value key of the same name.
+// CurrentUser retrieves the current user from the context.
 func CurrentUser(c buffalo.Context) User {
 	user, _ := c.Value(domain.ContextKeyCurrentUser).(User)
 	domain.NewExtra(c, "user_id", user.ID)
