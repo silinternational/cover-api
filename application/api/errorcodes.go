@@ -1,7 +1,7 @@
 package api
 
 const (
-	CategoryDatabase  = ErrorCategory("DB")
+	CategoryDatabase  = ErrorCategory("Database")
 	CategoryUser      = ErrorCategory("User") // used for errors related to user input, validation, etc.
 	CategoryForbidden = ErrorCategory("Forbidden")
 	CategoryNotFound  = ErrorCategory("NotFound")
@@ -25,18 +25,7 @@ const (
 	ErrorUpdateFailure            = ErrorKey("ErrorUpdateFailure")
 	ErrorValidation               = ErrorKey("ErrorValidation")
 
-	// HTTP codes for customErrorHandler
-
-	ErrorBadRequest           = ErrorKey("ErrorBadRequest")
-	ErrorInternalServerError  = ErrorKey("ErrorInternalServerError")
-	ErrorMethodNotAllowed     = ErrorKey("ErrorMethodNotAllowed")
-	ErrorNotAuthenticated     = ErrorKey("ErrorNotAuthenticated")
-	ErrorRouteNotFound        = ErrorKey("ErrorRouteNotFound")
-	ErrorUnexpectedHTTPStatus = ErrorKey("ErrorUnexpectedHTTPStatus")
-	ErrorUnprocessableEntity  = ErrorKey("ErrorUnprocessableEntity")
-
 	// Authentication
 
-	ErrorFindingUserByEmail             = ErrorKey("ErrorFindingUserByEmail")
-
+	ErrorFindingUserByEmail = ErrorKey("ErrorFindingUserByEmail")
 )

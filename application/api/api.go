@@ -100,6 +100,7 @@ func (a *AppError) LoadTranslatedMessage(c buffalo.Context) {
 }
 
 // keyToReadableString takes a key like ErrorSomethingSomethingOther and returns Error something something other
+// although it will lose initial lowercase letters, if it has a non-initial uppercase letter
 func keyToReadableString(key string) string {
 	re := regexp.MustCompile(`[A-Z][^A-Z]*`)
 	words := re.FindAllString(key, -1)
@@ -108,10 +109,7 @@ func keyToReadableString(key string) string {
 		return key
 	}
 
-	if len(words) == 1 {
-		return words[0]
-	}
-
+	// Lowercase all but first word
 	for i := 1; i < len(words); i++ {
 		words[i] = strings.ToLower(words[i])
 	}
