@@ -1,0 +1,13 @@
+# General Errors
+- id: Error.ErrorGenericInternalServer
+  translation: Sorry, we encountered an internal error. The developers have been notified and we apologize for the inconvenience.
+- id: Error.ErrorInvalidRequestBody
+  translation: We were unable to process your request, please check the information provided and try again
+- id: Error.ErrorMustBeAValidUUID
+  translation: The ID provided is not a valid format. Please ensure you're using IDs provided by the application
+- id: Error.ErrorNoRows
+  translation: Sorry, no records found for request
+- id: Error.ErrorNotAuthorized
+  translation: Sorry, you are not allowed to perform that action
+- id: Error.ErrorValidation
+  translation: There is a problem with the information provided, please check it and try again
