@@ -8,6 +8,8 @@ import (
 	"os"
 	"sync"
 
+	"github.com/gobuffalo/envy"
+
 	"github.com/gofrs/uuid"
 
 	"github.com/gobuffalo/buffalo"
@@ -85,6 +87,8 @@ func readEnv() {
 		log.Fatal(errors.New("error loading env vars: " + err.Error()))
 	}
 
+	// Doing this separately to avoid needing two environment variables for the same thing
+	Env.GoEnv = envy.Get("GO_ENV", "development")
 }
 
 // ErrLogProxy is a "tee" that sends to Rollbar and to the local logger,

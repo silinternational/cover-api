@@ -1,0 +1,4 @@
+- name: test
+  service: app
+  command: ./codeship-test.sh
+
