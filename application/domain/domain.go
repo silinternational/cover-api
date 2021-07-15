@@ -64,14 +64,13 @@ func getBuffaloContext(ctx context.Context) buffalo.Context {
 
 // Env Holds the values of environment variables
 var Env struct {
-	ApiBaseURL        string `required:"true" split_words:"true"`
-	AppName           string `default:"Riskman" split_words:"true"`
-	GoEnv             string `default:"development" split_words:"true"`
-	ServerRoot        string `default:"" split_words:"true"`
-	SessionSecret     string `required:"true" split_words:"true"`
-	RollbarServerRoot string `default:"" split_words:"true"`
-	RollbarToken      string `default:"" split_words:"true"`
-	UIURL             string `default:"missing.ui.url"`
+	GoEnv         string `ignored:"true"`
+	ApiBaseURL    string `required:"true" split_words:"true"`
+	AppName       string `default:"riskman" split_words:"true"`
+	SessionSecret string `required:"true" split_words:"true"`
+	ServerRoot    string `default:"" split_words:"true"`
+	RollbarToken  string `default:"" split_words:"true"`
+	UIURL         string `default:"missing.ui.url"`
 }
 
 func init() {

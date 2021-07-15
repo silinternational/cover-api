@@ -33,15 +33,12 @@ package actions
 
 import (
 	"github.com/gobuffalo/buffalo"
+	"github.com/gobuffalo/buffalo-pop/v2/pop/popmw"
 	"github.com/gobuffalo/envy"
-	forcessl "github.com/gobuffalo/mw-forcessl"
+	contenttype "github.com/gobuffalo/mw-contenttype"
 	i18n "github.com/gobuffalo/mw-i18n"
 	paramlogger "github.com/gobuffalo/mw-paramlogger"
 	"github.com/gobuffalo/packr/v2"
-	"github.com/unrolled/secure"
-
-	"github.com/gobuffalo/buffalo-pop/v2/pop/popmw"
-	contenttype "github.com/gobuffalo/mw-contenttype"
 	"github.com/gorilla/sessions"
 	"github.com/rs/cors"
 
@@ -113,16 +110,4 @@ func App() *buffalo.App {
 	}
 
 	return app
-}
-
-// forceSSL will return a middleware that will redirect an incoming request
-// if it is not HTTPS. "http://example.com" => "https://example.com".
-// This middleware does **not** enable SSL. for your application. To do that
-// we recommend using a proxy: https://gobuffalo.io/en/docs/proxy
-// for more information: https://github.com/unrolled/secure/
-func forceSSL() buffalo.MiddlewareFunc {
-	return forcessl.Middleware(secure.Options{
-		SSLRedirect:     ENV == "production",
-		SSLProxyHeaders: map[string]string{"X-Forwarded-Proto": "https"},
-	})
 }
