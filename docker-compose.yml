@@ -19,8 +19,8 @@ services:
       PORT: 3000
       APP_NAME: Riskman
       DATABASE_URL: postgres://riskman:riskman@db:5432/riskman?sslmode=disable
-      RISKMAN_GO_ENV: development
-      SERVICE_INTEGRATION_TOKEN: abc123
+      GO_ENV: development
+      RISKMAN_API_BASE_URL: localhost
     depends_on:
       - db
       - minio
