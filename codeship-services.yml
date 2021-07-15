@@ -19,6 +19,7 @@ app:
     TEST_DATABASE_URL: postgres://riskman:riskman@testdb:5432/riskman_test?sslmode=disable
     RISKMAN_API_BASE_URL: http://riskman.local:3000
     RISKMAN_APP_NAME: riskman
+    RISKMAN_SESSION_SECRET: kljsLSDJ83jF^kj3LKNEKn435LDKnt
   working_dir: /riskman
   command: true
 
