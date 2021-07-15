@@ -15,12 +15,16 @@ RUN curl -o /usr/local/bin/whenavail https://bitbucket.org/silintl/docker-whenav
 RUN mkdir -p /riskman
 WORKDIR /riskman
 
-COPY go.* ./
-RUN chmod 660 /riskman/go.* && chmod 770 /riskman
-ENV GO111MODULE=on
-
+# These lines (uncommented) seem to break permissions on Ubuntu
 #RUN useradd user && usermod -a -G root user && mkdir /home/user && chown user.user /home/user
 #USER user
+
+# Copy the Go Modules manifests
+# cache deps before building and copying source so that we don't need to re-download as much
+# and so that source changes don't invalidate our downloaded layer
+COPY go.mod go.mod
+COPY go.sum go.sum
+RUN go mod download
 
 # additional deps needed for running tests
 RUN go get github.com/gobuffalo/suite/v3 \
@@ -31,7 +35,6 @@ RUN go get github.com/gobuffalo/suite/v3 \
   github.com/gorilla/context
 
 ADD . .
-RUN go get ./...
 
 EXPOSE 6060
 CMD ["buffalo", "dev"]
