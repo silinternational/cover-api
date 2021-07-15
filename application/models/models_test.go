@@ -49,31 +49,10 @@ func destroyTable(i interface{}) {
 	}
 }
 
-type testBuffaloContext struct {
-	buffalo.DefaultContext
-	params map[interface{}]interface{}
-}
-
-func (b *testBuffaloContext) Value(key interface{}) interface{} {
-	return b.params[key]
-}
-
-func (b *testBuffaloContext) Set(key string, val interface{}) {
-	b.params[key] = val
-}
-
-func createTestContext(user User) buffalo.Context {
-	ctx := &testBuffaloContext{
-		params: map[interface{}]interface{}{},
-	}
-	ctx.Set(domain.ContextKeyCurrentUser, user)
-	return ctx
-}
-
 func (ms *ModelSuite) Test_CurrentUser() {
 	// setup
-	user := createUserFixtures(ms.DB, 1).Users[0]
-	ctx := createTestContext(user)
+	user := CreateUserFixtures(ms.DB, 1).Users[0]
+	ctx := CreateTestContext(user)
 
 	tests := []struct {
 		name     string
@@ -87,7 +66,7 @@ func (ms *ModelSuite) Test_CurrentUser() {
 		},
 		{
 			name:     "empty context",
-			context:  &testBuffaloContext{params: map[interface{}]interface{}{}},
+			context:  &TestBuffaloContext{params: map[interface{}]interface{}{}},
 			wantUser: User{},
 		},
 	}
