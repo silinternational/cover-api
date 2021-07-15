@@ -1,16 +1,6 @@
 version: "3.7"
 
 services:
-  proxy:
-    image: silintl/traefik-https-proxy
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./.cert/:/cert/
-    env_file:
-      - ./.env
-
   buffalo:
     build:
       context: ./application
@@ -33,7 +23,6 @@ services:
       SERVICE_INTEGRATION_TOKEN: abc123
     depends_on:
       - db
-      - proxy
       - minio
     command: buffalo dev
 

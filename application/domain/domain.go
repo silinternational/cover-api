@@ -8,10 +8,11 @@ import (
 	"os"
 	"sync"
 
+	"github.com/gofrs/uuid"
+
 	"github.com/gobuffalo/buffalo"
 	mwi18n "github.com/gobuffalo/mw-i18n"
 	"github.com/gobuffalo/packr/v2"
-	uuid2 "github.com/gofrs/uuid"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/rollbar/rollbar-go"
 )
@@ -142,10 +143,10 @@ func getExtras(c buffalo.Context) map[string]interface{} {
 
 // GetUUID creates a new, unique version 4 (random) UUID and returns it
 // as a uuid2.UUID. Errors are ignored.
-func GetUUID() uuid2.UUID {
-	uuid, err := uuid2.NewV4()
+func GetUUID() uuid.UUID {
+	id, err := uuid.NewV4()
 	if err != nil {
-		ErrLogger.Printf("error creating new uuid2 ... %v", err)
+		ErrLogger.Printf("error creating new uuid ... %v", err)
 	}
-	return uuid
+	return id
 }

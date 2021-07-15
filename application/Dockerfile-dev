@@ -26,12 +26,12 @@ COPY go.sum go.sum
 RUN go mod download
 
 # additional deps needed for running tests
-RUN go get github.com/gobuffalo/suite/v3
-RUN go get github.com/gobuffalo/httptest
-RUN go get github.com/markbates/grift
-RUN go get github.com/stretchr/testify
-RUN go get github.com/gorilla/pat
-RUN go get github.com/gorilla/context
+RUN go get github.com/gobuffalo/suite/v3 \
+  github.com/gobuffalo/httptest \
+  github.com/markbates/grift \
+  github.com/stretchr/testify \
+  github.com/gorilla/pat \
+  github.com/gorilla/context
 
 ADD . .
 
