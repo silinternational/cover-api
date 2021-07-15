@@ -67,8 +67,11 @@ var Env struct {
 	ApiBaseURL        string `required:"true" split_words:"true"`
 	AppName           string `default:"Riskman" split_words:"true"`
 	GoEnv             string `default:"development" split_words:"true"`
+	ServerRoot        string `default:"" split_words:"true"`
+	SessionSecret     string `required:"true" split_words:"true"`
 	RollbarServerRoot string `default:"" split_words:"true"`
 	RollbarToken      string `default:"" split_words:"true"`
+	UIURL             string `default:"missing.ui.url"`
 }
 
 func init() {
@@ -121,7 +124,7 @@ func (e *ErrLogProxy) InitRollbar() {
 		Env.GoEnv,
 		"",
 		"",
-		Env.RollbarServerRoot)
+		Env.ServerRoot)
 }
 
 // NewExtra Sets a new key-value pair in the `extras` entry of the context
@@ -153,4 +156,28 @@ func GetUUID() uuid.UUID {
 		ErrLogger.Printf("error creating new uuid ... %v", err)
 	}
 	return id
+}
+
+func RollbarMiddleware(next buffalo.Handler) buffalo.Handler {
+	return func(c buffalo.Context) error {
+		if Env.RollbarToken == "" {
+			return next(c)
+		}
+
+		if Env.GoEnv == "test" {
+			return next(c)
+		}
+
+		client := rollbar.New(
+			Env.RollbarToken,
+			Env.GoEnv,
+			"",
+			"",
+			Env.ServerRoot)
+		defer client.Close()
+
+		c.Set(ContextKeyRollbar, client)
+
+		return next(c)
+	}
 }
