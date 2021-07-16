@@ -159,11 +159,7 @@ func GetUUID() uuid.UUID {
 
 func RollbarMiddleware(next buffalo.Handler) buffalo.Handler {
 	return func(c buffalo.Context) error {
-		if Env.RollbarToken == "" {
-			return next(c)
-		}
-
-		if Env.GoEnv == "test" {
+		if Env.RollbarToken == "" || Env.GoEnv == "test" {
 			return next(c)
 		}
 
