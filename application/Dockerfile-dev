@@ -15,6 +15,7 @@ RUN curl -o /usr/local/bin/whenavail https://bitbucket.org/silintl/docker-whenav
 RUN mkdir -p /riskman
 WORKDIR /riskman
 
+# These lines (uncommented) seem to break permissions on Ubuntu
 #RUN useradd user && usermod -a -G root user && mkdir /home/user && chown user.user /home/user
 #USER user
 

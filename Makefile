@@ -2,7 +2,7 @@ dev: buffalo adminer migrate
 
 migrate: db
 	docker-compose run --rm buffalo whenavail db 5432 10 buffalo-pop pop migrate up
-	docker-compose run --rm buffalo /bin/bash -c "grift minio:seed && grift db:seed && grift private:seed"
+	docker-compose run --rm buffalo /bin/bash -c "grift db:seed"
 
 migratestatus: db
 	docker-compose run buffalo buffalo-pop pop migrate status

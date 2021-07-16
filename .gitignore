@@ -33,5 +33,6 @@ codeship.env
 coverage
 coverage.data
 generated/
+go-build/
 jhw.*
 tmp/
