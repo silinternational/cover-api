@@ -1,3 +1,8 @@
+// +build development
+
+// This build tag ensures that this file will not be included unless
+//  the `testing` tag is explicitly requested (which should be never)
+
 package models
 
 import (
