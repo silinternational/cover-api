@@ -8,6 +8,8 @@ import (
 	"os"
 	"sync"
 
+	"github.com/gobuffalo/envy"
+
 	"github.com/gofrs/uuid"
 
 	"github.com/gobuffalo/buffalo"
@@ -62,11 +64,13 @@ func getBuffaloContext(ctx context.Context) buffalo.Context {
 
 // Env Holds the values of environment variables
 var Env struct {
-	ApiBaseURL        string `required:"true" split_words:"true"`
-	AppName           string `default:"Riskman" split_words:"true"`
-	GoEnv             string `default:"development" split_words:"true"`
-	RollbarServerRoot string `default:"" split_words:"true"`
-	RollbarToken      string `default:"" split_words:"true"`
+	GoEnv         string `ignored:"true"`
+	ApiBaseURL    string `required:"true" split_words:"true"`
+	AppName       string `default:"riskman" split_words:"true"`
+	SessionSecret string `required:"true" split_words:"true"`
+	ServerRoot    string `default:"" split_words:"true"`
+	RollbarToken  string `default:"" split_words:"true"`
+	UIURL         string `default:"missing.ui.url"`
 }
 
 func init() {
@@ -85,6 +89,8 @@ func readEnv() {
 		log.Fatal(errors.New("error loading env vars: " + err.Error()))
 	}
 
+	// Doing this separately to avoid needing two environment variables for the same thing
+	Env.GoEnv = envy.Get("GO_ENV", "development")
 }
 
 // ErrLogProxy is a "tee" that sends to Rollbar and to the local logger,
@@ -117,7 +123,7 @@ func (e *ErrLogProxy) InitRollbar() {
 		Env.GoEnv,
 		"",
 		"",
-		Env.RollbarServerRoot)
+		Env.ServerRoot)
 }
 
 // NewExtra Sets a new key-value pair in the `extras` entry of the context
@@ -149,4 +155,24 @@ func GetUUID() uuid.UUID {
 		ErrLogger.Printf("error creating new uuid ... %v", err)
 	}
 	return id
+}
+
+func RollbarMiddleware(next buffalo.Handler) buffalo.Handler {
+	return func(c buffalo.Context) error {
+		if Env.RollbarToken == "" || Env.GoEnv == "test" {
+			return next(c)
+		}
+
+		client := rollbar.New(
+			Env.RollbarToken,
+			Env.GoEnv,
+			"",
+			"",
+			Env.ServerRoot)
+		defer client.Close()
+
+		c.Set(ContextKeyRollbar, client)
+
+		return next(c)
+	}
 }

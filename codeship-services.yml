@@ -1,0 +1,66 @@
+app:
+  build:
+    image: tester
+    context: application
+    dockerfile: Dockerfile-dev
+  cached: true
+  depends_on:
+    - testdb
+    - minio
+  environment:
+    ADDR: 0.0.0.0
+    HOST: http://riskman.local:3000
+    PORT: 3000
+    UI_URL: http://riskman.local:5000
+    AWS_ACCESS_KEY_ID: abc123
+    AWS_SECRET_ACCESS_KEY: abcd1234
+    DOCKER_IP: testdb
+    GO_ENV: test
+    TEST_DATABASE_URL: postgres://riskman:riskman@testdb:5432/riskman_test?sslmode=disable
+    RISKMAN_API_BASE_URL: http://riskman.local:3000
+    RISKMAN_APP_NAME: riskman
+    RISKMAN_SESSION_SECRET: kljsLSDJ83jF^kj3LKNEKn435LDKnt
+  working_dir: /riskman
+  command: true
+
+testdb:
+  image: postgres:11.6
+  environment:
+    POSTGRES_USER: riskman
+    POSTGRES_PASSWORD: riskman
+    POSTGRES_DB: riskman_test
+
+binary:
+  build:
+    image: 369020531563.dkr.ecr.us-east-1.amazonaws.com/riskman-stg
+    context: application
+    dockerfile: Dockerfile
+  cached: true
+  working_dir: /riskman
+  command: true
+
+ecsdeploy:
+  image: silintl/ecs-deploy:latest
+  encrypted_env_file: .env.encrypted
+
+awsgenerator:
+  image: codeship/aws-ecr-dockercfg-generator
+  encrypted_env_file: .env.encrypted
+  add_docker: true
+
+tracker:
+  image: silintl/app-deployment-tracker-ga:latest
+  environment:
+    TRACKING_ID: UA-56269387-10
+
+rollbar:
+  image: silintl/notify-rollbar-deployment:latest
+  encrypted_env_file: .env.encrypted
+
+minio:
+  image: minio/minio
+  command: server /data
+  environment:
+    MINIO_ACCESS_KEY: abc123
+    MINIO_SECRET_KEY: abcd1234
+

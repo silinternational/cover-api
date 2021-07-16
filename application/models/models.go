@@ -6,14 +6,20 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/go-playground/validator/v10"
 	"github.com/gobuffalo/buffalo"
 	"github.com/gobuffalo/pop/v5"
+
+	"github.com/gobuffalo/validate/v3"
 
 	"github.com/silinternational/riskman-api/domain"
 )
 
 // DB is a connection to the database to be used throughout the application.
 var DB *pop.Connection
+
+// Model validation tool
+var mValidate *validator.Validate
 
 const tokenBytes = 32
 
@@ -32,6 +38,8 @@ func init() {
 		log.Fatal(fmt.Errorf("error using crypto/rand ... %v", err))
 	}
 
+	// initialize model validation library
+	mValidate = validator.New()
 }
 
 func getRandomToken() (string, error) {
@@ -50,4 +58,15 @@ func CurrentUser(c buffalo.Context) User {
 	user, _ := c.Value(domain.ContextKeyCurrentUser).(User)
 	domain.NewExtra(c, "user_id", user.ID)
 	return user
+}
+
+func validateModel(m interface{}) *validate.Errors {
+	verrs := validate.NewErrors()
+
+	if err := mValidate.Struct(m); err != nil {
+		for _, err := range err.(validator.ValidationErrors) {
+			verrs.Add(err.StructNamespace(), err.Error())
+		}
+	}
+	return verrs
 }

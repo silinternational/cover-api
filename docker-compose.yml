@@ -17,10 +17,11 @@ services:
     environment:
       ADDR: 0.0.0.0
       PORT: 3000
-      APP_NAME: Riskman
       DATABASE_URL: postgres://riskman:riskman@db:5432/riskman?sslmode=disable
       GO_ENV: development
-      SERVICE_INTEGRATION_TOKEN: abc123
+      RISKMAN_API_BASE_URL: localhost
+      RISKMAN_APP_NAME: Riskman
+      RISKMAN_SESSION_SECRET: lkndsf98kj4kjbOIhw4kj5h
     depends_on:
       - db
       - minio
@@ -39,8 +40,7 @@ services:
       DOCKER_IP: testdb
       HISTCONTROL: ignoreboth:erasedups
       LOG_LEVEL: fatal
-      RISKMAN_API_BASE_URL: "localhost"
-      RISKMAN_GO_ENV: "test"
+      RISKMAN_API_BASE_URL: localhost
     depends_on:
       - testdb
       - minio
@@ -54,7 +54,7 @@ services:
     environment:
       POSTGRES_USER: riskman
       POSTGRES_PASSWORD: riskman
-      POSTGRES_DB: riskman_test
+      POSTGRES_DB: riskman
 
   testdb:
     image: postgres:11.6
