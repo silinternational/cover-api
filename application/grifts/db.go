@@ -41,7 +41,7 @@ var _ = grift.Namespace("db", func() {
 		}
 
 		for i, user := range fixtureUsers {
-			fixtureUsers[i].UUID, _ = uuid.FromString(userUUIDs[i])
+			fixtureUsers[i].ID, _ = uuid.FromString(userUUIDs[i])
 			err := models.DB.Create(fixtureUsers[i])
 			if err != nil {
 				err = fmt.Errorf("error loading user fixture ... %+v\n %v", user, err.Error())
