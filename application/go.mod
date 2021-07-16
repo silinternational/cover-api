@@ -3,6 +3,7 @@ module github.com/silinternational/riskman-api
 go 1.16
 
 require (
+	github.com/go-playground/validator/v10 v10.7.0
 	github.com/gobuffalo/buffalo v0.16.26
 	github.com/gobuffalo/buffalo-pop/v2 v2.3.0
 	github.com/gobuffalo/envy v1.9.0
@@ -12,6 +13,7 @@ require (
 	github.com/gobuffalo/mw-paramlogger v0.0.0-20190129202837-395da1998525
 	github.com/gobuffalo/packr/v2 v2.8.1
 	github.com/gobuffalo/pop/v5 v5.3.3
+	github.com/gobuffalo/validate/v3 v3.1.0
 	github.com/gofrs/uuid v3.2.0+incompatible
 	github.com/gorilla/sessions v1.2.1
 	github.com/kelseyhightower/envconfig v1.4.0
