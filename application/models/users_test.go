@@ -2,8 +2,6 @@ package models
 
 import (
 	"testing"
-
-	"github.com/silinternational/riskman-api/domain"
 )
 
 func (ms *ModelSuite) TestUser_Validate() {
@@ -18,24 +16,14 @@ func (ms *ModelSuite) TestUser_Validate() {
 			name: "minimum",
 			user: User{
 				Email: "user@example.com",
-				UUID:  domain.GetUUID(),
 			},
 			wantErr: false,
 		},
 		{
-			name: "missing email",
-			user: User{
-				UUID: domain.GetUUID(),
-			},
+			name:     "missing email",
+			user:     User{},
 			wantErr:  true,
 			errField: "User.Email",
-		},
-		{
-			name: "missing uuid",
-			user: User{
-				Email: "user@example.com",
-			},
-			wantErr: false, // UUID gets added automatically
 		},
 	}
 	for _, tt := range tests {
