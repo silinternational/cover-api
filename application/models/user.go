@@ -26,11 +26,11 @@ func (u *User) Validate(tx *pop.Connection) (*validate.Errors, error) {
 	return validateModel(u), nil
 }
 
-func (u *User) FindByID(tx *pop.Connection, id string) error {
+func (u *User) FindByID(tx *pop.Connection, id uuid.UUID) error {
 	return tx.Find(u, id)
 }
 
-func (u *User) IsUserAllowedTo(actor User, p Permission, req *http.Request) bool {
+func (u *User) IsActorAllowedTo(actor User, p Permission, subResource string, req *http.Request) bool {
 	switch p {
 	case PermissionView:
 		return true

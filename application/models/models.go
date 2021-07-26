@@ -11,6 +11,7 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/gobuffalo/buffalo"
 	"github.com/gobuffalo/pop/v5"
+	"github.com/gofrs/uuid"
 
 	"github.com/gobuffalo/validate/v3"
 
@@ -37,8 +38,8 @@ const (
 )
 
 type Authable interface {
-	FindByID(*pop.Connection, string) error
-	IsUserAllowedTo(User, Permission, *http.Request) bool
+	FindByID(*pop.Connection, uuid.UUID) error
+	IsActorAllowedTo(User, Permission, string, *http.Request) bool
 }
 
 func init() {
