@@ -42,6 +42,7 @@ import (
 	"github.com/gorilla/sessions"
 	"github.com/rs/cors"
 
+	"github.com/silinternational/riskman-api/actions/middleware"
 	"github.com/silinternational/riskman-api/domain"
 	"github.com/silinternational/riskman-api/models"
 )
@@ -105,6 +106,8 @@ func App() *buffalo.App {
 
 		// users
 		usersGroup := app.Group("/users")
+		usersGroup.Use(middleware.AuthN)
+		usersGroup.Use(middleware.AuthZ)
 		usersGroup.GET("/", usersList)
 
 	}

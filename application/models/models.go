@@ -1,10 +1,12 @@
 package models
 
 import (
+	"context"
 	"crypto/rand"
 	"encoding/base64"
 	"fmt"
 	"log"
+	"net/http"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gobuffalo/buffalo"
@@ -22,6 +24,22 @@ var DB *pop.Connection
 var mValidate *validator.Validate
 
 const tokenBytes = 32
+
+type Permission int
+
+const (
+	PermissionView Permission = iota
+	PermissionList
+	PermissionCreate
+	PermissionUpdate
+	PermissionDelete
+	PermissionDenied
+)
+
+type Authable interface {
+	FindByID(*pop.Connection, string) error
+	IsUserAllowedTo(User, Permission, *http.Request) bool
+}
 
 func init() {
 	var err error
@@ -69,4 +87,13 @@ func validateModel(m interface{}) *validate.Errors {
 		}
 	}
 	return verrs
+}
+
+// Tx retrieves the database transaction from the context
+func Tx(ctx context.Context) *pop.Connection {
+	tx, ok := ctx.Value("tx").(*pop.Connection)
+	if !ok {
+		return DB
+	}
+	return tx
 }
