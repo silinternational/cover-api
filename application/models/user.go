@@ -26,6 +26,10 @@ func (u *User) Validate(tx *pop.Connection) (*validate.Errors, error) {
 	return validateModel(u), nil
 }
 
+func (u *User) GetID() uuid.UUID {
+	return u.ID
+}
+
 func (u *User) FindByID(tx *pop.Connection, id uuid.UUID) error {
 	return tx.Find(u, id)
 }

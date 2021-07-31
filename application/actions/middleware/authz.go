@@ -13,10 +13,7 @@ import (
 )
 
 var authableResources = map[string]models.Authable{
-	"user": &models.User{},
-	//"policy": &models.Policy{},
-	//"item":   &models.Item{},
-	//"claim":  &models.Claim{},
+	domain.TypeUser: &models.User{},
 }
 
 func AuthZ(next buffalo.Handler) buffalo.Handler {
@@ -40,6 +37,7 @@ func AuthZ(next buffalo.Handler) buffalo.Handler {
 				return c.Error(http.StatusInternalServerError, fmt.Errorf("failed to intialize db connection"))
 			}
 			if err := resource.FindByID(tx, rID); err != nil {
+				// TODO: this perhaps should return a 404, or just pass the error along based on api.AppError
 				return c.Error(http.StatusInternalServerError, fmt.Errorf("failed to load resource: %s", err))
 			}
 		}
@@ -66,12 +64,17 @@ func AuthZ(next buffalo.Handler) buffalo.Handler {
 			return c.Error(http.StatusForbidden, fmt.Errorf("actor not allowed to perform that action on this resource"))
 		}
 
+		// put found resource into context if found
+		if resource.GetID() != uuid.Nil {
+			c.Set(rName, resource)
+		}
+
 		return next(c)
 	}
 }
 
 // limitedRequest returns a new *http.Request with most information about the request, excluding
-// Body and Forms that read from Body
+// Body and Forms that read from Body to ensure the Body content is still available for later processing
 func limitedRequest(req *http.Request) *http.Request {
 	return &http.Request{
 		Method:           req.Method,

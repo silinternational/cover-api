@@ -52,6 +52,8 @@ const (
 	ContextKeyCurrentUser = "current_user"
 	ContextKeyExtras      = "extras"
 	ContextKeyRollbar     = "rollbar"
+
+	TypeUser = "users"
 )
 
 func getBuffaloContext(ctx context.Context) buffalo.Context {

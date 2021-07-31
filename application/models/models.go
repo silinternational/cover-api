@@ -38,6 +38,7 @@ const (
 )
 
 type Authable interface {
+	GetID() uuid.UUID
 	FindByID(*pop.Connection, uuid.UUID) error
 	IsActorAllowedTo(User, Permission, string, *http.Request) bool
 }
