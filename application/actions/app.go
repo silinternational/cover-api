@@ -106,10 +106,11 @@ func App() *buffalo.App {
 		app.GET("/status", statusHandler)
 
 		// users
-		usersGroup := app.Group("/users")
+		usersGroup := app.Group("/" + domain.TypeUser)
 		usersGroup.Use(middleware.AuthN)
 		usersGroup.Use(middleware.AuthZ)
 		usersGroup.GET("/", usersList)
+		usersGroup.GET("/{id}", usersView)
 
 	}
 
