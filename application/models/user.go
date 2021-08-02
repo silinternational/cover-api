@@ -3,6 +3,7 @@ package models
 import (
 	"crypto/sha256"
 	"fmt"
+	"net/http"
 	"time"
 
 	"github.com/gobuffalo/pop/v5"
@@ -35,4 +36,29 @@ func (u *User) Validate(tx *pop.Connection) (*validate.Errors, error) {
 // HashClientIdAccessToken just returns a sha256.Sum256 of the input value
 func HashClientIdAccessToken(accessToken string) string {
 	return fmt.Sprintf("%x", sha256.Sum256([]byte(accessToken)))
+}
+
+func (u *User) GetID() uuid.UUID {
+	return u.ID
+}
+
+func (u *User) FindByID(tx *pop.Connection, id uuid.UUID) error {
+	return tx.Find(u, id)
+}
+
+func (u *User) IsActorAllowedTo(actor User, p Permission, subResource string, req *http.Request) bool {
+	switch p {
+	case PermissionView:
+		return true
+	case PermissionList, PermissionCreate, PermissionDelete:
+		return actor.IsAdmin()
+	case PermissionUpdate:
+		return actor.IsAdmin() || actor.ID.String() == u.ID.String()
+	default:
+		return false
+	}
+}
+
+func (u *User) IsAdmin() bool {
+	return false
 }

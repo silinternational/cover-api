@@ -1,11 +1,13 @@
 package models
 
 import (
+	"context"
 	"crypto/rand"
 	"encoding/base64"
 	"errors"
 	"fmt"
 	"log"
+	"net/http"
 	"reflect"
 	"strings"
 
@@ -28,6 +30,23 @@ var DB *pop.Connection
 var mValidate *validator.Validate
 
 const tokenBytes = 32
+
+type Permission int
+
+const (
+	PermissionView Permission = iota
+	PermissionList
+	PermissionCreate
+	PermissionUpdate
+	PermissionDelete
+	PermissionDenied
+)
+
+type Authable interface {
+	GetID() uuid.UUID
+	FindByID(*pop.Connection, uuid.UUID) error
+	IsActorAllowedTo(User, Permission, string, *http.Request) bool
+}
 
 func init() {
 	var err error
@@ -75,6 +94,15 @@ func validateModel(m interface{}) *validate.Errors {
 		}
 	}
 	return verrs
+}
+
+// Tx retrieves the database transaction from the context
+func Tx(ctx context.Context) *pop.Connection {
+	tx, ok := ctx.Value("tx").(*pop.Connection)
+	if !ok {
+		return DB
+	}
+	return tx
 }
 
 func fieldByName(i interface{}, name ...string) reflect.Value {
