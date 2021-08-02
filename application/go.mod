@@ -11,6 +11,7 @@ require (
 	github.com/gobuffalo/mw-contenttype v0.0.0-20190129203934-2554e742333b
 	github.com/gobuffalo/mw-i18n v1.1.0
 	github.com/gobuffalo/mw-paramlogger v0.0.0-20190129202837-395da1998525
+	github.com/gobuffalo/nulls v0.4.0
 	github.com/gobuffalo/packr/v2 v2.8.1
 	github.com/gobuffalo/pop/v5 v5.3.3
 	github.com/gobuffalo/validate/v3 v3.1.0
