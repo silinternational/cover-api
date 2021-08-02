@@ -5,7 +5,9 @@ import (
 	"errors"
 	"io"
 	"log"
+	"net/http"
 	"os"
+	"regexp"
 	"sync"
 
 	"github.com/gobuffalo/envy"
@@ -50,6 +52,8 @@ const (
 	ContextKeyCurrentUser = "current_user"
 	ContextKeyExtras      = "extras"
 	ContextKeyRollbar     = "rollbar"
+
+	TypeUser = "users"
 )
 
 func getBuffaloContext(ctx context.Context) buffalo.Context {
@@ -175,4 +179,21 @@ func RollbarMiddleware(next buffalo.Handler) buffalo.Handler {
 
 		return next(c)
 	}
+}
+
+// GetBearerTokenFromRequest obtains the token from an Authorization header beginning
+// with "Bearer". If not found, an empty string is returned.
+func GetBearerTokenFromRequest(r *http.Request) string {
+	authorizationHeader := r.Header.Get("Authorization")
+	if authorizationHeader == "" {
+		return ""
+	}
+
+	re := regexp.MustCompile(`^(?i)Bearer (.*)$`)
+	matches := re.FindSubmatch([]byte(authorizationHeader))
+	if len(matches) < 2 {
+		return ""
+	}
+
+	return string(matches[1])
 }
