@@ -1,0 +1,13 @@
+create_table("user_access_tokens") {
+	t.Column("id", "uuid", {primary: true})
+	t.Column("user_id", "uuid", {})
+	t.Column("access_token", "string", {})
+	t.Column("expires_at", "timestamp", {})
+	t.Column("is_api", "bool", {})
+	t.Column("last_used_at", "timestamp", {"null": true})
+	t.Timestamps()
+
+	t.Index("access_token", {"unique": true})
+
+	t.ForeignKey("user_id", {"users": ["id"]}, {"on_delete": "cascade"})
+}
