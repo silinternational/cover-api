@@ -1,7 +1,10 @@
 package models
 
 import (
+	"net/http"
 	"time"
+
+	"github.com/silinternational/riskman-api/domain"
 
 	"github.com/gobuffalo/validate/v3"
 
@@ -31,4 +34,32 @@ func (p *PolicyUser) GetID() uuid.UUID {
 
 func (p *PolicyUser) FindByID(tx *pop.Connection, id uuid.UUID) error {
 	return tx.Find(p, id)
+}
+
+// IsActorAllowedTo ensure the actor is either an admin, or a member of this policy to perform any permission
+func (p *PolicyUser) IsActorAllowedTo(tx *pop.Connection, user User, perm Permission, sub SubResource, r *http.Request) bool {
+	if user.IsAdmin() {
+		return true
+	}
+
+	var policy Policy
+	if err := policy.FindByID(tx, p.PolicyID); err != nil {
+		domain.ErrLogger.Printf("failed to load policy for dependent: %s", err)
+		return false
+	}
+
+	if len(policy.Members) == 0 {
+		if err := policy.LoadMembers(tx); err != nil {
+			domain.ErrLogger.Printf("failed to load members on policy: %s", err)
+			return false
+		}
+	}
+
+	for _, m := range policy.Members {
+		if m.ID == user.ID {
+			return true
+		}
+	}
+
+	return false
 }

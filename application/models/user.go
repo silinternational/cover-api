@@ -46,7 +46,7 @@ func (u *User) FindByID(tx *pop.Connection, id uuid.UUID) error {
 	return tx.Find(u, id)
 }
 
-func (u *User) IsActorAllowedTo(actor User, p Permission, subResource string, req *http.Request) bool {
+func (u *User) IsActorAllowedTo(tx *pop.Connection, actor User, p Permission, sub SubResource, req *http.Request) bool {
 	switch p {
 	case PermissionView:
 		return true
