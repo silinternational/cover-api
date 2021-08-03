@@ -31,7 +31,10 @@ var mValidate *validator.Validate
 
 const tokenBytes = 32
 
-type Permission int
+type (
+	Permission  int
+	SubResource string
+)
 
 const (
 	PermissionView Permission = iota
@@ -45,7 +48,7 @@ const (
 type Authable interface {
 	GetID() uuid.UUID
 	FindByID(*pop.Connection, uuid.UUID) error
-	IsActorAllowedTo(User, Permission, string, *http.Request) bool
+	IsActorAllowedTo(*pop.Connection, User, Permission, SubResource, *http.Request) bool
 }
 
 func init() {
