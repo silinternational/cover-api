@@ -110,14 +110,7 @@ func (u *UserAccessToken) GetUser(tx *pop.Connection) (User, error) {
 
 func createAccessTokenExpiry(isAPI bool) time.Time {
 	dtNow := time.Now()
-	var futureTime time.Time
-	if isAPI {
-		futureTime = dtNow.Add(time.Second * time.Duration(domain.Env.ApiTokenLifetimeSeconds))
-	} else {
-		futureTime = dtNow.Add(time.Second * time.Duration(domain.Env.AccessTokenLifetimeSeconds))
-	}
-
-	return futureTime
+	return dtNow.Add(time.Second * time.Duration(domain.Env.AccessTokenLifetimeSeconds))
 }
 
 // Create stores the UserAccessToken data as a new record in the database.
