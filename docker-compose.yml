@@ -7,7 +7,7 @@ services:
       dockerfile: Dockerfile-dev
     volumes:
       - ./application:/riskman
-      - ./go-build:/root/.cache/go-build
+      - go-build:/root/.cache/go-build
     ports:
       - "3000:3000"
       - "6060"
@@ -93,3 +93,6 @@ services:
     volumes:
       - ./application/:/app
     working_dir: /app
+
+volumes:
+  go-build: {}
