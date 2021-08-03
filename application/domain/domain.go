@@ -91,6 +91,7 @@ var Env struct {
 	SamlSsoURL                      string `required:"true" split_words:"true"`
 	SamlSloURL                      string `required:"true" split_words:"true"`
 	SamlCheckResponseSigning        bool   `required:"true" split_words:"true"`
+	SamlSignRequest                 bool   `required:"true" split_words:"true"`
 	SamlRequireEncryptedAssertion   bool   `required:"true" split_words:"true"`
 }
 
@@ -230,7 +231,9 @@ func IsOtherThanNoRows(err error) bool {
 }
 
 // RollbarSetPerson sets person on the rollbar context for further logging
-func RollbarSetPerson(c buffalo.Context, id, username, email string) {
+func RollbarSetPerson(c buffalo.Context, id, userFirst, userLast, email string) {
+
+	username := strings.TrimSpace(userFirst + " " + userLast)
 	rc, ok := c.Value(ContextKeyRollbar).(*rollbar.Client)
 	if ok {
 		rc.SetPerson(id, username, email)

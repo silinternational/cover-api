@@ -108,7 +108,7 @@ func (u *UserAccessToken) GetUser(tx *pop.Connection) (User, error) {
 	return *u.User, nil
 }
 
-func createAccessTokenExpiry(isAPI bool) time.Time {
+func createAccessTokenExpiry() time.Time {
 	dtNow := time.Now()
 	return dtNow.Add(time.Second * time.Duration(domain.Env.AccessTokenLifetimeSeconds))
 }
@@ -139,11 +139,9 @@ func InitAccessToken(clientID string) (UserAccessToken, error) {
 		fmt.Printf("\n\nClientID+token: %s%s\n", clientID, token)
 	}
 
-	isAPI := clientID == ""
-
 	return UserAccessToken{
 		AccessToken: token,
 		TokenHash:   HashClientIdAccessToken(clientID + token),
-		ExpiresAt:   createAccessTokenExpiry(isAPI),
+		ExpiresAt:   createAccessTokenExpiry(),
 	}, nil
 }

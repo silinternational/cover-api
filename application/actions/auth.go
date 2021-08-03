@@ -4,7 +4,11 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"net/url"
 	"strings"
+	"time"
+
+	"github.com/silinternational/riskman-api/auth"
 
 	"github.com/gobuffalo/buffalo/render"
 
@@ -34,7 +38,25 @@ const (
 	// http param and session key for ReturnTo
 	ReturnToParam      = "return-to"
 	ReturnToSessionKey = "ReturnTo"
+
+	// http param for token type
+	TokenTypeParam = "token-type"
 )
+
+var samlConfig = saml.Config{
+	IDPEntityID:                 domain.Env.SamlIdpEntityId,
+	SPEntityID:                  domain.Env.SamlSpEntityId,
+	SingleSignOnURL:             domain.Env.SamlSloURL,
+	SingleLogoutURL:             domain.Env.SamlSloURL,
+	AudienceURI:                 domain.Env.SamlAudienceUri,
+	AssertionConsumerServiceURL: domain.Env.SamlAssertionConsumerServiceUrl,
+	IDPPublicCert:               domain.Env.SamlIdpCert,
+	SPPublicCert:                domain.Env.SamlSpCert,
+	SPPrivateKey:                domain.Env.SamlSpPrivateKey,
+	SignRequest:                 domain.Env.SamlSignRequest,
+	CheckResponseSigning:        domain.Env.SamlCheckResponseSigning,
+	AttributeMap:                nil,
+}
 
 type authError struct {
 	httpStatus int
@@ -89,8 +111,7 @@ func setCurrentUser(next buffalo.Handler) buffalo.Handler {
 		c.Set(domain.ContextKeyCurrentUser, user)
 
 		// set person on rollbar session
-		username := strings.TrimSpace(user.FirstName + " " + user.LastName)
-		domain.RollbarSetPerson(c, user.ID.String(), username, user.Email)
+		domain.RollbarSetPerson(c, user.ID.String(), user.FirstName, user.LastName, user.Email)
 		msg := fmt.Sprintf("user %s authenticated with bearer token from ip %s", user.Email, c.Request().RemoteAddr)
 		domain.NewExtra(c, "user_id", user.ID)
 		domain.NewExtra(c, "email", user.Email)
@@ -129,8 +150,7 @@ func authRequest(c buffalo.Context) error {
 
 	getOrSetReturnTo(c)
 
-	authConfig := saml.Config{}
-	sp, err := saml.New(authConfig)
+	sp, err := saml.New(samlConfig)
 	if err != nil {
 		return authRequestError(c, authError{
 			httpStatus: http.StatusInternalServerError,
@@ -181,14 +201,7 @@ func authCallback(c buffalo.Context) error {
 			ClientIDSessionKey+" session entry is required to complete login")
 	}
 
-	authEmail, ok := c.Session().Get(AuthEmailSessionKey).(string)
-	if !ok {
-		return logErrorAndRedirect(c, api.ErrorMissingSessionAuthEmail,
-			AuthEmailSessionKey+" session entry is required to complete login")
-	}
-
-	authConfig := saml.Config{}
-	sp, err := saml.New(authConfig)
+	sp, err := saml.New(samlConfig)
 	if err != nil {
 		return authRequestError(c, authError{
 			httpStatus: http.StatusInternalServerError,
@@ -214,24 +227,30 @@ func authCallback(c buffalo.Context) error {
 	// login was success, clear session so new login can be initiated if needed
 	c.Session().Clear()
 
+	authUser := authResp.AuthUser
 	tx := models.Tx(c)
-	if err := user.FindOrCreateFromAuthUser(tx, authResp.AuthUser); err != nil {
+	if err := user.FindOrCreateFromAuthUser(tx, authUser); err != nil {
 		return logErrorAndRedirect(c, api.ErrorWithAuthUser, err.Error())
 	}
 
-	if inviteType != "" {
-		dealWithInviteFromCallback(c, inviteType, objectUUID, user)
+	isNew := false
+	if time.Since(user.CreatedAt) < time.Duration(time.Second*30) {
+		isNew = true
+	}
+	authUser.IsNew = isNew
+
+	accessToken, expiresAt, err := user.CreateAccessToken(tx, clientID)
+	if err != nil {
+		return logErrorAndRedirect(c, api.ErrorCreatingAccessToken, err.Error())
 	}
 
-	authUser, err := newOrgBasedAuthUser(c, clientID, user, org)
-	if err != nil {
-		return err
-	}
+	authUser.AccessToken = accessToken
+	authUser.AccessTokenExpiresAt = expiresAt
 
 	// set person on rollbar session
-	domain.RollbarSetPerson(c, authUser.ID, authUser.Nickname, authUser.Email)
+	domain.RollbarSetPerson(c, user.StaffID, user.FirstName, user.LastName, user.Email)
 
-	return c.Redirect(302, getLoginSuccessRedirectURL(authUser, returnTo))
+	return c.Redirect(302, getLoginSuccessRedirectURL(*authUser, returnTo))
 }
 
 // Make extras variadic, so that it can be omitted from the params
@@ -242,4 +261,77 @@ func logErrorAndRedirect(c buffalo.Context, code api.ErrorKey, message string) e
 
 	uiUrl := domain.Env.UIURL + "/login"
 	return c.Redirect(http.StatusFound, uiUrl)
+}
+
+// getLoginSuccessRedirectURL generates the URL for redirection after a successful login
+func getLoginSuccessRedirectURL(authUser auth.User, returnTo string) string {
+	uiURL := domain.Env.UIURL
+
+	params := fmt.Sprintf("?%s=Bearer&%s=%s",
+		TokenTypeParam, AccessTokenParam, authUser.AccessToken)
+
+	// New Users go straight to the welcome page
+	if authUser.IsNew {
+		uiURL += "/welcome"
+		if len(returnTo) > 0 {
+			params += "&" + ReturnToParam + "=" + url.QueryEscape(returnTo)
+		}
+		return uiURL + params
+	}
+
+	// Avoid two question marks in the params
+	if strings.Contains(returnTo, "?") && strings.HasPrefix(params, "?") {
+		params = "&" + params[1:]
+	}
+
+	return uiURL + returnTo + params
+}
+
+// authDestroy uses the bearer token to find the user's access token and
+//  calls the appropriate provider's logout function.
+func authDestroy(c buffalo.Context) error {
+	tokenParam := c.Param(LogoutToken)
+	if tokenParam == "" {
+		return logErrorAndRedirect(c, api.ErrorMissingLogoutToken,
+			LogoutToken+" is required to logout")
+	}
+
+	var uat models.UserAccessToken
+	tx := models.Tx(c)
+	err := uat.FindByBearerToken(tx, tokenParam)
+	if err != nil {
+		return logErrorAndRedirect(c, api.ErrorFindingAccessToken, err.Error())
+	}
+
+	authUser, err := uat.GetUser(tx)
+	if err != nil {
+		return logErrorAndRedirect(c, api.ErrorAuthProvidersLogout, err.Error())
+	}
+
+	// set person on rollbar session
+	domain.RollbarSetPerson(c, authUser.ID.String(), authUser.FirstName, authUser.LastName, authUser.Email)
+
+	sp, err := saml.New(samlConfig)
+	if err != nil {
+		return logErrorAndRedirect(c, api.ErrorLoadingAuthProvider, err.Error())
+	}
+
+	authResp := sp.Logout(c)
+	if authResp.Error != nil {
+		return logErrorAndRedirect(c, api.ErrorAuthProvidersLogout, authResp.Error.Error())
+	}
+
+	redirectURL := domain.Env.UIURL
+
+	if authResp.RedirectURL != "" {
+		var uat models.UserAccessToken
+		err = uat.DeleteByBearerToken(tx, tokenParam)
+		if err != nil {
+			return logErrorAndRedirect(c, api.ErrorDeletingAccessToken, err.Error())
+		}
+		c.Session().Clear()
+		redirectURL = authResp.RedirectURL
+	}
+
+	return c.Redirect(http.StatusFound, redirectURL)
 }

@@ -2,12 +2,13 @@ package auth
 
 // User holds common attributes expected from auth providers
 type User struct {
-	FirstName string
-	LastName  string
-	Email     string
-	UserID    string
-	Nickname  string
-	PhotoURL  string
+	FirstName            string
+	LastName             string
+	Email                string
+	StaffID              string
+	AccessToken          string `json:"AccessToken"`
+	AccessTokenExpiresAt int64  `json:"AccessTokenExpiresAt"`
+	IsNew                bool
 }
 
 // Response holds fields for login and logout responses. not all fields will have values
