@@ -21,7 +21,6 @@ type PolicyUser struct {
 }
 
 // Validate gets run every time you call a "pop.Validate*" (pop.ValidateAndSave, pop.ValidateAndCreate, pop.ValidateAndUpdate) method.
-//  It first adds a UUID to the user if its UUID is empty
 func (p *PolicyUser) Validate(tx *pop.Connection) (*validate.Errors, error) {
 	return validateModel(p), nil
 }
