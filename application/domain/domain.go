@@ -57,7 +57,11 @@ const (
 
 	DefaultUIPath = "/home"
 
-	TypeUser = "users"
+	TypeItem            = "items"
+	TypePolicy          = "policies"
+	TypePolicyDependent = "policy-dependents"
+	TypePolicyUser      = "policy-users"
+	TypeUser            = "users"
 )
 
 func getBuffaloContext(ctx context.Context) buffalo.Context {

@@ -13,7 +13,11 @@ import (
 )
 
 var authableResources = map[string]models.Authable{
-	domain.TypeUser: &models.User{},
+	domain.TypeItem:            &models.Item{},
+	domain.TypePolicy:          &models.Policy{},
+	domain.TypePolicyDependent: &models.PolicyDependent{},
+	domain.TypePolicyUser:      &models.PolicyUser{},
+	domain.TypeUser:            &models.User{},
 }
 
 func AuthZ(next buffalo.Handler) buffalo.Handler {
@@ -31,11 +35,12 @@ func AuthZ(next buffalo.Handler) buffalo.Handler {
 			return c.Error(http.StatusInternalServerError, fmt.Errorf("resource expected to be authable but isn't"))
 		}
 
+		tx := models.Tx(c)
+		if tx == nil {
+			return c.Error(http.StatusInternalServerError, fmt.Errorf("failed to intialize db connection"))
+		}
+
 		if rID != uuid.Nil {
-			tx := models.Tx(c)
-			if tx == nil {
-				return c.Error(http.StatusInternalServerError, fmt.Errorf("failed to intialize db connection"))
-			}
 			if err := resource.FindByID(tx, rID); err != nil {
 				// TODO: this perhaps should return a 404, or just pass the error along based on api.AppError
 				return c.Error(http.StatusInternalServerError, fmt.Errorf("failed to load resource: %s", err))
@@ -60,7 +65,7 @@ func AuthZ(next buffalo.Handler) buffalo.Handler {
 			p = models.PermissionDenied
 		}
 
-		if !resource.IsActorAllowedTo(actor, p, rSub, limitedRequest(c.Request())) {
+		if !resource.IsActorAllowedTo(tx, actor, p, models.SubResource(rSub), limitedRequest(c.Request())) {
 			return c.Error(http.StatusForbidden, fmt.Errorf("actor not allowed to perform that action on this resource"))
 		}
 

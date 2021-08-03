@@ -8,19 +8,35 @@ import (
 	"github.com/gofrs/uuid"
 )
 
+type ItemCategoryStatus string
+
+const (
+	ItemCategoryStatusDraft      = ItemCategoryStatus("Draft")
+	ItemCategoryStatusEnabled    = ItemCategoryStatus("Enabled")
+	ItemCategoryStatusDeprecated = ItemCategoryStatus("Deprecated")
+	ItemCategoryStatusDisabled   = ItemCategoryStatus("Disabled")
+)
+
+var ValidItemCategoryStatuses = map[ItemCategoryStatus]struct{}{
+	ItemCategoryStatusDraft:      {},
+	ItemCategoryStatusEnabled:    {},
+	ItemCategoryStatusDeprecated: {},
+	ItemCategoryStatusDisabled:   {},
+}
+
 // ItemCategories is a slice of ItemCategory objects
 type ItemCategories []ItemCategory
 
 // ItemCategory model
 type ItemCategory struct {
-	ID             uuid.UUID `db:"id"`
-	RiskCategoryID uuid.UUID `db:"risk_category_id"`
-	Name           string    `db:"name" validate:"required"`
-	HelpText       string    `db:"help_text"`
-	Status         string    `db:"status" validate:"required"`
-	AutoApproveMax int       `db:"auto_approve_max"`
-	CreatedAt      time.Time `db:"created_at"`
-	UpdatedAt      time.Time `db:"updated_at"`
+	ID             uuid.UUID          `db:"id"`
+	RiskCategoryID uuid.UUID          `db:"risk_category_id"`
+	Name           string             `db:"name" validate:"required"`
+	HelpText       string             `db:"help_text"`
+	Status         ItemCategoryStatus `db:"status" validate:"itemCategoryStatus"`
+	AutoApproveMax int                `db:"auto_approve_max"`
+	CreatedAt      time.Time          `db:"created_at"`
+	UpdatedAt      time.Time          `db:"updated_at"`
 
 	RiskCategory RiskCategory `belongs_to:"risk_categories" fk_id:"RiskCategoryID" validate:"-"`
 }

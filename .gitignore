@@ -35,3 +35,4 @@ coverage.data
 generated/
 jhw.*
 tmp/
+go-build/

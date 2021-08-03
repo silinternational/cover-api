@@ -43,6 +43,7 @@ rmtestdb:
 	docker-compose kill testdb && docker-compose rm -f testdb
 
 test: testdb minio
+	rm -f application/migrations/schema.sql
 	docker-compose run --rm test whenavail testdb 5432 10 buffalo test
 
 testenv: rmtestdb migratetestdb

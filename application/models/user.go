@@ -55,7 +55,7 @@ func (u *User) FindByStaffID(tx *pop.Connection, id string) error {
 	return tx.Where("staff_id = ?", id).First(u)
 }
 
-func (u *User) IsActorAllowedTo(actor User, p Permission, subResource string, req *http.Request) bool {
+func (u *User) IsActorAllowedTo(tx *pop.Connection, actor User, p Permission, sub SubResource, req *http.Request) bool {
 	switch p {
 	case PermissionView:
 		return true
