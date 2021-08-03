@@ -42,6 +42,7 @@ var _ = grift.Namespace("db", func() {
 				Email:        "jane.doe@example.org",
 				FirstName:    "Jane",
 				LastName:     "Doe",
+				IsBlocked:    true,
 				LastLoginUTC: time.Now().UTC().Add(time.Hour * -24),
 				StaffID:      "333333",
 			},

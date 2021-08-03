@@ -118,11 +118,11 @@ func fieldByName(i interface{}, name ...string) reflect.Value {
 
 // flattenPopErrors - pop validation errors are complex structures, this flattens them to a simple string
 func flattenPopErrors(popErrs *validate.Errors) string {
-	var msg string
+	var msgs []string
 	for key, val := range popErrs.Errors {
-		msg += fmt.Sprintf("%s: %s |", key, strings.Join(val, ", "))
+		msgs = append(msgs, fmt.Sprintf("%s: %s", key, strings.Join(val, ", ")))
 	}
-
+	msg := strings.Join(msgs, " |")
 	return msg
 }
 
