@@ -49,6 +49,8 @@ type Item struct {
 	CoverageStartDate time.Time          `db:"coverage_start_date"`
 	CreatedAt         time.Time          `db:"created_at"`
 	UpdatedAt         time.Time          `db:"updated_at"`
+
+	Policy Policy `belongs_to:"policies"`
 }
 
 // Validate gets run every time you call pop.ValidateAndSave, pop.ValidateAndCreate, or pop.ValidateAndUpdate
@@ -70,22 +72,32 @@ func (i *Item) IsActorAllowedTo(tx *pop.Connection, user User, perm Permission, 
 		return true
 	}
 
-	var policy Policy
-	if err := policy.FindByID(tx, i.PolicyID); err != nil {
+	if err := i.LoadPolicy(tx, false); err != nil {
 		domain.ErrLogger.Printf("failed to load policy for item: %s", err)
 		return false
 	}
 
-	if err := policy.LoadMembers(tx, false); err != nil {
+	if err := i.Policy.LoadMembers(tx, false); err != nil {
 		domain.ErrLogger.Printf("failed to load members on policy: %s", err)
 		return false
 	}
 
-	for _, m := range policy.Members {
+	for _, m := range i.Policy.Members {
 		if m.ID == user.ID {
 			return true
 		}
 	}
 
 	return false
+}
+
+// LoadPolicy - a simple wrapper method for loading the policy
+func (i *Item) LoadPolicy(tx *pop.Connection, reload bool) error {
+	if i.Policy.ID == uuid.Nil || reload {
+		if err := tx.Load(i, "Policy"); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
