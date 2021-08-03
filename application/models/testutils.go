@@ -14,9 +14,23 @@ import (
 	"github.com/gobuffalo/buffalo"
 	"github.com/gobuffalo/nulls"
 	"github.com/gobuffalo/pop/v5"
-
 	"github.com/silinternational/riskman-api/domain"
 )
+
+type FixturesConfig struct {
+	Policies            int
+	UsersPerPolicy      int
+	DependentsPerPolicy int
+}
+
+// Fixtures hold slices of model objects created for test fixtures
+type Fixtures struct {
+	Policies
+	PolicyDependents
+	PolicyUsers
+	UserAccessTokens
+	Users
+}
 
 // TestBuffaloContext is a buffalo context user in tests
 type TestBuffaloContext struct {
@@ -43,15 +57,9 @@ func CreateTestContext(user User) buffalo.Context {
 	return ctx
 }
 
-// UserFixtures hold slices of model objects created with new user fixtures
-type UserFixtures struct {
-	Users
-	UserAccessTokens
-}
-
 // CreateUserFixtures generates any number of user records for testing. The access token for
 // each user is the same as the user's Email.
-func CreateUserFixtures(tx *pop.Connection, n int) UserFixtures {
+func CreateUserFixtures(tx *pop.Connection, n int) Fixtures {
 	unique := domain.GetUUID().String()
 
 	users := make(Users, n)
@@ -62,19 +70,81 @@ func CreateUserFixtures(tx *pop.Connection, n int) UserFixtures {
 		users[i].FirstName = "first" + iStr
 		users[i].LastName = "last" + iStr
 		users[i].LastLoginUTC = time.Now()
-		users[i].StaffID = strconv.Itoa(rand.Int())
+		users[i].StaffID = randStr(10)
 		MustCreate(tx, &users[i])
 
 		accessTokenFixtures[i].UserID = users[i].ID
-		accessTokenFixtures[i].AccessToken = HashClientIdAccessToken(users[i].Email)
+		accessTokenFixtures[i].TokenHash = HashClientIdAccessToken(users[i].Email)
 		accessTokenFixtures[i].ExpiresAt = time.Now().Add(time.Minute * 60)
 		accessTokenFixtures[i].LastUsedAt = nulls.NewTime(time.Now())
 		MustCreate(tx, &accessTokenFixtures[i])
 	}
 
-	return UserFixtures{
+	return Fixtures{
 		Users:            users,
 		UserAccessTokens: accessTokenFixtures,
+	}
+}
+
+// CreatePolicyFixtures generates any number of policy records and associated policy users
+func CreatePolicyFixtures(tx *pop.Connection, config FixturesConfig) Fixtures {
+	var policyUsers PolicyUsers
+	var policyDependents PolicyDependents
+	var users Users
+
+	policies := make(Policies, config.Policies)
+	for i := range policies {
+		policies[i].Type = PolicyTypeHousehold
+		policies[i].Account = randStr(10)
+		policies[i].EntityCode = randStr(10)
+		policies[i].CostCenter = randStr(10)
+		policies[i].HouseholdID = randStr(10)
+		MustCreate(tx, &policies[i])
+
+		f := CreatePolicyUserFixtures(tx, policies[i], config.UsersPerPolicy)
+		users = append(users, f.Users...)
+		policyUsers = append(policyUsers, f.PolicyUsers...)
+
+		pDependents := CreatePolicyDependentFixtures(tx, policies[i], config.DependentsPerPolicy).PolicyDependents
+		policyDependents = append(policyDependents, pDependents...)
+	}
+	return Fixtures{
+		Policies:         policies,
+		PolicyDependents: policyDependents,
+		PolicyUsers:      policyUsers,
+		Users:            users,
+	}
+}
+
+// CreatePolicyUserFixtures generates any number of user and policy user records
+func CreatePolicyUserFixtures(tx *pop.Connection, policy Policy, n int) Fixtures {
+	users := CreateUserFixtures(tx, n).Users
+
+	policyUsers := make(PolicyUsers, n)
+	for i := range policyUsers {
+		policyUsers[i].PolicyID = policy.ID
+		policyUsers[i].UserID = users[i].ID
+		MustCreate(tx, &policyUsers[i])
+	}
+
+	return Fixtures{
+		PolicyUsers: policyUsers,
+		Users:       users,
+	}
+}
+
+// CreatePolicyDependentFixtures generates any number of policy dependent records
+func CreatePolicyDependentFixtures(tx *pop.Connection, policy Policy, n int) Fixtures {
+	policyDependents := make(PolicyDependents, n)
+	for i := range policyDependents {
+		policyDependents[i].PolicyID = policy.ID
+		policyDependents[i].Name = randStr(10)
+		policyDependents[i].BirthYear = time.Now().Year() - 18
+		MustCreate(tx, &policyDependents[i])
+	}
+
+	return Fixtures{
+		PolicyDependents: policyDependents,
 	}
 }
 
@@ -85,4 +155,13 @@ func MustCreate(tx *pop.Connection, f interface{}) {
 	if err != nil {
 		panic(fmt.Sprintf("error creating %T fixture, %s", f, err))
 	}
+}
+
+func randStr(n int) string {
+	const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+	b := make([]byte, n)
+	for i := range b {
+		b[i] = chars[rand.Int63()%int64(len(chars))]
+	}
+	return string(b)
 }
