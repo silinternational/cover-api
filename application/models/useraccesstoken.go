@@ -11,7 +11,6 @@ import (
 	"github.com/gobuffalo/nulls"
 	"github.com/gobuffalo/pop/v5"
 	"github.com/gobuffalo/validate/v3"
-	"github.com/gobuffalo/validate/v3/validators"
 	"github.com/gofrs/uuid"
 
 	"github.com/silinternational/riskman-api/domain"
@@ -20,11 +19,10 @@ import (
 // UserAccessToken is used by pop to map your user_access_tokens database table to your go code.
 type UserAccessToken struct {
 	ID          uuid.UUID  `db:"uuid"`
-	UserID      uuid.UUID  `db:"user_id"`
+	UserID      uuid.UUID  `db:"user_id" validate:"required"`
 	AccessToken string     `db:"-"`
-	TokenHash   string     `db:"access_token"`
-	IsAPI       bool       `db:"is_api"`
-	ExpiresAt   time.Time  `db:"expires_at"`
+	TokenHash   string     `db:"access_token" validate:"required"`
+	ExpiresAt   time.Time  `db:"expires_at" validate:"required"`
 	LastUsedAt  nulls.Time `db:"last_used_at"`
 	CreatedAt   time.Time  `db:"created_at"`
 	UpdatedAt   time.Time  `db:"updated_at"`
@@ -50,12 +48,7 @@ func (u UserAccessTokens) String() string {
 // Validate gets run every time you call a "pop.Validate*" (pop.ValidateAndSave, pop.ValidateAndCreate, pop.ValidateAndUpdate) method.
 // This method is not required and may be deleted.
 func (u *UserAccessToken) Validate(tx *pop.Connection) (*validate.Errors, error) {
-	return validate.Validate(
-		&validators.UUIDIsPresent{Field: u.ID, Name: "ID"},
-		&validators.UUIDIsPresent{Field: u.UserID, Name: "UserID"},
-		&validators.StringIsPresent{Field: u.TokenHash, Name: "TokenHash"},
-		&validators.TimeIsPresent{Field: u.ExpiresAt, Name: "ExpiresAt"},
-	), nil
+	return validateModel(u), nil
 }
 
 // ValidateCreate gets run every time you call "pop.ValidateAndCreate" method.
@@ -159,6 +152,5 @@ func InitAccessToken(clientID string) (UserAccessToken, error) {
 		AccessToken: token,
 		TokenHash:   HashClientIdAccessToken(clientID + token),
 		ExpiresAt:   createAccessTokenExpiry(isAPI),
-		IsAPI:       isAPI,
 	}, nil
 }
