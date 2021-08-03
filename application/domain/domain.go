@@ -76,6 +76,18 @@ var Env struct {
 	ServerRoot                 string `default:"" split_words:"true"`
 	RollbarToken               string `default:"" split_words:"true"`
 	UIURL                      string `default:"missing.ui.url"`
+
+	SamlSpEntityId                  string `required:"true" split_words:"true"`
+	SamlAudienceUri                 string `required:"true" split_words:"true"`
+	SamlIdpEntityId                 string `required:"true" split_words:"true"`
+	SamlIdpCert                     string `required:"true" split_words:"true"`
+	SamlSpCert                      string `required:"true" split_words:"true"`
+	SamlSpPrivateKey                string `required:"true" split_words:"true"`
+	SamlAssertionConsumerServiceUrl string `required:"true" split_words:"true"`
+	SamlSsoURL                      string `required:"true" split_words:"true"`
+	SamlSloURL                      string `required:"true" split_words:"true"`
+	SamlCheckResponseSigning        bool   `required:"true" split_words:"true"`
+	SamlRequireEncryptedAssertion   bool   `required:"true" split_words:"true"`
 }
 
 func init() {

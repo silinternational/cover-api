@@ -18,8 +18,11 @@ require (
 	github.com/gofrs/uuid v3.2.0+incompatible
 	github.com/gorilla/sessions v1.2.1
 	github.com/kelseyhightower/envconfig v1.4.0
+	github.com/markbates/goth v1.68.0
 	github.com/markbates/grift v1.5.0
 	github.com/rollbar/rollbar-go v1.4.1
 	github.com/rs/cors v1.8.0
+	github.com/russellhaering/gosaml2 v0.6.0
+	github.com/russellhaering/goxmldsig v1.1.0
 	github.com/stretchr/testify v1.7.0
 )
