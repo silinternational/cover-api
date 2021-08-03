@@ -9,7 +9,6 @@ import (
 	"log"
 	"net/http"
 	"reflect"
-	"strings"
 
 	"github.com/silinternational/riskman-api/api"
 
@@ -18,16 +17,11 @@ import (
 	"github.com/gobuffalo/pop/v5"
 	"github.com/gofrs/uuid"
 
-	"github.com/gobuffalo/validate/v3"
-
 	"github.com/silinternational/riskman-api/domain"
 )
 
 // DB is a connection to the database to be used throughout the application.
 var DB *pop.Connection
-
-// Model validation tool
-var mValidate *validator.Validate
 
 const tokenBytes = 32
 
@@ -67,8 +61,10 @@ func init() {
 	mValidate = validator.New()
 
 	// register custom validators for custom types
-	if err := mValidate.RegisterValidation("policyType", validatePolicyType, false); err != nil {
-		log.Fatal(fmt.Errorf("failed to register validation for policyType: %s", err))
+	for tag, vFunc := range validationTypes {
+		if err = mValidate.RegisterValidation(tag, vFunc, false); err != nil {
+			log.Fatal(fmt.Errorf("failed to register validation for %s: %s", tag, err))
+		}
 	}
 }
 
@@ -90,17 +86,6 @@ func CurrentUser(c buffalo.Context) User {
 	return user
 }
 
-func validateModel(m interface{}) *validate.Errors {
-	verrs := validate.NewErrors()
-
-	if err := mValidate.Struct(m); err != nil {
-		for _, err := range err.(validator.ValidationErrors) {
-			verrs.Add(err.StructNamespace(), err.Error())
-		}
-	}
-	return verrs
-}
-
 // Tx retrieves the database transaction from the context
 func Tx(ctx context.Context) *pop.Connection {
 	tx, ok := ctx.Value("tx").(*pop.Connection)
@@ -119,16 +104,6 @@ func fieldByName(i interface{}, name ...string) reflect.Value {
 		return fieldByName(i, name[1:]...)
 	}
 	return f
-}
-
-// flattenPopErrors - pop validation errors are complex structures, this flattens them to a simple string
-func flattenPopErrors(popErrs *validate.Errors) string {
-	var msgs []string
-	for key, val := range popErrs.Errors {
-		msgs = append(msgs, fmt.Sprintf("%s: %s", key, strings.Join(val, ", ")))
-	}
-	msg := strings.Join(msgs, " |")
-	return msg
 }
 
 func create(tx *pop.Connection, m interface{}) error {
@@ -188,12 +163,4 @@ func update(tx *pop.Connection, m interface{}) error {
 		)
 	}
 	return nil
-}
-
-func validatePolicyType(field validator.FieldLevel) bool {
-	if pt, ok := field.Field().Interface().(PolicyType); ok {
-		_, valid := ValidPolicyTypes[pt]
-		return valid
-	}
-	return false
 }
