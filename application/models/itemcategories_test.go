@@ -16,17 +16,26 @@ func (ms *ModelSuite) TestItemCategories_Validate() {
 			name: "minimum",
 			itemCategory: ItemCategory{
 				Name:   "computers",
-				Status: "enabled",
+				Status: ItemCategoryStatusEnabled,
 			},
 			wantErr: false,
 		},
 		{
 			name: "missing Name",
 			itemCategory: ItemCategory{
-				Status: "enabled",
+				Status: ItemCategoryStatusEnabled,
 			},
 			wantErr:  true,
 			errField: "ItemCategory.Name",
+		},
+		{
+			name: "invalid Status",
+			itemCategory: ItemCategory{
+				Name:   "computers",
+				Status: "bogus",
+			},
+			wantErr:  true,
+			errField: "ItemCategory.Status",
 		},
 		{
 			name: "missing Status",
