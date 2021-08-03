@@ -53,7 +53,10 @@ const (
 	ContextKeyExtras      = "extras"
 	ContextKeyRollbar     = "rollbar"
 
-	TypeUser = "users"
+	TypePolicy          = "policies"
+	TypePolicyDependent = "policy-dependents"
+	TypePolicyUser      = "policy-users"
+	TypeUser            = "users"
 )
 
 func getBuffaloContext(ctx context.Context) buffalo.Context {
