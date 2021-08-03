@@ -26,6 +26,12 @@ const (
 	ErrorValidation               = ErrorKey("ErrorValidation")
 
 	// Authentication
-
-	ErrorFindingUserByEmail = ErrorKey("ErrorFindingUserByEmail")
+	ErrorAuthProvidersCallback   = ErrorKey("ErrorAuthProvidersCallback")
+	ErrorGettingAuthURL          = ErrorKey("ErrorGettingAuthURL")
+	ErrorLoadingAuthProvider     = ErrorKey("ErrorLoadingAuthProvider")
+	ErrorMissingAuthEmail        = ErrorKey("ErrorMissingAuthEmail")
+	ErrorMissingClientID         = ErrorKey("ErrorMissingClientID")
+	ErrorMissingSessionAuthEmail = ErrorKey("ErrorMissingSessionAuthEmail")
+	ErrorMissingSessionClientID  = ErrorKey("ErrorMissingSessionClientID")
+	ErrorFindingUserByEmail      = ErrorKey("ErrorFindingUserByEmail")
 )

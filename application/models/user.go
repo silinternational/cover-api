@@ -6,6 +6,9 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/pkg/errors"
+	"github.com/silinternational/riskman-api/auth"
+
 	"github.com/gobuffalo/pop/v5"
 	"github.com/gobuffalo/validate/v3"
 	"github.com/gofrs/uuid"
@@ -61,4 +64,22 @@ func (u *User) IsActorAllowedTo(actor User, p Permission, subResource string, re
 
 func (u *User) IsAdmin() bool {
 	return false
+}
+
+func (u *User) FindOrCreateFromAuthUser(tx *pop.Connection, authUser *auth.User) error {
+	newUser := true
+	if u.ID != uuid.Nil {
+		newUser = false
+	}
+
+	// update attributes from authUser
+	u.FirstName = authUser.FirstName
+	u.LastName = authUser.LastName
+	u.Email = authUser.Email
+
+	if err := u.Save(tx); err != nil {
+		return errors.New("unable to save user record: " + err.Error())
+	}
+
+	return nil
 }

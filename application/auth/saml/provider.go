@@ -4,7 +4,6 @@ import (
 	"crypto/rsa"
 	"crypto/x509"
 	"encoding/base64"
-	"encoding/json"
 	"encoding/pem"
 	"errors"
 	"fmt"
@@ -50,18 +49,12 @@ func (c *Config) GetKeyPair() (privateKey *rsa.PrivateKey, cert []byte, err erro
 	return rsaKey, []byte(c.SPPublicCert), nil
 }
 
-func New(jsonConfig json.RawMessage) (*Provider, error) {
-	var config Config
-	err := json.Unmarshal(jsonConfig, &config)
-	if err != nil {
-		return &Provider{}, err
-	}
-
+func New(config Config) (*Provider, error) {
 	p := &Provider{
 		Config: config,
 	}
 
-	err = p.initSAMLServiceProvider()
+	err := p.initSAMLServiceProvider()
 	if err != nil {
 		return p, err
 	}

@@ -2,12 +2,14 @@ package domain
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"io"
 	"log"
 	"net/http"
 	"os"
 	"regexp"
+	"strings"
 	"sync"
 
 	"github.com/gobuffalo/envy"
@@ -52,6 +54,8 @@ const (
 	ContextKeyCurrentUser = "current_user"
 	ContextKeyExtras      = "extras"
 	ContextKeyRollbar     = "rollbar"
+
+	DefaultUIPath = "/home"
 
 	TypeUser = "users"
 )
@@ -209,4 +213,27 @@ func GetBearerTokenFromRequest(r *http.Request) string {
 	}
 
 	return string(matches[1])
+}
+
+// IsOtherThanNoRows returns false if the error is nil or is just reporting that there
+//   were no rows in the result set for a sql query.
+func IsOtherThanNoRows(err error) bool {
+	if err == nil {
+		return false
+	}
+
+	if strings.Contains(err.Error(), sql.ErrNoRows.Error()) {
+		return false
+	}
+
+	return true
+}
+
+// RollbarSetPerson sets person on the rollbar context for further logging
+func RollbarSetPerson(c buffalo.Context, id, username, email string) {
+	rc, ok := c.Value(ContextKeyRollbar).(*rollbar.Client)
+	if ok {
+		rc.SetPerson(id, username, email)
+		return
+	}
 }
