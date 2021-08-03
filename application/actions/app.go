@@ -42,6 +42,7 @@ import (
 	"github.com/gorilla/sessions"
 	"github.com/rs/cors"
 
+	"github.com/silinternational/riskman-api/actions/middleware"
 	"github.com/silinternational/riskman-api/domain"
 	"github.com/silinternational/riskman-api/models"
 )
@@ -102,10 +103,14 @@ func App() *buffalo.App {
 		app.Use(popmw.Transaction(models.DB))
 
 		app.GET("/", HomeHandler)
+		app.GET("/status", statusHandler)
 
 		// users
-		usersGroup := app.Group("/users")
+		usersGroup := app.Group("/" + domain.TypeUser)
+		usersGroup.Use(middleware.AuthN)
+		usersGroup.Use(middleware.AuthZ)
 		usersGroup.GET("/", usersList)
+		usersGroup.GET("/{id}", usersView)
 
 	}
 

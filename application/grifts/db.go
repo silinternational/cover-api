@@ -2,6 +2,7 @@ package grifts
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/gofrs/uuid"
 	"github.com/markbates/grift/grift"
@@ -24,19 +25,40 @@ var _ = grift.Namespace("db", func() {
 
 		fixtureUsers := []*models.User{
 			{
-				Email: "clark.kent@example.org",
+				Email:        "clark.kent@example.org",
+				FirstName:    "Clark",
+				LastName:     "Kent",
+				LastLoginUTC: time.Now().UTC().Add(time.Hour * -48),
+				StaffID:      "111111",
 			},
 			{
-				Email: "jane.eyre@example.org",
+				Email:        "jane.eyre@example.org",
+				FirstName:    "Jane",
+				LastName:     "Eyre",
+				LastLoginUTC: time.Now().UTC().Add(time.Hour * -36),
+				StaffID:      "222222",
 			},
 			{
-				Email: "jane.doe@example.org",
+				Email:        "jane.doe@example.org",
+				FirstName:    "Jane",
+				LastName:     "Doe",
+				IsBlocked:    true,
+				LastLoginUTC: time.Now().UTC().Add(time.Hour * -24),
+				StaffID:      "333333",
 			},
 			{
-				Email: "denethor.ben.ecthelion@example.org",
+				Email:        "denethor.ben.ecthelion@example.org",
+				FirstName:    "Denethor",
+				LastName:     "Ben Ecthelion",
+				LastLoginUTC: time.Now().UTC().Add(time.Hour * -18),
+				StaffID:      "444444",
 			},
 			{
-				Email: "john.smith@example.org",
+				Email:        "john.smith@example.org",
+				FirstName:    "John",
+				LastName:     "Smith",
+				LastLoginUTC: time.Now().UTC().Add(time.Hour * -12),
+				StaffID:      "555555",
 			},
 		}
 

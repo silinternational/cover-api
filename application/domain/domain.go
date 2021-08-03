@@ -5,7 +5,9 @@ import (
 	"errors"
 	"io"
 	"log"
+	"net/http"
 	"os"
+	"regexp"
 	"sync"
 
 	"github.com/gobuffalo/envy"
@@ -50,6 +52,8 @@ const (
 	ContextKeyCurrentUser = "current_user"
 	ContextKeyExtras      = "extras"
 	ContextKeyRollbar     = "rollbar"
+
+	TypeUser = "users"
 )
 
 func getBuffaloContext(ctx context.Context) buffalo.Context {
@@ -64,13 +68,14 @@ func getBuffaloContext(ctx context.Context) buffalo.Context {
 
 // Env Holds the values of environment variables
 var Env struct {
-	GoEnv         string `ignored:"true"`
-	ApiBaseURL    string `required:"true" split_words:"true"`
-	AppName       string `default:"riskman" split_words:"true"`
-	SessionSecret string `required:"true" split_words:"true"`
-	ServerRoot    string `default:"" split_words:"true"`
-	RollbarToken  string `default:"" split_words:"true"`
-	UIURL         string `default:"missing.ui.url"`
+	GoEnv                      string `ignored:"true"`
+	ApiBaseURL                 string `required:"true" split_words:"true"`
+	AccessTokenLifetimeSeconds int    `default:"1166400" split_words:"true"` // 13.5 days
+	AppName                    string `default:"riskman" split_words:"true"`
+	SessionSecret              string `required:"true" split_words:"true"`
+	ServerRoot                 string `default:"" split_words:"true"`
+	RollbarToken               string `default:"" split_words:"true"`
+	UIURL                      string `default:"missing.ui.url"`
 }
 
 func init() {
@@ -175,4 +180,21 @@ func RollbarMiddleware(next buffalo.Handler) buffalo.Handler {
 
 		return next(c)
 	}
+}
+
+// GetBearerTokenFromRequest obtains the token from an Authorization header beginning
+// with "Bearer". If not found, an empty string is returned.
+func GetBearerTokenFromRequest(r *http.Request) string {
+	authorizationHeader := r.Header.Get("Authorization")
+	if authorizationHeader == "" {
+		return ""
+	}
+
+	re := regexp.MustCompile(`^(?i)Bearer (.*)$`)
+	matches := re.FindSubmatch([]byte(authorizationHeader))
+	if len(matches) < 2 {
+		return ""
+	}
+
+	return string(matches[1])
 }

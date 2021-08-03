@@ -1,14 +1,22 @@
 package models
 
 import (
+	"context"
 	"crypto/rand"
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"log"
+	"net/http"
+	"reflect"
+	"strings"
+
+	"github.com/silinternational/riskman-api/api"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gobuffalo/buffalo"
 	"github.com/gobuffalo/pop/v5"
+	"github.com/gofrs/uuid"
 
 	"github.com/gobuffalo/validate/v3"
 
@@ -22,6 +30,23 @@ var DB *pop.Connection
 var mValidate *validator.Validate
 
 const tokenBytes = 32
+
+type Permission int
+
+const (
+	PermissionView Permission = iota
+	PermissionList
+	PermissionCreate
+	PermissionUpdate
+	PermissionDelete
+	PermissionDenied
+)
+
+type Authable interface {
+	GetID() uuid.UUID
+	FindByID(*pop.Connection, uuid.UUID) error
+	IsActorAllowedTo(User, Permission, string, *http.Request) bool
+}
 
 func init() {
 	var err error
@@ -69,4 +94,93 @@ func validateModel(m interface{}) *validate.Errors {
 		}
 	}
 	return verrs
+}
+
+// Tx retrieves the database transaction from the context
+func Tx(ctx context.Context) *pop.Connection {
+	tx, ok := ctx.Value("tx").(*pop.Connection)
+	if !ok {
+		return DB
+	}
+	return tx
+}
+
+func fieldByName(i interface{}, name ...string) reflect.Value {
+	if len(name) < 1 {
+		return reflect.Value{}
+	}
+	f := reflect.ValueOf(i).Elem().FieldByName(name[0])
+	if !f.IsValid() {
+		return fieldByName(i, name[1:]...)
+	}
+	return f
+}
+
+// flattenPopErrors - pop validation errors are complex structures, this flattens them to a simple string
+func flattenPopErrors(popErrs *validate.Errors) string {
+	var msgs []string
+	for key, val := range popErrs.Errors {
+		msgs = append(msgs, fmt.Sprintf("%s: %s", key, strings.Join(val, ", ")))
+	}
+	msg := strings.Join(msgs, " |")
+	return msg
+}
+
+func create(tx *pop.Connection, m interface{}) error {
+	uuidField := fieldByName(m, "ID")
+	if uuidField.IsValid() && uuidField.Interface().(uuid.UUID).Version() == 0 {
+		uuidField.Set(reflect.ValueOf(domain.GetUUID()))
+	}
+
+	valErrs, err := tx.ValidateAndCreate(m)
+	if err != nil {
+		return api.NewAppError(err, api.ErrorCreateFailure, api.CategoryInternal)
+	}
+
+	if valErrs.HasAny() {
+		return api.NewAppError(
+			errors.New(flattenPopErrors(valErrs)),
+			api.ErrorValidation,
+			api.CategoryUser,
+		)
+	}
+	return nil
+}
+
+func save(tx *pop.Connection, m interface{}) error {
+	uuidField := fieldByName(m, "ID")
+	if uuidField.IsValid() && uuidField.Interface().(uuid.UUID).Version() == 0 {
+		uuidField.Set(reflect.ValueOf(domain.GetUUID()))
+	}
+
+	valErrs, err := tx.ValidateAndSave(m)
+	if err != nil {
+		return api.NewAppError(err, api.ErrorSaveFailure, api.CategoryInternal)
+	}
+
+	if valErrs != nil && valErrs.HasAny() {
+		return api.NewAppError(
+			errors.New(flattenPopErrors(valErrs)),
+			api.ErrorValidation,
+			api.CategoryUser,
+		)
+	}
+
+	return nil
+}
+
+func update(tx *pop.Connection, m interface{}) error {
+	valErrs, err := tx.ValidateAndUpdate(m)
+	if err != nil {
+		return api.NewAppError(err, api.ErrorUpdateFailure, api.CategoryInternal)
+	}
+
+	if valErrs.HasAny() {
+		return api.NewAppError(
+			errors.New(flattenPopErrors(valErrs)),
+			api.ErrorValidation,
+			api.CategoryUser,
+		)
+	}
+	return nil
 }
