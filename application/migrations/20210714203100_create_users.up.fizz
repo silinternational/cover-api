@@ -9,5 +9,5 @@ create_table("users") {
 
 	t.Timestamps()
 
-    t.Index("email", {"unique": true})
+	t.Index("email", {"unique": true})
 }

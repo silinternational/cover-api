@@ -1,12 +1,12 @@
 create_table("risk_categories") {
-  t.Column("id", "uuid", {primary: true})
-  t.Column("name", "string", {})
-  t.Column("policy_max", "integer", {})
-  t.Timestamps()
+	t.Column("id", "uuid", {primary: true})
+	t.Column("name", "string", {})
+	t.Column("policy_max", "integer", {})
+	t.Timestamps()
 }
 sql(`
-  INSERT INTO risk_categories
-  VALUES
-    ('3be38915-7092-44f2-90ef-26f48214b34f', 'mobile', 25000, 'now', 'now'),
-    ('7bed3c00-23cf-4282-b2b8-da89426cef2f', 'stationary', 25000, 'now', 'now')
+	INSERT INTO risk_categories
+	VALUES
+		('3be38915-7092-44f2-90ef-26f48214b34f', 'mobile', 25000, 'now', 'now'),
+		('7bed3c00-23cf-4282-b2b8-da89426cef2f', 'stationary', 25000, 'now', 'now')
 `)
