@@ -24,12 +24,12 @@ var ValidPolicyTypes = map[PolicyType]struct{}{
 }
 
 type Policy struct {
-	ID          uuid.UUID  `json:"-" db:"id"`
-	Type        PolicyType `json:"type" db:"type" validate:"policyType"`
-	HouseholdID string     `json:"household_id" db:"household_id"`
-	CostCenter  string     `json:"cost_center" db:"cost_center"`
-	Account     string     `json:"account" db:"account"`
-	EntityCode  string     `json:"entity_code" db:"entity_code"`
+	ID          uuid.UUID  `db:"id"`
+	Type        PolicyType `db:"type" validate:"policyType"`
+	HouseholdID string     `db:"household_id"`
+	CostCenter  string     `db:"cost_center"`
+	Account     string     `db:"account"`
+	EntityCode  string     `db:"entity_code"`
 
 	CreatedAt time.Time `db:"created_at"`
 	UpdatedAt time.Time `db:"updated_at"`

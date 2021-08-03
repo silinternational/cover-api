@@ -3,6 +3,8 @@ package models
 import (
 	"time"
 
+	"github.com/gobuffalo/validate/v3"
+
 	"github.com/gobuffalo/pop/v5"
 	"github.com/gofrs/uuid"
 )
@@ -10,13 +12,19 @@ import (
 type PolicyDependents []PolicyDependent
 
 type PolicyDependent struct {
-	ID        uuid.UUID `json:"-" db:"id"`
-	PolicyID  uuid.UUID `json:"policy_id" db:"policy_id"`
-	Name      string    `json:"name" db:"name"`
-	BirthYear int       `json:"birth_year" db:"birth_year"`
+	ID        uuid.UUID `db:"id"`
+	PolicyID  uuid.UUID `db:"policy_id"`
+	Name      string    `db:"name" validate:"required"`
+	BirthYear int       `db:"birth_year" validate:"required"`
 
 	CreatedAt time.Time `db:"created_at"`
 	UpdatedAt time.Time `db:"updated_at"`
+}
+
+// Validate gets run every time you call a "pop.Validate*" (pop.ValidateAndSave, pop.ValidateAndCreate, pop.ValidateAndUpdate) method.
+//  It first adds a UUID to the user if its UUID is empty
+func (p *PolicyDependent) Validate(tx *pop.Connection) (*validate.Errors, error) {
+	return validateModel(p), nil
 }
 
 func (p *PolicyDependent) GetID() uuid.UUID {

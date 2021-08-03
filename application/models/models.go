@@ -192,9 +192,8 @@ func update(tx *pop.Connection, m interface{}) error {
 
 func validatePolicyType(field validator.FieldLevel) bool {
 	if pt, ok := field.Field().Interface().(PolicyType); ok {
-		if _, valid := ValidPolicyTypes[pt]; valid {
-			return valid
-		}
+		_, valid := ValidPolicyTypes[pt]
+		return valid
 	}
 	return false
 }
