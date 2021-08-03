@@ -1,10 +1,10 @@
 create_table("policies") {
 	t.Column("id", "uuid", {primary: true})
 	t.Column("type", "string", {})
-	t.Column("household_id", "string", {"null": true})
-	t.Column("cost_center", "string", {"null": true})
-	t.Column("account", "string", {"null": true})
-	t.Column("entity_code", "string", {"null": true})
+	t.Column("household_id", "string", {})
+	t.Column("cost_center", "string", {})
+	t.Column("account", "string", {})
+	t.Column("entity_code", "string", {})
 	t.Timestamps()
 
 	t.Index("type", {})
