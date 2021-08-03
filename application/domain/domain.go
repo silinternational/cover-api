@@ -70,8 +70,7 @@ func getBuffaloContext(ctx context.Context) buffalo.Context {
 var Env struct {
 	GoEnv                      string `ignored:"true"`
 	ApiBaseURL                 string `required:"true" split_words:"true"`
-	AccessTokenLifetimeSeconds int    `default:"1166400" split_words:"true"`  // 13.5 days
-	ApiTokenLifetimeSeconds    int    `default:"94608000" split_words:"true"` // 3 years
+	AccessTokenLifetimeSeconds int    `default:"1166400" split_words:"true"` // 13.5 days
 	AppName                    string `default:"riskman" split_words:"true"`
 	SessionSecret              string `required:"true" split_words:"true"`
 	ServerRoot                 string `default:"" split_words:"true"`
