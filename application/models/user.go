@@ -96,7 +96,8 @@ func (u *User) FindOrCreateFromAuthUser(tx *pop.Connection, authUser *auth.User)
 // CreateAccessToken - Create and store new UserAccessToken
 func (u *User) CreateAccessToken(tx *pop.Connection, clientID string) (string, int64, error) {
 	if clientID == "" {
-		return "", 0, fmt.Errorf("cannot create token with empty clientID for user %s", u.Nickname)
+		return "", 0, fmt.Errorf(
+			"cannot create token with empty clientID for user %s %s", u.FirstName, u.LastName)
 	}
 
 	token, _ := getRandomToken()

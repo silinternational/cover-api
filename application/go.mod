@@ -20,6 +20,7 @@ require (
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/markbates/goth v1.68.0
 	github.com/markbates/grift v1.5.0
+	github.com/pkg/errors v0.9.1
 	github.com/rollbar/rollbar-go v1.4.1
 	github.com/rs/cors v1.8.0
 	github.com/russellhaering/gosaml2 v0.6.0
