@@ -13,10 +13,11 @@ import (
 )
 
 var authableResources = map[string]models.Authable{
-	domain.TypeUser:            &models.User{},
+	domain.TypeItem:            &models.Item{},
 	domain.TypePolicy:          &models.Policy{},
 	domain.TypePolicyDependent: &models.PolicyDependent{},
 	domain.TypePolicyUser:      &models.PolicyUser{},
+	domain.TypeUser:            &models.User{},
 }
 
 func AuthZ(next buffalo.Handler) buffalo.Handler {

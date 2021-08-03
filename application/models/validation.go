@@ -14,6 +14,7 @@ var mValidate *validator.Validate
 var validationTypes = map[string]func(validator.FieldLevel) bool{
 	"policyType":         validatePolicyType,
 	"itemCategoryStatus": validateItemCategoryStatus,
+	"itemCoverageStatus": validateItemCoverageStatus,
 }
 
 func validateModel(m interface{}) *validate.Errors {
@@ -48,6 +49,14 @@ func validatePolicyType(field validator.FieldLevel) bool {
 func validateItemCategoryStatus(field validator.FieldLevel) bool {
 	if pt, ok := field.Field().Interface().(ItemCategoryStatus); ok {
 		_, valid := ValidItemCategoryStatuses[pt]
+		return valid
+	}
+	return false
+}
+
+func validateItemCoverageStatus(field validator.FieldLevel) bool {
+	if pt, ok := field.Field().Interface().(ItemCoverageStatus); ok {
+		_, valid := ValidItemCoverageStatuses[pt]
 		return valid
 	}
 	return false

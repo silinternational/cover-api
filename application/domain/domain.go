@@ -53,6 +53,7 @@ const (
 	ContextKeyExtras      = "extras"
 	ContextKeyRollbar     = "rollbar"
 
+	TypeItem            = "items"
 	TypePolicy          = "policies"
 	TypePolicyDependent = "policy-dependents"
 	TypePolicyUser      = "policy-users"
