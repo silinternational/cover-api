@@ -1,7 +1,10 @@
 package models
 
 import (
+	"net/http"
 	"time"
+
+	"github.com/silinternational/riskman-api/domain"
 
 	"github.com/gobuffalo/pop/v5"
 	"github.com/gobuffalo/validate/v3"
@@ -29,38 +32,60 @@ type Items []Item
 
 // Item model
 type Item struct {
-	ID   uuid.UUID `db:"id"`
-	Name string    `db:"name" validate:"required"`
-
-	/*
-		category_id
-		in_storage
-		country
-		description
-		policy_id
-		policy_dependent_id
-		make
-		model
-		serial_number
-		coverage_amount
-		purchase_date
-		coverage_status
-		coverage_start_date
-	*/
-	Status    ItemCoverageStatus `db:"status" validate:"itemCoverageStatus"`
-	CreatedAt time.Time          `db:"created_at"`
-	UpdatedAt time.Time          `db:"updated_at"`
+	ID                uuid.UUID          `db:"id"`
+	Name              string             `db:"name" validate:"required"`
+	CategoryID        uuid.UUID          `db:"category_id" validate:"required"`
+	InStorage         bool               `db:"in_storage"`
+	Country           string             `db:"country"`
+	Description       string             `db:"description"`
+	PolicyID          uuid.UUID          `db:"policy_id" validate:"required"`
+	PolicyDependentID uuid.UUID          `db:"policy_dependent_id"`
+	Make              string             `db:"make"`
+	Model             string             `db:"model"`
+	SerialNumber      string             `db:"serial_number"`
+	CoverageAmount    int                `db:"coverage_amount"`
+	PurchaseDate      time.Time          `db:"purchase_date"`
+	CoverageStatus    ItemCoverageStatus `db:"coverage_status" validate:"itemCategoryStatus"`
+	CoverageStartDate time.Time          `db:"coverage_start_date"`
+	CreatedAt         time.Time          `db:"created_at"`
+	UpdatedAt         time.Time          `db:"updated_at"`
 }
 
 // Validate gets run every time you call pop.ValidateAndSave, pop.ValidateAndCreate, or pop.ValidateAndUpdate
-func (r *Item) Validate(tx *pop.Connection) (*validate.Errors, error) {
-	return validateModel(r), nil
+func (i *Item) Validate(tx *pop.Connection) (*validate.Errors, error) {
+	return validateModel(i), nil
 }
 
-func (r *Item) GetID() uuid.UUID {
-	return r.ID
+func (i *Item) GetID() uuid.UUID {
+	return i.ID
 }
 
-func (r *Item) FindByID(tx *pop.Connection, id uuid.UUID) error {
-	return tx.Find(r, id)
+func (i *Item) FindByID(tx *pop.Connection, id uuid.UUID) error {
+	return tx.Find(i, id)
+}
+
+// IsActorAllowedTo ensure the actor is either an admin, or a member of this policy to perform any permission
+func (i *Item) IsActorAllowedTo(tx *pop.Connection, user User, perm Permission, sub SubResource, req *http.Request) bool {
+	if user.IsAdmin() {
+		return true
+	}
+
+	var policy Policy
+	if err := policy.FindByID(tx, i.PolicyID); err != nil {
+		domain.ErrLogger.Printf("failed to load policy for item: %s", err)
+		return false
+	}
+
+	if err := policy.LoadMembers(tx, false); err != nil {
+		domain.ErrLogger.Printf("failed to load members on policy: %s", err)
+		return false
+	}
+
+	for _, m := range policy.Members {
+		if m.ID == user.ID {
+			return true
+		}
+	}
+
+	return false
 }
