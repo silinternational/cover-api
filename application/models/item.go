@@ -47,11 +47,9 @@ type Item struct {
 		coverage_status
 		coverage_start_date
 	*/
-	HelpText       string             `db:"help_text"`
-	Status         ItemCoverageStatus `db:"status" validate:"itemCoverageStatus"`
-	AutoApproveMax int                `db:"auto_approve_max"`
-	CreatedAt      time.Time          `db:"created_at"`
-	UpdatedAt      time.Time          `db:"updated_at"`
+	Status    ItemCoverageStatus `db:"status" validate:"itemCoverageStatus"`
+	CreatedAt time.Time          `db:"created_at"`
+	UpdatedAt time.Time          `db:"updated_at"`
 }
 
 // Validate gets run every time you call pop.ValidateAndSave, pop.ValidateAndCreate, or pop.ValidateAndUpdate
