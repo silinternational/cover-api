@@ -7,8 +7,8 @@ create_table("policies") {
 	t.Column("entity_code", "string", {"null": true})
 	t.Timestamps()
 
-    t.Index("type", {})
-    t.Index("household_id", {"unique": true})
+	t.Index("type", {})
+	t.Index("household_id", {"unique": true})
 }
 
 create_table("policy_users") {
@@ -17,10 +17,10 @@ create_table("policy_users") {
 	t.Column("user_id", "uuid", {})
 	t.Timestamps()
 
-    t.Index(["policy_id","user_id"], {"unique": true})
+	t.Index(["policy_id","user_id"], {"unique": true})
 
-    t.ForeignKey("policy_id", {"policies": ["id"]}, {"on_delete": "cascade"})
-    t.ForeignKey("user_id", {"users": ["id"]}, {"on_delete": "cascade"})
+	t.ForeignKey("policy_id", {"policies": ["id"]}, {"on_delete": "cascade"})
+	t.ForeignKey("user_id", {"users": ["id"]}, {"on_delete": "cascade"})
 }
 
 create_table("policy_dependents") {
@@ -30,7 +30,7 @@ create_table("policy_dependents") {
 	t.Column("birth_year", "int", {})
 	t.Timestamps()
 
-    t.Index(["policy_id","name"], {"unique": true})
+	t.Index(["policy_id","name"], {"unique": true})
 
-    t.ForeignKey("policy_id", {"policies": ["id"]}, {"on_delete": "cascade"})
+	t.ForeignKey("policy_id", {"policies": ["id"]}, {"on_delete": "cascade"})
 }
