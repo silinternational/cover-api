@@ -49,11 +49,9 @@ func (p *PolicyDependent) IsActorAllowedTo(tx *pop.Connection, user User, perm P
 		return false
 	}
 
-	if len(policy.Members) == 0 {
-		if err := policy.LoadMembers(tx); err != nil {
-			domain.ErrLogger.Printf("failed to load members on policy: %s", err)
-			return false
-		}
+	if err := policy.LoadMembers(tx, false); err != nil {
+		domain.ErrLogger.Printf("failed to load members on policy: %s", err)
+		return false
 	}
 
 	for _, m := range policy.Members {

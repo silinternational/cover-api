@@ -58,11 +58,9 @@ func (p *Policy) IsActorAllowedTo(tx *pop.Connection, user User, perm Permission
 		return true
 	}
 
-	if len(p.Members) == 0 {
-		if err := p.LoadMembers(tx); err != nil {
-			domain.ErrLogger.Printf("failed to load members on policy: %s", err)
-			return false
-		}
+	if err := p.LoadMembers(tx, false); err != nil {
+		domain.ErrLogger.Printf("failed to load members on policy: %s", err)
+		return false
 	}
 
 	for _, m := range p.Members {
@@ -75,9 +73,12 @@ func (p *Policy) IsActorAllowedTo(tx *pop.Connection, user User, perm Permission
 }
 
 // LoadMembers - a simple wrapper method for loading members on the struct
-func (p *Policy) LoadMembers(tx *pop.Connection) error {
-	if err := tx.Load(p, "Members"); err != nil {
-		return err
+func (p *Policy) LoadMembers(tx *pop.Connection, reload bool) error {
+	if len(p.Members) == 0 || reload {
+		if err := tx.Load(p, "Members"); err != nil {
+			return err
+		}
 	}
+
 	return nil
 }
