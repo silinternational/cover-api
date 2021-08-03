@@ -65,6 +65,11 @@ func init() {
 
 	// initialize model validation library
 	mValidate = validator.New()
+
+	// register custom validators for custom types
+	if err := mValidate.RegisterValidation("policyType", validatePolicyType, false); err != nil {
+		log.Fatal(fmt.Errorf("failed to register validation for policyType: %s", err))
+	}
 }
 
 func getRandomToken() (string, error) {
@@ -183,4 +188,12 @@ func update(tx *pop.Connection, m interface{}) error {
 		)
 	}
 	return nil
+}
+
+func validatePolicyType(field validator.FieldLevel) bool {
+	if pt, ok := field.Field().Interface().(PolicyType); ok {
+		_, valid := ValidPolicyTypes[pt]
+		return valid
+	}
+	return false
 }
