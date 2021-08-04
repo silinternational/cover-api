@@ -98,7 +98,7 @@ func App() *buffalo.App {
 
 		//  Added for authorization
 		app.Use(setCurrentUser)
-		app.Middleware.Skip(setCurrentUser)
+		app.Middleware.Skip(setCurrentUser, HomeHandler, statusHandler)
 
 		// Set the request content type to JSON
 		app.Use(contenttype.Set("application/json"))

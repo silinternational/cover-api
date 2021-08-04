@@ -94,9 +94,9 @@ var Env struct {
 	SamlAssertionConsumerServiceUrl string `required:"true" split_words:"true"`
 	SamlSsoURL                      string `required:"true" split_words:"true"`
 	SamlSloURL                      string `required:"true" split_words:"true"`
-	SamlCheckResponseSigning        bool   `required:"true" split_words:"true"`
-	SamlSignRequest                 bool   `required:"true" split_words:"true"`
-	SamlRequireEncryptedAssertion   bool   `required:"true" split_words:"true"`
+	SamlCheckResponseSigning        bool   `default:"true" split_words:"true"`
+	SamlSignRequest                 bool   `default:"true" split_words:"true"`
+	SamlRequireEncryptedAssertion   bool   `default:"true" split_words:"true"`
 }
 
 func init() {
