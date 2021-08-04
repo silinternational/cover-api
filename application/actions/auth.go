@@ -24,10 +24,6 @@ const (
 	// http param for access token
 	AccessTokenParam = "access-token"
 
-	// http param and session key for Auth Email
-	AuthEmailParam      = "auth-email"
-	AuthEmailSessionKey = "AuthEmail"
-
 	// http param and session key for Client ID
 	ClientIDParam      = "client-id"
 	ClientIDSessionKey = "ClientID"
@@ -43,16 +39,21 @@ const (
 	TokenTypeParam = "token-type"
 )
 
+func replaceNewLines(input string) string {
+	output := strings.Replace(input, `\n`, "\n", -1)
+	return output
+}
+
 var samlConfig = saml.Config{
 	IDPEntityID:                 domain.Env.SamlIdpEntityId,
 	SPEntityID:                  domain.Env.SamlSpEntityId,
-	SingleSignOnURL:             domain.Env.SamlSloURL,
+	SingleSignOnURL:             domain.Env.SamlSsoURL,
 	SingleLogoutURL:             domain.Env.SamlSloURL,
 	AudienceURI:                 domain.Env.SamlAudienceUri,
 	AssertionConsumerServiceURL: domain.Env.SamlAssertionConsumerServiceUrl,
-	IDPPublicCert:               domain.Env.SamlIdpCert,
-	SPPublicCert:                domain.Env.SamlSpCert,
-	SPPrivateKey:                domain.Env.SamlSpPrivateKey,
+	IDPPublicCert:               replaceNewLines(domain.Env.SamlIdpCert),
+	SPPublicCert:                replaceNewLines(domain.Env.SamlSpCert),
+	SPPrivateKey:                replaceNewLines(domain.Env.SamlSpPrivateKey),
 	SignRequest:                 domain.Env.SamlSignRequest,
 	CheckResponseSigning:        domain.Env.SamlCheckResponseSigning,
 	AttributeMap:                nil,
@@ -135,18 +136,6 @@ func authRequest(c buffalo.Context) error {
 	}
 
 	c.Session().Set(ClientIDSessionKey, clientID)
-
-	// Get the AuthEmail param and push it into the Session
-	authEmail := c.Param(AuthEmailParam)
-	if authEmail == "" {
-		authErr := authError{
-			httpStatus: http.StatusBadRequest,
-			errorKey:   api.ErrorMissingAuthEmail,
-			errorMsg:   AuthEmailParam + " is required to login",
-		}
-		return authRequestError(c, authErr)
-	}
-	c.Session().Set(AuthEmailSessionKey, authEmail)
 
 	getOrSetReturnTo(c)
 

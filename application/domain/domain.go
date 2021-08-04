@@ -83,7 +83,7 @@ var Env struct {
 	SessionSecret              string `required:"true" split_words:"true"`
 	ServerRoot                 string `default:"" split_words:"true"`
 	RollbarToken               string `default:"" split_words:"true"`
-	UIURL                      string `default:"missing.ui.url"`
+	UIURL                      string `default:"http://missing.ui.url"`
 
 	SamlSpEntityId                  string `required:"true" split_words:"true"`
 	SamlAudienceUri                 string `required:"true" split_words:"true"`

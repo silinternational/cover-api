@@ -2,7 +2,6 @@ package saml
 
 import (
 	"crypto/rsa"
-	"encoding/json"
 	"testing"
 )
 
@@ -92,12 +91,12 @@ func TestNew(t *testing.T) {
 		AttributeMap:                nil,
 	}
 
-	jsonConfig, err := json.Marshal(config)
-	if err != nil {
-		t.Errorf("unable ot marshal config to json: %s", err)
-	}
+	//jsonConfig, err := json.Marshal(config)
+	//if err != nil {
+	//	t.Errorf("unable ot marshal config to json: %s", err)
+	//}
 
-	sp, err := New(jsonConfig)
+	sp, err := New(config)
 	if err != nil {
 		t.Errorf("error getting new saml provider: %s", err)
 	}
