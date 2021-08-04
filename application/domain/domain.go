@@ -55,6 +55,8 @@ const (
 	ContextKeyExtras      = "extras"
 	ContextKeyRollbar     = "rollbar"
 
+	DefaultUIPath = "/home"
+
 	TypeItem            = "items"
 	TypePolicy          = "policies"
 	TypePolicyDependent = "policy-dependents"
@@ -81,7 +83,20 @@ var Env struct {
 	SessionSecret              string `required:"true" split_words:"true"`
 	ServerRoot                 string `default:"" split_words:"true"`
 	RollbarToken               string `default:"" split_words:"true"`
-	UIURL                      string `default:"missing.ui.url"`
+	UIURL                      string `default:"http://missing.ui.url"`
+
+	SamlSpEntityId                  string `required:"true" split_words:"true"`
+	SamlAudienceUri                 string `required:"true" split_words:"true"`
+	SamlIdpEntityId                 string `required:"true" split_words:"true"`
+	SamlIdpCert                     string `required:"true" split_words:"true"`
+	SamlSpCert                      string `required:"true" split_words:"true"`
+	SamlSpPrivateKey                string `required:"true" split_words:"true"`
+	SamlAssertionConsumerServiceUrl string `required:"true" split_words:"true"`
+	SamlSsoURL                      string `required:"true" split_words:"true"`
+	SamlSloURL                      string `required:"true" split_words:"true"`
+	SamlCheckResponseSigning        bool   `default:"true" split_words:"true"`
+	SamlSignRequest                 bool   `default:"true" split_words:"true"`
+	SamlRequireEncryptedAssertion   bool   `default:"true" split_words:"true"`
 }
 
 func init() {
@@ -220,10 +235,29 @@ func IsOtherThanNoRows(err error) bool {
 }
 
 // RollbarSetPerson sets person on the rollbar context for further logging
-func RollbarSetPerson(c buffalo.Context, id, username, email string) {
+func RollbarSetPerson(c buffalo.Context, id, userFirst, userLast, email string) {
+	username := strings.TrimSpace(userFirst + " " + userLast)
 	rc, ok := c.Value(ContextKeyRollbar).(*rollbar.Client)
 	if ok {
 		rc.SetPerson(id, username, email)
-		return
 	}
+}
+
+func MergeExtras(extras []map[string]interface{}) map[string]interface{} {
+	allExtras := map[string]interface{}{}
+
+	// I didn't think I would need this, but without it at least one test was failing
+	// The code allowed a map[string]interface{} to get through (i.e. not in a slice)
+	// without the compiler complaining
+	if len(extras) == 1 {
+		return extras[0]
+	}
+
+	for _, e := range extras {
+		for k, v := range e {
+			allExtras[k] = v
+		}
+	}
+
+	return allExtras
 }
