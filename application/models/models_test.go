@@ -35,9 +35,17 @@ func Test_ModelSuite(t *testing.T) {
 }
 
 func DestroyAll() {
-	// delete all Users
+	// delete all Users and UserAccessTokens
 	var users Users
 	destroyTable(&users)
+
+	// delete all Policies, PolicyUsers, PolicyDependents, PolicyHistory records, and Items
+	var policies Policies
+	destroyTable(&policies)
+
+	// delete all ItemCategories
+	var categories ItemCategories
+	destroyTable(&categories)
 }
 
 func destroyTable(i interface{}) {

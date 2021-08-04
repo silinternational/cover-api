@@ -160,8 +160,16 @@ func CreatePolicyFixtures(tx *pop.Connection, config FixturesConfig) Fixtures {
 		users = append(users, f.Users...)
 		policyUsers = append(policyUsers, f.PolicyUsers...)
 
+		if err := policies[i].LoadMembers(tx, false); err != nil {
+			panic("failed to load members on policy " + policies[i].ID.String())
+		}
+
 		f = CreatePolicyDependentFixtures(tx, policies[i], config.DependentsPerPolicy)
 		policyDependents = append(policyDependents, f.PolicyDependents...)
+
+		if err := policies[i].LoadDependents(tx, false); err != nil {
+			panic("failed to load dependents on policy " + policies[i].ID.String())
+		}
 	}
 	return Fixtures{
 		Policies:         policies,
