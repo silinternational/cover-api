@@ -113,9 +113,10 @@ func App() *buffalo.App {
 
 		// users
 		usersGroup := app.Group("/" + domain.TypeUser)
-		usersGroup.Use(middleware.AuthN)
 		usersGroup.Use(middleware.AuthZ)
 		usersGroup.GET("/", usersList)
+		usersGroup.Middleware.Skip(middleware.AuthZ, usersMe)
+		usersGroup.GET("/me", usersMe)
 		usersGroup.GET("/{id}", usersView)
 
 		auth := app.Group("/auth")
@@ -124,12 +125,8 @@ func App() *buffalo.App {
 		auth.POST("/callback", authCallback)
 		auth.GET("/logout", authDestroy)
 
-		usersGroup.Middleware.Skip(middleware.AuthZ, usersMe)
-		usersGroup.GET("/me", usersMe)
-
 		// policies
 		policiesGroup := app.Group("/" + domain.TypePolicy)
-		policiesGroup.Use(middleware.AuthN)
 		policiesGroup.Use(middleware.AuthZ)
 		policiesGroup.GET("/", policiesList)
 	}

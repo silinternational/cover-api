@@ -32,9 +32,5 @@ func getReferencedUserFromCtx(c buffalo.Context) *models.User {
 }
 
 func usersMe(c buffalo.Context) error {
-	if user := getReferencedUserFromCtx(c); user != nil {
-		return c.Render(http.StatusOK, r.JSON(user))
-	}
-
-	return c.Render(http.StatusUnauthorized, nil)
+	return c.Render(http.StatusOK, r.JSON(models.CurrentUser(c)))
 }
