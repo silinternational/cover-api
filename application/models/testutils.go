@@ -11,6 +11,8 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/silinternational/riskman-api/api"
+
 	"github.com/gobuffalo/buffalo"
 	"github.com/gobuffalo/nulls"
 	"github.com/gobuffalo/pop/v5"
@@ -149,7 +151,7 @@ func CreatePolicyFixtures(tx *pop.Connection, config FixturesConfig) Fixtures {
 
 	policies := make(Policies, config.NumberOfPolicies)
 	for i := range policies {
-		policies[i].Type = PolicyTypeHousehold
+		policies[i].Type = api.PolicyTypeHousehold
 		policies[i].Account = randStr(10)
 		policies[i].EntityCode = randStr(10)
 		policies[i].CostCenter = randStr(10)

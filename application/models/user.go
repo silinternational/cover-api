@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/silinternational/riskman-api/api"
+
 	"github.com/silinternational/riskman-api/domain"
 
 	"github.com/pkg/errors"
@@ -73,10 +75,12 @@ func (u *User) IsAdmin() bool {
 }
 
 func (u *User) FindOrCreateFromAuthUser(tx *pop.Connection, authUser *auth.User) error {
+	isNewUser := false
 	if err := u.FindByStaffID(tx, authUser.StaffID); err != nil {
 		if domain.IsOtherThanNoRows(err) {
 			return err
 		}
+		isNewUser = true
 	}
 
 	// update attributes from authUser
@@ -88,6 +92,32 @@ func (u *User) FindOrCreateFromAuthUser(tx *pop.Connection, authUser *auth.User)
 
 	if err := tx.Save(u); err != nil {
 		return errors.New("unable to save user record: " + err.Error())
+	}
+
+	// If this is a brand-new user, create a Policy for them
+	if !isNewUser {
+		return nil
+	}
+
+	policy := Policy{
+		Type:        api.PolicyTypeHousehold,
+		Account:     randStr(10),
+		EntityCode:  randStr(10),
+		CostCenter:  randStr(10),
+		HouseholdID: randStr(10),
+	}
+
+	if err := tx.Create(&policy); err != nil {
+		return errors.New("unable to create initial policy for new user: " + err.Error())
+	}
+
+	polUser := PolicyUser{
+		PolicyID: policy.ID,
+		UserID:   u.ID,
+	}
+
+	if err := tx.Create(&polUser); err != nil {
+		return errors.New("unable to create policy-user for initial policy for new user: " + err.Error())
 	}
 
 	return nil

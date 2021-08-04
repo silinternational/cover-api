@@ -137,3 +137,11 @@ func MergeExtras(extras []map[string]interface{}) map[string]interface{} {
 
 	return allExtras
 }
+
+// TODO REmove these when the other PR's are in
+type PolicyType string
+
+const (
+	PolicyTypeHousehold = PolicyType("Household")
+	PolicyTypeOU        = PolicyType("OU")
+)

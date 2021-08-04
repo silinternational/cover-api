@@ -4,6 +4,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/silinternational/riskman-api/api"
+
 	"github.com/silinternational/riskman-api/domain"
 
 	"github.com/gobuffalo/pop/v5"
@@ -27,14 +29,14 @@ var ValidPolicyTypes = map[PolicyType]struct{}{
 }
 
 type Policy struct {
-	ID          uuid.UUID  `db:"id"`
-	Type        PolicyType `db:"type" validate:"policyType"`
-	HouseholdID string     `db:"household_id"`
-	CostCenter  string     `db:"cost_center"`
-	Account     string     `db:"account"`
-	EntityCode  string     `db:"entity_code"`
-	CreatedAt   time.Time  `db:"created_at"`
-	UpdatedAt   time.Time  `db:"updated_at"`
+	ID          uuid.UUID      `db:"id"`
+	Type        api.PolicyType `db:"type" validate:"policyType"`
+	HouseholdID string         `db:"household_id"`
+	CostCenter  string         `db:"cost_center"`
+	Account     string         `db:"account"`
+	EntityCode  string         `db:"entity_code"`
+	CreatedAt   time.Time      `db:"created_at"`
+	UpdatedAt   time.Time      `db:"updated_at"`
 
 	Dependents PolicyDependents `has_many:"policy_dependents"`
 	Members    Users            `many_to_many:"policy_users"`
