@@ -1,12 +1,13 @@
 package actions
 
 import (
-	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
 	"strings"
 	"time"
+
+	"github.com/gobuffalo/nulls"
 
 	"github.com/gobuffalo/buffalo"
 	"github.com/gobuffalo/buffalo/render"
@@ -66,7 +67,11 @@ func setCurrentUser(next buffalo.Handler) buffalo.Handler {
 	return func(c buffalo.Context) error {
 		bearerToken := domain.GetBearerTokenFromRequest(c.Request())
 		if bearerToken == "" {
-			return c.Error(http.StatusUnauthorized, errors.New("no Bearer token provided"))
+			return reportError(c, &api.AppError{
+				HttpStatus: http.StatusUnauthorized,
+				Key:        api.ErrorNotAuthorized,
+				Message:    "no Bearer token provided",
+			})
 		}
 
 		var userAccessToken models.UserAccessToken
@@ -76,7 +81,11 @@ func setCurrentUser(next buffalo.Handler) buffalo.Handler {
 			if domain.IsOtherThanNoRows(err) {
 				domain.Error(c, err.Error())
 			}
-			return c.Error(http.StatusUnauthorized, errors.New("invalid bearer token"))
+			return reportError(c, &api.AppError{
+				HttpStatus: http.StatusUnauthorized,
+				Key:        api.ErrorNotAuthorized,
+				DebugMsg:   "invalid bearer token",
+			})
 		}
 
 		isExpired, err := userAccessToken.DeleteIfExpired(tx)
@@ -85,13 +94,28 @@ func setCurrentUser(next buffalo.Handler) buffalo.Handler {
 		}
 
 		if isExpired {
-			return c.Error(http.StatusUnauthorized, errors.New("expired bearer token"))
+			return reportError(c, &api.AppError{
+				HttpStatus: http.StatusUnauthorized,
+				Key:        api.ErrorNotAuthorized,
+				DebugMsg:   "expired bearer token",
+			})
 		}
 
 		user, err := userAccessToken.GetUser(tx)
 		if err != nil {
-			return c.Error(http.StatusInternalServerError, fmt.Errorf("error finding user by access token, %s", err.Error()))
+			newExtra(c, "tokenID", userAccessToken.ID)
+			return reportError(c, &api.AppError{
+				HttpStatus: http.StatusInternalServerError,
+				Key:        api.ErrorQueryFailure,
+				DebugMsg:   "error finding user by access token, " + err.Error(),
+			})
 		}
+
+		userAccessToken.LastUsedAt = nulls.NewTime(time.Now().UTC())
+		if err := userAccessToken.Save(tx); err != nil {
+			domain.Error(c, "error saving userAccessToken with new LastUsedAt value: "+err.Error(), nil)
+		}
+
 		c.Set(domain.ContextKeyCurrentUser, user)
 
 		// set person on rollbar session

@@ -91,6 +91,12 @@ func getExtras(c buffalo.Context) map[string]interface{} {
 	return extras
 }
 
+func newExtra(c buffalo.Context, key string, e interface{}) {
+	extras := getExtras(c)
+	extras[key] = e
+	c.Set(domain.ContextKeyExtras, extras)
+}
+
 // GetFunctionName provides the filename, line number, and function name of the caller, skipping the top `skip`
 // functions on the stack.
 func GetFunctionName(skip int) string {
