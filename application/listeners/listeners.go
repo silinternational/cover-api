@@ -11,6 +11,8 @@ import (
 	"github.com/silinternational/riskman-api/models"
 )
 
+const PayloadID = "id"
+
 type apiListener struct {
 	name     string
 	listener func(events.Event)
@@ -71,7 +73,7 @@ func createUserPolicy(e events.Event) {
 }
 
 func getID(p events.Payload) (uuid.UUID, error) {
-	i, ok := p["id"]
+	i, ok := p[PayloadID]
 	if !ok {
 		return uuid.UUID{}, fmt.Errorf("id not in event payload")
 	}

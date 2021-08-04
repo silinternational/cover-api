@@ -184,7 +184,7 @@ func ConvertPolicyMembers(tx *pop.Connection, us Users) (api.PolicyMembers, erro
 
 // CreateInitialPolicy is a hack to create an initial policy for a new user
 func (u *User) CreateInitialPolicy(tx *pop.Connection) error {
-	if u.ID == uuid.Nil {
+	if u == nil || u.ID == uuid.Nil {
 		return errors.New("user must have an ID in CreateInitialPolicy")
 	}
 	if tx == nil {
