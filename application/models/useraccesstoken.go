@@ -18,7 +18,7 @@ import (
 
 // UserAccessToken is used by pop to map your user_access_tokens database table to your go code.
 type UserAccessToken struct {
-	ID          uuid.UUID  `db:"uuid"`
+	ID          uuid.UUID  `db:"id"`
 	UserID      uuid.UUID  `db:"user_id" validate:"required"`
 	AccessToken string     `db:"-"`
 	TokenHash   string     `db:"access_token" validate:"required"`
