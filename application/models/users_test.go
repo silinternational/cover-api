@@ -52,3 +52,42 @@ func (ms *ModelSuite) TestUser_Validate() {
 		})
 	}
 }
+
+func (ms *ModelSuite) TestUser_CreateInitialPolicy() {
+	t := ms.T()
+
+	f := CreateUserFixtures(ms.DB, 2)
+	user := f.Users[0]
+
+	tests := []struct {
+		name    string
+		user    User
+		wantErr bool
+	}{
+		{
+			name:    "missing ID",
+			user:    User{},
+			wantErr: true,
+		},
+		{
+			name:    "good",
+			user:    user,
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := tt.user.CreateInitialPolicy(DB)
+			if tt.wantErr {
+				ms.Error(err)
+				return
+			}
+
+			ms.NoError(err)
+
+			policyUser := PolicyUser{}
+			err = ms.DB.Where("user_id = ?", tt.user.ID).First(&policyUser)
+			ms.NoError(err, "error trying to find resulting policyUser")
+		})
+	}
+}

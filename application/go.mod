@@ -7,6 +7,7 @@ require (
 	github.com/gobuffalo/buffalo v0.16.26
 	github.com/gobuffalo/buffalo-pop/v2 v2.3.0
 	github.com/gobuffalo/envy v1.9.0
+	github.com/gobuffalo/events v1.4.1
 	github.com/gobuffalo/httptest v1.5.0
 	github.com/gobuffalo/mw-contenttype v0.0.0-20190129203934-2554e742333b
 	github.com/gobuffalo/mw-i18n v1.1.0

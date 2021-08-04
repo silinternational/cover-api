@@ -10,6 +10,8 @@ import (
 	"net/http"
 	"reflect"
 
+	"github.com/gobuffalo/events"
+
 	"github.com/silinternational/riskman-api/api"
 
 	"github.com/go-playground/validator/v10"
@@ -166,4 +168,11 @@ func update(tx *pop.Connection, m interface{}) error {
 		)
 	}
 	return nil
+}
+
+// This can include an event payload, which is a map[string]interface{}
+func emitEvent(e events.Event) {
+	if err := events.Emit(e); err != nil {
+		domain.ErrLogger.Printf("error emitting event %s ... %v", e.Kind, err)
+	}
 }
