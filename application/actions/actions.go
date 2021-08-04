@@ -40,7 +40,7 @@ func reportError(c buffalo.Context, err error) error {
 		appErr.DebugMsg = ""
 	}
 
-	if appErr.HttpStatus >= 300 && appErr.HttpStatus < 399 {
+	if appErr.HttpStatus >= 300 && appErr.HttpStatus <= 399 {
 		if appErr.RedirectURL == "" {
 			appErr.RedirectURL = domain.Env.UIURL + "/login?appError=" + appErr.Message
 		}

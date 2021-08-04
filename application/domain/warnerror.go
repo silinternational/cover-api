@@ -101,6 +101,5 @@ func rollbarMessage(c buffalo.Context, level string, msg string, extras map[stri
 	rc, ok := c.Value(ContextKeyRollbar).(*rollbar.Client)
 	if ok {
 		rc.MessageWithExtras(level, msg, extras)
-		return
 	}
 }
