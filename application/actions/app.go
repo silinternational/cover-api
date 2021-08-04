@@ -112,6 +112,14 @@ func App() *buffalo.App {
 		usersGroup.GET("/", usersList)
 		usersGroup.GET("/{id}", usersView)
 
+		usersGroup.Middleware.Skip(middleware.AuthZ, usersMe)
+		usersGroup.GET("/me", usersMe)
+
+		// policies
+		policiesGroup := app.Group("/" + domain.TypePolicy)
+		policiesGroup.Use(middleware.AuthN)
+		policiesGroup.Use(middleware.AuthZ)
+		policiesGroup.GET("/", policiesList)
 	}
 
 	return app

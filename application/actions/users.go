@@ -27,3 +27,11 @@ func getUserFromCxt(c buffalo.Context) *models.User {
 	}
 	return &user
 }
+
+func usersMe(c buffalo.Context) error {
+	if user := getUserFromCxt(c); user != nil {
+		return c.Render(http.StatusOK, r.JSON(user))
+	}
+
+	return c.Render(http.StatusUnauthorized, nil)
+}

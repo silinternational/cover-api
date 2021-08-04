@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/silinternational/riskman-api/api"
+
 	"github.com/gobuffalo/pop/v5"
 	"github.com/gobuffalo/validate/v3"
 	"github.com/gofrs/uuid"
@@ -25,6 +27,8 @@ type User struct {
 	StaffID      string    `db:"staff_id"`
 	CreatedAt    time.Time `db:"created_at"`
 	UpdatedAt    time.Time `db:"updated_at"`
+
+	Policies Policies `many_to_many:"policy_users"`
 }
 
 // Validate gets run every time you call a "pop.Validate*" (pop.ValidateAndSave, pop.ValidateAndCreate, pop.ValidateAndUpdate) method.
@@ -61,4 +65,34 @@ func (u *User) IsActorAllowedTo(tx *pop.Connection, actor User, p Permission, su
 
 func (u *User) IsAdmin() bool {
 	return false
+}
+
+func (u *User) LoadPolicies(tx *pop.Connection, reload bool) error {
+	if len(u.Policies) == 0 || reload {
+		return tx.Load(u, "Policies")
+	}
+	return nil
+}
+
+func ConvertPolicyMember(tx *pop.Connection, u User) (api.PolicyMember, error) {
+	return api.PolicyMember{
+		ID:           u.ID,
+		FirstName:    u.FirstName,
+		LastName:     u.LastName,
+		Email:        u.Email,
+		LastLoginUTC: u.LastLoginUTC,
+	}, nil
+}
+
+func ConvertPolicyMembers(tx *pop.Connection, us Users) (api.PolicyMembers, error) {
+	members := make(api.PolicyMembers, len(us))
+	for i, u := range us {
+		var err error
+		members[i], err = ConvertPolicyMember(tx, u)
+		if err != nil {
+			return api.PolicyMembers{}, err
+		}
+	}
+
+	return members, nil
 }
