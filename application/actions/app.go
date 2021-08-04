@@ -90,6 +90,8 @@ func App() *buffalo.App {
 		}
 		app.Use(domain.T.Middleware())
 
+		registerCustomErrorHandler(app)
+
 		// Initialize and attach "rollbar" to context
 		app.Use(domain.RollbarMiddleware)
 
@@ -122,6 +124,14 @@ func App() *buffalo.App {
 		auth.POST("/callback", authCallback)
 		auth.GET("/logout", authDestroy)
 
+		usersGroup.Middleware.Skip(middleware.AuthZ, usersMe)
+		usersGroup.GET("/me", usersMe)
+
+		// policies
+		policiesGroup := app.Group("/" + domain.TypePolicy)
+		policiesGroup.Use(middleware.AuthN)
+		policiesGroup.Use(middleware.AuthZ)
+		policiesGroup.GET("/", policiesList)
 	}
 
 	return app

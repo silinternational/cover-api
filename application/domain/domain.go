@@ -81,7 +81,7 @@ var Env struct {
 	AccessTokenLifetimeSeconds int    `default:"1166400" split_words:"true"` // 13.5 days
 	AppName                    string `default:"riskman" split_words:"true"`
 	SessionSecret              string `required:"true" split_words:"true"`
-	ServerRoot                 string `default:"" split_words:"true"`
+	RollbarServerRoot          string `default:"" split_words:"true"`
 	RollbarToken               string `default:"" split_words:"true"`
 	UIURL                      string `default:"http://missing.ui.url"`
 
@@ -149,7 +149,7 @@ func (e *ErrLogProxy) InitRollbar() {
 		Env.GoEnv,
 		"",
 		"",
-		Env.ServerRoot)
+		Env.RollbarServerRoot)
 }
 
 // NewExtra Sets a new key-value pair in the `extras` entry of the context
@@ -194,7 +194,7 @@ func RollbarMiddleware(next buffalo.Handler) buffalo.Handler {
 			Env.GoEnv,
 			"",
 			"",
-			Env.ServerRoot)
+			Env.RollbarServerRoot)
 		defer client.Close()
 
 		c.Set(ContextKeyRollbar, client)

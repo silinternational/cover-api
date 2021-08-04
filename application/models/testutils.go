@@ -20,8 +20,8 @@ import (
 )
 
 type FixturesConfig struct {
-	ItemsPerPolicy      int
 	NumberOfPolicies    int
+	ItemsPerPolicy      int
 	UsersPerPolicy      int
 	DependentsPerPolicy int
 }
@@ -127,11 +127,12 @@ func CreateUserFixtures(tx *pop.Connection, n int) Fixtures {
 		users[i].LastName = "last" + iStr
 		users[i].LastLoginUTC = time.Now()
 		users[i].StaffID = randStr(10)
+		users[i].AppRole = AppRoleUser
 		MustCreate(tx, &users[i])
 
 		accessTokenFixtures[i].UserID = users[i].ID
 		accessTokenFixtures[i].TokenHash = HashClientIdAccessToken(users[i].Email)
-		accessTokenFixtures[i].ExpiresAt = time.Now().Add(time.Minute * 60)
+		accessTokenFixtures[i].ExpiresAt = time.Now().UTC().Add(time.Minute * 60)
 		accessTokenFixtures[i].LastUsedAt = nulls.NewTime(time.Now())
 		MustCreate(tx, &accessTokenFixtures[i])
 	}
@@ -251,4 +252,27 @@ func randStr(n int) string {
 		b[i] = chars[rand.Int63()%int64(len(chars))]
 	}
 	return string(b)
+}
+
+func DestroyAll() {
+	// delete all Users and UserAccessTokens
+	var users Users
+	destroyTable(&users)
+
+	// delete all Policies, PolicyUsers, PolicyDependents, PolicyHistory records, and Items
+	var policies Policies
+	destroyTable(&policies)
+
+	// delete all ItemCategories
+	var categories ItemCategories
+	destroyTable(&categories)
+}
+
+func destroyTable(i interface{}) {
+	if err := DB.All(i); err != nil {
+		panic(err.Error())
+	}
+	if err := DB.Destroy(i); err != nil {
+		panic(err.Error())
+	}
 }

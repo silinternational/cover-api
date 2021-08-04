@@ -16,16 +16,9 @@ import (
 
 type Policies []Policy
 
-type PolicyType string
-
-const (
-	PolicyTypeHousehold = PolicyType("Household")
-	PolicyTypeOU        = PolicyType("OU")
-)
-
-var ValidPolicyTypes = map[PolicyType]struct{}{
-	PolicyTypeHousehold: {},
-	PolicyTypeOU:        {},
+var ValidPolicyTypes = map[api.PolicyType]struct{}{
+	api.PolicyTypeHousehold: {},
+	api.PolicyTypeOU:        {},
 }
 
 type Policy struct {
@@ -58,7 +51,7 @@ func (p *Policy) FindByID(tx *pop.Connection, id uuid.UUID) error {
 
 // IsActorAllowedTo ensure the actor is either an admin, or a member of this policy to perform any permission
 func (p *Policy) IsActorAllowedTo(tx *pop.Connection, user User, perm Permission, sub SubResource, r *http.Request) bool {
-	if user.IsAdmin() {
+	if user.IsAdmin() || perm == PermissionList {
 		return true
 	}
 
@@ -107,4 +100,46 @@ func (p *Policy) LoadItems(tx *pop.Connection, reload bool) error {
 	}
 
 	return nil
+}
+
+func ConvertPolicy(tx *pop.Connection, p Policy) (api.Policy, error) {
+	if err := p.LoadMembers(tx, false); err != nil {
+		return api.Policy{}, err
+	}
+	if err := p.LoadDependents(tx, false); err != nil {
+		return api.Policy{}, err
+	}
+
+	members, err := ConvertPolicyMembers(tx, p.Members)
+	if err != nil {
+		return api.Policy{}, err
+	}
+
+	dependents := ConvertPolicyDependents(tx, p.Dependents)
+
+	return api.Policy{
+		ID:          p.ID,
+		Type:        p.Type,
+		HouseholdID: p.HouseholdID,
+		CostCenter:  p.CostCenter,
+		Account:     p.Account,
+		EntityCode:  p.EntityCode,
+		CreatedAt:   p.CreatedAt,
+		UpdatedAt:   p.UpdatedAt,
+		Members:     members,
+		Dependents:  dependents,
+	}, nil
+}
+
+func ConvertPolicies(tx *pop.Connection, ps Policies) (api.Policies, error) {
+	policies := make(api.Policies, len(ps))
+	for i, p := range ps {
+		var err error
+		policies[i], err = ConvertPolicy(tx, p)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return policies, nil
 }
