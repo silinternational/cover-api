@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/silinternational/riskman-api/api"
-	"github.com/stretchr/testify/assert"
 )
 
 func (ms *ModelSuite) TestPolicy_Validate() {
@@ -79,8 +78,8 @@ func (ms *ModelSuite) TestPolicy_LoadMembers() {
 	MustCreate(ms.DB, &pu)
 
 	err := policy.LoadMembers(ms.DB, false)
-	assert.Nil(ms.T(), err)
-	assert.Len(ms.T(), policy.Members, 1)
+	ms.Nil(err)
+	ms.Len(policy.Members, 1)
 }
 
 func (ms *ModelSuite) TestPolicy_LoadDependents() {
@@ -109,6 +108,6 @@ func (ms *ModelSuite) TestPolicy_LoadDependents() {
 	MustCreate(ms.DB, &pu)
 
 	err := policy.LoadDependents(ms.DB, false)
-	assert.Nil(ms.T(), err)
-	assert.Len(ms.T(), policy.Dependents, 1)
+	ms.NoError(err)
+	ms.Len(policy.Dependents, 1)
 }

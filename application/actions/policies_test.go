@@ -7,9 +7,7 @@ import (
 	"testing"
 
 	"github.com/silinternational/riskman-api/api"
-
 	"github.com/silinternational/riskman-api/models"
-	"github.com/stretchr/testify/assert"
 )
 
 func (as *ActionSuite) Test_PoliciesList() {
@@ -23,8 +21,8 @@ func (as *ActionSuite) Test_PoliciesList() {
 	fixtures := models.CreatePolicyFixtures(as.DB, fixConfig)
 
 	for _, p := range fixtures.Policies {
-		assert.Nil(as.T(), p.LoadMembers(as.DB, false))
-		assert.Nil(as.T(), p.LoadDependents(as.DB, false))
+		as.NoError(p.LoadMembers(as.DB, false))
+		as.NoError(p.LoadDependents(as.DB, false))
 	}
 
 	// alias a couple users
@@ -34,7 +32,7 @@ func (as *ActionSuite) Test_PoliciesList() {
 	// change user 0 to an admin
 	appAdmin.AppRole = models.AppRoleAdmin
 	err := appAdmin.Update(as.DB)
-	assert.Nil(as.T(), err, "failed to make first policy user an app admin")
+	as.NoError(err, "failed to make first policy user an app admin")
 
 	tests := []struct {
 		name          string
@@ -78,12 +76,12 @@ func (as *ActionSuite) Test_PoliciesList() {
 			res := req.Get()
 
 			body := res.Body.String()
-			assert.Equal(as.T(), tt.wantStatus, res.Code, "incorrect status code returned, body: %s", body)
+			as.Equal(tt.wantStatus, res.Code, "incorrect status code returned, body: %s", body)
 			if tt.wantInBody != "" {
-				assert.Contains(as.T(), body, tt.wantInBody)
+				as.Contains(body, tt.wantInBody)
 			}
 			if tt.notWantInBody != "" {
-				assert.NotContains(as.T(), body, tt.notWantInBody)
+				as.NotContains(body, tt.notWantInBody)
 			}
 
 			if res.Code != http.StatusOK {
@@ -91,8 +89,8 @@ func (as *ActionSuite) Test_PoliciesList() {
 			}
 			var policies api.Policies
 			err := json.Unmarshal([]byte(body), &policies)
-			assert.Nil(t, err)
-			assert.Equal(t, tt.wantCount, len(policies))
+			as.NoError(err)
+			as.Equal(tt.wantCount, len(policies))
 		})
 	}
 }
