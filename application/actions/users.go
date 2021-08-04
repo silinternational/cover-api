@@ -24,11 +24,11 @@ func usersView(c buffalo.Context) error {
 // by the AuthZ middleware based on a url pattern of /users/{id}. This is NOT the authenticated
 // API caller
 func getReferencedUserFromCtx(c buffalo.Context) *models.User {
-	user, ok := c.Value(domain.TypeUser).(models.User)
+	user, ok := c.Value(domain.TypeUser).(*models.User)
 	if !ok {
 		return nil
 	}
-	return &user
+	return user
 }
 
 func usersMe(c buffalo.Context) error {
