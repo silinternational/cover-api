@@ -8,21 +8,35 @@ import (
 	"github.com/rollbar/rollbar-go"
 )
 
-// Error sends a message to Rollbar and to the local logger, including
-// any extras found in the context.
-func Error(ctx context.Context, msg string) {
-	bc := getBuffaloContext(ctx)
-
-	extras := getExtras(bc)
-	extrasLock.RLock()
-	defer extrasLock.RUnlock()
-
-	rollbarMessage(bc, rollbar.ERR, msg, extras)
-
-	logger := bc.Logger()
-	if logger != nil {
-		logger.Error(encodeLogMsg(msg, extras))
+// Error log error and send to Rollbar
+func Error(c buffalo.Context, msg string, extras ...map[string]interface{}) {
+	// Avoid panics running tests when c doesn't have the necessary nested methods
+	logger := c.Logger()
+	if logger == nil {
+		return
 	}
+
+	es := MergeExtras(extras)
+	if es == nil {
+		es = map[string]interface{}{}
+	}
+
+	rollbarMessage(c, rollbar.ERR, msg, es)
+
+	es["message"] = msg
+
+	encoder := jsonMin
+	if Env.GoEnv == "development" {
+		encoder = jsonIndented
+	}
+
+	j, err := encoder(&es)
+	if err != nil {
+		logger.Error("failed to json encode error message: %s", err)
+		return
+	}
+
+	logger.Error(string(j))
 }
 
 // Warn sends a message to Rollbar and to the local logger, including

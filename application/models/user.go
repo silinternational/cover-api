@@ -94,25 +94,18 @@ func (u *User) FindOrCreateFromAuthUser(tx *pop.Connection, authUser *auth.User)
 }
 
 // CreateAccessToken - Create and store new UserAccessToken
-func (u *User) CreateAccessToken(tx *pop.Connection, clientID string) (string, int64, error) {
+func (u *User) CreateAccessToken(tx *pop.Connection, clientID string) (UserAccessToken, error) {
 	if clientID == "" {
-		return "", 0, fmt.Errorf(
+		return UserAccessToken{}, fmt.Errorf(
 			"cannot create token with empty clientID for user %s %s", u.FirstName, u.LastName)
 	}
 
-	token, _ := getRandomToken()
-	hash := HashClientIdAccessToken(clientID + token)
-	expireAt := createAccessTokenExpiry()
+	uat := InitAccessToken(clientID)
+	uat.UserID = u.ID
 
-	userAccessToken := &UserAccessToken{
-		UserID:      u.ID,
-		AccessToken: hash,
-		ExpiresAt:   expireAt,
+	if err := uat.Create(tx); err != nil {
+		return uat, fmt.Errorf("error creating user access token id: %s ... %s", u.ID, err)
 	}
 
-	if err := userAccessToken.Create(tx); err != nil {
-		return "", 0, err
-	}
-
-	return token, expireAt.UTC().Unix(), nil
+	return uat, nil
 }

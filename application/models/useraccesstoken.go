@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/silinternational/riskman-api/api"
-
 	"github.com/gobuffalo/nulls"
 	"github.com/gobuffalo/pop/v5"
 	"github.com/gobuffalo/validate/v3"
@@ -128,12 +126,8 @@ func (u *UserAccessToken) Update(tx *pop.Connection) error {
 }
 
 // InitAccessToken prepares a new value for the AccessToken field and the ExpiresAt field.
-//   If clientID is blank, then IsAPI will be true
-func InitAccessToken(clientID string) (UserAccessToken, error) {
-	token, err := getRandomToken()
-	if err != nil {
-		return UserAccessToken{}, api.NewAppError(err, api.ErrorUnknown, api.CategoryInternal)
-	}
+func InitAccessToken(clientID string) UserAccessToken {
+	token, _ := getRandomToken() // The init() function would have made sure there was no error
 
 	if domain.Env.GoEnv == "development" {
 		fmt.Printf("\n\nClientID+token: %s%s\n", clientID, token)
@@ -143,5 +137,5 @@ func InitAccessToken(clientID string) (UserAccessToken, error) {
 		AccessToken: token,
 		TokenHash:   HashClientIdAccessToken(clientID + token),
 		ExpiresAt:   createAccessTokenExpiry(),
-	}, nil
+	}
 }

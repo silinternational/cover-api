@@ -8,13 +8,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/silinternational/riskman-api/auth"
-
+	"github.com/gobuffalo/buffalo"
 	"github.com/gobuffalo/buffalo/render"
 
-	"github.com/gobuffalo/buffalo"
-
 	"github.com/silinternational/riskman-api/api"
+	"github.com/silinternational/riskman-api/auth"
 	"github.com/silinternational/riskman-api/auth/saml"
 	"github.com/silinternational/riskman-api/domain"
 	"github.com/silinternational/riskman-api/models"
@@ -40,8 +38,7 @@ const (
 )
 
 func replaceNewLines(input string) string {
-	output := strings.Replace(input, `\n`, "\n", -1)
-	return output
+	return strings.Replace(input, `\n`, "\n", -1)
 }
 
 var samlConfig = saml.Config{
@@ -63,20 +60,6 @@ type authError struct {
 	httpStatus int
 	errorKey   api.ErrorKey
 	errorMsg   string
-}
-
-// Make extras variadic, so that it can be omitted from the params
-func authRequestError(c buffalo.Context, authErr authError, extras ...map[string]interface{}) error {
-	domain.Error(c, authErr.errorMsg)
-
-	appErr := api.AppError{
-		HttpStatus: authErr.httpStatus,
-		Key:        authErr.errorKey,
-	}
-
-	c.Session().Clear()
-
-	return c.Render(authErr.httpStatus, render.JSON(appErr))
 }
 
 func setCurrentUser(next buffalo.Handler) buffalo.Handler {
@@ -127,12 +110,12 @@ func authRequest(c buffalo.Context) error {
 	// Push the Client ID into the Session
 	clientID := c.Param(ClientIDParam)
 	if clientID == "" {
-		authErr := authError{
-			httpStatus: http.StatusBadRequest,
-			errorKey:   api.ErrorMissingClientID,
-			errorMsg:   ClientIDParam + " is required to login",
+		appErr := api.AppError{
+			HttpStatus: http.StatusBadRequest,
+			Key:        api.ErrorMissingClientID,
+			Message:    ClientIDParam + " is required to login",
 		}
-		return authRequestError(c, authErr)
+		return reportErrorAndClearSession(c, &appErr)
 	}
 
 	c.Session().Set(ClientIDSessionKey, clientID)
@@ -141,19 +124,19 @@ func authRequest(c buffalo.Context) error {
 
 	sp, err := saml.New(samlConfig)
 	if err != nil {
-		return authRequestError(c, authError{
-			httpStatus: http.StatusInternalServerError,
-			errorKey:   api.ErrorLoadingAuthProvider,
-			errorMsg:   "unable to load saml auth provider.",
+		return reportErrorAndClearSession(c, &api.AppError{
+			HttpStatus: http.StatusInternalServerError,
+			Key:        api.ErrorLoadingAuthProvider,
+			Message:    "unable to load saml auth provider.",
 		})
 	}
 
 	redirectURL, err := sp.AuthRequest(c)
 	if err != nil {
-		return authRequestError(c, authError{
-			httpStatus: http.StatusInternalServerError,
-			errorKey:   api.ErrorGettingAuthURL,
-			errorMsg:   "unable to determine what the saml authentication url should be",
+		return reportErrorAndClearSession(c, &api.AppError{
+			HttpStatus: http.StatusInternalServerError,
+			Key:        api.ErrorGettingAuthURL,
+			Message:    "unable to determine what the saml authentication url should be",
 		})
 	}
 
@@ -186,28 +169,40 @@ func getOrSetReturnTo(c buffalo.Context) string {
 func authCallback(c buffalo.Context) error {
 	clientID, ok := c.Session().Get(ClientIDSessionKey).(string)
 	if !ok {
-		return logErrorAndRedirect(c, api.ErrorMissingSessionClientID,
-			ClientIDSessionKey+" session entry is required to complete login")
+		appError := api.AppError{
+			Key:        api.ErrorMissingSessionKey,
+			DebugMsg:   ClientIDSessionKey + " session entry is required to complete login",
+			HttpStatus: http.StatusFound,
+		}
+		return reportErrorAndClearSession(c, &appError)
 	}
 
 	sp, err := saml.New(samlConfig)
 	if err != nil {
-		return authRequestError(c, authError{
-			httpStatus: http.StatusInternalServerError,
-			errorKey:   api.ErrorLoadingAuthProvider,
-			errorMsg:   "unable to load saml auth provider in auth callback.",
+		return reportErrorAndClearSession(c, &api.AppError{
+			HttpStatus: http.StatusInternalServerError,
+			Key:        api.ErrorLoadingAuthProvider,
+			Message:    "unable to load saml auth provider in auth callback.",
 		})
 	}
 
 	authResp := sp.AuthCallback(c)
 	if authResp.Error != nil {
-		return logErrorAndRedirect(c, api.ErrorAuthProvidersCallback, authResp.Error.Error())
+		reportErrorAndClearSession(c, &api.AppError{
+			HttpStatus: http.StatusInternalServerError,
+			Key:        api.ErrorAuthProvidersCallback,
+			Message:    authResp.Error.Error(),
+		})
 	}
 
 	returnTo := getOrSetReturnTo(c)
 
 	if authResp.AuthUser == nil {
-		return logErrorAndRedirect(c, api.ErrorAuthProvidersCallback, "nil authResp.AuthUser")
+		reportErrorAndClearSession(c, &api.AppError{
+			HttpStatus: http.StatusFound,
+			Key:        api.ErrorAuthProvidersCallback,
+			Message:    "nil authResp.AuthUser",
+		})
 	}
 
 	// if we have an authuser, find or create user in local db and finish login
@@ -219,7 +214,11 @@ func authCallback(c buffalo.Context) error {
 	authUser := authResp.AuthUser
 	tx := models.Tx(c)
 	if err := user.FindOrCreateFromAuthUser(tx, authUser); err != nil {
-		return logErrorAndRedirect(c, api.ErrorWithAuthUser, err.Error())
+		reportErrorAndClearSession(c, &api.AppError{
+			HttpStatus: http.StatusInternalServerError,
+			Key:        api.ErrorWithAuthUser,
+			Message:    err.Error(),
+		})
 	}
 
 	isNew := false
@@ -228,28 +227,22 @@ func authCallback(c buffalo.Context) error {
 	}
 	authUser.IsNew = isNew
 
-	accessToken, expiresAt, err := user.CreateAccessToken(tx, clientID)
+	uat, err := user.CreateAccessToken(tx, clientID)
 	if err != nil {
-		return logErrorAndRedirect(c, api.ErrorCreatingAccessToken, err.Error())
+		reportErrorAndClearSession(c, &api.AppError{
+			HttpStatus: http.StatusInternalServerError,
+			Key:        api.ErrorCreatingAccessToken,
+			Message:    err.Error(),
+		})
 	}
 
-	authUser.AccessToken = accessToken
-	authUser.AccessTokenExpiresAt = expiresAt
+	authUser.AccessToken = uat.AccessToken
+	authUser.AccessTokenExpiresAt = uat.ExpiresAt.UTC().Unix()
 
 	// set person on rollbar session
 	domain.RollbarSetPerson(c, user.StaffID, user.FirstName, user.LastName, user.Email)
 
 	return c.Redirect(302, getLoginSuccessRedirectURL(*authUser, returnTo))
-}
-
-// Make extras variadic, so that it can be omitted from the params
-func logErrorAndRedirect(c buffalo.Context, code api.ErrorKey, message string) error {
-	domain.Error(c, message)
-
-	c.Session().Clear()
-
-	uiUrl := domain.Env.UIURL + "/login"
-	return c.Redirect(http.StatusFound, uiUrl)
 }
 
 // getLoginSuccessRedirectURL generates the URL for redirection after a successful login
@@ -281,20 +274,31 @@ func getLoginSuccessRedirectURL(authUser auth.User, returnTo string) string {
 func authDestroy(c buffalo.Context) error {
 	tokenParam := c.Param(LogoutToken)
 	if tokenParam == "" {
-		return logErrorAndRedirect(c, api.ErrorMissingLogoutToken,
-			LogoutToken+" is required to logout")
+		return reportErrorAndClearSession(c, &api.AppError{
+			HttpStatus: http.StatusInternalServerError,
+			Key:        api.ErrorCreatingAccessToken,
+			Message:    LogoutToken + " is required to logout",
+		})
 	}
 
 	var uat models.UserAccessToken
 	tx := models.Tx(c)
 	err := uat.FindByBearerToken(tx, tokenParam)
 	if err != nil {
-		return logErrorAndRedirect(c, api.ErrorFindingAccessToken, err.Error())
+		return reportErrorAndClearSession(c, &api.AppError{
+			HttpStatus: http.StatusInternalServerError,
+			Key:        api.ErrorFindingAccessToken,
+			Message:    err.Error(),
+		})
 	}
 
 	authUser, err := uat.GetUser(tx)
 	if err != nil {
-		return logErrorAndRedirect(c, api.ErrorAuthProvidersLogout, err.Error())
+		return reportErrorAndClearSession(c, &api.AppError{
+			HttpStatus: http.StatusInternalServerError,
+			Key:        api.ErrorAuthProvidersLogout,
+			Message:    err.Error(),
+		})
 	}
 
 	// set person on rollbar session
@@ -302,12 +306,20 @@ func authDestroy(c buffalo.Context) error {
 
 	sp, err := saml.New(samlConfig)
 	if err != nil {
-		return logErrorAndRedirect(c, api.ErrorLoadingAuthProvider, err.Error())
+		return reportErrorAndClearSession(c, &api.AppError{
+			HttpStatus: http.StatusInternalServerError,
+			Key:        api.ErrorLoadingAuthProvider,
+			Message:    err.Error(),
+		})
 	}
 
 	authResp := sp.Logout(c)
 	if authResp.Error != nil {
-		return logErrorAndRedirect(c, api.ErrorAuthProvidersLogout, authResp.Error.Error())
+		return reportErrorAndClearSession(c, &api.AppError{
+			HttpStatus: http.StatusInternalServerError,
+			Key:        api.ErrorAuthProvidersLogout,
+			Message:    authResp.Error.Error(),
+		})
 	}
 
 	redirectURL := domain.Env.UIURL
@@ -316,7 +328,11 @@ func authDestroy(c buffalo.Context) error {
 		var uat models.UserAccessToken
 		err = uat.DeleteByBearerToken(tx, tokenParam)
 		if err != nil {
-			return logErrorAndRedirect(c, api.ErrorDeletingAccessToken, err.Error())
+			return reportErrorAndClearSession(c, &api.AppError{
+				HttpStatus: http.StatusInternalServerError,
+				Key:        api.ErrorDeletingAccessToken,
+				Message:    err.Error(),
+			})
 		}
 		c.Session().Clear()
 		redirectURL = authResp.RedirectURL
