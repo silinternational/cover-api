@@ -44,7 +44,7 @@ func AuthN(next buffalo.Handler) buffalo.Handler {
 		c.Set(domain.ContextKeyCurrentUser, user)
 
 		// set person on rollbar session
-		domain.RollbarSetPerson(c, user.ID.String(), user.FirstName+" "+user.LastName, user.Email)
+		domain.RollbarSetPerson(c, user.ID.String(), user.FirstName, user.LastName, user.Email)
 		// msg := fmt.Sprintf("user %s authenticated with bearer token from ip %s", user.Email, c.Request().RemoteAddr)
 		domain.NewExtra(c, "user_id", user.ID)
 		domain.NewExtra(c, "email", user.Email)
