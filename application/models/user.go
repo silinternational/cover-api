@@ -6,12 +6,14 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/silinternational/riskman-api/api"
+
+	"github.com/gobuffalo/events"
+
 	"github.com/silinternational/riskman-api/domain"
 
 	"github.com/pkg/errors"
 	"github.com/silinternational/riskman-api/auth"
-
-	"github.com/silinternational/riskman-api/api"
 
 	"github.com/gobuffalo/pop/v5"
 	"github.com/gobuffalo/validate/v3"
@@ -100,10 +102,12 @@ func (u *User) IsAdmin() bool {
 }
 
 func (u *User) FindOrCreateFromAuthUser(tx *pop.Connection, authUser *auth.User) error {
+	isNewUser := false
 	if err := u.FindByStaffID(tx, authUser.StaffID); err != nil {
 		if domain.IsOtherThanNoRows(err) {
 			return err
 		}
+		isNewUser = true
 	}
 
 	// update attributes from authUser
@@ -116,6 +120,17 @@ func (u *User) FindOrCreateFromAuthUser(tx *pop.Connection, authUser *auth.User)
 	if err := tx.Save(u); err != nil {
 		return errors.New("unable to save user record: " + err.Error())
 	}
+
+	// If this is a brand-new user, create a Policy for them
+	if !isNewUser {
+		return nil
+	}
+	e := events.Event{
+		Kind:    domain.EventApiUserCreated,
+		Message: fmt.Sprintf("Username: %s %s  ID: %s", u.FirstName, u.LastName, u.ID.String()),
+		Payload: events.Payload{"id": u.ID.String()},
+	}
+	emitEvent(e)
 
 	return nil
 }
@@ -165,4 +180,34 @@ func ConvertPolicyMembers(tx *pop.Connection, us Users) (api.PolicyMembers, erro
 	}
 
 	return members, nil
+}
+
+// CreateInitialPolicy is a hack to create an initial policy for a new user
+func (u *User) CreateInitialPolicy(tx *pop.Connection) error {
+	if u == nil || u.ID == uuid.Nil {
+		return errors.New("user must have an ID in CreateInitialPolicy")
+	}
+	if tx == nil {
+		tx = DB
+	}
+
+	policy := Policy{
+		Type:        api.PolicyTypeHousehold,
+		CostCenter:  fmt.Sprintf("CC-%s-%s", u.FirstName, u.LastName),
+		HouseholdID: fmt.Sprintf("HHID-%s-%s", u.FirstName, u.LastName),
+	}
+
+	if err := tx.Create(&policy); err != nil {
+		return errors.New("unable to create initial policy in CreateInitialPolicy: " + err.Error())
+	}
+
+	polUser := PolicyUser{
+		PolicyID: policy.ID,
+		UserID:   u.ID,
+	}
+
+	if err := tx.Create(&polUser); err != nil {
+		return errors.New("unable to create policy-user in CreateInitialPolicy: " + err.Error())
+	}
+	return nil
 }
