@@ -3,6 +3,8 @@ package models
 import (
 	"time"
 
+	"github.com/silinternational/riskman-api/api"
+
 	"github.com/gobuffalo/pop/v5"
 	"github.com/gobuffalo/validate/v3"
 	"github.com/gofrs/uuid"
@@ -44,4 +46,27 @@ func RiskCategoryMobileID() uuid.UUID {
 
 func RiskCategoryStationaryID() uuid.UUID {
 	return uuid.FromStringOrNil(RiskCategoryStationaryIDString)
+}
+
+func ConvertRiskCategory(rCat RiskCategory) (api.RiskCategory, error) {
+	return api.RiskCategory{
+		ID:        rCat.ID,
+		Name:      rCat.Name,
+		PolicyMax: rCat.PolicyMax,
+		CreatedAt: rCat.CreatedAt,
+		UpdatedAt: rCat.UpdatedAt,
+	}, nil
+}
+
+func ConvertRiskCategories(iCats RiskCategories) (api.RiskCategories, error) {
+	apiICs := make(api.RiskCategories, len(iCats))
+	for i, c := range iCats {
+		var err error
+		apiICs[i], err = ConvertRiskCategory(c)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return apiICs, nil
 }
