@@ -236,12 +236,10 @@ func IsOtherThanNoRows(err error) bool {
 
 // RollbarSetPerson sets person on the rollbar context for further logging
 func RollbarSetPerson(c buffalo.Context, id, userFirst, userLast, email string) {
-
 	username := strings.TrimSpace(userFirst + " " + userLast)
 	rc, ok := c.Value(ContextKeyRollbar).(*rollbar.Client)
 	if ok {
 		rc.SetPerson(id, username, email)
-		return
 	}
 }
 

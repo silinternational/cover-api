@@ -64,7 +64,7 @@ func setCurrentUser(next buffalo.Handler) buffalo.Handler {
 			return reportError(c, &api.AppError{
 				HttpStatus: http.StatusUnauthorized,
 				Key:        api.ErrorNotAuthorized,
-				Message:    "no Bearer token provided",
+				Message:    "no bearer token provided",
 			})
 		}
 
