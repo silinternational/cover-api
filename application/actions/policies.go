@@ -8,7 +8,7 @@ import (
 )
 
 func policiesList(c buffalo.Context) error {
-	user := getUserFromCxt(c)
+	user := models.CurrentUser(c)
 
 	if user.IsAdmin() {
 		return policiesListAll(c)
@@ -34,7 +34,7 @@ func policiesListAll(c buffalo.Context) error {
 
 func policiesListMine(c buffalo.Context) error {
 	tx := models.Tx(c)
-	user := getUserFromCxt(c)
+	user := models.CurrentUser(c)
 
 	if err := user.LoadPolicies(tx, false); err != nil {
 		return c.Render(http.StatusInternalServerError, r.JSON(err))
