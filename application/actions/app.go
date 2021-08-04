@@ -42,7 +42,6 @@ import (
 	"github.com/gorilla/sessions"
 	"github.com/rs/cors"
 
-	"github.com/silinternational/riskman-api/actions/middleware"
 	"github.com/silinternational/riskman-api/domain"
 	"github.com/silinternational/riskman-api/models"
 )
@@ -113,9 +112,9 @@ func App() *buffalo.App {
 
 		// users
 		usersGroup := app.Group("/" + domain.TypeUser)
-		usersGroup.Use(middleware.AuthZ)
+		usersGroup.Use(AuthZ)
 		usersGroup.GET("/", usersList)
-		usersGroup.Middleware.Skip(middleware.AuthZ, usersMe)
+		usersGroup.Middleware.Skip(AuthZ, usersMe)
 		usersGroup.GET("/me", usersMe)
 		usersGroup.GET("/{id}", usersView)
 
@@ -127,8 +126,9 @@ func App() *buffalo.App {
 
 		// policies
 		policiesGroup := app.Group("/" + domain.TypePolicy)
-		policiesGroup.Use(middleware.AuthZ)
+		policiesGroup.Use(AuthZ)
 		policiesGroup.GET("/", policiesList)
+		policiesGroup.GET("/{id}/dependents", dependentsList)
 	}
 
 	return app
