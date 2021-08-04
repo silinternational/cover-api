@@ -5,7 +5,7 @@ create_table("policy_history") {
     t.Column("action", "string", {})
     t.Column("item_id", "uuid", {})
     t.Column("description", "string", {})
-    t.Column("old_value", "string", {})
+    t.Column("old_value", "string", {}) 
     t.Column("new_value", "string", {})
     t.Timestamps()
 
