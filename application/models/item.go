@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/gobuffalo/nulls"
 	"github.com/silinternational/riskman-api/domain"
 
 	"github.com/gobuffalo/pop/v5"
@@ -39,18 +40,18 @@ type Item struct {
 	Country           string             `db:"country"`
 	Description       string             `db:"description"`
 	PolicyID          uuid.UUID          `db:"policy_id" validate:"required"`
-	PolicyDependentID uuid.UUID          `db:"policy_dependent_id"`
+	PolicyDependentID nulls.UUID         `db:"policy_dependent_id"`
 	Make              string             `db:"make"`
 	Model             string             `db:"model"`
 	SerialNumber      string             `db:"serial_number"`
 	CoverageAmount    int                `db:"coverage_amount"`
 	PurchaseDate      time.Time          `db:"purchase_date"`
-	CoverageStatus    ItemCoverageStatus `db:"coverage_status" validate:"itemCategoryStatus"`
+	CoverageStatus    ItemCoverageStatus `db:"coverage_status" validate:"itemCoverageStatus"`
 	CoverageStartDate time.Time          `db:"coverage_start_date"`
 	CreatedAt         time.Time          `db:"created_at"`
 	UpdatedAt         time.Time          `db:"updated_at"`
 
-	Policy Policy `belongs_to:"policies"`
+	Policy Policy `belongs_to:"policies" validate:"-"`
 }
 
 // Validate gets run every time you call pop.ValidateAndSave, pop.ValidateAndCreate, or pop.ValidateAndUpdate
