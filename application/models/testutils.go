@@ -94,6 +94,8 @@ func CreateItemFixtures(tx *pop.Connection, config FixturesConfig) Fixtures {
 
 // CreateCategoryFixtures generates any number of category records for testing
 func CreateCategoryFixtures(tx *pop.Connection, n int) Fixtures {
+	CreateRiskCategories(tx)
+
 	categories := make(ItemCategories, n)
 	for i := range categories {
 		categories[i].RiskCategoryID = RiskCategoryMobileID()
@@ -199,6 +201,28 @@ func CreatePolicyDependentFixtures(tx *pop.Connection, policy Policy, n int) Fix
 	return Fixtures{
 		PolicyDependents: policyDependents,
 	}
+}
+
+func CreateRiskCategories(tx *pop.Connection) {
+	if n, err := tx.Count(&RiskCategory{}); err != nil {
+		panic("failed to count the risk categories in the database")
+	} else if n > 0 {
+		return
+	}
+
+	riskCategoryMobile := RiskCategory{
+		ID:        RiskCategoryMobileID(),
+		Name:      "mobile",
+		PolicyMax: 25000,
+	}
+	MustCreate(tx, &riskCategoryMobile)
+
+	riskCategoryStationary := RiskCategory{
+		ID:        RiskCategoryStationaryID(),
+		Name:      "stationary",
+		PolicyMax: 25000,
+	}
+	MustCreate(tx, &riskCategoryStationary)
 }
 
 // MustCreate saves a record to the database with validation. Panics if any error occurs.
