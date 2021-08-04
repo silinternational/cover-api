@@ -18,6 +18,7 @@ import (
 )
 
 type FixturesConfig struct {
+	ItemsPerPolicy      int
 	Policies            int
 	UsersPerPolicy      int
 	DependentsPerPolicy int
@@ -25,6 +26,8 @@ type FixturesConfig struct {
 
 // Fixtures hold slices of model objects created for test fixtures
 type Fixtures struct {
+	Items
+	ItemCategories
 	Policies
 	PolicyDependents
 	PolicyUsers
@@ -57,6 +60,55 @@ func CreateTestContext(user User) buffalo.Context {
 	return ctx
 }
 
+// CreateItemFixtures generates any number of item records for testing
+// Uses FixturesConfig fields: Polices, DependentsPerPolicy, UsersPerPolicy, ItemsPerPolicy
+func CreateItemFixtures(tx *pop.Connection, config FixturesConfig) Fixtures {
+	fixtures := CreatePolicyFixtures(tx, config)
+	policies := fixtures.Policies
+	items := make(Items, config.ItemsPerPolicy*config.Policies)
+
+	categories := CreateCategoryFixtures(tx, len(items)).ItemCategories
+	for i := range policies {
+		for j := 0; j < config.ItemsPerPolicy; j++ {
+			idx := i*config.ItemsPerPolicy + j
+			items[idx].Name = randStr(10)
+			items[idx].CategoryID = categories[idx].ID
+			items[idx].Country = randStr(10)
+			items[idx].Description = randStr(40)
+			items[idx].PolicyID = policies[i].ID
+			items[idx].Make = randStr(10)
+			items[idx].Model = randStr(10)
+			items[idx].SerialNumber = randStr(10)
+			items[idx].CoverageAmount = int(rand.Int31n(100)) + 100
+			items[idx].PurchaseDate = time.Date(2010, 4, 1, 12, 0, 0, 0, time.UTC)
+			items[idx].CoverageStartDate = items[idx].PurchaseDate
+			items[idx].CoverageStatus = ItemCoverageStatusApproved
+			MustCreate(tx, &items[idx])
+		}
+	}
+
+	fixtures.Items = items
+
+	return fixtures
+}
+
+// CreateCategoryFixtures generates any number of category records for testing
+func CreateCategoryFixtures(tx *pop.Connection, n int) Fixtures {
+	categories := make(ItemCategories, n)
+	for i := range categories {
+		categories[i].RiskCategoryID = RiskCategoryMobileID()
+		categories[i].Name = randStr(10)
+		categories[i].HelpText = randStr(40)
+		categories[i].Status = ItemCategoryStatusEnabled
+		categories[i].AutoApproveMax = 500
+		MustCreate(tx, &categories[i])
+	}
+
+	return Fixtures{
+		ItemCategories: categories,
+	}
+}
+
 // CreateUserFixtures generates any number of user records for testing. The access token for
 // each user is the same as the user's Email.
 func CreateUserFixtures(tx *pop.Connection, n int) Fixtures {
@@ -87,6 +139,7 @@ func CreateUserFixtures(tx *pop.Connection, n int) Fixtures {
 }
 
 // CreatePolicyFixtures generates any number of policy records and associated policy users
+// Uses FixturesConfig fields: Polices, DependentsPerPolicy, UsersPerPolicy
 func CreatePolicyFixtures(tx *pop.Connection, config FixturesConfig) Fixtures {
 	var policyUsers PolicyUsers
 	var policyDependents PolicyDependents

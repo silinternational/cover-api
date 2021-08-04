@@ -8,6 +8,11 @@ import (
 	"github.com/gofrs/uuid"
 )
 
+const (
+	RiskCategoryMobileIDString     = "3be38915-7092-44f2-90ef-26f48214b34f"
+	RiskCategoryStationaryIDString = "7bed3c00-23cf-4282-b2b8-da89426cef2f"
+)
+
 // RiskCategories is a slice of RiskCategory objects
 type RiskCategories []RiskCategory
 
@@ -31,4 +36,12 @@ func (r *RiskCategory) GetID() uuid.UUID {
 
 func (r *RiskCategory) FindByID(tx *pop.Connection, id uuid.UUID) error {
 	return tx.Find(r, id)
+}
+
+func RiskCategoryMobileID() uuid.UUID {
+	return uuid.FromStringOrNil(RiskCategoryMobileIDString)
+}
+
+func RiskCategoryStationaryID() uuid.UUID {
+	return uuid.FromStringOrNil(RiskCategoryStationaryIDString)
 }
