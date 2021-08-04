@@ -4,6 +4,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/silinternational/riskman-api/api"
+
 	"github.com/silinternational/riskman-api/domain"
 
 	"github.com/gobuffalo/validate/v3"
@@ -61,4 +63,20 @@ func (p *PolicyDependent) IsActorAllowedTo(tx *pop.Connection, user User, perm P
 	}
 
 	return false
+}
+
+func ConvertPolicyDependent(tx *pop.Connection, d PolicyDependent) api.PolicyDependent {
+	return api.PolicyDependent{
+		ID:        d.ID,
+		Name:      d.Name,
+		BirthYear: d.BirthYear,
+	}
+}
+
+func ConvertPolicyDependents(tx *pop.Connection, ds PolicyDependents) api.PolicyDependents {
+	deps := make(api.PolicyDependents, len(ds))
+	for i, d := range ds {
+		deps[i] = ConvertPolicyDependent(tx, d)
+	}
+	return deps
 }

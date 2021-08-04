@@ -2,6 +2,8 @@ package models
 
 import (
 	"testing"
+
+	"github.com/silinternational/riskman-api/api"
 )
 
 func (ms *ModelSuite) TestPolicy_Validate() {
@@ -29,7 +31,7 @@ func (ms *ModelSuite) TestPolicy_Validate() {
 		{
 			name: "valid type",
 			Policy: Policy{
-				Type: PolicyTypeHousehold,
+				Type: api.PolicyTypeHousehold,
 			},
 			wantErr:  false,
 			errField: "",
@@ -49,4 +51,63 @@ func (ms *ModelSuite) TestPolicy_Validate() {
 			}
 		})
 	}
+}
+
+func (ms *ModelSuite) TestPolicy_LoadMembers() {
+	rando := randStr(6)
+	policy := Policy{
+		Type:        api.PolicyTypeHousehold,
+		HouseholdID: rando,
+	}
+	MustCreate(ms.DB, &policy)
+
+	user := User{
+		Email:     rando + "@testerson.com",
+		FirstName: "Test",
+		LastName:  "Testerson",
+		IsBlocked: false,
+		StaffID:   rando,
+		AppRole:   AppRoleUser,
+	}
+	MustCreate(ms.DB, &user)
+
+	pu := PolicyUser{
+		PolicyID: policy.ID,
+		UserID:   user.ID,
+	}
+	MustCreate(ms.DB, &pu)
+
+	err := policy.LoadMembers(ms.DB, false)
+	ms.Nil(err)
+	ms.Len(policy.Members, 1)
+}
+
+func (ms *ModelSuite) TestPolicy_LoadDependents() {
+	rando := randStr(6)
+	policy := Policy{
+		Type:        api.PolicyTypeHousehold,
+		HouseholdID: rando,
+	}
+	MustCreate(ms.DB, &policy)
+
+	user := User{
+		Email:     rando + "@testerson.com",
+		FirstName: "Test",
+		LastName:  "Testerson",
+		IsBlocked: false,
+		StaffID:   rando,
+		AppRole:   AppRoleUser,
+	}
+	MustCreate(ms.DB, &user)
+
+	pu := PolicyDependent{
+		PolicyID:  policy.ID,
+		Name:      rando + "-kiddo",
+		BirthYear: 2000,
+	}
+	MustCreate(ms.DB, &pu)
+
+	err := policy.LoadDependents(ms.DB, false)
+	ms.NoError(err)
+	ms.Len(policy.Dependents, 1)
 }
