@@ -6,6 +6,7 @@ import (
 
 	"github.com/gofrs/uuid"
 	"github.com/markbates/grift/grift"
+	"github.com/silinternational/riskman-api/domain"
 
 	"github.com/silinternational/riskman-api/models"
 )
@@ -13,7 +14,6 @@ import (
 var _ = grift.Namespace("db", func() {
 	grift.Desc("seed", "Seeds a database")
 	_ = grift.Add("seed", func(c *grift.Context) error {
-
 		// USERS Table
 		userUUIDs := []string{
 			"e5447366-26b2-4256-b2ab-58c92c3d54cc",
@@ -30,6 +30,7 @@ var _ = grift.Namespace("db", func() {
 				LastName:     "Kent",
 				LastLoginUTC: time.Now().UTC().Add(time.Hour * -48),
 				StaffID:      "111111",
+				AppRole:      models.AppRoleAdmin,
 			},
 			{
 				Email:        "jane.eyre@example.org",
@@ -67,6 +68,21 @@ var _ = grift.Namespace("db", func() {
 			err := models.DB.Create(fixtureUsers[i])
 			if err != nil {
 				err = fmt.Errorf("error loading user fixture ... %+v\n %v", user, err.Error())
+				return err
+			}
+		}
+
+		oneYearFromNow := time.Now().UTC().Add(time.Second * 60 * 60 * 24 * 365)
+		fixtureUserTokens := make(models.UserAccessTokens, len(fixtureUsers))
+		for i := range fixtureUserTokens {
+			fixtureUserTokens[i].ID = domain.GetUUID()
+			fixtureUserTokens[i].UserID = fixtureUsers[i].ID
+			fixtureUserTokens[i].TokenHash = models.HashClientIdAccessToken(fixtureUsers[i].Email)
+			fixtureUserTokens[i].ExpiresAt = oneYearFromNow
+
+			err := models.DB.Create(&fixtureUserTokens[i])
+			if err != nil {
+				err = fmt.Errorf("error loading user token fixture ... %+v\n %v", fixtureUsers[i], err.Error())
 				return err
 			}
 		}

@@ -20,7 +20,7 @@ func usersView(c buffalo.Context) error {
 	return c.Render(http.StatusNotFound, nil)
 }
 
-// getReferencedUserFromCtx pulls the models.User resoruce from context that was put there
+// getReferencedUserFromCtx pulls the models.User resource from context that was put there
 // by the AuthZ middleware based on a url pattern of /users/{id}. This is NOT the authenticated
 // API caller
 func getReferencedUserFromCtx(c buffalo.Context) *models.User {
