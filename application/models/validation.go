@@ -40,24 +40,24 @@ func flattenPopErrors(popErrs *validate.Errors) string {
 }
 
 func validatePolicyType(field validator.FieldLevel) bool {
-	if pt, ok := field.Field().Interface().(api.PolicyType); ok {
-		_, valid := ValidPolicyTypes[pt]
+	if value, ok := field.Field().Interface().(PolicyType); ok {
+		_, valid := ValidPolicyTypes[value]
 		return valid
 	}
 	return false
 }
 
 func validateItemCategoryStatus(field validator.FieldLevel) bool {
-	if pt, ok := field.Field().Interface().(ItemCategoryStatus); ok {
-		_, valid := ValidItemCategoryStatuses[pt]
+	if value, ok := field.Field().Interface().(ItemCategoryStatus); ok {
+		_, valid := ValidItemCategoryStatuses[value]
 		return valid
 	}
 	return false
 }
 
 func validateItemCoverageStatus(field validator.FieldLevel) bool {
-	if pt, ok := field.Field().Interface().(ItemCoverageStatus); ok {
-		_, valid := ValidItemCoverageStatuses[pt]
+	if value, ok := field.Field().Interface().(ItemCoverageStatus); ok {
+		_, valid := ValidItemCoverageStatuses[value]
 		return valid
 	}
 	return false
