@@ -57,6 +57,8 @@ const (
 
 	DefaultUIPath = "/home"
 
+	EventPayloadID = "id"
+
 	TypeItem            = "items"
 	TypePolicy          = "policies"
 	TypePolicyDependent = "policy-dependents"
