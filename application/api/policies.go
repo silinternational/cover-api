@@ -4,7 +4,13 @@ import (
 	"time"
 
 	"github.com/gofrs/uuid"
-	"github.com/silinternational/riskman-api/models"
+)
+
+type PolicyType string
+
+const (
+	PolicyTypeHousehold = PolicyType("Household")
+	PolicyTypeOU        = PolicyType("OU")
 )
 
 type Policies []Policy
@@ -21,7 +27,7 @@ type Policy struct {
 
 	// policy type
 	// required: true
-	Type models.PolicyType `json:"type"`
+	Type PolicyType `json:"type"`
 
 	// Household ID for billing
 	HouseholdID string `json:"household_id,omitempty"`

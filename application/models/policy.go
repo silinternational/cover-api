@@ -16,27 +16,20 @@ import (
 
 type Policies []Policy
 
-type PolicyType string
-
-const (
-	PolicyTypeHousehold = PolicyType("Household")
-	PolicyTypeOU        = PolicyType("OU")
-)
-
-var ValidPolicyTypes = map[PolicyType]struct{}{
-	PolicyTypeHousehold: {},
-	PolicyTypeOU:        {},
+var ValidPolicyTypes = map[api.PolicyType]struct{}{
+	api.PolicyTypeHousehold: {},
+	api.PolicyTypeOU:        {},
 }
 
 type Policy struct {
-	ID          uuid.UUID  `db:"id"`
-	Type        PolicyType `db:"type" validate:"policyType"`
-	HouseholdID string     `db:"household_id"`
-	CostCenter  string     `db:"cost_center"`
-	Account     string     `db:"account"`
-	EntityCode  string     `db:"entity_code"`
-	CreatedAt   time.Time  `db:"created_at"`
-	UpdatedAt   time.Time  `db:"updated_at"`
+	ID          uuid.UUID      `db:"id"`
+	Type        api.PolicyType `db:"type" validate:"policyType"`
+	HouseholdID string         `db:"household_id"`
+	CostCenter  string         `db:"cost_center"`
+	Account     string         `db:"account"`
+	EntityCode  string         `db:"entity_code"`
+	CreatedAt   time.Time      `db:"created_at"`
+	UpdatedAt   time.Time      `db:"updated_at"`
 
 	Dependents PolicyDependents `has_many:"policy_dependents"`
 	Members    Users            `many_to_many:"policy_users"`

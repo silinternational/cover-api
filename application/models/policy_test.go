@@ -2,6 +2,8 @@ package models
 
 import (
 	"testing"
+
+	"github.com/silinternational/riskman-api/api"
 )
 
 func (ms *ModelSuite) TestPolicy_Validate() {
@@ -29,7 +31,7 @@ func (ms *ModelSuite) TestPolicy_Validate() {
 		{
 			name: "valid type",
 			Policy: Policy{
-				Type: PolicyTypeHousehold,
+				Type: api.PolicyTypeHousehold,
 			},
 			wantErr:  false,
 			errField: "",

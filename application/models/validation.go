@@ -6,6 +6,7 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gobuffalo/validate/v3"
+	"github.com/silinternational/riskman-api/api"
 )
 
 // Model validation tool
@@ -39,7 +40,7 @@ func flattenPopErrors(popErrs *validate.Errors) string {
 }
 
 func validatePolicyType(field validator.FieldLevel) bool {
-	if pt, ok := field.Field().Interface().(PolicyType); ok {
+	if pt, ok := field.Field().Interface().(api.PolicyType); ok {
 		_, valid := ValidPolicyTypes[pt]
 		return valid
 	}
