@@ -97,6 +97,11 @@ func (ms *ModelSuite) TestCreatePolicyFixtures() {
 			ms.Equal(tt.wantPolicyDependents, len(got.PolicyDependents), "incorrect number of PolicyDependents")
 			ms.Equal(tt.wantPolicyUsers, len(got.PolicyUsers), "incorrect number of PolicyUsers")
 			ms.Equal(tt.wantUsers, len(got.Users), "incorrect number of Users")
+
+			ms.Equal(tt.config.UsersPerPolicy, len(got.Policies[0].Members),
+				"Policy.Members is not hydrated")
+			ms.Equal(tt.config.DependentsPerPolicy, len(got.Policies[0].Dependents),
+				"Policy.Dependents is not hydrated")
 		})
 	}
 }

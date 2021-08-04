@@ -36,8 +36,9 @@ type Policy struct {
 	CreatedAt   time.Time  `db:"created_at"`
 	UpdatedAt   time.Time  `db:"updated_at"`
 
-	Members PolicyUsers `many_to_many:"policy_users"`
-	Items   Items       `has_many:"items"`
+	Dependents PolicyDependents `has_many:"policy_dependents"`
+	Members    Users            `many_to_many:"policy_users"`
+	Items      Items            `has_many:"items"`
 }
 
 // Validate gets run every time you call a "pop.Validate*" (pop.ValidateAndSave, pop.ValidateAndCreate, pop.ValidateAndUpdate) method.
@@ -77,6 +78,17 @@ func (p *Policy) IsActorAllowedTo(tx *pop.Connection, user User, perm Permission
 func (p *Policy) LoadMembers(tx *pop.Connection, reload bool) error {
 	if len(p.Members) == 0 || reload {
 		if err := tx.Load(p, "Members"); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// LoadDependents - a simple wrapper method for loading dependents on the struct
+func (p *Policy) LoadDependents(tx *pop.Connection, reload bool) error {
+	if len(p.Dependents) == 0 || reload {
+		if err := tx.Load(p, "Dependents"); err != nil {
 			return err
 		}
 	}
