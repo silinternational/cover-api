@@ -160,8 +160,8 @@ func CreatePolicyFixtures(tx *pop.Connection, config FixturesConfig) Fixtures {
 		users = append(users, f.Users...)
 		policyUsers = append(policyUsers, f.PolicyUsers...)
 
-		pDependents := CreatePolicyDependentFixtures(tx, policies[i], config.DependentsPerPolicy).PolicyDependents
-		policyDependents = append(policyDependents, pDependents...)
+		f = CreatePolicyDependentFixtures(tx, policies[i], config.DependentsPerPolicy)
+		policyDependents = append(policyDependents, f.PolicyDependents...)
 	}
 	return Fixtures{
 		Policies:         policies,
