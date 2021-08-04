@@ -19,7 +19,7 @@ import (
 
 type FixturesConfig struct {
 	ItemsPerPolicy      int
-	Policies            int
+	NumberOfPolicies    int
 	UsersPerPolicy      int
 	DependentsPerPolicy int
 }
@@ -65,7 +65,7 @@ func CreateTestContext(user User) buffalo.Context {
 func CreateItemFixtures(tx *pop.Connection, config FixturesConfig) Fixtures {
 	fixtures := CreatePolicyFixtures(tx, config)
 	policies := fixtures.Policies
-	items := make(Items, config.ItemsPerPolicy*config.Policies)
+	items := make(Items, config.ItemsPerPolicy*config.NumberOfPolicies)
 
 	categories := CreateCategoryFixtures(tx, len(items)).ItemCategories
 	for i := range policies {
@@ -147,7 +147,7 @@ func CreatePolicyFixtures(tx *pop.Connection, config FixturesConfig) Fixtures {
 	var policyDependents PolicyDependents
 	var users Users
 
-	policies := make(Policies, config.Policies)
+	policies := make(Policies, config.NumberOfPolicies)
 	for i := range policies {
 		policies[i].Type = PolicyTypeHousehold
 		policies[i].Account = randStr(10)

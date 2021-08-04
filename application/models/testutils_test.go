@@ -19,7 +19,7 @@ func (ms *ModelSuite) TestCreateItemFixtures() {
 			name: "single policy, single item",
 			config: FixturesConfig{
 				ItemsPerPolicy:      1,
-				Policies:            1,
+				NumberOfPolicies:    1,
 				UsersPerPolicy:      1,
 				DependentsPerPolicy: 0,
 			},
@@ -33,7 +33,7 @@ func (ms *ModelSuite) TestCreateItemFixtures() {
 			name: "multiple policies, multiple items each",
 			config: FixturesConfig{
 				ItemsPerPolicy:      4,
-				Policies:            3,
+				NumberOfPolicies:    3,
 				UsersPerPolicy:      2,
 				DependentsPerPolicy: 1,
 			},
@@ -68,7 +68,7 @@ func (ms *ModelSuite) TestCreatePolicyFixtures() {
 		{
 			name: "single policy",
 			config: FixturesConfig{
-				Policies:            1,
+				NumberOfPolicies:    1,
 				UsersPerPolicy:      1,
 				DependentsPerPolicy: 0,
 			},
@@ -80,7 +80,7 @@ func (ms *ModelSuite) TestCreatePolicyFixtures() {
 		{
 			name: "multiple policies",
 			config: FixturesConfig{
-				Policies:            2,
+				NumberOfPolicies:    2,
 				UsersPerPolicy:      2,
 				DependentsPerPolicy: 1,
 			},
