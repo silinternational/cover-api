@@ -57,12 +57,6 @@ var samlConfig = saml.Config{
 	AttributeMap:                nil,
 }
 
-type authError struct {
-	httpStatus int
-	errorKey   api.ErrorKey
-	errorMsg   string
-}
-
 func setCurrentUser(next buffalo.Handler) buffalo.Handler {
 	return func(c buffalo.Context) error {
 		bearerToken := domain.GetBearerTokenFromRequest(c.Request())
