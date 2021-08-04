@@ -85,15 +85,15 @@ var Env struct {
 	ApiBaseURL                 string `required:"true" split_words:"true"`
 	AccessTokenLifetimeSeconds int    `default:"1166400" split_words:"true"` // 13.5 days
 	AppName                    string `default:"riskman" split_words:"true"`
-	RollbarServerRoot          string `default:"" split_words:"true"`
+	ListenerDelayMilliseconds  int    `default:"1000" split_words:"true"`
 
-	ListenerDelayMilliseconds int `default:"1000" split_words:"true"`
-	ListenerMaxRetries        int `default:"10" split_words:"true"`
+	ListenerMaxRetries int    `default:"10" split_words:"true"`
+	SessionSecret      string `required:"true" split_words:"true"`
 
-	SessionSecret string `required:"true" split_words:"true"`
-	ServerRoot    string `default:"" split_words:"true"`
-	RollbarToken  string `default:"" split_words:"true"`
-	UIURL         string `default:"http://missing.ui.url"`
+	ServerRoot        string `default:"" split_words:"true"`
+	RollbarServerRoot string `default:"" split_words:"true"`
+	RollbarToken      string `default:"" split_words:"true"`
+	UIURL             string `default:"http://missing.ui.url"`
 
 	SamlSpEntityId                  string `required:"true" split_words:"true"`
 	SamlAudienceUri                 string `required:"true" split_words:"true"`
