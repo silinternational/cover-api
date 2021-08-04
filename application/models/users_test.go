@@ -15,15 +15,26 @@ func (ms *ModelSuite) TestUser_Validate() {
 		{
 			name: "minimum",
 			user: User{
-				Email: "user@example.com",
+				Email:   "user@example.com",
+				AppRole: AppRoleUser,
 			},
 			wantErr: false,
 		},
 		{
-			name:     "missing email",
-			user:     User{},
+			name: "missing email",
+			user: User{
+				AppRole: AppRoleUser,
+			},
 			wantErr:  true,
 			errField: "User.Email",
+		},
+		{
+			name: "missing approle",
+			user: User{
+				Email: "dummy@dusos.com",
+			},
+			wantErr:  true,
+			errField: "User.AppRole",
 		},
 	}
 	for _, tt := range tests {
