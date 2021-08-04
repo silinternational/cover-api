@@ -90,6 +90,8 @@ func App() *buffalo.App {
 		}
 		app.Use(domain.T.Middleware())
 
+		registerCustomErrorHandler(app)
+
 		// Initialize and attach "rollbar" to context
 		app.Use(domain.RollbarMiddleware)
 
