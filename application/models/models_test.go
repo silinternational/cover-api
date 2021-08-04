@@ -34,29 +34,6 @@ func Test_ModelSuite(t *testing.T) {
 	suite.Run(t, ms)
 }
 
-func DestroyAll() {
-	// delete all Users and UserAccessTokens
-	var users Users
-	destroyTable(&users)
-
-	// delete all Policies, PolicyUsers, PolicyDependents, PolicyHistory records, and Items
-	var policies Policies
-	destroyTable(&policies)
-
-	// delete all ItemCategories
-	var categories ItemCategories
-	destroyTable(&categories)
-}
-
-func destroyTable(i interface{}) {
-	if err := DB.All(i); err != nil {
-		panic(err.Error())
-	}
-	if err := DB.Destroy(i); err != nil {
-		panic(err.Error())
-	}
-}
-
 func (ms *ModelSuite) Test_CurrentUser() {
 	// setup
 	user := CreateUserFixtures(ms.DB, 1).Users[0]

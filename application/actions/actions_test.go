@@ -5,6 +5,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/silinternational/riskman-api/models"
+
 	"github.com/gobuffalo/buffalo"
 	"github.com/gobuffalo/httptest"
 	"github.com/gobuffalo/pop/v5"
@@ -53,6 +55,8 @@ func (as *ActionSuite) SetupTest() {
 	as.Session = &buffalo.Session{
 		Session: s,
 	}
+
+	models.DestroyAll()
 }
 
 // sessionStore copied from gobuffalo/suite session.go

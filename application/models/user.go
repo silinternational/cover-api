@@ -13,20 +13,33 @@ import (
 	"github.com/gofrs/uuid"
 )
 
+type UserAppRole string
+
+const (
+	AppRoleAdmin = UserAppRole("Admin")
+	AppRoleUser  = UserAppRole("User")
+)
+
+var validUserAppRoles = map[UserAppRole]struct{}{
+	AppRoleAdmin: {},
+	AppRoleUser:  {},
+}
+
 // Users is a slice of User objects
 type Users []User
 
 // User model
 type User struct {
-	ID           uuid.UUID `json:"-" db:"id"`
-	Email        string    `db:"email" validate:"required"`
-	FirstName    string    `db:"first_name"`
-	LastName     string    `db:"last_name"`
-	IsBlocked    bool      `db:"is_blocked"`
-	LastLoginUTC time.Time `db:"last_login_utc"`
-	StaffID      string    `db:"staff_id"`
-	CreatedAt    time.Time `db:"created_at"`
-	UpdatedAt    time.Time `db:"updated_at"`
+	ID           uuid.UUID   `json:"-" db:"id"`
+	Email        string      `db:"email" validate:"required"`
+	FirstName    string      `db:"first_name"`
+	LastName     string      `db:"last_name"`
+	IsBlocked    bool        `db:"is_blocked"`
+	LastLoginUTC time.Time   `db:"last_login_utc"`
+	StaffID      string      `db:"staff_id"`
+	AppRole      UserAppRole `db:"app_role" validate:"appRole"`
+	CreatedAt    time.Time   `db:"created_at"`
+	UpdatedAt    time.Time   `db:"updated_at"`
 
 	Policies Policies `many_to_many:"policy_users"`
 }
@@ -35,6 +48,16 @@ type User struct {
 //  It first adds a UUID to the user if its UUID is empty
 func (u *User) Validate(tx *pop.Connection) (*validate.Errors, error) {
 	return validateModel(u), nil
+}
+
+// Create stores the User data as a new record in the database.
+func (u *User) Create(tx *pop.Connection) error {
+	return create(tx, u)
+}
+
+// Update writes the User data to an existing database record.
+func (u *User) Update(tx *pop.Connection) error {
+	return update(tx, u)
 }
 
 // HashClientIdAccessToken just returns a sha256.Sum256 of the input value
@@ -64,7 +87,7 @@ func (u *User) IsActorAllowedTo(tx *pop.Connection, actor User, p Permission, su
 }
 
 func (u *User) IsAdmin() bool {
-	return false
+	return u.AppRole == AppRoleAdmin
 }
 
 func (u *User) LoadPolicies(tx *pop.Connection, reload bool) error {

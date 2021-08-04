@@ -51,7 +51,7 @@ func (p *Policy) FindByID(tx *pop.Connection, id uuid.UUID) error {
 
 // IsActorAllowedTo ensure the actor is either an admin, or a member of this policy to perform any permission
 func (p *Policy) IsActorAllowedTo(tx *pop.Connection, user User, perm Permission, sub SubResource, r *http.Request) bool {
-	if user.IsAdmin() {
+	if user.IsAdmin() || perm == PermissionList {
 		return true
 	}
 
