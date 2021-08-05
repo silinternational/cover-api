@@ -185,7 +185,7 @@ func (as *ActionSuite) Test_DependentsCreate() {
 			actor:         normalUser,
 			reqBody:       goodRequest2,
 			policy:        fixtures.Policies[0],
-			wantCount:     1 + len(fixtures.Policies[0].Dependents),
+			wantCount:     2 + len(fixtures.Policies[0].Dependents),
 			wantStatus:    http.StatusOK,
 			wantInBody:    goodRequest2.Name,
 			notWantInBody: fixtures.Policies[1].Dependents[0].ID.String(),
