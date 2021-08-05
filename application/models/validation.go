@@ -6,6 +6,7 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gobuffalo/validate/v3"
+
 	"github.com/silinternational/riskman-api/api"
 )
 
@@ -57,7 +58,7 @@ func validateAppRole(field validator.FieldLevel) bool {
 }
 
 func validateItemCategoryStatus(field validator.FieldLevel) bool {
-	if value, ok := field.Field().Interface().(ItemCategoryStatus); ok {
+	if value, ok := field.Field().Interface().(api.ItemCategoryStatus); ok {
 		_, valid := ValidItemCategoryStatuses[value]
 		return valid
 	}
