@@ -3,11 +3,9 @@ package actions
 import (
 	"net/http"
 
-	"github.com/silinternational/riskman-api/api"
-
-	"github.com/silinternational/riskman-api/domain"
-
 	"github.com/gobuffalo/buffalo"
+
+	"github.com/silinternational/riskman-api/api"
 	"github.com/silinternational/riskman-api/domain"
 	"github.com/silinternational/riskman-api/models"
 )
