@@ -7,6 +7,7 @@ import (
 	"runtime/debug"
 
 	"github.com/gobuffalo/buffalo"
+
 	"github.com/silinternational/riskman-api/api"
 	"github.com/silinternational/riskman-api/domain"
 )

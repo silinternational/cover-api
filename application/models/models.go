@@ -10,15 +10,13 @@ import (
 	"net/http"
 	"reflect"
 
-	"github.com/gobuffalo/events"
-
-	"github.com/silinternational/riskman-api/api"
-
 	"github.com/go-playground/validator/v10"
 	"github.com/gobuffalo/buffalo"
+	"github.com/gobuffalo/events"
 	"github.com/gobuffalo/pop/v5"
 	"github.com/gofrs/uuid"
 
+	"github.com/silinternational/riskman-api/api"
 	"github.com/silinternational/riskman-api/domain"
 )
 

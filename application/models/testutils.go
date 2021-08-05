@@ -11,12 +11,11 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/silinternational/riskman-api/api"
-
 	"github.com/gobuffalo/buffalo"
 	"github.com/gobuffalo/nulls"
 	"github.com/gobuffalo/pop/v5"
 
+	"github.com/silinternational/riskman-api/api"
 	"github.com/silinternational/riskman-api/domain"
 )
 

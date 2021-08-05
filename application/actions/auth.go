@@ -8,10 +8,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gobuffalo/nulls"
-
 	"github.com/gobuffalo/buffalo"
 	"github.com/gobuffalo/buffalo/render"
+	"github.com/gobuffalo/nulls"
 
 	"github.com/silinternational/riskman-api/api"
 	"github.com/silinternational/riskman-api/auth"

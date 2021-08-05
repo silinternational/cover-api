@@ -4,14 +4,12 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/silinternational/riskman-api/api"
-
-	"github.com/silinternational/riskman-api/domain"
-
-	"github.com/gobuffalo/validate/v3"
-
 	"github.com/gobuffalo/pop/v5"
+	"github.com/gobuffalo/validate/v3"
 	"github.com/gofrs/uuid"
+
+	"github.com/silinternational/riskman-api/api"
+	"github.com/silinternational/riskman-api/domain"
 )
 
 type PolicyDependents []PolicyDependent

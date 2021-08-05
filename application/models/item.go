@@ -5,11 +5,11 @@ import (
 	"time"
 
 	"github.com/gobuffalo/nulls"
-	"github.com/silinternational/riskman-api/domain"
-
 	"github.com/gobuffalo/pop/v5"
 	"github.com/gobuffalo/validate/v3"
 	"github.com/gofrs/uuid"
+
+	"github.com/silinternational/riskman-api/domain"
 )
 
 type ItemCoverageStatus string

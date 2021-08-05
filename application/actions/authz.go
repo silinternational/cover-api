@@ -9,7 +9,6 @@ import (
 	"github.com/gofrs/uuid"
 
 	"github.com/silinternational/riskman-api/api"
-
 	"github.com/silinternational/riskman-api/domain"
 	"github.com/silinternational/riskman-api/models"
 )
