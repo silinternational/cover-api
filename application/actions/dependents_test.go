@@ -130,6 +130,11 @@ func (as *ActionSuite) Test_DependentsCreate() {
 		ChildBirthYear: 2001,
 	}
 
+	goodRequest2 := api.PolicyDependentInput{
+		Name:      "dependent name2",
+		BirthYear: 2001,
+	}
+
 	tests := []struct {
 		name          string
 		actor         models.User

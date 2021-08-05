@@ -15,10 +15,7 @@ func itemCategoriesList(c buffalo.Context) error {
 		return reportError(c, err)
 	}
 
-	apiCats, err := models.ConvertItemCategories(tx, itemCategories)
-	if err != nil {
-		return reportError(c, err)
-	}
+	apiCats := models.ConvertItemCategories(tx, itemCategories)
 
 	return renderOk(c, apiCats)
 }
