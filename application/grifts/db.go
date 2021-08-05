@@ -254,18 +254,20 @@ func createItemFixtures(fixPolicies []*models.Policy, fixICats []*models.ItemCat
 
 	for i, uu := range itemUUIDs {
 		fixItems[i] = &models.Item{
-			ID:             stringToUUID(uu),
-			Name:           fmt.Sprintf("IName-%d", i),
-			CategoryID:     fixICats[i%countICats].ID, // cycle through item categories
-			InStorage:      false,
-			Country:        fmt.Sprintf("ICountry%d", i),
-			Description:    fmt.Sprintf("This is the description for item %d.", i),
-			PolicyID:       fixPolicies[i/2].ID,
-			Make:           fmt.Sprintf("IMake-%d", i),
-			Model:          fmt.Sprintf("IModel-%d", i),
-			SerialNumber:   fmt.Sprintf("ISN-%d", i),
-			CoverageAmount: 100,
-			PurchaseDate:   time.Now().UTC().Add(time.Hour * time.Duration((i+1)*-48)),
+			ID:                stringToUUID(uu),
+			Name:              fmt.Sprintf("IName-%d", i),
+			CategoryID:        fixICats[i%countICats].ID, // cycle through item categories
+			InStorage:         false,
+			Country:           fmt.Sprintf("ICountry%d", i),
+			Description:       fmt.Sprintf("This is the description for item %d.", i),
+			PolicyID:          fixPolicies[i/2].ID,
+			Make:              fmt.Sprintf("IMake-%d", i),
+			Model:             fmt.Sprintf("IModel-%d", i),
+			SerialNumber:      fmt.Sprintf("ISN-%d", i),
+			CoverageAmount:    100,
+			CoverageStatus:    api.ItemCoverageStatusApproved,
+			CoverageStartDate: time.Now().UTC().Add(time.Hour * time.Duration((i+1)*-40)),
+			PurchaseDate:      time.Now().UTC().Add(time.Hour * time.Duration((i+1)*-48)),
 		}
 
 		err := models.DB.Create(fixItems[i])

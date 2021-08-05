@@ -41,6 +41,16 @@ const (
 	ErrorMissingSessionClientID = ErrorKey("ErrorMissingSessionClientID")
 	ErrorWithAuthUser           = ErrorKey("ErrorWithAuthUser")
 
-	// Policies
+	// Authorization
+	ErrorInvalidResourceID = ErrorKey("ErrorInvalidResourceID")
+	ErrorResourceNotFound  = ErrorKey("ErrorResourceNotFound")
+
+	// Policy
 	ErrorGettingPolicyFromContext = ErrorKey("ErrorGettingPolicyFromContext")
+	ErrorPolicyNotFound           = ErrorKey("ErrorPolicyNotFound")
+	ErrorPolicyUpdateInvalidInput = ErrorKey("ErrorPolicyUpdateInvalidInput")
+
+	// PolicyDependent
+	ErrorPolicyDependentCreateInvalidInput = ErrorKey("ErrorPolicyDependentCreateInvalidInput")
+	ErrorPolicyDependentCreate             = ErrorKey("ErrorPolicyDependentCreate")
 )

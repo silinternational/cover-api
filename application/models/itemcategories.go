@@ -59,15 +59,10 @@ func (r *ItemCategory) LoadRiskCategory(tx *pop.Connection, reload bool) error {
 }
 
 func ConvertItemCategory(tx *pop.Connection, iCat ItemCategory) (api.ItemCategory, error) {
-	if err := iCat.LoadRiskCategory(tx, false); err != nil {
-		return api.ItemCategory{}, err
-	}
-
 	return api.ItemCategory{
 		ID:             iCat.ID,
 		Name:           iCat.Name,
 		HelpText:       iCat.HelpText,
-		RiskCategoryID: iCat.RiskCategoryID,
 		Status:         iCat.Status,
 		AutoApproveMax: iCat.AutoApproveMax,
 		CreatedAt:      iCat.CreatedAt,
@@ -75,15 +70,15 @@ func ConvertItemCategory(tx *pop.Connection, iCat ItemCategory) (api.ItemCategor
 	}, nil
 }
 
-func ConvertItemCategories(tx *pop.Connection, iCats ItemCategories) (api.ItemCategories, error) {
-	apiICs := make(api.ItemCategories, len(iCats))
-	for i, c := range iCats {
+func ConvertItemCategories(tx *pop.Connection, ics ItemCategories) (api.ItemCategories, error) {
+	cats := make(api.ItemCategories, len(ics))
+	for i, ic := range ics {
 		var err error
-		apiICs[i], err = ConvertItemCategory(tx, c)
+		cats[i], err = ConvertItemCategory(tx, ic)
 		if err != nil {
-			return nil, err
+			return api.ItemCategories{}, err
 		}
 	}
 
-	return apiICs, nil
+	return cats, nil
 }

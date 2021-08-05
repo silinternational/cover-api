@@ -133,6 +133,8 @@ func ConvertItem(tx *pop.Connection, item Item) (api.Item, error) {
 		PurchaseDate:      item.PurchaseDate,
 		CoverageStatus:    item.CoverageStatus,
 		CoverageStartDate: item.CoverageStartDate,
+		CreatedAt:         item.CreatedAt,
+		UpdatedAt:         item.UpdatedAt,
 	}, nil
 }
 
