@@ -8,6 +8,7 @@ import (
 	"github.com/silinternational/riskman-api/domain"
 
 	"github.com/gobuffalo/buffalo"
+	"github.com/silinternational/riskman-api/domain"
 	"github.com/silinternational/riskman-api/models"
 )
 

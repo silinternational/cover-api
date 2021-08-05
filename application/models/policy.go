@@ -1,6 +1,7 @@
 package models
 
 import (
+	"errors"
 	"net/http"
 	"time"
 
@@ -92,6 +93,9 @@ func (p *Policy) LoadMembers(tx *pop.Connection, reload bool) error {
 
 // LoadDependents - a simple wrapper method for loading dependents on the struct
 func (p *Policy) LoadDependents(tx *pop.Connection, reload bool) error {
+	if p == nil {
+		return errors.New("policy is nil in LoadDependents")
+	}
 	if len(p.Dependents) == 0 || reload {
 		if err := tx.Load(p, "Dependents"); err != nil {
 			return err
