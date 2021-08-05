@@ -117,10 +117,17 @@ func (as *ActionSuite) Test_DependentsCreate() {
 	}
 
 	goodRequest := api.PolicyDependentInput{
-		Name:           "dependent name",
+		Name:           "dependent name2",
 		Relationship:   api.PolicyDependentRelationshipChild,
 		Location:       "bahamas",
 		ChildBirthYear: 1999,
+	}
+
+	goodRequest2 := api.PolicyDependentInput{
+		Name:           "dependent name2",
+		Relationship:   api.PolicyDependentRelationshipChild,
+		Location:       "bahamas",
+		ChildBirthYear: 2001,
 	}
 
 	tests := []struct {
@@ -176,11 +183,11 @@ func (as *ActionSuite) Test_DependentsCreate() {
 		{
 			name:          "user",
 			actor:         normalUser,
-			reqBody:       goodRequest,
+			reqBody:       goodRequest2,
 			policy:        fixtures.Policies[0],
 			wantCount:     1 + len(fixtures.Policies[0].Dependents),
 			wantStatus:    http.StatusOK,
-			wantInBody:    goodRequest.Name,
+			wantInBody:    goodRequest2.Name,
 			notWantInBody: fixtures.Policies[1].Dependents[0].ID.String(),
 		},
 	}
