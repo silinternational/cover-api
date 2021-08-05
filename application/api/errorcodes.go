@@ -40,4 +40,16 @@ const (
 	ErrorMissingLogoutToken     = ErrorKey("ErrorMissingLogoutToken")
 	ErrorMissingSessionClientID = ErrorKey("ErrorMissingSessionClientID")
 	ErrorWithAuthUser           = ErrorKey("ErrorWithAuthUser")
+
+	// Authorization
+	ErrorInvalidResourceID = ErrorKey("ErrorInvalidResourceID")
+	ErrorResourceNotFound  = ErrorKey("ErrorResourceNotFound")
+
+	// Policy
+	ErrorPolicyNotFound           = ErrorKey("ErrorPolicyNotFound")
+	ErrorPolicyUpdateInvalidInput = ErrorKey("ErrorPolicyUpdateInvalidInput")
+
+	// PolicyDependent
+	ErrorPolicyDependentCreateInvalidInput = ErrorKey("ErrorPolicyDependentCreateInvalidInput")
+	ErrorPolicyDependentCreate             = ErrorKey("ErrorPolicyDependentCreate")
 )

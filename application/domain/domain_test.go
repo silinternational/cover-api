@@ -3,9 +3,8 @@ package domain
 import (
 	"testing"
 
-	"github.com/stretchr/testify/suite"
-
 	"github.com/gofrs/uuid"
+	"github.com/stretchr/testify/suite"
 )
 
 // TestSuite establishes a test suite for domain tests

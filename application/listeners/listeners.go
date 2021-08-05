@@ -7,6 +7,7 @@ import (
 	"github.com/gobuffalo/events"
 	"github.com/gobuffalo/nulls"
 	"github.com/gofrs/uuid"
+
 	"github.com/silinternational/riskman-api/domain"
 	"github.com/silinternational/riskman-api/models"
 )
@@ -67,7 +68,6 @@ func createUserPolicy(e events.Event) {
 		domain.ErrLogger.Printf("Failed to create initial policy in createUserPolicy, %s", err)
 		return
 	}
-
 }
 
 func getID(p events.Payload) (uuid.UUID, error) {

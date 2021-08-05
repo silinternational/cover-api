@@ -3,9 +3,8 @@ package models
 import (
 	"time"
 
-	"github.com/gobuffalo/validate/v3"
-
 	"github.com/gobuffalo/pop/v5"
+	"github.com/gobuffalo/validate/v3"
 	"github.com/gofrs/uuid"
 )
 

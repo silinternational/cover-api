@@ -22,7 +22,7 @@ func (as *ActionSuite) Test_PoliciesList() {
 
 	for _, p := range fixtures.Policies {
 		as.NoError(p.LoadMembers(as.DB, false))
-		as.NoError(p.LoadDependents(as.DB, false))
+		p.LoadDependents(as.DB, false)
 	}
 
 	// alias a couple users
@@ -107,7 +107,7 @@ func (as *ActionSuite) Test_PoliciesUpdate() {
 
 	for _, p := range fixtures.Policies {
 		as.NoError(p.LoadMembers(as.DB, false))
-		as.NoError(p.LoadDependents(as.DB, false))
+		p.LoadDependents(as.DB, false)
 	}
 
 	// alias a couple users

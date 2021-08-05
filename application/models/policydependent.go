@@ -4,14 +4,12 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/silinternational/riskman-api/api"
-
-	"github.com/silinternational/riskman-api/domain"
-
-	"github.com/gobuffalo/validate/v3"
-
 	"github.com/gobuffalo/pop/v5"
+	"github.com/gobuffalo/validate/v3"
 	"github.com/gofrs/uuid"
+
+	"github.com/silinternational/riskman-api/api"
+	"github.com/silinternational/riskman-api/domain"
 )
 
 type PolicyDependentRelationship string
@@ -57,6 +55,10 @@ func (p *PolicyDependent) GetID() uuid.UUID {
 
 func (p *PolicyDependent) FindByID(tx *pop.Connection, id uuid.UUID) error {
 	return tx.Find(p, id)
+}
+
+func (p *PolicyDependent) Create(tx *pop.Connection) error {
+	return create(tx, p)
 }
 
 // IsActorAllowedTo ensure the actor is either an admin, or a member of this policy to perform any permission
