@@ -25,7 +25,8 @@ func AuthZ(next buffalo.Handler) buffalo.Handler {
 
 		actor, ok := c.Value(domain.ContextKeyCurrentUser).(models.User)
 		if !ok {
-			return c.Error(http.StatusUnauthorized, fmt.Errorf("actor must be authenticated to proceed"))
+			err := fmt.Errorf("actor must be authenticated to proceed")
+			return reportError(c, api.NewAppError(err, api.ErrorNotAuthorized, api.CategoryUnauthorized))
 		}
 
 		rName, rID, rSub := getResourceIDSubresource(c.Request().URL.Path)
@@ -38,12 +39,13 @@ func AuthZ(next buffalo.Handler) buffalo.Handler {
 		var resource models.Authable
 		var isAuthable bool
 		if resource, isAuthable = authableResources[rName]; !isAuthable {
-			return c.Error(http.StatusInternalServerError, fmt.Errorf("resource expected to be authable but isn't"))
+			return reportError(c, fmt.Errorf("resource expected to be authable but isn't"))
 		}
 
 		tx := models.Tx(c)
 		if tx == nil {
-			return c.Error(http.StatusInternalServerError, fmt.Errorf("failed to intialize db connection"))
+			err := fmt.Errorf("failed to intialize db connection")
+			return reportError(c, err)
 		}
 
 		if rID != uuid.Nil {
@@ -76,7 +78,8 @@ func AuthZ(next buffalo.Handler) buffalo.Handler {
 		}
 
 		if !resource.IsActorAllowedTo(tx, actor, p, models.SubResource(rSub), limitedRequest(c.Request())) {
-			return c.Error(http.StatusNotFound, fmt.Errorf("actor not allowed to perform that action on this resource"))
+			err := fmt.Errorf("actor not allowed to perform that action on this resource")
+			return reportError(c, api.NewAppError(err, api.ErrorNotAuthorized, api.CategoryForbidden))
 		}
 
 		// put found resource into context if found

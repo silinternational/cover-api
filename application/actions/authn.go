@@ -3,10 +3,10 @@ package actions
 import (
 	"errors"
 	"fmt"
-	"net/http"
 
 	"github.com/gobuffalo/buffalo"
 
+	"github.com/silinternational/riskman-api/api"
 	"github.com/silinternational/riskman-api/domain"
 	"github.com/silinternational/riskman-api/models"
 )
@@ -15,7 +15,8 @@ func AuthN(next buffalo.Handler) buffalo.Handler {
 	return func(c buffalo.Context) error {
 		bearerToken := domain.GetBearerTokenFromRequest(c.Request())
 		if bearerToken == "" {
-			return c.Error(http.StatusUnauthorized, errors.New("no Bearer token provided"))
+			err := errors.New("no Bearer token provided")
+			return reportError(c, api.NewAppError(err, api.ErrorNotAuthorized, api.CategoryUnauthorized))
 		}
 
 		var userAccessToken models.UserAccessToken
@@ -23,23 +24,26 @@ func AuthN(next buffalo.Handler) buffalo.Handler {
 		err := userAccessToken.FindByBearerToken(tx, bearerToken)
 		if err != nil {
 			if domain.IsOtherThanNoRows(err) {
-				return c.Error(http.StatusInternalServerError, err)
+				return reportError(c, err)
 			}
-			return c.Error(http.StatusUnauthorized, errors.New("invalid bearer token"))
+			err = errors.New("invalid bearer token")
+			return reportError(c, api.NewAppError(err, api.ErrorNotAuthorized, api.CategoryUnauthorized))
 		}
 
 		isExpired, err := userAccessToken.DeleteIfExpired(tx)
 		if err != nil {
-			return c.Error(http.StatusInternalServerError, err)
+			return reportError(c, err)
 		}
 
 		if isExpired {
-			return c.Error(http.StatusUnauthorized, errors.New("expired bearer token"))
+			err = errors.New("expired bearer token")
+			return reportError(c, api.NewAppError(err, api.ErrorNotAuthorized, api.CategoryUnauthorized))
 		}
 
 		user, err := userAccessToken.GetUser(tx)
 		if err != nil {
-			return c.Error(http.StatusInternalServerError, fmt.Errorf("error finding user by access token, %s", err.Error()))
+			err = fmt.Errorf("error finding user by access token, %s", err.Error())
+			return reportError(c, err)
 		}
 		c.Set(domain.ContextKeyCurrentUser, user)
 
