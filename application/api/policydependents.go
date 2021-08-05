@@ -9,3 +9,8 @@ type PolicyDependent struct {
 	Name      string    `json:"name"`
 	BirthYear int       `json:"birth_year"`
 }
+
+type PolicyDependentInput struct {
+	Name      string `json:"name"`
+	BirthYear int    `json:"birth_year"`
+}

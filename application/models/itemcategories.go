@@ -3,11 +3,11 @@ package models
 import (
 	"time"
 
-	"github.com/silinternational/riskman-api/api"
-
 	"github.com/gobuffalo/pop/v5"
 	"github.com/gobuffalo/validate/v3"
 	"github.com/gofrs/uuid"
+
+	"github.com/silinternational/riskman-api/api"
 )
 
 var ValidItemCategoryStatuses = map[api.ItemCategoryStatus]struct{}{
@@ -47,26 +47,15 @@ func (r *ItemCategory) FindByID(tx *pop.Connection, id uuid.UUID) error {
 	return tx.Find(r, id)
 }
 
-// LoadCategory - a simple wrapper method for loading an item category on the struct
-func (r *ItemCategory) LoadRiskCategory(tx *pop.Connection, reload bool) error {
-	if r.RiskCategory.ID == uuid.Nil || reload {
-		if err := tx.Load(r, "RiskCategory"); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func ConvertItemCategory(tx *pop.Connection, iCat ItemCategory) (api.ItemCategory, error) {
+func ConvertItemCategory(tx *pop.Connection, ic ItemCategory) (api.ItemCategory, error) {
 	return api.ItemCategory{
-		ID:             iCat.ID,
-		Name:           iCat.Name,
-		HelpText:       iCat.HelpText,
-		Status:         iCat.Status,
-		AutoApproveMax: iCat.AutoApproveMax,
-		CreatedAt:      iCat.CreatedAt,
-		UpdatedAt:      iCat.UpdatedAt,
+		ID:             ic.ID,
+		Name:           ic.Name,
+		HelpText:       ic.HelpText,
+		Status:         ic.Status,
+		AutoApproveMax: ic.AutoApproveMax,
+		CreatedAt:      ic.CreatedAt,
+		UpdatedAt:      ic.UpdatedAt,
 	}, nil
 }
 
@@ -79,6 +68,5 @@ func ConvertItemCategories(tx *pop.Connection, ics ItemCategories) (api.ItemCate
 			return api.ItemCategories{}, err
 		}
 	}
-
 	return cats, nil
 }

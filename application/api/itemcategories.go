@@ -15,15 +15,10 @@ const (
 	ItemCategoryStatusDisabled   = ItemCategoryStatus("Disabled")
 )
 
-// ItemCategories is a slice of ItemCategory objects
-// swagger:model
 type ItemCategories []ItemCategory
 
-// ItemCategory is an item's category object
-// swagger:model
 type ItemCategory struct {
 	ID             uuid.UUID          `json:"id"`
-	RiskCategoryID uuid.UUID          `json:"risk_category_id"`
 	Name           string             `json:"name"`
 	HelpText       string             `json:"help_text"`
 	Status         ItemCategoryStatus `json:"status"`
