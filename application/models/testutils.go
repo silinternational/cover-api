@@ -16,6 +16,7 @@ import (
 	"github.com/gobuffalo/buffalo"
 	"github.com/gobuffalo/nulls"
 	"github.com/gobuffalo/pop/v5"
+
 	"github.com/silinternational/riskman-api/domain"
 )
 
@@ -170,9 +171,7 @@ func CreatePolicyFixtures(tx *pop.Connection, config FixturesConfig) Fixtures {
 		f = CreatePolicyDependentFixtures(tx, policies[i], config.DependentsPerPolicy)
 		policyDependents = append(policyDependents, f.PolicyDependents...)
 
-		if err := policies[i].LoadDependents(tx, false); err != nil {
-			panic("failed to load dependents on policy " + policies[i].ID.String())
-		}
+		policies[i].LoadDependents(tx, false)
 	}
 	return Fixtures{
 		Policies:         policies,
