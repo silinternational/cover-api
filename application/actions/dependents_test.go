@@ -112,18 +112,22 @@ func (as *ActionSuite) Test_DependentsCreate() {
 	as.NoError(appAdmin.Update(as.DB), "failed to make first policy user an app admin")
 
 	incompleteRequest := api.PolicyDependentInput{
-		Name:      "",
-		BirthYear: 1999,
+		Name:           "",
+		ChildBirthYear: 1999,
 	}
 
 	goodRequest := api.PolicyDependentInput{
-		Name:      "dependent name",
-		BirthYear: 1999,
+		Name:           "dependent name",
+		Relationship:   api.PolicyDependentRelationshipChild,
+		Location:       "bahamas",
+		ChildBirthYear: 1999,
 	}
 
 	goodRequest2 := api.PolicyDependentInput{
-		Name:      "dependent name2",
-		BirthYear: 2001,
+		Name:           "dependent name2",
+		Relationship:   api.PolicyDependentRelationshipChild,
+		Location:       "USA",
+		ChildBirthYear: 2001,
 	}
 
 	tests := []struct {

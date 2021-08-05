@@ -1,0 +1,4 @@
+drop_column("policy_dependents", "relationship")
+drop_column("policy_dependents", "location")
+
+rename_column("policy_dependents", "child_birth_year", "birth_year")
