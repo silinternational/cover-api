@@ -13,14 +13,33 @@ func dependentsList(c buffalo.Context) error {
 	policy := getReferencedPolicyFromCtx(c)
 	if policy == nil {
 		err := errors.New("policy not found in route")
-		return reportError(c, api.NewAppError(err, "key", api.CategoryUser))
-
+		return reportError(c, api.NewAppError(err, api.ErrorPolicyNotFound, api.CategoryInternal))
 	}
 
 	tx := models.Tx(c)
-	if err := policy.LoadDependents(tx, false); err != nil {
-		return reportError(c, api.NewAppError(err, "key", api.CategoryInternal))
+	policy.LoadDependents(tx, false)
+
+	return renderOk(c, models.ConvertPolicyDependents(tx, policy.Dependents))
+}
+
+func dependentsCreate(c buffalo.Context) error {
+	policy := getReferencedPolicyFromCtx(c)
+	if policy == nil {
+		err := errors.New("policy not found in route")
+		return reportError(c, api.NewAppError(err, api.ErrorPolicyNotFound, api.CategoryUser))
 	}
 
-	return renderOk(c, policy.Dependents)
+	var input api.PolicyDependentInput
+	if err := StrictBind(c, &input); err != nil {
+		return reportError(c, api.NewAppError(err, api.ErrorPolicyDependentCreateInvalidInput, api.CategoryUser))
+	}
+
+	tx := models.Tx(c)
+	if err := policy.AddDependent(tx, input); err != nil {
+		return reportError(c, err)
+	}
+
+	policy.LoadDependents(tx, false)
+
+	return renderOk(c, models.ConvertPolicyDependents(tx, policy.Dependents))
 }

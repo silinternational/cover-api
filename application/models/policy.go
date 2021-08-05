@@ -1,18 +1,16 @@
 package models
 
 import (
-	"errors"
 	"net/http"
 	"time"
 
-	"github.com/silinternational/riskman-api/api"
-
-	"github.com/silinternational/riskman-api/domain"
-
 	"github.com/gobuffalo/pop/v5"
 	"github.com/gobuffalo/validate/v3"
-
 	"github.com/gofrs/uuid"
+	"github.com/pkg/errors"
+
+	"github.com/silinternational/riskman-api/api"
+	"github.com/silinternational/riskman-api/domain"
 )
 
 type Policies []Policy
@@ -92,17 +90,15 @@ func (p *Policy) LoadMembers(tx *pop.Connection, reload bool) error {
 }
 
 // LoadDependents - a simple wrapper method for loading dependents on the struct
-func (p *Policy) LoadDependents(tx *pop.Connection, reload bool) error {
+func (p *Policy) LoadDependents(tx *pop.Connection, reload bool) {
 	if p == nil {
-		return errors.New("policy is nil in LoadDependents")
+		panic("policy is nil in Policy.LoadDependents")
 	}
 	if len(p.Dependents) == 0 || reload {
 		if err := tx.Load(p, "Dependents"); err != nil {
-			return err
+			panic("database error loading Policy.Dependents, " + err.Error())
 		}
 	}
-
-	return nil
 }
 
 // LoadItems - a simple wrapper method for loading items on the struct
@@ -120,9 +116,7 @@ func ConvertPolicy(tx *pop.Connection, p Policy) (api.Policy, error) {
 	if err := p.LoadMembers(tx, false); err != nil {
 		return api.Policy{}, err
 	}
-	if err := p.LoadDependents(tx, false); err != nil {
-		return api.Policy{}, err
-	}
+	p.LoadDependents(tx, false)
 
 	members, err := ConvertPolicyMembers(tx, p.Members)
 	if err != nil {
@@ -156,4 +150,22 @@ func ConvertPolicies(tx *pop.Connection, ps Policies) (api.Policies, error) {
 	}
 
 	return policies, nil
+}
+
+func (p *Policy) AddDependent(tx *pop.Connection, input api.PolicyDependentInput) error {
+	if p == nil {
+		return errors.New("policy is nil in AddDependent")
+	}
+
+	dependent := PolicyDependent{
+		PolicyID:  p.ID,
+		Name:      input.Name,
+		BirthYear: input.BirthYear,
+	}
+
+	if err := dependent.Create(tx); err != nil {
+		return err
+	}
+
+	return nil
 }

@@ -9,7 +9,6 @@ import (
 	"github.com/gofrs/uuid"
 
 	"github.com/silinternational/riskman-api/api"
-
 	"github.com/silinternational/riskman-api/domain"
 	"github.com/silinternational/riskman-api/models"
 )
@@ -32,7 +31,7 @@ func AuthZ(next buffalo.Handler) buffalo.Handler {
 		rName, rID, rSub := getResourceIDSubresource(c.Request().URL.Path)
 		if rID == uuid.Nil && rSub != "" {
 			err := fmt.Errorf("invalid resource ID, not a UUID")
-			appErr := api.NewAppError(err, "key", api.CategoryUser)
+			appErr := api.NewAppError(err, api.ErrorInvalidResourceID, api.CategoryUser)
 			return reportError(c, appErr)
 		}
 
@@ -50,7 +49,7 @@ func AuthZ(next buffalo.Handler) buffalo.Handler {
 		if rID != uuid.Nil {
 			if err := resource.FindByID(tx, rID); err != nil {
 				err = fmt.Errorf("failed to load resource: %s", err)
-				appErr := api.NewAppError(err, "key", api.CategoryNotFound)
+				appErr := api.NewAppError(err, api.ErrorResourceNotFound, api.CategoryNotFound)
 				if domain.IsOtherThanNoRows(err) {
 					appErr.Category = api.CategoryInternal
 				}

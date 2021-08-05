@@ -116,7 +116,6 @@ func (ms *ModelSuite) TestPolicy_LoadDependents() {
 	}
 	MustCreate(ms.DB, &pu)
 
-	err := policy.LoadDependents(ms.DB, false)
-	ms.NoError(err)
+	policy.LoadDependents(ms.DB, false)
 	ms.Len(policy.Dependents, 1)
 }
