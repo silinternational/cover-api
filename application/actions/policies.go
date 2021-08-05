@@ -6,6 +6,7 @@ import (
 	"github.com/silinternational/riskman-api/domain"
 
 	"github.com/gobuffalo/buffalo"
+	"github.com/silinternational/riskman-api/domain"
 	"github.com/silinternational/riskman-api/models"
 )
 
@@ -48,6 +49,16 @@ func policiesListMine(c buffalo.Context) error {
 	}
 
 	return c.Render(http.StatusOK, r.JSON(apiPolicies))
+}
+
+// getPolicyFromCtx pulls the models.Policy resource from context that was put there
+// by the AuthZ middleware based on a URL pattern of /policy/{id}
+func getPolicyFromCtx(c buffalo.Context) *models.Policy {
+	policy, ok := c.Value(domain.TypePolicy).(*models.Policy)
+	if !ok {
+		return nil
+	}
+	return policy
 }
 
 func itemsList(c buffalo.Context) error {

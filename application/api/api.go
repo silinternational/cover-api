@@ -78,6 +78,8 @@ func (a *AppError) SetHttpStatusFromCategory() {
 		a.HttpStatus = http.StatusInternalServerError
 	case CategoryForbidden, CategoryNotFound:
 		a.HttpStatus = http.StatusNotFound
+	case CategoryUnauthorized:
+		a.HttpStatus = http.StatusUnauthorized
 	default:
 		a.HttpStatus = http.StatusBadRequest
 	}
