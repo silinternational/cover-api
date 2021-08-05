@@ -12,13 +12,33 @@ import (
 	"github.com/gofrs/uuid"
 )
 
+type PolicyDependentRelationship string
+
+const (
+	PolicyDependentRelationshipSpouse = PolicyDependentRelationship("Spouse")
+	PolicyDependentRelationshipChild  = PolicyDependentRelationship("Child")
+
+	MaximumChildAge = 26
+)
+
+var (
+	ValidPolicyDependentRelationships = map[PolicyDependentRelationship]struct{}{
+		PolicyDependentRelationshipSpouse: {},
+		PolicyDependentRelationshipChild:  {},
+	}
+
+	MinimumChildBirthYear = time.Now().UTC().Year() - MaximumChildAge
+)
+
 type PolicyDependents []PolicyDependent
 
 type PolicyDependent struct {
-	ID        uuid.UUID `db:"id"`
-	PolicyID  uuid.UUID `db:"policy_id"`
-	Name      string    `db:"name" validate:"required"`
-	BirthYear int       `db:"birth_year" validate:"required"`
+	ID             uuid.UUID                   `db:"id"`
+	PolicyID       uuid.UUID                   `db:"policy_id"`
+	Name           string                      `db:"name" validate:"required"`
+	Relationship   PolicyDependentRelationship `db:"relationship" validate:"validatePolicyDependentRelationship"`
+	Location       string                      `db:"location" validate:"required"`
+	ChildBirthYear int                         `db:"child_birth_year" validate:"policyDependentChildBirthYear,required_if=Relationship Child"`
 
 	CreatedAt time.Time `db:"created_at"`
 	UpdatedAt time.Time `db:"updated_at"`

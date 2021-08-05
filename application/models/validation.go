@@ -3,6 +3,7 @@ package models
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gobuffalo/validate/v3"
@@ -12,9 +13,11 @@ import (
 var mValidate *validator.Validate
 
 var validationTypes = map[string]func(validator.FieldLevel) bool{
-	"policyType":         validatePolicyType,
-	"itemCategoryStatus": validateItemCategoryStatus,
-	"itemCoverageStatus": validateItemCoverageStatus,
+	"policyDependentChildBirthYear": validatePolicyDependentChildBirthYear,
+	"policyDependentRelationship":   validatePolicyDependentRelationship,
+	"policyType":                    validatePolicyType,
+	"itemCategoryStatus":            validateItemCategoryStatus,
+	"itemCoverageStatus":            validateItemCoverageStatus,
 }
 
 func validateModel(m interface{}) *validate.Errors {
@@ -36,6 +39,19 @@ func flattenPopErrors(popErrs *validate.Errors) string {
 	}
 	msg := strings.Join(msgs, " |")
 	return msg
+}
+
+func validatePolicyDependentChildBirthYear(field validator.FieldLevel) bool {
+	year := int(field.Field().Int())
+	return year <= time.Now().UTC().Year()
+}
+
+func validatePolicyDependentRelationship(field validator.FieldLevel) bool {
+	if value, ok := field.Field().Interface().(PolicyDependentRelationship); ok {
+		_, valid := ValidPolicyDependentRelationships[value]
+		return valid
+	}
+	return false
 }
 
 func validatePolicyType(field validator.FieldLevel) bool {
