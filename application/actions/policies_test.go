@@ -187,7 +187,6 @@ func (as *ActionSuite) Test_PoliciesUpdate() {
 			if res.Code != http.StatusOK {
 				return
 			}
-			fmt.Println(body)
 			var policy api.Policy
 			as.NoError(json.Unmarshal([]byte(body), &policy))
 			as.Equal(tt.update.HouseholdID, policy.HouseholdID)
