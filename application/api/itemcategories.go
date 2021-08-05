@@ -30,6 +30,4 @@ type ItemCategory struct {
 	AutoApproveMax int                `json:"auto_approve_max"`
 	CreatedAt      time.Time          `json:"created_at"`
 	UpdatedAt      time.Time          `json:"updated_at"`
-
-	RiskCategory RiskCategory `json:"risk_category"`
 }

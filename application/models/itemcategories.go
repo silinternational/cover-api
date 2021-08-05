@@ -63,15 +63,11 @@ func ConvertItemCategory(tx *pop.Connection, iCat ItemCategory) (api.ItemCategor
 		return api.ItemCategory{}, err
 	}
 
-	rCat, err := ConvertRiskCategory(iCat.RiskCategory)
-	if err != nil {
-		return api.ItemCategory{}, err
-	}
 	return api.ItemCategory{
 		ID:             iCat.ID,
 		Name:           iCat.Name,
 		HelpText:       iCat.HelpText,
-		RiskCategory:   rCat,
+		RiskCategoryID: iCat.RiskCategoryID,
 		Status:         iCat.Status,
 		AutoApproveMax: iCat.AutoApproveMax,
 		CreatedAt:      iCat.CreatedAt,
