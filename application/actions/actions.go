@@ -125,5 +125,5 @@ func GetFunctionName(skip int) string {
 }
 
 func renderOk(c buffalo.Context, v interface{}) error {
-	return c.Render(http.StatusOK, r.JSON(v))
+	return renderOk(c, v)
 }

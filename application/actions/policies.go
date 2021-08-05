@@ -32,7 +32,7 @@ func policiesListAll(c buffalo.Context) error {
 		return c.Render(http.StatusInternalServerError, r.JSON(err))
 	}
 
-	return c.Render(http.StatusOK, r.JSON(apiPolicies))
+	return renderOk(c, apiPolicies)
 }
 
 func policiesListMine(c buffalo.Context) error {
@@ -48,7 +48,7 @@ func policiesListMine(c buffalo.Context) error {
 		return c.Render(http.StatusInternalServerError, r.JSON(err))
 	}
 
-	return c.Render(http.StatusOK, r.JSON(apiPolicies))
+	return renderOk(c, apiPolicies)
 }
 
 func policiesUpdate(c buffalo.Context) error {
@@ -82,7 +82,7 @@ func policiesUpdate(c buffalo.Context) error {
 		return reportError(c, err)
 	}
 
-	return c.Render(http.StatusOK, r.JSON(apiPolicy))
+	return renderOk(c, apiPolicy)
 }
 
 // getReferencedPolicyFromCtx pulls the models.Policy resource from context that was put there
