@@ -1,9 +1,8 @@
 package actions
 
 import (
+	"errors"
 	"net/http"
-
-	"github.com/silinternational/riskman-api/domain"
 
 	"github.com/gobuffalo/buffalo"
 
@@ -100,14 +99,11 @@ func getReferencedPolicyFromCtx(c buffalo.Context) *models.Policy {
 func itemsList(c buffalo.Context) error {
 	tx := models.Tx(c)
 
-	cPolicy := c.Value(domain.TypePolicy)
-	if cPolicy == nil {
-		return c.Render(http.StatusInternalServerError, r.String("failed to find policy in context after authn"))
-	}
+	policy := getReferencedPolicyFromCtx(c)
+	if policy == nil {
+		err := errors.New("policy not found in context")
+		return reportError(c, api.NewAppError(err, api.ErrorGettingPolicyFromContext, api.CategoryInternal))
 
-	policy, ok := cPolicy.(models.Policy)
-	if !ok {
-		return c.Render(http.StatusInternalServerError, r.String("failed to convert context policy in policy model"))
 	}
 
 	err := policy.LoadItems(tx, true)

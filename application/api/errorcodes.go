@@ -40,4 +40,7 @@ const (
 	ErrorMissingLogoutToken     = ErrorKey("ErrorMissingLogoutToken")
 	ErrorMissingSessionClientID = ErrorKey("ErrorMissingSessionClientID")
 	ErrorWithAuthUser           = ErrorKey("ErrorWithAuthUser")
+
+	// Policies
+	ErrorGettingPolicyFromContext = ErrorKey("ErrorGettingPolicyFromContext")
 )

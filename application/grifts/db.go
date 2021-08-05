@@ -4,12 +4,19 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/silinternational/riskman-api/api"
+
 	"github.com/gofrs/uuid"
 	"github.com/markbates/grift/grift"
 	"github.com/silinternational/riskman-api/domain"
 
 	"github.com/silinternational/riskman-api/models"
 )
+
+func stringToUUID(input string) uuid.UUID {
+	id, _ := uuid.FromString(input)
+	return id
+}
 
 var _ = grift.Namespace("db", func() {
 	grift.Desc("seed", "Seeds a database")
@@ -40,9 +47,9 @@ var _ = grift.Namespace("db", func() {
 				StaffID:      "222222",
 			},
 			{
-				Email:        "jane.doe@example.org",
-				FirstName:    "Jane",
-				LastName:     "Doe",
+				Email:        "carol.danvers@example.org",
+				FirstName:    "Carol",
+				LastName:     "Danvers",
 				IsBlocked:    true,
 				LastLoginUTC: time.Now().UTC().Add(time.Hour * -24),
 				StaffID:      "333333",
@@ -63,11 +70,12 @@ var _ = grift.Namespace("db", func() {
 			},
 		}
 
-		for i, user := range fixtureUsers {
-			fixtureUsers[i].ID, _ = uuid.FromString(userUUIDs[i])
+		for i, uu := range userUUIDs {
+			fixtureUsers[i].ID = stringToUUID(uu)
 			err := models.DB.Create(fixtureUsers[i])
 			if err != nil {
-				err = fmt.Errorf("error loading user fixture ... %+v\n %v", user, err.Error())
+				err = fmt.Errorf("error creating user fixture ... %+v\n %v",
+					fixtureUsers[i], err.Error())
 				return err
 			}
 		}
@@ -82,10 +90,38 @@ var _ = grift.Namespace("db", func() {
 
 			err := models.DB.Create(&fixtureUserTokens[i])
 			if err != nil {
-				err = fmt.Errorf("error loading user token fixture ... %+v\n %v", fixtureUsers[i], err.Error())
+				err = fmt.Errorf("error creating user token fixture ... %+v\n %v", fixtureUsers[i], err.Error())
 				return err
 			}
 		}
+
+		policyUUIDs := []string{
+			"31447366-26b2-4256-b2ab-58c92c3d54cc",
+			"3279902f-c204-4922-b479-57f0ec41eabe",
+			"33bcf980-e1f0-42d3-b2b0-2e4704159f4f",
+			"34dc63fa-1227-4bea-b34a-416a26c3e077",
+			"3596a5a6-971a-403d-8276-c41657bc57ce",
+		}
+
+		fixturePolicies := make([]*models.Policy, len(fixtureUsers))
+
+		for i, uu := range policyUUIDs {
+			user := fixtureUsers[i]
+			fixturePolicies[i] = &models.Policy{
+				ID:          stringToUUID(uu),
+				Type:        api.PolicyTypeHousehold,
+				HouseholdID: fmt.Sprintf("HID-%s-%s", user.FirstName, user.LastName),
+			}
+
+			err := models.DB.Create(fixturePolicies[i])
+			if err != nil {
+				err = fmt.Errorf("error creating policy fixture ... %+v\n %v",
+					fixturePolicies[i], err.Error())
+				return err
+			}
+		}
+
 		return nil
+
 	})
 })

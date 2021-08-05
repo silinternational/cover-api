@@ -13,7 +13,7 @@ func dependentsList(c buffalo.Context) error {
 	policy := getReferencedPolicyFromCtx(c)
 	if policy == nil {
 		err := errors.New("policy not found in route")
-		return reportError(c, api.NewAppError(err, "key", api.CategoryUser))
+		return reportError(c, api.NewAppError(err, "key", api.CategoryInternal))
 
 	}
 
