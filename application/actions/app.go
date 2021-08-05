@@ -129,6 +129,7 @@ func App() *buffalo.App {
 		policiesGroup.Use(AuthZ)
 		policiesGroup.GET("/", policiesList)
 		policiesGroup.GET("/{id}/dependents", dependentsList)
+		policiesGroup.PUT("/{id}", policiesUpdate)
 	}
 
 	return app

@@ -7,22 +7,23 @@ import (
 
 	"github.com/gobuffalo/buffalo"
 	"github.com/gofrs/uuid"
+
 	"github.com/silinternational/riskman-api/api"
 
 	"github.com/silinternational/riskman-api/domain"
 	"github.com/silinternational/riskman-api/models"
 )
 
-var authableResources = map[string]models.Authable{
-	domain.TypeItem:            &models.Item{},
-	domain.TypePolicy:          &models.Policy{},
-	domain.TypePolicyDependent: &models.PolicyDependent{},
-	domain.TypePolicyUser:      &models.PolicyUser{},
-	domain.TypeUser:            &models.User{},
-}
-
 func AuthZ(next buffalo.Handler) buffalo.Handler {
 	return func(c buffalo.Context) error {
+		authableResources := map[string]models.Authable{
+			domain.TypeItem:            &models.Item{},
+			domain.TypePolicy:          &models.Policy{},
+			domain.TypePolicyDependent: &models.PolicyDependent{},
+			domain.TypePolicyUser:      &models.PolicyUser{},
+			domain.TypeUser:            &models.User{},
+		}
+
 		actor, ok := c.Value(domain.ContextKeyCurrentUser).(models.User)
 		if !ok {
 			return c.Error(http.StatusUnauthorized, fmt.Errorf("actor must be authenticated to proceed"))
@@ -71,7 +72,7 @@ func AuthZ(next buffalo.Handler) buffalo.Handler {
 		}
 
 		if !resource.IsActorAllowedTo(tx, actor, p, models.SubResource(rSub), limitedRequest(c.Request())) {
-			return c.Error(http.StatusForbidden, fmt.Errorf("actor not allowed to perform that action on this resource"))
+			return c.Error(http.StatusNotFound, fmt.Errorf("actor not allowed to perform that action on this resource"))
 		}
 
 		// put found resource into context if found

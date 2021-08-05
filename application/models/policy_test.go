@@ -29,9 +29,18 @@ func (ms *ModelSuite) TestPolicy_Validate() {
 			errField: "Policy.Type",
 		},
 		{
-			name: "valid type",
+			name: "valid type, missing household id",
 			Policy: Policy{
 				Type: api.PolicyTypeHousehold,
+			},
+			wantErr:  true,
+			errField: "Policy.HouseholdID",
+		},
+		{
+			name: "valid type",
+			Policy: Policy{
+				Type:        api.PolicyTypeHousehold,
+				HouseholdID: "123456",
 			},
 			wantErr:  false,
 			errField: "",

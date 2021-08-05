@@ -53,3 +53,19 @@ type Policy struct {
 	// List of dependents on policy
 	Dependents PolicyDependents `json:"dependents,omitempty"`
 }
+
+// PolicyUpdate represents payload for updating a policy
+// swagger:model
+type PolicyUpdate struct {
+	// Household ID for billing
+	HouseholdID string `json:"household_id,omitempty"`
+
+	// Cost center for billing
+	CostCenter string `json:"cost_center,omitempty"`
+
+	// Account code for billing
+	Account string `json:"account,omitempty"`
+
+	// Entity code for billing
+	EntityCode string `json:"entity_code,omitempty"`
+}
