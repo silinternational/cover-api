@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	"github.com/gobuffalo/buffalo"
+
 	"github.com/silinternational/riskman-api/api"
 	"github.com/silinternational/riskman-api/models"
 )
@@ -21,5 +22,5 @@ func dependentsList(c buffalo.Context) error {
 		return reportError(c, api.NewAppError(err, "key", api.CategoryInternal))
 	}
 
-	return ok(c, policy.Dependents)
+	return renderOk(c, policy.Dependents)
 }

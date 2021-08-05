@@ -103,6 +103,6 @@ func GetFunctionName(skip int) string {
 	return fmt.Sprintf("%s:%d %s", file, line, fn.Name())
 }
 
-func ok(c buffalo.Context, v interface{}) error {
+func renderOk(c buffalo.Context, v interface{}) error {
 	return c.Render(http.StatusOK, r.JSON(v))
 }
