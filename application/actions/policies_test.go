@@ -153,7 +153,7 @@ func (as *ActionSuite) Test_PoliciesUpdate() {
 			update: api.PolicyUpdate{
 				HouseholdID: "09876",
 			},
-			wantStatus:    http.StatusForbidden,
+			wantStatus:    http.StatusNotFound,
 			notWantInBody: fixtures.Policies[0].ID.String(),
 		},
 		{
