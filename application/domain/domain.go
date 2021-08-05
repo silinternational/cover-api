@@ -2,12 +2,14 @@ package domain
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"io"
 	"log"
 	"net/http"
 	"os"
 	"regexp"
+	"strings"
 	"sync"
 
 	"github.com/gobuffalo/envy"
@@ -53,11 +55,20 @@ const (
 	ContextKeyExtras      = "extras"
 	ContextKeyRollbar     = "rollbar"
 
+	DefaultUIPath = "/home"
+
+	EventPayloadID = "id"
+
 	TypeItem            = "items"
 	TypePolicy          = "policies"
 	TypePolicyDependent = "policy-dependents"
 	TypePolicyUser      = "policy-users"
 	TypeUser            = "users"
+)
+
+// Event Kinds
+const (
+	EventApiUserCreated = "api:user:created"
 )
 
 func getBuffaloContext(ctx context.Context) buffalo.Context {
@@ -76,10 +87,28 @@ var Env struct {
 	ApiBaseURL                 string `required:"true" split_words:"true"`
 	AccessTokenLifetimeSeconds int    `default:"1166400" split_words:"true"` // 13.5 days
 	AppName                    string `default:"riskman" split_words:"true"`
-	SessionSecret              string `required:"true" split_words:"true"`
-	ServerRoot                 string `default:"" split_words:"true"`
-	RollbarToken               string `default:"" split_words:"true"`
-	UIURL                      string `default:"missing.ui.url"`
+
+	ListenerDelayMilliseconds int `default:"1000" split_words:"true"`
+	ListenerMaxRetries        int `default:"10" split_words:"true"`
+
+	SessionSecret     string `required:"true" split_words:"true"`
+	ServerRoot        string `default:"" split_words:"true"`
+	RollbarServerRoot string `default:"" split_words:"true"`
+	RollbarToken      string `default:"" split_words:"true"`
+	UIURL             string `default:"http://missing.ui.url"`
+
+	SamlSpEntityId                  string `default:"" split_words:"true"`
+	SamlAudienceUri                 string `default:"" split_words:"true"`
+	SamlIdpEntityId                 string `default:"" split_words:"true"`
+	SamlIdpCert                     string `default:"" split_words:"true"`
+	SamlSpCert                      string `default:"" split_words:"true"`
+	SamlSpPrivateKey                string `default:"" split_words:"true"`
+	SamlAssertionConsumerServiceUrl string `default:"" split_words:"true"`
+	SamlSsoURL                      string `default:"" split_words:"true"`
+	SamlSloURL                      string `default:"" split_words:"true"`
+	SamlCheckResponseSigning        bool   `default:"true" split_words:"true"`
+	SamlSignRequest                 bool   `default:"true" split_words:"true"`
+	SamlRequireEncryptedAssertion   bool   `default:"true" split_words:"true"`
 }
 
 func init() {
@@ -132,7 +161,7 @@ func (e *ErrLogProxy) InitRollbar() {
 		Env.GoEnv,
 		"",
 		"",
-		Env.ServerRoot)
+		Env.RollbarServerRoot)
 }
 
 // NewExtra Sets a new key-value pair in the `extras` entry of the context
@@ -177,7 +206,7 @@ func RollbarMiddleware(next buffalo.Handler) buffalo.Handler {
 			Env.GoEnv,
 			"",
 			"",
-			Env.ServerRoot)
+			Env.RollbarServerRoot)
 		defer client.Close()
 
 		c.Set(ContextKeyRollbar, client)
@@ -201,4 +230,46 @@ func GetBearerTokenFromRequest(r *http.Request) string {
 	}
 
 	return string(matches[1])
+}
+
+// IsOtherThanNoRows returns false if the error is nil or is just reporting that there
+//   were no rows in the result set for a sql query.
+func IsOtherThanNoRows(err error) bool {
+	if err == nil {
+		return false
+	}
+
+	if strings.Contains(err.Error(), sql.ErrNoRows.Error()) {
+		return false
+	}
+
+	return true
+}
+
+// RollbarSetPerson sets person on the rollbar context for further logging
+func RollbarSetPerson(c buffalo.Context, id, userFirst, userLast, email string) {
+	username := strings.TrimSpace(userFirst + " " + userLast)
+	rc, ok := c.Value(ContextKeyRollbar).(*rollbar.Client)
+	if ok {
+		rc.SetPerson(id, username, email)
+	}
+}
+
+func MergeExtras(extras []map[string]interface{}) map[string]interface{} {
+	allExtras := map[string]interface{}{}
+
+	// I didn't think I would need this, but without it at least one test was failing
+	// The code allowed a map[string]interface{} to get through (i.e. not in a slice)
+	// without the compiler complaining
+	if len(extras) == 1 {
+		return extras[0]
+	}
+
+	for _, e := range extras {
+		for k, v := range e {
+			allExtras[k] = v
+		}
+	}
+
+	return allExtras
 }

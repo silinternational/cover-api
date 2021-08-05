@@ -42,7 +42,6 @@ import (
 	"github.com/gorilla/sessions"
 	"github.com/rs/cors"
 
-	"github.com/silinternational/riskman-api/actions/middleware"
 	"github.com/silinternational/riskman-api/domain"
 	"github.com/silinternational/riskman-api/models"
 )
@@ -90,11 +89,17 @@ func App() *buffalo.App {
 		}
 		app.Use(domain.T.Middleware())
 
+		registerCustomErrorHandler(app)
+
 		// Initialize and attach "rollbar" to context
 		app.Use(domain.RollbarMiddleware)
 
 		// Log request parameters (filters apply).
 		app.Use(paramlogger.ParameterLogger)
+
+		//  Added for authorization
+		app.Use(setCurrentUser)
+		app.Middleware.Skip(setCurrentUser, HomeHandler, statusHandler)
 
 		// Set the request content type to JSON
 		app.Use(contenttype.Set("application/json"))
@@ -104,14 +109,28 @@ func App() *buffalo.App {
 
 		app.GET("/", HomeHandler)
 		app.GET("/status", statusHandler)
+		app.GET("/item-categories", itemCategoriesList)
 
 		// users
 		usersGroup := app.Group("/" + domain.TypeUser)
-		usersGroup.Use(middleware.AuthN)
-		usersGroup.Use(middleware.AuthZ)
+		usersGroup.Use(AuthZ)
 		usersGroup.GET("/", usersList)
+		usersGroup.Middleware.Skip(AuthZ, usersMe)
+		usersGroup.GET("/me", usersMe)
 		usersGroup.GET("/{id}", usersView)
 
+		auth := app.Group("/auth")
+		auth.Middleware.Skip(setCurrentUser, authRequest, authCallback, authDestroy)
+		auth.POST("/login", authRequest)
+		auth.POST("/callback", authCallback)
+		auth.GET("/logout", authDestroy)
+
+		// policies
+		policiesGroup := app.Group("/" + domain.TypePolicy)
+		policiesGroup.Use(AuthZ)
+		policiesGroup.GET("/", policiesList)
+		policiesGroup.GET("/{id}/dependents", dependentsList)
+		policiesGroup.PUT("/{id}", policiesUpdate)
 	}
 
 	return app

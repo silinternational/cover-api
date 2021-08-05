@@ -11,15 +11,18 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/silinternational/riskman-api/api"
+
 	"github.com/gobuffalo/buffalo"
 	"github.com/gobuffalo/nulls"
 	"github.com/gobuffalo/pop/v5"
+
 	"github.com/silinternational/riskman-api/domain"
 )
 
 type FixturesConfig struct {
-	ItemsPerPolicy      int
 	NumberOfPolicies    int
+	ItemsPerPolicy      int
 	UsersPerPolicy      int
 	DependentsPerPolicy int
 }
@@ -101,7 +104,7 @@ func CreateCategoryFixtures(tx *pop.Connection, n int) Fixtures {
 		categories[i].RiskCategoryID = RiskCategoryMobileID()
 		categories[i].Name = randStr(10)
 		categories[i].HelpText = randStr(40)
-		categories[i].Status = ItemCategoryStatusEnabled
+		categories[i].Status = api.ItemCategoryStatusEnabled
 		categories[i].AutoApproveMax = 500
 		MustCreate(tx, &categories[i])
 	}
@@ -125,11 +128,12 @@ func CreateUserFixtures(tx *pop.Connection, n int) Fixtures {
 		users[i].LastName = "last" + iStr
 		users[i].LastLoginUTC = time.Now()
 		users[i].StaffID = randStr(10)
+		users[i].AppRole = AppRoleUser
 		MustCreate(tx, &users[i])
 
 		accessTokenFixtures[i].UserID = users[i].ID
 		accessTokenFixtures[i].TokenHash = HashClientIdAccessToken(users[i].Email)
-		accessTokenFixtures[i].ExpiresAt = time.Now().Add(time.Minute * 60)
+		accessTokenFixtures[i].ExpiresAt = time.Now().UTC().Add(time.Minute * 60)
 		accessTokenFixtures[i].LastUsedAt = nulls.NewTime(time.Now())
 		MustCreate(tx, &accessTokenFixtures[i])
 	}
@@ -149,7 +153,7 @@ func CreatePolicyFixtures(tx *pop.Connection, config FixturesConfig) Fixtures {
 
 	policies := make(Policies, config.NumberOfPolicies)
 	for i := range policies {
-		policies[i].Type = PolicyTypeHousehold
+		policies[i].Type = api.PolicyTypeHousehold
 		policies[i].Account = randStr(10)
 		policies[i].EntityCode = randStr(10)
 		policies[i].CostCenter = randStr(10)
@@ -251,4 +255,27 @@ func randStr(n int) string {
 		b[i] = chars[rand.Int63()%int64(len(chars))]
 	}
 	return string(b)
+}
+
+func DestroyAll() {
+	// delete all Users and UserAccessTokens
+	var users Users
+	destroyTable(&users)
+
+	// delete all Policies, PolicyUsers, PolicyDependents, PolicyHistory records, and Items
+	var policies Policies
+	destroyTable(&policies)
+
+	// delete all ItemCategories
+	var categories ItemCategories
+	destroyTable(&categories)
+}
+
+func destroyTable(i interface{}) {
+	if err := DB.All(i); err != nil {
+		panic(err.Error())
+	}
+	if err := DB.Destroy(i); err != nil {
+		panic(err.Error())
+	}
 }

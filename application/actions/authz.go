@@ -1,4 +1,4 @@
-package middleware
+package actions
 
 import (
 	"fmt"
@@ -8,26 +8,33 @@ import (
 	"github.com/gobuffalo/buffalo"
 	"github.com/gofrs/uuid"
 
+	"github.com/silinternational/riskman-api/api"
+
 	"github.com/silinternational/riskman-api/domain"
 	"github.com/silinternational/riskman-api/models"
 )
 
-var authableResources = map[string]models.Authable{
-	domain.TypeItem:            &models.Item{},
-	domain.TypePolicy:          &models.Policy{},
-	domain.TypePolicyDependent: &models.PolicyDependent{},
-	domain.TypePolicyUser:      &models.PolicyUser{},
-	domain.TypeUser:            &models.User{},
-}
-
 func AuthZ(next buffalo.Handler) buffalo.Handler {
 	return func(c buffalo.Context) error {
+		authableResources := map[string]models.Authable{
+			domain.TypeItem:            &models.Item{},
+			domain.TypePolicy:          &models.Policy{},
+			domain.TypePolicyDependent: &models.PolicyDependent{},
+			domain.TypePolicyUser:      &models.PolicyUser{},
+			domain.TypeUser:            &models.User{},
+		}
+
 		actor, ok := c.Value(domain.ContextKeyCurrentUser).(models.User)
 		if !ok {
 			return c.Error(http.StatusUnauthorized, fmt.Errorf("actor must be authenticated to proceed"))
 		}
 
 		rName, rID, rSub := getResourceIDSubresource(c.Request().URL.Path)
+		if rID == uuid.Nil && rSub != "" {
+			err := fmt.Errorf("invalid resource ID, not a UUID")
+			appErr := api.NewAppError(err, "key", api.CategoryUser)
+			return reportError(c, appErr)
+		}
 
 		var resource models.Authable
 		var isAuthable bool
@@ -42,8 +49,12 @@ func AuthZ(next buffalo.Handler) buffalo.Handler {
 
 		if rID != uuid.Nil {
 			if err := resource.FindByID(tx, rID); err != nil {
-				// TODO: this perhaps should return a 404, or just pass the error along based on api.AppError
-				return c.Error(http.StatusInternalServerError, fmt.Errorf("failed to load resource: %s", err))
+				err = fmt.Errorf("failed to load resource: %s", err)
+				appErr := api.NewAppError(err, "key", api.CategoryNotFound)
+				if domain.IsOtherThanNoRows(err) {
+					appErr.Category = api.CategoryInternal
+				}
+				return reportError(c, appErr)
 			}
 		}
 
@@ -66,7 +77,7 @@ func AuthZ(next buffalo.Handler) buffalo.Handler {
 		}
 
 		if !resource.IsActorAllowedTo(tx, actor, p, models.SubResource(rSub), limitedRequest(c.Request())) {
-			return c.Error(http.StatusForbidden, fmt.Errorf("actor not allowed to perform that action on this resource"))
+			return c.Error(http.StatusNotFound, fmt.Errorf("actor not allowed to perform that action on this resource"))
 		}
 
 		// put found resource into context if found

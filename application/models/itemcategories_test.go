@@ -2,6 +2,8 @@ package models
 
 import (
 	"testing"
+
+	"github.com/silinternational/riskman-api/api"
 )
 
 func (ms *ModelSuite) TestItemCategories_Validate() {
@@ -16,14 +18,14 @@ func (ms *ModelSuite) TestItemCategories_Validate() {
 			name: "minimum",
 			itemCategory: ItemCategory{
 				Name:   "computers",
-				Status: ItemCategoryStatusEnabled,
+				Status: api.ItemCategoryStatusEnabled,
 			},
 			wantErr: false,
 		},
 		{
 			name: "missing Name",
 			itemCategory: ItemCategory{
-				Status: ItemCategoryStatusEnabled,
+				Status: api.ItemCategoryStatusEnabled,
 			},
 			wantErr:  true,
 			errField: "ItemCategory.Name",
