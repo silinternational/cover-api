@@ -16,6 +16,7 @@ import (
 	"github.com/gobuffalo/buffalo"
 	"github.com/gobuffalo/nulls"
 	"github.com/gobuffalo/pop/v5"
+
 	"github.com/silinternational/riskman-api/domain"
 )
 
@@ -103,7 +104,7 @@ func CreateCategoryFixtures(tx *pop.Connection, n int) Fixtures {
 		categories[i].RiskCategoryID = RiskCategoryMobileID()
 		categories[i].Name = randStr(10)
 		categories[i].HelpText = randStr(40)
-		categories[i].Status = ItemCategoryStatusEnabled
+		categories[i].Status = api.ItemCategoryStatusEnabled
 		categories[i].AutoApproveMax = 500
 		MustCreate(tx, &categories[i])
 	}
