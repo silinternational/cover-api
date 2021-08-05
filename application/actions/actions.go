@@ -6,6 +6,7 @@ import (
 	"runtime"
 
 	"github.com/gobuffalo/buffalo"
+
 	"github.com/silinternational/riskman-api/api"
 	"github.com/silinternational/riskman-api/domain"
 )
@@ -37,7 +38,9 @@ func reportError(c buffalo.Context, err error) error {
 
 	// clear out debugging info if not in development or test
 	if domain.Env.GoEnv == "development" || domain.Env.GoEnv == "test" {
-		appErr.DebugMsg = appErr.Err.Error()
+		if appErr.Err != nil {
+			appErr.DebugMsg = appErr.Err.Error()
+		}
 	} else {
 		appErr.Extras = map[string]interface{}{}
 	}
