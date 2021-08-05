@@ -24,7 +24,7 @@ func (as *ActionSuite) Test_DependentsList() {
 	normalUser := fixtures.Policies[0].Members[0]
 	appAdmin := fixtures.Policies[1].Members[0]
 
-	// change user 0 to an admin
+	// change user to an admin
 	appAdmin.AppRole = models.AppRoleAdmin
 	as.NoError(appAdmin.Update(as.DB), "failed to make first policy user an app admin")
 
