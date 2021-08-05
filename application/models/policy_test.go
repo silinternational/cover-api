@@ -112,7 +112,7 @@ func (ms *ModelSuite) TestPolicy_LoadDependents() {
 	pu := PolicyDependent{
 		PolicyID:       policy.ID,
 		Name:           rando + "-kiddo",
-		Relationship:   PolicyDependentRelationshipChild,
+		Relationship:   api.PolicyDependentRelationshipChild,
 		Location:       "Bahamas",
 		ChildBirthYear: 2000,
 	}

@@ -50,7 +50,7 @@ func validatePolicyDependentChildBirthYear(field validator.FieldLevel) bool {
 }
 
 func validatePolicyDependentRelationship(field validator.FieldLevel) bool {
-	if value, ok := field.Field().Interface().(PolicyDependentRelationship); ok {
+	if value, ok := field.Field().Interface().(api.PolicyDependentRelationship); ok {
 		_, valid := ValidPolicyDependentRelationships[value]
 		return valid
 	}

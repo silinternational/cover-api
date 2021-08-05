@@ -3,6 +3,8 @@ package models
 import (
 	"testing"
 	"time"
+
+	"github.com/silinternational/riskman-api/api"
 )
 
 func (ms *ModelSuite) TestPolicyDependent_Validate() {
@@ -17,7 +19,7 @@ func (ms *ModelSuite) TestPolicyDependent_Validate() {
 			name: "minimum Spouse",
 			policyDependent: PolicyDependent{
 				Name:         "Jane Smith",
-				Relationship: PolicyDependentRelationshipSpouse,
+				Relationship: api.PolicyDependentRelationshipSpouse,
 				Location:     "USA",
 			},
 			wantErr: false,
@@ -26,7 +28,7 @@ func (ms *ModelSuite) TestPolicyDependent_Validate() {
 			name: "minimum Child",
 			policyDependent: PolicyDependent{
 				Name:           "John Doe",
-				Relationship:   PolicyDependentRelationshipChild,
+				Relationship:   api.PolicyDependentRelationshipChild,
 				Location:       "USA",
 				ChildBirthYear: time.Now().UTC().Year() - 18,
 			},
@@ -35,7 +37,7 @@ func (ms *ModelSuite) TestPolicyDependent_Validate() {
 		{
 			name: "missing Name",
 			policyDependent: PolicyDependent{
-				Relationship:   PolicyDependentRelationshipChild,
+				Relationship:   api.PolicyDependentRelationshipChild,
 				Location:       "USA",
 				ChildBirthYear: time.Now().UTC().Year() - 18,
 			},
@@ -56,7 +58,7 @@ func (ms *ModelSuite) TestPolicyDependent_Validate() {
 			name: "missing Location",
 			policyDependent: PolicyDependent{
 				Name:           "Jane Smith",
-				Relationship:   PolicyDependentRelationshipChild,
+				Relationship:   api.PolicyDependentRelationshipChild,
 				ChildBirthYear: time.Now().UTC().Year() - 18,
 			},
 			wantErr:  true,
@@ -66,7 +68,7 @@ func (ms *ModelSuite) TestPolicyDependent_Validate() {
 			name: "missing ChildBirthYear",
 			policyDependent: PolicyDependent{
 				Name:         "Jane Smith",
-				Relationship: PolicyDependentRelationshipChild,
+				Relationship: api.PolicyDependentRelationshipChild,
 			},
 			wantErr:  true,
 			errField: "PolicyDependent.ChildBirthYear",
@@ -76,7 +78,7 @@ func (ms *ModelSuite) TestPolicyDependent_Validate() {
 		t.Run(tt.name, func(t *testing.T) {
 			vErr, _ := tt.policyDependent.Validate(DB)
 			if tt.wantErr {
-				ms.Equal(1, vErr.Count(), "Expected an error, but did not get one")
+				ms.GreaterOrEqualf(vErr.Count(), 1, "Expected an error, but did not get one")
 				ms.Lenf(vErr.Get(tt.errField), 1, "Expected an error on field %v, but got none (errors: %+v)", tt.errField, vErr.Errors)
 			} else {
 				ms.Falsef(vErr.HasAny(), "Unexpected error: %+v", vErr)

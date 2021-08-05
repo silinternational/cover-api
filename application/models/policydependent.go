@@ -12,33 +12,22 @@ import (
 	"github.com/silinternational/riskman-api/domain"
 )
 
-type PolicyDependentRelationship string
-
-const (
-	PolicyDependentRelationshipSpouse = PolicyDependentRelationship("Spouse")
-	PolicyDependentRelationshipChild  = PolicyDependentRelationship("Child")
-
-	MaximumChildAge = 26
-)
-
 var (
-	ValidPolicyDependentRelationships = map[PolicyDependentRelationship]struct{}{
-		PolicyDependentRelationshipSpouse: {},
-		PolicyDependentRelationshipChild:  {},
+	ValidPolicyDependentRelationships = map[api.PolicyDependentRelationship]struct{}{
+		api.PolicyDependentRelationshipSpouse: {},
+		api.PolicyDependentRelationshipChild:  {},
 	}
-
-	MinimumChildBirthYear = time.Now().UTC().Year() - MaximumChildAge
 )
 
 type PolicyDependents []PolicyDependent
 
 type PolicyDependent struct {
-	ID             uuid.UUID                   `db:"id"`
-	PolicyID       uuid.UUID                   `db:"policy_id"`
-	Name           string                      `db:"name" validate:"required"`
-	Relationship   PolicyDependentRelationship `db:"relationship" validate:"validatePolicyDependentRelationship"`
-	Location       string                      `db:"location" validate:"required"`
-	ChildBirthYear int                         `db:"child_birth_year" validate:"policyDependentChildBirthYear,required_if=Relationship Child"`
+	ID             uuid.UUID                       `db:"id"`
+	PolicyID       uuid.UUID                       `db:"policy_id"`
+	Name           string                          `db:"name" validate:"required"`
+	Relationship   api.PolicyDependentRelationship `db:"relationship" validate:"policyDependentRelationship"`
+	Location       string                          `db:"location" validate:"required"`
+	ChildBirthYear int                             `db:"child_birth_year" validate:"policyDependentChildBirthYear,required_if=Relationship Child"`
 
 	CreatedAt time.Time `db:"created_at"`
 	UpdatedAt time.Time `db:"updated_at"`
@@ -89,9 +78,11 @@ func (p *PolicyDependent) IsActorAllowedTo(tx *pop.Connection, user User, perm P
 
 func ConvertPolicyDependent(tx *pop.Connection, d PolicyDependent) api.PolicyDependent {
 	return api.PolicyDependent{
-		ID:        d.ID,
-		Name:      d.Name,
-		BirthYear: d.ChildBirthYear,
+		ID:             d.ID,
+		Name:           d.Name,
+		Relationship:   d.Relationship,
+		Location:       d.Location,
+		ChildBirthYear: d.ChildBirthYear,
 	}
 }
 

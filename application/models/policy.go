@@ -158,9 +158,11 @@ func (p *Policy) AddDependent(tx *pop.Connection, input api.PolicyDependentInput
 	}
 
 	dependent := PolicyDependent{
-		PolicyID:  p.ID,
-		Name:      input.Name,
-		BirthYear: input.BirthYear,
+		PolicyID:       p.ID,
+		Name:           input.Name,
+		Relationship:   input.Relationship,
+		Location:       input.Location,
+		ChildBirthYear: input.ChildBirthYear,
 	}
 
 	if err := dependent.Create(tx); err != nil {
