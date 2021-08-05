@@ -109,6 +109,7 @@ func App() *buffalo.App {
 
 		app.GET("/", HomeHandler)
 		app.GET("/status", statusHandler)
+		app.GET("/item-categories", itemCategoriesList)
 
 		// users
 		usersGroup := app.Group("/" + domain.TypeUser)

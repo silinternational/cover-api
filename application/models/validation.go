@@ -58,7 +58,7 @@ func validateAppRole(field validator.FieldLevel) bool {
 }
 
 func validateItemCategoryStatus(field validator.FieldLevel) bool {
-	if value, ok := field.Field().Interface().(ItemCategoryStatus); ok {
+	if value, ok := field.Field().Interface().(api.ItemCategoryStatus); ok {
 		_, valid := ValidItemCategoryStatuses[value]
 		return valid
 	}
