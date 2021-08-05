@@ -30,6 +30,11 @@ func AuthZ(next buffalo.Handler) buffalo.Handler {
 		}
 
 		rName, rID, rSub := getResourceIDSubresource(c.Request().URL.Path)
+		if rID == uuid.Nil && rSub != "" {
+			err := fmt.Errorf("invalid resource ID, not a UUID")
+			appErr := api.NewAppError(err, "key", api.CategoryUser)
+			return reportError(c, appErr)
+		}
 
 		var resource models.Authable
 		var isAuthable bool
