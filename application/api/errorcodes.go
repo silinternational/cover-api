@@ -1,11 +1,12 @@
 package api
 
 const (
-	CategoryDatabase  = ErrorCategory("Database")
-	CategoryUser      = ErrorCategory("User") // used for errors related to user input, validation, etc.
-	CategoryForbidden = ErrorCategory("Forbidden")
-	CategoryNotFound  = ErrorCategory("NotFound")
-	CategoryInternal  = ErrorCategory("Internal") // used for internal server errors, not related to bad user input
+	CategoryDatabase     = ErrorCategory("Database")
+	CategoryUser         = ErrorCategory("User") // used for errors related to user input, validation, etc.
+	CategoryForbidden    = ErrorCategory("Forbidden")
+	CategoryUnauthorized = ErrorCategory("Unauthorized")
+	CategoryNotFound     = ErrorCategory("NotFound")
+	CategoryInternal     = ErrorCategory("Internal") // used for internal server errors, not related to bad user input
 )
 
 const (

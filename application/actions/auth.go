@@ -1,6 +1,7 @@
 package actions
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -61,11 +62,8 @@ func setCurrentUser(next buffalo.Handler) buffalo.Handler {
 	return func(c buffalo.Context) error {
 		bearerToken := domain.GetBearerTokenFromRequest(c.Request())
 		if bearerToken == "" {
-			return reportError(c, &api.AppError{
-				HttpStatus: http.StatusUnauthorized,
-				Key:        api.ErrorNotAuthorized,
-				Message:    "no bearer token provided",
-			})
+			err := errors.New("no bearer token provided")
+			return reportError(c, api.NewAppError(err, api.ErrorNotAuthorized, api.CategoryUnauthorized))
 		}
 
 		var userAccessToken models.UserAccessToken
