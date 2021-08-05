@@ -28,7 +28,7 @@ func (ms *ModelSuite) TestPolicyDependent_Validate() {
 				Name:           "John Doe",
 				Relationship:   PolicyDependentRelationshipChild,
 				Location:       "USA",
-				ChildBirthYear: time.Now().UTC().AddDate(-18, 0, 0).Year(),
+				ChildBirthYear: time.Now().UTC().Year() - 18,
 			},
 			wantErr: false,
 		},
@@ -37,7 +37,7 @@ func (ms *ModelSuite) TestPolicyDependent_Validate() {
 			policyDependent: PolicyDependent{
 				Relationship:   PolicyDependentRelationshipChild,
 				Location:       "USA",
-				ChildBirthYear: time.Now().UTC().AddDate(-18, 0, 0).Year(),
+				ChildBirthYear: time.Now().UTC().Year() - 18,
 			},
 			wantErr:  true,
 			errField: "PolicyDependent.Name",
@@ -47,7 +47,7 @@ func (ms *ModelSuite) TestPolicyDependent_Validate() {
 			policyDependent: PolicyDependent{
 				Name:           "Jane Smith",
 				Location:       "USA",
-				ChildBirthYear: time.Now().UTC().AddDate(-18, 0, 0).Year(),
+				ChildBirthYear: time.Now().UTC().Year() - 18,
 			},
 			wantErr:  true,
 			errField: "PolicyDependent.Relationship",
@@ -57,7 +57,7 @@ func (ms *ModelSuite) TestPolicyDependent_Validate() {
 			policyDependent: PolicyDependent{
 				Name:           "Jane Smith",
 				Relationship:   PolicyDependentRelationshipChild,
-				ChildBirthYear: time.Now().UTC().AddDate(-18, 0, 0).Year(),
+				ChildBirthYear: time.Now().UTC().Year() - 18,
 			},
 			wantErr:  true,
 			errField: "PolicyDependent.Location",

@@ -89,7 +89,7 @@ func ConvertPolicyDependent(tx *pop.Connection, d PolicyDependent) api.PolicyDep
 	return api.PolicyDependent{
 		ID:        d.ID,
 		Name:      d.Name,
-		BirthYear: d.BirthYear,
+		BirthYear: d.ChildBirthYear,
 	}
 }
 

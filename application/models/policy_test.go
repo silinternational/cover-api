@@ -110,9 +110,11 @@ func (ms *ModelSuite) TestPolicy_LoadDependents() {
 	MustCreate(ms.DB, &user)
 
 	pu := PolicyDependent{
-		PolicyID:  policy.ID,
-		Name:      rando + "-kiddo",
-		BirthYear: 2000,
+		PolicyID:       policy.ID,
+		Name:           rando + "-kiddo",
+		Relationship:   PolicyDependentRelationshipChild,
+		Location:       "Bahamas",
+		ChildBirthYear: 2000,
 	}
 	MustCreate(ms.DB, &pu)
 
