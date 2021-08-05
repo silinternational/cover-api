@@ -90,9 +90,7 @@ func (as *ActionSuite) Test_ItemsList() {
 			body := res.Body.String()
 			as.Equal(tt.wantStatus, res.Code, "incorrect status code returned, body: %s", body)
 
-			for _, w := range tt.wantInBody {
-				as.Contains(body, w)
-			}
+			as.verifyResponseData(tt.wantInBody, body, "Items List")
 
 			if tt.notWantInBody != "" {
 				as.NotContains(body, tt.notWantInBody)

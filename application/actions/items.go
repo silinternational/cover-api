@@ -15,19 +15,17 @@ func itemsList(c buffalo.Context) error {
 	policy := getReferencedPolicyFromCtx(c)
 	if policy == nil {
 		err := errors.New("policy not found in context")
-		return reportError(c, api.NewAppError(err, api.ErrorGettingPolicyFromContext, api.CategoryInternal))
+		return reportError(c, api.NewAppError(err, api.ErrorPolicyFromContext, api.CategoryInternal))
 
 	}
 
 	err := policy.LoadItems(tx, true)
 	if err != nil {
-		return c.Render(http.StatusInternalServerError, r.JSON(err))
+		appErr := api.NewAppError(err, api.ErrorPolicyLoadingItems, api.CategoryInternal)
+		return reportError(c, appErr)
 	}
 
-	apiItems, err := models.ConvertItems(tx, policy.Items)
-	if err != nil {
-		return c.Render(http.StatusInternalServerError, r.JSON(err))
-	}
+	apiItems := models.ConvertItems(tx, policy.Items)
 
 	return c.Render(http.StatusOK, r.JSON(apiItems))
 }

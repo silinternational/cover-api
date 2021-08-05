@@ -13,11 +13,6 @@ import (
 	"github.com/silinternational/riskman-api/models"
 )
 
-func stringToUUID(input string) uuid.UUID {
-	id, _ := uuid.FromString(input)
-	return id
-}
-
 var _ = grift.Namespace("db", func() {
 	grift.Desc("seed", "Seeds a database")
 	_ = grift.Add("seed", func(c *grift.Context) error {
@@ -109,7 +104,7 @@ func createUserFixtures() ([]*models.User, error) {
 	}
 
 	for i, uu := range userUUIDs {
-		fixUsers[i].ID = stringToUUID(uu)
+		fixUsers[i].ID = uuid.FromStringOrNil(uu)
 		err := models.DB.Create(fixUsers[i])
 		if err != nil {
 			err = fmt.Errorf("error creating user fixture ... %+v\n %v",
@@ -157,7 +152,7 @@ func createPolicyFixtures(fixUsers []*models.User) ([]*models.Policy, error) {
 	for i, uu := range policyUUIDs {
 		user := fixUsers[i]
 		fixPolicies[i] = &models.Policy{
-			ID:          stringToUUID(uu),
+			ID:          uuid.FromStringOrNil(uu),
 			Type:        api.PolicyTypeHousehold,
 			HouseholdID: fmt.Sprintf("HID-%s-%s", user.FirstName, user.LastName),
 		}
@@ -210,7 +205,7 @@ func createCategories() ([]*models.ItemCategory, error) {
 	for i, uu := range itemCatUUIDs {
 
 		fixCats[i] = &models.ItemCategory{
-			ID:             stringToUUID(uu),
+			ID:             uuid.FromStringOrNil(uu),
 			RiskCategoryID: riskCats[i/3].ID,
 			Name:           fmt.Sprintf("ItemCat-%d", i),
 			HelpText:       fmt.Sprintf("This is help text for ItemCat-%d", i),
@@ -254,7 +249,7 @@ func createItemFixtures(fixPolicies []*models.Policy, fixICats []*models.ItemCat
 
 	for i, uu := range itemUUIDs {
 		fixItems[i] = &models.Item{
-			ID:                stringToUUID(uu),
+			ID:                uuid.FromStringOrNil(uu),
 			Name:              fmt.Sprintf("IName-%d", i),
 			CategoryID:        fixICats[i%countICats].ID, // cycle through item categories
 			InStorage:         false,

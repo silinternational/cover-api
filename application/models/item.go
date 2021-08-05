@@ -67,10 +67,7 @@ func (i *Item) IsActorAllowedTo(tx *pop.Connection, user User, perm Permission, 
 		return true
 	}
 
-	if err := i.LoadPolicy(tx, false); err != nil {
-		domain.ErrLogger.Printf("failed to load policy for item: %s", err)
-		return false
-	}
+	i.LoadPolicy(tx, false)
 
 	if err := i.Policy.LoadMembers(tx, false); err != nil {
 		domain.ErrLogger.Printf("failed to load members on policy: %s", err)
@@ -87,36 +84,29 @@ func (i *Item) IsActorAllowedTo(tx *pop.Connection, user User, perm Permission, 
 }
 
 // LoadPolicy - a simple wrapper method for loading the policy
-func (i *Item) LoadPolicy(tx *pop.Connection, reload bool) error {
+func (i *Item) LoadPolicy(tx *pop.Connection, reload bool) {
 	if i.Policy.ID == uuid.Nil || reload {
 		if err := tx.Load(i, "Policy"); err != nil {
-			return err
+			msg := "error loading item policy: " + err.Error()
+			panic(msg)
 		}
 	}
-
-	return nil
 }
 
 // LoadCategory - a simple wrapper method for loading an item category on the struct
-func (i *Item) LoadCategory(tx *pop.Connection, reload bool) error {
+func (i *Item) LoadCategory(tx *pop.Connection, reload bool) {
 	if i.Category.ID == uuid.Nil || reload {
 		if err := tx.Load(i, "Category"); err != nil {
-			return err
+			msg := "error loading item category: " + err.Error()
+			panic(msg)
 		}
 	}
-
-	return nil
 }
 
-func ConvertItem(tx *pop.Connection, item Item) (api.Item, error) {
-	if err := item.LoadCategory(tx, false); err != nil {
-		return api.Item{}, err
-	}
+func ConvertItem(tx *pop.Connection, item Item) api.Item {
+	item.LoadCategory(tx, false)
 
-	iCat, err := ConvertItemCategory(tx, item.Category)
-	if err != nil {
-		return api.Item{}, err
-	}
+	iCat := ConvertItemCategory(tx, item.Category)
 
 	return api.Item{
 		ID:                item.ID,
@@ -135,18 +125,14 @@ func ConvertItem(tx *pop.Connection, item Item) (api.Item, error) {
 		CoverageStartDate: item.CoverageStartDate,
 		CreatedAt:         item.CreatedAt,
 		UpdatedAt:         item.UpdatedAt,
-	}, nil
+	}
 }
 
-func ConvertItems(tx *pop.Connection, items Items) (api.Items, error) {
+func ConvertItems(tx *pop.Connection, items Items) api.Items {
 	apiItems := make(api.Items, len(items))
 	for i, p := range items {
-		var err error
-		apiItems[i], err = ConvertItem(tx, p)
-		if err != nil {
-			return nil, err
-		}
+		apiItems[i] = ConvertItem(tx, p)
 	}
 
-	return apiItems, nil
+	return apiItems
 }
