@@ -57,11 +57,18 @@ const (
 
 	DefaultUIPath = "/home"
 
+	EventPayloadID = "id"
+
 	TypeItem            = "items"
 	TypePolicy          = "policies"
 	TypePolicyDependent = "policy-dependents"
 	TypePolicyUser      = "policy-users"
 	TypeUser            = "users"
+)
+
+// Event Kinds
+const (
+	EventApiUserCreated = "api:user:created"
 )
 
 func getBuffaloContext(ctx context.Context) buffalo.Context {
@@ -80,10 +87,15 @@ var Env struct {
 	ApiBaseURL                 string `required:"true" split_words:"true"`
 	AccessTokenLifetimeSeconds int    `default:"1166400" split_words:"true"` // 13.5 days
 	AppName                    string `default:"riskman" split_words:"true"`
-	SessionSecret              string `required:"true" split_words:"true"`
-	ServerRoot                 string `default:"" split_words:"true"`
-	RollbarToken               string `default:"" split_words:"true"`
-	UIURL                      string `default:"http://missing.ui.url"`
+
+	ListenerDelayMilliseconds int `default:"1000" split_words:"true"`
+	ListenerMaxRetries        int `default:"10" split_words:"true"`
+
+	SessionSecret     string `required:"true" split_words:"true"`
+	ServerRoot        string `default:"" split_words:"true"`
+	RollbarServerRoot string `default:"" split_words:"true"`
+	RollbarToken      string `default:"" split_words:"true"`
+	UIURL             string `default:"http://missing.ui.url"`
 
 	SamlSpEntityId                  string `required:"true" split_words:"true"`
 	SamlAudienceUri                 string `required:"true" split_words:"true"`
@@ -149,7 +161,7 @@ func (e *ErrLogProxy) InitRollbar() {
 		Env.GoEnv,
 		"",
 		"",
-		Env.ServerRoot)
+		Env.RollbarServerRoot)
 }
 
 // NewExtra Sets a new key-value pair in the `extras` entry of the context
@@ -194,7 +206,7 @@ func RollbarMiddleware(next buffalo.Handler) buffalo.Handler {
 			Env.GoEnv,
 			"",
 			"",
-			Env.ServerRoot)
+			Env.RollbarServerRoot)
 		defer client.Close()
 
 		c.Set(ContextKeyRollbar, client)
