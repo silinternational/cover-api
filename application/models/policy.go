@@ -157,3 +157,21 @@ func ConvertPolicies(tx *pop.Connection, ps Policies) (api.Policies, error) {
 
 	return policies, nil
 }
+
+func (p *Policy) AddDependent(tx *pop.Connection, input api.PolicyDependentInput) error {
+	if p == nil {
+		return errors.New("policy is nil in AddDependent")
+	}
+
+	dependent := PolicyDependent{
+		PolicyID:  p.ID,
+		Name:      input.Name,
+		BirthYear: input.BirthYear,
+	}
+
+	if err := dependent.Create(tx); err != nil {
+		return err
+	}
+
+	return nil
+}

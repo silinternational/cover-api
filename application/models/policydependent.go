@@ -39,6 +39,10 @@ func (p *PolicyDependent) FindByID(tx *pop.Connection, id uuid.UUID) error {
 	return tx.Find(p, id)
 }
 
+func (p *PolicyDependent) Create(tx *pop.Connection) error {
+	return create(tx, p)
+}
+
 // IsActorAllowedTo ensure the actor is either an admin, or a member of this policy to perform any permission
 func (p *PolicyDependent) IsActorAllowedTo(tx *pop.Connection, user User, perm Permission, sub SubResource, r *http.Request) bool {
 	if user.IsAdmin() {
