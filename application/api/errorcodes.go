@@ -46,7 +46,9 @@ const (
 	ErrorResourceNotFound  = ErrorKey("ErrorResourceNotFound")
 
 	// Policy
+	ErrorPolicyFromContext        = ErrorKey("ErrorPolicyFromContext")
 	ErrorPolicyNotFound           = ErrorKey("ErrorPolicyNotFound")
+	ErrorPolicyLoadingItems       = ErrorKey("ErrorPolicyLoadingItems")
 	ErrorPolicyUpdateInvalidInput = ErrorKey("ErrorPolicyUpdateInvalidInput")
 
 	// PolicyDependent

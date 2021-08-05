@@ -47,7 +47,7 @@ func (r *ItemCategory) FindByID(tx *pop.Connection, id uuid.UUID) error {
 	return tx.Find(r, id)
 }
 
-func ConvertItemCategory(tx *pop.Connection, ic ItemCategory) (api.ItemCategory, error) {
+func ConvertItemCategory(tx *pop.Connection, ic ItemCategory) api.ItemCategory {
 	return api.ItemCategory{
 		ID:             ic.ID,
 		Name:           ic.Name,
@@ -56,17 +56,13 @@ func ConvertItemCategory(tx *pop.Connection, ic ItemCategory) (api.ItemCategory,
 		AutoApproveMax: ic.AutoApproveMax,
 		CreatedAt:      ic.CreatedAt,
 		UpdatedAt:      ic.UpdatedAt,
-	}, nil
+	}
 }
 
-func ConvertItemCategories(tx *pop.Connection, ics ItemCategories) (api.ItemCategories, error) {
+func ConvertItemCategories(tx *pop.Connection, ics ItemCategories) api.ItemCategories {
 	cats := make(api.ItemCategories, len(ics))
 	for i, ic := range ics {
-		var err error
-		cats[i], err = ConvertItemCategory(tx, ic)
-		if err != nil {
-			return api.ItemCategories{}, err
-		}
+		cats[i] = ConvertItemCategory(tx, ic)
 	}
-	return cats, nil
+	return cats
 }
