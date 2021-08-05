@@ -25,10 +25,10 @@ var ValidPolicyTypes = map[api.PolicyType]struct{}{
 type Policy struct {
 	ID          uuid.UUID      `db:"id"`
 	Type        api.PolicyType `db:"type" validate:"policyType"`
-	HouseholdID string         `db:"household_id"`
-	CostCenter  string         `db:"cost_center"`
-	Account     string         `db:"account"`
-	EntityCode  string         `db:"entity_code"`
+	HouseholdID string         `db:"household_id" validate:"required_if=Type Household"`
+	CostCenter  string         `db:"cost_center" validate:"required_if=Type OU"`
+	Account     string         `db:"account" validate:"required_if=Type OU"`
+	EntityCode  string         `db:"entity_code" validate:"required_if=Type OU"`
 	CreatedAt   time.Time      `db:"created_at"`
 	UpdatedAt   time.Time      `db:"updated_at"`
 
@@ -42,6 +42,16 @@ func (p *Policy) Validate(tx *pop.Connection) (*validate.Errors, error) {
 	return validateModel(p), nil
 }
 
+// Create stores the Policy data as a new record in the database.
+func (p *Policy) Create(tx *pop.Connection) error {
+	return create(tx, p)
+}
+
+// Update writes the Policy data to an existing database record.
+func (p *Policy) Update(tx *pop.Connection) error {
+	return update(tx, p)
+}
+
 func (p *Policy) GetID() uuid.UUID {
 	return p.ID
 }
@@ -51,8 +61,8 @@ func (p *Policy) FindByID(tx *pop.Connection, id uuid.UUID) error {
 }
 
 // IsActorAllowedTo ensure the actor is either an admin, or a member of this policy to perform any permission
-func (p *Policy) IsActorAllowedTo(tx *pop.Connection, user User, perm Permission, sub SubResource, r *http.Request) bool {
-	if user.IsAdmin() || perm == PermissionList {
+func (p *Policy) IsActorAllowedTo(tx *pop.Connection, actor User, perm Permission, sub SubResource, r *http.Request) bool {
+	if actor.IsAdmin() || perm == PermissionList {
 		return true
 	}
 
@@ -62,7 +72,7 @@ func (p *Policy) IsActorAllowedTo(tx *pop.Connection, user User, perm Permission
 	}
 
 	for _, m := range p.Members {
-		if m.ID == user.ID {
+		if m.ID == actor.ID {
 			return true
 		}
 	}

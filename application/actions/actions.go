@@ -1,6 +1,7 @@
 package actions
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"runtime"
@@ -10,6 +11,15 @@ import (
 	"github.com/silinternational/riskman-api/api"
 	"github.com/silinternational/riskman-api/domain"
 )
+
+// StrictBind hydrates a struct with values from a POST
+// REMEMBER the request body must have *exported* fields.
+//  Otherwise, this will give an empty result without an error.
+func StrictBind(c buffalo.Context, dest interface{}) error {
+	dec := json.NewDecoder(c.Request().Body)
+	dec.DisallowUnknownFields()
+	return dec.Decode(dest)
+}
 
 // reportError logs an error with details and renders the error with buffalo.Render.
 // If the HTTP status code provided is in the 300 family, buffalo.Redirect is used instead.
