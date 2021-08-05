@@ -97,15 +97,15 @@ var Env struct {
 	RollbarToken      string `default:"" split_words:"true"`
 	UIURL             string `default:"http://missing.ui.url"`
 
-	SamlSpEntityId                  string `required:"true" split_words:"true"`
-	SamlAudienceUri                 string `required:"true" split_words:"true"`
-	SamlIdpEntityId                 string `required:"true" split_words:"true"`
-	SamlIdpCert                     string `required:"true" split_words:"true"`
-	SamlSpCert                      string `required:"true" split_words:"true"`
-	SamlSpPrivateKey                string `required:"true" split_words:"true"`
-	SamlAssertionConsumerServiceUrl string `required:"true" split_words:"true"`
-	SamlSsoURL                      string `required:"true" split_words:"true"`
-	SamlSloURL                      string `required:"true" split_words:"true"`
+	SamlSpEntityId                  string `default:"" split_words:"true"`
+	SamlAudienceUri                 string `default:"" split_words:"true"`
+	SamlIdpEntityId                 string `default:"" split_words:"true"`
+	SamlIdpCert                     string `default:"" split_words:"true"`
+	SamlSpCert                      string `default:"" split_words:"true"`
+	SamlSpPrivateKey                string `default:"" split_words:"true"`
+	SamlAssertionConsumerServiceUrl string `default:"" split_words:"true"`
+	SamlSsoURL                      string `default:"" split_words:"true"`
+	SamlSloURL                      string `default:"" split_words:"true"`
 	SamlCheckResponseSigning        bool   `default:"true" split_words:"true"`
 	SamlSignRequest                 bool   `default:"true" split_words:"true"`
 	SamlRequireEncryptedAssertion   bool   `default:"true" split_words:"true"`
