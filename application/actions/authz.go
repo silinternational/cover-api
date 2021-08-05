@@ -1,4 +1,4 @@
-package middleware
+package actions
 
 import (
 	"fmt"
@@ -7,6 +7,7 @@ import (
 
 	"github.com/gobuffalo/buffalo"
 	"github.com/gofrs/uuid"
+	"github.com/silinternational/riskman-api/api"
 
 	"github.com/silinternational/riskman-api/domain"
 	"github.com/silinternational/riskman-api/models"
@@ -42,8 +43,12 @@ func AuthZ(next buffalo.Handler) buffalo.Handler {
 
 		if rID != uuid.Nil {
 			if err := resource.FindByID(tx, rID); err != nil {
-				// TODO: this perhaps should return a 404, or just pass the error along based on api.AppError
-				return c.Error(http.StatusInternalServerError, fmt.Errorf("failed to load resource: %s", err))
+				err = fmt.Errorf("failed to load resource: %s", err)
+				appErr := api.NewAppError(err, "key", api.CategoryNotFound)
+				if domain.IsOtherThanNoRows(err) {
+					appErr.Category = api.CategoryInternal
+				}
+				return reportError(c, appErr)
 			}
 		}
 

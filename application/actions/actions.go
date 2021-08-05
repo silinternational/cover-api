@@ -7,6 +7,7 @@ import (
 	"runtime"
 
 	"github.com/gobuffalo/buffalo"
+
 	"github.com/silinternational/riskman-api/api"
 	"github.com/silinternational/riskman-api/domain"
 )
@@ -47,7 +48,9 @@ func reportError(c buffalo.Context, err error) error {
 
 	// clear out debugging info if not in development or test
 	if domain.Env.GoEnv == "development" || domain.Env.GoEnv == "test" {
-		appErr.DebugMsg = appErr.Err.Error()
+		if appErr.Err != nil {
+			appErr.DebugMsg = appErr.Err.Error()
+		}
 	} else {
 		appErr.Extras = map[string]interface{}{}
 	}
@@ -68,23 +71,12 @@ func reportErrorAndClearSession(c buffalo.Context, err *api.AppError) error {
 	return reportError(c, err)
 }
 
-func httpStatusForErrCategory(cat api.ErrorCategory) int {
-	switch cat {
-	case api.CategoryInternal, api.CategoryDatabase:
-		return http.StatusInternalServerError
-	case api.CategoryForbidden, api.CategoryNotFound:
-		return http.StatusNotFound
-	}
-	return http.StatusBadRequest
-}
-
 func appErrorFromErr(err error) *api.AppError {
 	terr, ok := err.(*api.AppError)
 	if ok {
 		return &api.AppError{
-			HttpStatus: httpStatusForErrCategory(terr.Category),
-			Key:        terr.Key,
-			DebugMsg:   terr.Error(),
+			Key:      terr.Key,
+			DebugMsg: terr.Error(),
 		}
 	}
 
@@ -119,4 +111,8 @@ func GetFunctionName(skip int) string {
 
 	fn := runtime.FuncForPC(pc)
 	return fmt.Sprintf("%s:%d %s", file, line, fn.Name())
+}
+
+func renderOk(c buffalo.Context, v interface{}) error {
+	return c.Render(http.StatusOK, r.JSON(v))
 }
