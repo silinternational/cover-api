@@ -132,6 +132,7 @@ func App() *buffalo.App {
 		policiesGroup.Use(middleware.AuthN)
 		policiesGroup.Use(middleware.AuthZ)
 		policiesGroup.GET("/", policiesList)
+		policiesGroup.PUT("/{id}", policiesUpdate)
 	}
 
 	return app

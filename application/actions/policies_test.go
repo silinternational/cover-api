@@ -94,3 +94,103 @@ func (as *ActionSuite) Test_PoliciesList() {
 		})
 	}
 }
+
+func (as *ActionSuite) Test_PoliciesUpdate() {
+	fixConfig := models.FixturesConfig{
+		NumberOfPolicies:    3,
+		ItemsPerPolicy:      2,
+		UsersPerPolicy:      1,
+		DependentsPerPolicy: 0,
+	}
+
+	fixtures := models.CreatePolicyFixtures(as.DB, fixConfig)
+
+	for _, p := range fixtures.Policies {
+		as.NoError(p.LoadMembers(as.DB, false))
+		as.NoError(p.LoadDependents(as.DB, false))
+	}
+
+	// alias a couple users
+	appAdmin := fixtures.Policies[0].Members[0]
+	normalUser := fixtures.Policies[1].Members[0]
+
+	// change user 0 to an admin
+	appAdmin.AppRole = models.AppRoleAdmin
+	err := appAdmin.Update(as.DB)
+	as.NoError(err, "failed to make first policy user an app admin")
+
+	tests := []struct {
+		name          string
+		actor         models.User
+		policy        models.Policy
+		update        api.PolicyUpdate
+		wantStatus    int
+		wantInBody    string
+		notWantInBody string
+	}{
+		{
+			name:          "empty household id",
+			actor:         normalUser,
+			policy:        fixtures.Policies[1],
+			update:        api.PolicyUpdate{},
+			wantStatus:    http.StatusBadRequest,
+			notWantInBody: fixtures.Policies[1].ID.String(),
+		},
+		{
+			name:   "valid household id",
+			actor:  normalUser,
+			policy: fixtures.Policies[1],
+			update: api.PolicyUpdate{
+				HouseholdID: "654978",
+			},
+			wantStatus: http.StatusOK,
+			wantInBody: fixtures.Policies[1].ID.String(),
+		},
+		{
+			name:   "other person's policy",
+			actor:  normalUser,
+			policy: fixtures.Policies[0],
+			update: api.PolicyUpdate{
+				HouseholdID: "09876",
+			},
+			wantStatus:    http.StatusForbidden,
+			notWantInBody: fixtures.Policies[0].ID.String(),
+		},
+		{
+			name:   "admin update other person's policy",
+			actor:  appAdmin,
+			policy: fixtures.Policies[1],
+			update: api.PolicyUpdate{
+				HouseholdID: "998877",
+			},
+			wantStatus: http.StatusOK,
+			wantInBody: fixtures.Policies[1].ID.String(),
+		},
+	}
+
+	for _, tt := range tests {
+		as.T().Run(tt.name, func(t *testing.T) {
+			req := as.JSON("/policies/" + tt.policy.ID.String())
+			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
+			req.Headers["content-type"] = "application/json"
+			res := req.Put(tt.update)
+
+			body := res.Body.String()
+			as.Equal(tt.wantStatus, res.Code, "incorrect status code returned, body: %s", body)
+			if tt.wantInBody != "" {
+				as.Contains(body, tt.wantInBody)
+			}
+			if tt.notWantInBody != "" {
+				as.NotContains(body, tt.notWantInBody)
+			}
+
+			if res.Code != http.StatusOK {
+				return
+			}
+			fmt.Println(body)
+			var policy api.Policy
+			as.NoError(json.Unmarshal([]byte(body), &policy))
+			as.Equal(tt.update.HouseholdID, policy.HouseholdID)
+		})
+	}
+}
