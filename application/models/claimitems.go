@@ -74,18 +74,18 @@ func (c *ClaimItem) IsActorAllowedTo(tx *pop.Connection, user User, perm Permiss
 	}
 
 	if err := c.LoadItem(tx, false); err != nil {
-		domain.ErrLogger.Printf("failed to load item for claim item: %s", err)
+		domain.ErrLogger.Printf("failed to load Item for ClaimItem: %s", err)
 		return false
 	}
 
 	var policy Policy
 	if err := policy.FindByID(tx, c.Item.PolicyID); err != nil {
-		domain.ErrLogger.Printf("failed to load policy for dependent: %s", err)
+		domain.ErrLogger.Printf("failed to load Policy for ClaimItem: %s", err)
 		return false
 	}
 
 	if err := policy.LoadMembers(tx, false); err != nil {
-		domain.ErrLogger.Printf("failed to load members on policy: %s", err)
+		domain.ErrLogger.Printf("failed to load Members on Policy: %s", err)
 		return false
 	}
 
