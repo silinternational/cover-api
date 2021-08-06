@@ -38,16 +38,17 @@ type Claim struct {
 	EventType        api.ClaimEventType `db:"event_type" validate:"claimEventType,required_unless=Status Draft"`
 	EventDescription string             `db:"event_description" validate:"required_unless=Status Draft"`
 	Status           api.ClaimStatus    `db:"status" validate:"claimStatus"`
-	ReviewDate       time.Time          `db:"review_date"`
+	ReviewDate       nulls.Time         `db:"review_date"`
 	ReviewerID       nulls.UUID         `db:"reviewer_id"`
 	PaymentDate      nulls.Time         `db:"payment_date"`
 	TotalPayout      int                `db:"total_payout"`
 	CreatedAt        time.Time          `db:"created_at"`
 	UpdatedAt        time.Time          `db:"updated_at"`
 
-	Policy   Policy `belongs_to:"policies" validate:"-"`
-	Items    Items  `has_many:"claim_items" validate:"-"`
-	Reviewer User   `belongs_to:"users" validate:"-"`
+	Policy     Policy     `belongs_to:"policies" validate:"-"`
+	ClaimItems ClaimItems `has_many:"claim_items" validate:"-"`
+	Items      Items      `many_to_many:"claim_items" validate:"-"`
+	Reviewer   User       `belongs_to:"users" validate:"-"`
 }
 
 // Validate gets run every time you call a "pop.Validate*" (pop.ValidateAndSave, pop.ValidateAndCreate, pop.ValidateAndUpdate) method.
@@ -81,12 +82,12 @@ func (c *Claim) IsActorAllowedTo(tx *pop.Connection, user User, perm Permission,
 
 	var policy Policy
 	if err := policy.FindByID(tx, c.PolicyID); err != nil {
-		domain.ErrLogger.Printf("failed to load policy for dependent: %s", err)
+		domain.ErrLogger.Printf("failed to load Policy for Claim: %s", err)
 		return false
 	}
 
 	if err := policy.LoadMembers(tx, false); err != nil {
-		domain.ErrLogger.Printf("failed to load members on policy: %s", err)
+		domain.ErrLogger.Printf("failed to load Members on Policy: %s", err)
 		return false
 	}
 
@@ -129,11 +130,9 @@ func ConvertClaim(c Claim) api.Claim {
 		EventDescription: c.EventDescription,
 		Status:           c.Status,
 		ReviewDate:       c.ReviewDate,
-		ReviewerID:       c.ReviewerID.UUID,
-		PaymentDate:      c.PaymentDate.Time,
+		ReviewerID:       c.ReviewerID,
+		PaymentDate:      c.PaymentDate,
 		TotalPayout:      c.TotalPayout,
-		CreatedAt:        c.CreatedAt,
-		UpdatedAt:        c.UpdatedAt,
 	}
 }
 

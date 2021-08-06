@@ -57,6 +57,7 @@ const (
 
 	EventPayloadID = "id"
 
+	TypeClaim           = "claims"
 	TypeItem            = "items"
 	TypePolicy          = "policies"
 	TypePolicyDependent = "policy-dependents"

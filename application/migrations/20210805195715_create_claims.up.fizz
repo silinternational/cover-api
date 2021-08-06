@@ -1,13 +1,13 @@
 create_table("claims") {
 	t.Column("id", "uuid", {primary: true})
 	t.Column("policy_id", "uuid", {})
-	t.Column("event_date", "datetime", {})
+	t.Column("event_date", "timestamp", {})
 	t.Column("event_type", "string", {})
 	t.Column("event_description", "string", {})
 	t.Column("status", "string", {})
-	t.Column("review_date", "datetime", {"null": true})
+	t.Column("review_date", "timestamp", {"null": true})
 	t.Column("reviewer_id", "uuid", {"null": true})
-	t.Column("payment_date", "datetime", {"null": true})
+	t.Column("payment_date", "timestamp", {"null": true})
 	t.Column("total_payout", "int", {})
 	t.Timestamps()
 
@@ -30,7 +30,7 @@ create_table("claim_items") {
 	t.Column("payout_option", "string", {})
 	t.Column("payout_amount", "int", {})
 	t.Column("fmv", "int", {})
-	t.Column("review_date", "datetime", {"null": true})
+	t.Column("review_date", "timestamp", {"null": true})
 	t.Column("reviewer_id", "uuid", {"null": true})
 	t.Timestamps()
 

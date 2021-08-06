@@ -16,7 +16,6 @@ import (
 var _ = grift.Namespace("db", func() {
 	grift.Desc("seed", "Seeds a database")
 	_ = grift.Add("seed", func(c *grift.Context) error {
-
 		countUsers := models.Users{}
 		count, err := models.DB.Count(countUsers)
 		if err != nil {
@@ -49,8 +48,12 @@ var _ = grift.Namespace("db", func() {
 			return err
 		}
 
-		return nil
+		_, err = createClaimFixtures(fixPolicies)
+		if err != nil {
+			return err
+		}
 
+		return nil
 	})
 })
 
@@ -274,4 +277,39 @@ func createItemFixtures(fixPolicies []*models.Policy, fixICats []*models.ItemCat
 	}
 
 	return fixItems, nil
+}
+
+func createClaimFixtures(fixPolicies []*models.Policy) ([]models.Claim, error) {
+	claimUUIDs := []string{
+		"023b599d-dd17-4eb9-9895-da462f52526a",
+		"1eba86ef-e801-4a9c-a500-fe507040d004",
+		"2e1caab9-6ba4-45f5-bb0a-40e9a406e3a0",
+		"37a5b5e4-8e52-4276-be3c-ee3d320ad0dc",
+		"41176ee9-b6cc-4064-9295-8fbab81d8a99",
+	}
+
+	if len(claimUUIDs) > len(fixPolicies) {
+		err := fmt.Errorf("mismatching count of fixtures in createPolicyFixtures. "+
+			"Expected the number of user fixtures to be %d, but got %d",
+			len(claimUUIDs), len(fixPolicies))
+		return nil, err
+	}
+
+	fixClaims := make([]models.Claim, len(fixPolicies))
+
+	for i, uu := range claimUUIDs {
+		fixClaims[i] = models.Claim{
+			ID:       uuid.FromStringOrNil(uu),
+			PolicyID: fixPolicies[i].ID,
+		}
+
+		err := models.DB.Create(&fixClaims[i])
+		if err != nil {
+			err = fmt.Errorf("error creating policy fixture ... %+v\n %v",
+				fixClaims[i], err.Error())
+			return nil, err
+		}
+	}
+
+	return fixClaims, nil
 }
