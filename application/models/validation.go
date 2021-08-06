@@ -16,6 +16,9 @@ var mValidate *validator.Validate
 
 var validationTypes = map[string]func(validator.FieldLevel) bool{
 	"appRole":                       validateAppRole,
+	"claimEventType":                validateClaimEventType,
+	"claimStatus":                   validateClaimStatus,
+	"claimItemStatus":               validateClaimItemStatus,
 	"policyDependentChildBirthYear": validatePolicyDependentChildBirthYear,
 	"policyDependentRelationship":   validatePolicyDependentRelationship,
 	"policyType":                    validatePolicyType,
@@ -42,6 +45,30 @@ func flattenPopErrors(popErrs *validate.Errors) string {
 	}
 	msg := strings.Join(msgs, " |")
 	return msg
+}
+
+func validateClaimEventType(field validator.FieldLevel) bool {
+	if value, ok := field.Field().Interface().(api.ClaimEventType); ok {
+		_, valid := ValidClaimEventTypes[value]
+		return valid
+	}
+	return false
+}
+
+func validateClaimStatus(field validator.FieldLevel) bool {
+	if value, ok := field.Field().Interface().(api.ClaimStatus); ok {
+		_, valid := ValidClaimStatus[value]
+		return valid
+	}
+	return false
+}
+
+func validateClaimItemStatus(field validator.FieldLevel) bool {
+	if value, ok := field.Field().Interface().(api.ClaimItemStatus); ok {
+		_, valid := ValidClaimItemStatus[value]
+		return valid
+	}
+	return false
 }
 
 func validatePolicyDependentChildBirthYear(field validator.FieldLevel) bool {

@@ -1,7 +1,6 @@
 package actions
 
 import (
-	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -10,7 +9,6 @@ import (
 
 	"github.com/gobuffalo/buffalo"
 	"github.com/gobuffalo/buffalo/render"
-	"github.com/gobuffalo/nulls"
 
 	"github.com/silinternational/riskman-api/api"
 	"github.com/silinternational/riskman-api/auth"
@@ -51,70 +49,6 @@ var samlConfig = saml.Config{
 	SignRequest:                 domain.Env.SamlSignRequest,
 	CheckResponseSigning:        domain.Env.SamlCheckResponseSigning,
 	AttributeMap:                nil,
-}
-
-func setCurrentUser(next buffalo.Handler) buffalo.Handler {
-	return func(c buffalo.Context) error {
-		bearerToken := domain.GetBearerTokenFromRequest(c.Request())
-		if bearerToken == "" {
-			err := errors.New("no bearer token provided")
-			return reportError(c, api.NewAppError(err, api.ErrorNotAuthorized, api.CategoryUnauthorized))
-		}
-
-		var userAccessToken models.UserAccessToken
-		tx := models.Tx(c)
-		err := userAccessToken.FindByBearerToken(tx, bearerToken)
-		if err != nil {
-			if domain.IsOtherThanNoRows(err) {
-				domain.Error(c, err.Error())
-			}
-			return reportError(c, &api.AppError{
-				HttpStatus: http.StatusUnauthorized,
-				Key:        api.ErrorNotAuthorized,
-				DebugMsg:   "invalid bearer token",
-			})
-		}
-
-		isExpired, err := userAccessToken.DeleteIfExpired(tx)
-		if err != nil {
-			domain.Error(c, err.Error())
-		}
-
-		if isExpired {
-			return reportError(c, &api.AppError{
-				HttpStatus: http.StatusUnauthorized,
-				Key:        api.ErrorNotAuthorized,
-				DebugMsg:   "expired bearer token",
-			})
-		}
-
-		user, err := userAccessToken.GetUser(tx)
-		if err != nil {
-			newExtra(c, "tokenID", userAccessToken.ID)
-			return reportError(c, &api.AppError{
-				HttpStatus: http.StatusInternalServerError,
-				Key:        api.ErrorQueryFailure,
-				DebugMsg:   "error finding user by access token, " + err.Error(),
-			})
-		}
-
-		userAccessToken.LastUsedAt = nulls.NewTime(time.Now().UTC())
-		if err := userAccessToken.Save(tx); err != nil {
-			domain.Error(c, "error saving userAccessToken with new LastUsedAt value: "+err.Error(), nil)
-		}
-
-		c.Set(domain.ContextKeyCurrentUser, user)
-
-		// set person on rollbar session
-		domain.RollbarSetPerson(c, user.ID.String(), user.FirstName, user.LastName, user.Email)
-		msg := fmt.Sprintf("user %s authenticated with bearer token from ip %s", user.Email, c.Request().RemoteAddr)
-		domain.NewExtra(c, "user_id", user.ID)
-		domain.NewExtra(c, "email", user.Email)
-		domain.NewExtra(c, "ip", c.Request().RemoteAddr)
-		domain.Info(c, msg)
-
-		return next(c)
-	}
 }
 
 func authRequest(c buffalo.Context) error {

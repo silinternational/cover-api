@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/gobuffalo/events"
+	"github.com/gobuffalo/nulls"
 	"github.com/gobuffalo/pop/v5"
 	"github.com/gobuffalo/validate/v3"
 	"github.com/gofrs/uuid"
@@ -84,7 +85,7 @@ func (u *User) FindByStaffID(tx *pop.Connection, id string) error {
 func (u *User) IsActorAllowedTo(tx *pop.Connection, actor User, p Permission, sub SubResource, req *http.Request) bool {
 	switch p {
 	case PermissionView:
-		return true
+		return actor.IsAdmin() || actor.ID.String() == u.ID.String()
 	case PermissionList, PermissionCreate, PermissionDelete:
 		return actor.IsAdmin()
 	case PermissionUpdate:
@@ -149,11 +150,12 @@ func (u *User) CreateAccessToken(tx *pop.Connection, clientID string) (UserAcces
 	return uat, nil
 }
 
-func (u *User) LoadPolicies(tx *pop.Connection, reload bool) error {
+func (u *User) LoadPolicies(tx *pop.Connection, reload bool) {
 	if len(u.Policies) == 0 || reload {
-		return tx.Load(u, "Policies")
+		if err := tx.Load(u, "Policies"); err != nil {
+			panic("failed to load User Policies " + err.Error())
+		}
 	}
-	return nil
 }
 
 func ConvertPolicyMember(tx *pop.Connection, u User) (api.PolicyMember, error) {
@@ -207,4 +209,31 @@ func (u *User) CreateInitialPolicy(tx *pop.Connection) error {
 		return errors.New("unable to create policy-user in CreateInitialPolicy: " + err.Error())
 	}
 	return nil
+}
+
+func (u *Users) GetAll(tx *pop.Connection) error {
+	return tx.All(u)
+}
+
+func ConvertUsers(in Users) api.Users {
+	out := make(api.Users, len(in))
+	for i := range in {
+		out[i] = ConvertUser(in[i])
+	}
+	return out
+}
+
+func ConvertUser(u User) api.User {
+	// TODO: provide more than one policy
+	var policyID nulls.UUID
+	if len(u.Policies) > 0 {
+		policyID = nulls.NewUUID(u.Policies[0].ID)
+	}
+	return api.User{
+		ID:        u.ID,
+		Email:     u.Email,
+		FirstName: u.FirstName,
+		LastName:  u.LastName,
+		PolicyID:  policyID,
+	}
 }

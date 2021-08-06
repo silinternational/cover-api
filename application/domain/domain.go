@@ -94,7 +94,6 @@ var Env struct {
 	ListenerMaxRetries        int `default:"10" split_words:"true"`
 
 	SessionSecret     string `required:"true" split_words:"true"`
-	ServerRoot        string `default:"" split_words:"true"`
 	RollbarServerRoot string `default:"" split_words:"true"`
 	RollbarToken      string `default:"" split_words:"true"`
 	UIURL             string `default:"http://missing.ui.url"`

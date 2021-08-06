@@ -9,6 +9,7 @@ import (
 	"github.com/silinternational/riskman-api/domain"
 
 	"github.com/gobuffalo/buffalo"
+
 	"github.com/silinternational/riskman-api/api"
 	"github.com/silinternational/riskman-api/models"
 )
@@ -28,9 +29,7 @@ func itemsList(c buffalo.Context) error {
 		return reportError(c, appErr)
 	}
 
-	apiItems := models.ConvertItems(tx, policy.Items)
-
-	return c.Render(http.StatusOK, r.JSON(apiItems))
+	return renderOk(c, models.ConvertItems(tx, policy.Items))
 }
 
 func itemsAdd(c buffalo.Context) error {

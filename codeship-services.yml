@@ -11,7 +11,6 @@ app:
     ADDR: 0.0.0.0
     HOST: http://riskman.local:3000
     PORT: 3000
-    UI_URL: http://riskman.local:5000
     AWS_ACCESS_KEY_ID: abc123
     AWS_SECRET_ACCESS_KEY: abcd1234
     DOCKER_IP: testdb
