@@ -10,7 +10,6 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/silinternational/riskman-api/api"
-	"github.com/silinternational/riskman-api/domain"
 )
 
 type Policies []Policy
@@ -64,10 +63,7 @@ func (p *Policy) IsActorAllowedTo(tx *pop.Connection, actor User, perm Permissio
 		return true
 	}
 
-	if err := p.LoadMembers(tx, false); err != nil {
-		domain.ErrLogger.Printf("failed to load members on policy: %s", err)
-		return false
-	}
+	p.LoadMembers(tx, false)
 
 	for _, m := range p.Members {
 		if m.ID == actor.ID {
@@ -79,12 +75,12 @@ func (p *Policy) IsActorAllowedTo(tx *pop.Connection, actor User, perm Permissio
 }
 
 // LoadMembers - a simple wrapper method for loading members on the struct
-func (p *Policy) LoadMembers(tx *pop.Connection, reload bool) error {
+func (p *Policy) LoadMembers(tx *pop.Connection, reload bool) {
 	if len(p.Members) == 0 || reload {
-		return tx.Load(p, "Members")
+		if err := tx.Load(p, "Members"); err != nil {
+			panic("database error loading Policy.Members, " + err.Error())
+		}
 	}
-
-	return nil
 }
 
 // LoadDependents - a simple wrapper method for loading dependents on the struct
@@ -109,9 +105,7 @@ func (p *Policy) LoadItems(tx *pop.Connection, reload bool) error {
 }
 
 func ConvertPolicy(tx *pop.Connection, p Policy) (api.Policy, error) {
-	if err := p.LoadMembers(tx, false); err != nil {
-		return api.Policy{}, err
-	}
+	p.LoadMembers(tx, false)
 	p.LoadDependents(tx, false)
 
 	members, err := ConvertPolicyMembers(tx, p.Members)

@@ -12,12 +12,10 @@ import (
 	"github.com/silinternational/riskman-api/domain"
 )
 
-var (
-	ValidPolicyDependentRelationships = map[api.PolicyDependentRelationship]struct{}{
-		api.PolicyDependentRelationshipSpouse: {},
-		api.PolicyDependentRelationshipChild:  {},
-	}
-)
+var ValidPolicyDependentRelationships = map[api.PolicyDependentRelationship]struct{}{
+	api.PolicyDependentRelationshipSpouse: {},
+	api.PolicyDependentRelationshipChild:  {},
+}
 
 type PolicyDependents []PolicyDependent
 
@@ -62,10 +60,7 @@ func (p *PolicyDependent) IsActorAllowedTo(tx *pop.Connection, user User, perm P
 		return false
 	}
 
-	if err := policy.LoadMembers(tx, false); err != nil {
-		domain.ErrLogger.Printf("failed to load members on policy: %s", err)
-		return false
-	}
+	policy.LoadMembers(tx, false)
 
 	for _, m := range policy.Members {
 		if m.ID == user.ID {

@@ -230,10 +230,11 @@ func ConvertUser(u User) api.User {
 		policyID = nulls.NewUUID(u.Policies[0].ID)
 	}
 	return api.User{
-		ID:        u.ID,
-		Email:     u.Email,
-		FirstName: u.FirstName,
-		LastName:  u.LastName,
-		PolicyID:  policyID,
+		ID:           u.ID,
+		Email:        u.Email,
+		FirstName:    u.FirstName,
+		LastName:     u.LastName,
+		LastLoginUTC: u.LastLoginUTC,
+		PolicyID:     policyID,
 	}
 }

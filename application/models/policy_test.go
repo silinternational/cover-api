@@ -86,8 +86,7 @@ func (ms *ModelSuite) TestPolicy_LoadMembers() {
 	}
 	MustCreate(ms.DB, &pu)
 
-	err := policy.LoadMembers(ms.DB, false)
-	ms.Nil(err)
+	policy.LoadMembers(ms.DB, false)
 	ms.Len(policy.Members, 1)
 }
 
