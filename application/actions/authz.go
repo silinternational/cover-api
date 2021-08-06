@@ -30,8 +30,8 @@ func AuthZ(next buffalo.Handler) buffalo.Handler {
 			return reportError(c, api.NewAppError(err, api.ErrorNotAuthorized, api.CategoryUnauthorized))
 		}
 
-		rName, rID, rSub := getResourceIDSubresource(c.Request().URL.Path)
-		if rID == uuid.Nil && rSub != "" {
+		rName, rID, rSub, partsCount := getResourceIDSubresource(c.Request().URL.Path)
+		if rID == uuid.Nil && partsCount > 1 {
 			err := fmt.Errorf("invalid resource ID, not a UUID")
 			appErr := api.NewAppError(err, api.ErrorInvalidResourceID, api.CategoryUser)
 			return reportError(c, appErr)
@@ -110,30 +110,31 @@ func limitedRequest(req *http.Request) *http.Request {
 	}
 }
 
-func getResourceIDSubresource(path string) (string, uuid.UUID, string) {
-	resource, id, sub := "", uuid.Nil, ""
+func getResourceIDSubresource(path string) (string, uuid.UUID, string, int) {
+	resource, id, sub, partsCount := "", uuid.Nil, "", 0
 
 	if path == "" {
-		return resource, id, sub
+		return resource, id, sub, partsCount
 	}
 
 	cleanPath := strings.TrimPrefix(path, "/")
 	cleanPath = strings.TrimSuffix(cleanPath, "/")
 	pathParts := strings.Split(cleanPath, "/")
+	partsCount = len(pathParts)
 
-	if len(pathParts) == 0 {
-		return resource, id, sub
+	if partsCount == 0 {
+		return resource, id, sub, partsCount
 	}
 
 	resource = pathParts[0]
 
-	if len(pathParts) > 1 {
+	if partsCount > 1 {
 		id = uuid.FromStringOrNil(pathParts[1])
 	}
 
-	if len(pathParts) > 2 && id != uuid.Nil {
+	if partsCount > 2 && id != uuid.Nil {
 		sub = pathParts[2]
 	}
 
-	return resource, id, sub
+	return resource, id, sub, partsCount
 }
