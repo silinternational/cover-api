@@ -84,10 +84,7 @@ func (c *ClaimItem) IsActorAllowedTo(tx *pop.Connection, user User, perm Permiss
 		return false
 	}
 
-	if err := policy.LoadMembers(tx, false); err != nil {
-		domain.ErrLogger.Printf("failed to load Members on Policy: %s", err)
-		return false
-	}
+	policy.LoadMembers(tx, false)
 
 	for _, m := range policy.Members {
 		if m.ID == user.ID {
