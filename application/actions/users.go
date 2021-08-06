@@ -27,7 +27,16 @@ func usersView(c buffalo.Context) error {
 		err := errors.New("user not found in context")
 		return reportError(c, api.NewAppError(err, "", api.CategoryInternal))
 	}
-	return renderOk(c, models.ConvertUser(*user))
+	return renderUser(c, *user)
+}
+
+func usersMe(c buffalo.Context) error {
+	return renderUser(c, models.CurrentUser(c))
+}
+
+func renderUser(c buffalo.Context, user models.User) error {
+	user.LoadPolicies(models.Tx(c), false)
+	return renderOk(c, models.ConvertUser(user))
 }
 
 // getReferencedUserFromCtx pulls the models.User resource from context that was put there
@@ -39,8 +48,4 @@ func getReferencedUserFromCtx(c buffalo.Context) *models.User {
 		return nil
 	}
 	return user
-}
-
-func usersMe(c buffalo.Context) error {
-	return renderOk(c, models.ConvertUser(models.CurrentUser(c)))
 }

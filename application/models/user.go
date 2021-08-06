@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/gobuffalo/events"
+	"github.com/gobuffalo/nulls"
 	"github.com/gobuffalo/pop/v5"
 	"github.com/gobuffalo/validate/v3"
 	"github.com/gofrs/uuid"
@@ -149,11 +150,12 @@ func (u *User) CreateAccessToken(tx *pop.Connection, clientID string) (UserAcces
 	return uat, nil
 }
 
-func (u *User) LoadPolicies(tx *pop.Connection, reload bool) error {
+func (u *User) LoadPolicies(tx *pop.Connection, reload bool) {
 	if len(u.Policies) == 0 || reload {
-		return tx.Load(u, "Policies")
+		if err := tx.Load(u, "Policies"); err != nil {
+			panic("failed to load User Policies " + err.Error())
+		}
 	}
-	return nil
 }
 
 func ConvertPolicyMember(tx *pop.Connection, u User) (api.PolicyMember, error) {
@@ -222,7 +224,16 @@ func ConvertUsers(in Users) api.Users {
 }
 
 func ConvertUser(u User) api.User {
+	// TODO: provide more than one policy
+	var policyID nulls.UUID
+	if len(u.Policies) > 0 {
+		policyID = nulls.NewUUID(u.Policies[0].ID)
+	}
 	return api.User{
-		ID: u.ID,
+		ID:        u.ID,
+		Email:     u.Email,
+		FirstName: u.FirstName,
+		LastName:  u.LastName,
+		PolicyID:  policyID,
 	}
 }
