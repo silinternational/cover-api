@@ -70,6 +70,6 @@ minio:
   image: minio/minio
   command: server /data
   environment:
-    MINIO_ACCESS_KEY: abc123
-    MINIO_SECRET_KEY: abcd1234
+    MINIO_ROOT_USER: abc123
+    MINIO_ROOT_PASSWORD: abcd1234
 
