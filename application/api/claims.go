@@ -3,6 +3,7 @@ package api
 import (
 	"time"
 
+	"github.com/gobuffalo/nulls"
 	"github.com/gofrs/uuid"
 )
 
@@ -34,10 +35,8 @@ type Claim struct {
 	EventType        ClaimEventType `json:"event_type"`
 	EventDescription string         `json:"event_description"`
 	Status           ClaimStatus    `json:"status"`
-	ReviewDate       time.Time      `json:"review_date,omitempty"`
-	ReviewerID       uuid.UUID      `json:"reviewer_id,omitempty"`
-	PaymentDate      time.Time      `json:"payment_date,omitempty"`
+	ReviewDate       nulls.Time     `json:"review_date,omitempty"`
+	ReviewerID       nulls.UUID     `json:"reviewer_id,omitempty"`
+	PaymentDate      nulls.Time     `json:"payment_date,omitempty"`
 	TotalPayout      int            `json:"total_payout,omitempty"`
-	CreatedAt        time.Time      `json:"created_at"`
-	UpdatedAt        time.Time      `json:"updated_at"`
 }
