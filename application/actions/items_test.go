@@ -154,13 +154,12 @@ func (as *ActionSuite) Test_ItemsAdd() {
 	}
 
 	tests := []struct {
-		name          string
-		actor         models.User
-		policy        models.Policy
-		newItem       api.ItemInput
-		wantStatus    int
-		wantInBody    []string
-		notWantInBody string
+		name       string
+		actor      models.User
+		policy     models.Policy
+		newItem    api.ItemInput
+		wantStatus int
+		wantInBody []string
 	}{
 		{
 			name:       "unauthenticated",
@@ -234,10 +233,6 @@ func (as *ActionSuite) Test_ItemsAdd() {
 
 			as.verifyResponseData(tt.wantInBody, body, "Items Add")
 
-			if tt.notWantInBody != "" {
-				as.NotContains(body, tt.notWantInBody)
-			}
-
 			if res.Code != http.StatusOK {
 				return
 			}
@@ -299,13 +294,12 @@ func (as *ActionSuite) Test_ItemsUpdate() {
 	}
 
 	tests := []struct {
-		name          string
-		actor         models.User
-		oldItem       models.Item
-		newItem       api.ItemInput
-		wantStatus    int
-		wantInBody    []string
-		notWantInBody string
+		name       string
+		actor      models.User
+		oldItem    models.Item
+		newItem    api.ItemInput
+		wantStatus int
+		wantInBody []string
 	}{
 		{
 			name:       "unauthenticated",
@@ -386,10 +380,6 @@ func (as *ActionSuite) Test_ItemsUpdate() {
 			as.Equal(tt.wantStatus, res.Code, "incorrect status code returned, body: %s", body)
 
 			as.verifyResponseData(tt.wantInBody, body, "Items Add")
-
-			if tt.notWantInBody != "" {
-				as.NotContains(body, tt.notWantInBody)
-			}
 
 			if res.Code != http.StatusOK {
 				return
