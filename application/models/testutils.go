@@ -90,6 +90,7 @@ func CreateItemFixtures(tx *pop.Connection, config FixturesConfig) Fixtures {
 	}
 
 	fixtures.Items = items
+	fixtures.ItemCategories = categories
 
 	return fixtures
 }

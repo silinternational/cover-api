@@ -1,6 +1,7 @@
 package actions
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/gobuffalo/buffalo"
@@ -54,6 +55,10 @@ func policiesListMine(c buffalo.Context) error {
 func policiesUpdate(c buffalo.Context) error {
 	tx := models.Tx(c)
 	policy := getReferencedPolicyFromCtx(c)
+	if policy == nil {
+		err := errors.New("policy not found in context")
+		return reportError(c, api.NewAppError(err, api.ErrorPolicyFromContext, api.CategoryInternal))
+	}
 
 	var update api.PolicyUpdate
 	if err := StrictBind(c, &update); err != nil {

@@ -37,11 +37,34 @@ type Item struct {
 	Model             string             `json:"model"`
 	SerialNumber      string             `json:"serial_number"`
 	CoverageAmount    int                `json:"coverage_amount"`
-	PurchaseDate      time.Time          `json:"purchase_date"`
+	PurchaseDate      string             `json:"purchase_date"`
 	CoverageStatus    ItemCoverageStatus `json:"coverage_status"`
-	CoverageStartDate time.Time          `json:"coverage_start_date"`
+	CoverageStartDate string             `json:"coverage_start_date"`
 	CreatedAt         time.Time          `json:"created_at"`
 	UpdatedAt         time.Time          `json:"updated_at"`
 
 	Category ItemCategory `json:"category"`
+}
+
+// ItemAddInput represents payload for adding an item
+// swagger:model
+type ItemAddInput struct {
+	Name           string    `json:"name"`
+	CategoryID     uuid.UUID `json:"category_id"`
+	InStorage      bool      `json:"in_storage"`
+	Country        string    `json:"country"`
+	Description    string    `json:"description"`
+	PolicyID       uuid.UUID `json:"policy_id"`
+	Make           string    `json:"make"`
+	Model          string    `json:"model"`
+	SerialNumber   string    `json:"serial_number"`
+	CoverageAmount int       `json:"coverage_amount"`
+
+	// date (yyyy-mm-dd) of item's purchase
+	PurchaseDate string `json:"purchase_date"`
+
+	CoverageStatus ItemCoverageStatus `json:"coverage_status"`
+
+	// date (yyyy-mm-dd) of item's coverage start date
+	CoverageStartDate string `json:"coverage_start_date"`
 }
