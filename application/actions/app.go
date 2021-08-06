@@ -46,6 +46,8 @@ import (
 	"github.com/silinternational/riskman-api/models"
 )
 
+const idRegex = `/{id:[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-4[a-fA-F0-9]{3}-[8|9|aA|bB][a-fA-F0-9]{3}-[a-fA-F0-9]{12}}`
+
 // ENV is used to help switch settings based on where the
 // application is being run. Default is "development".
 var (
@@ -117,7 +119,7 @@ func App() *buffalo.App {
 		usersGroup.GET("/", usersList)
 		usersGroup.Middleware.Skip(AuthZ, usersMe)
 		usersGroup.GET("/me", usersMe)
-		usersGroup.GET("/{id}", usersView)
+		usersGroup.GET(idRegex, usersView)
 
 		auth := app.Group("/auth")
 		auth.Middleware.Skip(AuthN, authRequest, authCallback, authDestroy)
@@ -133,11 +135,11 @@ func App() *buffalo.App {
 		// policies
 		policiesGroup := app.Group("/" + domain.TypePolicy)
 		policiesGroup.GET("/", policiesList)
-		policiesGroup.GET("/{id}/dependents", dependentsList)
-		policiesGroup.PUT("/{id}", policiesUpdate)
-		policiesGroup.POST("/{id}/dependents", dependentsCreate)
-		policiesGroup.GET("/{id}/items", itemsList)
-		policiesGroup.POST("/{id}/items", itemsAdd)
+		policiesGroup.GET(idRegex+"/dependents", dependentsList)
+		policiesGroup.PUT(idRegex, policiesUpdate)
+		policiesGroup.POST(idRegex+"/dependents", dependentsCreate)
+		policiesGroup.GET(idRegex+"/items", itemsList)
+		policiesGroup.POST(idRegex+"/items", itemsAdd)
 	}
 
 	return app

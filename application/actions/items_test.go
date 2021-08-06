@@ -40,6 +40,7 @@ func (as *ActionSuite) Test_ItemsList() {
 		{
 			name:          "unauthenticated",
 			actor:         models.User{},
+			policy:        models.Policy{ID: domain.GetUUID()},
 			wantStatus:    http.StatusUnauthorized,
 			wantInBody:    []string{api.ErrorNotAuthorized.String()},
 			notWantInBody: item2.ID.String(),
