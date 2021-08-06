@@ -84,7 +84,7 @@ func (u *User) FindByStaffID(tx *pop.Connection, id string) error {
 func (u *User) IsActorAllowedTo(tx *pop.Connection, actor User, p Permission, sub SubResource, req *http.Request) bool {
 	switch p {
 	case PermissionView:
-		return true
+		return actor.IsAdmin() || actor.ID.String() == u.ID.String()
 	case PermissionList, PermissionCreate, PermissionDelete:
 		return actor.IsAdmin()
 	case PermissionUpdate:
@@ -207,4 +207,22 @@ func (u *User) CreateInitialPolicy(tx *pop.Connection) error {
 		return errors.New("unable to create policy-user in CreateInitialPolicy: " + err.Error())
 	}
 	return nil
+}
+
+func (u *Users) GetAll(tx *pop.Connection) error {
+	return tx.All(u)
+}
+
+func ConvertUsers(in Users) api.Users {
+	out := make(api.Users, len(in))
+	for i := range in {
+		out[i] = ConvertUser(in[i])
+	}
+	return out
+}
+
+func ConvertUser(u User) api.User {
+	return api.User{
+		ID: u.ID,
+	}
 }

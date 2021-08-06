@@ -1,23 +1,33 @@
 package actions
 
 import (
-	"net/http"
+	"errors"
 
 	"github.com/gobuffalo/buffalo"
 
+	"github.com/silinternational/riskman-api/api"
 	"github.com/silinternational/riskman-api/domain"
 	"github.com/silinternational/riskman-api/models"
 )
 
 func usersList(c buffalo.Context) error {
-	return c.Render(http.StatusOK, r.JSON(map[string]string{"users": "This is just a stub"}))
+	var users models.Users
+	if err := users.GetAll(models.Tx(c)); err != nil {
+		if domain.IsOtherThanNoRows(err) {
+			return reportError(c, err)
+		}
+		return reportError(c, api.NewAppError(err, api.ErrorNoRows, api.CategoryNotFound))
+	}
+	return renderOk(c, models.ConvertUsers(users))
 }
 
 func usersView(c buffalo.Context) error {
-	if user := getReferencedUserFromCtx(c); user != nil {
-		return c.Render(http.StatusOK, r.JSON(user))
+	user := getReferencedUserFromCtx(c)
+	if user == nil {
+		err := errors.New("user not found in context")
+		return reportError(c, api.NewAppError(err, "", api.CategoryInternal))
 	}
-	return c.Render(http.StatusNotFound, nil)
+	return renderOk(c, models.ConvertUser(*user))
 }
 
 // getReferencedUserFromCtx pulls the models.User resource from context that was put there
@@ -32,5 +42,5 @@ func getReferencedUserFromCtx(c buffalo.Context) *models.User {
 }
 
 func usersMe(c buffalo.Context) error {
-	return c.Render(http.StatusOK, r.JSON(models.CurrentUser(c)))
+	return renderOk(c, models.ConvertUser(models.CurrentUser(c)))
 }
