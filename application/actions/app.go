@@ -125,6 +125,11 @@ func App() *buffalo.App {
 		auth.POST("/callback", authCallback)
 		auth.GET("/logout", authDestroy)
 
+		// claims
+		claimsGroup := app.Group("/" + domain.TypeClaim)
+		claimsGroup.Use(AuthZ)
+		claimsGroup.GET("/", claimsList)
+
 		// policies
 		policiesGroup := app.Group("/" + domain.TypePolicy)
 		policiesGroup.Use(AuthZ)
