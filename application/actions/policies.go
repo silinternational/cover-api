@@ -39,9 +39,7 @@ func policiesListMine(c buffalo.Context) error {
 	tx := models.Tx(c)
 	user := models.CurrentUser(c)
 
-	if err := user.LoadPolicies(tx, false); err != nil {
-		return c.Render(http.StatusInternalServerError, r.JSON(err))
-	}
+	user.LoadPolicies(tx, false)
 
 	apiPolicies, err := models.ConvertPolicies(tx, user.Policies)
 	if err != nil {
