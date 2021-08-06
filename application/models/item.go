@@ -53,6 +53,10 @@ func (i *Item) Validate(tx *pop.Connection) (*validate.Errors, error) {
 	return validateModel(i), nil
 }
 
+func (i *Item) Create(tx *pop.Connection) error {
+	return create(tx, i)
+}
+
 func (i *Item) GetID() uuid.UUID {
 	return i.ID
 }
@@ -120,9 +124,9 @@ func ConvertItem(tx *pop.Connection, item Item) api.Item {
 		Model:             item.Model,
 		SerialNumber:      item.SerialNumber,
 		CoverageAmount:    item.CoverageAmount,
-		PurchaseDate:      item.PurchaseDate,
+		PurchaseDate:      item.PurchaseDate.Format(domain.DateFormat),
 		CoverageStatus:    item.CoverageStatus,
-		CoverageStartDate: item.CoverageStartDate,
+		CoverageStartDate: item.CoverageStartDate.Format(domain.DateFormat),
 		CreatedAt:         item.CreatedAt,
 		UpdatedAt:         item.UpdatedAt,
 	}

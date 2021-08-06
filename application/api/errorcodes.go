@@ -45,6 +45,10 @@ const (
 	ErrorInvalidResourceID = ErrorKey("ErrorInvalidResourceID")
 	ErrorResourceNotFound  = ErrorKey("ErrorResourceNotFound")
 
+	// Item
+	ErrorItemInvalidPurchaseDate      = ErrorKey("ErrorItemInvalidPurchaseDate")
+	ErrorItemInvalidCoverageStartDate = ErrorKey("ErrorItemInvalidCoverageStartDate")
+
 	// Policy
 	ErrorPolicyFromContext        = ErrorKey("ErrorPolicyFromContext")
 	ErrorPolicyNotFound           = ErrorKey("ErrorPolicyNotFound")

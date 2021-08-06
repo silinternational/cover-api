@@ -133,6 +133,7 @@ func App() *buffalo.App {
 		policiesGroup.PUT("/{id}", policiesUpdate)
 		policiesGroup.POST("/{id}/dependents", dependentsCreate)
 		policiesGroup.GET("/{id}/items", itemsList)
+		policiesGroup.POST("/{id}/items", itemsAdd)
 	}
 
 	return app
