@@ -73,10 +73,7 @@ func (i *Item) IsActorAllowedTo(tx *pop.Connection, user User, perm Permission, 
 
 	i.LoadPolicy(tx, false)
 
-	if err := i.Policy.LoadMembers(tx, false); err != nil {
-		domain.ErrLogger.Printf("failed to load members on policy: %s", err)
-		return false
-	}
+	i.Policy.LoadMembers(tx, false)
 
 	for _, m := range i.Policy.Members {
 		if m.ID == user.ID {
@@ -91,8 +88,7 @@ func (i *Item) IsActorAllowedTo(tx *pop.Connection, user User, perm Permission, 
 func (i *Item) LoadPolicy(tx *pop.Connection, reload bool) {
 	if i.Policy.ID == uuid.Nil || reload {
 		if err := tx.Load(i, "Policy"); err != nil {
-			msg := "error loading item policy: " + err.Error()
-			panic(msg)
+			panic("error loading item policy: " + err.Error())
 		}
 	}
 }

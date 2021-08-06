@@ -10,7 +10,6 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/silinternational/riskman-api/api"
-	"github.com/silinternational/riskman-api/domain"
 )
 
 type Policies []Policy
@@ -64,10 +63,7 @@ func (p *Policy) IsActorAllowedTo(tx *pop.Connection, actor User, perm Permissio
 		return true
 	}
 
-	if err := p.LoadMembers(tx, false); err != nil {
-		domain.ErrLogger.Printf("failed to load members on policy: %s", err)
-		return false
-	}
+	p.LoadMembers(tx, false)
 
 	for _, m := range p.Members {
 		if m.ID == actor.ID {
@@ -79,12 +75,12 @@ func (p *Policy) IsActorAllowedTo(tx *pop.Connection, actor User, perm Permissio
 }
 
 // LoadMembers - a simple wrapper method for loading members on the struct
-func (p *Policy) LoadMembers(tx *pop.Connection, reload bool) error {
+func (p *Policy) LoadMembers(tx *pop.Connection, reload bool) {
 	if len(p.Members) == 0 || reload {
-		return tx.Load(p, "Members")
+		if err := tx.Load(p, "Members"); err != nil {
+			panic("database error loading Policy.Members, " + err.Error())
+		}
 	}
-
-	return nil
 }
 
 // LoadDependents - a simple wrapper method for loading dependents on the struct
@@ -100,25 +96,19 @@ func (p *Policy) LoadDependents(tx *pop.Connection, reload bool) {
 }
 
 // LoadItems - a simple wrapper method for loading items on the struct
-func (p *Policy) LoadItems(tx *pop.Connection, reload bool) error {
+func (p *Policy) LoadItems(tx *pop.Connection, reload bool) {
 	if len(p.Items) == 0 || reload {
-		return tx.Load(p, "Items")
+		if err := tx.Load(p, "Items"); err != nil {
+			panic("database error loading Policy.Items, " + err.Error())
+		}
 	}
-
-	return nil
 }
 
-func ConvertPolicy(tx *pop.Connection, p Policy) (api.Policy, error) {
-	if err := p.LoadMembers(tx, false); err != nil {
-		return api.Policy{}, err
-	}
+func ConvertPolicy(tx *pop.Connection, p Policy) api.Policy {
+	p.LoadMembers(tx, false)
 	p.LoadDependents(tx, false)
 
-	members, err := ConvertPolicyMembers(tx, p.Members)
-	if err != nil {
-		return api.Policy{}, err
-	}
-
+	members := ConvertPolicyMembers(tx, p.Members)
 	dependents := ConvertPolicyDependents(tx, p.Dependents)
 
 	return api.Policy{
@@ -132,20 +122,16 @@ func ConvertPolicy(tx *pop.Connection, p Policy) (api.Policy, error) {
 		UpdatedAt:   p.UpdatedAt,
 		Members:     members,
 		Dependents:  dependents,
-	}, nil
+	}
 }
 
-func ConvertPolicies(tx *pop.Connection, ps Policies) (api.Policies, error) {
+func ConvertPolicies(tx *pop.Connection, ps Policies) api.Policies {
 	policies := make(api.Policies, len(ps))
 	for i, p := range ps {
-		var err error
-		policies[i], err = ConvertPolicy(tx, p)
-		if err != nil {
-			return nil, err
-		}
+		policies[i] = ConvertPolicy(tx, p)
 	}
 
-	return policies, nil
+	return policies
 }
 
 func (p *Policy) AddDependent(tx *pop.Connection, input api.PolicyDependentInput) error {
@@ -162,6 +148,21 @@ func (p *Policy) AddDependent(tx *pop.Connection, input api.PolicyDependentInput
 	}
 
 	if err := dependent.Create(tx); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (p *Policy) AddClaim(tx *pop.Connection, input api.ClaimCreateInput) error {
+	if p == nil {
+		return errors.New("policy is nil in AddClaim")
+	}
+
+	claim := CovertClaimCreateInput(input)
+	claim.PolicyID = p.ID
+
+	if err := claim.Create(tx); err != nil {
 		return err
 	}
 

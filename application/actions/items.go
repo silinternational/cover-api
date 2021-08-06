@@ -23,16 +23,12 @@ func itemsList(c buffalo.Context) error {
 		return reportError(c, api.NewAppError(err, api.ErrorPolicyFromContext, api.CategoryInternal))
 	}
 
-	err := policy.LoadItems(tx, true)
-	if err != nil {
-		appErr := api.NewAppError(err, api.ErrorPolicyLoadingItems, api.CategoryInternal)
-		return reportError(c, appErr)
-	}
+	policy.LoadItems(tx, true)
 
 	return renderOk(c, models.ConvertItems(tx, policy.Items))
 }
 
-func itemsAdd(c buffalo.Context) error {
+func itemsCreate(c buffalo.Context) error {
 	tx := models.Tx(c)
 	policy := getReferencedPolicyFromCtx(c)
 	if policy == nil {

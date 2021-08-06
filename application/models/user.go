@@ -153,32 +153,28 @@ func (u *User) CreateAccessToken(tx *pop.Connection, clientID string) (UserAcces
 func (u *User) LoadPolicies(tx *pop.Connection, reload bool) {
 	if len(u.Policies) == 0 || reload {
 		if err := tx.Load(u, "Policies"); err != nil {
-			panic("failed to load User Policies " + err.Error())
+			panic("database error loading User.Policies, " + err.Error())
 		}
 	}
 }
 
-func ConvertPolicyMember(tx *pop.Connection, u User) (api.PolicyMember, error) {
+func ConvertPolicyMember(tx *pop.Connection, u User) api.PolicyMember {
 	return api.PolicyMember{
 		ID:           u.ID,
 		FirstName:    u.FirstName,
 		LastName:     u.LastName,
 		Email:        u.Email,
 		LastLoginUTC: u.LastLoginUTC,
-	}, nil
+	}
 }
 
-func ConvertPolicyMembers(tx *pop.Connection, us Users) (api.PolicyMembers, error) {
+func ConvertPolicyMembers(tx *pop.Connection, us Users) api.PolicyMembers {
 	members := make(api.PolicyMembers, len(us))
 	for i, u := range us {
-		var err error
-		members[i], err = ConvertPolicyMember(tx, u)
-		if err != nil {
-			return api.PolicyMembers{}, err
-		}
+		members[i] = ConvertPolicyMember(tx, u)
 	}
 
-	return members, nil
+	return members
 }
 
 // CreateInitialPolicy is a hack to create an initial policy for a new user

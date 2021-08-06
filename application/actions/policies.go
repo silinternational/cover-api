@@ -28,10 +28,7 @@ func policiesListAll(c buffalo.Context) error {
 		return c.Render(http.StatusInternalServerError, r.JSON(err))
 	}
 
-	apiPolicies, err := models.ConvertPolicies(tx, policies)
-	if err != nil {
-		return c.Render(http.StatusInternalServerError, r.JSON(err))
-	}
+	apiPolicies := models.ConvertPolicies(tx, policies)
 
 	return renderOk(c, apiPolicies)
 }
@@ -42,10 +39,7 @@ func policiesListMine(c buffalo.Context) error {
 
 	user.LoadPolicies(tx, false)
 
-	apiPolicies, err := models.ConvertPolicies(tx, user.Policies)
-	if err != nil {
-		return c.Render(http.StatusInternalServerError, r.JSON(err))
-	}
+	apiPolicies := models.ConvertPolicies(tx, user.Policies)
 
 	return renderOk(c, apiPolicies)
 }
@@ -80,10 +74,7 @@ func policiesUpdate(c buffalo.Context) error {
 		return reportError(c, err)
 	}
 
-	apiPolicy, err := models.ConvertPolicy(tx, *policy)
-	if err != nil {
-		return reportError(c, err)
-	}
+	apiPolicy := models.ConvertPolicy(tx, *policy)
 
 	return renderOk(c, apiPolicy)
 }
