@@ -10,7 +10,13 @@
 ## IDE configuration
 
 ### Custom tags
-Add "development" to the "Custom tags" setting in "Go - Build Tags & Vendoring" section of Goland Preferences. This ensures that the test fixture generation functions in `testutils.go` are not ignored by the IDE.
+Adding the "development" tag ensures that the test fixture generation functions in `testutils.go` are not ignored by the IDE.
+
+#### GoLand
+Add "development" to the "Custom tags" setting in "Go - Build Tags & Vendoring" section of Goland Preferences. 
+
+#### VS Code
+Add "development" to the "Go: Build Tags" setting in VS Code Extension Preferences.
 
 ### Editorconfig
 
