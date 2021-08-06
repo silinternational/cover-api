@@ -46,6 +46,8 @@ import (
 	"github.com/silinternational/riskman-api/models"
 )
 
+const idRegex = `/{id:[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-4[a-fA-F0-9]{3}-[8|9|aA|bB][a-fA-F0-9]{3}-[a-fA-F0-9]{12}}`
+
 // ENV is used to help switch settings based on where the
 // application is being run. Default is "development".
 var (
@@ -129,6 +131,8 @@ func App() *buffalo.App {
 		// claims
 		claimsGroup := app.Group("/" + domain.TypeClaim)
 		claimsGroup.GET("/", claimsList)
+		claimsGroup.GET(idRegex, claimsView)
+		claimsGroup.POST(idRegex, claimsCreate)
 
 		// policies
 		policiesGroup := app.Group("/" + domain.TypePolicy)
