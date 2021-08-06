@@ -125,27 +125,25 @@ func (as *ActionSuite) Test_ItemsAdd() {
 
 	iCat := fixtures.ItemCategories[0]
 
-	badItemDate := api.ItemAddInput{
+	badItemDate := api.ItemInput{
 		Name:       "Item with bad purchase date",
 		CategoryID: domain.GetUUID(),
 	}
 
-	badCatID := api.ItemAddInput{
+	badCatID := api.ItemInput{
 		Name:              "Item with missing category",
 		CategoryID:        domain.GetUUID(),
-		PolicyID:          policy.ID,
 		PurchaseDate:      "2006-01-02",
 		CoverageStartDate: "2006-01-03",
 		CoverageStatus:    api.ItemCoverageStatusDraft,
 	}
 
-	goodItem := api.ItemAddInput{
+	goodItem := api.ItemInput{
 		Name:              "Good Item",
 		CategoryID:        iCat.ID,
 		InStorage:         true,
 		Country:           "Thailand",
 		Description:       "camera",
-		PolicyID:          policy.ID,
 		Make:              "Minolta",
 		Model:             "Max",
 		SerialNumber:      "MM1234",
@@ -159,7 +157,7 @@ func (as *ActionSuite) Test_ItemsAdd() {
 		name          string
 		actor         models.User
 		policy        models.Policy
-		newItem       api.ItemAddInput
+		newItem       api.ItemInput
 		wantStatus    int
 		wantInBody    []string
 		notWantInBody string
@@ -211,6 +209,7 @@ func (as *ActionSuite) Test_ItemsAdd() {
 				`"in_storage":true`,
 				`"country":"` + goodItem.Country,
 				`"description":"` + goodItem.Description,
+				`"policy_id":"` + policy.ID.String(),
 				`"make":"` + goodItem.Make,
 				`"model":"` + goodItem.Model,
 				`"serial_number":"` + goodItem.SerialNumber,
@@ -229,6 +228,159 @@ func (as *ActionSuite) Test_ItemsAdd() {
 			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
 			req.Headers["content-type"] = "application/json"
 			res := req.Post(tt.newItem)
+
+			body := res.Body.String()
+			as.Equal(tt.wantStatus, res.Code, "incorrect status code returned, body: %s", body)
+
+			as.verifyResponseData(tt.wantInBody, body, "Items Add")
+
+			if tt.notWantInBody != "" {
+				as.NotContains(body, tt.notWantInBody)
+			}
+
+			if res.Code != http.StatusOK {
+				return
+			}
+
+			var apiItem api.Item
+			err := json.Unmarshal([]byte(body), &apiItem)
+			as.NoError(err)
+
+			var item models.Item
+			as.NoError(as.DB.Where(`name = ?`, tt.newItem.Name).First(&item),
+				"error finding newly added item.")
+		})
+	}
+}
+
+func (as *ActionSuite) Test_ItemsUpdate() {
+	fixConfig := models.FixturesConfig{
+		NumberOfPolicies:    2,
+		ItemsPerPolicy:      2,
+		UsersPerPolicy:      1,
+		DependentsPerPolicy: 0,
+	}
+
+	fixtures := models.CreateItemFixtures(as.DB, fixConfig)
+
+	oldItem := fixtures.Items[0]
+	policy := fixtures.Policies[0]
+	policyCreator := policy.Members[0]
+	otherUser := fixtures.Policies[1].Members[0]
+
+	iCat := fixtures.ItemCategories[1] // different one
+
+	badItemDate := api.ItemInput{
+		Name:       "Item with bad purchase date",
+		CategoryID: oldItem.CategoryID,
+	}
+
+	badCatID := api.ItemInput{
+		Name:              "Item with missing category",
+		CategoryID:        domain.GetUUID(),
+		PurchaseDate:      "2006-01-02",
+		CoverageStartDate: "2006-01-03",
+		CoverageStatus:    api.ItemCoverageStatusDraft,
+	}
+
+	goodItem := api.ItemInput{
+		Name:              "Good Item",
+		CategoryID:        iCat.ID,
+		InStorage:         true,
+		Country:           "Thailand",
+		Description:       "camera",
+		Make:              "Minolta",
+		Model:             "Max",
+		SerialNumber:      "MM1234",
+		CoverageAmount:    oldItem.CoverageAmount,
+		PurchaseDate:      "2006-01-02",
+		CoverageStatus:    api.ItemCoverageStatusDraft,
+		CoverageStartDate: "2006-01-03",
+	}
+
+	tests := []struct {
+		name          string
+		actor         models.User
+		oldItem       models.Item
+		newItem       api.ItemInput
+		wantStatus    int
+		wantInBody    []string
+		notWantInBody string
+	}{
+		{
+			name:       "unauthenticated",
+			actor:      models.User{},
+			oldItem:    oldItem,
+			wantStatus: http.StatusUnauthorized,
+			wantInBody: []string{api.ErrorNotAuthorized.String(),
+				"no bearer token provided",
+			},
+		},
+		{
+			name:       "unauthorized",
+			actor:      otherUser,
+			oldItem:    oldItem,
+			wantStatus: http.StatusNotFound,
+			wantInBody: []string{"actor not allowed to perform that action on this resource"},
+		},
+		{
+			name:       "bad item id",
+			actor:      policyCreator,
+			oldItem:    models.Item{ID: domain.GetUUID()},
+			wantStatus: http.StatusNotFound,
+			wantInBody: []string{api.ErrorResourceNotFound.String()},
+		},
+		{
+			name:       "has bad purchase date",
+			actor:      policyCreator,
+			oldItem:    oldItem,
+			newItem:    badItemDate,
+			wantStatus: http.StatusBadRequest,
+			wantInBody: []string{
+				api.ErrorItemInvalidPurchaseDate.String(),
+				"failed to parse item purchase date",
+			},
+		},
+		{
+			name:       "has bad category id",
+			actor:      policyCreator,
+			oldItem:    oldItem,
+			newItem:    badCatID,
+			wantStatus: http.StatusBadRequest,
+			wantInBody: []string{api.ErrorQueryFailure.String()},
+		},
+		{
+			name:       "good item",
+			actor:      policyCreator,
+			oldItem:    oldItem,
+			newItem:    goodItem,
+			wantStatus: http.StatusOK,
+			wantInBody: []string{
+				`"name":"` + goodItem.Name,
+				`"category_id":"` + goodItem.CategoryID.String(),
+				`"in_storage":true`,
+				`"country":"` + goodItem.Country,
+				`"description":"` + goodItem.Description,
+				`"policy_id":"` + policy.ID.String(),
+				`"make":"` + goodItem.Make,
+				`"model":"` + goodItem.Model,
+				`"serial_number":"` + goodItem.SerialNumber,
+				// keeps oldItem coverage_amount
+				fmt.Sprintf(`"coverage_amount":%v`, goodItem.CoverageAmount),
+				`"purchase_date":"` + goodItem.PurchaseDate + `"`,
+				`"coverage_status":"` + string(goodItem.CoverageStatus),
+				`"category":{"id":"` + iCat.ID.String(),
+				`"name":"` + iCat.Name,
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		as.T().Run(tt.name, func(t *testing.T) {
+			req := as.JSON("/items/%s", tt.oldItem.ID.String())
+			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
+			req.Headers["content-type"] = "application/json"
+			res := req.Put(tt.newItem)
 
 			body := res.Body.String()
 			as.Equal(tt.wantStatus, res.Code, "incorrect status code returned, body: %s", body)

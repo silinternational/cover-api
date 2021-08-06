@@ -33,6 +33,7 @@ type Item struct {
 	InStorage         bool               `json:"in_storage"`
 	Country           string             `json:"country"`
 	Description       string             `json:"description"`
+	PolicyID          uuid.UUID          `json:"policy_id"`
 	Make              string             `json:"make"`
 	Model             string             `json:"model"`
 	SerialNumber      string             `json:"serial_number"`
@@ -46,19 +47,19 @@ type Item struct {
 	Category ItemCategory `json:"category"`
 }
 
-// ItemAddInput represents payload for adding an item
+// ItemInput represents payload for adding an item
 // swagger:model
-type ItemAddInput struct {
-	Name           string    `json:"name"`
-	CategoryID     uuid.UUID `json:"category_id"`
-	InStorage      bool      `json:"in_storage"`
-	Country        string    `json:"country"`
-	Description    string    `json:"description"`
-	PolicyID       uuid.UUID `json:"policy_id"`
-	Make           string    `json:"make"`
-	Model          string    `json:"model"`
-	SerialNumber   string    `json:"serial_number"`
-	CoverageAmount int       `json:"coverage_amount"`
+type ItemInput struct {
+	Name        string    `json:"name"`
+	CategoryID  uuid.UUID `json:"category_id"`
+	InStorage   bool      `json:"in_storage"`
+	Country     string    `json:"country"`
+	Description string    `json:"description"`
+
+	Make           string `json:"make"`
+	Model          string `json:"model"`
+	SerialNumber   string `json:"serial_number"`
+	CoverageAmount int    `json:"coverage_amount"`
 
 	// date (yyyy-mm-dd) of item's purchase
 	PurchaseDate string `json:"purchase_date"`

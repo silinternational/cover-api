@@ -57,6 +57,10 @@ func (i *Item) Create(tx *pop.Connection) error {
 	return create(tx, i)
 }
 
+func (i *Item) Update(tx *pop.Connection) error {
+	return update(tx, i)
+}
+
 func (i *Item) GetID() uuid.UUID {
 	return i.ID
 }
@@ -120,6 +124,7 @@ func ConvertItem(tx *pop.Connection, item Item) api.Item {
 		InStorage:         item.InStorage,
 		Country:           item.Country,
 		Description:       item.Description,
+		PolicyID:          item.PolicyID,
 		Make:              item.Make,
 		Model:             item.Model,
 		SerialNumber:      item.SerialNumber,
