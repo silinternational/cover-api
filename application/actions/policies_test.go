@@ -193,3 +193,119 @@ func (as *ActionSuite) Test_PoliciesUpdate() {
 		})
 	}
 }
+
+func (as *ActionSuite) Test_PoliciesListMembers() {
+	fixConfig := models.FixturesConfig{
+		NumberOfPolicies:    3,
+		ItemsPerPolicy:      0,
+		UsersPerPolicy:      2,
+		DependentsPerPolicy: 0,
+	}
+
+	fixtures := models.CreatePolicyFixtures(as.DB, fixConfig)
+
+	for _, p := range fixtures.Policies {
+		as.NoError(p.LoadMembers(as.DB, false))
+		p.LoadDependents(as.DB, false)
+	}
+
+	// alias a couple users
+	appAdmin := fixtures.Policies[0].Members[0]
+	normalUser := fixtures.Policies[1].Members[0]
+
+	// change user 0 to an admin
+	appAdmin.AppRole = models.AppRoleAdmin
+	err := appAdmin.Update(as.DB)
+	as.NoError(err, "failed to make first policy user an app admin")
+
+	tests := []struct {
+		name          string
+		actor         models.User
+		policyID      string
+		wantCount     int
+		wantStatus    int
+		wantInBody    string
+		notWantInBody string
+	}{
+		{
+			name:          "unauthenticated",
+			actor:         models.User{},
+			policyID:      fixtures.Policies[0].ID.String(),
+			wantCount:     0,
+			wantStatus:    http.StatusUnauthorized,
+			wantInBody:    "",
+			notWantInBody: fixtures.Policies[0].Members[0].ID.String(),
+		},
+		{
+			name:          "admin",
+			actor:         appAdmin,
+			policyID:      fixtures.Policies[0].ID.String(),
+			wantCount:     fixConfig.UsersPerPolicy,
+			wantStatus:    http.StatusOK,
+			wantInBody:    appAdmin.ID.String(),
+			notWantInBody: normalUser.ID.String(),
+		},
+		{
+			name:          "admin - other user's policy",
+			actor:         appAdmin,
+			policyID:      fixtures.Policies[1].ID.String(),
+			wantCount:     fixConfig.UsersPerPolicy,
+			wantStatus:    http.StatusOK,
+			wantInBody:    normalUser.ID.String(),
+			notWantInBody: appAdmin.ID.String(),
+		},
+		{
+			name:          "user",
+			actor:         normalUser,
+			policyID:      fixtures.Policies[1].ID.String(),
+			wantCount:     fixConfig.UsersPerPolicy,
+			wantStatus:    http.StatusOK,
+			wantInBody:    normalUser.ID.String(),
+			notWantInBody: appAdmin.ID.String(),
+		},
+		{
+			name:          "normal user, other user's policy",
+			actor:         normalUser,
+			policyID:      fixtures.Policies[0].ID.String(),
+			wantCount:     fixConfig.UsersPerPolicy,
+			wantStatus:    http.StatusNotFound,
+			wantInBody:    "",
+			notWantInBody: appAdmin.ID.String(),
+		},
+		{
+			name:          "invalid ID",
+			actor:         normalUser,
+			policyID:      "abc123",
+			wantCount:     fixConfig.UsersPerPolicy,
+			wantStatus:    http.StatusNotFound,
+			wantInBody:    "",
+			notWantInBody: normalUser.ID.String(),
+		},
+	}
+
+	for _, tt := range tests {
+		as.T().Run(tt.name, func(t *testing.T) {
+			req := as.JSON("/policies/" + tt.policyID + "/members")
+			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
+			req.Headers["content-type"] = "application/json"
+			res := req.Get()
+
+			body := res.Body.String()
+			as.Equal(tt.wantStatus, res.Code, "incorrect status code returned, body: %s", body)
+			if tt.wantInBody != "" {
+				as.Contains(body, tt.wantInBody)
+			}
+			if tt.notWantInBody != "" {
+				as.NotContains(body, tt.notWantInBody)
+			}
+
+			if res.Code != http.StatusOK {
+				return
+			}
+			var members api.PolicyMembers
+			err := json.Unmarshal([]byte(body), &members)
+			as.NoError(err)
+			as.Equal(tt.wantCount, len(members))
+		})
+	}
+}

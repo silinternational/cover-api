@@ -88,6 +88,26 @@ func policiesUpdate(c buffalo.Context) error {
 	return renderOk(c, apiPolicy)
 }
 
+func policiesListMembers(c buffalo.Context) error {
+	tx := models.Tx(c)
+	policy := getReferencedPolicyFromCtx(c)
+	if policy == nil {
+		err := errors.New("policy not found in context")
+		return reportError(c, api.NewAppError(err, api.ErrorPolicyFromContext, api.CategoryInternal))
+	}
+
+	if err := policy.LoadMembers(tx, false); err != nil {
+		return reportError(c, api.NewAppError(err, api.ErrorQueryFailure, api.CategoryInternal))
+	}
+
+	members, err := models.ConvertPolicyMembers(tx, policy.Members)
+	if err != nil {
+		return reportError(c, api.NewAppError(err, api.ErrorFailedToConvertToAPIType, api.CategoryInternal))
+	}
+
+	return renderOk(c, members)
+}
+
 // getReferencedPolicyFromCtx pulls the models.Policy resource from context that was put there
 // by the AuthZ middleware
 func getReferencedPolicyFromCtx(c buffalo.Context) *models.Policy {
