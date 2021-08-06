@@ -142,6 +142,7 @@ func App() *buffalo.App {
 		policiesGroup.GET(idRegex+"/items", itemsList)
 		policiesGroup.POST(idRegex+"/items", itemsCreate)
 		policiesGroup.POST(idRegex+"/claims", claimsCreate)
+		policiesGroup.GET(idRegex+"/members", policiesListMembers)
 	}
 
 	return app
