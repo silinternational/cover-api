@@ -81,9 +81,7 @@ func (p *Policy) IsActorAllowedTo(tx *pop.Connection, actor User, perm Permissio
 // LoadMembers - a simple wrapper method for loading members on the struct
 func (p *Policy) LoadMembers(tx *pop.Connection, reload bool) error {
 	if len(p.Members) == 0 || reload {
-		if err := tx.Load(p, "Members"); err != nil {
-			return err
-		}
+		return tx.Load(p, "Members")
 	}
 
 	return nil
@@ -104,9 +102,7 @@ func (p *Policy) LoadDependents(tx *pop.Connection, reload bool) {
 // LoadItems - a simple wrapper method for loading items on the struct
 func (p *Policy) LoadItems(tx *pop.Connection, reload bool) error {
 	if len(p.Items) == 0 || reload {
-		if err := tx.Load(p, "Items"); err != nil {
-			return err
-		}
+		return tx.Load(p, "Items")
 	}
 
 	return nil
