@@ -97,9 +97,10 @@ func App() *buffalo.App {
 		// Log request parameters (filters apply).
 		app.Use(paramlogger.ParameterLogger)
 
-		//  Added for authorization
-		app.Use(AuthN)
+		//  Add authentication and authorization
+		app.Use(AuthN, AuthZ)
 		app.Middleware.Skip(AuthN, HomeHandler, statusHandler)
+		app.Middleware.Skip(AuthZ, HomeHandler, statusHandler)
 
 		// Set the request content type to JSON
 		app.Use(contenttype.Set("application/json"))
@@ -113,7 +114,6 @@ func App() *buffalo.App {
 
 		// users
 		usersGroup := app.Group("/" + domain.TypeUser)
-		usersGroup.Use(AuthZ)
 		usersGroup.GET("/", usersList)
 		usersGroup.Middleware.Skip(AuthZ, usersMe)
 		usersGroup.GET("/me", usersMe)
@@ -121,18 +121,17 @@ func App() *buffalo.App {
 
 		auth := app.Group("/auth")
 		auth.Middleware.Skip(AuthN, authRequest, authCallback, authDestroy)
+		auth.Middleware.Skip(AuthZ, authRequest, authCallback, authDestroy)
 		auth.POST("/login", authRequest)
 		auth.POST("/callback", authCallback)
 		auth.GET("/logout", authDestroy)
 
 		// claims
 		claimsGroup := app.Group("/" + domain.TypeClaim)
-		claimsGroup.Use(AuthZ)
 		claimsGroup.GET("/", claimsList)
 
 		// policies
 		policiesGroup := app.Group("/" + domain.TypePolicy)
-		policiesGroup.Use(AuthZ)
 		policiesGroup.GET("/", policiesList)
 		policiesGroup.GET("/{id}/dependents", dependentsList)
 		policiesGroup.PUT("/{id}", policiesUpdate)
