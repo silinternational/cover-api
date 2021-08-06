@@ -84,7 +84,7 @@ func CreateItemFixtures(tx *pop.Connection, config FixturesConfig) Fixtures {
 			items[idx].CoverageAmount = int(rand.Int31n(100)) + 100
 			items[idx].PurchaseDate = time.Date(2010, 4, 1, 12, 0, 0, 0, time.UTC)
 			items[idx].CoverageStartDate = items[idx].PurchaseDate
-			items[idx].CoverageStatus = ItemCoverageStatusApproved
+			items[idx].CoverageStatus = api.ItemCoverageStatusApproved
 			MustCreate(tx, &items[idx])
 		}
 	}
@@ -203,7 +203,9 @@ func CreatePolicyDependentFixtures(tx *pop.Connection, policy Policy, n int) Fix
 	for i := range policyDependents {
 		policyDependents[i].PolicyID = policy.ID
 		policyDependents[i].Name = randStr(10)
-		policyDependents[i].BirthYear = time.Now().Year() - 18
+		policyDependents[i].Relationship = api.PolicyDependentRelationshipChild
+		policyDependents[i].Location = randStr(10)
+		policyDependents[i].ChildBirthYear = time.Now().Year() - 18
 		MustCreate(tx, &policyDependents[i])
 	}
 
@@ -264,6 +266,14 @@ func DestroyAll() {
 	// delete all ItemCategories
 	var categories ItemCategories
 	destroyTable(&categories)
+
+	// delete all RiskCategories
+	var rCats RiskCategories
+	destroyTable(&rCats)
+
+	// delete all Items
+	var items Items
+	destroyTable(&items)
 }
 
 func destroyTable(i interface{}) {

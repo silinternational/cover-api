@@ -19,9 +19,10 @@ services:
       PORT: 3000
       DATABASE_URL: postgres://riskman:riskman@db:5432/riskman?sslmode=disable
       GO_ENV: development
-      RISKMAN_API_BASE_URL: localhost
+      RISKMAN_API_BASE_URL: http://riskman.local:3000
       RISKMAN_APP_NAME: Riskman
       RISKMAN_SESSION_SECRET: lkndsf98kj4kjbOIhw4kj5h
+      RISKMAN_UI_URL: http://localhost:8081
     depends_on:
       - db
       - minio
@@ -92,8 +93,8 @@ services:
     env_file:
       - test.env
     environment:
-      MINIO_ACCESS_KEY: ${AWS_ACCESS_KEY_ID}
-      MINIO_SECRET_KEY: ${AWS_SECRET_ACCESS_KEY}
+      MINIO_ROOT_USER: ${AWS_ACCESS_KEY_ID}
+      MINIO_ROOT_PASSWORD: ${AWS_SECRET_ACCESS_KEY}
 
   swagger:
     image: quay.io/goswagger/swagger:latest
