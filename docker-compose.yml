@@ -22,7 +22,6 @@ services:
       RISKMAN_API_BASE_URL: http://riskman.local:3000
       RISKMAN_APP_NAME: Riskman
       RISKMAN_SESSION_SECRET: lkndsf98kj4kjbOIhw4kj5h
-      RISKMAN_UI_URL: http://localhost:8081
     depends_on:
       - db
       - minio
