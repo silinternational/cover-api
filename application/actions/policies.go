@@ -96,9 +96,7 @@ func policiesListMembers(c buffalo.Context) error {
 		return reportError(c, api.NewAppError(err, api.ErrorPolicyFromContext, api.CategoryInternal))
 	}
 
-	if err := policy.LoadMembers(tx, false); err != nil {
-		return reportError(c, api.NewAppError(err, api.ErrorQueryFailure, api.CategoryInternal))
-	}
+	policy.LoadMembers(tx, false)
 
 	members, err := models.ConvertPolicyMembers(tx, policy.Members)
 	if err != nil {

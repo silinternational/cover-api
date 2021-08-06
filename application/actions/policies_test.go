@@ -21,7 +21,7 @@ func (as *ActionSuite) Test_PoliciesList() {
 	fixtures := models.CreatePolicyFixtures(as.DB, fixConfig)
 
 	for _, p := range fixtures.Policies {
-		as.NoError(p.LoadMembers(as.DB, false))
+		p.LoadMembers(as.DB, false)
 		p.LoadDependents(as.DB, false)
 	}
 
@@ -106,7 +106,7 @@ func (as *ActionSuite) Test_PoliciesUpdate() {
 	fixtures := models.CreatePolicyFixtures(as.DB, fixConfig)
 
 	for _, p := range fixtures.Policies {
-		as.NoError(p.LoadMembers(as.DB, false))
+		p.LoadMembers(as.DB, false)
 		p.LoadDependents(as.DB, false)
 	}
 
@@ -205,7 +205,7 @@ func (as *ActionSuite) Test_PoliciesListMembers() {
 	fixtures := models.CreatePolicyFixtures(as.DB, fixConfig)
 
 	for _, p := range fixtures.Policies {
-		as.NoError(p.LoadMembers(as.DB, false))
+		p.LoadMembers(as.DB, false)
 		p.LoadDependents(as.DB, false)
 	}
 
