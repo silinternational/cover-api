@@ -98,8 +98,8 @@ func App() *buffalo.App {
 		app.Use(paramlogger.ParameterLogger)
 
 		//  Added for authorization
-		app.Use(setCurrentUser)
-		app.Middleware.Skip(setCurrentUser, HomeHandler, statusHandler)
+		app.Use(AuthN)
+		app.Middleware.Skip(AuthN, HomeHandler, statusHandler)
 
 		// Set the request content type to JSON
 		app.Use(contenttype.Set("application/json"))
@@ -120,7 +120,7 @@ func App() *buffalo.App {
 		usersGroup.GET("/{id}", usersView)
 
 		auth := app.Group("/auth")
-		auth.Middleware.Skip(setCurrentUser, authRequest, authCallback, authDestroy)
+		auth.Middleware.Skip(AuthN, authRequest, authCallback, authDestroy)
 		auth.POST("/login", authRequest)
 		auth.POST("/callback", authCallback)
 		auth.GET("/logout", authDestroy)
