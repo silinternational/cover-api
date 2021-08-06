@@ -131,6 +131,7 @@ func App() *buffalo.App {
 		// claims
 		claimsGroup := app.Group("/" + domain.TypeClaim)
 		claimsGroup.GET("/", claimsList)
+		claimsGroup.GET(idRegex, claimsView)
 
 		// policies
 		policiesGroup := app.Group("/" + domain.TypePolicy)
