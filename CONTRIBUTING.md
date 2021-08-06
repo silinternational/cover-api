@@ -87,6 +87,50 @@ situations. For example:
     }
 ```
 
+
+### Attaching methods to models
+Since all models exist in the same `models` package, any methods not attached to a specific struct could apply to any
+struct unless they are named appropriate. So rather than have methods with names like `UserFindByID` and
+`TeamFindByID`, we attach `FindByID` methods to both `User` and `Team`. This means in order to use
+those methods you must first declare a variable of the right type, then call the method on it and handle errors. For
+example:
+
+```go
+var user models.User
+if err := user.FindByID(id); err != nil {
+    handleErr(err)
+}
+```
+
+### Writing Tests
+We try to write automated tests for everything possible. When deciding whether to test a particular situation in a
+model or action, we typically test everything specific to the model in the model, and then test other behaviours
+through the action. For example test model validation, data formatting, etc. at a model level, and then at an action
+level test authentication, authorization, handling of error conditions, trying to access other user's resources, etc.
+
+#### Fixture data
+To simplify the creation of fixtures we have helper functions in the `models` package that are not built
+if the Go build tag is other than `development`.
+
+## DB Indexes
+When using Buffalo's ORM POP to perform DB migrations, including creating indexes and foreign keys it can be handy to
+be able to look them all up in the database to know the exact names of indexes, especially when needing to write a
+migration to change or remove one. Here is a handy query to see all indexes across all tables in the database:
+
+```sql
+SELECT
+    tablename,
+    indexname,
+    indexdef
+FROM
+    pg_indexes
+WHERE
+    schemaname = 'public'
+ORDER BY
+    tablename,
+    indexname
+```
+
 ### Error handling and presentation
 
 #### REST API responses

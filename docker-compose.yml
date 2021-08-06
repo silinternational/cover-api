@@ -19,10 +19,6 @@ services:
       PORT: 3000
       DATABASE_URL: postgres://riskman:riskman@db:5432/riskman?sslmode=disable
       GO_ENV: development
-      RISKMAN_API_BASE_URL: http://riskman.local:3000
-      RISKMAN_APP_NAME: Riskman
-      RISKMAN_SESSION_SECRET: lkndsf98kj4kjbOIhw4kj5h
-      RISKMAN_UI_URL: http://localhost:8081
     depends_on:
       - db
       - minio
@@ -42,15 +38,6 @@ services:
       HISTCONTROL: ignoreboth:erasedups
       LOG_LEVEL: fatal
       RISKMAN_API_BASE_URL: localhost
-      RISKMAN_SAML_SP_ENTITY_ID: http://example.local:3000
-      RISKMAN_SAML_AUDIENCE_URI: http://example.local:3000
-      RISKMAN_SAML_IDP_ENTITY_ID: our.idp.net
-      RISKMAN_SAML_IDP_CERT: -----BEGIN CERTIFICATE-----\nMIIDXTC...2bb\nPw==\n-----END CERTIFICATE-----\n
-      RISKMAN_SAML_SP_CERT: -----BEGIN CERTIFICATE-----\nMIIDXTC...3cc\nPw==\n-----END CERTIFICATE-----\n
-      RISKMAN_SAML_SP_PRIVATE_KEY: -----BEGIN PRIVATE KEY-----\nMIIG/gIB...OJxmEMBgT\n-----END PRIVATE KEY-----\n
-      RISKMAN_SAML_ASSERTION_CONSUMER_SERVICE_URL: http://example.local:3000/auth/callback
-      RISKMAN_SAML_SSO_URL: https://our.idp.net/saml2/idp/SSOService.php
-      RISKMAN_SAML_SLO_URL: https://our.idp.net/saml2/idp/SingleLogoutService.php
     depends_on:
       - testdb
       - minio
