@@ -11,9 +11,9 @@ create_table("items") {
 	t.Column("model", "string", {})
 	t.Column("serial_number", "string", {})
 	t.Column("coverage_amount", "int", {})
-	t.Column("purchase_date", "datetime", {})
+	t.Column("purchase_date", "timestamp", {})
 	t.Column("coverage_status", "string", {})
-	t.Column("coverage_start_date", "datetime", {})
+	t.Column("coverage_start_date", "timestamp", {})
 	t.Timestamps()
 
 	t.ForeignKey("category_id", {"item_categories": ["id"]}, {})
