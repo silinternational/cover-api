@@ -80,13 +80,17 @@ func (c *Claim) IsActorAllowedTo(tx *pop.Connection, user User, perm Permission,
 		return true
 	}
 
+	if perm == PermissionList {
+		return false // TODO: list only current user's claims
+	}
+
 	if perm == PermissionCreate {
 		return true
 	}
 
 	var policy Policy
 	if err := policy.FindByID(tx, c.PolicyID); err != nil {
-		domain.ErrLogger.Printf("failed to load Policy for Claim: %s", err)
+		domain.ErrLogger.Printf("failed to load Policy %s for Claim: %s", c.PolicyID, err)
 		return false
 	}
 
