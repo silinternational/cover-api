@@ -47,6 +47,15 @@ binary:
   working_dir: /riskman
   command: true
 
+docs:
+  build:
+    image: apidocs
+    context: application
+    dockerfile: Dockerfile-api-docs
+  environment:
+    S3PATH: s3://riskman.gtis.guru/public/api-docs.html
+  encrypted_env_file: .env.encrypted
+
 ecsdeploy:
   image: silintl/ecs-deploy:latest
   encrypted_env_file: .env.encrypted
