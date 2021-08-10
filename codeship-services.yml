@@ -52,8 +52,6 @@ docs:
     image: apidocs
     context: application
     dockerfile: Dockerfile-api-docs
-  environment:
-    S3PATH: s3://riskman.gtis.guru/public/api-docs.html
   encrypted_env_file: .env.encrypted
 
 ecsdeploy:
