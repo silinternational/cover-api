@@ -90,6 +90,23 @@ func itemsUpdate(c buffalo.Context) error {
 	return c.Render(http.StatusOK, r.JSON(output))
 }
 
+func itemsRemove(c buffalo.Context) error {
+	tx := models.Tx(c)
+	item := getReferencedItemFromCtx(c)
+	if item == nil {
+		err := errors.New("item not found in context")
+		return reportError(c, api.NewAppError(err, api.ErrorItemFromContext, api.CategoryInternal))
+	}
+
+	user := models.CurrentUser(c)
+
+	if err := item.SafeDelete(tx, user); err != nil {
+		return reportError(c, err)
+	}
+
+	return c.Render(http.StatusNoContent, nil)
+}
+
 // convertItemApiInput creates a new `Item` from a `ItemInput`.
 func convertItemApiInput(ctx context.Context, input api.ItemInput, policyID uuid.UUID) (models.Item, error) {
 	item := models.Item{}

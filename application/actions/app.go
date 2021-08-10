@@ -147,6 +147,7 @@ func App() *buffalo.App {
 		// item
 		itemsGroup := app.Group("/" + domain.TypeItem)
 		itemsGroup.PUT(idRegex, itemsUpdate)
+		itemsGroup.DELETE(idRegex, itemsRemove)
 	}
 
 	return app

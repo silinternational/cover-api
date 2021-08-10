@@ -395,3 +395,95 @@ func (as *ActionSuite) Test_ItemsUpdate() {
 		})
 	}
 }
+
+func (as *ActionSuite) Test_ItemsRemove() {
+	fixConfig := models.FixturesConfig{
+		NumberOfPolicies:    3,
+		ItemsPerPolicy:      2,
+		UsersPerPolicy:      1,
+		DependentsPerPolicy: 0,
+	}
+
+	fixtures := models.CreateItemFixtures(as.DB, fixConfig)
+
+	item2 := fixtures.Items[2]
+	item3 := fixtures.Items[3]
+
+	adminUser := fixtures.Policies[0].Members[0]
+	adminUser.AppRole = models.AppRoleAdmin
+	as.NoError(as.DB.Save(&adminUser), "failed saving admin user")
+
+	policyOwner := fixtures.Policies[1].Members[0]
+	otherUser := fixtures.Policies[2].Members[0]
+
+	tests := []struct {
+		name       string
+		actor      models.User
+		oldItem    models.Item
+		wantCount  int
+		wantStatus int
+		wantInBody []string
+	}{
+		{
+			name:       "unauthenticated",
+			actor:      models.User{},
+			oldItem:    item2,
+			wantCount:  4,
+			wantStatus: http.StatusUnauthorized,
+			wantInBody: []string{api.ErrorNotAuthorized.String(),
+				"no bearer token provided",
+			},
+		},
+		{
+			name:       "unauthorized",
+			actor:      otherUser,
+			oldItem:    item2,
+			wantCount:  4,
+			wantStatus: http.StatusNotFound,
+			wantInBody: []string{"actor not allowed to perform that action on this resource"},
+		},
+		{
+			name:       "bad item id",
+			actor:      policyOwner,
+			oldItem:    models.Item{ID: domain.GetUUID()},
+			wantStatus: http.StatusNotFound,
+		},
+		{
+			name:       "ok for policy creator",
+			actor:      policyOwner,
+			oldItem:    item2,
+			wantCount:  5,
+			wantStatus: http.StatusNoContent,
+		},
+		{
+			name:       "ok for admin",
+			actor:      adminUser,
+			oldItem:    item3,
+			wantCount:  4,
+			wantStatus: http.StatusNoContent,
+		},
+	}
+
+	for _, tt := range tests {
+		as.T().Run(tt.name, func(t *testing.T) {
+			req := as.JSON("/items/%s", tt.oldItem.ID.String())
+			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
+			req.Headers["content-type"] = "application/json"
+			res := req.Delete()
+
+			body := res.Body.String()
+			as.Equal(tt.wantStatus, res.Code, "incorrect status code returned, body: %s", body)
+
+			if res.Code != http.StatusNoContent {
+				as.verifyResponseData(tt.wantInBody, body, "Items Add")
+				return
+			}
+
+			var dbItems models.Items
+			count, err := as.DB.Count(&dbItems)
+			as.NoError(err)
+
+			as.Equal(tt.wantCount, count, "incorrect number of remaining items")
+		})
+	}
+}

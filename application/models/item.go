@@ -1,6 +1,7 @@
 package models
 
 import (
+	"errors"
 	"net/http"
 	"time"
 
@@ -67,6 +68,24 @@ func (i *Item) GetID() uuid.UUID {
 
 func (i *Item) FindByID(tx *pop.Connection, id uuid.UUID) error {
 	return tx.Find(i, id)
+}
+
+func (i *Item) SafeDelete(tx *pop.Connection, actor User) error {
+	if !i.IsActorAllowedTo(tx, actor, PermissionDelete, "", nil) {
+		return errors.New("actor is not authorized to delete item")
+	}
+
+	clItems := ClaimItems{}
+	clICount, err := tx.Where("item_id = ?", i.ID).Count(&clItems)
+	if err != nil {
+		return err
+	}
+
+	if clICount > 0 {
+		return errors.New("deleting the item is not allowed, since it has an associated claim item.")
+	}
+
+	return tx.Destroy(i)
 }
 
 // IsActorAllowedTo ensure the actor is either an admin, or a member of this policy to perform any permission
