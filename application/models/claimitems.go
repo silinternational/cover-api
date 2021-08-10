@@ -73,10 +73,7 @@ func (c *ClaimItem) IsActorAllowedTo(tx *pop.Connection, user User, perm Permiss
 		return true
 	}
 
-	if err := c.LoadItem(tx, false); err != nil {
-		domain.ErrLogger.Printf("failed to load Item for ClaimItem: %s", err)
-		return false
-	}
+	c.LoadItem(tx, false)
 
 	var policy Policy
 	if err := policy.FindByID(tx, c.Item.PolicyID); err != nil {
@@ -95,25 +92,28 @@ func (c *ClaimItem) IsActorAllowedTo(tx *pop.Connection, user User, perm Permiss
 	return false
 }
 
-func (c *ClaimItem) LoadClaim(tx *pop.Connection, reload bool) error {
+func (c *ClaimItem) LoadClaim(tx *pop.Connection, reload bool) {
 	if c.Claim.ID == uuid.Nil || reload {
-		return tx.Load(c, "Claim")
+		if err := tx.Load(c, "Claim"); err != nil {
+			panic("database error loading ClaimItem.Claim, " + err.Error())
+		}
 	}
-	return nil
 }
 
-func (c *ClaimItem) LoadItem(tx *pop.Connection, reload bool) error {
+func (c *ClaimItem) LoadItem(tx *pop.Connection, reload bool) {
 	if c.Item.ID == uuid.Nil || reload {
-		return tx.Load(c, "Item")
+		if err := tx.Load(c, "Item"); err != nil {
+			panic("database error loading ClaimItem.Item, " + err.Error())
+		}
 	}
-	return nil
 }
 
-func (c *ClaimItem) LoadReviewer(tx *pop.Connection, reload bool) error {
+func (c *ClaimItem) LoadReviewer(tx *pop.Connection, reload bool) {
 	if c.ReviewerID.Valid && (c.Reviewer.ID == uuid.Nil || reload) {
-		return tx.Load(c, "Reviewer")
+		if err := tx.Load(c, "Reviewer"); err != nil {
+			panic("database error loading ClaimItem.Reviewer, " + err.Error())
+		}
 	}
-	return nil
 }
 
 func ConvertClaimItem(c ClaimItem) api.ClaimItem {

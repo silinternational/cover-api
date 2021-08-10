@@ -63,7 +63,7 @@ func CreateTestContext(user User) buffalo.Context {
 }
 
 // CreateItemFixtures generates any number of item records for testing
-// Uses FixturesConfig fields: Polices, DependentsPerPolicy, UsersPerPolicy, ItemsPerPolicy
+// Uses FixturesConfig fields: NumberOfPolices, DependentsPerPolicy, UsersPerPolicy, ItemsPerPolicy
 func CreateItemFixtures(tx *pop.Connection, config FixturesConfig) Fixtures {
 	fixtures := CreatePolicyFixtures(tx, config)
 	policies := fixtures.Policies
@@ -87,6 +87,7 @@ func CreateItemFixtures(tx *pop.Connection, config FixturesConfig) Fixtures {
 			items[idx].CoverageStatus = api.ItemCoverageStatusApproved
 			MustCreate(tx, &items[idx])
 		}
+		policies[i].LoadItems(tx, false)
 	}
 
 	fixtures.Items = items
@@ -145,7 +146,7 @@ func CreateUserFixtures(tx *pop.Connection, n int) Fixtures {
 }
 
 // CreatePolicyFixtures generates any number of policy records and associated policy users
-// Uses FixturesConfig fields: Polices, DependentsPerPolicy, UsersPerPolicy
+// Uses FixturesConfig fields: NumberOfPolicies, DependentsPerPolicy, UsersPerPolicy
 func CreatePolicyFixtures(tx *pop.Connection, config FixturesConfig) Fixtures {
 	var policyUsers PolicyUsers
 	var policyDependents PolicyDependents
@@ -258,6 +259,10 @@ func DestroyAll() {
 	var users Users
 	destroyTable(&users)
 
+	// delete all Claims and ClaimItems
+	var claims Claims
+	destroyTable(&claims)
+
 	// delete all Policies, PolicyUsers, PolicyDependents, PolicyHistory records, and Items
 	var policies Policies
 	destroyTable(&policies)
@@ -269,10 +274,6 @@ func DestroyAll() {
 	// delete all RiskCategories
 	var rCats RiskCategories
 	destroyTable(&rCats)
-
-	// delete all Items
-	var items Items
-	destroyTable(&items)
 }
 
 func destroyTable(i interface{}) {

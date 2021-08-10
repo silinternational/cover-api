@@ -62,4 +62,8 @@ const (
 	// PolicyDependent
 	ErrorPolicyDependentCreateInvalidInput = ErrorKey("ErrorPolicyDependentCreateInvalidInput")
 	ErrorPolicyDependentCreate             = ErrorKey("ErrorPolicyDependentCreate")
+
+	// Claim
+	ErrorClaimCreateInvalidInput = ErrorKey("ErrorClaimCreateInvalidInput")
+	ErrorClaimCreate             = ErrorKey("ErrorClaimCreate")
 )

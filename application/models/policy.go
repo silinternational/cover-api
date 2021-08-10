@@ -29,9 +29,10 @@ type Policy struct {
 	CreatedAt   time.Time      `db:"created_at"`
 	UpdatedAt   time.Time      `db:"updated_at"`
 
+	Claims     Claims           `has_many:"claims"`
 	Dependents PolicyDependents `has_many:"policy_dependents"`
-	Members    Users            `many_to_many:"policy_users"`
 	Items      Items            `has_many:"items"`
+	Members    Users            `many_to_many:"policy_users"`
 }
 
 // Validate gets run every time you call a "pop.Validate*" (pop.ValidateAndSave, pop.ValidateAndCreate, pop.ValidateAndUpdate) method.
@@ -74,11 +75,11 @@ func (p *Policy) IsActorAllowedTo(tx *pop.Connection, actor User, perm Permissio
 	return false
 }
 
-// LoadMembers - a simple wrapper method for loading members on the struct
-func (p *Policy) LoadMembers(tx *pop.Connection, reload bool) {
-	if len(p.Members) == 0 || reload {
-		if err := tx.Load(p, "Members"); err != nil {
-			panic("database error loading Policy.Members, " + err.Error())
+// LoadClaims - a simple wrapper method for loading claims on the struct
+func (p *Policy) LoadClaims(tx *pop.Connection, reload bool) {
+	if len(p.Claims) == 0 || reload {
+		if err := tx.Load(p, "Claims"); err != nil {
+			panic("database error loading Policy.Claims, " + err.Error())
 		}
 	}
 }
@@ -96,24 +97,31 @@ func (p *Policy) LoadDependents(tx *pop.Connection, reload bool) {
 }
 
 // LoadItems - a simple wrapper method for loading items on the struct
-func (p *Policy) LoadItems(tx *pop.Connection, reload bool) error {
+func (p *Policy) LoadItems(tx *pop.Connection, reload bool) {
 	if len(p.Items) == 0 || reload {
-		return tx.Load(p, "Items")
+		if err := tx.Load(p, "Items"); err != nil {
+			panic("database error loading Policy.Items, " + err.Error())
+		}
 	}
-
-	return nil
 }
 
-func ConvertPolicy(tx *pop.Connection, p Policy) (api.Policy, error) {
-	p.LoadMembers(tx, false)
-	p.LoadDependents(tx, false)
-
-	members, err := ConvertPolicyMembers(tx, p.Members)
-	if err != nil {
-		return api.Policy{}, err
+// LoadMembers - a simple wrapper method for loading members on the struct
+func (p *Policy) LoadMembers(tx *pop.Connection, reload bool) {
+	if len(p.Members) == 0 || reload {
+		if err := tx.Load(p, "Members"); err != nil {
+			panic("database error loading Policy.Members, " + err.Error())
+		}
 	}
+}
 
+func ConvertPolicy(tx *pop.Connection, p Policy) api.Policy {
+	p.LoadClaims(tx, true)
+	p.LoadDependents(tx, true)
+	p.LoadMembers(tx, true)
+
+	claims := ConvertClaims(p.Claims)
 	dependents := ConvertPolicyDependents(tx, p.Dependents)
+	members := ConvertPolicyMembers(tx, p.Members)
 
 	return api.Policy{
 		ID:          p.ID,
@@ -124,22 +132,19 @@ func ConvertPolicy(tx *pop.Connection, p Policy) (api.Policy, error) {
 		EntityCode:  p.EntityCode,
 		CreatedAt:   p.CreatedAt,
 		UpdatedAt:   p.UpdatedAt,
-		Members:     members,
+		Claims:      claims,
 		Dependents:  dependents,
-	}, nil
+		Members:     members,
+	}
 }
 
-func ConvertPolicies(tx *pop.Connection, ps Policies) (api.Policies, error) {
+func ConvertPolicies(tx *pop.Connection, ps Policies) api.Policies {
 	policies := make(api.Policies, len(ps))
 	for i, p := range ps {
-		var err error
-		policies[i], err = ConvertPolicy(tx, p)
-		if err != nil {
-			return nil, err
-		}
+		policies[i] = ConvertPolicy(tx, p)
 	}
 
-	return policies, nil
+	return policies
 }
 
 func (p *Policy) AddDependent(tx *pop.Connection, input api.PolicyDependentInput) error {
@@ -156,6 +161,21 @@ func (p *Policy) AddDependent(tx *pop.Connection, input api.PolicyDependentInput
 	}
 
 	if err := dependent.Create(tx); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (p *Policy) AddClaim(tx *pop.Connection, input api.ClaimCreateInput) error {
+	if p == nil {
+		return errors.New("policy is nil in AddClaim")
+	}
+
+	claim := CovertClaimCreateInput(input)
+	claim.PolicyID = p.ID
+
+	if err := claim.Create(tx); err != nil {
 		return err
 	}
 

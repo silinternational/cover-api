@@ -92,8 +92,7 @@ func (i *Item) IsActorAllowedTo(tx *pop.Connection, user User, perm Permission, 
 func (i *Item) LoadPolicy(tx *pop.Connection, reload bool) {
 	if i.Policy.ID == uuid.Nil || reload {
 		if err := tx.Load(i, "Policy"); err != nil {
-			msg := "error loading item policy: " + err.Error()
-			panic(msg)
+			panic("error loading item policy: " + err.Error())
 		}
 	}
 }

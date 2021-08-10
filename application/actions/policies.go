@@ -28,10 +28,7 @@ func policiesListAll(c buffalo.Context) error {
 		return c.Render(http.StatusInternalServerError, r.JSON(err))
 	}
 
-	apiPolicies, err := models.ConvertPolicies(tx, policies)
-	if err != nil {
-		return c.Render(http.StatusInternalServerError, r.JSON(err))
-	}
+	apiPolicies := models.ConvertPolicies(tx, policies)
 
 	return renderOk(c, apiPolicies)
 }
@@ -42,10 +39,7 @@ func policiesListMine(c buffalo.Context) error {
 
 	user.LoadPolicies(tx, false)
 
-	apiPolicies, err := models.ConvertPolicies(tx, user.Policies)
-	if err != nil {
-		return c.Render(http.StatusInternalServerError, r.JSON(err))
-	}
+	apiPolicies := models.ConvertPolicies(tx, user.Policies)
 
 	return renderOk(c, apiPolicies)
 }
@@ -80,12 +74,7 @@ func policiesUpdate(c buffalo.Context) error {
 		return reportError(c, err)
 	}
 
-	apiPolicy, err := models.ConvertPolicy(tx, *policy)
-	if err != nil {
-		return reportError(c, err)
-	}
-
-	return renderOk(c, apiPolicy)
+	return renderOk(c, models.ConvertPolicy(tx, *policy))
 }
 
 func policiesListMembers(c buffalo.Context) error {
@@ -98,12 +87,7 @@ func policiesListMembers(c buffalo.Context) error {
 
 	policy.LoadMembers(tx, false)
 
-	members, err := models.ConvertPolicyMembers(tx, policy.Members)
-	if err != nil {
-		return reportError(c, api.NewAppError(err, api.ErrorFailedToConvertToAPIType, api.CategoryInternal))
-	}
-
-	return renderOk(c, members)
+	return renderOk(c, models.ConvertPolicyMembers(tx, policy.Members))
 }
 
 // getReferencedPolicyFromCtx pulls the models.Policy resource from context that was put there

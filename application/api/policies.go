@@ -52,6 +52,9 @@ type Policy struct {
 
 	// List of dependents on policy
 	Dependents PolicyDependents `json:"dependents,omitempty"`
+
+	// List of claims on policy
+	Claims Claims `json:"claims,omitempty"`
 }
 
 // PolicyUpdate represents payload for updating a policy
