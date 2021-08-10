@@ -1,0 +1,7 @@
+FROM quay.io/goswagger/swagger:latest
+
+WORKDIR /src
+ADD . .
+
+ENTRYPOINT []
+CMD ["./build-push-api-docs.sh"]
