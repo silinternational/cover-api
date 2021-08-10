@@ -3,6 +3,8 @@ package models
 import (
 	"time"
 
+	"github.com/silinternational/riskman-api/domain"
+
 	"github.com/gobuffalo/pop/v5"
 	"github.com/gobuffalo/validate/v3"
 	"github.com/gofrs/uuid"
@@ -44,7 +46,18 @@ func (r *ItemCategory) GetID() uuid.UUID {
 }
 
 func (r *ItemCategory) FindByID(tx *pop.Connection, id uuid.UUID) error {
-	return tx.Find(r, id)
+	if err := tx.Find(r, id); err != nil {
+		appErr := api.AppError{
+			Err:      err,
+			Key:      api.ErrorQueryFailure,
+			Category: api.CategoryInternal,
+		}
+		if !domain.IsOtherThanNoRows(err) {
+			appErr.Category = api.CategoryUser
+		}
+		return &appErr
+	}
+	return nil
 }
 
 func ConvertItemCategory(tx *pop.Connection, ic ItemCategory) api.ItemCategory {
