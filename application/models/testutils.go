@@ -14,6 +14,7 @@ import (
 	"github.com/gobuffalo/buffalo"
 	"github.com/gobuffalo/nulls"
 	"github.com/gobuffalo/pop/v5"
+	"github.com/gofrs/uuid"
 
 	"github.com/silinternational/riskman-api/api"
 	"github.com/silinternational/riskman-api/domain"
@@ -21,6 +22,7 @@ import (
 
 type FixturesConfig struct {
 	NumberOfPolicies    int
+	ClaimsPerPolicy     int
 	ItemsPerPolicy      int
 	UsersPerPolicy      int
 	DependentsPerPolicy int
@@ -68,32 +70,58 @@ func CreateItemFixtures(tx *pop.Connection, config FixturesConfig) Fixtures {
 	fixtures := CreatePolicyFixtures(tx, config)
 	policies := fixtures.Policies
 	items := make(Items, config.ItemsPerPolicy*config.NumberOfPolicies)
+	claims := make(Claims, config.ClaimsPerPolicy*config.NumberOfPolicies)
 
 	categories := CreateCategoryFixtures(tx, len(items)).ItemCategories
 	for i := range policies {
 		for j := 0; j < config.ItemsPerPolicy; j++ {
 			idx := i*config.ItemsPerPolicy + j
-			items[idx].Name = randStr(10)
-			items[idx].CategoryID = categories[idx].ID
-			items[idx].Country = randStr(10)
-			items[idx].Description = randStr(40)
-			items[idx].PolicyID = policies[i].ID
-			items[idx].Make = randStr(10)
-			items[idx].Model = randStr(10)
-			items[idx].SerialNumber = randStr(10)
-			items[idx].CoverageAmount = int(rand.Int31n(100)) + 100
-			items[idx].PurchaseDate = time.Date(2010, 4, 1, 12, 0, 0, 0, time.UTC)
-			items[idx].CoverageStartDate = items[idx].PurchaseDate
-			items[idx].CoverageStatus = api.ItemCoverageStatusApproved
-			MustCreate(tx, &items[idx])
+			items[idx] = createItemFixture(tx, policies[i].ID, categories[idx].ID)
 		}
 		policies[i].LoadItems(tx, false)
+
+		for k := 0; k < config.ClaimsPerPolicy; k++ {
+			idx := i*config.ClaimsPerPolicy + k
+			claims[idx] = createClaimFixture(tx, policies[i].ID)
+		}
+		policies[i].LoadClaims(tx, false)
 	}
 
 	fixtures.Items = items
 	fixtures.ItemCategories = categories
 
 	return fixtures
+}
+
+func createItemFixture(tx *pop.Connection, policyID uuid.UUID, categoryID uuid.UUID) Item {
+	item := Item{
+		Name:              randStr(10),
+		CategoryID:        categoryID,
+		Country:           randStr(10),
+		Description:       randStr(40),
+		PolicyID:          policyID,
+		Make:              randStr(10),
+		Model:             randStr(10),
+		SerialNumber:      randStr(10),
+		CoverageAmount:    int(rand.Int31n(100)) + 100,
+		PurchaseDate:      time.Date(2010, 4, 1, 12, 0, 0, 0, time.UTC),
+		CoverageStartDate: time.Date(2010, 4, 1, 13, 0, 0, 0, time.UTC),
+		CoverageStatus:    api.ItemCoverageStatusApproved,
+	}
+	MustCreate(tx, &item)
+	return item
+}
+
+func createClaimFixture(tx *pop.Connection, policyID uuid.UUID) Claim {
+	claim := Claim{
+		PolicyID:         policyID,
+		EventDate:        time.Date(2020, 5, 1, 12, 0, 0, 0, time.UTC),
+		EventType:        api.ClaimEventTypeImpact,
+		EventDescription: randStr(25),
+		Status:           api.ClaimStatusPending,
+	}
+	MustCreate(tx, &claim)
+	return claim
 }
 
 // CreateCategoryFixtures generates any number of category records for testing
