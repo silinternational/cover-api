@@ -18,4 +18,4 @@ apk add --no-cache python3 py3-pip
 pip install awscli
 
 # copy file to s3
-aws s3 cp --acl public-read api-docs.html $S3PATH
+aws s3 cp api-docs.html $S3PATH
