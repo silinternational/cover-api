@@ -30,6 +30,26 @@ func claimsView(c buffalo.Context) error {
 	return renderOk(c, models.ConvertClaim(*claim))
 }
 
+func claimsCreate(c buffalo.Context) error {
+	policy := getReferencedPolicyFromCtx(c)
+	if policy == nil {
+		err := errors.New("policy not found in route")
+		return reportError(c, api.NewAppError(err, api.ErrorPolicyNotFound, api.CategoryUser))
+	}
+
+	var input api.ClaimCreateInput
+	if err := StrictBind(c, &input); err != nil {
+		return reportError(c, api.NewAppError(err, api.ErrorClaimCreateInvalidInput, api.CategoryUser))
+	}
+
+	tx := models.Tx(c)
+	if err := policy.AddClaim(tx, input); err != nil {
+		return reportError(c, err)
+	}
+
+	return renderOk(c, models.ConvertPolicy(tx, *policy))
+}
+
 // getReferencedClaimFromCtx pulls the models.Claim resource from context that was put there
 // by the AuthZ middleware
 func getReferencedClaimFromCtx(c buffalo.Context) *models.Claim {

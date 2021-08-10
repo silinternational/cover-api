@@ -13,7 +13,6 @@ import (
 func (as *ActionSuite) Test_PoliciesList() {
 	fixConfig := models.FixturesConfig{
 		NumberOfPolicies:    3,
-		ItemsPerPolicy:      2,
 		UsersPerPolicy:      1,
 		DependentsPerPolicy: 0,
 	}
@@ -98,7 +97,6 @@ func (as *ActionSuite) Test_PoliciesList() {
 func (as *ActionSuite) Test_PoliciesUpdate() {
 	fixConfig := models.FixturesConfig{
 		NumberOfPolicies:    3,
-		ItemsPerPolicy:      2,
 		UsersPerPolicy:      1,
 		DependentsPerPolicy: 0,
 	}
@@ -197,7 +195,6 @@ func (as *ActionSuite) Test_PoliciesUpdate() {
 func (as *ActionSuite) Test_PoliciesListMembers() {
 	fixConfig := models.FixturesConfig{
 		NumberOfPolicies:    3,
-		ItemsPerPolicy:      0,
 		UsersPerPolicy:      2,
 		DependentsPerPolicy: 0,
 	}

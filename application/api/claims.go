@@ -40,3 +40,9 @@ type Claim struct {
 	PaymentDate      nulls.Time     `json:"payment_date,omitempty"`
 	TotalPayout      int            `json:"total_payout,omitempty"`
 }
+
+type ClaimCreateInput struct {
+	EventDate        time.Time      `json:"event_date"`
+	EventType        ClaimEventType `json:"event_type"`
+	EventDescription string         `json:"event_description"`
+}

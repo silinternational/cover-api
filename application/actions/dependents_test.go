@@ -13,7 +13,6 @@ import (
 func (as *ActionSuite) Test_DependentsList() {
 	config := models.FixturesConfig{
 		NumberOfPolicies:    3,
-		ItemsPerPolicy:      2,
 		UsersPerPolicy:      1,
 		DependentsPerPolicy: 1,
 	}
@@ -96,7 +95,6 @@ func (as *ActionSuite) Test_DependentsList() {
 func (as *ActionSuite) Test_DependentsCreate() {
 	config := models.FixturesConfig{
 		NumberOfPolicies:    3,
-		ItemsPerPolicy:      2,
 		UsersPerPolicy:      1,
 		DependentsPerPolicy: 1,
 	}

@@ -80,6 +80,10 @@ func (c *Claim) IsActorAllowedTo(tx *pop.Connection, user User, perm Permission,
 		return true
 	}
 
+	if perm == PermissionCreate {
+		return true
+	}
+
 	var policy Policy
 	if err := policy.FindByID(tx, c.PolicyID); err != nil {
 		domain.ErrLogger.Printf("failed to load Policy for Claim: %s", err)
@@ -97,25 +101,28 @@ func (c *Claim) IsActorAllowedTo(tx *pop.Connection, user User, perm Permission,
 	return false
 }
 
-func (c *Claim) LoadItems(tx *pop.Connection, reload bool) error {
+func (c *Claim) LoadItems(tx *pop.Connection, reload bool) {
 	if len(c.Items) == 0 || reload {
-		return tx.Load(c, "Items")
+		if err := tx.Load(c, "Items"); err != nil {
+			panic("database error loading Claim.Items, " + err.Error())
+		}
 	}
-	return nil
 }
 
-func (c *Claim) LoadPolicy(tx *pop.Connection, reload bool) error {
+func (c *Claim) LoadPolicy(tx *pop.Connection, reload bool) {
 	if c.Policy.ID == uuid.Nil || reload {
-		return tx.Load(c, "Policy")
+		if err := tx.Load(c, "Policy"); err != nil {
+			panic("database error loading Claim.Policy, " + err.Error())
+		}
 	}
-	return nil
 }
 
-func (c *Claim) LoadReviewer(tx *pop.Connection, reload bool) error {
+func (c *Claim) LoadReviewer(tx *pop.Connection, reload bool) {
 	if c.ReviewerID.Valid && (c.Reviewer.ID == uuid.Nil || reload) {
-		return tx.Load(c, "Reviewer")
+		if err := tx.Load(c, "Reviewer"); err != nil {
+			panic("database error loading Claim.Reviewer, " + err.Error())
+		}
 	}
-	return nil
 }
 
 func ConvertClaim(c Claim) api.Claim {
@@ -139,4 +146,13 @@ func ConvertClaims(cs Claims) api.Claims {
 		claims[i] = ConvertClaim(c)
 	}
 	return claims
+}
+
+func CovertClaimCreateInput(input api.ClaimCreateInput) Claim {
+	return Claim{
+		EventDate:        input.EventDate,
+		EventType:        input.EventType,
+		EventDescription: input.EventDescription,
+		Status:           api.ClaimStatusDraft,
+	}
 }
