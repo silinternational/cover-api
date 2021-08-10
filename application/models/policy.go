@@ -29,9 +29,10 @@ type Policy struct {
 	CreatedAt   time.Time      `db:"created_at"`
 	UpdatedAt   time.Time      `db:"updated_at"`
 
+	Claims     Claims           `has_many:"claims"`
 	Dependents PolicyDependents `has_many:"policy_dependents"`
-	Members    Users            `many_to_many:"policy_users"`
 	Items      Items            `has_many:"items"`
+	Members    Users            `many_to_many:"policy_users"`
 }
 
 // Validate gets run every time you call a "pop.Validate*" (pop.ValidateAndSave, pop.ValidateAndCreate, pop.ValidateAndUpdate) method.
@@ -74,11 +75,11 @@ func (p *Policy) IsActorAllowedTo(tx *pop.Connection, actor User, perm Permissio
 	return false
 }
 
-// LoadMembers - a simple wrapper method for loading members on the struct
-func (p *Policy) LoadMembers(tx *pop.Connection, reload bool) {
-	if len(p.Members) == 0 || reload {
-		if err := tx.Load(p, "Members"); err != nil {
-			panic("database error loading Policy.Members, " + err.Error())
+// LoadClaims - a simple wrapper method for loading claims on the struct
+func (p *Policy) LoadClaims(tx *pop.Connection, reload bool) {
+	if len(p.Claims) == 0 || reload {
+		if err := tx.Load(p, "Claims"); err != nil {
+			panic("database error loading Policy.Claims, " + err.Error())
 		}
 	}
 }
@@ -104,12 +105,23 @@ func (p *Policy) LoadItems(tx *pop.Connection, reload bool) {
 	}
 }
 
-func ConvertPolicy(tx *pop.Connection, p Policy) api.Policy {
-	p.LoadMembers(tx, false)
-	p.LoadDependents(tx, false)
+// LoadMembers - a simple wrapper method for loading members on the struct
+func (p *Policy) LoadMembers(tx *pop.Connection, reload bool) {
+	if len(p.Members) == 0 || reload {
+		if err := tx.Load(p, "Members"); err != nil {
+			panic("database error loading Policy.Members, " + err.Error())
+		}
+	}
+}
 
-	members := ConvertPolicyMembers(tx, p.Members)
+func ConvertPolicy(tx *pop.Connection, p Policy) api.Policy {
+	p.LoadClaims(tx, true)
+	p.LoadDependents(tx, true)
+	p.LoadMembers(tx, true)
+
+	claims := ConvertClaims(p.Claims)
 	dependents := ConvertPolicyDependents(tx, p.Dependents)
+	members := ConvertPolicyMembers(tx, p.Members)
 
 	return api.Policy{
 		ID:          p.ID,
@@ -120,8 +132,9 @@ func ConvertPolicy(tx *pop.Connection, p Policy) api.Policy {
 		EntityCode:  p.EntityCode,
 		CreatedAt:   p.CreatedAt,
 		UpdatedAt:   p.UpdatedAt,
-		Members:     members,
+		Claims:      claims,
 		Dependents:  dependents,
+		Members:     members,
 	}
 }
 

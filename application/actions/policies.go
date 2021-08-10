@@ -74,9 +74,7 @@ func policiesUpdate(c buffalo.Context) error {
 		return reportError(c, err)
 	}
 
-	apiPolicy := models.ConvertPolicy(tx, *policy)
-
-	return renderOk(c, apiPolicy)
+	return renderOk(c, models.ConvertPolicy(tx, *policy))
 }
 
 func policiesListMembers(c buffalo.Context) error {
@@ -89,12 +87,7 @@ func policiesListMembers(c buffalo.Context) error {
 
 	policy.LoadMembers(tx, false)
 
-	members, err := models.ConvertPolicyMembers(tx, policy.Members)
-	if err != nil {
-		return reportError(c, api.NewAppError(err, api.ErrorFailedToConvertToAPIType, api.CategoryInternal))
-	}
-
-	return renderOk(c, members)
+	return renderOk(c, models.ConvertPolicyMembers(tx, policy.Members))
 }
 
 // getReferencedPolicyFromCtx pulls the models.Policy resource from context that was put there
