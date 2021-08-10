@@ -13,6 +13,8 @@ import (
 
 func claimsList(c buffalo.Context) error {
 	tx := models.Tx(c)
+
+	// TODO: list only current user's claims
 	var claims models.Claims
 	if err := tx.All(&claims); err != nil {
 		return c.Render(http.StatusInternalServerError, r.JSON(err))
