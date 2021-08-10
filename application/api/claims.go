@@ -26,23 +26,55 @@ const (
 	ClaimStatusDenied   = ClaimStatus("Denied")
 )
 
+// swagger:model
 type Claims []Claim
 
+// swagger:model
 type Claim struct {
-	ID               uuid.UUID      `json:"id"`
-	PolicyID         uuid.UUID      `json:"policy_id"`
-	EventDate        time.Time      `json:"event_date"`
-	EventType        ClaimEventType `json:"event_type"`
-	EventDescription string         `json:"event_description"`
-	Status           ClaimStatus    `json:"status"`
-	ReviewDate       nulls.Time     `json:"review_date,omitempty"`
-	ReviewerID       nulls.UUID     `json:"reviewer_id,omitempty"`
-	PaymentDate      nulls.Time     `json:"payment_date,omitempty"`
-	TotalPayout      int            `json:"total_payout,omitempty"`
+	// unique ID
+	//
+	// read only: true
+	// swagger:strfmt uuid4
+	ID uuid.UUID `json:"id"`
+
+	// policy ID
+	//
+	// swagger:strfmt uuid4
+	PolicyID uuid.UUID `json:"policy_id"`
+
+	// event date
+	EventDate time.Time `json:"event_date"`
+
+	// event type, one of: Theft, Impact, Lightning, Water, Evacuation, Other
+	EventType ClaimEventType `json:"event_type"`
+
+	// event description
+	EventDescription string `json:"event_description"`
+
+	// event status
+	Status ClaimStatus `json:"status"`
+
+	// review date
+	ReviewDate nulls.Time `json:"review_date,omitempty"`
+
+	// reviewer ID
+	ReviewerID nulls.UUID `json:"reviewer_id,omitempty"`
+
+	// payment date
+	PaymentDate nulls.Time `json:"payment_date,omitempty"`
+
+	// total payout
+	TotalPayout int `json:"total_payout,omitempty"`
 }
 
+// swagger:model
 type ClaimCreateInput struct {
-	EventDate        time.Time      `json:"event_date"`
-	EventType        ClaimEventType `json:"event_type"`
-	EventDescription string         `json:"event_description"`
+	// event date
+	EventDate time.Time `json:"event_date"`
+
+	// event type, one of: Theft, Impact, Lightning, Water, Evacuation, Other
+	EventType ClaimEventType `json:"event_type"`
+
+	// event description
+	EventDescription string `json:"event_description"`
 }

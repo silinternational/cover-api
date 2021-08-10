@@ -11,6 +11,20 @@ import (
 	"github.com/silinternational/riskman-api/models"
 )
 
+// swagger:operation GET /claims Claims ClaimsList
+//
+// ClaimsList
+//
+// list all the current user's claims, or all Claims if called as an admin
+//
+// ---
+// responses:
+//   '200':
+//     description: a list of Claims
+//     schema:
+//       type: array
+//       items:
+//         "$ref": "#/definitions/Claim"
 func claimsList(c buffalo.Context) error {
 	tx := models.Tx(c)
 
@@ -23,6 +37,18 @@ func claimsList(c buffalo.Context) error {
 	return renderOk(c, models.ConvertClaims(claims))
 }
 
+// swagger:operation GET /claims/{id} Claims ClaimsView
+//
+// ClaimsView
+//
+// view a specific claim
+//
+// ---
+// responses:
+//   '200':
+//     description: a Claim
+//     schema:
+//       "$ref": "#/definitions/Claim"
 func claimsView(c buffalo.Context) error {
 	claim := getReferencedClaimFromCtx(c)
 	if claim == nil {
@@ -32,6 +58,18 @@ func claimsView(c buffalo.Context) error {
 	return renderOk(c, models.ConvertClaim(*claim))
 }
 
+// swagger:operation POST /policy/{id}/claims Claims ClaimsCreate
+//
+// ClaimsCreate
+//
+// create a new Claim on a policy
+//
+// ---
+// responses:
+//   '200':
+//     description: the new Claim
+//     schema:
+//       "$ref": "#/definitions/Claim"
 func claimsCreate(c buffalo.Context) error {
 	policy := getReferencedPolicyFromCtx(c)
 	if policy == nil {
