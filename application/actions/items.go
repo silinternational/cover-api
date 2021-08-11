@@ -8,11 +8,10 @@ import (
 
 	"github.com/gofrs/uuid"
 
-	"github.com/silinternational/riskman-api/domain"
-
 	"github.com/gobuffalo/buffalo"
 
 	"github.com/silinternational/riskman-api/api"
+	"github.com/silinternational/riskman-api/domain"
 	"github.com/silinternational/riskman-api/models"
 )
 
@@ -99,7 +98,7 @@ func itemsCreate(c buffalo.Context) error {
 	return c.Render(http.StatusOK, r.JSON(output))
 }
 
-// swagger:operation PUT /policies/{id}/items PolicyItems PolicyItemsUpdate
+// swagger:operation PUT /items/{id} PolicyItems PolicyItemsUpdate
 //
 // PolicyItemsUpdate
 //
@@ -110,7 +109,7 @@ func itemsCreate(c buffalo.Context) error {
 //   - name: id
 //     in: path
 //     required: true
-//     description: policy ID
+//     description: item ID
 //   - name: policy item update input
 //     in: body
 //     description: policy item create update object
