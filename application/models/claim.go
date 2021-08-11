@@ -75,16 +75,12 @@ func (c *Claim) FindByID(tx *pop.Connection, id uuid.UUID) error {
 }
 
 // IsActorAllowedTo ensure the actor is either an admin, or a member of this policy to perform any permission
-func (c *Claim) IsActorAllowedTo(tx *pop.Connection, user User, perm Permission, sub SubResource, r *http.Request) bool {
-	if user.IsAdmin() {
+func (c *Claim) IsActorAllowedTo(tx *pop.Connection, actor User, perm Permission, sub SubResource, r *http.Request) bool {
+	if actor.IsAdmin() {
 		return true
 	}
 
-	if perm == PermissionList {
-		return false // TODO: list only current user's claims
-	}
-
-	if perm == PermissionCreate {
+	if perm == PermissionList || perm == PermissionCreate {
 		return true
 	}
 
@@ -97,7 +93,7 @@ func (c *Claim) IsActorAllowedTo(tx *pop.Connection, user User, perm Permission,
 	policy.LoadMembers(tx, false)
 
 	for _, m := range policy.Members {
-		if m.ID == user.ID {
+		if m.ID == actor.ID {
 			return true
 		}
 	}
