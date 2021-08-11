@@ -214,14 +214,24 @@ func getLoginSuccessRedirectURL(authUser auth.User, returnTo string) string {
 	return uiURL + returnTo + params
 }
 
-// authDestroy uses the bearer token to find the user's access token and
-//  calls the appropriate provider's logout function.
+// swagger:operation GET /auth/logout Authentication AuthLogout
+//
+// Logout of application
+//
+// ---
+// parameters:
+// - name: tokem
+//   in: path
+//   required: true
+//   description: the user's bearer token
+// responses:
+//   '302'
 func authDestroy(c buffalo.Context) error {
 	tokenParam := c.Param(LogoutToken)
 	if tokenParam == "" {
 		return reportErrorAndClearSession(c, &api.AppError{
-			HttpStatus: http.StatusInternalServerError,
-			Key:        api.ErrorCreatingAccessToken,
+			HttpStatus: http.StatusBadRequest,
+			Key:        api.ErrorMissingLogoutToken,
 			Message:    LogoutToken + " is required to logout",
 		})
 	}
