@@ -10,6 +10,20 @@ import (
 	"github.com/silinternational/riskman-api/models"
 )
 
+// swagger:operation GET /users Users UsersList
+//
+// UsersList
+//
+// gets the data for all Users.
+//
+// ---
+// responses:
+//   '200':
+//     description: all users
+//     schema:
+//       type: array
+//       items:
+//         "$ref": "#/definitions/User"
 func usersList(c buffalo.Context) error {
 	var users models.Users
 	if err := users.GetAll(models.Tx(c)); err != nil {
@@ -21,6 +35,23 @@ func usersList(c buffalo.Context) error {
 	return renderOk(c, models.ConvertUsers(users))
 }
 
+// swagger:operation GET /users/{id} Users UsersView
+//
+// UsersView
+//
+// gets the data for a specific User.
+//
+// ---
+// parameters:
+//   - name: id
+//     in: path
+//     required: true
+//     description: user ID
+// responses:
+//   '200':
+//     description: a user
+//     schema:
+//       "$ref": "#/definitions/User"
 func usersView(c buffalo.Context) error {
 	user := getReferencedUserFromCtx(c)
 	if user == nil {
@@ -30,6 +61,18 @@ func usersView(c buffalo.Context) error {
 	return renderUser(c, *user)
 }
 
+// swagger:operation GET /users/me Users UsersMe
+//
+// UsersMe
+//
+// gets the data for authenticated User.
+//
+// ---
+// responses:
+//   '200':
+//     description: authenticated user
+//     schema:
+//       "$ref": "#/definitions/User"
 func usersMe(c buffalo.Context) error {
 	return renderUser(c, models.CurrentUser(c))
 }

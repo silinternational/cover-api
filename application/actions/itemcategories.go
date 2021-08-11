@@ -7,6 +7,20 @@ import (
 	"github.com/silinternational/riskman-api/models"
 )
 
+// swagger:operation GET /item-categories ItemCategories ItemCategoriesList
+//
+// ItemCategoriesList
+//
+// list all the enabled item categories
+//
+// ---
+// responses:
+//   '200':
+//     description: a list of ItemCategories
+//     schema:
+//       type: array
+//       items:
+//         "$ref": "#/definitions/ItemCategory"
 func itemCategoriesList(c buffalo.Context) error {
 	tx := models.Tx(c)
 
