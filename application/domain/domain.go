@@ -11,6 +11,7 @@ import (
 	"regexp"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/gobuffalo/buffalo"
 	"github.com/gobuffalo/envy"
@@ -40,6 +41,16 @@ var Assets *packr.Box
 
 var extrasLock = sync.RWMutex{}
 
+// Ported from WeCarry's domain.go to get models/file.go working
+var AllowedFileUploadTypes = []string{
+	"image/bmp",
+	"image/gif",
+	"image/jpeg",
+	"image/png",
+	"image/webp",
+	"application/pdf",
+}
+
 // BuffaloContextType is a custom type used as a value key passed to context.WithValue as per the recommendations
 // in the function docs for that function: https://golang.org/pkg/context/#WithValue
 type BuffaloContextType string
@@ -66,7 +77,15 @@ const (
 )
 
 const (
-	DateFormat = "2006-01-02"
+	DateFormat 	= "2006-01-02"
+
+	// Ported from WeCarry's domain.go to get upload.go working
+	MaxFileSize	= 1024 * 1024 * 10       // 10 Megabytes
+
+	// Ported from WeCarry's domain.go to get models/file.go working
+	DurationDay                 = time.Duration(time.Hour * 24)
+	DurationWeek                = time.Duration(DurationDay * 7)
+	Megabyte                    = 1048576
 )
 
 // Event Kinds
@@ -120,6 +139,9 @@ var Env struct {
 	AwsAccessKeyID             		string	`default:"abc123" split_words:"true"`
 	AwsSecretAccessKey         		string	`default:"abcd1234" split_words:"true"`
 	EmailFromAddress           		string	`default:"no_reply@example.com" split_words:"true"`
+
+	// Ported from WeCarry's domain.go to get models/file.go working
+	MaxFileDelete              		int		`default:"10" split_words:"true"`
 }
 
 func init() {
@@ -283,4 +305,17 @@ func MergeExtras(extras []map[string]interface{}) map[string]interface{} {
 	}
 
 	return allExtras
+}
+
+// Ported from WeCarry's domain.go to get models/file.go working
+// IsStringInSlice iterates over a slice of strings, looking for the given
+// string. If found, true is returned. Otherwise, false is returned.
+func IsStringInSlice(needle string, haystack []string) bool {
+	for _, hs := range haystack {
+		if needle == hs {
+			return true
+		}
+	}
+
+	return false
 }

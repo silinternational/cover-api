@@ -30,5 +30,6 @@ require (
 	github.com/russellhaering/goxmldsig v1.1.0
 	github.com/ssor/bom v0.0.0-20170718123548-6386211fdfcf // indirect
 	github.com/stretchr/testify v1.7.0
+	golang.org/x/image v0.0.0-20190802002840-cff245a6509b
 	jaytaylor.com/html2text v0.0.0-20200412013138-3577fbdbcff7
 )

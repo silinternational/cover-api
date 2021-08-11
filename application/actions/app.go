@@ -114,6 +114,8 @@ func App() *buffalo.App {
 		app.GET("/status", statusHandler)
 		app.GET("/item-categories", itemCategoriesList)
 
+		app.POST("/upload", uploadHandler)
+
 		// users
 		usersGroup := app.Group("/" + domain.TypeUser)
 		usersGroup.GET("/", usersList)
