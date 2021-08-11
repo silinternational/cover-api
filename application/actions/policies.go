@@ -11,6 +11,20 @@ import (
 	"github.com/silinternational/riskman-api/models"
 )
 
+// swagger:operation GET /policies Policies PoliciesList
+//
+// PoliciesList
+//
+// gets the data for all the user's Policies, or, if called by an admin, all Policies in the system
+//
+// ---
+// responses:
+//   '200':
+//     description: all policies
+//     schema:
+//       type: array
+//       items:
+//         "$ref": "#/definitions/Policy"
 func policiesList(c buffalo.Context) error {
 	user := models.CurrentUser(c)
 
@@ -44,6 +58,29 @@ func policiesListMine(c buffalo.Context) error {
 	return renderOk(c, apiPolicies)
 }
 
+// swagger:operation PUT /policies/{id} Policies PoliciesUpdate
+//
+// PoliciesUpdate
+//
+// update a policy
+//
+// ---
+// parameters:
+//   - name: id
+//     in: path
+//     required: true
+//     description: policy ID
+//   - name: policy update input
+//     in: body
+//     description: policy update input object
+//     required: true
+//     schema:
+//       "$ref": "#/definitions/PolicyUpdate"
+// responses:
+//   '200':
+//     description: updated Policy
+//     schema:
+//       "$ref": "#/definitions/Policy"
 func policiesUpdate(c buffalo.Context) error {
 	tx := models.Tx(c)
 	policy := getReferencedPolicyFromCtx(c)
@@ -77,6 +114,25 @@ func policiesUpdate(c buffalo.Context) error {
 	return renderOk(c, models.ConvertPolicy(tx, *policy))
 }
 
+// swagger:operation GET /policies/{id}/members Policies PoliciesListMembers
+//
+// PoliciesListMembers
+//
+// gets the data for all the members of a Policy
+//
+// ---
+// parameters:
+//   - name: id
+//     in: path
+//     required: true
+//     description: policy ID
+// responses:
+//   '200':
+//     description: all policy members
+//     schema:
+//       type: array
+//       items:
+//         "$ref": "#/definitions/PolicyMember"
 func policiesListMembers(c buffalo.Context) error {
 	tx := models.Tx(c)
 	policy := getReferencedPolicyFromCtx(c)
