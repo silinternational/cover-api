@@ -2,7 +2,6 @@ package actions
 
 import (
 	"errors"
-	"net/http"
 
 	"github.com/gobuffalo/buffalo"
 
@@ -39,7 +38,7 @@ func policiesListAll(c buffalo.Context) error {
 	tx := models.Tx(c)
 	var policies models.Policies
 	if err := tx.All(&policies); err != nil {
-		return c.Render(http.StatusInternalServerError, r.JSON(err))
+		return reportError(c, err)
 	}
 
 	apiPolicies := models.ConvertPolicies(tx, policies)

@@ -2,7 +2,6 @@ package actions
 
 import (
 	"errors"
-	"net/http"
 
 	"github.com/gobuffalo/buffalo"
 
@@ -26,14 +25,27 @@ import (
 //       items:
 //         "$ref": "#/definitions/Claim"
 func claimsList(c buffalo.Context) error {
-	tx := models.Tx(c)
+	user := models.CurrentUser(c)
 
-	// TODO: list only current user's claims
-	var claims models.Claims
-	if err := tx.All(&claims); err != nil {
-		return c.Render(http.StatusInternalServerError, r.JSON(err))
+	if user.IsAdmin() {
+		return claimsListAll(c)
 	}
 
+	return claimsListMine(c)
+}
+
+func claimsListAll(c buffalo.Context) error {
+	var claims models.Claims
+	if err := models.Tx(c).All(&claims); err != nil {
+		return reportError(c, err)
+	}
+
+	return renderOk(c, models.ConvertClaims(claims))
+}
+
+func claimsListMine(c buffalo.Context) error {
+	currentUser := models.CurrentUser(c)
+	claims := currentUser.MyClaims(models.Tx(c))
 	return renderOk(c, models.ConvertClaims(claims))
 }
 
