@@ -52,6 +52,7 @@ docs:
     image: apidocs
     context: application
     dockerfile: Dockerfile-api-docs
+  cached: true
   encrypted_env_file: .env.encrypted
 
 ecsdeploy:

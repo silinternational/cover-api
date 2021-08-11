@@ -116,8 +116,8 @@ func (i *Item) Inactivate(tx *pop.Connection) error {
 }
 
 // IsActorAllowedTo ensure the actor is either an admin, or a member of this policy to perform any permission
-func (i *Item) IsActorAllowedTo(tx *pop.Connection, user User, perm Permission, sub SubResource, req *http.Request) bool {
-	if user.IsAdmin() {
+func (i *Item) IsActorAllowedTo(tx *pop.Connection, actor User, perm Permission, sub SubResource, req *http.Request) bool {
+	if actor.IsAdmin() {
 		return true
 	}
 
@@ -126,7 +126,7 @@ func (i *Item) IsActorAllowedTo(tx *pop.Connection, user User, perm Permission, 
 	i.Policy.LoadMembers(tx, false)
 
 	for _, m := range i.Policy.Members {
-		if m.ID == user.ID {
+		if m.ID == actor.ID {
 			return true
 		}
 	}
