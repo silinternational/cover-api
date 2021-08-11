@@ -7,10 +7,19 @@ import (
 	"github.com/gofrs/uuid"
 )
 
-type (
-	ClaimEventType string
-	ClaimStatus    string
-)
+// ClaimEventType
+//
+// may be one of: Theft, Impact, Lightning, Water, Evacuation, Other
+//
+// swagger:model
+type ClaimEventType string
+
+// ClaimStatus
+//
+// may be one of: Draft, Pending, Approved, Denied
+//
+// swagger:model
+type ClaimStatus string
 
 const (
 	ClaimEventTypeTheft      = ClaimEventType("Theft")
@@ -33,7 +42,6 @@ type Claims []Claim
 type Claim struct {
 	// unique ID
 	//
-	// read only: true
 	// swagger:strfmt uuid4
 	ID uuid.UUID `json:"id"`
 
@@ -43,24 +51,32 @@ type Claim struct {
 	PolicyID uuid.UUID `json:"policy_id"`
 
 	// event date
+	//
+	// swagger:strfmt date-time
 	EventDate time.Time `json:"event_date"`
 
-	// event type, one of: Theft, Impact, Lightning, Water, Evacuation, Other
+	// event type
 	EventType ClaimEventType `json:"event_type"`
 
-	// event description
+	// event description .
 	EventDescription string `json:"event_description"`
 
 	// event status
 	Status ClaimStatus `json:"status"`
 
 	// review date
+	//
+	// swagger:strfmt date-time
 	ReviewDate nulls.Time `json:"review_date,omitempty"`
 
 	// reviewer ID
+	//
+	// swagger:strfmt uuid4
 	ReviewerID nulls.UUID `json:"reviewer_id,omitempty"`
 
 	// payment date
+	//
+	// swagger:strfmt date-time
 	PaymentDate nulls.Time `json:"payment_date,omitempty"`
 
 	// total payout
@@ -72,7 +88,6 @@ type ClaimCreateInput struct {
 	// event date
 	EventDate time.Time `json:"event_date"`
 
-	// event type, one of: Theft, Impact, Lightning, Water, Evacuation, Other
 	EventType ClaimEventType `json:"event_type"`
 
 	// event description

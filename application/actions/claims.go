@@ -58,13 +58,20 @@ func claimsView(c buffalo.Context) error {
 	return renderOk(c, models.ConvertClaim(*claim))
 }
 
-// swagger:operation POST /policy/{id}/claims Claims ClaimsCreate
+// swagger:operation POST /policies/{id}/claims Claims ClaimsCreate
 //
 // ClaimsCreate
 //
 // create a new Claim on a policy
 //
 // ---
+// parameters:
+//   - name: claim input
+//     in: body
+//     description: claim create input object
+//     required: true
+//     schema:
+//       "$ref": "#/definitions/ClaimCreateInput"
 // responses:
 //   '200':
 //     description: the new Claim
