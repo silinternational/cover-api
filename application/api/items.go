@@ -18,6 +18,7 @@ const (
 	ItemCoverageStatusPending  = ItemCoverageStatus("Pending")
 	ItemCoverageStatusApproved = ItemCoverageStatus("Approved")
 	ItemCoverageStatusDenied   = ItemCoverageStatus("Denied")
+	ItemCoverageStatusInactive = ItemCoverageStatus("Inactive")
 )
 
 // swagger:model

@@ -1,7 +1,6 @@
 package models
 
 import (
-	"errors"
 	"net/http"
 	"time"
 
@@ -20,6 +19,7 @@ var ValidItemCoverageStatuses = map[api.ItemCoverageStatus]struct{}{
 	api.ItemCoverageStatusPending:  {},
 	api.ItemCoverageStatusApproved: {},
 	api.ItemCoverageStatusDenied:   {},
+	api.ItemCoverageStatusInactive: {},
 }
 
 // Items is a slice of Item objects
@@ -70,22 +70,49 @@ func (i *Item) FindByID(tx *pop.Connection, id uuid.UUID) error {
 	return tx.Find(i, id)
 }
 
-func (i *Item) SafeDelete(tx *pop.Connection, actor User) error {
-	if !i.IsActorAllowedTo(tx, actor, PermissionDelete, "", nil) {
-		return errors.New("actor is not authorized to delete item")
+// SafeDeleteOrInactivate deletes the item if it is newish (less than 72 hours old)
+//  and if there are no ClaimItems associated with it.
+//  Otherwise, it changes its status to Inactive.
+func (i *Item) SafeDeleteOrInactivate(tx *pop.Connection, actor User) error {
+	// TODO Add a check related to whether the item already got included in the billing process.
+
+	if !i.isNewEnough() {
+		return i.Inactivate(tx)
 	}
 
 	clItems := ClaimItems{}
 	clICount, err := tx.Where("item_id = ?", i.ID).Count(&clItems)
 	if err != nil {
-		return err
+		return api.NewAppError(
+			err, api.ErrorQueryFailure, api.CategoryDatabase,
+		)
 	}
 
 	if clICount > 0 {
-		return errors.New("deleting the item is not allowed, since it has an associated claim item.")
+		return i.Inactivate(tx)
 	}
 
 	return tx.Destroy(i)
+}
+
+// isNewEnough checks whether the item was created in the last X hours
+func (i *Item) isNewEnough() bool {
+	oldTime, err := time.Parse(time.RFC3339, "1970-01-01T00:07:41+00:00")
+	if err != nil {
+		panic("error parsing old time format: " + err.Error())
+	}
+
+	if !i.CreatedAt.After(oldTime) {
+		panic("item doesn't have a valid CreatedAt date")
+	}
+
+	cutOffDate := time.Now().UTC().Add(time.Hour * -domain.ItemDeleteCutOffHours)
+	return !i.CreatedAt.Before(cutOffDate)
+}
+
+func (i *Item) Inactivate(tx *pop.Connection) error {
+	i.CoverageStatus = api.ItemCoverageStatusInactive
+	return i.Update(tx)
 }
 
 // IsActorAllowedTo ensure the actor is either an admin, or a member of this policy to perform any permission

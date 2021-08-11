@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"testing"
+	"time"
 
 	"github.com/silinternational/riskman-api/domain"
 
@@ -409,6 +410,16 @@ func (as *ActionSuite) Test_ItemsRemove() {
 	item2 := fixtures.Items[2]
 	item3 := fixtures.Items[3]
 
+	oldHours := time.Duration(time.Hour * -(domain.ItemDeleteCutOffHours + 4))
+	oldTime := time.Now().UTC().Add(oldHours)
+
+	oldItem := fixtures.Items[4]
+	oldItem.CreatedAt = oldTime
+
+	q := "UPDATE items SET created_at = ? WHERE id = ?"
+	err := as.DB.RawQuery(q, oldTime.Format(time.RFC3339), oldItem.ID.String()).Exec()
+	as.NoError(err, "error updating item to look old")
+
 	adminUser := fixtures.Policies[0].Members[0]
 	adminUser.AppRole = models.AppRoleAdmin
 	as.NoError(as.DB.Save(&adminUser), "failed saving admin user")
@@ -417,62 +428,71 @@ func (as *ActionSuite) Test_ItemsRemove() {
 	otherUser := fixtures.Policies[2].Members[0]
 
 	tests := []struct {
-		name       string
-		actor      models.User
-		oldItem    models.Item
-		wantCount  int
-		wantStatus int
-		wantInBody []string
+		name           string
+		actor          models.User
+		item           models.Item
+		wantCount      int
+		wantHTTPStatus int
+		wantItemStatus api.ItemCoverageStatus
+		wantInBody     []string
 	}{
 		{
-			name:       "unauthenticated",
-			actor:      models.User{},
-			oldItem:    item2,
-			wantCount:  4,
-			wantStatus: http.StatusUnauthorized,
+			name:           "unauthenticated",
+			actor:          models.User{},
+			item:           item2,
+			wantCount:      4,
+			wantHTTPStatus: http.StatusUnauthorized,
 			wantInBody: []string{api.ErrorNotAuthorized.String(),
 				"no bearer token provided",
 			},
 		},
 		{
-			name:       "unauthorized",
-			actor:      otherUser,
-			oldItem:    item2,
-			wantCount:  4,
-			wantStatus: http.StatusNotFound,
-			wantInBody: []string{"actor not allowed to perform that action on this resource"},
+			name:           "unauthorized",
+			actor:          otherUser,
+			item:           item2,
+			wantCount:      4,
+			wantHTTPStatus: http.StatusNotFound,
+			wantInBody:     []string{"actor not allowed to perform that action on this resource"},
 		},
 		{
-			name:       "bad item id",
-			actor:      policyOwner,
-			oldItem:    models.Item{ID: domain.GetUUID()},
-			wantStatus: http.StatusNotFound,
+			name:           "bad item id",
+			actor:          policyOwner,
+			item:           models.Item{ID: domain.GetUUID()},
+			wantHTTPStatus: http.StatusNotFound,
 		},
 		{
-			name:       "ok for policy creator",
-			actor:      policyOwner,
-			oldItem:    item2,
-			wantCount:  5,
-			wantStatus: http.StatusNoContent,
+			name:           "inactivate old item",
+			actor:          adminUser,
+			item:           oldItem,
+			wantCount:      6,
+			wantHTTPStatus: http.StatusNoContent,
+			wantItemStatus: api.ItemCoverageStatusInactive,
 		},
 		{
-			name:       "ok for admin",
-			actor:      adminUser,
-			oldItem:    item3,
-			wantCount:  4,
-			wantStatus: http.StatusNoContent,
+			name:           "ok for policy creator",
+			actor:          policyOwner,
+			item:           item2,
+			wantCount:      5,
+			wantHTTPStatus: http.StatusNoContent,
+		},
+		{
+			name:           "ok for admin",
+			actor:          adminUser,
+			item:           item3,
+			wantCount:      4,
+			wantHTTPStatus: http.StatusNoContent,
 		},
 	}
 
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
-			req := as.JSON("/items/%s", tt.oldItem.ID.String())
+			req := as.JSON("/items/%s", tt.item.ID.String())
 			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
 			req.Headers["content-type"] = "application/json"
 			res := req.Delete()
 
 			body := res.Body.String()
-			as.Equal(tt.wantStatus, res.Code, "incorrect status code returned, body: %s", body)
+			as.Equal(tt.wantHTTPStatus, res.Code, "incorrect status code returned, body: %s", body)
 
 			if res.Code != http.StatusNoContent {
 				as.verifyResponseData(tt.wantInBody, body, "Items Add")
@@ -484,6 +504,12 @@ func (as *ActionSuite) Test_ItemsRemove() {
 			as.NoError(err)
 
 			as.Equal(tt.wantCount, count, "incorrect number of remaining items")
+
+			if string(tt.wantItemStatus) != "" {
+				dbItem := models.Item{}
+				as.NoError(as.DB.Find(&dbItem, tt.item.ID))
+				as.Equal(tt.wantItemStatus, dbItem.CoverageStatus, "incorrect item status")
+			}
 		})
 	}
 }

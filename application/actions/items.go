@@ -165,7 +165,7 @@ func itemsRemove(c buffalo.Context) error {
 
 	user := models.CurrentUser(c)
 
-	if err := item.SafeDelete(tx, user); err != nil {
+	if err := item.SafeDeleteOrInactivate(tx, user); err != nil {
 		return reportError(c, err)
 	}
 

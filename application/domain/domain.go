@@ -67,6 +67,9 @@ const (
 
 const (
 	DateFormat = "2006-01-02"
+
+	// How many hours old an item can be until it's not allowed to be deleted
+	ItemDeleteCutOffHours = 72
 )
 
 // Event Kinds
