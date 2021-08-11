@@ -51,6 +51,19 @@ var samlConfig = saml.Config{
 	AttributeMap:                nil,
 }
 
+// swagger:operation POST /auth/login Authentication AuthLogin
+//
+// Start the SAML login process
+//
+// ---
+// parameters:
+// - name: client-id
+//   in: path
+//   required: true
+//   description: the user's client id
+// responses:
+//   '200':
+//     description: returns a "RedirectURL" key with the saml idp url that has a saml request
 func authRequest(c buffalo.Context) error {
 	// Push the Client ID into the Session
 	clientID := c.Param(ClientIDParam)
@@ -220,12 +233,13 @@ func getLoginSuccessRedirectURL(authUser auth.User, returnTo string) string {
 //
 // ---
 // parameters:
-// - name: tokem
+// - name: token
 //   in: path
 //   required: true
 //   description: the user's bearer token
 // responses:
-//   '302'
+//   '302':
+//     description: redirect to UI
 func authDestroy(c buffalo.Context) error {
 	tokenParam := c.Param(LogoutToken)
 	if tokenParam == "" {
