@@ -44,6 +44,11 @@ func claimsList(c buffalo.Context) error {
 // view a specific claim
 //
 // ---
+// parameters:
+// - name: id
+//   in: path
+//   required: true
+//   description: claim ID
 // responses:
 //   '200':
 //     description: a Claim
@@ -66,6 +71,10 @@ func claimsView(c buffalo.Context) error {
 //
 // ---
 // parameters:
+//   - name: id
+//     in: path
+//     required: true
+//     description: policy ID
 //   - name: claim input
 //     in: body
 //     description: claim create input object

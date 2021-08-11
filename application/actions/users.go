@@ -42,6 +42,11 @@ func usersList(c buffalo.Context) error {
 // gets the data for a specific User.
 //
 // ---
+// parameters:
+//   - name: id
+//     in: path
+//     required: true
+//     description: user ID
 // responses:
 //   '200':
 //     description: a user

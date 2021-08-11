@@ -16,6 +16,11 @@ import (
 // list policy dependents
 //
 // ---
+// parameters:
+//   - name: id
+//     in: path
+//     required: true
+//     description: policy ID
 // responses:
 //   '200':
 //     description: a list of PolicyDependents
@@ -44,6 +49,10 @@ func dependentsList(c buffalo.Context) error {
 //
 // ---
 // parameters:
+//   - name: id
+//     in: path
+//     required: true
+//     description: policy ID
 //   - name: policy dependent
 //     in: body
 //     description: policy dependent input object
