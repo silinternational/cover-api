@@ -60,7 +60,7 @@ var samlConfig = saml.Config{
 // ---
 // parameters:
 // - name: client-id
-//   in: path
+//   in: query
 //   required: true
 //   description: the user's client id
 // responses:
@@ -238,7 +238,7 @@ func getLoginSuccessRedirectURL(authUser auth.User, returnTo string) string {
 // ---
 // parameters:
 // - name: token
-//   in: path
+//   in: query
 //   required: true
 //   description: the user's bearer token
 // responses:
