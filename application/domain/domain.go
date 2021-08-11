@@ -111,6 +111,15 @@ var Env struct {
 	SamlCheckResponseSigning        bool   `default:"true" split_words:"true"`
 	SamlSignRequest                 bool   `default:"true" split_words:"true"`
 	SamlRequireEncryptedAssertion   bool   `default:"true" split_words:"true"`
+
+	// Ported from WeCarry's domain.go so that aws.go works
+	AwsRegion                  		string	`default:"us-east-1" split_words:"true"`
+	AwsS3Endpoint              		string	`default:"http://minio:9000" split_words:"true"`
+	AwsS3DisableSSL            		bool	`default:"true" split_words:"true"`
+	AwsS3Bucket                		string	`default:"wca-test-bucket" split_words:"true"`
+	AwsAccessKeyID             		string	`default:"abc123" split_words:"true"`
+	AwsSecretAccessKey         		string	`default:"abcd1234" split_words:"true"`
+	EmailFromAddress           		string	`default:"no_reply@example.com" split_words:"true"`
 }
 
 func init() {
