@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/gofrs/uuid"
+
 	"github.com/silinternational/riskman-api/domain"
 
 	"github.com/gobuffalo/buffalo"
@@ -15,6 +16,25 @@ import (
 	"github.com/silinternational/riskman-api/models"
 )
 
+// swagger:operation GET /policies/{id}/items Policies PolicyItemsList
+//
+// PolicyItemsList
+//
+// gets the data for all the items on a Policy
+//
+// ---
+// parameters:
+//   - name: id
+//     in: path
+//     required: true
+//     description: policy ID
+// responses:
+//   '200':
+//     description: all policy items
+//     schema:
+//       type: array
+//       items:
+//         "$ref": "#/definitions/Item"
 func itemsList(c buffalo.Context) error {
 	tx := models.Tx(c)
 
@@ -29,6 +49,29 @@ func itemsList(c buffalo.Context) error {
 	return renderOk(c, models.ConvertItems(tx, policy.Items))
 }
 
+// swagger:operation POST /policies/{id}/items Policies PolicyItemsCreate
+//
+// PolicyItemsCreate
+//
+// create a policy item
+//
+// ---
+// parameters:
+//   - name: id
+//     in: path
+//     required: true
+//     description: policy ID
+//   - name: policy item create input
+//     in: body
+//     description: policy item create input object
+//     required: true
+//     schema:
+//       "$ref": "#/definitions/ItemInput"
+// responses:
+//   '200':
+//     description: new Item
+//     schema:
+//       "$ref": "#/definitions/Item"
 func itemsCreate(c buffalo.Context) error {
 	tx := models.Tx(c)
 	policy := getReferencedPolicyFromCtx(c)
@@ -56,6 +99,29 @@ func itemsCreate(c buffalo.Context) error {
 	return c.Render(http.StatusOK, r.JSON(output))
 }
 
+// swagger:operation PUT /policies/{id}/items Policies PolicyItemsUpdate
+//
+// PolicyItemsUpdate
+//
+// update a policy item
+//
+// ---
+// parameters:
+//   - name: id
+//     in: path
+//     required: true
+//     description: policy ID
+//   - name: policy item update input
+//     in: body
+//     description: policy item create update object
+//     required: true
+//     schema:
+//       "$ref": "#/definitions/ItemInput"
+// responses:
+//   '200':
+//     description: updated Item
+//     schema:
+//       "$ref": "#/definitions/Item"
 func itemsUpdate(c buffalo.Context) error {
 	tx := models.Tx(c)
 	item := getReferencedItemFromCtx(c)
