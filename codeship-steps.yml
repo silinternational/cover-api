@@ -1,6 +1,14 @@
-- name: test
-  service: app
-  command: ./codeship-test.sh
+- type: parallel
+  steps:
+
+  - name: test
+    service: app
+    command: ./codeship-test.sh
+
+  - name: apidocs
+    service: docs
+    tag: develop
+    command: ./build-push-api-docs.sh
 
 #- name: push_develop_timestamp
 #  service: binary
@@ -57,8 +65,3 @@
 #  service: rollbar
 #  tag: ^(main|develop)
 #  command: "/notify.sh"
-
-- name: apidocs
-  service: docs
-  tag: develop
-  command: ./build-push-api-docs.sh
