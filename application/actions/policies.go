@@ -114,9 +114,9 @@ func policiesUpdate(c buffalo.Context) error {
 	return renderOk(c, models.ConvertPolicy(tx, *policy))
 }
 
-// swagger:operation GET /policies/{id}/members Policies PoliciesListMembers
+// swagger:operation GET /policies/{id}/members PolicyMembers PolicyMembersList
 //
-// PoliciesListMembers
+// PolicyMembersList
 //
 // gets the data for all the members of a Policy
 //

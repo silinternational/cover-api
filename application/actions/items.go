@@ -16,7 +16,7 @@ import (
 	"github.com/silinternational/riskman-api/models"
 )
 
-// swagger:operation GET /policies/{id}/items Policies PolicyItemsList
+// swagger:operation GET /policies/{id}/items PolicyItems PolicyItemsList
 //
 // PolicyItemsList
 //
@@ -49,7 +49,7 @@ func itemsList(c buffalo.Context) error {
 	return renderOk(c, models.ConvertItems(tx, policy.Items))
 }
 
-// swagger:operation POST /policies/{id}/items Policies PolicyItemsCreate
+// swagger:operation POST /policies/{id}/items PolicyItems PolicyItemsCreate
 //
 // PolicyItemsCreate
 //
@@ -99,7 +99,7 @@ func itemsCreate(c buffalo.Context) error {
 	return c.Render(http.StatusOK, r.JSON(output))
 }
 
-// swagger:operation PUT /policies/{id}/items Policies PolicyItemsUpdate
+// swagger:operation PUT /policies/{id}/items PolicyItems PolicyItemsUpdate
 //
 // PolicyItemsUpdate
 //
