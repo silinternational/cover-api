@@ -9,6 +9,25 @@ import (
 	"github.com/silinternational/riskman-api/models"
 )
 
+// swagger:operation GET /policies/{id}/dependents PolicyDependents PolicyDependentsList
+//
+// PolicyDependentsList
+//
+// list policy dependents
+//
+// ---
+// parameters:
+//   - name: id
+//     in: path
+//     required: true
+//     description: policy ID
+// responses:
+//   '200':
+//     description: a list of PolicyDependents
+//     schema:
+//       type: array
+//       items:
+//         "$ref": "#/definitions/PolicyDependents"
 func dependentsList(c buffalo.Context) error {
 	policy := getReferencedPolicyFromCtx(c)
 	if policy == nil {
@@ -22,6 +41,29 @@ func dependentsList(c buffalo.Context) error {
 	return renderOk(c, models.ConvertPolicyDependents(tx, policy.Dependents))
 }
 
+// swagger:operation POST /policies/{id}/dependents PolicyDependents PolicyDependentsCreate
+//
+// PolicyDependentsCreate
+//
+// create a new PolicyDependent on a policy
+//
+// ---
+// parameters:
+//   - name: id
+//     in: path
+//     required: true
+//     description: policy ID
+//   - name: policy dependent
+//     in: body
+//     description: policy dependent input object
+//     required: true
+//     schema:
+//       "$ref": "#/definitions/PolicyDependentInput"
+// responses:
+//   '200':
+//     description: the new PolicyDependent
+//     schema:
+//       "$ref": "#/definitions/PolicyDependent"
 func dependentsCreate(c buffalo.Context) error {
 	policy := getReferencedPolicyFromCtx(c)
 	if policy == nil {
