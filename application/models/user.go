@@ -158,6 +158,19 @@ func (u *User) LoadPolicies(tx *pop.Connection, reload bool) {
 	}
 }
 
+func (u *User) MyClaims(tx *pop.Connection) Claims {
+	if err := tx.Load(u, "Policies.Claims"); err != nil {
+		panic("database error loading User.Policies.Claims, " + err.Error())
+	}
+
+	var claims Claims
+	for _, policy := range u.Policies {
+		claims = append(claims, policy.Claims...)
+	}
+
+	return claims
+}
+
 func ConvertPolicyMember(tx *pop.Connection, u User) api.PolicyMember {
 	return api.PolicyMember{
 		ID:           u.ID,

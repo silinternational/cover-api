@@ -14,7 +14,7 @@ import (
 func (as *ActionSuite) Test_ClaimsList() {
 	const numberOfPolicies = 3
 	const claimsPerPolicy = 4
-	const numberOfClaims = claimsPerPolicy * numberOfPolicies
+	const totalNumberOfClaims = claimsPerPolicy * numberOfPolicies
 	fixConfig := models.FixturesConfig{
 		NumberOfPolicies:    numberOfPolicies,
 		UsersPerPolicy:      1,
@@ -38,20 +38,24 @@ func (as *ActionSuite) Test_ClaimsList() {
 		name          string
 		actor         models.User
 		wantStatus    int
+		wantClaims    int
 		wantInBody    string
 		notWantInBody string
 	}{
 		{
 			name:          "normal user",
 			actor:         normalUser,
-			wantStatus:    http.StatusNotFound,
-			notWantInBody: fixtures.Policies[0].ID.String(),
+			wantStatus:    http.StatusOK,
+			wantClaims:    claimsPerPolicy,
+			wantInBody:    fixtures.Policies[1].Claims[0].ID.String(),
+			notWantInBody: fixtures.Policies[0].Claims[0].ID.String(),
 		},
 		{
 			name:       "admin user",
 			actor:      appAdmin,
 			wantStatus: http.StatusOK,
-			wantInBody: fixtures.Policies[0].ID.String(),
+			wantClaims: totalNumberOfClaims,
+			wantInBody: fixtures.Policies[0].Claims[0].ID.String(),
 		},
 	}
 
@@ -76,7 +80,7 @@ func (as *ActionSuite) Test_ClaimsList() {
 			}
 			var responseObject api.Claims
 			as.NoError(json.Unmarshal([]byte(body), &responseObject))
-			as.Len(responseObject, numberOfClaims, "incorrect # of claims, %+v", responseObject)
+			as.Len(responseObject, tt.wantClaims, "incorrect # of claims, %+v", responseObject)
 		})
 	}
 }
