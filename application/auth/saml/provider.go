@@ -134,7 +134,7 @@ func getUserFromAssertion(assertion *saml2.AssertionInfo) *auth.User {
 		FirstName: getSAMLAttributeFirstValue("givenName", assertion.Assertions[0].AttributeStatement.Attributes),
 		LastName:  getSAMLAttributeFirstValue("sn", assertion.Assertions[0].AttributeStatement.Attributes),
 		Email:     getSAMLAttributeFirstValue("mail", assertion.Assertions[0].AttributeStatement.Attributes),
-		StaffID:   assertion.NameID,
+		StaffID:   getSAMLAttributeFirstValue("employeeNumber", assertion.Assertions[0].AttributeStatement.Attributes),
 	}
 }
 
