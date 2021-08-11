@@ -15,7 +15,6 @@ type Users []User
 type User struct {
 	// unique ID
 	//
-	// read only: true
 	// swagger:strfmt uuid4
 	ID uuid.UUID `json:"id"`
 
