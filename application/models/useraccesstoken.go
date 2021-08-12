@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/silinternational/riskman-api/api"
+
 	"github.com/gobuffalo/nulls"
 	"github.com/gobuffalo/pop/v5"
 	"github.com/gobuffalo/validate/v3"
@@ -62,11 +64,20 @@ func (u *UserAccessToken) ValidateUpdate(tx *pop.Connection) (*validate.Errors, 
 }
 
 // DeleteByBearerToken uses a sha256.Sum256 of the bearerToken to find which UserAccessToken to delete
-func (u *UserAccessToken) DeleteByBearerToken(tx *pop.Connection, bearerToken string) error {
-	if err := u.FindByBearerToken(tx, bearerToken); err != nil {
-		return err
+func (u *UserAccessToken) DeleteByBearerToken(tx *pop.Connection, bearerToken string) *api.AppError {
+	if appErr := u.FindByBearerToken(tx, bearerToken); appErr != nil {
+		return appErr
 	}
-	return tx.Destroy(u)
+	if err := tx.Destroy(u); err != nil {
+		appErr := api.AppError{
+			Key:      api.ErrorDeletingAccessToken,
+			Category: api.CategoryDatabase,
+			Message:  err.Error(),
+		}
+		return &appErr
+	}
+
+	return nil
 }
 
 // DeleteIfExpired checks the token expiration and returns `true` if expired. Also deletes
@@ -83,13 +94,21 @@ func (u *UserAccessToken) DeleteIfExpired(tx *pop.Connection) (bool, error) {
 }
 
 // FindByBearerToken uses a sha256.Sum256 of the bearerToken to find the corresponding UserAccessToken
-func (u *UserAccessToken) FindByBearerToken(tx *pop.Connection, bearerToken string) error {
+func (u *UserAccessToken) FindByBearerToken(tx *pop.Connection, bearerToken string) *api.AppError {
 	if err := tx.Eager().Where("access_token = ?", HashClientIdAccessToken(bearerToken)).First(u); err != nil {
 		l := len(bearerToken)
 		if l > 5 {
 			l = 5
 		}
-		return fmt.Errorf("failed to find access token '%s...', %s", bearerToken[0:l], err)
+		appErr := api.AppError{
+			Key:      api.ErrorFindingAccessToken,
+			Category: api.CategoryUser,
+			Message:  fmt.Sprintf("failed to find access token '%s...', %s", bearerToken[0:l], err),
+		}
+		if domain.IsOtherThanNoRows(err) {
+			appErr.Category = api.CategoryDatabase
+		}
+		return &appErr
 	}
 
 	return nil
