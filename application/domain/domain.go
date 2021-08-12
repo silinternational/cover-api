@@ -77,6 +77,11 @@ const (
 	EventApiUserCreated = "api:user:created"
 )
 
+var (
+	// redirect url for after logout
+	LogoutRedirectURL = "missing.ui.url/logged-out"
+)
+
 func getBuffaloContext(ctx context.Context) buffalo.Context {
 	bc, ok := ctx.Value(BuffaloContext).(buffalo.Context)
 	if ok {
@@ -123,6 +128,8 @@ func init() {
 	ErrLogger.InitRollbar()
 	Assets = packr.New("Assets", "../assets")
 	AuthCallbackURL = Env.ApiBaseURL + "/auth/callback"
+
+	LogoutRedirectURL = Env.UIURL + "/logged-out"
 }
 
 // readEnv loads environment data into `Env`
