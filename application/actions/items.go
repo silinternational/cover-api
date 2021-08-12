@@ -155,6 +155,39 @@ func itemsUpdate(c buffalo.Context) error {
 	return c.Render(http.StatusOK, r.JSON(output))
 }
 
+// swagger:operation DELETE /items/{id} PolicyItems PolicyItemsRemove
+//
+// PolicyItemsRemove
+//
+// Delete a policy item if it is less than 72 hours old and has no associations.
+//   Otherwise, inactivate coverage on it.
+//
+// ---
+// parameters:
+//   - name: id
+//     in: path
+//     required: true
+//     description: item ID
+// responses:
+//   '204':
+//     description: OK but no content in response
+func itemsRemove(c buffalo.Context) error {
+	tx := models.Tx(c)
+	item := getReferencedItemFromCtx(c)
+	if item == nil {
+		err := errors.New("item not found in context")
+		return reportError(c, api.NewAppError(err, api.ErrorItemFromContext, api.CategoryInternal))
+	}
+
+	user := models.CurrentUser(c)
+
+	if err := item.SafeDeleteOrInactivate(tx, user); err != nil {
+		return reportError(c, err)
+	}
+
+	return c.Render(http.StatusNoContent, nil)
+}
+
 // convertItemApiInput creates a new `Item` from a `ItemInput`.
 func convertItemApiInput(ctx context.Context, input api.ItemInput, policyID uuid.UUID) (models.Item, error) {
 	item := models.Item{}
