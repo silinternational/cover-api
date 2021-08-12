@@ -110,6 +110,8 @@ func (i *Item) isNewEnough() bool {
 	return !i.CreatedAt.Before(cutOffDate)
 }
 
+// Inactivate sets the item's CoverageStatus to Inactive
+//  TODO deal with coverage payment changes
 func (i *Item) Inactivate(tx *pop.Connection) error {
 	i.CoverageStatus = api.ItemCoverageStatusInactive
 	return i.Update(tx)

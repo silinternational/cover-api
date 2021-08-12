@@ -155,6 +155,22 @@ func itemsUpdate(c buffalo.Context) error {
 	return c.Render(http.StatusOK, r.JSON(output))
 }
 
+// swagger:operation DELETE /items/{id} PolicyItems PolicyItemsRemove
+//
+// PolicyItemsRemove
+//
+// Delete a policy item if it is less than 72 hours old and has no associations.
+//   Otherwise, inactivate coverage on it.
+//
+// ---
+// parameters:
+//   - name: id
+//     in: path
+//     required: true
+//     description: item ID
+// responses:
+//   '204':
+//     description: OK but no content in response
 func itemsRemove(c buffalo.Context) error {
 	tx := models.Tx(c)
 	item := getReferencedItemFromCtx(c)
