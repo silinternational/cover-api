@@ -79,7 +79,7 @@ const (
 
 var (
 	// redirect url for after logout
-	LogoutRedirectURL = "missing.ui.url//logged-out"
+	LogoutRedirectURL = "missing.ui.url/logged-out"
 )
 
 func getBuffaloContext(ctx context.Context) buffalo.Context {
