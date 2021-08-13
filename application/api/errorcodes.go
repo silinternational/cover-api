@@ -65,5 +65,5 @@ const (
 
 	// Claim
 	ErrorClaimCreateInvalidInput = ErrorKey("ErrorClaimCreateInvalidInput")
-	ErrorClaimCreate             = ErrorKey("ErrorClaimCreate")
+	ErrorClaimUpdateInvalidInput = ErrorKey("ErrorClaimUpdateInvalidInput")
 )
