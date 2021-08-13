@@ -185,7 +185,7 @@ func (as *ActionSuite) Test_ClaimsUpdate() {
 	as.NoError(err, "failed to make an app admin")
 
 	input := api.ClaimUpdateInput{
-		EventDate:        time.Now(),
+		EventDate:        time.Now().UTC(),
 		EventType:        api.ClaimEventTypeTheft,
 		EventDescription: "a description",
 	}
@@ -258,7 +258,7 @@ func (as *ActionSuite) Test_ClaimsUpdate() {
 func (as *ActionSuite) verifyClaimUpdate(input api.ClaimUpdateInput, claim models.Claim) {
 	as.Equal(input.EventType, claim.EventType, "EventType not correct")
 	as.Equal(input.EventDescription, claim.EventDescription, "EventDescription not correct")
-	as.Equal(input.EventDate, claim.EventDate, "EventDate not correct")
+	as.WithinDuration(input.EventDate, claim.EventDate, time.Millisecond, "EventDate not correct")
 }
 
 func (as *ActionSuite) Test_ClaimsCreate() {
