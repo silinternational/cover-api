@@ -70,12 +70,7 @@ func (u *UserAccessToken) DeleteByBearerToken(tx *pop.Connection, bearerToken st
 		return appErr
 	}
 	if err := tx.Destroy(u); err != nil {
-		appErr := api.AppError{
-			Err:      err,
-			Key:      api.ErrorDeletingAccessToken,
-			Category: api.CategoryDatabase,
-		}
-		return &appErr
+		panic("database error trying to destroy user access token: " + err.Error())
 	}
 
 	return nil
@@ -103,14 +98,15 @@ func (u *UserAccessToken) FindByBearerToken(tx *pop.Connection, bearerToken stri
 			l = 5
 		}
 
+		if domain.IsOtherThanNoRows(err) {
+			panic("database error trying to find user access token: " + err.Error())
+		}
+
 		appErr := api.AppError{
 			Err:      err,
 			Key:      api.ErrorFindingAccessToken,
 			Category: api.CategoryUser,
 			Message:  fmt.Sprintf("failed to find access token '%s...'", bearerToken[0:l]),
-		}
-		if domain.IsOtherThanNoRows(err) {
-			panic("database error trying to find bearer token")
 		}
 		return &appErr
 	}
