@@ -64,7 +64,8 @@ func (u *UserAccessToken) ValidateUpdate(tx *pop.Connection) (*validate.Errors, 
 }
 
 // DeleteByBearerToken uses a sha256.Sum256 of the bearerToken to find which UserAccessToken to delete
-func (u *UserAccessToken) DeleteByBearerToken(tx *pop.Connection, bearerToken string) *api.AppError {
+// returns an api.AppError
+func (u *UserAccessToken) DeleteByBearerToken(tx *pop.Connection, bearerToken string) error {
 	if appErr := u.FindByBearerToken(tx, bearerToken); appErr != nil {
 		return appErr
 	}
@@ -94,7 +95,8 @@ func (u *UserAccessToken) DeleteIfExpired(tx *pop.Connection) (bool, error) {
 }
 
 // FindByBearerToken uses a sha256.Sum256 of the bearerToken to find the corresponding UserAccessToken
-func (u *UserAccessToken) FindByBearerToken(tx *pop.Connection, bearerToken string) *api.AppError {
+// returns an api.AppError
+func (u *UserAccessToken) FindByBearerToken(tx *pop.Connection, bearerToken string) error {
 	if err := tx.Eager().Where("access_token = ?", HashClientIdAccessToken(bearerToken)).First(u); err != nil {
 		l := len(bearerToken)
 		if l > 5 {
@@ -108,7 +110,7 @@ func (u *UserAccessToken) FindByBearerToken(tx *pop.Connection, bearerToken stri
 			Message:  fmt.Sprintf("failed to find access token '%s...'", bearerToken[0:l]),
 		}
 		if domain.IsOtherThanNoRows(err) {
-			appErr.Category = api.CategoryDatabase
+			panic("database error trying to find bearer token")
 		}
 		return &appErr
 	}

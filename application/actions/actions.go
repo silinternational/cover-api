@@ -77,7 +77,7 @@ func reportError(c buffalo.Context, err error) error {
 
 // reportErrorAndClearSession logs an error with details, clears the session, and renders the error with buffalo.Render.
 // If the HTTP status code provided is in the 300 family, buffalo.Redirect is used instead.
-func reportErrorAndClearSession(c buffalo.Context, err *api.AppError) error {
+func reportErrorAndClearSession(c buffalo.Context, err error) error {
 	c.Session().Clear()
 	return reportError(c, err)
 }

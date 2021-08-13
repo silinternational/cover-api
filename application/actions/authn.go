@@ -21,10 +21,7 @@ func AuthN(next buffalo.Handler) buffalo.Handler {
 
 		var userAccessToken models.UserAccessToken
 		tx := models.Tx(c)
-		if appErr := userAccessToken.FindByBearerToken(tx, bearerToken); appErr != nil {
-			if appErr.Category == api.CategoryDatabase {
-				return reportError(c, appErr)
-			}
+		if err := userAccessToken.FindByBearerToken(tx, bearerToken); err != nil {
 			err := errors.New("invalid bearer token")
 			return reportError(c, api.NewAppError(err, api.ErrorNotAuthorized, api.CategoryUnauthorized))
 		}
