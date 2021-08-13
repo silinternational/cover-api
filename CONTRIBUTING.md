@@ -69,7 +69,18 @@ To run all tests, run `make test`.
 To run a single test:
 1. run `make testenv` - this starts the test container and drops you into a bash prompt, from which you can run test commands.
 2. `buffalo test actions -m "Test_Name"` will run any tests matching "Test_Name" in the "actions" package.
-3. (alternative) `go test -v -tags development ./actions -testify.m "Test_Name"` - this runs more quickly than `buffalo test` and allows you to use go test flags like `-v`. The `-tags development` is applied by `buffalo test` but not by `go test` and is required in order to include the test fixture generation in `testutils.go`
+3. (alternative) `go test -v -tags development ./actions -testify.m "Test_Name"` - this runs more quickly than `buffalo test` and allows you to use go test flags like `-v`. The `-tags development` is applied by `buffalo test` but not by `go test` and is required in order to include the test fixture generation in `testutils.go`. The test image contains a bash alias `t` as a shortcut for this command, e.g. `t actions Test_Name`.
+
+Using Goland:
+1. Set `development` custom build tag (see [Custom tags](#custom-tags))
+2. Edit test configuration template (Run -> Edit Configurations... -> Edit configuration templates... -> Go Test) as follows:
+- check "Use all custom build tags"
+- set environment variables:
+
+```
+GO_ENV=test
+```
+3. Click the green arrow next to the test or test step
 
 ### Database Queries
 
