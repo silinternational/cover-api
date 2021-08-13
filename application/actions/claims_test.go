@@ -163,6 +163,104 @@ func (as *ActionSuite) Test_ClaimsView() {
 	}
 }
 
+func (as *ActionSuite) Test_ClaimsUpdate() {
+	fixConfig := models.FixturesConfig{
+		NumberOfPolicies:    3,
+		UsersPerPolicy:      1,
+		ClaimsPerPolicy:     4,
+		DependentsPerPolicy: 0,
+		ItemsPerPolicy:      2,
+	}
+
+	fixtures := models.CreateItemFixtures(as.DB, fixConfig)
+
+	// alias a couple users
+	appAdmin := fixtures.Policies[0].Members[0]
+	firstUser := fixtures.Policies[1].Members[0]
+	secondUser := fixtures.Policies[2].Members[0]
+
+	// make an admin
+	appAdmin.AppRole = models.AppRoleAdmin
+	err := appAdmin.Update(as.DB)
+	as.NoError(err, "failed to make an app admin")
+
+	input := api.ClaimUpdateInput{
+		EventDate:        time.Now(),
+		EventType:        api.ClaimEventTypeTheft,
+		EventDescription: "a description",
+	}
+
+	tests := []struct {
+		name          string
+		actor         models.User
+		claim         models.Claim
+		input         api.ClaimUpdateInput
+		wantStatus    int
+		wantInBody    string
+		notWantInBody string
+	}{
+		{
+			name:          "unauthorized user",
+			actor:         firstUser,
+			claim:         fixtures.Policies[2].Claims[0],
+			input:         input,
+			wantStatus:    http.StatusNotFound,
+			notWantInBody: fixtures.Policies[2].ID.String(),
+		},
+		{
+			name:       "authorized user",
+			actor:      secondUser,
+			claim:      fixtures.Policies[2].Claims[0],
+			input:      input,
+			wantStatus: http.StatusOK,
+			wantInBody: fixtures.Policies[2].Claims[0].ID.String(),
+		},
+		{
+			name:       "admin user",
+			actor:      appAdmin,
+			claim:      fixtures.Policies[2].Claims[0],
+			input:      input,
+			wantStatus: http.StatusOK,
+			wantInBody: fixtures.Policies[2].Claims[0].ID.String(),
+		},
+	}
+
+	for _, tt := range tests {
+		as.T().Run(tt.name, func(t *testing.T) {
+			req := as.JSON("/claims/" + tt.claim.ID.String())
+			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
+			req.Headers["content-type"] = "application/json"
+			res := req.Put(tt.input)
+
+			body := res.Body.String()
+			as.Equal(tt.wantStatus, res.Code, "incorrect status code returned, body: %s", body)
+			if tt.wantInBody != "" {
+				as.Contains(body, tt.wantInBody, "did not find expected string")
+			}
+			if tt.notWantInBody != "" {
+				as.NotContains(body, tt.notWantInBody, "found unexpected string")
+			}
+
+			if res.Code != http.StatusOK {
+				return
+			}
+			var responseObject api.Claim
+			as.NoError(json.Unmarshal([]byte(body), &responseObject))
+			as.Equal(tt.claim.ID, responseObject.ID, "incorrect object in response", responseObject)
+
+			updatedClaim := models.Claim{}
+			as.NoError(as.DB.Find(&updatedClaim, tt.claim.ID))
+			as.verifyClaimUpdate(input, updatedClaim)
+		})
+	}
+}
+
+func (as *ActionSuite) verifyClaimUpdate(input api.ClaimUpdateInput, claim models.Claim) {
+	as.Equal(input.EventType, claim.EventType, "EventType not correct")
+	as.Equal(input.EventDescription, claim.EventDescription, "EventDescription not correct")
+	as.Equal(input.EventDate, claim.EventDate, "EventDate not correct")
+}
+
 func (as *ActionSuite) Test_ClaimsCreate() {
 	fixConfig := models.FixturesConfig{
 		NumberOfPolicies:    3,

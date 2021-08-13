@@ -132,6 +132,7 @@ func App() *buffalo.App {
 		claimsGroup := app.Group("/" + domain.TypeClaim)
 		claimsGroup.GET("/", claimsList)
 		claimsGroup.GET(idRegex, claimsView)
+		claimsGroup.PUT(idRegex, claimsUpdate)
 
 		// policies
 		policiesGroup := app.Group("/" + domain.TypePolicy)
