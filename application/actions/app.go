@@ -102,7 +102,7 @@ func App() *buffalo.App {
 		//  Add authentication and authorization
 		app.Use(AuthN, AuthZ)
 		app.Middleware.Skip(AuthN, HomeHandler, statusHandler)
-		app.Middleware.Skip(AuthZ, HomeHandler, statusHandler, itemCategoriesList)
+		app.Middleware.Skip(AuthZ, HomeHandler, statusHandler, uploadHandler, itemCategoriesList)
 
 		// Set the request content type to JSON
 		app.Use(contenttype.Set("application/json"))
