@@ -290,7 +290,7 @@ func authDestroy(c buffalo.Context) error {
 		})
 	}
 
-	redirectURL := domain.Env.UIURL
+	redirectURL := domain.LogoutRedirectURL
 
 	if authResp.RedirectURL != "" {
 		var uat models.UserAccessToken

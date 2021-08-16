@@ -36,5 +36,7 @@ RUN go get github.com/gobuffalo/suite/v3 \
 
 ADD . .
 
+RUN printf "t() {\n go test -v -tags development ./\$1 -testify.m \$2 \n}\n" >> ~/.bashrc
+
 EXPOSE 6060
 CMD ["buffalo", "dev"]

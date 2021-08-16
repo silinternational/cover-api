@@ -125,7 +125,7 @@ func (p *Provider) Logout(c buffalo.Context) auth.Response {
 	if err != nil {
 		resp.Error = err
 	}
-	rURL := fmt.Sprintf("%s?ReturnTo=%s", p.Config.SingleLogoutURL, domain.Env.UIURL)
+	rURL := fmt.Sprintf("%s?ReturnTo=%s", p.Config.SingleLogoutURL, domain.LogoutRedirectURL)
 	return auth.Response{RedirectURL: rURL}
 }
 

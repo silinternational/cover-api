@@ -93,3 +93,14 @@ type ClaimCreateInput struct {
 	// event description
 	EventDescription string `json:"event_description"`
 }
+
+// swagger:model
+type ClaimUpdateInput struct {
+	// event date
+	EventDate time.Time `json:"event_date"`
+
+	EventType ClaimEventType `json:"event_type"`
+
+	// event description
+	EventDescription string `json:"event_description"`
+}

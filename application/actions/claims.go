@@ -1,8 +1,6 @@
 package actions
 
 import (
-	"errors"
-
 	"github.com/gobuffalo/buffalo"
 
 	"github.com/silinternational/riskman-api/api"
@@ -69,9 +67,47 @@ func claimsListMine(c buffalo.Context) error {
 func claimsView(c buffalo.Context) error {
 	claim := getReferencedClaimFromCtx(c)
 	if claim == nil {
-		err := errors.New("claim not found in context")
-		return reportError(c, api.NewAppError(err, "", api.CategoryInternal))
+		panic("claim not found in context")
 	}
+	return renderOk(c, models.ConvertClaim(*claim))
+}
+
+// swagger:operation PUT /claims/{id} Claims ClaimsUpdate
+//
+// ClaimsUpdate
+//
+// update a claim
+//
+// ---
+// parameters:
+// - name: id
+//   in: path
+//   required: true
+//   description: claim ID
+// responses:
+//   '200':
+//     description: a Claim
+//     schema:
+//       "$ref": "#/definitions/Claim"
+func claimsUpdate(c buffalo.Context) error {
+	claim := getReferencedClaimFromCtx(c)
+	if claim == nil {
+		panic("claim not found in context")
+	}
+
+	var input api.ClaimUpdateInput
+	if err := StrictBind(c, &input); err != nil {
+		return reportError(c, api.NewAppError(err, api.ErrorClaimUpdateInvalidInput, api.CategoryUser))
+	}
+
+	claim.EventType = input.EventType
+	claim.EventDescription = input.EventDescription
+	claim.EventDate = input.EventDate
+
+	if err := claim.Update(models.Tx(c)); err != nil {
+		return reportError(c, err)
+	}
+
 	return renderOk(c, models.ConvertClaim(*claim))
 }
 
@@ -101,8 +137,7 @@ func claimsView(c buffalo.Context) error {
 func claimsCreate(c buffalo.Context) error {
 	policy := getReferencedPolicyFromCtx(c)
 	if policy == nil {
-		err := errors.New("policy not found in route")
-		return reportError(c, api.NewAppError(err, api.ErrorPolicyNotFound, api.CategoryUser))
+		panic("policy not found in route")
 	}
 
 	var input api.ClaimCreateInput
