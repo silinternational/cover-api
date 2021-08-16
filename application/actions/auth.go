@@ -256,13 +256,8 @@ func authDestroy(c buffalo.Context) error {
 
 	var uat models.UserAccessToken
 	tx := models.Tx(c)
-	err := uat.FindByBearerToken(tx, tokenParam)
-	if err != nil {
-		return reportErrorAndClearSession(c, &api.AppError{
-			HttpStatus: http.StatusInternalServerError,
-			Key:        api.ErrorFindingAccessToken,
-			Message:    err.Error(),
-		})
+	if appErr := uat.FindByBearerToken(tx, tokenParam); appErr != nil {
+		return reportErrorAndClearSession(c, appErr)
 	}
 
 	authUser, err := uat.GetUser(tx)
@@ -299,13 +294,8 @@ func authDestroy(c buffalo.Context) error {
 
 	if authResp.RedirectURL != "" {
 		var uat models.UserAccessToken
-		err = uat.DeleteByBearerToken(tx, tokenParam)
-		if err != nil {
-			return reportErrorAndClearSession(c, &api.AppError{
-				HttpStatus: http.StatusInternalServerError,
-				Key:        api.ErrorDeletingAccessToken,
-				Message:    err.Error(),
-			})
+		if appErr := uat.DeleteByBearerToken(tx, tokenParam); appErr != nil {
+			return reportErrorAndClearSession(c, appErr)
 		}
 		c.Session().Clear()
 		redirectURL = authResp.RedirectURL

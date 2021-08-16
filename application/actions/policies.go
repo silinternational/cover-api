@@ -1,8 +1,6 @@
 package actions
 
 import (
-	"errors"
-
 	"github.com/gobuffalo/buffalo"
 
 	"github.com/silinternational/riskman-api/api"
@@ -84,8 +82,7 @@ func policiesUpdate(c buffalo.Context) error {
 	tx := models.Tx(c)
 	policy := getReferencedPolicyFromCtx(c)
 	if policy == nil {
-		err := errors.New("policy not found in context")
-		return reportError(c, api.NewAppError(err, api.ErrorPolicyFromContext, api.CategoryInternal))
+		panic("policy not found in context")
 	}
 
 	var update api.PolicyUpdate
@@ -136,8 +133,7 @@ func policiesListMembers(c buffalo.Context) error {
 	tx := models.Tx(c)
 	policy := getReferencedPolicyFromCtx(c)
 	if policy == nil {
-		err := errors.New("policy not found in context")
-		return reportError(c, api.NewAppError(err, api.ErrorPolicyFromContext, api.CategoryInternal))
+		panic("policy not found in context")
 	}
 
 	policy.LoadMembers(tx, false)
