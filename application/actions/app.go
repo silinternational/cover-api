@@ -41,6 +41,7 @@ import (
 	"github.com/gobuffalo/packr/v2"
 	"github.com/gorilla/sessions"
 	"github.com/rs/cors"
+	"github.com/silinternational/riskman-api/listeners"
 
 	"github.com/silinternational/riskman-api/domain"
 	"github.com/silinternational/riskman-api/models"
@@ -150,6 +151,8 @@ func App() *buffalo.App {
 		itemsGroup.PUT(idRegex, itemsUpdate)
 		itemsGroup.DELETE(idRegex, itemsRemove)
 	}
+
+	listeners.RegisterListeners()
 
 	return app
 }
