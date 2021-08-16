@@ -39,8 +39,7 @@ func itemsList(c buffalo.Context) error {
 
 	policy := getReferencedPolicyFromCtx(c)
 	if policy == nil {
-		err := errors.New("policy not found in context")
-		return reportError(c, api.NewAppError(err, api.ErrorPolicyFromContext, api.CategoryInternal))
+		panic("policy not found in context")
 	}
 
 	policy.LoadItems(tx, true)
@@ -75,8 +74,7 @@ func itemsCreate(c buffalo.Context) error {
 	tx := models.Tx(c)
 	policy := getReferencedPolicyFromCtx(c)
 	if policy == nil {
-		err := errors.New("policy not found in context")
-		return reportError(c, api.NewAppError(err, api.ErrorPolicyFromContext, api.CategoryInternal))
+		panic("policy not found in context")
 	}
 
 	var itemPost api.ItemInput
@@ -125,8 +123,7 @@ func itemsUpdate(c buffalo.Context) error {
 	tx := models.Tx(c)
 	item := getReferencedItemFromCtx(c)
 	if item == nil {
-		err := errors.New("item not found in context")
-		return reportError(c, api.NewAppError(err, api.ErrorItemFromContext, api.CategoryInternal))
+		panic("item not found in context")
 	}
 
 	var itemPut api.ItemInput
@@ -175,8 +172,7 @@ func itemsRemove(c buffalo.Context) error {
 	tx := models.Tx(c)
 	item := getReferencedItemFromCtx(c)
 	if item == nil {
-		err := errors.New("item not found in context")
-		return reportError(c, api.NewAppError(err, api.ErrorItemFromContext, api.CategoryInternal))
+		panic("item not found in context")
 	}
 
 	user := models.CurrentUser(c)

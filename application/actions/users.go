@@ -1,8 +1,6 @@
 package actions
 
 import (
-	"errors"
-
 	"github.com/gobuffalo/buffalo"
 
 	"github.com/silinternational/riskman-api/api"
@@ -55,8 +53,7 @@ func usersList(c buffalo.Context) error {
 func usersView(c buffalo.Context) error {
 	user := getReferencedUserFromCtx(c)
 	if user == nil {
-		err := errors.New("user not found in context")
-		return reportError(c, api.NewAppError(err, "", api.CategoryInternal))
+		panic("user not found in context")
 	}
 	return renderUser(c, *user)
 }

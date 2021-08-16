@@ -1,8 +1,6 @@
 package actions
 
 import (
-	"errors"
-
 	"github.com/gobuffalo/buffalo"
 
 	"github.com/silinternational/riskman-api/api"
@@ -31,8 +29,7 @@ import (
 func dependentsList(c buffalo.Context) error {
 	policy := getReferencedPolicyFromCtx(c)
 	if policy == nil {
-		err := errors.New("policy not found in route")
-		return reportError(c, api.NewAppError(err, api.ErrorPolicyNotFound, api.CategoryInternal))
+		panic("policy not found in context")
 	}
 
 	tx := models.Tx(c)
@@ -67,8 +64,7 @@ func dependentsList(c buffalo.Context) error {
 func dependentsCreate(c buffalo.Context) error {
 	policy := getReferencedPolicyFromCtx(c)
 	if policy == nil {
-		err := errors.New("policy not found in route")
-		return reportError(c, api.NewAppError(err, api.ErrorPolicyNotFound, api.CategoryUser))
+		panic("policy not found in context")
 	}
 
 	var input api.PolicyDependentInput
