@@ -1,0 +1,9 @@
+drop_index("policies", "policies_legacy_id_idx")
+drop_column("policies", "legacy_id")
+add_index("policies", "household_id", {"unique": true})
+
+drop_index("claims", "claims_legacy_id_idx")
+drop_column("claims", "legacy_id")
+
+drop_index("items", "items_legacy_id_idx")
+drop_column("items", "legacy_id")

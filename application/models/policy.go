@@ -26,13 +26,14 @@ type Policy struct {
 	CostCenter  string         `db:"cost_center" validate:"required_if=Type OU"`
 	Account     string         `db:"account" validate:"required_if=Type OU"`
 	EntityCode  string         `db:"entity_code" validate:"required_if=Type OU"`
+	LegacyID    string         `db:"legacy_id"`
 	CreatedAt   time.Time      `db:"created_at"`
 	UpdatedAt   time.Time      `db:"updated_at"`
 
-	Claims     Claims           `has_many:"claims"`
-	Dependents PolicyDependents `has_many:"policy_dependents"`
-	Items      Items            `has_many:"items"`
-	Members    Users            `many_to_many:"policy_users"`
+	Claims     Claims           `has_many:"claims" validate:"-"`
+	Dependents PolicyDependents `has_many:"policy_dependents" validate:"-"`
+	Items      Items            `has_many:"items" validate:"-"`
+	Members    Users            `many_to_many:"policy_users" validate:"-"`
 }
 
 // Validate gets run every time you call a "pop.Validate*" (pop.ValidateAndSave, pop.ValidateAndCreate, pop.ValidateAndUpdate) method.
