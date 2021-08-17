@@ -15,6 +15,7 @@ type ClaimItemStatus string
 
 const (
 	ClaimItemStatusPending  = ClaimItemStatus("Pending")
+	ClaimItemStatusRevision = ClaimItemStatus("Revision")
 	ClaimItemStatusApproved = ClaimItemStatus("Approved")
 	ClaimItemStatusDenied   = ClaimItemStatus("Denied")
 )
