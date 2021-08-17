@@ -221,12 +221,62 @@ var _ = grift.Namespace("db", func() {
 
 func importItemCategories(tx *pop.Connection, in []LegacyItemCategory) {
 	fmt.Println("Item categories")
-	fmt.Println("id,status,risk_category_id,name,auto_approve_max,help_text")
+	fmt.Println("legacy_id,id,status,risk_category_id,name,auto_approve_max,help_text")
+
 	for _, i := range in {
-		fmt.Printf(`"%s","%s",%d,"%s",%d,"%s"`+"\n",
-			i.Id, i.Status, i.RiskCategoryId, i.Name, i.AutoApproveMax, i.HelpText)
+		newItemCategory := models.ItemCategory{
+			RiskCategoryID: getRiskCategoryUUID(i.RiskCategoryId),
+			Name:           i.Name,
+			HelpText:       i.HelpText,
+			Status:         getItemCategoryStatus(i),
+			AutoApproveMax: i.AutoApproveMax,
+			CreatedAt:      parseStringTime(i.CreatedAt, "ItemCategory.CreatedAt"),
+			UpdatedAt:      parseStringTime(i.UpdatedAt, "ItemCategory.UpdatedAt"),
+			LegacyID:       stringToInt(i.Id),
+		}
+
+		if err := newItemCategory.Create(tx); err != nil {
+			panic(fmt.Sprintf("failed to create item category, %s\n%+v", err, newItemCategory))
+		}
+
+		fmt.Printf(`%d,"%s","%s",%s,"%s",%d,"%s"`+"\n",
+			newItemCategory.LegacyID, newItemCategory.ID, newItemCategory.Status,
+			newItemCategory.RiskCategoryID, newItemCategory.Name, newItemCategory.AutoApproveMax,
+			newItemCategory.HelpText)
 	}
+
 	fmt.Println("")
+}
+
+func getRiskCategoryUUID(legacyID int) uuid.UUID {
+	switch legacyID {
+	case 1:
+		return uuid.FromStringOrNil(models.RiskCategoryStationaryIDString)
+	case 2, 3:
+		return uuid.FromStringOrNil(models.RiskCategoryMobileIDString)
+	}
+	fmt.Printf("unrecognized risk category ID %d", legacyID)
+	return uuid.FromStringOrNil(models.RiskCategoryMobileIDString)
+}
+
+func getItemCategoryStatus(itemCategory LegacyItemCategory) api.ItemCategoryStatus {
+	var status api.ItemCategoryStatus
+
+	// TODO: add other status values to this function
+
+	switch itemCategory.Status {
+	case "enabled":
+		status = api.ItemCategoryStatusEnabled
+
+	case "deprecated":
+		status = api.ItemCategoryStatusDeprecated
+
+	default:
+		fmt.Printf("unrecognized item category status %s\n", itemCategory.Status)
+		status = api.ItemCategoryStatus(itemCategory.Status)
+	}
+
+	return status
 }
 
 func importPolicies(tx *pop.Connection, in []LegacyPolicy) {
@@ -371,9 +421,8 @@ func importItems(tx *pop.Connection, policy models.Policy, items []LegacyItem) {
 	for _, item := range items {
 		newItem := models.Item{
 			// TODO: name/policy needs to be unique
-			Name: item.Name + domain.GetUUID().String(),
-			// TODO: fix this
-			CategoryID:  uuid.FromStringOrNil("61447366-26b2-4256-b2ab-58c92c3d54cc"),
+			Name:        item.Name + domain.GetUUID().String(),
+			CategoryID:  getItemCategoryUUID(tx, item.CategoryId),
 			InStorage:   false,
 			Country:     item.Country,
 			Description: item.Description,
@@ -394,6 +443,14 @@ func importItems(tx *pop.Connection, policy models.Policy, items []LegacyItem) {
 			panic(fmt.Sprintf("failed to create item, %s\n%+v", err, newItem))
 		}
 	}
+}
+
+func getItemCategoryUUID(tx *pop.Connection, legacyID int) uuid.UUID {
+	var itemCategory models.ItemCategory
+	if err := tx.Where("legacy_id = ?", strconv.Itoa(legacyID)).First(&itemCategory); err != nil {
+		panic(fmt.Sprintf("failed to find item category by legacy ID %d\n", legacyID))
+	}
+	return itemCategory.ID
 }
 
 func getCoverageStatus(item LegacyItem) api.ItemCoverageStatus {
