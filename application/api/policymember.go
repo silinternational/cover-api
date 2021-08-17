@@ -25,8 +25,14 @@ type PolicyMember struct {
 	// email address
 	Email string `json:"email"`
 
+	// email address
+	EmailOverride string `json:"email_override,omitempty"`
+
 	// last login time (UTC)
 	//
 	// swagger:strfmt date-time
 	LastLoginUTC time.Time `json:"last_login_utc"`
+
+	// a country or something similar
+	Location string `json:"location,omitempty"`
 }

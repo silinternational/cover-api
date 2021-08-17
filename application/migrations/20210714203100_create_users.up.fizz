@@ -1,10 +1,12 @@
 create_table("users") {
 	t.Column("id", "uuid", {primary: true})
 	t.Column("email", "string", {})
+	t.Column("email_override", "string", {})
 	t.Column("first_name", "string", {})
 	t.Column("last_name", "string", {})
 	t.Column("is_blocked", "bool", {})
 	t.Column("last_login_utc", "timestamp", {})
+	t.Column("location", "string", {})
 	t.Column("staff_id", "string", {})
 
 	t.Timestamps()

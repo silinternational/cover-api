@@ -21,6 +21,9 @@ type User struct {
 	// email address
 	Email string `json:"email"`
 
+	// email address
+	EmailOverride string `json:"email_override,omitempty"`
+
 	// first name
 	FirstName string `json:"first_name"`
 
@@ -29,6 +32,9 @@ type User struct {
 
 	// last login date and time (UTC)
 	LastLoginUTC time.Time `json:"last_login_utc"`
+
+	// country or something similar
+	Location string `json:"location,omitempty"`
 
 	// policy ID (temporary, will be replaced with a list of policies)
 	// swagger:strfmt uuid4
