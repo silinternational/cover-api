@@ -45,7 +45,7 @@ type Claim struct {
 	ReviewerID       nulls.UUID         `db:"reviewer_id"`
 	PaymentDate      nulls.Time         `db:"payment_date"`
 	TotalPayout      int                `db:"total_payout"`
-	LegacyID         string             `db:"legacy_id"`
+	LegacyID         int                `db:"legacy_id"`
 	CreatedAt        time.Time          `db:"created_at"`
 	UpdatedAt        time.Time          `db:"updated_at"`
 

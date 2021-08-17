@@ -26,7 +26,7 @@ type Policy struct {
 	CostCenter  string         `db:"cost_center" validate:"required_if=Type OU"`
 	Account     string         `db:"account" validate:"required_if=Type OU"`
 	EntityCode  string         `db:"entity_code" validate:"required_if=Type OU"`
-	LegacyID    string         `db:"legacy_id"`
+	LegacyID    int            `db:"legacy_id"`
 	CreatedAt   time.Time      `db:"created_at"`
 	UpdatedAt   time.Time      `db:"updated_at"`
 
