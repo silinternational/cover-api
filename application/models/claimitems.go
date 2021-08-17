@@ -1,6 +1,8 @@
 package models
 
 import (
+	"errors"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -56,7 +58,17 @@ func (c *ClaimItem) Create(tx *pop.Connection) error {
 }
 
 // Update writes the Policy data to an existing database record.
-func (c *ClaimItem) Update(tx *pop.Connection) error {
+func (c *ClaimItem) Update(tx *pop.Connection, oldStatus api.ClaimItemStatus) error {
+	validTrans, err := isClaimItemTransitionValid(oldStatus, c.Status)
+	if err != nil {
+		panic(err)
+	}
+	if !validTrans {
+		err := fmt.Errorf("invalid claim item status transition from %s to %s",
+			oldStatus, c.Status)
+		appErr := api.NewAppError(err, api.ErrorValidation, api.CategoryUser)
+		return appErr
+	}
 	return update(tx, c)
 }
 
@@ -91,6 +103,40 @@ func (c *ClaimItem) IsActorAllowedTo(tx *pop.Connection, actor User, perm Permis
 	}
 
 	return false
+}
+
+func claimItemStatusTransitions() map[api.ClaimItemStatus][]api.ClaimItemStatus {
+	return map[api.ClaimItemStatus][]api.ClaimItemStatus{
+		api.ClaimItemStatusPending: {
+			api.ClaimItemStatusRevision,
+			api.ClaimItemStatusApproved,
+			api.ClaimItemStatusDenied,
+		},
+		api.ClaimItemStatusRevision: {
+			api.ClaimItemStatusApproved,
+			api.ClaimItemStatusDenied,
+		},
+		api.ClaimItemStatusApproved: {},
+		api.ClaimItemStatusDenied:   {},
+	}
+}
+
+func isClaimItemTransitionValid(status1, status2 api.ClaimItemStatus) (bool, error) {
+	if status1 == status2 {
+		return true, nil
+	}
+	targets, ok := claimItemStatusTransitions()[status1]
+	if !ok {
+		return false, errors.New("unexpected initial claim item status - " + string(status1))
+	}
+
+	for _, target := range targets {
+		if status2 == target {
+			return true, nil
+		}
+	}
+
+	return false, nil
 }
 
 func (c *ClaimItem) LoadClaim(tx *pop.Connection, reload bool) {
