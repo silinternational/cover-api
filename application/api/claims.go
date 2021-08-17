@@ -31,6 +31,7 @@ const (
 
 	ClaimStatusDraft    = ClaimStatus("Draft")
 	ClaimStatusPending  = ClaimStatus("Pending")
+	ClaimStatusRevision = ClaimStatus("Revision")
 	ClaimStatusApproved = ClaimStatus("Approved")
 	ClaimStatusDenied   = ClaimStatus("Denied")
 )
