@@ -113,8 +113,7 @@ func claimItemStatusTransitions() map[api.ClaimItemStatus][]api.ClaimItemStatus 
 			api.ClaimItemStatusDenied,
 		},
 		api.ClaimItemStatusRevision: {
-			api.ClaimItemStatusApproved,
-			api.ClaimItemStatusDenied,
+			api.ClaimItemStatusPending,
 		},
 		api.ClaimItemStatusApproved: {},
 		api.ClaimItemStatusDenied:   {},
