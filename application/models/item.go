@@ -126,9 +126,9 @@ func (i *Item) isNewEnough() bool {
 // Inactivate sets the item's CoverageStatus to Inactive
 //  TODO deal with coverage payment changes
 func (i *Item) Inactivate(tx *pop.Connection) error {
-	status1 := i.CoverageStatus
+	oldStatus := i.CoverageStatus
 	i.CoverageStatus = api.ItemCoverageStatusInactive
-	return i.Update(tx, status1)
+	return i.Update(tx, oldStatus)
 }
 
 // IsActorAllowedTo ensure the actor is either an admin, or a member of this policy to perform any permission
