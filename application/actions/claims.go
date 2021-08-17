@@ -100,11 +100,14 @@ func claimsUpdate(c buffalo.Context) error {
 		return reportError(c, api.NewAppError(err, api.ErrorClaimUpdateInvalidInput, api.CategoryUser))
 	}
 
+	// for future proofing
+	oldStatus := claim.Status
+
 	claim.EventType = input.EventType
 	claim.EventDescription = input.EventDescription
 	claim.EventDate = input.EventDate
 
-	if err := claim.Update(models.Tx(c)); err != nil {
+	if err := claim.Update(models.Tx(c), oldStatus); err != nil {
 		return reportError(c, err)
 	}
 
