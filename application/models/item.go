@@ -182,7 +182,7 @@ func isItemTransitionValid(status1, status2 api.ItemCoverageStatus) (bool, error
 	}
 	targets, ok := itemStatusTransitions()[status1]
 	if !ok {
-		return false, errors.New("unexpected initial status - " + string(status1))
+		return false, errors.New("unexpected initial item coverage status - " + string(status1))
 	}
 
 	for _, target := range targets {
