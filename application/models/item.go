@@ -1,6 +1,8 @@
 package models
 
 import (
+	"errors"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -17,6 +19,7 @@ import (
 var ValidItemCoverageStatuses = map[api.ItemCoverageStatus]struct{}{
 	api.ItemCoverageStatusDraft:    {},
 	api.ItemCoverageStatusPending:  {},
+	api.ItemCoverageStatusRevision: {},
 	api.ItemCoverageStatusApproved: {},
 	api.ItemCoverageStatusDenied:   {},
 	api.ItemCoverageStatusInactive: {},
@@ -58,7 +61,17 @@ func (i *Item) Create(tx *pop.Connection) error {
 	return create(tx, i)
 }
 
-func (i *Item) Update(tx *pop.Connection) error {
+func (i *Item) Update(tx *pop.Connection, oldStatus api.ItemCoverageStatus) error {
+	validTrans, err := isItemTransitionValid(oldStatus, i.CoverageStatus)
+	if err != nil {
+		panic(err)
+	}
+	if !validTrans {
+		err := fmt.Errorf("invalid item coverage status transition from %s to %s",
+			oldStatus, i.CoverageStatus)
+		appErr := api.NewAppError(err, api.ErrorValidation, api.CategoryUser)
+		return appErr
+	}
 	return update(tx, i)
 }
 
@@ -113,8 +126,9 @@ func (i *Item) isNewEnough() bool {
 // Inactivate sets the item's CoverageStatus to Inactive
 //  TODO deal with coverage payment changes
 func (i *Item) Inactivate(tx *pop.Connection) error {
+	status1 := i.CoverageStatus
 	i.CoverageStatus = api.ItemCoverageStatusInactive
-	return i.Update(tx)
+	return i.Update(tx, status1)
 }
 
 // IsActorAllowedTo ensure the actor is either an admin, or a member of this policy to perform any permission
@@ -134,6 +148,50 @@ func (i *Item) IsActorAllowedTo(tx *pop.Connection, actor User, perm Permission,
 	}
 
 	return false
+}
+
+func itemStatusTransitions() map[api.ItemCoverageStatus][]api.ItemCoverageStatus {
+	return map[api.ItemCoverageStatus][]api.ItemCoverageStatus{
+		api.ItemCoverageStatusDraft: {
+			api.ItemCoverageStatusPending,
+			api.ItemCoverageStatusInactive,
+		},
+		api.ItemCoverageStatusPending: {
+			api.ItemCoverageStatusRevision,
+			api.ItemCoverageStatusApproved,
+			api.ItemCoverageStatusDenied,
+			api.ItemCoverageStatusInactive,
+		},
+		api.ItemCoverageStatusRevision: {
+			api.ItemCoverageStatusApproved,
+			api.ItemCoverageStatusDenied,
+			api.ItemCoverageStatusInactive,
+		},
+		api.ItemCoverageStatusApproved: {
+			api.ItemCoverageStatusPending,
+			api.ItemCoverageStatusInactive,
+		},
+		api.ItemCoverageStatusDenied:   {},
+		api.ItemCoverageStatusInactive: {},
+	}
+}
+
+func isItemTransitionValid(status1, status2 api.ItemCoverageStatus) (bool, error) {
+	if status1 == status2 {
+		return true, nil
+	}
+	targets, ok := itemStatusTransitions()[status1]
+	if !ok {
+		return false, errors.New("unexpected initial status - " + string(status1))
+	}
+
+	for _, target := range targets {
+		if status2 == target {
+			return true, nil
+		}
+	}
+
+	return false, nil
 }
 
 // LoadPolicy - a simple wrapper method for loading the policy

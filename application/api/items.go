@@ -16,6 +16,7 @@ type ItemCoverageStatus string
 const (
 	ItemCoverageStatusDraft    = ItemCoverageStatus("Draft")
 	ItemCoverageStatusPending  = ItemCoverageStatus("Pending")
+	ItemCoverageStatusRevision = ItemCoverageStatus("Revision")
 	ItemCoverageStatusApproved = ItemCoverageStatus("Approved")
 	ItemCoverageStatusDenied   = ItemCoverageStatus("Denied")
 	ItemCoverageStatusInactive = ItemCoverageStatus("Inactive")

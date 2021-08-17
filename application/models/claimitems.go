@@ -15,6 +15,7 @@ import (
 
 var ValidClaimItemStatus = map[api.ClaimItemStatus]struct{}{
 	api.ClaimItemStatusPending:  {},
+	api.ClaimItemStatusRevision: {},
 	api.ClaimItemStatusApproved: {},
 	api.ClaimItemStatusDenied:   {},
 }

@@ -290,7 +290,7 @@ func (as *ActionSuite) Test_ItemsUpdate() {
 		SerialNumber:      "MM1234",
 		CoverageAmount:    oldItem.CoverageAmount,
 		PurchaseDate:      "2006-01-02",
-		CoverageStatus:    api.ItemCoverageStatusDraft,
+		CoverageStatus:    api.ItemCoverageStatusInactive,
 		CoverageStartDate: "2006-01-03",
 	}
 
