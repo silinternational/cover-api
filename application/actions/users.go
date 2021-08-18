@@ -12,13 +12,14 @@ import (
 
 func usersList(c buffalo.Context) error {
 	var users models.Users
-	if err := users.GetAll(models.Tx(c)); err != nil {
+	tx := models.Tx(c)
+	if err := users.GetAll(tx); err != nil {
 		if domain.IsOtherThanNoRows(err) {
 			return reportError(c, err)
 		}
 		return reportError(c, api.NewAppError(err, api.ErrorNoRows, api.CategoryNotFound))
 	}
-	return renderOk(c, models.ConvertUsers(users))
+	return renderOk(c, models.ConvertUsers(tx, users))
 }
 
 func usersView(c buffalo.Context) error {
@@ -35,8 +36,9 @@ func usersMe(c buffalo.Context) error {
 }
 
 func renderUser(c buffalo.Context, user models.User) error {
+	tx := models.Tx(c)
 	user.LoadPolicies(models.Tx(c), false)
-	return renderOk(c, models.ConvertUser(user))
+	return renderOk(c, models.ConvertUser(tx, user))
 }
 
 // getReferencedUserFromCtx pulls the models.User resource from context that was put there
