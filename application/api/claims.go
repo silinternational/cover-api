@@ -9,7 +9,7 @@ import (
 
 // ClaimEventType
 //
-// may be one of: Theft, Impact, Lightning, Water, Evacuation, Other
+// may be one of: Theft, Impact, Electrical, Water, Evacuation, Other
 //
 // swagger:model
 type ClaimEventType string
@@ -24,7 +24,7 @@ type ClaimStatus string
 const (
 	ClaimEventTypeTheft      = ClaimEventType("Theft")
 	ClaimEventTypeImpact     = ClaimEventType("Impact")
-	ClaimEventTypeLightning  = ClaimEventType("Lightning")
+	ClaimEventTypeElectrical = ClaimEventType("Electrical")
 	ClaimEventTypeWater      = ClaimEventType("Water")
 	ClaimEventTypeEvacuation = ClaimEventType("Evacuation")
 	ClaimEventTypeOther      = ClaimEventType("Other")
