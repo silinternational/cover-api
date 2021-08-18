@@ -11,6 +11,8 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/silinternational/riskman-api/storage"
+
 	"github.com/gobuffalo/buffalo"
 	"github.com/gobuffalo/nulls"
 	"github.com/gobuffalo/pop/v5"
@@ -31,6 +33,7 @@ type FixturesConfig struct {
 
 // Fixtures hold slices of model objects created for test fixtures
 type Fixtures struct {
+	Files
 	Items
 	ItemCategories
 	Policies
@@ -63,6 +66,29 @@ func CreateTestContext(user User) buffalo.Context {
 	}
 	ctx.Set(domain.ContextKeyCurrentUser, user)
 	return ctx
+}
+
+// CreateFileFixtures generates any number of file records for testing
+//  all owned by the same user.
+func CreateFileFixtures(tx *pop.Connection, n int, createdByID uuid.UUID) Fixtures {
+
+	_ = storage.CreateS3Bucket()
+	files := make(Files, n)
+	for i := range files {
+		f := File{
+			Content:     []byte("GIF87a"),
+			Name:        fmt.Sprintf("file_%d.gif", i),
+			CreatedByID: createdByID,
+		}
+		if err := f.Store(tx); err != nil {
+			panic(fmt.Sprintf("failed to create file fixture, %s", err))
+		}
+		files[i] = f
+	}
+
+	return Fixtures{
+		Files: files,
+	}
 }
 
 // CreateItemFixtures generates any number of item records for testing
