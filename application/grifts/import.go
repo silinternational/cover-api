@@ -190,7 +190,11 @@ var _ = grift.Namespace("db", func() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		defer f.Close()
+		defer func(f *os.File) {
+			if err := f.Close(); err != nil {
+				panic("failed to close file, " + err.Error())
+			}
+		}(f)
 
 		r := bufio.NewReader(f)
 		dec := json.NewDecoder(r)
@@ -289,9 +293,11 @@ func getItemCategoryStatus(itemCategory LegacyItemCategory) api.ItemCategoryStat
 func importPolicies(tx *pop.Connection, in []LegacyPolicy) {
 	nClaims := 0
 	nItems := 0
-	for _, p := range in {
+	for i, p := range in {
+		normalizePolicy(&in[i])
+
 		newPolicy := models.Policy{
-			Type:        getPolicyType(&p),
+			Type:        getPolicyType(p),
 			HouseholdID: p.HouseholdId,
 			CostCenter:  p.CostCenter,
 			Account:     strconv.Itoa(p.Account),
@@ -318,12 +324,23 @@ func importPolicies(tx *pop.Connection, in []LegacyPolicy) {
 	fmt.Println("")
 }
 
-// getPolicyType gets the normalized policy type and adjusts other fields as necessary
-func getPolicyType(p *LegacyPolicy) api.PolicyType {
+// getPolicyType gets the correct policy type
+func getPolicyType(p LegacyPolicy) api.PolicyType {
 	var policyType api.PolicyType
-	if p.Type == "household" {
-		policyType = api.PolicyTypeHousehold
 
+	switch p.Type {
+	case "household":
+		policyType = api.PolicyTypeHousehold
+	case "ou", "corporate":
+		policyType = api.PolicyTypeCorporate
+	}
+
+	return policyType
+}
+
+// normalizePolicy adjusts policy fields to pass validation checks
+func normalizePolicy(p *LegacyPolicy) {
+	if p.Type == "household" {
 		// TODO: fix input data so this isn't needed
 		if p.HouseholdId == "" {
 			fmt.Printf("empty HouseholdId on Policy %s\n", p.Id)
@@ -331,8 +348,6 @@ func getPolicyType(p *LegacyPolicy) api.PolicyType {
 		}
 	}
 	if p.Type == "ou" || p.Type == "corporate" {
-		policyType = api.PolicyTypeCorporate
-
 		// TODO: fix input data so this isn't needed
 		if !p.EntityCode.Valid || p.EntityCode.String == "" {
 			fmt.Printf("empty EntityCode on Policy %s\n", p.Id)
@@ -343,7 +358,6 @@ func getPolicyType(p *LegacyPolicy) api.PolicyType {
 			p.CostCenter = "-"
 		}
 	}
-	return policyType
 }
 
 func importClaims(tx *pop.Connection, policy models.Policy, claims []LegacyClaim) {
