@@ -96,7 +96,7 @@ func policiesUpdate(c buffalo.Context) error {
 		policy.CostCenter = ""
 		policy.Account = ""
 		policy.EntityCode = ""
-	case api.PolicyTypeOU:
+	case api.PolicyTypeCorporate:
 		policy.HouseholdID = ""
 		policy.CostCenter = update.CostCenter
 		policy.Account = update.Account
