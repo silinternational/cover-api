@@ -14,16 +14,14 @@ import (
 	"strings"
 	"time"
 
-	"github.com/silinternational/riskman-api/storage"
-
-	"github.com/gofrs/uuid"
-
 	"github.com/gobuffalo/pop/v5"
 	"github.com/gobuffalo/validate/v3"
-	"github.com/silinternational/riskman-api/api"
+	"github.com/gofrs/uuid"
 	_ "golang.org/x/image/webp" // enable decoding of WEBP images
 
+	"github.com/silinternational/riskman-api/api"
 	"github.com/silinternational/riskman-api/domain"
+	"github.com/silinternational/riskman-api/storage"
 )
 
 type FileUploadError struct {
@@ -44,11 +42,7 @@ type File struct {
 	Size          int       `db:"size" validate:"required"`
 	ContentType   string    `db:"content_type" validate:"required"`
 	Linked        bool      `db:"linked"`
-
-	// ID of file creator / owner
-	//
-	// read only: true
-	CreatedByID uuid.UUID `db:"created_by_id" validate:"required"`
+	CreatedByID   uuid.UUID `db:"created_by_id" validate:"required"`
 
 	CreatedAt time.Time `db:"created_at"`
 	UpdatedAt time.Time `db:"updated_at"`

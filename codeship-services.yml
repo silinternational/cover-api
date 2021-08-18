@@ -60,7 +60,7 @@ ecsdeploy:
   encrypted_env_file: .env.encrypted
 
 awsgenerator:
-  image: codeship/storage-ecr-dockercfg-generator
+  image: codeship/aws-ecr-dockercfg-generator
   encrypted_env_file: .env.encrypted
   add_docker: true
 

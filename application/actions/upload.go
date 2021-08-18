@@ -16,6 +16,7 @@ import (
 const fileFieldName = "file"
 
 // UploadResponse is a JSON response for the /upload endpoint
+// swagger:model
 type UploadResponse struct {
 	Name        string `json:"filename,omitempty"`
 	ID          string `json:"id,omitempty"`
@@ -24,7 +25,21 @@ type UploadResponse struct {
 	Size        int    `json:"size,omitempty"`
 }
 
-// uploadHandler responds to POST requests at /upload
+// swagger:operation POST /upload Files UploadFile
+//
+// Upload a new File object
+//
+// ---
+// parameters:
+//   - name: file
+//     in: body
+//     description: file object
+//     required: true
+// responses:
+//   '200':
+//     description: uploaded File data
+//     schema:
+//       "$ref": "#/definitions/UploadResponse"
 func uploadHandler(c buffalo.Context) error {
 	f, err := c.File(fileFieldName)
 	if err != nil {

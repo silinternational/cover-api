@@ -46,8 +46,6 @@ const (
 	ErrorResourceNotFound  = ErrorKey("ErrorResourceNotFound")
 
 	// File
-	//Ported from WeCarry's errorcodes.go to get upload.go working
-
 	ErrorReceivingFile           = ErrorKey("ErrorReceivingFile")
 	ErrorStoreFileBadContentType = ErrorKey("ErrorStoreFileBadContentType")
 	ErrorStoreFileTooLarge       = ErrorKey("ErrorStoreFileTooLarge")
