@@ -376,7 +376,7 @@ func getEventType(claim LegacyClaim) api.ClaimEventType {
 	case "Broken", "Dropped":
 		eventType = api.ClaimEventTypeImpact
 	case "Lightning", "Lightening":
-		eventType = api.ClaimEventTypeLightning
+		eventType = api.ClaimEventTypeElectrical
 	case "Theft":
 		eventType = api.ClaimEventTypeTheft
 	case "Water Damage":
