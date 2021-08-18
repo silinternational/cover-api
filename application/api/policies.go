@@ -8,20 +8,20 @@ import (
 
 // PolicyType
 //
-// may be one of: Household, OU
+// may be one of: Household, Corporate
 //
 // swagger:model
 type PolicyType string
 
 const (
 	PolicyTypeHousehold = PolicyType("Household")
-	PolicyTypeOU        = PolicyType("OU")
+	PolicyTypeCorporate = PolicyType("Corporate")
 )
 
 // swagger:model
 type Policies []Policy
 
-// Policy represents a single policy, either household or OU
+// Policy represents a single policy, either household or corporate
 // swagger:model
 type Policy struct {
 	// unique ID
