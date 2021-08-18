@@ -45,6 +45,13 @@ const (
 	ErrorInvalidResourceID = ErrorKey("ErrorInvalidResourceID")
 	ErrorResourceNotFound  = ErrorKey("ErrorResourceNotFound")
 
+	// File
+	ErrorReceivingFile           = ErrorKey("ErrorReceivingFile")
+	ErrorStoreFileBadContentType = ErrorKey("ErrorStoreFileBadContentType")
+	ErrorStoreFileTooLarge       = ErrorKey("ErrorStoreFileTooLarge")
+	ErrorUnableToReadFile        = ErrorKey("ErrorUnableToReadFile")
+	ErrorUnableToStoreFile       = ErrorKey("ErrorUnableToStoreFile")
+
 	// Claim
 	ErrorClaimFromContext = ErrorKey("ErrorClaimFromContext")
 

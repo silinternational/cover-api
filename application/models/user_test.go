@@ -2,6 +2,8 @@ package models
 
 import (
 	"testing"
+
+	"github.com/gofrs/uuid"
 )
 
 func (ms *ModelSuite) TestUser_Validate() {
@@ -88,6 +90,59 @@ func (ms *ModelSuite) TestUser_CreateInitialPolicy() {
 			policyUser := PolicyUser{}
 			err = ms.DB.Where("user_id = ?", tt.user.ID).First(&policyUser)
 			ms.NoError(err, "error trying to find resulting policyUser")
+		})
+	}
+}
+
+func (ms *ModelSuite) TestUser_OwnsFile() {
+	userFixtures := CreateUserFixtures(ms.DB, 2)
+	userOwnsFile := userFixtures.Users[1]
+	userNoFile := userFixtures.Users[0]
+
+	fileFixtures := CreateFileFixtures(ms.DB, 1, userOwnsFile.ID)
+	file := fileFixtures.Files[0]
+
+	tests := []struct {
+		name    string
+		user    User
+		fileID  uuid.UUID
+		want    bool
+		wantErr bool
+	}{
+		{
+			name:    "user not valid",
+			fileID:  file.ID,
+			wantErr: true,
+		},
+		{
+			name:    "file ID not valid",
+			user:    userNoFile,
+			wantErr: true,
+		},
+		{
+			name:    "not owned",
+			user:    userNoFile,
+			fileID:  file.ID,
+			want:    false,
+			wantErr: false,
+		},
+		{
+			name:    "owned",
+			user:    userOwnsFile,
+			fileID:  file.ID,
+			want:    true,
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		ms.T().Run(tt.name, func(t *testing.T) {
+			ownsFile, err := tt.user.OwnsFile(ms.DB, tt.fileID)
+			if tt.wantErr {
+				ms.Error(err)
+				return
+			}
+			ms.NoError(err)
+			ms.Equal(tt.want, ownsFile, "incorrect result from OwnsFile")
 		})
 	}
 }

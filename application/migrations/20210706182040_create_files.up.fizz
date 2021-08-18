@@ -1,0 +1,13 @@
+create_table("files") {
+	t.Column("id", "uuid", {primary: true})
+	t.Column("url", "string", {"size": 1024})
+	t.Column("url_expiration", "timestamp")
+	t.Column("name", "string", {})
+	t.Column("size", "integer", {})
+	t.Column("content_type", "string", {})
+	t.Column("created_by_id", "uuid", {})
+	t.Column("linked", "bool", {"default": 0})
+	t.Timestamps()
+
+	t.Index("url", {"unique": true})
+}

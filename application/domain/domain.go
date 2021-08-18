@@ -11,6 +11,7 @@ import (
 	"regexp"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/gobuffalo/buffalo"
 	"github.com/gobuffalo/envy"
@@ -39,6 +40,15 @@ var T *mwi18n.Translator
 var Assets *packr.Box
 
 var extrasLock = sync.RWMutex{}
+
+var AllowedFileUploadTypes = []string{
+	"image/bmp",
+	"image/gif",
+	"image/jpeg",
+	"image/png",
+	"image/webp",
+	"application/pdf",
+}
 
 // BuffaloContextType is a custom type used as a value key passed to context.WithValue as per the recommendations
 // in the function docs for that function: https://golang.org/pkg/context/#WithValue
@@ -70,6 +80,12 @@ const (
 
 	// How many hours old an item can be until it's not allowed to be deleted
 	ItemDeleteCutOffHours = 72
+
+	MaxFileSize = 1024 * 1024 * 10 // 10 Megabytes
+
+	DurationDay  = time.Duration(time.Hour * 24)
+	DurationWeek = time.Duration(DurationDay * 7)
+	Megabyte     = 1048576
 )
 
 // Event Kinds
@@ -119,6 +135,16 @@ var Env struct {
 	SamlCheckResponseSigning        bool   `default:"true" split_words:"true"`
 	SamlSignRequest                 bool   `default:"true" split_words:"true"`
 	SamlRequireEncryptedAssertion   bool   `default:"true" split_words:"true"`
+
+	AwsRegion          string `split_words:"true"`
+	AwsS3Endpoint      string `split_words:"true"`
+	AwsS3DisableSSL    bool   `split_words:"true"`
+	AwsS3Bucket        string `split_words:"true"`
+	AwsAccessKeyID     string `split_words:"true"`
+	AwsSecretAccessKey string `split_words:"true"`
+	EmailFromAddress   string `split_words:"true"`
+
+	MaxFileDelete int `default:"10" split_words:"true"`
 }
 
 func init() {
@@ -284,4 +310,16 @@ func MergeExtras(extras []map[string]interface{}) map[string]interface{} {
 	}
 
 	return allExtras
+}
+
+// IsStringInSlice iterates over a slice of strings, looking for the given
+// string. If found, true is returned. Otherwise, false is returned.
+func IsStringInSlice(needle string, haystack []string) bool {
+	for _, hs := range haystack {
+		if needle == hs {
+			return true
+		}
+	}
+
+	return false
 }
