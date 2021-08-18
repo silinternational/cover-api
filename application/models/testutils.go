@@ -22,8 +22,9 @@ import (
 
 type FixturesConfig struct {
 	NumberOfPolicies    int
-	ClaimsPerPolicy     int
 	ItemsPerPolicy      int
+	ClaimsPerPolicy     int
+	ClaimItemsPerClaim  int
 	UsersPerPolicy      int
 	DependentsPerPolicy int
 }
@@ -82,7 +83,7 @@ func CreateItemFixtures(tx *pop.Connection, config FixturesConfig) Fixtures {
 
 		for k := 0; k < config.ClaimsPerPolicy; k++ {
 			idx := i*config.ClaimsPerPolicy + k
-			claims[idx] = createClaimFixture(tx, policies[i].ID)
+			claims[idx] = createClaimFixture(tx, policies[i].ID, config.ClaimItemsPerClaim)
 		}
 		policies[i].LoadClaims(tx, false)
 	}
@@ -112,7 +113,7 @@ func createItemFixture(tx *pop.Connection, policyID uuid.UUID, categoryID uuid.U
 	return item
 }
 
-func createClaimFixture(tx *pop.Connection, policyID uuid.UUID) Claim {
+func createClaimFixture(tx *pop.Connection, policyID uuid.UUID, claimItemCount int) Claim {
 	claim := Claim{
 		PolicyID:         policyID,
 		EventDate:        time.Date(2020, 5, 1, 12, 0, 0, 0, time.UTC),
@@ -121,6 +122,20 @@ func createClaimFixture(tx *pop.Connection, policyID uuid.UUID) Claim {
 		Status:           api.ClaimStatusPending,
 	}
 	MustCreate(tx, &claim)
+
+	icFixtures := CreateCategoryFixtures(tx, claimItemCount)
+
+	claim.ClaimItems = make(ClaimItems, claimItemCount)
+	for i := range claim.ClaimItems {
+		item := createItemFixture(tx, policyID, icFixtures.ItemCategories[i].ID)
+		claim.ClaimItems[i] = ClaimItem{
+			ClaimID: claim.ID,
+			ItemID:  item.ID,
+			Status:  api.ClaimItemStatusPending,
+		}
+		MustCreate(tx, &claim.ClaimItems[i])
+	}
+
 	return claim
 }
 
@@ -288,6 +303,8 @@ func DestroyAll() {
 	destroyTable(&users)
 
 	// delete all Claims and ClaimItems
+	var claimItems ClaimItems
+	destroyTable(&claimItems)
 	var claims Claims
 	destroyTable(&claims)
 

@@ -19,6 +19,7 @@ func (as *ActionSuite) Test_ClaimsList() {
 		NumberOfPolicies:    numberOfPolicies,
 		UsersPerPolicy:      1,
 		ClaimsPerPolicy:     claimsPerPolicy,
+		ClaimItemsPerClaim:  2,
 		DependentsPerPolicy: 0,
 		ItemsPerPolicy:      2,
 	}
@@ -81,6 +82,9 @@ func (as *ActionSuite) Test_ClaimsList() {
 			var responseObject api.Claims
 			as.NoError(json.Unmarshal([]byte(body), &responseObject))
 			as.Len(responseObject, tt.wantClaims, "incorrect # of claims, %+v", responseObject)
+			for _, c := range responseObject {
+				as.Len(c.Items, fixConfig.ItemsPerPolicy)
+			}
 		})
 	}
 }
