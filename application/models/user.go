@@ -293,14 +293,15 @@ func ConvertUser(tx *pop.Connection, u User) api.User {
 	}
 
 	output := api.User{
-		ID:           u.ID,
-		Email:        u.Email,
+		ID:            u.ID,
+		Email:         u.Email,
 		EmailOverride: u.EmailOverride,
-		FirstName:    u.FirstName,
-		LastName:     u.LastName,
-		LastLoginUTC: u.LastLoginUTC,
-		PhotoFileID:  u.PhotoFileID,
-		PolicyID:     policyID,
+		FirstName:     u.FirstName,
+		LastName:      u.LastName,
+		LastLoginUTC:  u.LastLoginUTC,
+		Location:      u.Location,
+		PhotoFileID:   u.PhotoFileID,
+		PolicyID:      policyID,
 	}
 
 	if u.PhotoFile != nil {

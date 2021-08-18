@@ -14,5 +14,5 @@ create_table("users") {
 
 	t.Index("email", {"unique": true})
 
-    t.ForeignKey("photo_file_id", {"files": ["id"]}, {"on_delete": "set null"})
+	t.ForeignKey("photo_file_id", {"files": ["id"]}, {"on_delete": "set null"})
 }

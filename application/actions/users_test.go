@@ -83,7 +83,7 @@ func (as *ActionSuite) Test_usersMe() {
 
 			if tt.wantPhotoID != uuid.Nil {
 				want := `"photo_file":{"id":"` + tt.wantPhotoID.String()
-				as.Contains(body, want, "didn't get the photo ID in the response")
+				as.Contains(body, want, "didn't get the photo file in the response")
 				want = `"photo_file_id":"` + tt.wantPhotoID.String()
 				as.Contains(body, want, "didn't get the photo ID in the response")
 			}
