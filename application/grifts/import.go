@@ -251,7 +251,7 @@ func importItemCategories(tx *pop.Connection, in []LegacyItemCategory) {
 		itemCategoryMap[categoryID] = newItemCategory.ID
 
 		fmt.Printf(`%d,"%s","%s",%s,"%s",%d,"%s"`+"\n",
-			newItemCategory.LegacyID, newItemCategory.ID, newItemCategory.Status,
+			newItemCategory.LegacyID.Int, newItemCategory.ID, newItemCategory.Status,
 			newItemCategory.RiskCategoryID, newItemCategory.Name, newItemCategory.AutoApproveMax,
 			newItemCategory.HelpText)
 	}
@@ -293,8 +293,9 @@ func getItemCategoryStatus(itemCategory LegacyItemCategory) api.ItemCategoryStat
 func importPolicies(tx *pop.Connection, in []LegacyPolicy) {
 	nClaims := 0
 	nItems := 0
-	for i, p := range in {
+	for i := range in {
 		normalizePolicy(&in[i])
+		p := in[i]
 
 		newPolicy := models.Policy{
 			Type:        getPolicyType(p),
@@ -442,13 +443,12 @@ func importItems(tx *pop.Connection, policy models.Policy, items []LegacyItem) {
 	for _, item := range items {
 		newItem := models.Item{
 			// TODO: name/policy needs to be unique
-			Name:        item.Name + domain.GetUUID().String(),
-			CategoryID:  itemCategoryMap[item.CategoryId],
-			InStorage:   false,
-			Country:     item.Country,
-			Description: item.Description,
-			PolicyID:    policy.ID,
-			// PolicyDependentID: nulls.UUID{},
+			Name:              item.Name + domain.GetUUID().String(),
+			CategoryID:        itemCategoryMap[item.CategoryId],
+			InStorage:         false,
+			Country:           item.Country,
+			Description:       item.Description,
+			PolicyID:          policy.ID,
 			Make:              item.Make,
 			Model:             item.Model,
 			SerialNumber:      item.SerialNumber,
