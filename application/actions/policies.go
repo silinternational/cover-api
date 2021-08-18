@@ -1,9 +1,6 @@
 package actions
 
 import (
-	"errors"
-	"net/http"
-
 	"github.com/gobuffalo/buffalo"
 
 	"github.com/silinternational/riskman-api/api"
@@ -11,6 +8,20 @@ import (
 	"github.com/silinternational/riskman-api/models"
 )
 
+// swagger:operation GET /policies Policies PoliciesList
+//
+// PoliciesList
+//
+// gets the data for all the user's Policies, or, if called by an admin, all Policies in the system
+//
+// ---
+// responses:
+//   '200':
+//     description: all policies
+//     schema:
+//       type: array
+//       items:
+//         "$ref": "#/definitions/Policy"
 func policiesList(c buffalo.Context) error {
 	user := models.CurrentUser(c)
 
@@ -25,7 +36,7 @@ func policiesListAll(c buffalo.Context) error {
 	tx := models.Tx(c)
 	var policies models.Policies
 	if err := tx.All(&policies); err != nil {
-		return c.Render(http.StatusInternalServerError, r.JSON(err))
+		return reportError(c, err)
 	}
 
 	apiPolicies := models.ConvertPolicies(tx, policies)
@@ -44,12 +55,34 @@ func policiesListMine(c buffalo.Context) error {
 	return renderOk(c, apiPolicies)
 }
 
+// swagger:operation PUT /policies/{id} Policies PoliciesUpdate
+//
+// PoliciesUpdate
+//
+// update a policy
+//
+// ---
+// parameters:
+//   - name: id
+//     in: path
+//     required: true
+//     description: policy ID
+//   - name: policy update input
+//     in: body
+//     description: policy update input object
+//     required: true
+//     schema:
+//       "$ref": "#/definitions/PolicyUpdate"
+// responses:
+//   '200':
+//     description: updated Policy
+//     schema:
+//       "$ref": "#/definitions/Policy"
 func policiesUpdate(c buffalo.Context) error {
 	tx := models.Tx(c)
 	policy := getReferencedPolicyFromCtx(c)
 	if policy == nil {
-		err := errors.New("policy not found in context")
-		return reportError(c, api.NewAppError(err, api.ErrorPolicyFromContext, api.CategoryInternal))
+		panic("policy not found in context")
 	}
 
 	var update api.PolicyUpdate
@@ -77,12 +110,30 @@ func policiesUpdate(c buffalo.Context) error {
 	return renderOk(c, models.ConvertPolicy(tx, *policy))
 }
 
+// swagger:operation GET /policies/{id}/members PolicyMembers PolicyMembersList
+//
+// PolicyMembersList
+//
+// gets the data for all the members of a Policy
+//
+// ---
+// parameters:
+//   - name: id
+//     in: path
+//     required: true
+//     description: policy ID
+// responses:
+//   '200':
+//     description: all policy members
+//     schema:
+//       type: array
+//       items:
+//         "$ref": "#/definitions/PolicyMember"
 func policiesListMembers(c buffalo.Context) error {
 	tx := models.Tx(c)
 	policy := getReferencedPolicyFromCtx(c)
 	if policy == nil {
-		err := errors.New("policy not found in context")
-		return reportError(c, api.NewAppError(err, api.ErrorPolicyFromContext, api.CategoryInternal))
+		panic("policy not found in context")
 	}
 
 	policy.LoadMembers(tx, false)

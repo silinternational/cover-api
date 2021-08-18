@@ -1,6 +1,8 @@
 package models
 
 import (
+	"errors"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -25,6 +27,7 @@ var ValidClaimEventTypes = map[api.ClaimEventType]struct{}{
 var ValidClaimStatus = map[api.ClaimStatus]struct{}{
 	api.ClaimStatusDraft:    {},
 	api.ClaimStatusPending:  {},
+	api.ClaimStatusRevision: {},
 	api.ClaimStatusApproved: {},
 	api.ClaimStatusDenied:   {},
 }
@@ -56,13 +59,23 @@ func (c *Claim) Validate(tx *pop.Connection) (*validate.Errors, error) {
 	return validateModel(c), nil
 }
 
-// Create stores the Policy data as a new record in the database.
+// Create stores the Claim data as a new record in the database.
 func (c *Claim) Create(tx *pop.Connection) error {
 	return create(tx, c)
 }
 
-// Update writes the Policy data to an existing database record.
-func (c *Claim) Update(tx *pop.Connection) error {
+// Update writes the Claim data to an existing database record.
+func (c *Claim) Update(tx *pop.Connection, oldStatus api.ClaimStatus) error {
+	validTrans, err := isClaimTransitionValid(oldStatus, c.Status)
+	if err != nil {
+		panic(err)
+	}
+	if !validTrans {
+		err := fmt.Errorf("invalid claim status transition from %s to %s",
+			oldStatus, c.Status)
+		appErr := api.NewAppError(err, api.ErrorValidation, api.CategoryUser)
+		return appErr
+	}
 	return update(tx, c)
 }
 
@@ -75,16 +88,12 @@ func (c *Claim) FindByID(tx *pop.Connection, id uuid.UUID) error {
 }
 
 // IsActorAllowedTo ensure the actor is either an admin, or a member of this policy to perform any permission
-func (c *Claim) IsActorAllowedTo(tx *pop.Connection, user User, perm Permission, sub SubResource, r *http.Request) bool {
-	if user.IsAdmin() {
+func (c *Claim) IsActorAllowedTo(tx *pop.Connection, actor User, perm Permission, sub SubResource, r *http.Request) bool {
+	if actor.IsAdmin() {
 		return true
 	}
 
-	if perm == PermissionList {
-		return false // TODO: list only current user's claims
-	}
-
-	if perm == PermissionCreate {
+	if perm == PermissionList || perm == PermissionCreate {
 		return true
 	}
 
@@ -97,12 +106,48 @@ func (c *Claim) IsActorAllowedTo(tx *pop.Connection, user User, perm Permission,
 	policy.LoadMembers(tx, false)
 
 	for _, m := range policy.Members {
-		if m.ID == user.ID {
+		if m.ID == actor.ID {
 			return true
 		}
 	}
 
 	return false
+}
+
+func claimStatusTransitions() map[api.ClaimStatus][]api.ClaimStatus {
+	return map[api.ClaimStatus][]api.ClaimStatus{
+		api.ClaimStatusDraft: {
+			api.ClaimStatusPending,
+		},
+		api.ClaimStatusPending: {
+			api.ClaimStatusRevision,
+			api.ClaimStatusApproved,
+			api.ClaimStatusDenied,
+		},
+		api.ClaimStatusRevision: {
+			api.ClaimStatusPending,
+		},
+		api.ClaimStatusApproved: {},
+		api.ClaimStatusDenied:   {},
+	}
+}
+
+func isClaimTransitionValid(status1, status2 api.ClaimStatus) (bool, error) {
+	if status1 == status2 {
+		return true, nil
+	}
+	targets, ok := claimStatusTransitions()[status1]
+	if !ok {
+		return false, errors.New("unexpected initial status - " + string(status1))
+	}
+
+	for _, target := range targets {
+		if status2 == target {
+			return true, nil
+		}
+	}
+
+	return false, nil
 }
 
 func (c *Claim) LoadItems(tx *pop.Connection, reload bool) {

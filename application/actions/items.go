@@ -7,21 +7,39 @@ import (
 	"time"
 
 	"github.com/gofrs/uuid"
-	"github.com/silinternational/riskman-api/domain"
 
 	"github.com/gobuffalo/buffalo"
 
 	"github.com/silinternational/riskman-api/api"
+	"github.com/silinternational/riskman-api/domain"
 	"github.com/silinternational/riskman-api/models"
 )
 
+// swagger:operation GET /policies/{id}/items PolicyItems PolicyItemsList
+//
+// PolicyItemsList
+//
+// gets the data for all the items on a Policy
+//
+// ---
+// parameters:
+//   - name: id
+//     in: path
+//     required: true
+//     description: policy ID
+// responses:
+//   '200':
+//     description: all policy items
+//     schema:
+//       type: array
+//       items:
+//         "$ref": "#/definitions/Item"
 func itemsList(c buffalo.Context) error {
 	tx := models.Tx(c)
 
 	policy := getReferencedPolicyFromCtx(c)
 	if policy == nil {
-		err := errors.New("policy not found in context")
-		return reportError(c, api.NewAppError(err, api.ErrorPolicyFromContext, api.CategoryInternal))
+		panic("policy not found in context")
 	}
 
 	policy.LoadItems(tx, true)
@@ -29,12 +47,34 @@ func itemsList(c buffalo.Context) error {
 	return renderOk(c, models.ConvertItems(tx, policy.Items))
 }
 
+// swagger:operation POST /policies/{id}/items PolicyItems PolicyItemsCreate
+//
+// PolicyItemsCreate
+//
+// create a policy item
+//
+// ---
+// parameters:
+//   - name: id
+//     in: path
+//     required: true
+//     description: policy ID
+//   - name: policy item create input
+//     in: body
+//     description: policy item create input object
+//     required: true
+//     schema:
+//       "$ref": "#/definitions/ItemInput"
+// responses:
+//   '200':
+//     description: new Item
+//     schema:
+//       "$ref": "#/definitions/Item"
 func itemsCreate(c buffalo.Context) error {
 	tx := models.Tx(c)
 	policy := getReferencedPolicyFromCtx(c)
 	if policy == nil {
-		err := errors.New("policy not found in context")
-		return reportError(c, api.NewAppError(err, api.ErrorPolicyFromContext, api.CategoryInternal))
+		panic("policy not found in context")
 	}
 
 	var itemPost api.ItemInput
@@ -56,12 +96,34 @@ func itemsCreate(c buffalo.Context) error {
 	return c.Render(http.StatusOK, r.JSON(output))
 }
 
+// swagger:operation PUT /items/{id} PolicyItems PolicyItemsUpdate
+//
+// PolicyItemsUpdate
+//
+// update a policy item
+//
+// ---
+// parameters:
+//   - name: id
+//     in: path
+//     required: true
+//     description: item ID
+//   - name: policy item update input
+//     in: body
+//     description: policy item create update object
+//     required: true
+//     schema:
+//       "$ref": "#/definitions/ItemInput"
+// responses:
+//   '200':
+//     description: updated Item
+//     schema:
+//       "$ref": "#/definitions/Item"
 func itemsUpdate(c buffalo.Context) error {
 	tx := models.Tx(c)
 	item := getReferencedItemFromCtx(c)
 	if item == nil {
-		err := errors.New("item not found in context")
-		return reportError(c, api.NewAppError(err, api.ErrorItemFromContext, api.CategoryInternal))
+		panic("item not found in context")
 	}
 
 	var itemPut api.ItemInput
@@ -82,12 +144,44 @@ func itemsUpdate(c buffalo.Context) error {
 	}
 	newItem.ID = item.ID
 
-	if err := newItem.Update(tx); err != nil {
+	if err := newItem.Update(tx, item.CoverageStatus); err != nil {
 		return reportError(c, err)
 	}
 
 	output := models.ConvertItem(tx, newItem)
 	return c.Render(http.StatusOK, r.JSON(output))
+}
+
+// swagger:operation DELETE /items/{id} PolicyItems PolicyItemsRemove
+//
+// PolicyItemsRemove
+//
+// Delete a policy item if it is less than 72 hours old and has no associations.
+//   Otherwise, inactivate coverage on it.
+//
+// ---
+// parameters:
+//   - name: id
+//     in: path
+//     required: true
+//     description: item ID
+// responses:
+//   '204':
+//     description: OK but no content in response
+func itemsRemove(c buffalo.Context) error {
+	tx := models.Tx(c)
+	item := getReferencedItemFromCtx(c)
+	if item == nil {
+		panic("item not found in context")
+	}
+
+	user := models.CurrentUser(c)
+
+	if err := item.SafeDeleteOrInactivate(tx, user); err != nil {
+		return reportError(c, err)
+	}
+
+	return c.Render(http.StatusNoContent, nil)
 }
 
 // convertItemApiInput creates a new `Item` from a `ItemInput`.

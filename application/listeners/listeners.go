@@ -31,6 +31,18 @@ var apiListeners = map[string][]apiListener{
 	},
 }
 
+// RegisterListeners registers all the listeners to be used by the app
+func RegisterListeners() {
+	for _, listeners := range apiListeners {
+		for _, l := range listeners {
+			_, err := events.NamedListen(l.name, l.listener)
+			if err != nil {
+				domain.ErrLogger.Printf("Failed registering listener: %s, err: %s", l.name, err.Error())
+			}
+		}
+	}
+}
+
 func createUserPolicy(e events.Event) {
 	if e.Kind != domain.EventApiUserCreated {
 		return

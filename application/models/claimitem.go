@@ -15,6 +15,7 @@ import (
 
 var ValidClaimItemStatus = map[api.ClaimItemStatus]struct{}{
 	api.ClaimItemStatusPending:  {},
+	api.ClaimItemStatusRevision: {},
 	api.ClaimItemStatusApproved: {},
 	api.ClaimItemStatusDenied:   {},
 }
@@ -68,8 +69,8 @@ func (c *ClaimItem) FindByID(tx *pop.Connection, id uuid.UUID) error {
 }
 
 // IsActorAllowedTo ensure the actor is either an admin, or a member of this policy to perform any permission
-func (c *ClaimItem) IsActorAllowedTo(tx *pop.Connection, user User, perm Permission, sub SubResource, r *http.Request) bool {
-	if user.IsAdmin() {
+func (c *ClaimItem) IsActorAllowedTo(tx *pop.Connection, actor User, perm Permission, sub SubResource, r *http.Request) bool {
+	if actor.IsAdmin() {
 		return true
 	}
 
@@ -84,7 +85,7 @@ func (c *ClaimItem) IsActorAllowedTo(tx *pop.Connection, user User, perm Permiss
 	policy.LoadMembers(tx, false)
 
 	for _, m := range policy.Members {
-		if m.ID == user.ID {
+		if m.ID == actor.ID {
 			return true
 		}
 	}

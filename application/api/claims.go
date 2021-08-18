@@ -7,10 +7,19 @@ import (
 	"github.com/gofrs/uuid"
 )
 
-type (
-	ClaimEventType string
-	ClaimStatus    string
-)
+// ClaimEventType
+//
+// may be one of: Theft, Impact, Lightning, Water, Evacuation, Other
+//
+// swagger:model
+type ClaimEventType string
+
+// ClaimStatus
+//
+// may be one of: Draft, Pending, Approved, Denied
+//
+// swagger:model
+type ClaimStatus string
 
 const (
 	ClaimEventTypeTheft      = ClaimEventType("Theft")
@@ -22,27 +31,77 @@ const (
 
 	ClaimStatusDraft    = ClaimStatus("Draft")
 	ClaimStatusPending  = ClaimStatus("Pending")
+	ClaimStatusRevision = ClaimStatus("Revision")
 	ClaimStatusApproved = ClaimStatus("Approved")
 	ClaimStatusDenied   = ClaimStatus("Denied")
 )
 
+// swagger:model
 type Claims []Claim
 
+// swagger:model
 type Claim struct {
-	ID               uuid.UUID      `json:"id"`
-	PolicyID         uuid.UUID      `json:"policy_id"`
-	EventDate        time.Time      `json:"event_date"`
-	EventType        ClaimEventType `json:"event_type"`
-	EventDescription string         `json:"event_description"`
-	Status           ClaimStatus    `json:"status"`
-	ReviewDate       nulls.Time     `json:"review_date,omitempty"`
-	ReviewerID       nulls.UUID     `json:"reviewer_id,omitempty"`
-	PaymentDate      nulls.Time     `json:"payment_date,omitempty"`
-	TotalPayout      int            `json:"total_payout,omitempty"`
+	// unique ID
+	//
+	// swagger:strfmt uuid4
+	ID uuid.UUID `json:"id"`
+
+	// policy ID
+	//
+	// swagger:strfmt uuid4
+	PolicyID uuid.UUID `json:"policy_id"`
+
+	// event date
+	//
+	// swagger:strfmt date-time
+	EventDate time.Time `json:"event_date"`
+
+	// event type
+	EventType ClaimEventType `json:"event_type"`
+
+	// event description .
+	EventDescription string `json:"event_description"`
+
+	// event status
+	Status ClaimStatus `json:"status"`
+
+	// review date
+	//
+	// swagger:strfmt date-time
+	ReviewDate nulls.Time `json:"review_date,omitempty"`
+
+	// reviewer ID
+	//
+	// swagger:strfmt uuid4
+	ReviewerID nulls.UUID `json:"reviewer_id,omitempty"`
+
+	// payment date
+	//
+	// swagger:strfmt date-time
+	PaymentDate nulls.Time `json:"payment_date,omitempty"`
+
+	// total payout
+	TotalPayout int `json:"total_payout,omitempty"`
 }
 
+// swagger:model
 type ClaimCreateInput struct {
-	EventDate        time.Time      `json:"event_date"`
-	EventType        ClaimEventType `json:"event_type"`
-	EventDescription string         `json:"event_description"`
+	// event date
+	EventDate time.Time `json:"event_date"`
+
+	EventType ClaimEventType `json:"event_type"`
+
+	// event description
+	EventDescription string `json:"event_description"`
+}
+
+// swagger:model
+type ClaimUpdateInput struct {
+	// event date
+	EventDate time.Time `json:"event_date"`
+
+	EventType ClaimEventType `json:"event_type"`
+
+	// event description
+	EventDescription string `json:"event_description"`
 }

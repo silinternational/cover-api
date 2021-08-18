@@ -41,6 +41,7 @@ import (
 	"github.com/gobuffalo/packr/v2"
 	"github.com/gorilla/sessions"
 	"github.com/rs/cors"
+	"github.com/silinternational/riskman-api/listeners"
 
 	"github.com/silinternational/riskman-api/domain"
 	"github.com/silinternational/riskman-api/models"
@@ -134,6 +135,7 @@ func App() *buffalo.App {
 		claimsGroup := app.Group("/" + domain.TypeClaim)
 		claimsGroup.GET("/", claimsList)
 		claimsGroup.GET(idRegex, claimsView)
+		claimsGroup.PUT(idRegex, claimsUpdate)
 
 		// policies
 		policiesGroup := app.Group("/" + domain.TypePolicy)
@@ -149,7 +151,10 @@ func App() *buffalo.App {
 		// item
 		itemsGroup := app.Group("/" + domain.TypeItem)
 		itemsGroup.PUT(idRegex, itemsUpdate)
+		itemsGroup.DELETE(idRegex, itemsRemove)
 	}
+
+	listeners.RegisterListeners()
 
 	return app
 }

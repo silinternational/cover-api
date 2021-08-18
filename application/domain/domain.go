@@ -77,20 +77,28 @@ const (
 )
 
 const (
-	DateFormat 	= "2006-01-02"
+	DateFormat = "2006-01-02"
+
+	// How many hours old an item can be until it's not allowed to be deleted
+	ItemDeleteCutOffHours = 72
 
 	// Ported from WeCarry's domain.go to get upload.go working
-	MaxFileSize	= 1024 * 1024 * 10       // 10 Megabytes
+	MaxFileSize = 1024 * 1024 * 10 // 10 Megabytes
 
 	// Ported from WeCarry's domain.go to get models/file.go working
-	DurationDay                 = time.Duration(time.Hour * 24)
-	DurationWeek                = time.Duration(DurationDay * 7)
-	Megabyte                    = 1048576
+	DurationDay  = time.Duration(time.Hour * 24)
+	DurationWeek = time.Duration(DurationDay * 7)
+	Megabyte     = 1048576
 )
 
 // Event Kinds
 const (
 	EventApiUserCreated = "api:user:created"
+)
+
+var (
+	// redirect url for after logout
+	LogoutRedirectURL = "missing.ui.url/logged-out"
 )
 
 func getBuffaloContext(ctx context.Context) buffalo.Context {
@@ -131,17 +139,17 @@ var Env struct {
 	SamlSignRequest                 bool   `default:"true" split_words:"true"`
 	SamlRequireEncryptedAssertion   bool   `default:"true" split_words:"true"`
 
-	// Ported from WeCarry's domain.go so that aws.go works
-	AwsRegion                  		string	`default:"us-east-1" split_words:"true"`
-	AwsS3Endpoint              		string	`default:"http://minio:9000" split_words:"true"`
-	AwsS3DisableSSL            		bool	`default:"true" split_words:"true"`
-	AwsS3Bucket                		string	`default:"wca-test-bucket" split_words:"true"`
-	AwsAccessKeyID             		string	`default:"abc123" split_words:"true"`
-	AwsSecretAccessKey         		string	`default:"abcd1234" split_words:"true"`
-	EmailFromAddress           		string	`default:"no_reply@example.com" split_words:"true"`
+	// Ported from WeCarry's domain.go so that storage.go works
+	AwsRegion          string `default:"us-east-1" split_words:"true"`
+	AwsS3Endpoint      string `default:"http://minio:9000" split_words:"true"`
+	AwsS3DisableSSL    bool   `default:"true" split_words:"true"`
+	AwsS3Bucket        string `default:"wca-test-bucket" split_words:"true"`
+	AwsAccessKeyID     string `default:"abc123" split_words:"true"`
+	AwsSecretAccessKey string `default:"abcd1234" split_words:"true"`
+	EmailFromAddress   string `default:"no_reply@example.com" split_words:"true"`
 
 	// Ported from WeCarry's domain.go to get models/file.go working
-	MaxFileDelete              		int		`default:"10" split_words:"true"`
+	MaxFileDelete int `default:"10" split_words:"true"`
 }
 
 func init() {
@@ -151,6 +159,8 @@ func init() {
 	ErrLogger.InitRollbar()
 	Assets = packr.New("Assets", "../assets")
 	AuthCallbackURL = Env.ApiBaseURL + "/auth/callback"
+
+	LogoutRedirectURL = Env.UIURL + "/logged-out"
 }
 
 // readEnv loads environment data into `Env`

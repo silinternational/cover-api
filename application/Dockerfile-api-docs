@@ -1,7 +1,5 @@
 FROM quay.io/goswagger/swagger:latest
 
-WORKDIR /src
-ADD . .
 
 # install redoc-cli to bundle html
 RUN apk add --no-cache --no-progress npm
@@ -10,6 +8,9 @@ RUN npm install --no-progress -g redoc-cli
 # install aws cli to push docs to s3
 RUN apk add --no-cache --no-progress python3 py3-pip
 RUN pip install --progress-bar off awscli
+
+WORKDIR /src
+ADD . .
 
 ENTRYPOINT []
 CMD ["./build-push-api-docs.sh"]

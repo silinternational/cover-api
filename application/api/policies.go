@@ -6,6 +6,11 @@ import (
 	"github.com/gofrs/uuid"
 )
 
+// PolicyType
+//
+// may be one of: Household, OU
+//
+// swagger:model
 type PolicyType string
 
 const (
@@ -13,20 +18,18 @@ const (
 	PolicyTypeOU        = PolicyType("OU")
 )
 
+// swagger:model
 type Policies []Policy
 
-// Policy represents a single policy, either household or ou
+// Policy represents a single policy, either household or OU
 // swagger:model
 type Policy struct {
-	// unique id (uuid) for thread
+	// unique ID
 	//
 	// swagger:strfmt uuid4
-	// unique: true
-	// example: 63d5b060-1460-4348-bdf0-ad03c105a8d5
 	ID uuid.UUID `json:"id"`
 
 	// policy type
-	// required: true
 	Type PolicyType `json:"type"`
 
 	// Household ID for billing
@@ -42,9 +45,13 @@ type Policy struct {
 	EntityCode string `json:"entity_code,omitempty"`
 
 	// The time the policy was created
+	//
+	// swagger:strfmt date-time
 	CreatedAt time.Time `json:"created_at"`
 
 	// The time the policy was last updated
+	//
+	// swagger:strfmt date-time
 	UpdatedAt time.Time `json:"updated_at"`
 
 	// List of policy members

@@ -2,6 +2,11 @@ package api
 
 import "github.com/gofrs/uuid"
 
+// PolicyDependentRelationship
+//
+// may be one of: Spouse, Child
+//
+// swagger:model
 type PolicyDependentRelationship string
 
 const (
@@ -9,19 +14,40 @@ const (
 	PolicyDependentRelationshipChild  = PolicyDependentRelationship("Child")
 )
 
+// swagger:model
 type PolicyDependents []PolicyDependent
 
+// swagger:model
 type PolicyDependent struct {
-	ID             uuid.UUID                   `json:"id"`
-	Name           string                      `json:"name"`
-	Relationship   PolicyDependentRelationship `json:"relationship"`
-	Location       string                      `json:"location"`
-	ChildBirthYear int                         `json:"child_birth_year"`
+	// unique ID
+	//
+	// swagger:strfmt uuid4
+	ID uuid.UUID `json:"id"`
+
+	// dependent name
+	Name string `json:"name"`
+
+	// dependent relationship
+	Relationship PolicyDependentRelationship `json:"relationship"`
+
+	// dependent location
+	Location string `json:"location"`
+
+	// birth year of child
+	ChildBirthYear int `json:"child_birth_year"`
 }
 
+// swagger:model
 type PolicyDependentInput struct {
-	Name           string                      `json:"name"`
-	Relationship   PolicyDependentRelationship `json:"relationship"`
-	Location       string                      `json:"location"`
-	ChildBirthYear int                         `json:"child_birth_year"`
+	// dependent name
+	Name string `json:"name"`
+
+	// dependent relationship, one of: Spouse, Child
+	Relationship PolicyDependentRelationship `json:"relationship"`
+
+	// dependent location
+	Location string `json:"location"`
+
+	// birth year of child
+	ChildBirthYear int `json:"child_birth_year"`
 }

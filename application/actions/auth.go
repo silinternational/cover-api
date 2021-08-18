@@ -51,6 +51,21 @@ var samlConfig = saml.Config{
 	AttributeMap:                nil,
 }
 
+// swagger:operation POST /auth/login Authentication AuthLogin
+//
+// AuthLogin
+//
+// Start the SAML login process
+//
+// ---
+// parameters:
+// - name: client-id
+//   in: query
+//   required: true
+//   description: the user's client id
+// responses:
+//   '200':
+//     description: returns a "RedirectURL" key with the saml idp url that has a saml request
 func authRequest(c buffalo.Context) error {
 	// Push the Client ID into the Session
 	clientID := c.Param(ClientIDParam)
@@ -214,27 +229,35 @@ func getLoginSuccessRedirectURL(authUser auth.User, returnTo string) string {
 	return uiURL + returnTo + params
 }
 
-// authDestroy uses the bearer token to find the user's access token and
-//  calls the appropriate provider's logout function.
+// swagger:operation GET /auth/logout Authentication AuthLogout
+//
+// AuthLogout
+//
+// Logout of application
+//
+// ---
+// parameters:
+// - name: token
+//   in: query
+//   required: true
+//   description: the user's bearer token
+// responses:
+//   '302':
+//     description: redirect to UI
 func authDestroy(c buffalo.Context) error {
 	tokenParam := c.Param(LogoutToken)
 	if tokenParam == "" {
 		return reportErrorAndClearSession(c, &api.AppError{
-			HttpStatus: http.StatusInternalServerError,
-			Key:        api.ErrorCreatingAccessToken,
+			HttpStatus: http.StatusBadRequest,
+			Key:        api.ErrorMissingLogoutToken,
 			Message:    LogoutToken + " is required to logout",
 		})
 	}
 
 	var uat models.UserAccessToken
 	tx := models.Tx(c)
-	err := uat.FindByBearerToken(tx, tokenParam)
-	if err != nil {
-		return reportErrorAndClearSession(c, &api.AppError{
-			HttpStatus: http.StatusInternalServerError,
-			Key:        api.ErrorFindingAccessToken,
-			Message:    err.Error(),
-		})
+	if appErr := uat.FindByBearerToken(tx, tokenParam); appErr != nil {
+		return reportErrorAndClearSession(c, appErr)
 	}
 
 	authUser, err := uat.GetUser(tx)
@@ -267,17 +290,12 @@ func authDestroy(c buffalo.Context) error {
 		})
 	}
 
-	redirectURL := domain.Env.UIURL
+	redirectURL := domain.LogoutRedirectURL
 
 	if authResp.RedirectURL != "" {
 		var uat models.UserAccessToken
-		err = uat.DeleteByBearerToken(tx, tokenParam)
-		if err != nil {
-			return reportErrorAndClearSession(c, &api.AppError{
-				HttpStatus: http.StatusInternalServerError,
-				Key:        api.ErrorDeletingAccessToken,
-				Message:    err.Error(),
-			})
+		if appErr := uat.DeleteByBearerToken(tx, tokenParam); appErr != nil {
+			return reportErrorAndClearSession(c, appErr)
 		}
 		c.Session().Clear()
 		redirectURL = authResp.RedirectURL

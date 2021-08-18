@@ -35,14 +35,16 @@ type Users []User
 
 // User model
 type User struct {
-	ID           uuid.UUID   `json:"-" db:"id"`
-	Email        string      `db:"email" validate:"required"`
-	FirstName    string      `db:"first_name"`
-	LastName     string      `db:"last_name"`
-	IsBlocked    bool        `db:"is_blocked"`
-	LastLoginUTC time.Time   `db:"last_login_utc"`
-	StaffID      string      `db:"staff_id"`
-	AppRole      UserAppRole `db:"app_role" validate:"appRole"`
+	ID            uuid.UUID   `json:"-" db:"id"`
+	Email         string      `db:"email" validate:"required"`
+	EmailOverride string      `db:"email_override"`
+	FirstName     string      `db:"first_name"`
+	LastName      string      `db:"last_name"`
+	IsBlocked     bool        `db:"is_blocked"`
+	LastLoginUTC  time.Time   `db:"last_login_utc"`
+	Location      string      `db:"location"`
+	StaffID       string      `db:"staff_id"`
+	AppRole       UserAppRole `db:"app_role" validate:"appRole"`
 
 	// unique id (uuid) for a avatar or photo file
 	//
@@ -167,13 +169,28 @@ func (u *User) LoadPolicies(tx *pop.Connection, reload bool) {
 	}
 }
 
+func (u *User) MyClaims(tx *pop.Connection) Claims {
+	if err := tx.Load(u, "Policies.Claims"); err != nil {
+		panic("database error loading User.Policies.Claims, " + err.Error())
+	}
+
+	var claims Claims
+	for _, policy := range u.Policies {
+		claims = append(claims, policy.Claims...)
+	}
+
+	return claims
+}
+
 func ConvertPolicyMember(tx *pop.Connection, u User) api.PolicyMember {
 	return api.PolicyMember{
-		ID:           u.ID,
-		FirstName:    u.FirstName,
-		LastName:     u.LastName,
-		Email:        u.Email,
-		LastLoginUTC: u.LastLoginUTC,
+		ID:            u.ID,
+		FirstName:     u.FirstName,
+		LastName:      u.LastName,
+		Email:         u.Email,
+		EmailOverride: u.EmailOverride,
+		LastLoginUTC:  u.LastLoginUTC,
+		Location:      u.Location,
 	}
 }
 
@@ -278,6 +295,7 @@ func ConvertUser(tx *pop.Connection, u User) api.User {
 	output := api.User{
 		ID:           u.ID,
 		Email:        u.Email,
+		EmailOverride: u.EmailOverride,
 		FirstName:    u.FirstName,
 		LastName:     u.LastName,
 		LastLoginUTC: u.LastLoginUTC,
