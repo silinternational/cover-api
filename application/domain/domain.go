@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -168,10 +167,6 @@ func readEnv() {
 
 	// Doing this separately to avoid needing two environment variables for the same thing
 	Env.GoEnv = envy.Get("GO_ENV", "development")
-
-	fmt.Printf("\nAwsRegion  %v", Env.AwsRegion)
-	fmt.Printf("\nAwsS3Endpoint  %v", Env.AwsS3Endpoint)
-	fmt.Printf("\nAwsS3DisableSSL  %v", Env.AwsS3DisableSSL)
 }
 
 // ErrLogProxy is a "tee" that sends to Rollbar and to the local logger,

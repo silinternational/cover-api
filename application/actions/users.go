@@ -77,7 +77,7 @@ func usersMe(c buffalo.Context) error {
 
 func renderUser(c buffalo.Context, user models.User) error {
 	tx := models.Tx(c)
-	user.LoadPolicies(models.Tx(c), false)
+	user.LoadPolicies(tx, false)
 	return renderOk(c, models.ConvertUser(tx, user))
 }
 

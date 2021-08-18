@@ -45,11 +45,7 @@ type User struct {
 	Location      string      `db:"location"`
 	StaffID       string      `db:"staff_id"`
 	AppRole       UserAppRole `db:"app_role" validate:"appRole"`
-
-	// unique id (uuid) for a avatar or photo file
-	//
-	// example: 63d5b060-1460-4348-bdf0-ad03c105a8d5
-	PhotoFileID nulls.UUID `json:"photo_file_id" db:"photo_file_id"`
+	PhotoFileID   nulls.UUID  `json:"photo_file_id" db:"photo_file_id"`
 
 	CreatedAt time.Time `db:"created_at"`
 	UpdatedAt time.Time `db:"updated_at"`
