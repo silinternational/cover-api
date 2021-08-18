@@ -45,10 +45,15 @@ type User struct {
 	Location      string      `db:"location"`
 	StaffID       string      `db:"staff_id"`
 	AppRole       UserAppRole `db:"app_role" validate:"appRole"`
-	CreatedAt     time.Time   `db:"created_at"`
-	UpdatedAt     time.Time   `db:"updated_at"`
+	PhotoFileID   nulls.UUID  `json:"photo_file_id" db:"photo_file_id"`
+
+	CreatedAt time.Time `db:"created_at"`
+	UpdatedAt time.Time `db:"updated_at"`
 
 	Policies Policies `many_to_many:"policy_users"`
+
+	// File object that contains the user's avatar or photo
+	PhotoFile *File `belongs_to:"files"`
 }
 
 // Validate gets run every time you call a "pop.Validate*" (pop.ValidateAndSave, pop.ValidateAndCreate, pop.ValidateAndUpdate) method.
@@ -228,27 +233,77 @@ func (u *Users) GetAll(tx *pop.Connection) error {
 	return tx.All(u)
 }
 
-func ConvertUsers(in Users) api.Users {
+// OwnsFile returns true if the user owns the file identified by the given ID
+func (u *User) OwnsFile(tx *pop.Connection, fileID uuid.UUID) (bool, error) {
+	if u.ID == uuid.Nil {
+		return false, errors.New("no user ID provided")
+	}
+	var f File
+	err := tx.Find(&f, fileID)
+	if err != nil {
+		if domain.IsOtherThanNoRows(err) {
+			panic("error finding file: " + err.Error())
+		}
+
+		return false, errors.New("unable to find file with ID : " + fileID.String())
+
+	}
+	return u.ID == f.CreatedByID, nil
+}
+
+// AttachPhotoFile assigns a previously-stored File to this User as a profile photo
+func (u *User) AttachPhotoFile(tx *pop.Connection, fileID uuid.UUID) error {
+	if err := addFile(tx, u, fileID); err != nil {
+		return err
+	}
+
+	u.LoadPhotoFile(tx)
+	return nil
+}
+
+// LoadPhotoFile - a simple wrapper method for loading members on the struct
+func (u *User) LoadPhotoFile(tx *pop.Connection) {
+	if !u.PhotoFileID.Valid {
+		return
+	}
+	if err := tx.Load(u, "PhotoFile"); err != nil {
+		panic("database error loading User.PhotoFile, " + err.Error())
+	}
+}
+
+func ConvertUsers(tx *pop.Connection, in Users) api.Users {
 	out := make(api.Users, len(in))
 	for i := range in {
-		out[i] = ConvertUser(in[i])
+		out[i] = ConvertUser(tx, in[i])
 	}
 	return out
 }
 
-func ConvertUser(u User) api.User {
+func ConvertUser(tx *pop.Connection, u User) api.User {
+	u.LoadPhotoFile(tx)
+
 	// TODO: provide more than one policy
 	var policyID nulls.UUID
 	if len(u.Policies) > 0 {
 		policyID = nulls.NewUUID(u.Policies[0].ID)
 	}
-	return api.User{
+
+	output := api.User{
 		ID:            u.ID,
 		Email:         u.Email,
 		EmailOverride: u.EmailOverride,
 		FirstName:     u.FirstName,
 		LastName:      u.LastName,
 		LastLoginUTC:  u.LastLoginUTC,
+		Location:      u.Location,
+		PhotoFileID:   u.PhotoFileID,
 		PolicyID:      policyID,
 	}
+
+	if u.PhotoFile != nil {
+		f := convertFile(*u.PhotoFile)
+		output.PhotoFile = &f
+	}
+
+	return output
 }
