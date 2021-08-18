@@ -16,16 +16,16 @@ type Policies []Policy
 
 var ValidPolicyTypes = map[api.PolicyType]struct{}{
 	api.PolicyTypeHousehold: {},
-	api.PolicyTypeOU:        {},
+	api.PolicyTypeCorporate: {},
 }
 
 type Policy struct {
 	ID          uuid.UUID      `db:"id"`
 	Type        api.PolicyType `db:"type" validate:"policyType"`
 	HouseholdID string         `db:"household_id" validate:"required_if=Type Household"`
-	CostCenter  string         `db:"cost_center" validate:"required_if=Type OU"`
-	Account     string         `db:"account" validate:"required_if=Type OU"`
-	EntityCode  string         `db:"entity_code" validate:"required_if=Type OU"`
+	CostCenter  string         `db:"cost_center" validate:"required_if=Type Corporate"`
+	Account     string         `db:"account" validate:"required_if=Type Corporate"`
+	EntityCode  string         `db:"entity_code" validate:"required_if=Type Corporate"`
 	LegacyID    int            `db:"legacy_id"`
 	CreatedAt   time.Time      `db:"created_at"`
 	UpdatedAt   time.Time      `db:"updated_at"`

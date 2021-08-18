@@ -18,7 +18,7 @@ import (
 var ValidClaimEventTypes = map[api.ClaimEventType]struct{}{
 	api.ClaimEventTypeTheft:      {},
 	api.ClaimEventTypeImpact:     {},
-	api.ClaimEventTypeLightning:  {},
+	api.ClaimEventTypeElectrical: {},
 	api.ClaimEventTypeWater:      {},
 	api.ClaimEventTypeEvacuation: {},
 	api.ClaimEventTypeOther:      {},
