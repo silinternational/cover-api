@@ -45,4 +45,6 @@ type User struct {
 	// example: 63d5b060-1460-4348-bdf0-ad03c105a8d5
 	PhotoFileID nulls.UUID `json:"photo_file_id"`
 
+	// File object that contains the user's photo
+	PhotoFile *File `json:"photo_file,omitempty"`
 }
