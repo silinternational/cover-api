@@ -10,6 +10,8 @@ import (
 	"net/http"
 	"reflect"
 
+	"github.com/gobuffalo/nulls"
+
 	"github.com/go-playground/validator/v10"
 	"github.com/gobuffalo/buffalo"
 	"github.com/gobuffalo/events"
@@ -173,4 +175,43 @@ func emitEvent(e events.Event) {
 	if err := events.Emit(e); err != nil {
 		domain.ErrLogger.Printf("error emitting event %s ... %v", e.Kind, err)
 	}
+}
+
+func addFile(tx *pop.Connection, m interface{}, fileID uuid.UUID) error {
+	var f File
+
+	if err := f.Find(tx, fileID); err != nil {
+		return err
+	}
+
+	fileField := fieldByName(m, "FileID", "PhotoFileID")
+	if !fileField.IsValid() {
+		return errors.New("error identifying File ID field")
+	}
+
+	oldID := fileField.Interface().(nulls.UUID)
+	fileField.Set(reflect.ValueOf(nulls.NewUUID(f.ID)))
+	idField := fieldByName(m, "ID")
+	if !idField.IsValid() {
+		return errors.New("error identifying ID field")
+	}
+
+	if err := tx.Update(m); err != nil {
+		return fmt.Errorf("failed to update the file ID column, %s", err)
+	}
+
+	if err := f.SetLinked(tx); err != nil {
+		return fmt.Errorf("error marking file %s as linked, %s", f.ID, err)
+	}
+
+	if !oldID.Valid {
+		return nil
+	}
+
+	oldFile := File{ID: oldID.UUID}
+	if err := oldFile.ClearLinked(tx); err != nil {
+		domain.ErrLogger.Printf("error marking old file %s as unlinked, %s", oldFile.ID, err)
+	}
+
+	return nil
 }

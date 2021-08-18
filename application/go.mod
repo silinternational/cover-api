@@ -3,6 +3,7 @@ module github.com/silinternational/riskman-api
 go 1.16
 
 require (
+	github.com/aws/aws-sdk-go v1.40.19
 	github.com/go-playground/validator/v10 v10.7.0
 	github.com/gobuffalo/buffalo v0.16.26
 	github.com/gobuffalo/buffalo-pop/v2 v2.3.0
@@ -27,4 +28,5 @@ require (
 	github.com/russellhaering/gosaml2 v0.6.0
 	github.com/russellhaering/goxmldsig v1.1.0
 	github.com/stretchr/testify v1.7.0
+	golang.org/x/image v0.0.0-20190802002840-cff245a6509b
 )
