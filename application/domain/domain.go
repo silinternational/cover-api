@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -41,7 +42,6 @@ var Assets *packr.Box
 
 var extrasLock = sync.RWMutex{}
 
-// Ported from WeCarry's domain.go to get models/file.go working
 var AllowedFileUploadTypes = []string{
 	"image/bmp",
 	"image/gif",
@@ -82,10 +82,8 @@ const (
 	// How many hours old an item can be until it's not allowed to be deleted
 	ItemDeleteCutOffHours = 72
 
-	// Ported from WeCarry's domain.go to get upload.go working
 	MaxFileSize = 1024 * 1024 * 10 // 10 Megabytes
 
-	// Ported from WeCarry's domain.go to get models/file.go working
 	DurationDay  = time.Duration(time.Hour * 24)
 	DurationWeek = time.Duration(DurationDay * 7)
 	Megabyte     = 1048576
@@ -139,16 +137,14 @@ var Env struct {
 	SamlSignRequest                 bool   `default:"true" split_words:"true"`
 	SamlRequireEncryptedAssertion   bool   `default:"true" split_words:"true"`
 
-	// Ported from WeCarry's domain.go so that storage.go works
-	AwsRegion          string `default:"us-east-1" split_words:"true"`
-	AwsS3Endpoint      string `default:"http://minio:9000" split_words:"true"`
-	AwsS3DisableSSL    bool   `default:"true" split_words:"true"`
-	AwsS3Bucket        string `default:"wca-test-bucket" split_words:"true"`
-	AwsAccessKeyID     string `default:"abc123" split_words:"true"`
-	AwsSecretAccessKey string `default:"abcd1234" split_words:"true"`
-	EmailFromAddress   string `default:"no_reply@example.com" split_words:"true"`
+	AwsRegion          string `split_words:"true"`
+	AwsS3Endpoint      string `split_words:"true"`
+	AwsS3DisableSSL    bool   `split_words:"true"`
+	AwsS3Bucket        string `split_words:"true"`
+	AwsAccessKeyID     string `split_words:"true"`
+	AwsSecretAccessKey string `split_words:"true"`
+	EmailFromAddress   string `split_words:"true"`
 
-	// Ported from WeCarry's domain.go to get models/file.go working
 	MaxFileDelete int `default:"10" split_words:"true"`
 }
 
@@ -172,6 +168,10 @@ func readEnv() {
 
 	// Doing this separately to avoid needing two environment variables for the same thing
 	Env.GoEnv = envy.Get("GO_ENV", "development")
+
+	fmt.Printf("\nAwsRegion  %v", Env.AwsRegion)
+	fmt.Printf("\nAwsS3Endpoint  %v", Env.AwsS3Endpoint)
+	fmt.Printf("\nAwsS3DisableSSL  %v", Env.AwsS3DisableSSL)
 }
 
 // ErrLogProxy is a "tee" that sends to Rollbar and to the local logger,
@@ -317,7 +317,6 @@ func MergeExtras(extras []map[string]interface{}) map[string]interface{} {
 	return allExtras
 }
 
-// Ported from WeCarry's domain.go to get models/file.go working
 // IsStringInSlice iterates over a slice of strings, looking for the given
 // string. If found, true is returned. Otherwise, false is returned.
 func IsStringInSlice(needle string, haystack []string) bool {
