@@ -1,4 +1,4 @@
-package aws
+package storage
 
 import (
 	"bytes"
@@ -46,8 +46,8 @@ func (ts *TestSuite) TestRawEmail() {
 		<p>
 		This is a test to see if AWS can send a raw email.
 		For some reason it needs to be a certain length to pass "make test"
-		(as defined by "ts.Greater(len(raw), 1000)" at line 54 
-		of riskman-api/application/aws/aws_test.go)
+		(as defined by "ts.Greater(len(raw), 1000)" at line 54
+		of riskman-api/application/storage/storage_test.go)
 		</p>
 		<p>End of body</p>`)
 

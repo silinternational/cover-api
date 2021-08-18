@@ -1,8 +1,8 @@
-package aws
+package storage
 
 import (
 	"bytes"
-	// "encoding/base64" (Uncomment to be able to display a logo at the end of an email, 
+	// "encoding/base64" (Uncomment to be able to display a logo at the end of an email,
 	// see commented out code at the end of function "rawEmail")
 	"errors"
 	"fmt"
@@ -286,10 +286,10 @@ func rawEmail(to, from, subject, body string) []byte {
 	}
 
 	// Uncomment the code below to add the ability to display a logo at
-	// the end of an email. This code needs "logo.png" located in 
+	// the end of an email. This code needs "logo.png" located in
 	// "riskman-api/applications/assets" to function correctly.
 	// Also uncomment "encoding/base64" in imports section.
-	
+
 	/*w, err = relatedWriter.CreatePart(textproto.MIMEHeader{
 		"Content-Type":              {"image/png"},
 		"Content-Disposition":       {"inline"},
