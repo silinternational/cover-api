@@ -323,8 +323,8 @@ func getPolicyType(p *LegacyPolicy) api.PolicyType {
 			p.HouseholdId = "-"
 		}
 	}
-	if p.Type == "ou" {
-		policyType = api.PolicyTypeOU
+	if p.Type == "ou" || p.Type == "corporate" {
+		policyType = api.PolicyTypeCorporate
 
 		// TODO: fix input data so this isn't needed
 		if !p.EntityCode.Valid || p.EntityCode.String == "" {
