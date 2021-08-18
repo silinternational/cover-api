@@ -178,6 +178,9 @@ type JournalEntry struct {
 	RMJE        float64      `json:"RM_JE"`
 }
 
+// itemCategoryMap is a map of legacy ID to new ID
+var itemCategoryMap = map[int]uuid.UUID{}
+
 var _ = grift.Namespace("db", func() {
 	_ = grift.Desc("import", "Import legacy data")
 	_ = grift.Add("import", func(c *grift.Context) error {
@@ -224,6 +227,8 @@ func importItemCategories(tx *pop.Connection, in []LegacyItemCategory) {
 	fmt.Println("legacy_id,id,status,risk_category_id,name,auto_approve_max,help_text")
 
 	for _, i := range in {
+		categoryID := stringToInt(i.Id, "ItemCategory ID")
+
 		newItemCategory := models.ItemCategory{
 			RiskCategoryID: getRiskCategoryUUID(i.RiskCategoryId),
 			Name:           i.Name,
@@ -232,12 +237,14 @@ func importItemCategories(tx *pop.Connection, in []LegacyItemCategory) {
 			AutoApproveMax: i.AutoApproveMax,
 			CreatedAt:      parseStringTime(i.CreatedAt, "ItemCategory.CreatedAt"),
 			UpdatedAt:      parseStringTime(i.UpdatedAt, "ItemCategory.UpdatedAt"),
-			LegacyID:       stringToInt(i.Id),
+			LegacyID:       categoryID,
 		}
 
 		if err := newItemCategory.Create(tx); err != nil {
 			panic(fmt.Sprintf("failed to create item category, %s\n%+v", err, newItemCategory))
 		}
+
+		itemCategoryMap[categoryID] = newItemCategory.ID
 
 		fmt.Printf(`%d,"%s","%s",%s,"%s",%d,"%s"`+"\n",
 			newItemCategory.LegacyID, newItemCategory.ID, newItemCategory.Status,
@@ -289,7 +296,7 @@ func importPolicies(tx *pop.Connection, in []LegacyPolicy) {
 			CostCenter:  p.CostCenter,
 			Account:     strconv.Itoa(p.Account),
 			EntityCode:  p.EntityCode.String,
-			LegacyID:    stringToInt(p.Id),
+			LegacyID:    stringToInt(p.Id, "Policy ID"),
 			CreatedAt:   parseStringTime(p.CreatedAt, "Policy.CreatedAt"),
 			UpdatedAt:   parseNullStringTime(p.UpdatedAt, "Policy.UpdatedAt"),
 		}
@@ -342,7 +349,7 @@ func getPolicyType(p *LegacyPolicy) api.PolicyType {
 func importClaims(tx *pop.Connection, policy models.Policy, claims []LegacyClaim) {
 	for _, c := range claims {
 		newClaim := models.Claim{
-			LegacyID:         stringToInt(c.Id),
+			LegacyID:         stringToInt(c.Id, "Claim ID"),
 			PolicyID:         policy.ID,
 			EventDate:        parseStringTime(c.EventDate, "EventDate"),
 			EventType:        getEventType(c),
@@ -422,7 +429,7 @@ func importItems(tx *pop.Connection, policy models.Policy, items []LegacyItem) {
 		newItem := models.Item{
 			// TODO: name/policy needs to be unique
 			Name:        item.Name + domain.GetUUID().String(),
-			CategoryID:  getItemCategoryUUID(tx, item.CategoryId),
+			CategoryID:  itemCategoryMap[item.CategoryId],
 			InStorage:   false,
 			Country:     item.Country,
 			Description: item.Description,
@@ -435,7 +442,7 @@ func importItems(tx *pop.Connection, policy models.Policy, items []LegacyItem) {
 			PurchaseDate:      parseStringTime(item.PurchaseDate, "Item.PurchaseDate"),
 			CoverageStatus:    getCoverageStatus(item),
 			CoverageStartDate: parseStringTime(item.CoverageStartDate, "Item.CoverageStartDate"),
-			LegacyID:          stringToInt(item.Id),
+			LegacyID:          stringToInt(item.Id, "Item ID"),
 			CreatedAt:         parseStringTime(item.CreatedAt, "Item.CreatedAt"),
 			UpdatedAt:         parseNullStringTime(item.UpdatedAt, "Item.UpdatedAt"),
 		}
@@ -443,14 +450,6 @@ func importItems(tx *pop.Connection, policy models.Policy, items []LegacyItem) {
 			panic(fmt.Sprintf("failed to create item, %s\n%+v", err, newItem))
 		}
 	}
-}
-
-func getItemCategoryUUID(tx *pop.Connection, legacyID int) uuid.UUID {
-	var itemCategory models.ItemCategory
-	if err := tx.Where("legacy_id = ?", strconv.Itoa(legacyID)).First(&itemCategory); err != nil {
-		panic(fmt.Sprintf("failed to find item category by legacy ID %d\n", legacyID))
-	}
-	return itemCategory.ID
 }
 
 func getCoverageStatus(item LegacyItem) api.ItemCoverageStatus {
@@ -494,10 +493,10 @@ func parseNullStringTime(t nulls.String, desc string) time.Time {
 	return updatedAt
 }
 
-func stringToInt(s string) int {
+func stringToInt(s, msg string) int {
 	n, err := strconv.Atoi(s)
 	if err != nil {
-		panic(fmt.Sprintf("ID '%s' is not an int", s))
+		panic(fmt.Sprintf("%s '%s' is not an int", msg, s))
 	}
 	return n
 }
