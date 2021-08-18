@@ -18,7 +18,7 @@ const fileFieldName = "file"
 // UploadResponse is a JSON response for the /upload endpoint
 type UploadResponse struct {
 	Name        string `json:"filename,omitempty"`
-	UUID        string `json:"id,omitempty"`
+	ID          string `json:"id,omitempty"`
 	URL         string `json:"url,omitempty"`
 	ContentType string `json:"content_type,omitempty"`
 	Size        int    `json:"size,omitempty"`
@@ -51,13 +51,13 @@ func uploadHandler(c buffalo.Context) error {
 		domain.Error(c, fmt.Sprintf("error storing uploaded file ... %v", fErr))
 		return c.Render(fErr.HttpStatus, render.JSON(api.AppError{
 			HttpStatus: fErr.HttpStatus,
-			Message:  fErr.Message,
+			Message:    fErr.Message,
 		}))
 	}
 
 	resp := UploadResponse{
 		Name:        fileObject.Name,
-		UUID:        fileObject.UUID.String(),
+		ID:          fileObject.ID.String(),
 		URL:         fileObject.URL,
 		ContentType: fileObject.ContentType,
 		Size:        fileObject.Size,

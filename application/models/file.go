@@ -14,14 +14,15 @@ import (
 	"strings"
 	"time"
 
+	"github.com/silinternational/riskman-api/storage"
+
+	"github.com/gofrs/uuid"
+
 	"github.com/gobuffalo/pop/v5"
 	"github.com/gobuffalo/validate/v3"
-	"github.com/gobuffalo/validate/v3/validators"
-	"github.com/gofrs/uuid"
 	"github.com/silinternational/riskman-api/api"
 	_ "golang.org/x/image/webp" // enable decoding of WEBP images
 
-	"github.com/silinternational/riskman-api/aws"
 	"github.com/silinternational/riskman-api/domain"
 )
 
@@ -36,17 +37,23 @@ func (f *FileUploadError) Error() string {
 }
 
 type File struct {
-	ID            int       `json:"-" db:"id"`
-	UUID          uuid.UUID `json:"uuid" db:"uuid"`
-	URL           string    `json:"url" db:"url"`
-	URLExpiration time.Time `json:"url_expiration" db:"url_expiration"`
-	Name          string    `json:"name" db:"name"`
-	Size          int       `json:"size" db:"size"`
-	ContentType   string    `json:"content_type" db:"content_type"`
-	Linked        bool      `json:"linked" db:"linked"`
-	CreatedAt     time.Time `json:"created_at" db:"created_at"`
-	UpdatedAt     time.Time `json:"updated_at" db:"updated_at"`
-	Content       []byte    `json:"-" db:"-"`
+	ID            uuid.UUID `db:"id"`
+	URL           string    `db:"url" validate:"required"`
+	URLExpiration time.Time `db:"url_expiration"`
+	Name          string    `db:"name" validate:"required"`
+	Size          int       `db:"size" validate:"required"`
+	ContentType   string    `db:"content_type" validate:"required"`
+	Linked        bool      `db:"linked"`
+
+	// ID of file creator / owner
+	//
+	// read only: true
+	CreatedByID uuid.UUID `db:"created_by_id" validate:"required"`
+
+	CreatedAt time.Time `db:"created_at"`
+	UpdatedAt time.Time `db:"updated_at"`
+
+	Content []byte `db:"-"`
 }
 
 // String can be helpful for serializing the model
@@ -66,19 +73,7 @@ func (f Files) String() string {
 
 // Validate gets run every time you call a "pop.Validate*" (pop.ValidateAndSave, pop.ValidateAndCreate, pop.ValidateAndUpdate) method.
 func (f *File) Validate(tx *pop.Connection) (*validate.Errors, error) {
-	return validate.Validate(
-		&validators.UUIDIsPresent{Field: f.UUID, Name: "UUID"},
-	), nil
-}
-
-// ValidateCreate gets run every time you call "pop.ValidateAndCreate" method.
-func (f *File) ValidateCreate(tx *pop.Connection) (*validate.Errors, error) {
-	return validate.NewErrors(), nil
-}
-
-// ValidateUpdate gets run every time you call "pop.ValidateAndUpdate" method.
-func (f *File) ValidateUpdate(tx *pop.Connection) (*validate.Errors, error) {
-	return validate.NewErrors(), nil
+	return validateModel(f), nil
 }
 
 // Store takes a byte slice and stores it into S3 and saves the metadata in the database file table.
@@ -106,9 +101,9 @@ func (f *File) Store(tx *pop.Connection) *FileUploadError {
 	f.removeMetadata()
 	f.changeFileExtension()
 
-	f.UUID = domain.GetUUID()
+	f.ID = domain.GetUUID()
 
-	url, err := aws.StoreFile(f.UUID.String(), contentType, f.Content)
+	url, err := storage.StoreFile(f.ID.String(), contentType, f.Content)
 	if err != nil {
 		e := FileUploadError{
 			HttpStatus: http.StatusInternalServerError,
@@ -171,18 +166,13 @@ func (f *File) changeFileExtension() {
 	f.Name = strings.TrimSuffix(f.Name, filepath.Ext(f.Name)) + ext[0]
 }
 
-// FindByUUID locates a file by UUID and returns the result, including a valid URL.
+// Find locates a file by ID and returns the result, including a valid URL.
 // None of the struct members of f are used as input, but are updated if the function is successful.
-func (f *File) FindByUUID(tx *pop.Connection, fileUUID string) error {
+func (f *File) Find(tx *pop.Connection, id uuid.UUID) error {
 	var file File
-	if err := tx.Where("uuid = ?", fileUUID).First(&file); err != nil {
+	if err := tx.Find(&file, id); err != nil {
 		return err
 	}
-
-	if err := file.RefreshURL(tx); err != nil {
-		return err
-	}
-
 	*f = file
 	return nil
 }
@@ -193,7 +183,7 @@ func (f *File) RefreshURL(tx *pop.Connection) error {
 		return nil
 	}
 
-	newURL, err := aws.GetFileURL(f.UUID.String())
+	newURL, err := storage.GetFileURL(f.ID.String())
 	if err != nil {
 		return err
 	}
@@ -242,8 +232,8 @@ func (f *Files) DeleteUnlinked(tx *pop.Connection) error {
 	nRemovedFromDB := 0
 	nRemovedFromS3 := 0
 	for _, file := range files {
-		if err := aws.RemoveFile(file.UUID.String()); err != nil {
-			domain.ErrLogger.Printf("error removing from S3, id='%s', %s", file.UUID.String(), err)
+		if err := storage.RemoveFile(file.ID.String()); err != nil {
+			domain.ErrLogger.Printf("error removing from S3, id='%s', %s", file.ID.String(), err)
 			continue
 		}
 		nRemovedFromS3++
@@ -291,11 +281,12 @@ func (f *Files) FindByIDs(tx *pop.Connection, ids []int) error {
 // convertFile converts a models.File to an api.File
 func convertFile(file File) api.File {
 	return api.File{
-		ID:            file.UUID,
+		ID:            file.ID,
 		URL:           file.URL,
 		URLExpiration: file.URLExpiration,
 		Name:          file.Name,
 		Size:          file.Size,
 		ContentType:   file.ContentType,
+		CreatedByID:   file.CreatedByID,
 	}
 }

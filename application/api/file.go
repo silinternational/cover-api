@@ -33,4 +33,10 @@ type File struct {
 
 	// MIME content type, limited to 255 characters, e.g. 'image/jpeg'
 	ContentType string `json:"content_type"`
+
+	// ID of file creator / owner
+	//
+	// swagger:strfmt uuid4
+	// read only: true
+	CreatedByID uuid.UUID `json:"created_by_id"`
 }
