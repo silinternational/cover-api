@@ -241,7 +241,7 @@ func importItemCategories(tx *pop.Connection, in []LegacyItemCategory) {
 			AutoApproveMax: i.AutoApproveMax,
 			CreatedAt:      parseStringTime(i.CreatedAt, "ItemCategory.CreatedAt"),
 			UpdatedAt:      parseStringTime(i.UpdatedAt, "ItemCategory.UpdatedAt"),
-			LegacyID:       categoryID,
+			LegacyID:       nulls.NewInt(categoryID),
 		}
 
 		if err := newItemCategory.Create(tx); err != nil {
@@ -302,7 +302,7 @@ func importPolicies(tx *pop.Connection, in []LegacyPolicy) {
 			CostCenter:  p.CostCenter,
 			Account:     strconv.Itoa(p.Account),
 			EntityCode:  p.EntityCode.String,
-			LegacyID:    stringToInt(p.Id, "Policy ID"),
+			LegacyID:    nulls.NewInt(stringToInt(p.Id, "Policy ID")),
 			CreatedAt:   parseStringTime(p.CreatedAt, "Policy.CreatedAt"),
 			UpdatedAt:   parseNullStringTime(p.UpdatedAt, "Policy.UpdatedAt"),
 		}
@@ -363,7 +363,7 @@ func normalizePolicy(p *LegacyPolicy) {
 func importClaims(tx *pop.Connection, policy models.Policy, claims []LegacyClaim) {
 	for _, c := range claims {
 		newClaim := models.Claim{
-			LegacyID:         stringToInt(c.Id, "Claim ID"),
+			LegacyID:         nulls.NewInt(stringToInt(c.Id, "Claim ID")),
 			PolicyID:         policy.ID,
 			EventDate:        parseStringTime(c.EventDate, "EventDate"),
 			EventType:        getEventType(c),
@@ -456,7 +456,7 @@ func importItems(tx *pop.Connection, policy models.Policy, items []LegacyItem) {
 			PurchaseDate:      parseStringTime(item.PurchaseDate, "Item.PurchaseDate"),
 			CoverageStatus:    getCoverageStatus(item),
 			CoverageStartDate: parseStringTime(item.CoverageStartDate, "Item.CoverageStartDate"),
-			LegacyID:          stringToInt(item.Id, "Item ID"),
+			LegacyID:          nulls.NewInt(stringToInt(item.Id, "Item ID")),
 			CreatedAt:         parseStringTime(item.CreatedAt, "Item.CreatedAt"),
 			UpdatedAt:         parseNullStringTime(item.UpdatedAt, "Item.UpdatedAt"),
 		}

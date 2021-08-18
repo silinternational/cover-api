@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/gobuffalo/nulls"
 	"github.com/gobuffalo/pop/v5"
 	"github.com/gobuffalo/validate/v3"
 	"github.com/gofrs/uuid"
@@ -26,7 +27,7 @@ type Policy struct {
 	CostCenter  string         `db:"cost_center" validate:"required_if=Type Corporate"`
 	Account     string         `db:"account" validate:"required_if=Type Corporate"`
 	EntityCode  string         `db:"entity_code" validate:"required_if=Type Corporate"`
-	LegacyID    int            `db:"legacy_id"`
+	LegacyID    nulls.Int      `db:"legacy_id"`
 	CreatedAt   time.Time      `db:"created_at"`
 	UpdatedAt   time.Time      `db:"updated_at"`
 

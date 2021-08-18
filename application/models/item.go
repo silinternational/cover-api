@@ -45,7 +45,7 @@ type Item struct {
 	PurchaseDate      time.Time              `db:"purchase_date"`
 	CoverageStatus    api.ItemCoverageStatus `db:"coverage_status" validate:"itemCoverageStatus"`
 	CoverageStartDate time.Time              `db:"coverage_start_date"`
-	LegacyID          int                    `db:"legacy_id"`
+	LegacyID          nulls.Int              `db:"legacy_id"`
 	CreatedAt         time.Time              `db:"created_at"`
 	UpdatedAt         time.Time              `db:"updated_at"`
 

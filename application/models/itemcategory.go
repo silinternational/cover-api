@@ -3,6 +3,8 @@ package models
 import (
 	"time"
 
+	"github.com/gobuffalo/nulls"
+
 	"github.com/silinternational/riskman-api/domain"
 
 	"github.com/gobuffalo/pop/v5"
@@ -30,7 +32,7 @@ type ItemCategory struct {
 	HelpText       string                 `db:"help_text"`
 	Status         api.ItemCategoryStatus `db:"status" validate:"itemCategoryStatus"`
 	AutoApproveMax int                    `db:"auto_approve_max"`
-	LegacyID       int                    `db:"legacy_id"`
+	LegacyID       nulls.Int              `db:"legacy_id"`
 	CreatedAt      time.Time              `db:"created_at"`
 	UpdatedAt      time.Time              `db:"updated_at"`
 
