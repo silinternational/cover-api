@@ -28,7 +28,18 @@ const (
 	ClaimEventTypeWaterDamage     = ClaimEventType("Water Damage")
 	ClaimEventTypeEvacuation      = ClaimEventType("Evacuation")
 	ClaimEventTypeOther           = ClaimEventType("Other")
+)
 
+var AllClaimEventTypes = []ClaimEventType{
+	ClaimEventTypeTheft,
+	ClaimEventTypeImpact,
+	ClaimEventTypeElectricalSurge,
+	ClaimEventTypeWaterDamage,
+	ClaimEventTypeEvacuation,
+	ClaimEventTypeOther,
+}
+
+const (
 	ClaimStatusDraft    = ClaimStatus("Draft")
 	ClaimStatusPending  = ClaimStatus("Pending")
 	ClaimStatusRevision = ClaimStatus("Revision")
