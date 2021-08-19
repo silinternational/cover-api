@@ -322,6 +322,7 @@ func (as *ActionSuite) Test_ClaimsCreate() {
 				`"event_type":"` + string(input.EventType),
 				`"event_description":"` + input.EventDescription,
 				`"status":"` + string(api.ClaimStatusDraft),
+				`"claim_items":[]`,
 			},
 		},
 		{
@@ -343,6 +344,7 @@ func (as *ActionSuite) Test_ClaimsCreate() {
 				`"event_type":"` + string(input.EventType),
 				`"event_description":"` + input.EventDescription,
 				`"status":"` + string(api.ClaimStatusDraft),
+				`"claim_items":[]`,
 			},
 		},
 	}

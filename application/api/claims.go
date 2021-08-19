@@ -95,7 +95,7 @@ type Claim struct {
 	TotalPayout int `json:"total_payout,omitempty"`
 
 	// list of items included in claim
-	Items ClaimItems `json:"items"`
+	Items ClaimItems `json:"claim_items"`
 }
 
 // swagger:model
