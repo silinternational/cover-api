@@ -11,29 +11,27 @@ app:
     ADDR: 0.0.0.0
     HOST: http://riskman.local:3000
     PORT: 3000
-    AWS_ACCESS_KEY_ID: abc123
-    AWS_SECRET_ACCESS_KEY: abcd1234
     DOCKER_IP: testdb
     GO_ENV: test
     TEST_DATABASE_URL: postgres://riskman:riskman@testdb:5432/riskman_test?sslmode=disable
-    RISKMAN_API_BASE_URL: http://riskman.local:3000
-    RISKMAN_APP_NAME: riskman
-    RISKMAN_SESSION_SECRET: kljsLSDJ83jF^kj3LKNEKn435LDKnt
-    RISKMAN_AWS_ACCESS_KEY_ID: abc123
-    RISKMAN_AWS_SECRET_ACCESS_KEY: abcd1234
-    RISKMAN_AWS_REGION: us-east-1
-    RISKMAN_AWS_S3_ENDPOINT: http://minio:9000
-    RISKMAN_AWS_S3_DISABLE_SSL: true
-    RISKMAN_AWS_S3_BUCKET: riskman-test-bucket
-    RISKMAN_SAML_SP_ENTITY_ID: http://example.local:3000
-    RISKMAN_SAML_AUDIENCE_URI: http://example.local:3000
-    RISKMAN_SAML_IDP_ENTITY_ID: our.idp.net
-    RISKMAN_SAML_IDP_CERT: -----BEGIN CERTIFICATE-----\nMIIDXTC...2bb\nPw==\n-----END CERTIFICATE-----\n
-    RISKMAN_SAML_SP_CERT: -----BEGIN CERTIFICATE-----\nMIIDXTC...3cc\nPw==\n-----END CERTIFICATE-----\n
-    RISKMAN_SAML_SP_PRIVATE_KEY: -----BEGIN PRIVATE KEY-----\nMIIG/gIB...OJxmEMBgT\n-----END PRIVATE KEY-----\n
-    RISKMAN_SAML_ASSERTION_CONSUMER_SERVICE_URL: http://example.local:3000/auth/callback
-    RISKMAN_SAML_SSO_URL: https://our.idp.net/saml2/idp/SSOService.php
-    RISKMAN_SAML_SLO_URL: https://our.idp.net/saml2/idp/SingleLogoutService.php
+    API_BASE_URL: http://riskman.local:3000
+    APP_NAME: riskman
+    SESSION_SECRET: kljsLSDJ83jF^kj3LKNEKn435LDKnt
+    AWS_ACCESS_KEY_ID: abc123
+    AWS_SECRET_ACCESS_KEY: abcd1234
+    AWS_REGION: us-east-1
+    AWS_S3_ENDPOINT: http://minio:9000
+    AWS_S3_DISABLE_SSL: true
+    AWS_S3_BUCKET: riskman-test-bucket
+    SAML_SP_ENTITY_ID: http://example.local:3000
+    SAML_AUDIENCE_URI: http://example.local:3000
+    SAML_IDP_ENTITY_ID: our.idp.net
+    SAML_IDP_CERT: -----BEGIN CERTIFICATE-----\nMIIDXTC...2bb\nPw==\n-----END CERTIFICATE-----\n
+    SAML_SP_CERT: -----BEGIN CERTIFICATE-----\nMIIDXTC...3cc\nPw==\n-----END CERTIFICATE-----\n
+    SAML_SP_PRIVATE_KEY: -----BEGIN PRIVATE KEY-----\nMIIG/gIB...OJxmEMBgT\n-----END PRIVATE KEY-----\n
+    SAML_ASSERTION_CONSUMER_SERVICE_URL: http://example.local:3000/auth/callback
+    SAML_SSO_URL: https://our.idp.net/saml2/idp/SSOService.php
+    SAML_SLO_URL: https://our.idp.net/saml2/idp/SingleLogoutService.php
   working_dir: /riskman
   command: true
 
@@ -46,7 +44,7 @@ testdb:
 
 binary:
   build:
-    image: 369020531563.dkr.ecr.us-east-1.amazonaws.com/riskman-stg
+    image: 369020531563.dkr.ecr.us-east-1.amazonaws.com/cover-stg
     context: application
     dockerfile: Dockerfile
   cached: true
