@@ -41,6 +41,7 @@ import (
 	"github.com/gobuffalo/packr/v2"
 	"github.com/gorilla/sessions"
 	"github.com/rs/cors"
+
 	"github.com/silinternational/riskman-api/listeners"
 
 	"github.com/silinternational/riskman-api/domain"
@@ -137,6 +138,17 @@ func App() *buffalo.App {
 		claimsGroup.GET(idRegex, claimsView)
 		claimsGroup.PUT(idRegex, claimsUpdate)
 
+		// config
+		configGroup := app.Group("/config")
+		configGroup.Middleware.Skip(AuthN, claimEventTypes)
+		configGroup.Middleware.Skip(AuthZ, claimEventTypes)
+		configGroup.GET("/claim-event-types", claimEventTypes)
+
+		// item
+		itemsGroup := app.Group("/" + domain.TypeItem)
+		itemsGroup.PUT(idRegex, itemsUpdate)
+		itemsGroup.DELETE(idRegex, itemsRemove)
+
 		// policies
 		policiesGroup := app.Group("/" + domain.TypePolicy)
 		policiesGroup.GET("/", policiesList)
@@ -147,11 +159,6 @@ func App() *buffalo.App {
 		policiesGroup.POST(idRegex+"/items", itemsCreate)
 		policiesGroup.POST(idRegex+"/claims", claimsCreate)
 		policiesGroup.GET(idRegex+"/members", policiesListMembers)
-
-		// item
-		itemsGroup := app.Group("/" + domain.TypeItem)
-		itemsGroup.PUT(idRegex, itemsUpdate)
-		itemsGroup.DELETE(idRegex, itemsRemove)
 	}
 
 	listeners.RegisterListeners()

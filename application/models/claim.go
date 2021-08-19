@@ -16,12 +16,12 @@ import (
 )
 
 var ValidClaimEventTypes = map[api.ClaimEventType]struct{}{
-	api.ClaimEventTypeTheft:      {},
-	api.ClaimEventTypeImpact:     {},
-	api.ClaimEventTypeElectrical: {},
-	api.ClaimEventTypeWater:      {},
-	api.ClaimEventTypeEvacuation: {},
-	api.ClaimEventTypeOther:      {},
+	api.ClaimEventTypeTheft:           {},
+	api.ClaimEventTypeImpact:          {},
+	api.ClaimEventTypeElectricalSurge: {},
+	api.ClaimEventTypeWaterDamage:     {},
+	api.ClaimEventTypeEvacuation:      {},
+	api.ClaimEventTypeOther:           {},
 }
 
 var ValidClaimStatus = map[api.ClaimStatus]struct{}{
