@@ -28,13 +28,15 @@ import (
 	list is a complex structure contained related data. The remainder are simple objects.
 
 TODO:
-	1. Import ClaimItems
-	2. Import users and assign correct IDs (claim.reviewer_id)
-	3. Import policy members (parse email field on polices)
-	4. Import other tables (e.g. Journal Entries)
+	1. Import users and assign correct IDs (claim.reviewer_id)
+	2. Import policy members (parse email field on polices)
+	3. Import other tables (e.g. Journal Entries)
 */
 
-const TimeFormat = "2006-01-02 15:04:05"
+const (
+	TimeFormat = "2006-01-02 15:04:05"
+	EmptyTime  = "1970-01-01 00:00:00"
+)
 
 type LegacyData struct {
 	Users          []LegacyUsers        `json:"users"`
@@ -194,11 +196,20 @@ type JournalEntry struct {
 	RMJE        float64      `json:"RM_JE"`
 }
 
+// userMap is a map of legacy ID to new ID
+var userMap = map[int]uuid.UUID{}
+
 // itemMap is a map of legacy ID to new ID
 var itemMap = map[int]uuid.UUID{}
 
 // itemCategoryMap is a map of legacy ID to new ID
 var itemCategoryMap = map[int]uuid.UUID{}
+
+// time used in place of missing time values
+var (
+	emptyTime    time.Time
+	earliestTime time.Time
+)
 
 var _ = grift.Namespace("db", func() {
 	_ = grift.Desc("import", "Import legacy data")
@@ -224,7 +235,7 @@ var _ = grift.Namespace("db", func() {
 
 		if err := models.DB.Transaction(func(tx *pop.Connection) error {
 			fmt.Println("record counts: ")
-			fmt.Printf("  Users: %d\n", len(obj.Users))
+			fmt.Printf("  Admin Users: %d\n", len(obj.Users))
 			fmt.Printf("  Policies: %d\n", len(obj.Policies))
 			fmt.Printf("  PolicyTypes: %d\n", len(obj.PolicyTypes))
 			fmt.Printf("  Maintenance: %d\n", len(obj.Maintenance))
@@ -234,8 +245,10 @@ var _ = grift.Namespace("db", func() {
 			fmt.Printf("  LossReasons: %d\n", len(obj.LossReasons))
 			fmt.Println("")
 
+			importAdminUsers(tx, obj.Users)
 			importItemCategories(tx, obj.ItemCategories)
 			importPolicies(tx, obj.Policies)
+			fmt.Print("Earliest time: ", earliestTime)
 
 			return errors.New("blocking transaction commit until everything is ready")
 		}); err != nil {
@@ -245,6 +258,48 @@ var _ = grift.Namespace("db", func() {
 		return nil
 	})
 })
+
+func init() {
+	emptyTime, _ = time.Parse(TimeFormat, EmptyTime)
+	earliestTime, _ = time.Parse(TimeFormat, "2020-12-31 00:00:00")
+	pop.Debug = false // Disable the Pop log messages
+}
+
+func importAdminUsers(tx *pop.Connection, in []LegacyUsers) {
+	fmt.Println("Admin Users")
+	fmt.Println("id,email,email_override,first_name,last_name,last_login_utc,location,staff_id,app_role")
+
+	for _, user := range in {
+		userID := stringToInt(user.Id, "User ID")
+		userDesc := fmt.Sprintf("User[%d].", userID)
+
+		newUser := models.User{
+			Email:         user.Email,
+			EmailOverride: user.EmailOverride,
+			FirstName:     user.FirstName,
+			LastName:      user.LastName,
+			LastLoginUTC:  parseStringTime(user.LastLoginUtc, userDesc+"LastLoginUTC"),
+			Location:      user.Location,
+			StaffID:       user.StaffId,
+			AppRole:       models.AppRoleAdmin,
+			CreatedAt:     parseStringTime(user.CreatedAt, userDesc+"CreatedAt"),
+			UpdatedAt:     parseStringTime(user.UpdatedAt, userDesc+"UpdatedAt"),
+		}
+
+		if err := newUser.Create(tx); err != nil {
+			log.Fatalf("failed to create user, %s\n%+v", err, newUser)
+		}
+
+		userMap[userID] = newUser.ID
+
+		fmt.Printf(`"%s","%s","%s","%s","%s","%s","%s","%s","%s"`+"\n",
+			newUser.ID, newUser.Email, newUser.EmailOverride, newUser.FirstName, newUser.LastName,
+			newUser.LastLoginUTC, newUser.Location, newUser.StaffID, newUser.AppRole,
+		)
+	}
+
+	fmt.Println()
+}
 
 func importItemCategories(tx *pop.Connection, in []LegacyItemCategory) {
 	fmt.Println("Item categories")
@@ -311,6 +366,7 @@ func getItemCategoryStatus(itemCategory LegacyItemCategory) api.ItemCategoryStat
 }
 
 func importPolicies(tx *pop.Connection, in []LegacyPolicy) {
+	nPolicies := 0
 	nClaims := 0
 	nItems := 0
 	nClaimItems := 0
@@ -327,12 +383,13 @@ func importPolicies(tx *pop.Connection, in []LegacyPolicy) {
 			Account:     strconv.Itoa(p.Account),
 			EntityCode:  p.EntityCode.String,
 			LegacyID:    nulls.NewInt(policyID),
-			CreatedAt:   parseStringTime(p.CreatedAt, "Policy.CreatedAt"),
+			CreatedAt:   parseStringTime(p.CreatedAt, fmt.Sprintf("Policy[%d].CreatedAt", policyID)),
 			UpdatedAt:   parseNullStringTimeToTime(p.UpdatedAt, fmt.Sprintf("Policy[%d].UpdatedAt", policyID)),
 		}
 		if err := newPolicy.Create(tx); err != nil {
 			log.Fatalf("failed to create policy, %s\n%+v", err, newPolicy)
 		}
+		nPolicies++
 
 		importItems(tx, newPolicy, p.Items)
 		nItems += len(p.Items)
@@ -342,7 +399,7 @@ func importPolicies(tx *pop.Connection, in []LegacyPolicy) {
 	}
 
 	fmt.Println("imported: ")
-	fmt.Printf("  Policies: %d\n", len(in))
+	fmt.Printf("  Policies: %d\n", nPolicies)
 	fmt.Printf("  Claims: %d\n", nClaims)
 	fmt.Printf("  Items: %d\n", nItems)
 	fmt.Printf("  ClaimItems: %d\n", nClaimItems)
@@ -366,20 +423,25 @@ func getPolicyType(p LegacyPolicy) api.PolicyType {
 // normalizePolicy adjusts policy fields to pass validation checks
 func normalizePolicy(p *LegacyPolicy) {
 	if p.Type == "household" {
+		p.CostCenter = ""
+		p.EntityCode = nulls.String{}
+
 		// TODO: fix input data so this isn't needed
 		if p.HouseholdId == "" {
-			log.Printf("empty HouseholdId on Policy %s\n", p.Id)
+			log.Printf("Policy[%s].HouseholdId is empty\n", p.Id)
 			p.HouseholdId = "-"
 		}
 	}
 	if p.Type == "ou" || p.Type == "corporate" {
+		p.HouseholdId = ""
+
 		// TODO: fix input data so this isn't needed
 		if !p.EntityCode.Valid || p.EntityCode.String == "" {
-			log.Printf("empty EntityCode on Policy %s\n", p.Id)
+			log.Printf("Policy[%s].EntityCode is empty\n", p.Id)
 			p.EntityCode = nulls.NewString("-")
 		}
 		if p.CostCenter == "" {
-			log.Printf("empty CostCenter on Policy %s\n", p.Id)
+			log.Printf("Policy[%s].CostCenter is empty\n", p.Id)
 			p.CostCenter = "-"
 		}
 	}
@@ -389,20 +451,22 @@ func importClaims(tx *pop.Connection, policy models.Policy, claims []LegacyClaim
 	nClaimItems := 0
 
 	for _, c := range claims {
+		claimID := stringToInt(c.Id, "Claim ID")
+		claimDesc := fmt.Sprintf("Claim[%d].", claimID)
 		newClaim := models.Claim{
-			LegacyID:         nulls.NewInt(stringToInt(c.Id, "Claim ID")),
+			LegacyID:         nulls.NewInt(claimID),
 			PolicyID:         policy.ID,
-			EventDate:        parseStringTime(c.EventDate, "EventDate"),
+			EventDate:        parseStringTime(c.EventDate, claimDesc+"EventDate"),
 			EventType:        getEventType(c),
 			EventDescription: getEventDescription(c),
 			Status:           getClaimStatus(c),
-			ReviewDate:       nulls.NewTime(parseStringTime(c.ReviewDate, "Claim.ReviewDate")),
+			ReviewDate:       nulls.NewTime(parseStringTime(c.ReviewDate, claimDesc+"ReviewDate")),
 			// TODO: need user IDs
 			// ReviewerID:       c.ReviewerId,
-			PaymentDate: nulls.NewTime(parseStringTime(c.PaymentDate, "Claim.PaymentDate")),
+			PaymentDate: nulls.NewTime(parseStringTime(c.PaymentDate, claimDesc+"PaymentDate")),
 			TotalPayout: fixedPointStringToInt(c.TotalPayout, "Claim.TotalPayout"),
-			CreatedAt:   parseStringTime(c.CreatedAt, "Claim.CreatedAt"),
-			UpdatedAt:   parseStringTime(c.UpdatedAt, "Claim.UpdatedAt"),
+			CreatedAt:   parseStringTime(c.CreatedAt, claimDesc+"CreatedAt"),
+			UpdatedAt:   parseStringTime(c.UpdatedAt, claimDesc+"UpdatedAt"),
 		}
 		if err := newClaim.Create(tx); err != nil {
 			log.Fatalf("failed to create claim, %s\n%+v", err, newClaim)
@@ -417,10 +481,14 @@ func importClaims(tx *pop.Connection, policy models.Policy, claims []LegacyClaim
 
 func importClaimItems(tx *pop.Connection, claim models.Claim, items []LegacyClaimItem) {
 	for _, c := range items {
+		claimItemID := stringToInt(c.Id, "ClaimItem ID")
+		itemDesc := fmt.Sprintf("ClaimItem[%d].", claimItemID)
+
 		itemUUID, ok := itemMap[c.ItemId]
 		if !ok {
-			log.Fatalf("item ID %d not found in claim %d item list", c.ItemId, claim.LegacyID.Int)
+			log.Fatalf("item ID %d not found in claim %d item list", claimItemID, claim.LegacyID.Int)
 		}
+
 		newClaimItem := models.ClaimItem{
 			ClaimID:         claim.ID,
 			ItemID:          itemUUID,
@@ -433,16 +501,16 @@ func importClaimItems(tx *pop.Connection, claim models.Claim, items []LegacyClai
 			PayoutOption:    c.PayoutOption,
 			PayoutAmount:    fixedPointStringToInt(c.PayoutAmount, "ClaimItem.PayoutAmount"),
 			FMV:             fixedPointStringToInt(c.Fmv, "ClaimItem.FMV"),
-			ReviewDate:      parseStringTimeToNullTime(c.ReviewDate, "ClaimItem.ReviewDate"),
+			ReviewDate:      parseStringTimeToNullTime(c.ReviewDate, itemDesc+"ReviewDate"),
 			// ReviewerID:      c.ReviewerId, // TODO: get reviewer ID
-			CreatedAt: parseStringTime(c.CreatedAt, "ClaimItem.CreatedAt"),
-			UpdatedAt: parseStringTime(c.UpdatedAt, "ClaimItem.UpdatedAt"),
+			LegacyID:  claimItemID,
+			CreatedAt: parseStringTime(c.CreatedAt, itemDesc+"CreatedAt"),
+			UpdatedAt: parseStringTime(c.UpdatedAt, itemDesc+"UpdatedAt"),
 		}
 
 		if err := newClaimItem.Create(tx); err != nil {
-			log.Fatalf("failed to create claim item, %s\nClaimItem:\n%+v", err, newClaimItem)
+			log.Fatalf("failed to create claim item %d, %s\nClaimItem:\n%+v", claimItemID, err, newClaimItem)
 		}
-
 	}
 }
 
@@ -526,6 +594,7 @@ func getClaimStatus(claim LegacyClaim) api.ClaimStatus {
 func importItems(tx *pop.Connection, policy models.Policy, items []LegacyItem) {
 	for _, item := range items {
 		itemID := stringToInt(item.Id, "Item ID")
+		itemDesc := fmt.Sprintf("Item[%d].", itemID)
 
 		newItem := models.Item{
 			// TODO: name/policy needs to be unique
@@ -538,13 +607,13 @@ func importItems(tx *pop.Connection, policy models.Policy, items []LegacyItem) {
 			Make:              item.Make,
 			Model:             item.Model,
 			SerialNumber:      item.SerialNumber,
-			CoverageAmount:    fixedPointStringToInt(item.CoverageAmount, "Item.CoverageAmount"),
-			PurchaseDate:      parseStringTime(item.PurchaseDate, "Item.PurchaseDate"),
+			CoverageAmount:    fixedPointStringToInt(item.CoverageAmount, itemDesc+"CoverageAmount"),
+			PurchaseDate:      parseStringTime(item.PurchaseDate, itemDesc+"PurchaseDate"),
 			CoverageStatus:    getCoverageStatus(item),
-			CoverageStartDate: parseStringTime(item.CoverageStartDate, "Item.CoverageStartDate"),
+			CoverageStartDate: parseStringTime(item.CoverageStartDate, itemDesc+"CoverageStartDate"),
 			LegacyID:          nulls.NewInt(itemID),
-			CreatedAt:         parseStringTime(item.CreatedAt, "Item.CreatedAt"),
-			UpdatedAt:         parseNullStringTimeToTime(item.UpdatedAt, fmt.Sprintf("Item[%d].UpdatedAt", itemID)),
+			CreatedAt:         parseStringTime(item.CreatedAt, itemDesc+"CreatedAt"),
+			UpdatedAt:         parseNullStringTimeToTime(item.UpdatedAt, itemDesc+"UpdatedAt"),
 		}
 		if err := newItem.Create(tx); err != nil {
 			log.Fatalf("failed to create item, %s\n%+v", err, newItem)
@@ -573,21 +642,24 @@ func getCoverageStatus(item LegacyItem) api.ItemCoverageStatus {
 
 func parseStringTime(t, desc string) time.Time {
 	if t == "" {
-		log.Printf("time is empty, using zero value, in %s", desc)
-		return time.Time{}
+		log.Printf("%s is empty, using %s", desc, EmptyTime)
+		return emptyTime
 	}
-	createdAt, err := time.Parse(TimeFormat, t)
+	tt, err := time.Parse(TimeFormat, t)
 	if err != nil {
 		log.Fatalf("failed to parse '%s' time '%s'", desc, t)
 	}
-	return createdAt
+	if tt.Before(earliestTime) {
+		earliestTime = tt
+	}
+	return tt
 }
 
 func parseNullStringTimeToTime(t nulls.String, desc string) time.Time {
 	var tt time.Time
 
 	if !t.Valid {
-		log.Printf("time is null, using zero value, in %s", desc)
+		log.Printf("%s is null, using %s", desc, EmptyTime)
 		return tt
 	}
 
@@ -597,13 +669,16 @@ func parseNullStringTimeToTime(t nulls.String, desc string) time.Time {
 		log.Fatalf("failed to parse '%s' time '%s'", desc, t.String)
 	}
 
+	if tt.Before(earliestTime) {
+		earliestTime = tt
+	}
 	return tt
 }
 
 func parseStringTimeToNullTime(t, desc string) nulls.Time {
 	if t == "" {
 		log.Printf("time is empty, using null time, in %s", desc)
-		return nulls.Time{}
+		return nulls.NewTime(emptyTime)
 	}
 
 	var tt time.Time
@@ -613,6 +688,9 @@ func parseStringTimeToNullTime(t, desc string) nulls.Time {
 		log.Fatalf("failed to parse '%s' time '%s'", desc, t)
 	}
 
+	if tt.Before(earliestTime) {
+		earliestTime = tt
+	}
 	return nulls.NewTime(tt)
 }
 
@@ -624,20 +702,20 @@ func stringToInt(s, msg string) int {
 	return n
 }
 
-func fixedPointStringToInt(s, field string) int {
+func fixedPointStringToInt(s, desc string) int {
 	if s == "" {
-		log.Printf("%s is empty", field)
+		log.Printf("%s is empty", desc)
 		return 0
 	}
 
 	parts := strings.Split(s, ".")
 	if len(parts) != 2 {
-		log.Fatalf("%s has more than one '.' character: '%s'", field, s)
+		log.Fatalf("%s has more than one '.' character: '%s'", desc, s)
 	}
-	intPart := stringToInt(parts[0], field+" left of decimal")
+	intPart := stringToInt(parts[0], desc+" left of decimal")
 	if len(parts[1]) != 2 {
-		log.Fatalf("%s does not have two digits after the decimal: %s", field, s)
+		log.Fatalf("%s does not have two digits after the decimal: %s", desc, s)
 	}
-	fractionalPart := stringToInt(parts[1], field+" right of decimal")
+	fractionalPart := stringToInt(parts[1], desc+" right of decimal")
 	return intPart*100 + fractionalPart
 }
