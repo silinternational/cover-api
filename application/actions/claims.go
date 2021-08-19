@@ -158,7 +158,7 @@ func claimsCreate(c buffalo.Context) error {
 		return reportError(c, err)
 	}
 
-	return renderOk(c, models.ConvertClaim(dbClaim))
+	return renderOk(c, models.ConvertClaim(tx, dbClaim))
 }
 
 // getReferencedClaimFromCtx pulls the models.Claim resource from context that was put there
