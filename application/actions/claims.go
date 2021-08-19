@@ -149,11 +149,12 @@ func claimsCreate(c buffalo.Context) error {
 	}
 
 	tx := models.Tx(c)
-	if err := policy.AddClaim(tx, input); err != nil {
+	dbClaim, err := policy.AddClaim(tx, input)
+	if err != nil {
 		return reportError(c, err)
 	}
 
-	return renderOk(c, models.ConvertPolicy(tx, *policy))
+	return renderOk(c, models.ConvertClaim(dbClaim))
 }
 
 // getReferencedClaimFromCtx pulls the models.Claim resource from context that was put there

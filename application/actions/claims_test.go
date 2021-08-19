@@ -271,9 +271,13 @@ func (as *ActionSuite) Test_ClaimsCreate() {
 
 	fixtures := models.CreateItemFixtures(as.DB, fixConfig)
 
+	policyByOther := fixtures.Policies[0]
+	policyByUser := fixtures.Policies[1]
+	policyByAdmin := fixtures.Policies[2]
+
 	// alias a couple users
 	appAdmin := fixtures.Policies[0].Members[0]
-	normalUser := fixtures.Policies[1].Members[0]
+	normalUser := policyByUser.Members[0]
 
 	// make an admin
 	appAdmin.AppRole = models.AppRoleAdmin
@@ -292,40 +296,50 @@ func (as *ActionSuite) Test_ClaimsCreate() {
 		policy        models.Policy
 		input         api.ClaimCreateInput
 		wantStatus    int
-		wantInBody    string
+		wantInBody    []string
 		notWantInBody string
 	}{
 		{
 			name:          "incomplete input",
 			actor:         normalUser,
-			policy:        fixtures.Policies[1],
+			policy:        policyByUser,
 			input:         api.ClaimCreateInput{},
 			wantStatus:    http.StatusBadRequest,
-			notWantInBody: fixtures.Policies[1].ID.String(),
+			notWantInBody: policyByUser.ID.String(),
 		},
 		{
 			name:       "valid input",
 			actor:      normalUser,
-			policy:     fixtures.Policies[1],
+			policy:     policyByUser,
 			input:      input,
 			wantStatus: http.StatusOK,
-			wantInBody: fixtures.Policies[1].ID.String(),
+			wantInBody: []string{
+				`"policy_id":"` + policyByUser.ID.String(),
+				`"event_type":"` + string(input.EventType),
+				`"event_description":"` + input.EventDescription,
+				`"status":"` + string(api.ClaimStatusDraft),
+			},
 		},
 		{
 			name:          "other person's policy",
 			actor:         normalUser,
-			policy:        fixtures.Policies[0],
+			policy:        policyByOther,
 			input:         input,
 			wantStatus:    http.StatusNotFound,
-			notWantInBody: fixtures.Policies[0].ID.String(),
+			notWantInBody: policyByOther.ID.String(),
 		},
 		{
 			name:       "admin operation on other person's policy",
 			actor:      appAdmin,
-			policy:     fixtures.Policies[2],
+			policy:     policyByAdmin,
 			input:      input,
 			wantStatus: http.StatusOK,
-			wantInBody: fixtures.Policies[2].ID.String(),
+			wantInBody: []string{
+				`"policy_id":"` + policyByAdmin.ID.String(),
+				`"event_type":"` + string(input.EventType),
+				`"event_description":"` + input.EventDescription,
+				`"status":"` + string(api.ClaimStatusDraft),
+			},
 		},
 	}
 
@@ -338,9 +352,9 @@ func (as *ActionSuite) Test_ClaimsCreate() {
 
 			body := res.Body.String()
 			as.Equal(tt.wantStatus, res.Code, "incorrect status code returned, body: %s", body)
-			if tt.wantInBody != "" {
-				as.Contains(body, tt.wantInBody)
-			}
+
+			as.verifyResponseData(tt.wantInBody, body, "Create Claim fields")
+
 			if tt.notWantInBody != "" {
 				as.NotContains(body, tt.notWantInBody)
 			}
@@ -348,11 +362,11 @@ func (as *ActionSuite) Test_ClaimsCreate() {
 			if res.Code != http.StatusOK {
 				return
 			}
-			var responseObject api.Policy
-			as.NoError(json.Unmarshal([]byte(body), &responseObject))
-			as.Len(responseObject.Claims, 1, "incorrect # of claims on policy, %+v", responseObject)
-			as.Equal(tt.input.EventDescription, responseObject.Claims[0].EventDescription,
-				"response object is not correct, %+v", responseObject)
+			var respObj api.Claim
+			as.NoError(json.Unmarshal([]byte(body), &respObj))
+
+			as.Equal(tt.input.EventDescription, respObj.EventDescription,
+				"response object is not correct, %+v", respObj)
 		})
 	}
 }

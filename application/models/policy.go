@@ -167,17 +167,17 @@ func (p *Policy) AddDependent(tx *pop.Connection, input api.PolicyDependentInput
 	return nil
 }
 
-func (p *Policy) AddClaim(tx *pop.Connection, input api.ClaimCreateInput) error {
+func (p *Policy) AddClaim(tx *pop.Connection, input api.ClaimCreateInput) (Claim, error) {
 	if p == nil {
-		return errors.New("policy is nil in AddClaim")
+		return Claim{}, errors.New("policy is nil in AddClaim")
 	}
 
 	claim := CovertClaimCreateInput(input)
 	claim.PolicyID = p.ID
 
 	if err := claim.Create(tx); err != nil {
-		return err
+		return Claim{}, err
 	}
 
-	return nil
+	return claim, nil
 }
