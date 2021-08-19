@@ -39,6 +39,7 @@ TODO:
 const TimeFormat = "2006-01-02 15:04:05"
 
 type LegacyData struct {
+	Users          []LegacyUsers        `json:"users"`
 	Policies       []LegacyPolicy       `json:"policies"`
 	PolicyTypes    []PolicyType         `json:"PolicyType"`
 	Maintenance    []Maintenance        `json:"Maintenance"`
@@ -46,6 +47,20 @@ type LegacyData struct {
 	ItemCategories []LegacyItemCategory `json:"item_categories"`
 	RiskCategories []LegacyRiskCategory `json:"risk_categories"`
 	LossReasons    []LossReason         `json:"LossReason"`
+}
+
+type LegacyUsers struct {
+	Location      string `json:"location"`
+	CreatedAt     string `json:"created_at"`
+	LastName      string `json:"last_name"`
+	FirstName     string `json:"first_name"`
+	UpdatedAt     string `json:"updated_at"`
+	Id            string `json:"id"`
+	Email         string `json:"email"`
+	EmailOverride string `json:"email_override"`
+	IsBlocked     int    `json:"is_blocked"`
+	LastLoginUtc  string `json:"last_login_utc"`
+	StaffId       string `json:"staff_id"`
 }
 
 type LegacyPolicy struct {
@@ -208,6 +223,7 @@ var _ = grift.Namespace("db", func() {
 
 		if err := models.DB.Transaction(func(tx *pop.Connection) error {
 			fmt.Println("record counts: ")
+			fmt.Printf("  Users: %d\n", len(obj.Users))
 			fmt.Printf("  Policies: %d\n", len(obj.Policies))
 			fmt.Printf("  PolicyTypes: %d\n", len(obj.PolicyTypes))
 			fmt.Printf("  Maintenance: %d\n", len(obj.Maintenance))
