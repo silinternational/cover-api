@@ -9,6 +9,7 @@ import (
 	"math"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gobuffalo/nulls"
@@ -28,7 +29,11 @@ import (
 	list is a complex structure contained related data. The remainder are simple objects.
 
 TODO:
-	1. Import users and assign correct IDs (claim.reviewer_id)
+	1. Import ClaimItems
+	2. Import users and assign correct IDs (claim.reviewer_id)
+	3. Import policy members (parse email field on polices)
+	4. Import other tables (e.g. Journal Entries)
+	5. Convert panic to log.Fatal or log.Fatalf
 */
 
 const TimeFormat = "2006-01-02 15:04:05"
@@ -72,7 +77,7 @@ type LegacyItem struct {
 	Country           string       `json:"country"`
 	Model             string       `json:"model"`
 	CategoryId        int          `json:"category_id"`
-	CoverageAmount    float64      `json:"coverage_amount"`
+	CoverageAmount    string       `json:"coverage_amount"`
 	UpdatedAt         nulls.String `json:"updated_at"`
 	PolicyDependentId int          `json:"policy_dependent_id"`
 	CoverageStatus    string       `json:"coverage_status"`
@@ -83,7 +88,7 @@ type LegacyItemCategory struct {
 	Name           string `json:"name"`
 	Status         string `json:"status"`
 	UpdatedAt      string `json:"updated_at"`
-	AutoApproveMax int    `json:"auto_approve_max"`
+	AutoApproveMax string `json:"auto_approve_max"`
 	RiskCategoryId int    `json:"risk_category_id"`
 	HelpText       string `json:"help_text"`
 	Id             string `json:"id"`
@@ -100,29 +105,29 @@ type LegacyClaim struct {
 	Id               string            `json:"id"`
 	EventType        string            `json:"event_type"`
 	PaymentDate      string            `json:"payment_date"`
-	TotalPayout      float64           `json:"total_payout"`
+	TotalPayout      string            `json:"total_payout"`
 	EventDate        string            `json:"event_date"`
 	Status           string            `json:"status"`
 }
 
 type LegacyClaimItem struct {
-	ReviewerId      int     `json:"reviewer_id"`
-	PayoutAmount    float64 `json:"payout_amount"`
-	ItemId          int     `json:"item_id"`
-	PayoutOption    string  `json:"payout_option"`
-	RepairEstimate  float64 `json:"repair_estimate"`
-	UpdatedAt       string  `json:"updated_at"`
-	ReviewDate      string  `json:"review_date"`
-	CreatedAt       string  `json:"created_at"`
-	Location        string  `json:"location"`
-	ReplaceActual   float64 `json:"replace_actual"`
-	Id              string  `json:"id"`
-	ReplaceEstimate float64 `json:"replace_estimate"`
-	IsRepairable    int     `json:"is_repairable"`
-	Status          string  `json:"status"`
-	RepairActual    float64 `json:"repair_actual"`
-	Fmv             float64 `json:"fmv"`
-	ClaimId         int     `json:"claim_id"`
+	ReviewerId      int    `json:"reviewer_id"`
+	PayoutAmount    string `json:"payout_amount"`
+	ItemId          int    `json:"item_id"`
+	PayoutOption    string `json:"payout_option"`
+	RepairEstimate  string `json:"repair_estimate"`
+	UpdatedAt       string `json:"updated_at"`
+	ReviewDate      string `json:"review_date"`
+	CreatedAt       string `json:"created_at"`
+	Location        string `json:"location"`
+	ReplaceActual   string `json:"replace_actual"`
+	Id              string `json:"id"`
+	ReplaceEstimate string `json:"replace_estimate"`
+	IsRepairable    int    `json:"is_repairable"`
+	Status          string `json:"status"`
+	RepairActual    string `json:"repair_actual"`
+	Fmv             string `json:"fmv"`
+	ClaimId         int    `json:"claim_id"`
 }
 
 type PolicyType struct {
@@ -236,7 +241,7 @@ func importItemCategories(tx *pop.Connection, in []LegacyItemCategory) {
 			Name:           i.Name,
 			HelpText:       i.HelpText,
 			Status:         getItemCategoryStatus(i),
-			AutoApproveMax: i.AutoApproveMax,
+			AutoApproveMax: fixedPointStringToInt(i.AutoApproveMax, "ItemCategory.AutoApproveMax"),
 			CreatedAt:      parseStringTime(i.CreatedAt, "ItemCategory.CreatedAt"),
 			UpdatedAt:      parseStringTime(i.UpdatedAt, "ItemCategory.UpdatedAt"),
 			LegacyID:       nulls.NewInt(categoryID),
@@ -372,7 +377,7 @@ func importClaims(tx *pop.Connection, policy models.Policy, claims []LegacyClaim
 			// TODO: need user IDs
 			// ReviewerID:       c.ReviewerId,
 			PaymentDate: nulls.NewTime(parseStringTime(c.PaymentDate, "Claim.PaymentDate")),
-			TotalPayout: floatToInt(c.TotalPayout),
+			TotalPayout: fixedPointStringToInt(c.TotalPayout, "Claim.TotalPayout"),
 			CreatedAt:   parseStringTime(c.CreatedAt, "Claim.CreatedAt"),
 			UpdatedAt:   parseStringTime(c.UpdatedAt, "Claim.UpdatedAt"),
 		}
@@ -450,7 +455,7 @@ func importItems(tx *pop.Connection, policy models.Policy, items []LegacyItem) {
 			Make:              item.Make,
 			Model:             item.Model,
 			SerialNumber:      item.SerialNumber,
-			CoverageAmount:    floatToInt(item.CoverageAmount),
+			CoverageAmount:    fixedPointStringToInt(item.CoverageAmount, "Item.CoverageAmount"),
 			PurchaseDate:      parseStringTime(item.PurchaseDate, "Item.PurchaseDate"),
 			CoverageStatus:    getCoverageStatus(item),
 			CoverageStartDate: parseStringTime(item.CoverageStartDate, "Item.CoverageStartDate"),
@@ -511,4 +516,22 @@ func stringToInt(s, msg string) int {
 		panic(fmt.Sprintf("%s '%s' is not an int", msg, s))
 	}
 	return n
+}
+
+func fixedPointStringToInt(s, field string) int {
+	if s == "" {
+		log.Printf("%s is empty", field)
+		return 0
+	}
+
+	parts := strings.Split(s, ".")
+	if len(parts) != 2 {
+		log.Fatalf("%s has more than one '.' character: '%s'", field, s)
+	}
+	intPart := stringToInt(parts[0], field+" left of decimal")
+	if len(parts[1]) != 2 {
+		log.Fatalf("%s does not have two digits after the decimal: %s", field, s)
+	}
+	fractionalPart := stringToInt(parts[1], field+" right of decimal")
+	return intPart*100 + fractionalPart
 }
