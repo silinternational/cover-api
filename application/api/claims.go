@@ -9,7 +9,7 @@ import (
 
 // ClaimEventType
 //
-// may be one of: Theft, Impact, Electrical, Water, Evacuation, Other
+// may be one of: Theft, Impact, Electrical Surge, Water Damage, Evacuation, Other
 //
 // swagger:model
 type ClaimEventType string
@@ -22,13 +22,24 @@ type ClaimEventType string
 type ClaimStatus string
 
 const (
-	ClaimEventTypeTheft      = ClaimEventType("Theft")
-	ClaimEventTypeImpact     = ClaimEventType("Impact")
-	ClaimEventTypeElectrical = ClaimEventType("Electrical")
-	ClaimEventTypeWater      = ClaimEventType("Water")
-	ClaimEventTypeEvacuation = ClaimEventType("Evacuation")
-	ClaimEventTypeOther      = ClaimEventType("Other")
+	ClaimEventTypeTheft           = ClaimEventType("Theft")
+	ClaimEventTypeImpact          = ClaimEventType("Impact")
+	ClaimEventTypeElectricalSurge = ClaimEventType("Electrical Surge")
+	ClaimEventTypeWaterDamage     = ClaimEventType("Water Damage")
+	ClaimEventTypeEvacuation      = ClaimEventType("Evacuation")
+	ClaimEventTypeOther           = ClaimEventType("Other")
+)
 
+var AllClaimEventTypes = []ClaimEventType{
+	ClaimEventTypeTheft,
+	ClaimEventTypeImpact,
+	ClaimEventTypeElectricalSurge,
+	ClaimEventTypeWaterDamage,
+	ClaimEventTypeEvacuation,
+	ClaimEventTypeOther,
+}
+
+const (
 	ClaimStatusDraft    = ClaimStatus("Draft")
 	ClaimStatusPending  = ClaimStatus("Pending")
 	ClaimStatusRevision = ClaimStatus("Revision")
@@ -82,6 +93,9 @@ type Claim struct {
 
 	// total payout
 	TotalPayout int `json:"total_payout,omitempty"`
+
+	// list of items included in claim
+	Items ClaimItems `json:"items"`
 }
 
 // swagger:model
