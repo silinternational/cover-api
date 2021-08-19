@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"net/mail"
 	"os"
 	"strconv"
 	"strings"
@@ -29,13 +30,15 @@ import (
 
 TODO:
 	1. Import users and assign correct IDs (claim.reviewer_id)
-	2. Import policy members (parse email field on polices)
-	3. Import other tables (e.g. Journal Entries)
+	2. Import other tables (e.g. Journal Entries)
+	3. Ensure created_at and updated_at are saved correctly
 */
 
 const (
-	TimeFormat = "2006-01-02 15:04:05"
-	EmptyTime  = "1970-01-01 00:00:00"
+	TimeFormat               = "2006-01-02 15:04:05"
+	EmptyTime                = "1970-01-01 00:00:00"
+	SilenceEmptyTimeWarnings = true
+	SilenceBadEmailWarning   = true
 )
 
 type LegacyData struct {
@@ -74,6 +77,7 @@ type LegacyPolicy struct {
 	HouseholdId string        `json:"household_id"`
 	EntityCode  nulls.String  `json:"entity_code"`
 	Type        string        `json:"type"`
+	Email       string        `json:"email"`
 	UpdatedAt   nulls.String  `json:"updated_at"`
 	CreatedAt   string        `json:"created_at"`
 }
@@ -196,14 +200,17 @@ type JournalEntry struct {
 	RMJE        float64      `json:"RM_JE"`
 }
 
-// userMap is a map of legacy ID to new ID
-var userMap = map[int]uuid.UUID{}
+// userEmailMap is a map of email address to new ID
+var userEmailMap = map[string]uuid.UUID{}
 
-// itemMap is a map of legacy ID to new ID
-var itemMap = map[int]uuid.UUID{}
+// userIDMap is a map of legacy ID to new ID
+var userIDMap = map[int]uuid.UUID{}
 
-// itemCategoryMap is a map of legacy ID to new ID
-var itemCategoryMap = map[int]uuid.UUID{}
+// itemIDMap is a map of legacy ID to new ID
+var itemIDMap = map[int]uuid.UUID{}
+
+// itemCategoryIDMap is a map of legacy ID to new ID
+var itemCategoryIDMap = map[int]uuid.UUID{}
 
 // time used in place of missing time values
 var (
@@ -290,7 +297,7 @@ func importAdminUsers(tx *pop.Connection, in []LegacyUsers) {
 			log.Fatalf("failed to create user, %s\n%+v", err, newUser)
 		}
 
-		userMap[userID] = newUser.ID
+		userIDMap[userID] = newUser.ID
 
 		fmt.Printf(`"%s","%s","%s","%s","%s","%s","%s","%s","%s"`+"\n",
 			newUser.ID, newUser.Email, newUser.EmailOverride, newUser.FirstName, newUser.LastName,
@@ -323,7 +330,7 @@ func importItemCategories(tx *pop.Connection, in []LegacyItemCategory) {
 			log.Fatalf("failed to create item category, %s\n%+v", err, newItemCategory)
 		}
 
-		itemCategoryMap[categoryID] = newItemCategory.ID
+		itemCategoryIDMap[categoryID] = newItemCategory.ID
 
 		fmt.Printf(`%d,"%s","%s",%s,"%s",%d,"%s"`+"\n",
 			newItemCategory.LegacyID.Int, newItemCategory.ID, newItemCategory.Status,
@@ -366,10 +373,7 @@ func getItemCategoryStatus(itemCategory LegacyItemCategory) api.ItemCategoryStat
 }
 
 func importPolicies(tx *pop.Connection, in []LegacyPolicy) {
-	nPolicies := 0
-	nClaims := 0
-	nItems := 0
-	nClaimItems := 0
+	var nPolicies, nClaims, nItems, nClaimItems, nPolicyUsers int
 
 	for i := range in {
 		normalizePolicy(&in[i])
@@ -396,6 +400,8 @@ func importPolicies(tx *pop.Connection, in []LegacyPolicy) {
 
 		nClaimItems += importClaims(tx, newPolicy, p.Claims)
 		nClaims += len(p.Claims)
+
+		nPolicyUsers += importPolicyUsers(tx, p, newPolicy.ID)
 	}
 
 	fmt.Println("imported: ")
@@ -403,6 +409,7 @@ func importPolicies(tx *pop.Connection, in []LegacyPolicy) {
 	fmt.Printf("  Claims: %d\n", nClaims)
 	fmt.Printf("  Items: %d\n", nItems)
 	fmt.Printf("  ClaimItems: %d\n", nClaimItems)
+	fmt.Printf("  PolicyUsers: %d\n", nPolicyUsers)
 	fmt.Println("")
 }
 
@@ -432,6 +439,7 @@ func normalizePolicy(p *LegacyPolicy) {
 			p.HouseholdId = "-"
 		}
 	}
+
 	if p.Type == "ou" || p.Type == "corporate" {
 		p.HouseholdId = ""
 
@@ -445,6 +453,69 @@ func normalizePolicy(p *LegacyPolicy) {
 			p.CostCenter = "-"
 		}
 	}
+}
+
+func importPolicyUsers(tx *pop.Connection, p LegacyPolicy, policyID uuid.UUID) int {
+	if p.Email == "" {
+		if !SilenceBadEmailWarning {
+			log.Printf("Policy[%s].Email is empty\n", p.Id)
+		}
+		return 0
+	}
+
+	n := 0
+	s := strings.Split(strings.ReplaceAll(p.Email, " ", ","), ",")
+	for _, email := range s {
+		validEmail, ok := validMailAddress(email)
+		if !ok {
+			if !SilenceBadEmailWarning {
+				log.Printf("Policy[%s] has an invalid email address: '%s'\n", p.Id, email)
+			}
+			continue
+		}
+		createPolicyUser(tx, validEmail, policyID)
+		n++
+	}
+	return n
+}
+
+func createPolicyUser(tx *pop.Connection, email string, policyID uuid.UUID) {
+	userID, ok := userEmailMap[email]
+	if !ok {
+		user := createUserFromEmailAddress(tx, email)
+		userID = user.ID
+	}
+	policyUser := models.PolicyUser{
+		PolicyID: policyID,
+		UserID:   userID,
+	}
+	if err := policyUser.Create(tx); err != nil {
+		log.Fatalf("failed to create new PolicyUser, %s", err)
+	}
+}
+
+func createUserFromEmailAddress(tx *pop.Connection, email string) models.User {
+	user := models.User{
+		Email:     email,
+		FirstName: "", // TODO: look up in IDP data
+		LastName:  "", // TODO: look up in IDP data
+		StaffID:   "", // TODO: look up in IDP data
+		// TODO: add a "needs review" flag
+		AppRole: models.AppRoleUser,
+	}
+	if err := user.Create(tx); err != nil {
+		log.Fatalf("failed to create new User for policy, %s", err)
+	}
+	userEmailMap[email] = user.ID
+	return user
+}
+
+func validMailAddress(address string) (string, bool) {
+	addr, err := mail.ParseAddress(address)
+	if err != nil {
+		return "", false
+	}
+	return addr.Address, true
 }
 
 func importClaims(tx *pop.Connection, policy models.Policy, claims []LegacyClaim) int {
@@ -484,7 +555,7 @@ func importClaimItems(tx *pop.Connection, claim models.Claim, items []LegacyClai
 		claimItemID := stringToInt(c.Id, "ClaimItem ID")
 		itemDesc := fmt.Sprintf("ClaimItem[%d].", claimItemID)
 
-		itemUUID, ok := itemMap[c.ItemId]
+		itemUUID, ok := itemIDMap[c.ItemId]
 		if !ok {
 			log.Fatalf("item ID %d not found in claim %d item list", claimItemID, claim.LegacyID.Int)
 		}
@@ -599,7 +670,7 @@ func importItems(tx *pop.Connection, policy models.Policy, items []LegacyItem) {
 		newItem := models.Item{
 			// TODO: name/policy needs to be unique
 			Name:              item.Name + domain.GetUUID().String(),
-			CategoryID:        itemCategoryMap[item.CategoryId],
+			CategoryID:        itemCategoryIDMap[item.CategoryId],
 			InStorage:         false,
 			Country:           item.Country,
 			Description:       item.Description,
@@ -618,7 +689,7 @@ func importItems(tx *pop.Connection, policy models.Policy, items []LegacyItem) {
 		if err := newItem.Create(tx); err != nil {
 			log.Fatalf("failed to create item, %s\n%+v", err, newItem)
 		}
-		itemMap[itemID] = newItem.ID
+		itemIDMap[itemID] = newItem.ID
 	}
 }
 
@@ -642,7 +713,9 @@ func getCoverageStatus(item LegacyItem) api.ItemCoverageStatus {
 
 func parseStringTime(t, desc string) time.Time {
 	if t == "" {
-		log.Printf("%s is empty, using %s", desc, EmptyTime)
+		if !SilenceEmptyTimeWarnings {
+			log.Printf("%s is empty, using %s", desc, EmptyTime)
+		}
 		return emptyTime
 	}
 	tt, err := time.Parse(TimeFormat, t)
@@ -659,7 +732,9 @@ func parseNullStringTimeToTime(t nulls.String, desc string) time.Time {
 	var tt time.Time
 
 	if !t.Valid {
-		log.Printf("%s is null, using %s", desc, EmptyTime)
+		if !SilenceEmptyTimeWarnings {
+			log.Printf("%s is null, using %s", desc, EmptyTime)
+		}
 		return tt
 	}
 
@@ -677,7 +752,9 @@ func parseNullStringTimeToTime(t nulls.String, desc string) time.Time {
 
 func parseStringTimeToNullTime(t, desc string) nulls.Time {
 	if t == "" {
-		log.Printf("time is empty, using null time, in %s", desc)
+		if !SilenceEmptyTimeWarnings {
+			log.Printf("time is empty, using null time, in %s", desc)
+		}
 		return nulls.NewTime(emptyTime)
 	}
 
