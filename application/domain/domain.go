@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -93,10 +94,8 @@ const (
 	EventApiUserCreated = "api:user:created"
 )
 
-var (
-	// redirect url for after logout
-	LogoutRedirectURL = "missing.ui.url/logged-out"
-)
+// redirect url for after logout
+var LogoutRedirectURL = "missing.ui.url/logged-out"
 
 func getBuffaloContext(ctx context.Context) buffalo.Context {
 	bc, ok := ctx.Value(BuffaloContext).(buffalo.Context)
@@ -160,7 +159,7 @@ func init() {
 
 // readEnv loads environment data into `Env`
 func readEnv() {
-	err := envconfig.Process("riskman", &Env)
+	err := envconfig.Process("", &Env)
 	if err != nil {
 		log.Fatal(errors.New("error loading env vars: " + err.Error()))
 	}

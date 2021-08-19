@@ -71,7 +71,6 @@ func CreateTestContext(user User) buffalo.Context {
 // CreateFileFixtures generates any number of file records for testing
 //  all owned by the same user.
 func CreateFileFixtures(tx *pop.Connection, n int, createdByID uuid.UUID) Fixtures {
-
 	_ = storage.CreateS3Bucket()
 	files := make(Files, n)
 	for i := range files {
@@ -109,7 +108,7 @@ func CreateItemFixtures(tx *pop.Connection, config FixturesConfig) Fixtures {
 
 		for k := 0; k < config.ClaimsPerPolicy; k++ {
 			idx := i*config.ClaimsPerPolicy + k
-			claims[idx] = createClaimFixture(tx, policies[i].ID, config.ClaimItemsPerClaim)
+			claims[idx] = createClaimFixture(tx, policies[i].ID, config)
 		}
 		policies[i].LoadClaims(tx, false)
 	}
@@ -139,7 +138,7 @@ func createItemFixture(tx *pop.Connection, policyID uuid.UUID, categoryID uuid.U
 	return item
 }
 
-func createClaimFixture(tx *pop.Connection, policyID uuid.UUID, claimItemCount int) Claim {
+func createClaimFixture(tx *pop.Connection, policyID uuid.UUID, config FixturesConfig) Claim {
 	claim := Claim{
 		PolicyID:         policyID,
 		EventDate:        time.Date(2020, 5, 1, 12, 0, 0, 0, time.UTC),
@@ -149,15 +148,26 @@ func createClaimFixture(tx *pop.Connection, policyID uuid.UUID, claimItemCount i
 	}
 	MustCreate(tx, &claim)
 
-	icFixtures := CreateCategoryFixtures(tx, claimItemCount)
+	icFixtures := CreateCategoryFixtures(tx, config.ClaimItemsPerClaim)
 
-	claim.ClaimItems = make(ClaimItems, claimItemCount)
+	claim.ClaimItems = make(ClaimItems, config.ClaimItemsPerClaim)
 	for i := range claim.ClaimItems {
 		item := createItemFixture(tx, policyID, icFixtures.ItemCategories[i].ID)
 		claim.ClaimItems[i] = ClaimItem{
-			ClaimID: claim.ID,
-			ItemID:  item.ID,
-			Status:  api.ClaimItemStatusPending,
+			ID:              uuid.UUID{},
+			ClaimID:         claim.ID,
+			ItemID:          item.ID,
+			Status:          api.ClaimItemStatusPending,
+			IsRepairable:    false,
+			RepairEstimate:  0,
+			RepairActual:    0,
+			ReplaceEstimate: 10000,
+			ReplaceActual:   8500,
+			PayoutOption:    "",
+			PayoutAmount:    8500,
+			FMV:             13000,
+			ReviewDate:      nulls.Time{},
+			ReviewerID:      nulls.UUID{},
 		}
 		MustCreate(tx, &claim.ClaimItems[i])
 	}
