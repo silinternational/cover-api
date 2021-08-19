@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"math"
 	"os"
 	"strconv"
 	"strings"
@@ -25,7 +24,7 @@ import (
 /*
 	This is a temporary command-line utility to read a JSON file with data from the legacy Riskman software.
 
-	The input file is expected to have a number of top-level objects, as defined in `TempData`. The `Policies`
+	The input file is expected to have a number of top-level objects, as defined in `LegacyData`. The `Policies`
 	list is a complex structure contained related data. The remainder are simple objects.
 
 TODO:
@@ -33,7 +32,6 @@ TODO:
 	2. Import users and assign correct IDs (claim.reviewer_id)
 	3. Import policy members (parse email field on polices)
 	4. Import other tables (e.g. Journal Entries)
-	5. Convert panic to log.Fatal or log.Fatalf
 */
 
 const TimeFormat = "2006-01-02 15:04:05"
@@ -238,7 +236,7 @@ var _ = grift.Namespace("db", func() {
 
 			return errors.New("blocking transaction commit until everything is ready")
 		}); err != nil {
-			panic("failed to import, " + err.Error())
+			log.Fatalf("failed to import, %s", err)
 		}
 
 		return nil
@@ -264,7 +262,7 @@ func importItemCategories(tx *pop.Connection, in []LegacyItemCategory) {
 		}
 
 		if err := newItemCategory.Create(tx); err != nil {
-			panic(fmt.Sprintf("failed to create item category, %s\n%+v", err, newItemCategory))
+			log.Fatalf("failed to create item category, %s\n%+v", err, newItemCategory)
 		}
 
 		itemCategoryMap[categoryID] = newItemCategory.ID
@@ -285,7 +283,7 @@ func getRiskCategoryUUID(legacyID int) uuid.UUID {
 	case 2, 3:
 		return uuid.FromStringOrNil(models.RiskCategoryMobileIDString)
 	}
-	fmt.Printf("unrecognized risk category ID %d", legacyID)
+	log.Printf("unrecognized risk category ID %d", legacyID)
 	return uuid.FromStringOrNil(models.RiskCategoryMobileIDString)
 }
 
@@ -302,7 +300,7 @@ func getItemCategoryStatus(itemCategory LegacyItemCategory) api.ItemCategoryStat
 		status = api.ItemCategoryStatusDeprecated
 
 	default:
-		fmt.Printf("unrecognized item category status %s\n", itemCategory.Status)
+		log.Printf("unrecognized item category status %s\n", itemCategory.Status)
 		status = api.ItemCategoryStatus(itemCategory.Status)
 	}
 
@@ -327,7 +325,7 @@ func importPolicies(tx *pop.Connection, in []LegacyPolicy) {
 			UpdatedAt:   parseNullStringTime(p.UpdatedAt, "Policy.UpdatedAt"),
 		}
 		if err := newPolicy.Create(tx); err != nil {
-			panic(fmt.Sprintf("failed to create policy, %s\n%+v", err, newPolicy))
+			log.Fatalf("failed to create policy, %s\n%+v", err, newPolicy)
 		}
 
 		importClaims(tx, newPolicy, p.Claims)
@@ -363,18 +361,18 @@ func normalizePolicy(p *LegacyPolicy) {
 	if p.Type == "household" {
 		// TODO: fix input data so this isn't needed
 		if p.HouseholdId == "" {
-			fmt.Printf("empty HouseholdId on Policy %s\n", p.Id)
+			log.Printf("empty HouseholdId on Policy %s\n", p.Id)
 			p.HouseholdId = "-"
 		}
 	}
 	if p.Type == "ou" || p.Type == "corporate" {
 		// TODO: fix input data so this isn't needed
 		if !p.EntityCode.Valid || p.EntityCode.String == "" {
-			fmt.Printf("empty EntityCode on Policy %s\n", p.Id)
+			log.Printf("empty EntityCode on Policy %s\n", p.Id)
 			p.EntityCode = nulls.NewString("-")
 		}
 		if p.CostCenter == "" {
-			fmt.Printf("empty CostCenter on Policy %s\n", p.Id)
+			log.Printf("empty CostCenter on Policy %s\n", p.Id)
 			p.CostCenter = "-"
 		}
 	}
@@ -398,14 +396,9 @@ func importClaims(tx *pop.Connection, policy models.Policy, claims []LegacyClaim
 			UpdatedAt:   parseStringTime(c.UpdatedAt, "Claim.UpdatedAt"),
 		}
 		if err := newClaim.Create(tx); err != nil {
-			panic(fmt.Sprintf("failed to create claim, %s\n%+v", err, newClaim))
+			log.Fatalf("failed to create claim, %s\n%+v", err, newClaim)
 		}
 	}
-}
-
-func floatToInt(f float64) int {
-	// TODO: fix this so we do not lose precision
-	return int(math.Round(f))
 }
 
 func getEventType(claim LegacyClaim) api.ClaimEventType {
@@ -425,7 +418,7 @@ func getEventType(claim LegacyClaim) api.ClaimEventType {
 	case "Fire", "Miscellaneous", "Unknown", "Vandalism", "War":
 		eventType = api.ClaimEventTypeOther
 	default:
-		fmt.Printf("unrecognized event type: %s\n", claim.EventType)
+		log.Printf("unrecognized event type: %s\n", claim.EventType)
 		eventType = api.ClaimEventTypeOther
 	}
 
@@ -435,7 +428,7 @@ func getEventType(claim LegacyClaim) api.ClaimEventType {
 func getEventDescription(claim LegacyClaim) string {
 	if claim.EventDescription == "" {
 		// TODO: provide event descriptions on source data
-		// fmt.Printf("missing event description on claim %s\n", claim.Id)
+		// log.Printf("missing event description on claim %s\n", claim.Id)
 		return "-"
 	}
 	return claim.EventDescription
@@ -451,7 +444,7 @@ func getClaimStatus(claim LegacyClaim) api.ClaimStatus {
 		claimStatus = api.ClaimStatusApproved
 
 	default:
-		fmt.Printf("unrecognized claim status %s\n", claim.Status)
+		log.Printf("unrecognized claim status %s\n", claim.Status)
 		claimStatus = api.ClaimStatus(claim.Status)
 	}
 
@@ -480,7 +473,7 @@ func importItems(tx *pop.Connection, policy models.Policy, items []LegacyItem) {
 			UpdatedAt:         parseNullStringTime(item.UpdatedAt, "Item.UpdatedAt"),
 		}
 		if err := newItem.Create(tx); err != nil {
-			panic(fmt.Sprintf("failed to create item, %s\n%+v", err, newItem))
+			log.Fatalf("failed to create item, %s\n%+v", err, newItem)
 		}
 	}
 }
@@ -496,7 +489,7 @@ func getCoverageStatus(item LegacyItem) api.ItemCoverageStatus {
 		coverageStatus = api.ItemCoverageStatusInactive
 
 	default:
-		fmt.Printf("unknown coverage status %s\n", item.CoverageStatus)
+		log.Printf("unknown coverage status %s\n", item.CoverageStatus)
 		coverageStatus = api.ItemCoverageStatus(item.CoverageStatus)
 	}
 
@@ -509,7 +502,7 @@ func parseStringTime(t, desc string) time.Time {
 	}
 	createdAt, err := time.Parse(TimeFormat, t)
 	if err != nil {
-		panic(fmt.Sprintf("failed to parse '%s' time '%s'", desc, t))
+		log.Fatalf("failed to parse '%s' time '%s'", desc, t)
 	}
 	return createdAt
 }
@@ -520,7 +513,7 @@ func parseNullStringTime(t nulls.String, desc string) time.Time {
 		var err error
 		updatedAt, err = time.Parse(TimeFormat, t.String)
 		if err != nil {
-			panic(fmt.Sprintf("failed to parse '%s' time '%s'", desc, t.String))
+			log.Fatalf("failed to parse '%s' time '%s'", desc, t.String)
 		}
 	}
 	return updatedAt
@@ -529,7 +522,7 @@ func parseNullStringTime(t nulls.String, desc string) time.Time {
 func stringToInt(s, msg string) int {
 	n, err := strconv.Atoi(s)
 	if err != nil {
-		panic(fmt.Sprintf("%s '%s' is not an int", msg, s))
+		log.Fatalf("%s '%s' is not an int", msg, s)
 	}
 	return n
 }
