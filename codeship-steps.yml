@@ -10,58 +10,58 @@
     tag: develop
     command: ./build-push-api-docs.sh
 
-#- name: push_develop_timestamp
-#  service: binary
-#  type: push
-#  image_name: 369020531563.dkr.ecr.us-east-1.amazonaws.com/cover-stg
-#  image_tag: "{{.Timestamp}}"
-#  tag: develop
-#  registry: https://369020531563.dkr.ecr.us-east-1.amazonaws.com
-#  dockercfg_service: awsgenerator
-#
-#- name: push_develop_develop
-#  service: binary
-#  type: push
-#  image_name: 369020531563.dkr.ecr.us-east-1.amazonaws.com/cover-stg
-#  image_tag: "develop"
-#  tag: develop
-#  registry: https://369020531563.dkr.ecr.us-east-1.amazonaws.com
-#  dockercfg_service: awsgenerator
-#
-#- name: push_production_timestamp
-#  service: binary
-#  type: push
-#  image_name: 369020531563.dkr.ecr.us-east-1.amazonaws.com/cover-prod
-#  image_tag: "{{.Timestamp}}"
-#  tag: main
-#  registry: https://369020531563.dkr.ecr.us-east-1.amazonaws.com
-#  dockercfg_service: awsgenerator
-#
-#- name: push_production_latest
-#  service: binary
-#  type: push
-#  image_name: 369020531563.dkr.ecr.us-east-1.amazonaws.com/cover-prod
-#  image_tag: "latest"
-#  tag: main
-#  registry: https://369020531563.dkr.ecr.us-east-1.amazonaws.com
-#  dockercfg_service: awsgenerator
-#
-#- name: deploy_staging_web
-#  service: ecsdeploy
-#  tag: develop
-#  command: "-c appsdev-stg -n cover-api -i 369020531563.dkr.ecr.us-east-1.amazonaws.com/cover-stg -e CI_TIMESTAMP -t 600"
-#
-#- name: deploy_production_web
-#  service: ecsdeploy
-#  tag: main
-#  command: "-c appsdev-prod -n cover-api -i 369020531563.dkr.ecr.us-east-1.amazonaws.com/cover-prod -e CI_TIMESTAMP -t 600"
-#
-#- name: track_deployment
-#  service: tracker
-#  tag: ^(main|develop)
-#  command: "true"
-#
-#- name: rollbar
-#  service: rollbar
-#  tag: ^(main|develop)
-#  command: "/notify.sh"
+- name: push_develop_timestamp
+  service: binary
+  type: push
+  image_name: 369020531563.dkr.ecr.us-east-1.amazonaws.com/cover-stg
+  image_tag: "{{.Timestamp}}"
+  tag: develop
+  registry: https://369020531563.dkr.ecr.us-east-1.amazonaws.com
+  dockercfg_service: awsgenerator
+
+- name: push_develop_develop
+  service: binary
+  type: push
+  image_name: 369020531563.dkr.ecr.us-east-1.amazonaws.com/cover-stg
+  image_tag: "develop"
+  tag: develop
+  registry: https://369020531563.dkr.ecr.us-east-1.amazonaws.com
+  dockercfg_service: awsgenerator
+
+- name: push_production_timestamp
+  service: binary
+  type: push
+  image_name: 369020531563.dkr.ecr.us-east-1.amazonaws.com/cover-prod
+  image_tag: "{{.Timestamp}}"
+  tag: main
+  registry: https://369020531563.dkr.ecr.us-east-1.amazonaws.com
+  dockercfg_service: awsgenerator
+
+- name: push_production_latest
+  service: binary
+  type: push
+  image_name: 369020531563.dkr.ecr.us-east-1.amazonaws.com/cover-prod
+  image_tag: "latest"
+  tag: main
+  registry: https://369020531563.dkr.ecr.us-east-1.amazonaws.com
+  dockercfg_service: awsgenerator
+
+- name: deploy_staging_web
+  service: ecsdeploy
+  tag: develop
+  command: "-c appsdev-stg -n cover-api -i 369020531563.dkr.ecr.us-east-1.amazonaws.com/cover-stg -e CI_TIMESTAMP -t 600 --max-definitions 10"
+
+- name: deploy_production_web
+  service: ecsdeploy
+  tag: main
+  command: "-c appsdev-prod -n cover-api -i 369020531563.dkr.ecr.us-east-1.amazonaws.com/cover-prod -e CI_TIMESTAMP -t 600 --max-definitions 10"
+
+- name: track_deployment
+  service: tracker
+  tag: ^(main|develop)
+  command: "true"
+
+- name: rollbar
+  service: rollbar
+  tag: ^(main|develop)
+  command: "/notify.sh"
