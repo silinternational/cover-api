@@ -50,7 +50,6 @@ type Claim struct {
 
 	Policy     Policy     `belongs_to:"policies" validate:"-"`
 	ClaimItems ClaimItems `has_many:"claim_items" validate:"-"`
-	Items      Items      `many_to_many:"claim_items" validate:"-"`
 	Reviewer   User       `belongs_to:"users" validate:"-"`
 }
 
@@ -150,10 +149,10 @@ func isClaimTransitionValid(status1, status2 api.ClaimStatus) (bool, error) {
 	return false, nil
 }
 
-func (c *Claim) LoadItems(tx *pop.Connection, reload bool) {
-	if len(c.Items) == 0 || reload {
-		if err := tx.Load(c, "Items"); err != nil {
-			panic("database error loading Claim.Items, " + err.Error())
+func (c *Claim) LoadClaimItems(tx *pop.Connection, reload bool) {
+	if len(c.ClaimItems) == 0 || reload {
+		if err := tx.Load(c, "ClaimItems"); err != nil {
+			panic("database error loading Claim.ClaimItems, " + err.Error())
 		}
 	}
 }
@@ -174,7 +173,9 @@ func (c *Claim) LoadReviewer(tx *pop.Connection, reload bool) {
 	}
 }
 
-func ConvertClaim(c Claim) api.Claim {
+func ConvertClaim(tx *pop.Connection, c Claim) api.Claim {
+	c.LoadClaimItems(tx, true)
+
 	return api.Claim{
 		ID:               c.ID,
 		PolicyID:         c.PolicyID,
@@ -186,13 +187,14 @@ func ConvertClaim(c Claim) api.Claim {
 		ReviewerID:       c.ReviewerID,
 		PaymentDate:      c.PaymentDate,
 		TotalPayout:      c.TotalPayout,
+		Items:            ConvertClaimItems(c.ClaimItems),
 	}
 }
 
-func ConvertClaims(cs Claims) api.Claims {
+func ConvertClaims(tx *pop.Connection, cs Claims) api.Claims {
 	claims := make(api.Claims, len(cs))
 	for i, c := range cs {
-		claims[i] = ConvertClaim(c)
+		claims[i] = ConvertClaim(tx, c)
 	}
 	return claims
 }

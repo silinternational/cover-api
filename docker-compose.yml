@@ -13,7 +13,7 @@ services:
       - "6060"
     env_file:
       - ./test.env
-      - ./.env
+      - ./local.env
     environment:
       ADDR: 0.0.0.0
       PORT: 3000
@@ -37,7 +37,7 @@ services:
       DOCKER_IP: testdb
       HISTCONTROL: ignoreboth:erasedups
       LOG_LEVEL: fatal
-      RISKMAN_API_BASE_URL: localhost
+      API_BASE_URL: localhost
     depends_on:
       - testdb
       - minio
@@ -78,10 +78,7 @@ services:
       - "9000:9000"
     command: server /data
     env_file:
-      - test.env
-    environment:
-      MINIO_ROOT_USER: ${AWS_ACCESS_KEY_ID}
-      MINIO_ROOT_PASSWORD: ${AWS_SECRET_ACCESS_KEY}
+      - ./test.env
 
   swagger:
     image: quay.io/goswagger/swagger:latest

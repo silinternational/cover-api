@@ -33,18 +33,20 @@ func claimsList(c buffalo.Context) error {
 }
 
 func claimsListAll(c buffalo.Context) error {
+	tx := models.Tx(c)
 	var claims models.Claims
 	if err := models.Tx(c).All(&claims); err != nil {
 		return reportError(c, err)
 	}
 
-	return renderOk(c, models.ConvertClaims(claims))
+	return renderOk(c, models.ConvertClaims(tx, claims))
 }
 
 func claimsListMine(c buffalo.Context) error {
+	tx := models.Tx(c)
 	currentUser := models.CurrentUser(c)
 	claims := currentUser.MyClaims(models.Tx(c))
-	return renderOk(c, models.ConvertClaims(claims))
+	return renderOk(c, models.ConvertClaims(tx, claims))
 }
 
 // swagger:operation GET /claims/{id} Claims ClaimsView
@@ -65,11 +67,12 @@ func claimsListMine(c buffalo.Context) error {
 //     schema:
 //       "$ref": "#/definitions/Claim"
 func claimsView(c buffalo.Context) error {
+	tx := models.Tx(c)
 	claim := getReferencedClaimFromCtx(c)
 	if claim == nil {
 		panic("claim not found in context")
 	}
-	return renderOk(c, models.ConvertClaim(*claim))
+	return renderOk(c, models.ConvertClaim(tx, *claim))
 }
 
 // swagger:operation PUT /claims/{id} Claims ClaimsUpdate
@@ -90,6 +93,7 @@ func claimsView(c buffalo.Context) error {
 //     schema:
 //       "$ref": "#/definitions/Claim"
 func claimsUpdate(c buffalo.Context) error {
+	tx := models.Tx(c)
 	claim := getReferencedClaimFromCtx(c)
 	if claim == nil {
 		panic("claim not found in context")
@@ -111,7 +115,7 @@ func claimsUpdate(c buffalo.Context) error {
 		return reportError(c, err)
 	}
 
-	return renderOk(c, models.ConvertClaim(*claim))
+	return renderOk(c, models.ConvertClaim(tx, *claim))
 }
 
 // swagger:operation POST /policies/{id}/claims Claims ClaimsCreate
