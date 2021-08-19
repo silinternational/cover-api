@@ -28,9 +28,7 @@ import (
 	list is a complex structure contained related data. The remainder are simple objects.
 
 TODO:
-	1. Import item categories and assign correct IDs (item.category_id)
-	2. Import users and assign correct IDs (claim.reviewer_id)
-	3. Import policy dependents and assign correct IDs (item.policy_dependent_id)
+	1. Import users and assign correct IDs (claim.reviewer_id)
 */
 
 const TimeFormat = "2006-01-02 15:04:05"
