@@ -140,7 +140,6 @@ func App() *buffalo.App {
 
 		// config
 		configGroup := app.Group("/config")
-		configGroup.Middleware.Skip(AuthN, claimEventTypes)
 		configGroup.Middleware.Skip(AuthZ, claimEventTypes)
 		configGroup.GET("/claim-event-types", claimEventTypes)
 
