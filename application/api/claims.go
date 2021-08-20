@@ -62,6 +62,12 @@ type Claim struct {
 	// swagger:strfmt uuid4
 	PolicyID uuid.UUID `json:"policy_id"`
 
+	// reference number
+	//
+	// human friendly six character string
+	// example: AB4331
+	ReferenceNumber string `json:"reference_number"`
+
 	// event date
 	//
 	// swagger:strfmt date-time

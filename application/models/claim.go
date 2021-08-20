@@ -15,6 +15,10 @@ import (
 	"github.com/silinternational/riskman-api/domain"
 )
 
+const (
+	ClaimReferenceNumberLength = 6
+)
+
 var ValidClaimEventTypes = map[api.ClaimEventType]struct{}{
 	api.ClaimEventTypeTheft:           {},
 	api.ClaimEventTypeImpact:          {},
@@ -37,6 +41,7 @@ type Claims []Claim
 type Claim struct {
 	ID               uuid.UUID          `db:"id"`
 	PolicyID         uuid.UUID          `db:"policy_id" validate:"required"`
+	ReferenceNumber  string             `db:"reference_number" validate:"required,len=6"`
 	EventDate        time.Time          `db:"event_date" validate:"required_unless=Status Draft"`
 	EventType        api.ClaimEventType `db:"event_type" validate:"claimEventType,required_unless=Status Draft"`
 	EventDescription string             `db:"event_description" validate:"required_unless=Status Draft"`
@@ -60,6 +65,7 @@ func (c *Claim) Validate(tx *pop.Connection) (*validate.Errors, error) {
 
 // Create stores the Claim data as a new record in the database.
 func (c *Claim) Create(tx *pop.Connection) error {
+	c.ReferenceNumber = domain.RandomString(ClaimReferenceNumberLength)
 	return create(tx, c)
 }
 

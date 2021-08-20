@@ -22,6 +22,10 @@ type PolicyUser struct {
 	UpdatedAt time.Time `db:"updated_at"`
 }
 
+func (p *PolicyUser) Create(tx *pop.Connection) error {
+	return create(tx, p)
+}
+
 // Validate gets run every time you call a "pop.Validate*" (pop.ValidateAndSave, pop.ValidateAndCreate, pop.ValidateAndUpdate) method.
 func (p *PolicyUser) Validate(tx *pop.Connection) (*validate.Errors, error) {
 	return validateModel(p), nil

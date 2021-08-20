@@ -6,6 +6,7 @@ import (
 	"errors"
 	"io"
 	"log"
+	"math/rand"
 	"net/http"
 	"os"
 	"regexp"
@@ -320,4 +321,14 @@ func IsStringInSlice(needle string, haystack []string) bool {
 	}
 
 	return false
+}
+
+var letters = []rune("ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
+
+func RandomString(n int) string {
+	b := make([]rune, n)
+	for i := range b {
+		b[i] = letters[rand.Intn(len(letters))]
+	}
+	return string(b)
 }
