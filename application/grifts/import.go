@@ -415,7 +415,7 @@ func importClaimItems(tx *pop.Connection, claim models.Claim, items []LegacyClai
 			FMV:             fixedPointStringToInt(c.Fmv, "ClaimItem.FMV"),
 			ReviewDate:      parseStringTimeToNullTime(c.ReviewDate, itemDesc+"ReviewDate"),
 			// ReviewerID:      c.ReviewerId, // TODO: get reviewer ID
-			LegacyID:  claimItemID,
+			LegacyID:  nulls.NewInt(claimItemID),
 			CreatedAt: parseStringTime(c.CreatedAt, itemDesc+"CreatedAt"),
 			UpdatedAt: parseStringTime(c.UpdatedAt, itemDesc+"UpdatedAt"),
 		}
