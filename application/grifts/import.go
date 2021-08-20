@@ -29,9 +29,9 @@ import (
 	list is a complex structure contained related data. The remainder are simple objects.
 
 TODO:
-	1. Import users and assign correct IDs (claim.reviewer_id)
-	2. Import other tables (e.g. Journal Entries)
-	3. Ensure created_at and updated_at are saved correctly
+	1. Import other tables (e.g. Journal Entries)
+	2. Ensure created_at and updated_at are saved correctly
+	3. Import employee IDs by merging with IDP data
 */
 
 const (
@@ -44,8 +44,8 @@ const (
 // userEmailMap is a map of email address to new ID
 var userEmailMap = map[string]uuid.UUID{}
 
-// userIDMap is a map of legacy ID to new ID
-var userIDMap = map[int]uuid.UUID{}
+// userStaffIDMap is a map of staff ID to new ID
+var userStaffIDMap = map[string]uuid.UUID{}
 
 // itemIDMap is a map of legacy ID to new ID
 var itemIDMap = map[int]uuid.UUID{}
@@ -54,10 +54,7 @@ var itemIDMap = map[int]uuid.UUID{}
 var itemCategoryIDMap = map[int]uuid.UUID{}
 
 // time used in place of missing time values
-var (
-	emptyTime    time.Time
-	earliestTime time.Time
-)
+var emptyTime time.Time
 
 var _ = grift.Namespace("db", func() {
 	_ = grift.Desc("import", "Import legacy data")
@@ -96,7 +93,6 @@ var _ = grift.Namespace("db", func() {
 			importAdminUsers(tx, obj.Users)
 			importItemCategories(tx, obj.ItemCategories)
 			importPolicies(tx, obj.Policies)
-			fmt.Print("Earliest time: ", earliestTime)
 
 			return errors.New("blocking transaction commit until everything is ready")
 		}); err != nil {
@@ -109,7 +105,6 @@ var _ = grift.Namespace("db", func() {
 
 func init() {
 	emptyTime, _ = time.Parse(TimeFormat, EmptyTime)
-	earliestTime, _ = time.Parse(TimeFormat, "2020-12-31 00:00:00")
 	pop.Debug = false // Disable the Pop log messages
 }
 
@@ -138,7 +133,7 @@ func importAdminUsers(tx *pop.Connection, in []LegacyUsers) {
 			log.Fatalf("failed to create user, %s\n%+v", err, newUser)
 		}
 
-		userIDMap[userID] = newUser.ID
+		userStaffIDMap[user.StaffId] = newUser.ID
 
 		fmt.Printf(`"%s","%s","%s","%s","%s","%s","%s","%s","%s"`+"\n",
 			newUser.ID, newUser.Email, newUser.EmailOverride, newUser.FirstName, newUser.LastName,
@@ -373,12 +368,11 @@ func importClaims(tx *pop.Connection, policy models.Policy, claims []LegacyClaim
 			EventDescription: getEventDescription(c),
 			Status:           getClaimStatus(c),
 			ReviewDate:       nulls.NewTime(parseStringTime(c.ReviewDate, claimDesc+"ReviewDate")),
-			// TODO: need user IDs
-			// ReviewerID:       c.ReviewerId,
-			PaymentDate: nulls.NewTime(parseStringTime(c.PaymentDate, claimDesc+"PaymentDate")),
-			TotalPayout: fixedPointStringToInt(c.TotalPayout, "Claim.TotalPayout"),
-			CreatedAt:   parseStringTime(c.CreatedAt, claimDesc+"CreatedAt"),
-			UpdatedAt:   parseStringTime(c.UpdatedAt, claimDesc+"UpdatedAt"),
+			ReviewerID:       getAdminUserUUID(strconv.Itoa(c.ReviewerId), claimDesc+"ReviewerID"),
+			PaymentDate:      nulls.NewTime(parseStringTime(c.PaymentDate, claimDesc+"PaymentDate")),
+			TotalPayout:      fixedPointStringToInt(c.TotalPayout, "Claim.TotalPayout"),
+			CreatedAt:        parseStringTime(c.CreatedAt, claimDesc+"CreatedAt"),
+			UpdatedAt:        parseStringTime(c.UpdatedAt, claimDesc+"UpdatedAt"),
 		}
 		if err := newClaim.Create(tx); err != nil {
 			log.Fatalf("failed to create claim, %s\n%+v", err, newClaim)
@@ -414,10 +408,10 @@ func importClaimItems(tx *pop.Connection, claim models.Claim, items []LegacyClai
 			PayoutAmount:    fixedPointStringToInt(c.PayoutAmount, "ClaimItem.PayoutAmount"),
 			FMV:             fixedPointStringToInt(c.Fmv, "ClaimItem.FMV"),
 			ReviewDate:      parseStringTimeToNullTime(c.ReviewDate, itemDesc+"ReviewDate"),
-			// ReviewerID:      c.ReviewerId, // TODO: get reviewer ID
-			LegacyID:  nulls.NewInt(claimItemID),
-			CreatedAt: parseStringTime(c.CreatedAt, itemDesc+"CreatedAt"),
-			UpdatedAt: parseStringTime(c.UpdatedAt, itemDesc+"UpdatedAt"),
+			ReviewerID:      getAdminUserUUID(strconv.Itoa(c.ReviewerId), itemDesc+"ReviewerID"),
+			LegacyID:        nulls.NewInt(claimItemID),
+			CreatedAt:       parseStringTime(c.CreatedAt, itemDesc+"CreatedAt"),
+			UpdatedAt:       parseStringTime(c.UpdatedAt, itemDesc+"UpdatedAt"),
 		}
 
 		if err := newClaimItem.Create(tx); err != nil {
@@ -451,6 +445,15 @@ func getIsRepairable(c LegacyClaimItem) bool {
 		log.Println("ClaimItem.IsRepairable is neither 0 nor 1")
 	}
 	return c.IsRepairable == 1
+}
+
+func getAdminUserUUID(staffID, desc string) nulls.UUID {
+	userUUID, ok := userStaffIDMap[staffID]
+	if !ok {
+		log.Printf("%s has unrecognized staff ID %d\n", desc, staffID)
+		return nulls.UUID{}
+	}
+	return nulls.NewUUID(userUUID)
 }
 
 func getEventType(claim LegacyClaim) api.ClaimEventType {
@@ -563,9 +566,6 @@ func parseStringTime(t, desc string) time.Time {
 	if err != nil {
 		log.Fatalf("failed to parse '%s' time '%s'", desc, t)
 	}
-	if tt.Before(earliestTime) {
-		earliestTime = tt
-	}
 	return tt
 }
 
@@ -585,9 +585,6 @@ func parseNullStringTimeToTime(t nulls.String, desc string) time.Time {
 		log.Fatalf("failed to parse '%s' time '%s'", desc, t.String)
 	}
 
-	if tt.Before(earliestTime) {
-		earliestTime = tt
-	}
 	return tt
 }
 
@@ -606,9 +603,6 @@ func parseStringTimeToNullTime(t, desc string) nulls.Time {
 		log.Fatalf("failed to parse '%s' time '%s'", desc, t)
 	}
 
-	if tt.Before(earliestTime) {
-		earliestTime = tt
-	}
 	return nulls.NewTime(tt)
 }
 
