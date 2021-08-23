@@ -260,6 +260,9 @@ func (as *ActionSuite) Test_ItemsUpdate() {
 	fixtures := models.CreateItemFixtures(as.DB, fixConfig)
 
 	oldItem := fixtures.Items[0]
+	oldItem.CoverageStatus = api.ItemCoverageStatusRevision
+	as.NoError(as.DB.Update(&oldItem), "error trying to change item status for test")
+
 	policy := fixtures.Policies[0]
 	policyCreator := policy.Members[0]
 	otherUser := fixtures.Policies[1].Members[0]
@@ -290,7 +293,7 @@ func (as *ActionSuite) Test_ItemsUpdate() {
 		SerialNumber:      "MM1234",
 		CoverageAmount:    oldItem.CoverageAmount,
 		PurchaseDate:      "2006-01-02",
-		CoverageStatus:    api.ItemCoverageStatusInactive,
+		CoverageStatus:    api.ItemCoverageStatusRevision,
 		CoverageStartDate: "2006-01-03",
 	}
 

@@ -133,6 +133,14 @@ func (i *Item) Inactivate(tx *pop.Connection) error {
 
 // IsActorAllowedTo ensure the actor is either an admin, or a member of this policy to perform any permission
 func (i *Item) IsActorAllowedTo(tx *pop.Connection, actor User, perm Permission, sub SubResource, req *http.Request) bool {
+
+	// Don't allow updating an item itself if it has the wrong status
+	if perm == PermissionUpdate && sub == "" {
+		if i.CoverageStatus != api.ItemCoverageStatusDraft && i.CoverageStatus != api.ItemCoverageStatusRevision {
+			return false
+		}
+	}
+
 	if actor.IsAdmin() {
 		return true
 	}
