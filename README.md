@@ -17,7 +17,7 @@ At this point you'll have a running instance of this application available at ht
 
 #### SAML Identity Provider
 
-Fill in the correct values in the RISKMAN_SAML_* variables as appropriate for
+Fill in the correct values in the SAML_* variables as appropriate for
 your own SAML IDP
 
 ### Troubleshooting
@@ -57,9 +57,9 @@ You can access use Adminer to manage the PostgreSQL database using the following
  - URL: http://localhost:8000
  - System: PostgreSQL
  - Server: db
- - Username: riskman
- - Password: riskman
- - Database: riskman
+ - Username: cover
+ - Password: cover
+ - Database: cover
 
 You can check the box for "permanent login" and it'll save these settings in a cookie for next time. 
 
