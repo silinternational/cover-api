@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/silinternational/riskman-api/api"
+	"github.com/silinternational/cover-api/api"
 )
 
 func (ms *ModelSuite) TestPolicyDependent_Validate() {

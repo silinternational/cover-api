@@ -1,4 +1,4 @@
-# Riskman API
+# Cover API
 
 ## Getting Started
 This application is based on the [Buffalo](https://gobuffalo.io) Framework, an opinionated MVC framework that comes 

@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/silinternational/riskman-api/api"
-	"github.com/silinternational/riskman-api/models"
+	"github.com/silinternational/cover-api/api"
+	"github.com/silinternational/cover-api/models"
 )
 
 func (as *ActionSuite) Test_ItemCategoriesList() {

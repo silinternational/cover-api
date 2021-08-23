@@ -7,10 +7,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/silinternational/riskman-api/domain"
+	"github.com/silinternational/cover-api/domain"
 
-	"github.com/silinternational/riskman-api/api"
-	"github.com/silinternational/riskman-api/models"
+	"github.com/silinternational/cover-api/api"
+	"github.com/silinternational/cover-api/models"
 )
 
 func (as *ActionSuite) Test_ItemsList() {
@@ -75,7 +75,7 @@ func (as *ActionSuite) Test_ItemsList() {
 				`"coverage_start_date":"` + item2.CoverageStartDate.Format("2006-01-02"),
 				`"category":{"id":"`,
 				`"name":"` + item2.Name,
-				//TODO add some checks for the Item Category
+				// TODO add some checks for the Item Category
 				`{"id":"` + item3.ID.String(),
 			},
 			notWantInBody: fixtures.Policies[0].ID.String(),
@@ -167,7 +167,8 @@ func (as *ActionSuite) Test_ItemsAdd() {
 			actor:      models.User{},
 			policy:     policy,
 			wantStatus: http.StatusUnauthorized,
-			wantInBody: []string{api.ErrorNotAuthorized.String(),
+			wantInBody: []string{
+				api.ErrorNotAuthorized.String(),
 				"no bearer token provided",
 			},
 		},
@@ -283,7 +284,8 @@ func (as *ActionSuite) Test_ItemsSubmit() {
 			actor:      models.User{},
 			oldItem:    revisionItem,
 			wantStatus: http.StatusUnauthorized,
-			wantInBody: []string{api.ErrorNotAuthorized.String(),
+			wantInBody: []string{
+				api.ErrorNotAuthorized.String(),
 				"no bearer token provided",
 			},
 		},
@@ -413,7 +415,8 @@ func (as *ActionSuite) Test_ItemsUpdate() {
 			actor:      models.User{},
 			oldItem:    oldItem,
 			wantStatus: http.StatusUnauthorized,
-			wantInBody: []string{api.ErrorNotAuthorized.String(),
+			wantInBody: []string{
+				api.ErrorNotAuthorized.String(),
 				"no bearer token provided",
 			},
 		},
@@ -556,7 +559,8 @@ func (as *ActionSuite) Test_ItemsRemove() {
 			item:           item2,
 			wantCount:      4,
 			wantHTTPStatus: http.StatusUnauthorized,
-			wantInBody: []string{api.ErrorNotAuthorized.String(),
+			wantInBody: []string{
+				api.ErrorNotAuthorized.String(),
 				"no bearer token provided",
 			},
 		},

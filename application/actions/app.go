@@ -1,4 +1,4 @@
-// Riskman API
+// Cover API
 //
 // Terms Of Service:
 //
@@ -42,10 +42,10 @@ import (
 	"github.com/gorilla/sessions"
 	"github.com/rs/cors"
 
-	"github.com/silinternational/riskman-api/listeners"
+	"github.com/silinternational/cover-api/listeners"
 
-	"github.com/silinternational/riskman-api/domain"
-	"github.com/silinternational/riskman-api/models"
+	"github.com/silinternational/cover-api/domain"
+	"github.com/silinternational/cover-api/models"
 )
 
 const idRegex = `/{id:[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-4[a-fA-F0-9]{3}-[8|9|aA|bB][a-fA-F0-9]{3}-[a-fA-F0-9]{12}}`
@@ -88,7 +88,7 @@ func App() *buffalo.App {
 					AllowedHeaders:   []string{"*"},
 				}).Handler,
 			},
-			SessionName:  "_riskman_api_session",
+			SessionName:  "_cover_api_session",
 			SessionStore: sessions.NewCookieStore([]byte(domain.Env.SessionSecret)),
 		})
 

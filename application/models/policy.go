@@ -9,7 +9,7 @@ import (
 	"github.com/gofrs/uuid"
 	"github.com/pkg/errors"
 
-	"github.com/silinternational/riskman-api/api"
+	"github.com/silinternational/cover-api/api"
 )
 
 type Policies []Policy

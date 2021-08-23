@@ -9,8 +9,8 @@ import (
 	"github.com/gobuffalo/buffalo"
 	"github.com/gobuffalo/buffalo/render"
 
-	"github.com/silinternational/riskman-api/api"
-	"github.com/silinternational/riskman-api/domain"
+	"github.com/silinternational/cover-api/api"
+	"github.com/silinternational/cover-api/domain"
 )
 
 var r *render.Engine

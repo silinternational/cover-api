@@ -111,7 +111,7 @@ var Env struct {
 	GoEnv                      string `ignored:"true"`
 	ApiBaseURL                 string `required:"true" split_words:"true"`
 	AccessTokenLifetimeSeconds int    `default:"1166400" split_words:"true"` // 13.5 days
-	AppName                    string `default:"riskman" split_words:"true"`
+	AppName                    string `default:"cover" split_words:"true"`
 
 	ListenerDelayMilliseconds int `default:"1000" split_words:"true"`
 	ListenerMaxRetries        int `default:"10" split_words:"true"`

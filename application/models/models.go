@@ -18,8 +18,8 @@ import (
 	"github.com/gobuffalo/pop/v5"
 	"github.com/gofrs/uuid"
 
-	"github.com/silinternational/riskman-api/api"
-	"github.com/silinternational/riskman-api/domain"
+	"github.com/silinternational/cover-api/api"
+	"github.com/silinternational/cover-api/domain"
 )
 
 // DB is a connection to the database to be used throughout the application.

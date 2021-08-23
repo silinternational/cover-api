@@ -3,13 +3,13 @@ package models
 import (
 	"time"
 
-	"github.com/silinternational/riskman-api/domain"
+	"github.com/silinternational/cover-api/domain"
 
 	"github.com/gobuffalo/pop/v5"
 	"github.com/gobuffalo/validate/v3"
 	"github.com/gofrs/uuid"
 
-	"github.com/silinternational/riskman-api/api"
+	"github.com/silinternational/cover-api/api"
 )
 
 var ValidItemCategoryStatuses = map[api.ItemCategoryStatus]struct{}{

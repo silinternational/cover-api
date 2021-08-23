@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
-	"github.com/silinternational/riskman-api/domain"
+	"github.com/silinternational/cover-api/domain"
 )
 
 // ModelSuite doesn't contain a buffalo suite.Model and can be used for tests that don't need access to the database
