@@ -2,9 +2,11 @@ package grifts
 
 import (
 	"bufio"
+	"encoding/csv"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"log"
 	"net/mail"
 	"os"
@@ -31,7 +33,6 @@ import (
 TODO:
 	1. Import other tables (e.g. Journal Entries)
 	2. Ensure created_at and updated_at are saved correctly
-	3. Import employee IDs by merging with IDP data
 */
 
 const (
@@ -40,6 +41,9 @@ const (
 	SilenceEmptyTimeWarnings = true
 	SilenceBadEmailWarning   = true
 )
+
+// userEmailStaffIDMap is a map of email address to staff ID
+var userEmailStaffIDMap = map[string]string{}
 
 // userEmailMap is a map of email address to new ID
 var userEmailMap = map[string]uuid.UUID{}
@@ -56,9 +60,13 @@ var itemCategoryIDMap = map[int]uuid.UUID{}
 // time used in place of missing time values
 var emptyTime time.Time
 
+var nPolicyUsersWithStaffID int
+
 var _ = grift.Namespace("db", func() {
 	_ = grift.Desc("import", "Import legacy data")
 	_ = grift.Add("import", func(c *grift.Context) error {
+		importIdpUsers()
+
 		var obj LegacyData
 
 		f, err := os.Open("./riskman.json")
@@ -102,6 +110,38 @@ var _ = grift.Namespace("db", func() {
 		return nil
 	})
 })
+
+func importIdpUsers() {
+	f, err := os.Open("./sil-users.csv")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer func(f *os.File) {
+		if err := f.Close(); err != nil {
+			panic("failed to close file, " + err.Error())
+		}
+	}(f)
+
+	r := csv.NewReader(bufio.NewReader(f))
+
+	for {
+		csvLine, err := r.Read()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			log.Fatalf("failed to read from IDP data file, %s", err)
+		}
+
+		staffID := csvLine[2]
+		email := csvLine[7]
+		if staffID == "NULL" || email == "NULL" {
+			continue
+		}
+
+		userEmailStaffIDMap[strings.ToLower(email)] = staffID
+	}
+}
 
 func init() {
 	emptyTime, _ = time.Parse(TimeFormat, EmptyTime)
@@ -245,7 +285,7 @@ func importPolicies(tx *pop.Connection, in []LegacyPolicy) {
 	fmt.Printf("  Claims: %d\n", nClaims)
 	fmt.Printf("  Items: %d\n", nItems)
 	fmt.Printf("  ClaimItems: %d\n", nClaimItems)
-	fmt.Printf("  PolicyUsers: %d\n", nPolicyUsers)
+	fmt.Printf("  PolicyUsers: %d w/staffID: %d\n", nPolicyUsers, nPolicyUsersWithStaffID)
 	fmt.Println("")
 }
 
@@ -316,6 +356,7 @@ func importPolicyUsers(tx *pop.Connection, p LegacyPolicy, policyID uuid.UUID) i
 }
 
 func createPolicyUser(tx *pop.Connection, email string, policyID uuid.UUID) {
+	email = strings.ToLower(email)
 	userID, ok := userEmailMap[email]
 	if !ok {
 		user := createUserFromEmailAddress(tx, email)
@@ -331,12 +372,14 @@ func createPolicyUser(tx *pop.Connection, email string, policyID uuid.UUID) {
 }
 
 func createUserFromEmailAddress(tx *pop.Connection, email string) models.User {
+	staffID, ok := userEmailStaffIDMap[email]
+	if ok {
+		nPolicyUsersWithStaffID++
+	}
+
 	user := models.User{
-		Email:     email,
-		FirstName: "", // TODO: look up in IDP data
-		LastName:  "", // TODO: look up in IDP data
-		StaffID:   "", // TODO: look up in IDP data
-		// TODO: add a "needs review" flag
+		Email:   email,
+		StaffID: staffID,
 		AppRole: models.AppRoleUser,
 	}
 	if err := user.Create(tx); err != nil {
@@ -450,7 +493,7 @@ func getIsRepairable(c LegacyClaimItem) bool {
 func getAdminUserUUID(staffID, desc string) nulls.UUID {
 	userUUID, ok := userStaffIDMap[staffID]
 	if !ok {
-		log.Printf("%s has unrecognized staff ID %d\n", desc, staffID)
+		log.Printf("%s has unrecognized staff ID %s\n", desc, staffID)
 		return nulls.UUID{}
 	}
 	return nulls.NewUUID(userUUID)
