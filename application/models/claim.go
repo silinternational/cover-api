@@ -149,6 +149,39 @@ func isClaimTransitionValid(status1, status2 api.ClaimStatus) (bool, error) {
 	return false, nil
 }
 
+func (c *Claim) AddItem(tx *pop.Connection, claim Claim, input api.ClaimItemCreateInput) (ClaimItem, error) {
+	if c == nil {
+		return ClaimItem{}, errors.New("claim is nil in AddItem")
+	}
+
+	// ensure item and claim belong to the same policy
+	var item Item
+	if err := item.FindByID(tx, input.ItemID); err != nil {
+		err = fmt.Errorf("failed to load item: %s", err)
+		appErr := api.NewAppError(err, api.ErrorResourceNotFound, api.CategoryNotFound)
+		if domain.IsOtherThanNoRows(err) {
+			appErr.Category = api.CategoryInternal
+		}
+		return ClaimItem{}, appErr
+	}
+
+	if claim.PolicyID != item.PolicyID {
+		err := fmt.Errorf("claim and item do not have same policy id: %s vs. %s",
+			claim.PolicyID.String(), item.PolicyID.String())
+		appErr := api.NewAppError(err, api.ErrorClaimItemCreateInvalidInput, api.CategoryUser)
+		return ClaimItem{}, appErr
+	}
+
+	clmItem := ConvertClaimItemCreateInput(input)
+	clmItem.ClaimID = claim.ID
+
+	if err := clmItem.Create(tx); err != nil {
+		return ClaimItem{}, err
+	}
+
+	return clmItem, nil
+}
+
 func (c *Claim) LoadClaimItems(tx *pop.Connection, reload bool) {
 	if len(c.ClaimItems) == 0 || reload {
 		if err := tx.Load(c, "ClaimItems"); err != nil {
@@ -199,7 +232,7 @@ func ConvertClaims(tx *pop.Connection, cs Claims) api.Claims {
 	return claims
 }
 
-func CovertClaimCreateInput(input api.ClaimCreateInput) Claim {
+func ConvertClaimCreateInput(input api.ClaimCreateInput) Claim {
 	return Claim{
 		EventDate:        input.EventDate,
 		EventType:        input.EventType,

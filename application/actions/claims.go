@@ -161,6 +161,49 @@ func claimsCreate(c buffalo.Context) error {
 	return renderOk(c, models.ConvertClaim(tx, dbClaim))
 }
 
+// swagger:operation POST /policies/{id}/claims Claims ClaimsItemsCreate
+//
+// ClaimsItemsCreate
+//
+// create a new ClaimItem on a Claim
+//
+// ---
+// parameters:
+//   - name: id
+//     in: path
+//     required: true
+//     description: policy ID
+//   - name: claim item input
+//     in: body
+//     description: claim item create input object
+//     required: true
+//     schema:
+//       "$ref": "#/definitions/ClaimItemCreateInput"
+// responses:
+//   '200':
+//     description: the new ClaimItem
+//     schema:
+//       "$ref": "#/definitions/ClaimItem"
+func claimsItemsCreate(c buffalo.Context) error {
+	claim := getReferencedClaimFromCtx(c)
+	if claim == nil {
+		panic("claim not found in route")
+	}
+
+	var input api.ClaimItemCreateInput
+	if err := StrictBind(c, &input); err != nil {
+		return reportError(c, api.NewAppError(err, api.ErrorClaimItemCreateInvalidInput, api.CategoryUser))
+	}
+
+	tx := models.Tx(c)
+	claimItem, err := claim.AddItem(tx, *claim, input)
+	if err != nil {
+		return reportError(c, err)
+	}
+
+	return renderOk(c, models.ConvertClaimItem(tx, claimItem))
+}
+
 // getReferencedClaimFromCtx pulls the models.Claim resource from context that was put there
 // by the AuthZ middleware
 func getReferencedClaimFromCtx(c buffalo.Context) *models.Claim {
