@@ -84,7 +84,7 @@ func (as *ActionSuite) Test_ItemsList() {
 
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
-			req := as.JSON("/policies/%s/items", tt.policy.ID.String())
+			req := as.JSON("/%s/%s/%s", domain.TypePolicy, tt.policy.ID.String(), domain.TypeItem)
 			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
 			req.Headers["content-type"] = "application/json"
 			res := req.Get()
@@ -224,7 +224,7 @@ func (as *ActionSuite) Test_ItemsAdd() {
 
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
-			req := as.JSON("/policies/%s/items", tt.policy.ID.String())
+			req := as.JSON("/%s/%s/%s", domain.TypePolicy, tt.policy.ID.String(), domain.TypeItem)
 			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
 			req.Headers["content-type"] = "application/json"
 			res := req.Post(tt.newItem)
@@ -327,7 +327,7 @@ func (as *ActionSuite) Test_ItemsSubmit() {
 
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
-			req := as.JSON("/items/%s/submit", tt.oldItem.ID.String())
+			req := as.JSON("/%s/%s/submit", domain.TypeItem, tt.oldItem.ID.String())
 			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
 			req.Headers["content-type"] = "application/json"
 			res := req.Post(nil)
@@ -600,7 +600,7 @@ func (as *ActionSuite) Test_ItemsRemove() {
 
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
-			req := as.JSON("/items/%s", tt.item.ID.String())
+			req := as.JSON("/%s/%s", domain.TypeItem, tt.item.ID.String())
 			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
 			req.Headers["content-type"] = "application/json"
 			res := req.Delete()
