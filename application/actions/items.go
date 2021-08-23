@@ -152,6 +152,38 @@ func itemsUpdate(c buffalo.Context) error {
 	return c.Render(http.StatusOK, r.JSON(output))
 }
 
+// swagger:operation POST /items/{id}/submit PolicyItems PolicyItemsSubmit
+//
+// PolicyItemsSubmit
+//
+// submit a policy item for coverage
+//
+// ---
+// parameters:
+//   - name: id
+//     in: path
+//     required: true
+//     description: item ID
+// responses:
+//   '200':
+//     description: submitted Item
+//     schema:
+//       "$ref": "#/definitions/Item"
+func itemsSubmit(c buffalo.Context) error {
+	tx := models.Tx(c)
+	item := getReferencedItemFromCtx(c)
+	if item == nil {
+		panic("item not found in context")
+	}
+
+	if err := item.SubmitForApproval(tx); err != nil {
+		return reportError(c, err)
+	}
+
+	output := models.ConvertItem(tx, *item)
+	return c.Render(http.StatusOK, r.JSON(output))
+}
+
 // swagger:operation DELETE /items/{id} PolicyItems PolicyItemsRemove
 //
 // PolicyItemsRemove

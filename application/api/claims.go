@@ -30,13 +30,19 @@ const (
 	ClaimEventTypeOther           = ClaimEventType("Other")
 )
 
-var AllClaimEventTypes = []ClaimEventType{
-	ClaimEventTypeTheft,
-	ClaimEventTypeImpact,
-	ClaimEventTypeElectricalSurge,
-	ClaimEventTypeWaterDamage,
-	ClaimEventTypeEvacuation,
-	ClaimEventTypeOther,
+// swagger:model
+type ClaimEventTypeStruct struct {
+	Name         ClaimEventType `json:"name"`
+	IsRepairable bool           `json:"is_repairable"`
+}
+
+var AllClaimEventTypes = []ClaimEventTypeStruct{
+	{ClaimEventTypeTheft, false},
+	{ClaimEventTypeImpact, true},
+	{ClaimEventTypeElectricalSurge, true},
+	{ClaimEventTypeWaterDamage, true},
+	{ClaimEventTypeEvacuation, false},
+	{ClaimEventTypeOther, true},
 }
 
 const (
@@ -95,7 +101,7 @@ type Claim struct {
 	TotalPayout int `json:"total_payout,omitempty"`
 
 	// list of items included in claim
-	Items ClaimItems `json:"items"`
+	Items ClaimItems `json:"claim_items"`
 }
 
 // swagger:model

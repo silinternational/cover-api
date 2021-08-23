@@ -188,7 +188,7 @@ func ConvertClaim(tx *pop.Connection, c Claim) api.Claim {
 		ReviewerID:       c.ReviewerID,
 		PaymentDate:      c.PaymentDate,
 		TotalPayout:      c.TotalPayout,
-		Items:            ConvertClaimItems(c.ClaimItems),
+		Items:            ConvertClaimItems(tx, c.ClaimItems),
 	}
 }
 

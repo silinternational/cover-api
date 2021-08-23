@@ -163,31 +163,45 @@ func (c *ClaimItem) LoadReviewer(tx *pop.Connection, reload bool) {
 	}
 }
 
-func ConvertClaimItem(c ClaimItem) api.ClaimItem {
+func ConvertClaimItem(tx *pop.Connection, c ClaimItem) api.ClaimItem {
+	c.LoadItem(tx, false)
+	item := ConvertItem(tx, c.Item)
 	return api.ClaimItem{
-		ID:              c.ID,
-		ClaimID:         c.ClaimID,
-		ItemID:          c.ItemID,
-		Status:          c.Status,
-		IsRepairable:    c.IsRepairable,
-		RepairEstimate:  c.RepairEstimate,
-		RepairActual:    c.RepairActual,
-		ReplaceEstimate: c.ReplaceEstimate,
-		ReplaceActual:   c.ReplaceActual,
-		PayoutOption:    c.PayoutOption,
-		PayoutAmount:    c.PayoutAmount,
-		FMV:             c.FMV,
-		ReviewDate:      c.ReviewDate.Time,
-		ReviewerID:      c.ReviewerID.UUID,
-		CreatedAt:       c.CreatedAt,
-		UpdatedAt:       c.UpdatedAt,
+		ItemID:            c.ItemID,
+		Name:              item.Name,
+		Category:          item.Category,
+		InStorage:         item.InStorage,
+		Country:           item.Country,
+		Description:       item.Description,
+		PolicyID:          item.PolicyID,
+		Make:              item.Make,
+		Model:             item.Model,
+		SerialNumber:      item.SerialNumber,
+		CoverageAmount:    item.CoverageAmount,
+		PurchaseDate:      item.PurchaseDate,
+		CoverageStatus:    item.CoverageStatus,
+		CoverageStartDate: item.CoverageStartDate,
+		ClaimID:           c.ClaimID,
+		Status:            c.Status,
+		IsRepairable:      c.IsRepairable,
+		RepairEstimate:    c.RepairEstimate,
+		RepairActual:      c.RepairActual,
+		ReplaceEstimate:   c.ReplaceEstimate,
+		ReplaceActual:     c.ReplaceActual,
+		PayoutOption:      c.PayoutOption,
+		PayoutAmount:      c.PayoutAmount,
+		FMV:               c.FMV,
+		ReviewDate:        c.ReviewDate.Time,
+		ReviewerID:        c.ReviewerID.UUID,
+		CreatedAt:         c.CreatedAt,
+		UpdatedAt:         c.UpdatedAt,
 	}
 }
 
-func ConvertClaimItems(cs ClaimItems) api.ClaimItems {
+func ConvertClaimItems(tx *pop.Connection, cs ClaimItems) api.ClaimItems {
 	claimItems := make(api.ClaimItems, len(cs))
 	for i, c := range cs {
-		claimItems[i] = ConvertClaimItem(c)
+		claimItems[i] = ConvertClaimItem(tx, c)
 	}
 	return claimItems
 }

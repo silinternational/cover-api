@@ -19,7 +19,7 @@ import (
 //     schema:
 //       type: array
 //       items:
-//         type: string
+//         "$ref": "#/definitions/ClaimEventTypeStruct"
 func claimEventTypes(c buffalo.Context) error {
 	return renderOk(c, api.AllClaimEventTypes)
 }
