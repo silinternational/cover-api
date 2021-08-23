@@ -16,6 +16,10 @@ import (
 	"github.com/silinternational/riskman-api/domain"
 )
 
+const (
+	ItemSubmit = "submit"
+)
+
 var ValidItemCoverageStatuses = map[api.ItemCoverageStatus]struct{}{
 	api.ItemCoverageStatusDraft:    {},
 	api.ItemCoverageStatusPending:  {},
@@ -134,9 +138,12 @@ func (i *Item) Inactivate(tx *pop.Connection) error {
 // IsActorAllowedTo ensure the actor is either an admin, or a member of this policy to perform any permission
 func (i *Item) IsActorAllowedTo(tx *pop.Connection, actor User, perm Permission, sub SubResource, req *http.Request) bool {
 
-	// Don't allow updating an item itself if it has the wrong status
-	if perm == PermissionUpdate && sub == "" {
-		if i.CoverageStatus != api.ItemCoverageStatusDraft && i.CoverageStatus != api.ItemCoverageStatusRevision {
+	if i.CoverageStatus != api.ItemCoverageStatusDraft && i.CoverageStatus != api.ItemCoverageStatusRevision {
+		// Don't allow updating an item itself if it has the wrong status
+		if perm == PermissionUpdate && sub == "" {
+			return false
+			// Don't allow submitting an item if it has the wrong status
+		} else if perm == PermissionCreate && sub == ItemSubmit {
 			return false
 		}
 	}
@@ -171,6 +178,7 @@ func itemStatusTransitions() map[api.ItemCoverageStatus][]api.ItemCoverageStatus
 			api.ItemCoverageStatusInactive,
 		},
 		api.ItemCoverageStatusRevision: {
+			api.ItemCoverageStatusPending,
 			api.ItemCoverageStatusApproved,
 			api.ItemCoverageStatusDenied,
 			api.ItemCoverageStatusInactive,
@@ -200,6 +208,16 @@ func isItemTransitionValid(status1, status2 api.ItemCoverageStatus) (bool, error
 	}
 
 	return false, nil
+}
+
+// SubmitForApproval takes the item from Draft or Revision status to Pending or Approved status.
+// It assumes that the item's current status has already been validated.
+// TODO decide whether the item can be auto-approved
+// TODO emit an event for the the status transition
+func (i *Item) SubmitForApproval(tx *pop.Connection) error {
+	oldStatus := i.CoverageStatus
+	i.CoverageStatus = api.ItemCoverageStatusPending
+	return i.Update(tx, oldStatus)
 }
 
 // LoadPolicy - a simple wrapper method for loading the policy
