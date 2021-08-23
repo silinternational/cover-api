@@ -30,13 +30,18 @@ const (
 	ClaimEventTypeOther           = ClaimEventType("Other")
 )
 
-var AllClaimEventTypes = []ClaimEventType{
-	ClaimEventTypeTheft,
-	ClaimEventTypeImpact,
-	ClaimEventTypeElectricalSurge,
-	ClaimEventTypeWaterDamage,
-	ClaimEventTypeEvacuation,
-	ClaimEventTypeOther,
+type ClaimEventTypeStruct struct {
+	Name         ClaimEventType `json:"name"`
+	IsRepairable bool           `json:"is_repairable"`
+}
+
+var AllClaimEventTypes = []ClaimEventTypeStruct{
+	{ClaimEventTypeTheft, false},
+	{ClaimEventTypeImpact, true},
+	{ClaimEventTypeElectricalSurge, true},
+	{ClaimEventTypeWaterDamage, true},
+	{ClaimEventTypeEvacuation, false},
+	{ClaimEventTypeOther, true},
 }
 
 const (
