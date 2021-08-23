@@ -50,6 +50,12 @@ import (
 
 const idRegex = `/{id:[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-4[a-fA-F0-9]{3}-[8|9|aA|bB][a-fA-F0-9]{3}-[a-fA-F0-9]{12}}`
 
+const (
+	slashPolicies = "/" + domain.TypePolicy
+	slashItems    = "/" + domain.TypeItem
+	slashClaims   = "/" + domain.TypeClaim
+)
+
 // ENV is used to help switch settings based on where the
 // application is being run. Default is "development".
 var (
@@ -131,10 +137,6 @@ func App() *buffalo.App {
 		auth.POST("/login", authRequest)
 		auth.POST("/callback", authCallback)
 		auth.GET("/logout", authDestroy)
-
-		slashPolicies := "/" + domain.TypePolicy
-		slashItems := "/" + domain.TypeItem
-		slashClaims := "/" + domain.TypeClaim
 
 		// claims
 		claimsGroup := app.Group(slashClaims)
