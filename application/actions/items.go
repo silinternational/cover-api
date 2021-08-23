@@ -152,7 +152,7 @@ func itemsUpdate(c buffalo.Context) error {
 	return c.Render(http.StatusOK, r.JSON(output))
 }
 
-// swagger:operation POST /items/{id} PolicyItems PolicyItemsSubmit
+// swagger:operation POST /items/{id}/submit PolicyItems PolicyItemsSubmit
 //
 // PolicyItemsSubmit
 //
