@@ -84,7 +84,7 @@ func (as *ActionSuite) Test_ItemsList() {
 
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
-			req := as.JSON("/policies/%s/items", tt.policy.ID.String())
+			req := as.JSON("/%s/%s/%s", domain.TypePolicy, tt.policy.ID.String(), domain.TypeItem)
 			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
 			req.Headers["content-type"] = "application/json"
 			res := req.Get()
@@ -224,7 +224,7 @@ func (as *ActionSuite) Test_ItemsAdd() {
 
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
-			req := as.JSON("/policies/%s/items", tt.policy.ID.String())
+			req := as.JSON("/%s/%s/%s", domain.TypePolicy, tt.policy.ID.String(), domain.TypeItem)
 			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
 			req.Headers["content-type"] = "application/json"
 			res := req.Post(tt.newItem)
@@ -249,6 +249,107 @@ func (as *ActionSuite) Test_ItemsAdd() {
 	}
 }
 
+func (as *ActionSuite) Test_ItemsSubmit() {
+	fixConfig := models.FixturesConfig{
+		NumberOfPolicies:    2,
+		ItemsPerPolicy:      2,
+		UsersPerPolicy:      1,
+		DependentsPerPolicy: 0,
+	}
+
+	fixtures := models.CreateItemFixtures(as.DB, fixConfig)
+
+	approvedItem := fixtures.Items[1]
+
+	revisionItem := fixtures.Items[0]
+	revisionItem.CoverageStatus = api.ItemCoverageStatusRevision
+	as.NoError(as.DB.Update(&revisionItem), "error trying to change item status for test")
+
+	policy := fixtures.Policies[0]
+	policyCreator := policy.Members[0]
+	otherUser := fixtures.Policies[1].Members[0]
+
+	iCatID := revisionItem.CategoryID
+
+	tests := []struct {
+		name       string
+		actor      models.User
+		oldItem    models.Item
+		wantStatus int
+		wantInBody []string
+	}{
+		{
+			name:       "unauthenticated",
+			actor:      models.User{},
+			oldItem:    revisionItem,
+			wantStatus: http.StatusUnauthorized,
+			wantInBody: []string{api.ErrorNotAuthorized.String(),
+				"no bearer token provided",
+			},
+		},
+		{
+			name:       "unauthorized",
+			actor:      otherUser,
+			oldItem:    revisionItem,
+			wantStatus: http.StatusNotFound,
+			wantInBody: []string{"actor not allowed to perform that action on this resource"},
+		},
+		{
+			name:       "bad start status",
+			actor:      policyCreator,
+			oldItem:    approvedItem,
+			wantStatus: http.StatusNotFound,
+			wantInBody: []string{api.ErrorNotAuthorized.String()},
+		},
+		{
+			name:       "good item",
+			actor:      policyCreator,
+			oldItem:    revisionItem,
+			wantStatus: http.StatusOK,
+			wantInBody: []string{
+				`"name":"` + revisionItem.Name,
+				`"category_id":"` + revisionItem.CategoryID.String(),
+				fmt.Sprintf(`"in_storage":%t`, revisionItem.InStorage),
+				`"country":"` + revisionItem.Country,
+				`"description":"` + revisionItem.Description,
+				`"policy_id":"` + policy.ID.String(),
+				`"make":"` + revisionItem.Make,
+				`"model":"` + revisionItem.Model,
+				`"serial_number":"` + revisionItem.SerialNumber,
+				// keeps revisionItem coverage_amount
+				fmt.Sprintf(`"coverage_amount":%v`, revisionItem.CoverageAmount),
+				`"purchase_date":"` + revisionItem.PurchaseDate.Format(domain.DateFormat) + `"`,
+				`"coverage_status":"` + string(api.ItemCoverageStatusPending),
+				`"category":{"id":"` + iCatID.String(),
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		as.T().Run(tt.name, func(t *testing.T) {
+			req := as.JSON("/%s/%s/submit", domain.TypeItem, tt.oldItem.ID.String())
+			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
+			req.Headers["content-type"] = "application/json"
+			res := req.Post(nil)
+
+			body := res.Body.String()
+			as.Equal(tt.wantStatus, res.Code, "incorrect status code returned, body: %s", body)
+
+			as.verifyResponseData(tt.wantInBody, body, "Items Add")
+
+			if res.Code != http.StatusOK {
+				return
+			}
+
+			var item models.Item
+			as.NoError(as.DB.Find(&item, tt.oldItem.ID),
+				"error finding submitted item.")
+
+			as.Equal(api.ItemCoverageStatusPending, item.CoverageStatus, "incorrect coverage status after submission")
+		})
+	}
+}
+
 func (as *ActionSuite) Test_ItemsUpdate() {
 	fixConfig := models.FixturesConfig{
 		NumberOfPolicies:    2,
@@ -260,6 +361,11 @@ func (as *ActionSuite) Test_ItemsUpdate() {
 	fixtures := models.CreateItemFixtures(as.DB, fixConfig)
 
 	oldItem := fixtures.Items[0]
+	oldItem.CoverageStatus = api.ItemCoverageStatusRevision
+	as.NoError(as.DB.Update(&oldItem), "error trying to change item status for test")
+
+	approvedItem := fixtures.Items[1]
+
 	policy := fixtures.Policies[0]
 	policyCreator := policy.Members[0]
 	otherUser := fixtures.Policies[1].Members[0]
@@ -290,7 +396,7 @@ func (as *ActionSuite) Test_ItemsUpdate() {
 		SerialNumber:      "MM1234",
 		CoverageAmount:    oldItem.CoverageAmount,
 		PurchaseDate:      "2006-01-02",
-		CoverageStatus:    api.ItemCoverageStatusInactive,
+		CoverageStatus:    api.ItemCoverageStatusRevision,
 		CoverageStartDate: "2006-01-03",
 	}
 
@@ -343,6 +449,14 @@ func (as *ActionSuite) Test_ItemsUpdate() {
 			newItem:    badCatID,
 			wantStatus: http.StatusBadRequest,
 			wantInBody: []string{api.ErrorQueryFailure.String()},
+		},
+		{
+			name:       "has bad start status",
+			actor:      policyCreator,
+			oldItem:    approvedItem,
+			newItem:    badCatID,
+			wantStatus: http.StatusNotFound,
+			wantInBody: []string{api.ErrorNotAuthorized.String()},
 		},
 		{
 			name:       "good item",
@@ -486,7 +600,7 @@ func (as *ActionSuite) Test_ItemsRemove() {
 
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
-			req := as.JSON("/items/%s", tt.item.ID.String())
+			req := as.JSON("/%s/%s", domain.TypeItem, tt.item.ID.String())
 			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
 			req.Headers["content-type"] = "application/json"
 			res := req.Delete()

@@ -50,6 +50,12 @@ import (
 
 const idRegex = `/{id:[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-4[a-fA-F0-9]{3}-[8|9|aA|bB][a-fA-F0-9]{3}-[a-fA-F0-9]{12}}`
 
+const (
+	slashPolicies = "/" + domain.TypePolicy
+	slashItems    = "/" + domain.TypeItem
+	slashClaims   = "/" + domain.TypeClaim
+)
+
 // ENV is used to help switch settings based on where the
 // application is being run. Default is "development".
 var (
@@ -133,7 +139,7 @@ func App() *buffalo.App {
 		auth.GET("/logout", authDestroy)
 
 		// claims
-		claimsGroup := app.Group("/" + domain.TypeClaim)
+		claimsGroup := app.Group(slashClaims)
 		claimsGroup.GET("/", claimsList)
 		claimsGroup.GET(idRegex, claimsView)
 		claimsGroup.PUT(idRegex, claimsUpdate)
@@ -145,19 +151,20 @@ func App() *buffalo.App {
 		configGroup.GET("/claim-event-types", claimEventTypes)
 
 		// item
-		itemsGroup := app.Group("/" + domain.TypeItem)
+		itemsGroup := app.Group(slashItems)
+		itemsGroup.POST(idRegex+"/submit", itemsSubmit)
 		itemsGroup.PUT(idRegex, itemsUpdate)
 		itemsGroup.DELETE(idRegex, itemsRemove)
 
 		// policies
-		policiesGroup := app.Group("/" + domain.TypePolicy)
+		policiesGroup := app.Group(slashPolicies)
 		policiesGroup.GET("/", policiesList)
 		policiesGroup.GET(idRegex+"/dependents", dependentsList)
 		policiesGroup.PUT(idRegex, policiesUpdate)
 		policiesGroup.POST(idRegex+"/dependents", dependentsCreate)
-		policiesGroup.GET(idRegex+"/items", itemsList)
-		policiesGroup.POST(idRegex+"/items", itemsCreate)
-		policiesGroup.POST(idRegex+"/claims", claimsCreate)
+		policiesGroup.GET(idRegex+slashItems, itemsList)
+		policiesGroup.POST(idRegex+slashItems, itemsCreate)
+		policiesGroup.POST(idRegex+slashClaims, claimsCreate)
 		policiesGroup.GET(idRegex+"/members", policiesListMembers)
 	}
 
