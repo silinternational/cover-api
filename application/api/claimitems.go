@@ -25,20 +25,57 @@ type ClaimItems []ClaimItem
 
 // swagger:model
 type ClaimItem struct {
-	// unique ID
-	//
-	// swagger:strfmt uuid4
-	ID uuid.UUID `json:"id"`
-
-	// claim ID
-	//
-	// swagger:strfmt uuid4
-	ClaimID uuid.UUID `json:"claim_id"`
 
 	// item ID
 	//
 	// swagger:strfmt uuid4
 	ItemID uuid.UUID `json:"item_id"`
+
+	// The name of the Item
+	Name string `json:"name"`
+
+	// is item in storage?
+	InStorage bool `json:"in_storage"`
+
+	// country where item is located
+	Country string `json:"country"`
+
+	// item description
+	Description string `json:"description"`
+
+	// item policy ID
+	//
+	// swagger:strfmt uuid4
+	PolicyID uuid.UUID `json:"policy_id"`
+
+	// item make (manufacturer)
+	Make string `json:"make"`
+
+	// item model
+	Model string `json:"model"`
+
+	// item serial number
+	SerialNumber string `json:"serial_number"`
+
+	// item coverage amount (USD)
+	CoverageAmount int `json:"coverage_amount"`
+
+	// date (yyyy-mm-dd) of item's purchase
+	PurchaseDate string `json:"purchase_date"`
+
+	// item coverage status
+	CoverageStatus ItemCoverageStatus `json:"coverage_status"`
+
+	// start date (yyyy-mm-dd) of item's coverage
+	CoverageStartDate string `json:"coverage_start_date"`
+
+	// item category
+	Category ItemCategory `json:"category"`
+
+	// claim ID
+	//
+	// swagger:strfmt uuid4
+	ClaimID uuid.UUID `json:"claim_id"`
 
 	// claim item status
 	Status ClaimItemStatus `json:"status"`
