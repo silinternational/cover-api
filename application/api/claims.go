@@ -30,6 +30,7 @@ const (
 	ClaimEventTypeOther           = ClaimEventType("Other")
 )
 
+// swagger:model
 type ClaimEventTypeStruct struct {
 	Name         ClaimEventType `json:"name"`
 	IsRepairable bool           `json:"is_repairable"`
