@@ -66,11 +66,15 @@ func init() {
 	mValidate = validator.New()
 
 	// register custom validators for custom types
-	for tag, vFunc := range validationTypes {
+	for tag, vFunc := range fieldValidators {
 		if err = mValidate.RegisterValidation(tag, vFunc, false); err != nil {
 			log.Fatal(fmt.Errorf("failed to register validation for %s: %s", tag, err))
 		}
 	}
+
+	// register struct-level validators
+	mValidate.RegisterStructValidation(claimStructLevelValidation, Claim{})
+	mValidate.RegisterStructValidation(claimItemStructLevelValidation, ClaimItem{})
 }
 
 func getRandomToken() (string, error) {

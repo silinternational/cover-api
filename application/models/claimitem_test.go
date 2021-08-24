@@ -2,11 +2,16 @@ package models
 
 import (
 	"testing"
+	"time"
+
+	"github.com/gobuffalo/nulls"
 
 	"github.com/silinternational/cover-api/api"
 )
 
 func (ms *ModelSuite) TestClaimItem_Validate() {
+	user := CreateUserFixtures(ms.DB, 1).Users[0]
+
 	tests := []struct {
 		name      string
 		claimItem *ClaimItem
@@ -20,9 +25,37 @@ func (ms *ModelSuite) TestClaimItem_Validate() {
 			wantErr:   true,
 		},
 		{
-			name: "valid status",
+			name: "valid status, not approved",
 			claimItem: &ClaimItem{
-				Status: api.ClaimItemStatusApproved,
+				Status: api.ClaimItemStatusPending,
+			},
+			errField: "",
+			wantErr:  false,
+		},
+		{
+			name: "approved, but no reviewer",
+			claimItem: &ClaimItem{
+				Status:     api.ClaimItemStatusApproved,
+				ReviewDate: nulls.NewTime(time.Now()),
+			},
+			errField: "ClaimItem.ReviewerID",
+			wantErr:  true,
+		},
+		{
+			name: "denied, but no review date",
+			claimItem: &ClaimItem{
+				Status:     api.ClaimItemStatusDenied,
+				ReviewerID: nulls.NewUUID(user.ID),
+			},
+			errField: "ClaimItem.ReviewDate",
+			wantErr:  true,
+		},
+		{
+			name: "valid status, approved",
+			claimItem: &ClaimItem{
+				Status:     api.ClaimItemStatusApproved,
+				ReviewerID: nulls.NewUUID(user.ID),
+				ReviewDate: nulls.NewTime(time.Now()),
 			},
 			errField: "",
 			wantErr:  false,

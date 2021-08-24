@@ -14,7 +14,7 @@ import (
 // Model validation tool
 var mValidate *validator.Validate
 
-var validationTypes = map[string]func(validator.FieldLevel) bool{
+var fieldValidators = map[string]func(validator.FieldLevel) bool{
 	"appRole":                       validateAppRole,
 	"claimEventType":                validateClaimEventType,
 	"claimStatus":                   validateClaimStatus,
@@ -114,4 +114,42 @@ func validateItemCoverageStatus(field validator.FieldLevel) bool {
 		return valid
 	}
 	return false
+}
+
+func claimStructLevelValidation(sl validator.StructLevel) {
+	claim, ok := sl.Current().Interface().(Claim)
+	if !ok {
+		panic("claimStructLevelValidation registered to a type other than Claim")
+	}
+
+	if claim.Status != api.ClaimStatusApproved && claim.Status != api.ClaimStatusDenied {
+		return
+	}
+
+	if !claim.ReviewerID.Valid {
+		sl.ReportError(claim.Status, "reviewer_id", "ReviewerID", "reviewer_required", "foo")
+	}
+
+	if !claim.ReviewDate.Valid {
+		sl.ReportError(claim.Status, "review_date", "ReviewDate", "review_date_required", "")
+	}
+}
+
+func claimItemStructLevelValidation(sl validator.StructLevel) {
+	claimItem, ok := sl.Current().Interface().(ClaimItem)
+	if !ok {
+		panic("claimItemStructLevelValidation registered to a type other than ClaimItem")
+	}
+
+	if claimItem.Status != api.ClaimItemStatusApproved && claimItem.Status != api.ClaimItemStatusDenied {
+		return
+	}
+
+	if !claimItem.ReviewerID.Valid {
+		sl.ReportError(claimItem.Status, "reviewer_id", "ReviewerID", "reviewer_required", "foo")
+	}
+
+	if !claimItem.ReviewDate.Valid {
+		sl.ReportError(claimItem.Status, "review_date", "ReviewDate", "review_date_required", "")
+	}
 }

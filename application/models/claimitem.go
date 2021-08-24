@@ -39,6 +39,7 @@ type ClaimItem struct {
 	FMV             int                 `db:"fmv"`
 	ReviewDate      nulls.Time          `db:"review_date"`
 	ReviewerID      nulls.UUID          `db:"reviewer_id"`
+	LegacyID        nulls.Int           `db:"legacy_id"`
 	CreatedAt       time.Time           `db:"created_at"`
 	UpdatedAt       time.Time           `db:"updated_at"`
 
