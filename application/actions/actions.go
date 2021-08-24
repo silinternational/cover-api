@@ -29,7 +29,10 @@ func init() {
 func StrictBind(c buffalo.Context, dest interface{}) error {
 	dec := json.NewDecoder(c.Request().Body)
 	dec.DisallowUnknownFields()
-	return dec.Decode(dest)
+	if err := dec.Decode(dest); err != nil {
+		return api.NewAppError(err, api.ErrorInvalidRequestBody, api.CategoryUser)
+	}
+	return nil
 }
 
 // reportError logs an error with details and renders the error with buffalo.Render.

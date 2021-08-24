@@ -101,7 +101,7 @@ func claimsUpdate(c buffalo.Context) error {
 
 	var input api.ClaimUpdateInput
 	if err := StrictBind(c, &input); err != nil {
-		return reportError(c, api.NewAppError(err, api.ErrorClaimUpdateInvalidInput, api.CategoryUser))
+		return reportError(c, err)
 	}
 
 	// for future proofing
@@ -149,7 +149,7 @@ func claimsCreate(c buffalo.Context) error {
 
 	var input api.ClaimCreateInput
 	if err := StrictBind(c, &input); err != nil {
-		return reportError(c, api.NewAppError(err, api.ErrorClaimCreateInvalidInput, api.CategoryUser))
+		return reportError(c, err)
 	}
 
 	tx := models.Tx(c)
@@ -192,7 +192,7 @@ func claimsItemsCreate(c buffalo.Context) error {
 
 	var input api.ClaimItemCreateInput
 	if err := StrictBind(c, &input); err != nil {
-		return reportError(c, api.NewAppError(err, api.ErrorClaimItemCreateInvalidInput, api.CategoryUser))
+		return reportError(c, err)
 	}
 
 	tx := models.Tx(c)
