@@ -152,9 +152,9 @@ func App() *buffalo.App {
 
 		// item
 		itemsGroup := app.Group(itemsPath)
-		itemsGroup.POST(idRegex+"/submit", itemsSubmit)
-		itemsGroup.POST(idRegex+"/approve", itemsApprove)
-		itemsGroup.POST(idRegex+"/deny", itemsDeny)
+		itemsGroup.POST(idRegex+"/"+models.ItemSubmit, itemsSubmit)
+		itemsGroup.POST(idRegex+"/"+models.ItemApprove, itemsApprove)
+		itemsGroup.POST(idRegex+"/"+models.ItemDeny, itemsDeny)
 		itemsGroup.PUT(idRegex, itemsUpdate)
 		itemsGroup.DELETE(idRegex, itemsRemove)
 

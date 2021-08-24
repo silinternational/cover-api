@@ -329,7 +329,7 @@ func (as *ActionSuite) Test_ItemsSubmit() {
 
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
-			req := as.JSON("/%s/%s/submit", domain.TypeItem, tt.oldItem.ID.String())
+			req := as.JSON("/%s/%s/%s", domain.TypeItem, tt.oldItem.ID.String(), models.ItemSubmit)
 			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
 			req.Headers["content-type"] = "application/json"
 			res := req.Post(nil)
@@ -434,7 +434,7 @@ func (as *ActionSuite) Test_ItemsApprove() {
 
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
-			req := as.JSON("/%s/%s/approve", domain.TypeItem, tt.oldItem.ID.String())
+			req := as.JSON("/%s/%s/%s", domain.TypeItem, tt.oldItem.ID.String(), models.ItemApprove)
 			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
 			req.Headers["content-type"] = "application/json"
 			res := req.Post(nil)
@@ -539,7 +539,7 @@ func (as *ActionSuite) Test_ItemsDeny() {
 
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
-			req := as.JSON("/%s/%s/deny", domain.TypeItem, tt.oldItem.ID.String())
+			req := as.JSON("/%s/%s/%s", domain.TypeItem, tt.oldItem.ID.String(), models.ItemDeny)
 			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
 			req.Headers["content-type"] = "application/json"
 			res := req.Post(nil)
