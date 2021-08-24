@@ -3,7 +3,7 @@ package grifts
 import "github.com/gobuffalo/nulls"
 
 type LegacyData struct {
-	Users          []LegacyUsers        `json:"users"`
+	Users          []LegacyUser         `json:"users"`
 	Policies       []LegacyPolicy       `json:"policies"`
 	PolicyTypes    []PolicyType         `json:"PolicyType"`
 	Maintenance    []Maintenance        `json:"Maintenance"`
@@ -13,7 +13,7 @@ type LegacyData struct {
 	LossReasons    []LossReason         `json:"LossReason"`
 }
 
-type LegacyUsers struct {
+type LegacyUser struct {
 	Location      string `json:"location"`
 	CreatedAt     string `json:"created_at"`
 	LastName      string `json:"last_name"`

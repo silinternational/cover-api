@@ -148,7 +148,7 @@ func init() {
 	pop.Debug = false // Disable the Pop log messages
 }
 
-func importAdminUsers(tx *pop.Connection, in []LegacyUsers) {
+func importAdminUsers(tx *pop.Connection, in []LegacyUser) {
 	fmt.Println("Admin Users")
 	fmt.Println("id,email,email_override,first_name,last_name,last_login_utc,location,staff_id,app_role")
 
