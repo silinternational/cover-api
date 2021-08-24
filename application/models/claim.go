@@ -92,7 +92,7 @@ func (c *Claim) IsActorAllowedTo(tx *pop.Connection, actor User, perm Permission
 		return true
 	}
 
-	if perm == PermissionList || perm == PermissionCreate {
+	if perm == PermissionList || (perm == PermissionCreate && sub == "") {
 		return true
 	}
 
