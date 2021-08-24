@@ -81,7 +81,8 @@ To run all tests, run `make test`.
 ```
 GO_ENV=test
 ```
-3. Click the green arrow next to the test or test step
+4. Add `127.0.0.1 testdb` to `/etc/hosts` (or equivalent)
+5. Click the green arrow next to the test or test step
 
 ### Database Queries
 
