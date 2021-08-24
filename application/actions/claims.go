@@ -161,7 +161,7 @@ func claimsCreate(c buffalo.Context) error {
 	return renderOk(c, models.ConvertClaim(tx, dbClaim))
 }
 
-// swagger:operation POST /policies/{id}/claims Claims ClaimsItemsCreate
+// swagger:operation POST /claims/{id}/items Claims ClaimsItemsCreate
 //
 // ClaimsItemsCreate
 //
@@ -172,7 +172,7 @@ func claimsCreate(c buffalo.Context) error {
 //   - name: id
 //     in: path
 //     required: true
-//     description: policy ID
+//     description: claim ID
 //   - name: claim item input
 //     in: body
 //     description: claim item create input object
