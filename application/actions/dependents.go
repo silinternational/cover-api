@@ -3,8 +3,8 @@ package actions
 import (
 	"github.com/gobuffalo/buffalo"
 
-	"github.com/silinternational/riskman-api/api"
-	"github.com/silinternational/riskman-api/models"
+	"github.com/silinternational/cover-api/api"
+	"github.com/silinternational/cover-api/models"
 )
 
 // swagger:operation GET /policies/{id}/dependents PolicyDependents PolicyDependentsList

@@ -13,9 +13,9 @@ import (
 	"github.com/gofrs/uuid"
 	"github.com/pkg/errors"
 
-	"github.com/silinternational/riskman-api/api"
-	"github.com/silinternational/riskman-api/auth"
-	"github.com/silinternational/riskman-api/domain"
+	"github.com/silinternational/cover-api/api"
+	"github.com/silinternational/cover-api/auth"
+	"github.com/silinternational/cover-api/domain"
 )
 
 type UserAppRole string

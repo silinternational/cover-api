@@ -19,9 +19,9 @@ import (
 	"github.com/gofrs/uuid"
 	_ "golang.org/x/image/webp" // enable decoding of WEBP images
 
-	"github.com/silinternational/riskman-api/api"
-	"github.com/silinternational/riskman-api/domain"
-	"github.com/silinternational/riskman-api/storage"
+	"github.com/silinternational/cover-api/api"
+	"github.com/silinternational/cover-api/domain"
+	"github.com/silinternational/cover-api/storage"
 )
 
 type FileUploadError struct {

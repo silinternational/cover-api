@@ -6,7 +6,7 @@ import (
 
 	"github.com/gobuffalo/nulls"
 
-	"github.com/silinternational/riskman-api/api"
+	"github.com/silinternational/cover-api/api"
 )
 
 func (ms *ModelSuite) TestClaimItem_Validate() {

@@ -6,14 +6,14 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/silinternational/riskman-api/api"
+	"github.com/silinternational/cover-api/api"
 
 	"github.com/gobuffalo/nulls"
 	"github.com/gobuffalo/pop/v5"
 	"github.com/gobuffalo/validate/v3"
 	"github.com/gofrs/uuid"
 
-	"github.com/silinternational/riskman-api/domain"
+	"github.com/silinternational/cover-api/domain"
 )
 
 const (
@@ -138,7 +138,6 @@ func (i *Item) Inactivate(tx *pop.Connection) error {
 
 // IsActorAllowedTo ensure the actor is either an admin, or a member of this policy to perform any permission
 func (i *Item) IsActorAllowedTo(tx *pop.Connection, actor User, perm Permission, sub SubResource, req *http.Request) bool {
-
 	if i.CoverageStatus != api.ItemCoverageStatusDraft && i.CoverageStatus != api.ItemCoverageStatusRevision {
 		// Don't allow updating an item itself if it has the wrong status
 		if perm == PermissionUpdate && sub == "" {

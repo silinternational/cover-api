@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/silinternational/riskman-api/models"
+	"github.com/silinternational/cover-api/models"
 
 	"github.com/gobuffalo/buffalo"
 	"github.com/gobuffalo/httptest"

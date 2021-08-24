@@ -7,10 +7,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/silinternational/riskman-api/domain"
-
-	"github.com/silinternational/riskman-api/api"
-	"github.com/silinternational/riskman-api/models"
+	"github.com/silinternational/cover-api/api"
+	"github.com/silinternational/cover-api/domain"
+	"github.com/silinternational/cover-api/models"
 )
 
 func (as *ActionSuite) Test_ClaimsList() {
@@ -381,7 +380,6 @@ func (as *ActionSuite) Test_ClaimsCreate() {
 
 // TODO make this test more robust
 func (as *ActionSuite) Test_ClaimsItemsCreate() {
-
 	fixConfig := models.FixturesConfig{
 		NumberOfPolicies:    3,
 		UsersPerPolicy:      1,
@@ -495,5 +493,4 @@ func (as *ActionSuite) Test_ClaimsItemsCreate() {
 				"response object is not correct, %+v", respObj)
 		})
 	}
-
 }

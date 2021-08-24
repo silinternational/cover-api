@@ -3,7 +3,7 @@ package actions
 import (
 	"github.com/gobuffalo/buffalo"
 
-	"github.com/silinternational/riskman-api/api"
+	"github.com/silinternational/cover-api/api"
 )
 
 // swagger:operation GET /config/claim-event-types Config ClaimEventTypes

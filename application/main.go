@@ -3,7 +3,7 @@ package main
 import (
 	"log"
 
-	"github.com/silinternational/riskman-api/actions"
+	"github.com/silinternational/cover-api/actions"
 )
 
 // main is the starting point for your Buffalo application.

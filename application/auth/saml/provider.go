@@ -14,8 +14,8 @@ import (
 	"github.com/russellhaering/gosaml2/types"
 	dsig "github.com/russellhaering/goxmldsig"
 
-	"github.com/silinternational/riskman-api/auth"
-	"github.com/silinternational/riskman-api/domain"
+	"github.com/silinternational/cover-api/auth"
+	"github.com/silinternational/cover-api/domain"
 )
 
 type Provider struct {
@@ -63,7 +63,6 @@ func New(config Config) (*Provider, error) {
 }
 
 func (p *Provider) initSAMLServiceProvider() error {
-
 	idpCertStore, err := getCertStore(p.Config.IDPPublicCert)
 	if err != nil {
 		return err
@@ -232,7 +231,6 @@ func getRsaPrivateKey(privateKey, publicCert string) (*rsa.PrivateKey, error) {
 	rsaKey.PublicKey = *pubKey
 
 	return rsaKey, nil
-
 }
 
 func pemToBase64(pemStr string) (string, error) {

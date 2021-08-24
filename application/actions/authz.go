@@ -8,9 +8,9 @@ import (
 	"github.com/gobuffalo/buffalo"
 	"github.com/gofrs/uuid"
 
-	"github.com/silinternational/riskman-api/api"
-	"github.com/silinternational/riskman-api/domain"
-	"github.com/silinternational/riskman-api/models"
+	"github.com/silinternational/cover-api/api"
+	"github.com/silinternational/cover-api/domain"
+	"github.com/silinternational/cover-api/models"
 )
 
 func AuthZ(next buffalo.Handler) buffalo.Handler {
