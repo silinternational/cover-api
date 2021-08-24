@@ -9,6 +9,7 @@ import (
 
 	"github.com/gobuffalo/buffalo"
 	"github.com/gobuffalo/buffalo/render"
+
 	"github.com/silinternational/cover-api/models"
 )
 
@@ -61,8 +62,9 @@ func uploadHandler(c buffalo.Context) error {
 	}
 
 	fileObject := models.File{
-		Name:    f.Filename,
-		Content: content,
+		Name:        f.Filename,
+		Content:     content,
+		CreatedByID: models.CurrentUser(c).ID,
 	}
 	if fErr := fileObject.Store(models.Tx(c)); fErr != nil {
 		domain.Error(c, fmt.Sprintf("error storing uploaded file ... %v", fErr))
