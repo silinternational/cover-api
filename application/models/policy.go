@@ -174,7 +174,7 @@ func (p *Policy) AddClaim(tx *pop.Connection, input api.ClaimCreateInput) (Claim
 		return Claim{}, errors.New("policy is nil in AddClaim")
 	}
 
-	claim := CovertClaimCreateInput(input)
+	claim := ConvertClaimCreateInput(input)
 	claim.PolicyID = p.ID
 
 	if err := claim.Create(tx); err != nil {
