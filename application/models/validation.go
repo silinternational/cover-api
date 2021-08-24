@@ -117,7 +117,10 @@ func validateItemCoverageStatus(field validator.FieldLevel) bool {
 }
 
 func claimStructLevelValidation(sl validator.StructLevel) {
-	claim := sl.Current().Interface().(Claim)
+	claim, ok := sl.Current().Interface().(Claim)
+	if !ok {
+		panic("claimStructLevelValidation registered to a type other than Claim")
+	}
 
 	if claim.Status != api.ClaimStatusApproved && claim.Status != api.ClaimStatusDenied {
 		return
@@ -133,7 +136,10 @@ func claimStructLevelValidation(sl validator.StructLevel) {
 }
 
 func claimItemStructLevelValidation(sl validator.StructLevel) {
-	claimItem := sl.Current().Interface().(ClaimItem)
+	claimItem, ok := sl.Current().Interface().(ClaimItem)
+	if !ok {
+		panic("claimItemStructLevelValidation registered to a type other than ClaimItem")
+	}
 
 	if claimItem.Status != api.ClaimItemStatusApproved && claimItem.Status != api.ClaimItemStatusDenied {
 		return
