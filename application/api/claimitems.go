@@ -58,7 +58,7 @@ type ClaimItem struct {
 	// item serial number
 	SerialNumber string `json:"serial_number"`
 
-	// item coverage amount (USD)
+	// item coverage amount (0.01 USD)
 	CoverageAmount int `json:"coverage_amount"`
 
 	// date (yyyy-mm-dd) of item's purchase
@@ -84,25 +84,25 @@ type ClaimItem struct {
 	// is item repairable?
 	IsRepairable bool `json:"is_repairable"`
 
-	// repair estimate (USD)
+	// repair estimate (0.01 USD)
 	RepairEstimate int `json:"repair_estimate,omitempty"`
 
-	// actual repair cost (USD)
+	// actual repair cost (0.01 USD)
 	RepairActual int `json:"repair_actual,omitempty"`
 
-	// replacement estimate (USD)
+	// replacement estimate (0.01 USD)
 	ReplaceEstimate int `json:"replace_estimate,omitempty"`
 
-	// actual replacement cost (USD)
+	// actual replacement cost (0.01 USD)
 	ReplaceActual int `json:"replace_actual,omitempty"`
 
 	// payout option
 	PayoutOption string `json:"payout_option,omitempty"`
 
-	// payout amount (USD)
+	// payout amount (0.01 USD)
 	PayoutAmount int `json:"payout_amount,omitempty"`
 
-	// fair market value (USD)
+	// fair market value (0.01 USD)
 	FMV int `json:"fmv,omitempty"`
 
 	// review date
@@ -136,24 +136,24 @@ type ClaimItemCreateInput struct {
 	// is item repairable?
 	IsRepairable bool `json:"is_repairable"`
 
-	// repair estimate (USD)
+	// repair estimate (0.01 USD)
 	RepairEstimate int `json:"repair_estimate"`
 
-	// actual repair cost (USD)
+	// actual repair cost (0.01 USD)
 	RepairActual int `json:"repair_actual"`
 
-	// replacement estimate (USD)
+	// replacement estimate (0.01 USD)
 	ReplaceEstimate int `json:"replace_estimate"`
 
-	// actual replacement cost (USD)
+	// actual replacement cost (0.01 USD)
 	ReplaceActual int `json:"replace_actual"`
 
 	// payout option
 	PayoutOption string `json:"payout_option"`
 
-	// payout amount (USD)
+	// payout amount (0.01 USD)
 	PayoutAmount int `json:"payout_amount"`
 
-	// fair market value (USD)
+	// fair market value (0.01 USD)
 	FMV int `json:"fmv"`
 }
