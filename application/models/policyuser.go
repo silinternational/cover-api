@@ -27,6 +27,11 @@ func (p *PolicyUser) Validate(tx *pop.Connection) (*validate.Errors, error) {
 	return validateModel(p), nil
 }
 
+// Create stores the data as a new record in the database.
+func (p *PolicyUser) Create(tx *pop.Connection) error {
+	return create(tx, p)
+}
+
 func (p *PolicyUser) GetID() uuid.UUID {
 	return p.ID
 }
