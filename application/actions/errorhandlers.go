@@ -8,8 +8,8 @@ import (
 
 	"github.com/gobuffalo/buffalo"
 
-	"github.com/silinternational/riskman-api/api"
-	"github.com/silinternational/riskman-api/domain"
+	"github.com/silinternational/cover-api/api"
+	"github.com/silinternational/cover-api/domain"
 )
 
 func registerCustomErrorHandler(app *buffalo.App) {

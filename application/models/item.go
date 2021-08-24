@@ -6,14 +6,18 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/silinternational/riskman-api/api"
+	"github.com/silinternational/cover-api/api"
 
 	"github.com/gobuffalo/nulls"
 	"github.com/gobuffalo/pop/v5"
 	"github.com/gobuffalo/validate/v3"
 	"github.com/gofrs/uuid"
 
-	"github.com/silinternational/riskman-api/domain"
+	"github.com/silinternational/cover-api/domain"
+)
+
+const (
+	ItemSubmit = "submit"
 )
 
 var ValidItemCoverageStatuses = map[api.ItemCoverageStatus]struct{}{
@@ -45,6 +49,7 @@ type Item struct {
 	PurchaseDate      time.Time              `db:"purchase_date"`
 	CoverageStatus    api.ItemCoverageStatus `db:"coverage_status" validate:"itemCoverageStatus"`
 	CoverageStartDate time.Time              `db:"coverage_start_date"`
+	LegacyID          nulls.Int              `db:"legacy_id"`
 	CreatedAt         time.Time              `db:"created_at"`
 	UpdatedAt         time.Time              `db:"updated_at"`
 
@@ -133,6 +138,16 @@ func (i *Item) Inactivate(tx *pop.Connection) error {
 
 // IsActorAllowedTo ensure the actor is either an admin, or a member of this policy to perform any permission
 func (i *Item) IsActorAllowedTo(tx *pop.Connection, actor User, perm Permission, sub SubResource, req *http.Request) bool {
+	if i.CoverageStatus != api.ItemCoverageStatusDraft && i.CoverageStatus != api.ItemCoverageStatusRevision {
+		// Don't allow updating an item itself if it has the wrong status
+		if perm == PermissionUpdate && sub == "" {
+			return false
+			// Don't allow submitting an item if it has the wrong status
+		} else if perm == PermissionCreate && sub == ItemSubmit {
+			return false
+		}
+	}
+
 	if actor.IsAdmin() {
 		return true
 	}
@@ -163,6 +178,7 @@ func itemStatusTransitions() map[api.ItemCoverageStatus][]api.ItemCoverageStatus
 			api.ItemCoverageStatusInactive,
 		},
 		api.ItemCoverageStatusRevision: {
+			api.ItemCoverageStatusPending,
 			api.ItemCoverageStatusApproved,
 			api.ItemCoverageStatusDenied,
 			api.ItemCoverageStatusInactive,
@@ -192,6 +208,16 @@ func isItemTransitionValid(status1, status2 api.ItemCoverageStatus) (bool, error
 	}
 
 	return false, nil
+}
+
+// SubmitForApproval takes the item from Draft or Revision status to Pending or Approved status.
+// It assumes that the item's current status has already been validated.
+// TODO decide whether the item can be auto-approved
+// TODO emit an event for the the status transition
+func (i *Item) SubmitForApproval(tx *pop.Connection) error {
+	oldStatus := i.CoverageStatus
+	i.CoverageStatus = api.ItemCoverageStatusPending
+	return i.Update(tx, oldStatus)
 }
 
 // LoadPolicy - a simple wrapper method for loading the policy

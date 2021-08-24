@@ -3,13 +3,15 @@ package models
 import (
 	"time"
 
-	"github.com/silinternational/riskman-api/domain"
+	"github.com/gobuffalo/nulls"
+
+	"github.com/silinternational/cover-api/domain"
 
 	"github.com/gobuffalo/pop/v5"
 	"github.com/gobuffalo/validate/v3"
 	"github.com/gofrs/uuid"
 
-	"github.com/silinternational/riskman-api/api"
+	"github.com/silinternational/cover-api/api"
 )
 
 var ValidItemCategoryStatuses = map[api.ItemCategoryStatus]struct{}{
@@ -30,6 +32,7 @@ type ItemCategory struct {
 	HelpText       string                 `db:"help_text"`
 	Status         api.ItemCategoryStatus `db:"status" validate:"itemCategoryStatus"`
 	AutoApproveMax int                    `db:"auto_approve_max"`
+	LegacyID       nulls.Int              `db:"legacy_id"`
 	CreatedAt      time.Time              `db:"created_at"`
 	UpdatedAt      time.Time              `db:"updated_at"`
 
@@ -41,16 +44,21 @@ func (r *ItemCategory) Create(tx *pop.Connection) error {
 }
 
 // Validate gets run every time you call a "pop.Validate*" (pop.ValidateAndSave, pop.ValidateAndCreate, pop.ValidateAndUpdate) method.
-func (r *ItemCategory) Validate(tx *pop.Connection) (*validate.Errors, error) {
-	return validateModel(r), nil
+func (i *ItemCategory) Validate(tx *pop.Connection) (*validate.Errors, error) {
+	return validateModel(i), nil
 }
 
-func (r *ItemCategory) GetID() uuid.UUID {
-	return r.ID
+func (i *ItemCategory) GetID() uuid.UUID {
+	return i.ID
 }
 
-func (r *ItemCategory) FindByID(tx *pop.Connection, id uuid.UUID) error {
-	if err := tx.Find(r, id); err != nil {
+// Create stores the data as a new record in the database.
+func (i *ItemCategory) Create(tx *pop.Connection) error {
+	return create(tx, i)
+}
+
+func (i *ItemCategory) FindByID(tx *pop.Connection, id uuid.UUID) error {
+	if err := tx.Find(i, id); err != nil {
 		appErr := api.AppError{
 			Err:      err,
 			Key:      api.ErrorQueryFailure,

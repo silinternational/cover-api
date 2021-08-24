@@ -63,7 +63,7 @@ type Item struct {
 	// serial number
 	SerialNumber string `json:"serial_number"`
 
-	// coverage amount (USD)
+	// coverage amount (0.01 USD)
 	CoverageAmount int `json:"coverage_amount"`
 
 	// date (yyyy-mm-dd) of item's purchase
@@ -118,7 +118,7 @@ type ItemInput struct {
 	// serial number
 	SerialNumber string `json:"serial_number"`
 
-	// coverage amount (USD)
+	// coverage amount (0.01 USD)
 	CoverageAmount int `json:"coverage_amount"`
 
 	// date (yyyy-mm-dd) of item's purchase

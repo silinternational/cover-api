@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"io/ioutil"
 
-	"github.com/silinternational/riskman-api/api"
-	"github.com/silinternational/riskman-api/domain"
+	"github.com/silinternational/cover-api/api"
+	"github.com/silinternational/cover-api/domain"
 
 	"github.com/gobuffalo/buffalo"
 	"github.com/gobuffalo/buffalo/render"
-	"github.com/silinternational/riskman-api/models"
+	"github.com/silinternational/cover-api/models"
 )
 
 // fileFieldName is the multipart field name for the file upload.

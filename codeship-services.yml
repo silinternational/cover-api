@@ -9,20 +9,20 @@ app:
     - minio
   environment:
     ADDR: 0.0.0.0
-    HOST: http://riskman.local:3000
+    HOST: http://cover.local:3000
     PORT: 3000
     DOCKER_IP: testdb
     GO_ENV: test
-    TEST_DATABASE_URL: postgres://riskman:riskman@testdb:5432/riskman_test?sslmode=disable
-    API_BASE_URL: http://riskman.local:3000
-    APP_NAME: riskman
+    TEST_DATABASE_URL: postgres://cover:cover@testdb:5432/cover_test?sslmode=disable
+    API_BASE_URL: http://cover.local:3000
+    APP_NAME: cover
     SESSION_SECRET: kljsLSDJ83jF^kj3LKNEKn435LDKnt
     AWS_ACCESS_KEY_ID: abc123
     AWS_SECRET_ACCESS_KEY: abcd1234
     AWS_REGION: us-east-1
     AWS_S3_ENDPOINT: http://minio:9000
     AWS_S3_DISABLE_SSL: true
-    AWS_S3_BUCKET: riskman-test-bucket
+    AWS_S3_BUCKET: cover-test-bucket
     SAML_SP_ENTITY_ID: http://example.local:3000
     SAML_AUDIENCE_URI: http://example.local:3000
     SAML_IDP_ENTITY_ID: our.idp.net
@@ -32,15 +32,15 @@ app:
     SAML_ASSERTION_CONSUMER_SERVICE_URL: http://example.local:3000/auth/callback
     SAML_SSO_URL: https://our.idp.net/saml2/idp/SSOService.php
     SAML_SLO_URL: https://our.idp.net/saml2/idp/SingleLogoutService.php
-  working_dir: /riskman
+  working_dir: /cover
   command: true
 
 testdb:
   image: postgres:11.6
   environment:
-    POSTGRES_USER: riskman
-    POSTGRES_PASSWORD: riskman
-    POSTGRES_DB: riskman_test
+    POSTGRES_USER: cover
+    POSTGRES_PASSWORD: cover
+    POSTGRES_DB: cover_test
 
 binary:
   build:
@@ -48,7 +48,7 @@ binary:
     context: application
     dockerfile: Dockerfile
   cached: true
-  working_dir: /riskman
+  working_dir: /cover
   command: true
 
 docs:

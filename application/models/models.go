@@ -18,8 +18,8 @@ import (
 	"github.com/gobuffalo/pop/v5"
 	"github.com/gofrs/uuid"
 
-	"github.com/silinternational/riskman-api/api"
-	"github.com/silinternational/riskman-api/domain"
+	"github.com/silinternational/cover-api/api"
+	"github.com/silinternational/cover-api/domain"
 )
 
 // DB is a connection to the database to be used throughout the application.
@@ -70,11 +70,15 @@ func init() {
 	mValidate = validator.New()
 
 	// register custom validators for custom types
-	for tag, vFunc := range validationTypes {
+	for tag, vFunc := range fieldValidators {
 		if err = mValidate.RegisterValidation(tag, vFunc, false); err != nil {
 			log.Fatal(fmt.Errorf("failed to register validation for %s: %s", tag, err))
 		}
 	}
+
+	// register struct-level validators
+	mValidate.RegisterStructValidation(claimStructLevelValidation, Claim{})
+	mValidate.RegisterStructValidation(claimItemStructLevelValidation, ClaimItem{})
 }
 
 func getRandomToken() (string, error) {

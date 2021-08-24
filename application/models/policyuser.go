@@ -8,7 +8,7 @@ import (
 	"github.com/gobuffalo/validate/v3"
 	"github.com/gofrs/uuid"
 
-	"github.com/silinternational/riskman-api/domain"
+	"github.com/silinternational/cover-api/domain"
 )
 
 type PolicyUsers []PolicyUser
@@ -29,6 +29,11 @@ func (p *PolicyUser) Create(tx *pop.Connection) error {
 // Validate gets run every time you call a "pop.Validate*" (pop.ValidateAndSave, pop.ValidateAndCreate, pop.ValidateAndUpdate) method.
 func (p *PolicyUser) Validate(tx *pop.Connection) (*validate.Errors, error) {
 	return validateModel(p), nil
+}
+
+// Create stores the data as a new record in the database.
+func (p *PolicyUser) Create(tx *pop.Connection) error {
+	return create(tx, p)
 }
 
 func (p *PolicyUser) GetID() uuid.UUID {

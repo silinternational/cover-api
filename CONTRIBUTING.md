@@ -1,4 +1,4 @@
-# Contributing to Riskman-API
+# Contributing to Cover-API
 
 #### Table of Contents
 

@@ -1,4 +1,4 @@
-module github.com/silinternational/riskman-api
+module github.com/silinternational/cover-api
 
 go 1.16
 

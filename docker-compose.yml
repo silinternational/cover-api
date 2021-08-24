@@ -6,7 +6,7 @@ services:
       context: ./application
       dockerfile: Dockerfile-dev
     volumes:
-      - ./application:/riskman
+      - ./application:/cover
       - go-build:/root/.cache/go-build
     ports:
       - "3000:3000"
@@ -17,7 +17,7 @@ services:
     environment:
       ADDR: 0.0.0.0
       PORT: 3000
-      DATABASE_URL: postgres://riskman:riskman@db:5432/riskman?sslmode=disable
+      DATABASE_URL: postgres://cover:cover@db:5432/cover?sslmode=disable
       GO_ENV: development
     depends_on:
       - db
@@ -29,7 +29,7 @@ services:
       context: ./application
       dockerfile: Dockerfile-dev
     volumes:
-      - ./application:/riskman
+      - ./application:/cover
     env_file:
       - ./test.env
     environment:
@@ -41,7 +41,7 @@ services:
     depends_on:
       - testdb
       - minio
-    working_dir: /riskman
+    working_dir: /cover
     command: buffalo test
 
   db:
@@ -49,9 +49,9 @@ services:
     volumes:
       - ./db-init.sh:/docker-entrypoint-initdb.d/db-init.sh
     environment:
-      POSTGRES_USER: riskman
-      POSTGRES_PASSWORD: riskman
-      POSTGRES_DB: riskman
+      POSTGRES_USER: cover
+      POSTGRES_PASSWORD: cover
+      POSTGRES_DB: cover
 
   testdb:
     image: postgres:11.6
@@ -60,11 +60,11 @@ services:
     ports:
       - "5432:5432"
     environment:
-      POSTGRES_USER: riskman
-      POSTGRES_PASSWORD: riskman
-      POSTGRES_DB: riskman_test
+      POSTGRES_USER: cover
+      POSTGRES_PASSWORD: cover
+      POSTGRES_DB: cover_test
 
-  # http://localhost:8080/?pgsql=db&username=riskman&db=riskman&ns=public
+  # http://localhost:8080/?pgsql=db&username=cover&db=cover&ns=public
   adminer:
     image: adminer
     depends_on:

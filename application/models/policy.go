@@ -4,12 +4,13 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/gobuffalo/nulls"
 	"github.com/gobuffalo/pop/v5"
 	"github.com/gobuffalo/validate/v3"
 	"github.com/gofrs/uuid"
 	"github.com/pkg/errors"
 
-	"github.com/silinternational/riskman-api/api"
+	"github.com/silinternational/cover-api/api"
 )
 
 type Policies []Policy
@@ -26,13 +27,14 @@ type Policy struct {
 	CostCenter  string         `db:"cost_center" validate:"required_if=Type Corporate"`
 	Account     string         `db:"account" validate:"required_if=Type Corporate"`
 	EntityCode  string         `db:"entity_code" validate:"required_if=Type Corporate"`
+	LegacyID    nulls.Int      `db:"legacy_id"`
 	CreatedAt   time.Time      `db:"created_at"`
 	UpdatedAt   time.Time      `db:"updated_at"`
 
-	Claims     Claims           `has_many:"claims"`
-	Dependents PolicyDependents `has_many:"policy_dependents"`
-	Items      Items            `has_many:"items"`
-	Members    Users            `many_to_many:"policy_users"`
+	Claims     Claims           `has_many:"claims" validate:"-"`
+	Dependents PolicyDependents `has_many:"policy_dependents" validate:"-"`
+	Items      Items            `has_many:"items" validate:"-"`
+	Members    Users            `many_to_many:"policy_users" validate:"-"`
 }
 
 // Validate gets run every time you call a "pop.Validate*" (pop.ValidateAndSave, pop.ValidateAndCreate, pop.ValidateAndUpdate) method.
@@ -172,7 +174,7 @@ func (p *Policy) AddClaim(tx *pop.Connection, input api.ClaimCreateInput) (Claim
 		return Claim{}, errors.New("policy is nil in AddClaim")
 	}
 
-	claim := CovertClaimCreateInput(input)
+	claim := ConvertClaimCreateInput(input)
 	claim.PolicyID = p.ID
 
 	if err := claim.Create(tx); err != nil {

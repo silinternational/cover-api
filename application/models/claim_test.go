@@ -4,8 +4,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/silinternational/riskman-api/api"
-	"github.com/silinternational/riskman-api/domain"
+	"github.com/silinternational/cover-api/api"
+	"github.com/silinternational/cover-api/domain"
 )
 
 func (ms *ModelSuite) TestClaim_Validate() {

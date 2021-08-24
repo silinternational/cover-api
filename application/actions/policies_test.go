@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/silinternational/riskman-api/api"
-	"github.com/silinternational/riskman-api/models"
+	"github.com/silinternational/cover-api/api"
+	"github.com/silinternational/cover-api/models"
 )
 
 func (as *ActionSuite) Test_PoliciesList() {

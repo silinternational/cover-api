@@ -7,8 +7,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/silinternational/riskman-api/api"
-	"github.com/silinternational/riskman-api/models"
+	"github.com/silinternational/cover-api/api"
+	"github.com/silinternational/cover-api/domain"
+	"github.com/silinternational/cover-api/models"
 )
 
 func (as *ActionSuite) Test_ClaimsList() {
@@ -280,7 +281,7 @@ func (as *ActionSuite) Test_ClaimsCreate() {
 	policyByAdmin := fixtures.Policies[2]
 
 	// alias a couple users
-	appAdmin := fixtures.Policies[0].Members[0]
+	appAdmin := fixtures.Policies[2].Members[0]
 	normalUser := policyByUser.Members[0]
 
 	// make an admin
@@ -372,6 +373,123 @@ func (as *ActionSuite) Test_ClaimsCreate() {
 			as.NoError(json.Unmarshal([]byte(body), &respObj))
 
 			as.Equal(tt.input.EventDescription, respObj.EventDescription,
+				"response object is not correct, %+v", respObj)
+		})
+	}
+}
+
+// TODO make this test more robust
+func (as *ActionSuite) Test_ClaimsItemsCreate() {
+	fixConfig := models.FixturesConfig{
+		NumberOfPolicies:    3,
+		UsersPerPolicy:      1,
+		DependentsPerPolicy: 0,
+		ItemsPerPolicy:      2,
+		ClaimsPerPolicy:     1,
+	}
+
+	fixtures := models.CreateItemFixtures(as.DB, fixConfig)
+
+	claim := fixtures.Policies[1].Claims[0]
+	item := fixtures.Policies[1].Items[0]
+
+	otherUser := fixtures.Policies[0].Members[0]
+	sameUser := fixtures.Policies[1].Members[0]
+
+	input := api.ClaimItemCreateInput{
+		ItemID:          item.ID,
+		IsRepairable:    true,
+		RepairEstimate:  200,
+		RepairActual:    0,
+		ReplaceEstimate: 300,
+		ReplaceActual:   0,
+		PayoutOption:    "my account",
+		PayoutAmount:    0,
+		FMV:             250,
+	}
+
+	tests := []struct {
+		name          string
+		actor         models.User
+		claim         models.Claim
+		input         api.ClaimItemCreateInput
+		wantStatus    int
+		wantInBody    []string
+		notWantInBody string
+	}{
+		{
+			name:          "incomplete input",
+			actor:         sameUser,
+			claim:         claim,
+			input:         api.ClaimItemCreateInput{},
+			wantStatus:    http.StatusNotFound,
+			wantInBody:    []string{api.ErrorResourceNotFound.String()},
+			notWantInBody: claim.ID.String(),
+		},
+		{
+			name:       "valid input",
+			actor:      sameUser,
+			claim:      claim,
+			input:      input,
+			wantStatus: http.StatusOK,
+			wantInBody: []string{
+				`"item_id":"` + input.ItemID.String(),
+				`"name":"` + item.Name,
+				fmt.Sprintf(`"in_storage":%t`, item.InStorage),
+				`"country":"` + item.Country,
+				`"description":"` + item.Description,
+				`"policy_id":"` + item.PolicyID.String(),
+				`"make":"` + item.Make,
+				`"model":"` + item.Model,
+				`"serial_number":"` + item.SerialNumber,
+				fmt.Sprintf(`"coverage_amount":%v`, item.CoverageAmount),
+				`"purchase_date":"` + item.PurchaseDate.Format(domain.DateFormat),
+				`"coverage_status":"` + string(item.CoverageStatus),
+				`"coverage_start_date":"` + item.CoverageStartDate.Format(domain.DateFormat),
+				`"category":{"id":"` + item.CategoryID.String(),
+				`"claim_id":"` + claim.ID.String(),
+				`"status":"` + string(api.ClaimItemStatusDraft),
+				fmt.Sprintf(`"is_repairable":%t`, input.IsRepairable),
+				fmt.Sprintf(`"repair_estimate":%v`, input.RepairEstimate),
+				fmt.Sprintf(`"replace_estimate":%v`, input.ReplaceEstimate),
+				`"payout_option":"` + input.PayoutOption,
+				fmt.Sprintf(`"fmv":%v`, input.FMV),
+			},
+		},
+		{
+			name:          "other person's policy",
+			actor:         otherUser,
+			claim:         claim,
+			input:         input,
+			wantStatus:    http.StatusNotFound,
+			notWantInBody: claim.ID.String(),
+		},
+	}
+
+	for _, tt := range tests {
+		as.T().Run(tt.name, func(t *testing.T) {
+			req := as.JSON(fmt.Sprintf("/%s/%s/%s", domain.TypeClaim, tt.claim.ID, domain.TypeItem))
+			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
+			req.Headers["content-type"] = "application/json"
+
+			res := req.Post(tt.input)
+
+			body := res.Body.String()
+			as.Equal(tt.wantStatus, res.Code, "incorrect status code returned, body: %s", body)
+
+			as.verifyResponseData(tt.wantInBody, body, "CreateItem Claim fields")
+
+			if tt.notWantInBody != "" {
+				as.NotContains(body, tt.notWantInBody)
+			}
+
+			if res.Code != http.StatusOK {
+				return
+			}
+			var respObj api.ClaimItem
+			as.NoError(json.Unmarshal([]byte(body), &respObj))
+
+			as.Equal(tt.input.PayoutOption, respObj.PayoutOption,
 				"response object is not correct, %+v", respObj)
 		})
 	}

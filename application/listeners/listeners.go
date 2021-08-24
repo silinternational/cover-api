@@ -8,8 +8,8 @@ import (
 	"github.com/gobuffalo/nulls"
 	"github.com/gofrs/uuid"
 
-	"github.com/silinternational/riskman-api/domain"
-	"github.com/silinternational/riskman-api/models"
+	"github.com/silinternational/cover-api/domain"
+	"github.com/silinternational/cover-api/models"
 )
 
 type apiListener struct {

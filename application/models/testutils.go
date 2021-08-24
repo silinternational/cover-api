@@ -11,15 +11,15 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/silinternational/riskman-api/storage"
+	"github.com/silinternational/cover-api/storage"
 
 	"github.com/gobuffalo/buffalo"
 	"github.com/gobuffalo/nulls"
 	"github.com/gobuffalo/pop/v5"
 	"github.com/gofrs/uuid"
 
-	"github.com/silinternational/riskman-api/api"
-	"github.com/silinternational/riskman-api/domain"
+	"github.com/silinternational/cover-api/api"
+	"github.com/silinternational/cover-api/domain"
 )
 
 type FixturesConfig struct {

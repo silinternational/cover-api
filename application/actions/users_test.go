@@ -5,10 +5,10 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/silinternational/riskman-api/domain"
+	"github.com/silinternational/cover-api/domain"
 
 	"github.com/gofrs/uuid"
-	"github.com/silinternational/riskman-api/models"
+	"github.com/silinternational/cover-api/models"
 )
 
 func (as *ActionSuite) Test_usersMe() {
