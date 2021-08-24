@@ -16,6 +16,7 @@ import (
 )
 
 var ValidClaimItemStatus = map[api.ClaimItemStatus]struct{}{
+	api.ClaimItemStatusDraft:    {},
 	api.ClaimItemStatusPending:  {},
 	api.ClaimItemStatusRevision: {},
 	api.ClaimItemStatusApproved: {},
@@ -204,4 +205,22 @@ func ConvertClaimItems(tx *pop.Connection, cs ClaimItems) api.ClaimItems {
 		claimItems[i] = ConvertClaimItem(tx, c)
 	}
 	return claimItems
+}
+
+func ConvertClaimItemCreateInput(input api.ClaimItemCreateInput) ClaimItem {
+	item := ClaimItem{
+		ItemID:          input.ItemID,
+		IsRepairable:    input.IsRepairable,
+		RepairEstimate:  input.RepairEstimate,
+		RepairActual:    input.RepairActual,
+		ReplaceEstimate: input.ReplaceEstimate,
+		ReplaceActual:   input.ReplaceActual,
+		PayoutOption:    input.PayoutOption,
+		PayoutAmount:    input.PayoutAmount,
+		FMV:             input.FMV,
+	}
+
+	item.Status = api.ClaimItemStatusDraft
+
+	return item
 }

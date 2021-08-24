@@ -14,6 +14,7 @@ import (
 type ClaimItemStatus string
 
 const (
+	ClaimItemStatusDraft    = ClaimItemStatus("Draft")
 	ClaimItemStatusPending  = ClaimItemStatus("Pending")
 	ClaimItemStatusRevision = ClaimItemStatus("Revision")
 	ClaimItemStatusApproved = ClaimItemStatus("Approved")
@@ -123,4 +124,36 @@ type ClaimItem struct {
 	//
 	// swagger:strfmt date-time
 	UpdatedAt time.Time `json:"updated_at"`
+}
+
+// swagger:model
+type ClaimItemCreateInput struct {
+	// item ID
+	//
+	// swagger:strfmt uuid4
+	ItemID uuid.UUID `json:"item_id"`
+
+	// is item repairable?
+	IsRepairable bool `json:"is_repairable"`
+
+	// repair estimate (USD)
+	RepairEstimate int `json:"repair_estimate"`
+
+	// actual repair cost (USD)
+	RepairActual int `json:"repair_actual"`
+
+	// replacement estimate (USD)
+	ReplaceEstimate int `json:"replace_estimate"`
+
+	// actual replacement cost (USD)
+	ReplaceActual int `json:"replace_actual"`
+
+	// payout option
+	PayoutOption string `json:"payout_option"`
+
+	// payout amount (USD)
+	PayoutAmount int `json:"payout_amount"`
+
+	// fair market value (USD)
+	FMV int `json:"fmv"`
 }
