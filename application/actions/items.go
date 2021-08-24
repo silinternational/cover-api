@@ -184,6 +184,70 @@ func itemsSubmit(c buffalo.Context) error {
 	return c.Render(http.StatusOK, r.JSON(output))
 }
 
+// swagger:operation POST /items/{id}/approve PolicyItems PolicyItemsApprove
+//
+// PolicyItemsApprove
+//
+// approve coverage on a policy item
+//
+// ---
+// parameters:
+//   - name: id
+//     in: path
+//     required: true
+//     description: item ID
+// responses:
+//   '200':
+//     description: approved Item
+//     schema:
+//       "$ref": "#/definitions/Item"
+func itemsApprove(c buffalo.Context) error {
+	tx := models.Tx(c)
+	item := getReferencedItemFromCtx(c)
+	if item == nil {
+		panic("item not found in context")
+	}
+
+	if err := item.Approve(tx); err != nil {
+		return reportError(c, err)
+	}
+
+	output := models.ConvertItem(tx, *item)
+	return c.Render(http.StatusOK, r.JSON(output))
+}
+
+// swagger:operation POST /items/{id}/deny PolicyItems PolicyItemsDeny
+//
+// PolicyItemsDeny
+//
+// deny coverage on a policy item
+//
+// ---
+// parameters:
+//   - name: id
+//     in: path
+//     required: true
+//     description: item ID
+// responses:
+//   '200':
+//     description: denied Item
+//     schema:
+//       "$ref": "#/definitions/Item"
+func itemsDeny(c buffalo.Context) error {
+	tx := models.Tx(c)
+	item := getReferencedItemFromCtx(c)
+	if item == nil {
+		panic("item not found in context")
+	}
+
+	if err := item.Deny(tx); err != nil {
+		return reportError(c, err)
+	}
+
+	output := models.ConvertItem(tx, *item)
+	return c.Render(http.StatusOK, r.JSON(output))
+}
+
 // swagger:operation DELETE /items/{id} PolicyItems PolicyItemsRemove
 //
 // PolicyItemsRemove
