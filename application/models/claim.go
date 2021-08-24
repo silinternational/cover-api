@@ -16,7 +16,7 @@ import (
 )
 
 const (
-	ClaimReferenceNumberLength = 6
+	ClaimReferenceNumberLength = 7
 )
 
 var ValidClaimEventTypes = map[api.ClaimEventType]struct{}{
@@ -41,7 +41,7 @@ type Claims []Claim
 type Claim struct {
 	ID               uuid.UUID          `db:"id"`
 	PolicyID         uuid.UUID          `db:"policy_id" validate:"required"`
-	ReferenceNumber  string             `db:"reference_number" validate:"required,len=6"`
+	ReferenceNumber  string             `db:"reference_number" validate:"required,len=7"`
 	EventDate        time.Time          `db:"event_date" validate:"required_unless=Status Draft"`
 	EventType        api.ClaimEventType `db:"event_type" validate:"claimEventType,required_unless=Status Draft"`
 	EventDescription string             `db:"event_description" validate:"required_unless=Status Draft"`
@@ -66,7 +66,7 @@ func (c *Claim) Validate(tx *pop.Connection) (*validate.Errors, error) {
 
 // Create stores the Claim data as a new record in the database.
 func (c *Claim) Create(tx *pop.Connection) error {
-	c.ReferenceNumber = domain.RandomString(ClaimReferenceNumberLength)
+	c.ReferenceNumber = uniqueClaimReferenceNumber(tx)
 	return create(tx, c)
 }
 
@@ -91,6 +91,10 @@ func (c *Claim) GetID() uuid.UUID {
 
 func (c *Claim) FindByID(tx *pop.Connection, id uuid.UUID) error {
 	return tx.Find(c, id)
+}
+
+func (c *Claim) FindByReferenceNumber(tx *pop.Connection, ref string) error {
+	return tx.Where("reference_number = ?", ref).First(c)
 }
 
 // IsActorAllowedTo ensure the actor is either an admin, or a member of this policy to perform any permission
@@ -245,5 +249,24 @@ func ConvertClaimCreateInput(input api.ClaimCreateInput) Claim {
 		EventType:        input.EventType,
 		EventDescription: input.EventDescription,
 		Status:           api.ClaimStatusDraft,
+	}
+}
+
+func uniqueClaimReferenceNumber(tx *pop.Connection) string {
+	attempts := 0
+	for {
+		// create reference number in format CAB1234
+		ref := fmt.Sprintf("C%s%s",
+			domain.RandomString(2, "ABCDEFGHIJKLMNOPQRSTUVWXYZ"),
+			domain.RandomString(4, "1234567890"))
+		var claim Claim
+		err := claim.FindByReferenceNumber(tx, ref)
+		if err != nil && !domain.IsOtherThanNoRows(err) {
+			return ref
+		}
+		attempts++
+		if attempts > 100 {
+			panic(fmt.Errorf("failed to find unique claim reference number after 100 attempts"))
+		}
 	}
 }

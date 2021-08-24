@@ -24,7 +24,7 @@ func (ms *ModelSuite) TestClaim_Validate() {
 		{
 			name: "valid status",
 			claim: &Claim{
-				ReferenceNumber:  domain.RandomString(ClaimReferenceNumberLength),
+				ReferenceNumber:  domain.RandomString(ClaimReferenceNumberLength, ""),
 				PolicyID:         domain.GetUUID(),
 				EventType:        api.ClaimEventTypeImpact,
 				EventDate:        time.Now(),

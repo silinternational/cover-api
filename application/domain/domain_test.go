@@ -24,6 +24,6 @@ func (ts *TestSuite) Test_emptyUUIDValue() {
 
 func (ts *TestSuite) Test_RandomString() {
 	for i := 1; i < 30; i++ {
-		ts.Len(RandomString(i), i)
+		ts.Len(RandomString(i, ""), i)
 	}
 }

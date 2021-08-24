@@ -39,10 +39,6 @@ type ItemCategory struct {
 	RiskCategory RiskCategory `belongs_to:"risk_categories" fk_id:"RiskCategoryID" validate:"-"`
 }
 
-func (r *ItemCategory) Create(tx *pop.Connection) error {
-	return create(tx, r)
-}
-
 // Validate gets run every time you call a "pop.Validate*" (pop.ValidateAndSave, pop.ValidateAndCreate, pop.ValidateAndUpdate) method.
 func (i *ItemCategory) Validate(tx *pop.Connection) (*validate.Errors, error) {
 	return validateModel(i), nil

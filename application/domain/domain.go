@@ -323,8 +323,11 @@ func IsStringInSlice(needle string, haystack []string) bool {
 	return false
 }
 
-func RandomString(n int) string {
-	letters := []rune("ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
+func RandomString(n int, includeLetters string) string {
+	if includeLetters == "" {
+		includeLetters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+	}
+	letters := []rune(includeLetters)
 	b := make([]rune, n)
 	for i := range b {
 		b[i] = letters[rand.Intn(len(letters))] // #nosec G404
