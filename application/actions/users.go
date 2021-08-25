@@ -53,9 +53,6 @@ func usersList(c buffalo.Context) error {
 //       "$ref": "#/definitions/User"
 func usersView(c buffalo.Context) error {
 	user := getReferencedUserFromCtx(c)
-	if user == nil {
-		panic("user not found in context")
-	}
 	return renderUser(c, *user)
 }
 
@@ -87,7 +84,7 @@ func renderUser(c buffalo.Context, user models.User) error {
 func getReferencedUserFromCtx(c buffalo.Context) *models.User {
 	user, ok := c.Value(domain.TypeUser).(*models.User)
 	if !ok {
-		return nil
+		panic("user not found in context")
 	}
 	return user
 }

@@ -38,9 +38,6 @@ func itemsList(c buffalo.Context) error {
 	tx := models.Tx(c)
 
 	policy := getReferencedPolicyFromCtx(c)
-	if policy == nil {
-		panic("policy not found in context")
-	}
 
 	policy.LoadItems(tx, true)
 
@@ -73,9 +70,6 @@ func itemsList(c buffalo.Context) error {
 func itemsCreate(c buffalo.Context) error {
 	tx := models.Tx(c)
 	policy := getReferencedPolicyFromCtx(c)
-	if policy == nil {
-		panic("policy not found in context")
-	}
 
 	var itemPost api.ItemInput
 	if err := StrictBind(c, &itemPost); err != nil {
@@ -122,9 +116,6 @@ func itemsCreate(c buffalo.Context) error {
 func itemsUpdate(c buffalo.Context) error {
 	tx := models.Tx(c)
 	item := getReferencedItemFromCtx(c)
-	if item == nil {
-		panic("item not found in context")
-	}
 
 	var itemPut api.ItemInput
 	if err := StrictBind(c, &itemPut); err != nil {
@@ -172,11 +163,66 @@ func itemsUpdate(c buffalo.Context) error {
 func itemsSubmit(c buffalo.Context) error {
 	tx := models.Tx(c)
 	item := getReferencedItemFromCtx(c)
-	if item == nil {
-		panic("item not found in context")
-	}
 
 	if err := item.SubmitForApproval(tx); err != nil {
+		return reportError(c, err)
+	}
+
+	output := models.ConvertItem(tx, *item)
+	return c.Render(http.StatusOK, r.JSON(output))
+}
+
+// swagger:operation POST /items/{id}/approve PolicyItems PolicyItemsApprove
+//
+// PolicyItemsApprove
+//
+// approve coverage on a policy item
+//
+// ---
+// parameters:
+//   - name: id
+//     in: path
+//     required: true
+//     description: item ID
+// responses:
+//   '200':
+//     description: approved Item
+//     schema:
+//       "$ref": "#/definitions/Item"
+func itemsApprove(c buffalo.Context) error {
+	tx := models.Tx(c)
+	item := getReferencedItemFromCtx(c)
+
+	if err := item.Approve(tx); err != nil {
+		return reportError(c, err)
+	}
+
+	output := models.ConvertItem(tx, *item)
+	return c.Render(http.StatusOK, r.JSON(output))
+}
+
+// swagger:operation POST /items/{id}/deny PolicyItems PolicyItemsDeny
+//
+// PolicyItemsDeny
+//
+// deny coverage on a policy item
+//
+// ---
+// parameters:
+//   - name: id
+//     in: path
+//     required: true
+//     description: item ID
+// responses:
+//   '200':
+//     description: denied Item
+//     schema:
+//       "$ref": "#/definitions/Item"
+func itemsDeny(c buffalo.Context) error {
+	tx := models.Tx(c)
+	item := getReferencedItemFromCtx(c)
+
+	if err := item.Deny(tx); err != nil {
 		return reportError(c, err)
 	}
 
@@ -203,9 +249,6 @@ func itemsSubmit(c buffalo.Context) error {
 func itemsRemove(c buffalo.Context) error {
 	tx := models.Tx(c)
 	item := getReferencedItemFromCtx(c)
-	if item == nil {
-		panic("item not found in context")
-	}
 
 	user := models.CurrentUser(c)
 
@@ -263,7 +306,7 @@ func parseItemDates(input api.ItemInput, modelItem *models.Item) error {
 func getReferencedItemFromCtx(c buffalo.Context) *models.Item {
 	item, ok := c.Value(domain.TypeItem).(*models.Item)
 	if !ok {
-		return nil
+		panic("item not found in context")
 	}
 	return item
 }

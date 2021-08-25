@@ -51,9 +51,9 @@ import (
 const idRegex = `/{id:[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-4[a-fA-F0-9]{3}-[8|9|aA|bB][a-fA-F0-9]{3}-[a-fA-F0-9]{12}}`
 
 const (
-	slashPolicies = "/" + domain.TypePolicy
-	slashItems    = "/" + domain.TypeItem
-	slashClaims   = "/" + domain.TypeClaim
+	policiesPath = "/" + domain.TypePolicy
+	itemsPath    = "/" + domain.TypeItem
+	claimsPath   = "/" + domain.TypeClaim
 )
 
 // ENV is used to help switch settings based on where the
@@ -139,11 +139,11 @@ func App() *buffalo.App {
 		auth.GET("/logout", authDestroy)
 
 		// claims
-		claimsGroup := app.Group(slashClaims)
+		claimsGroup := app.Group(claimsPath)
 		claimsGroup.GET("/", claimsList)
 		claimsGroup.GET(idRegex, claimsView)
 		claimsGroup.PUT(idRegex, claimsUpdate)
-		claimsGroup.POST(idRegex+slashItems, claimsItemsCreate)
+		claimsGroup.POST(idRegex+itemsPath, claimsItemsCreate)
 
 		// config
 		configGroup := app.Group("/config")
@@ -151,20 +151,22 @@ func App() *buffalo.App {
 		configGroup.GET("/claim-event-types", claimEventTypes)
 
 		// item
-		itemsGroup := app.Group(slashItems)
-		itemsGroup.POST(idRegex+"/submit", itemsSubmit)
+		itemsGroup := app.Group(itemsPath)
+		itemsGroup.POST(idRegex+"/"+models.ItemSubmit, itemsSubmit)
+		itemsGroup.POST(idRegex+"/"+models.ItemApprove, itemsApprove)
+		itemsGroup.POST(idRegex+"/"+models.ItemDeny, itemsDeny)
 		itemsGroup.PUT(idRegex, itemsUpdate)
 		itemsGroup.DELETE(idRegex, itemsRemove)
 
 		// policies
-		policiesGroup := app.Group(slashPolicies)
+		policiesGroup := app.Group(policiesPath)
 		policiesGroup.GET("/", policiesList)
 		policiesGroup.GET(idRegex+"/dependents", dependentsList)
 		policiesGroup.PUT(idRegex, policiesUpdate)
 		policiesGroup.POST(idRegex+"/dependents", dependentsCreate)
-		policiesGroup.GET(idRegex+slashItems, itemsList)
-		policiesGroup.POST(idRegex+slashItems, itemsCreate)
-		policiesGroup.POST(idRegex+slashClaims, claimsCreate)
+		policiesGroup.GET(idRegex+itemsPath, itemsList)
+		policiesGroup.POST(idRegex+itemsPath, itemsCreate)
+		policiesGroup.POST(idRegex+claimsPath, claimsCreate)
 		policiesGroup.GET(idRegex+"/members", policiesListMembers)
 	}
 

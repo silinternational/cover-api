@@ -329,7 +329,7 @@ func (as *ActionSuite) Test_ItemsSubmit() {
 
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
-			req := as.JSON("/%s/%s/submit", domain.TypeItem, tt.oldItem.ID.String())
+			req := as.JSON("/%s/%s/%s", domain.TypeItem, tt.oldItem.ID.String(), models.ItemSubmit)
 			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
 			req.Headers["content-type"] = "application/json"
 			res := req.Post(nil)
@@ -348,6 +348,216 @@ func (as *ActionSuite) Test_ItemsSubmit() {
 				"error finding submitted item.")
 
 			as.Equal(api.ItemCoverageStatusPending, item.CoverageStatus, "incorrect coverage status after submission")
+		})
+	}
+}
+
+func (as *ActionSuite) Test_ItemsApprove() {
+	fixConfig := models.FixturesConfig{
+		NumberOfPolicies:    2,
+		ItemsPerPolicy:      2,
+		UsersPerPolicy:      1,
+		DependentsPerPolicy: 0,
+	}
+
+	fixtures := models.CreateItemFixtures(as.DB, fixConfig)
+
+	approvedItem := fixtures.Items[1]
+
+	pendingItem := fixtures.Items[0]
+	pendingItem.CoverageStatus = api.ItemCoverageStatusPending
+	as.NoError(as.DB.Update(&pendingItem), "error trying to change item status for test")
+
+	policy := fixtures.Policies[0]
+	policyCreator := policy.Members[0]
+
+	adminUser := fixtures.Policies[1].Members[0]
+	adminUser.AppRole = models.AppRoleAdmin
+	as.NoError(as.DB.Save(&adminUser), "failed saving admin user")
+
+	iCatID := pendingItem.CategoryID
+
+	tests := []struct {
+		name       string
+		actor      models.User
+		oldItem    models.Item
+		wantStatus int
+		wantInBody []string
+	}{
+		{
+			name:       "unauthenticated",
+			actor:      models.User{},
+			oldItem:    pendingItem,
+			wantStatus: http.StatusUnauthorized,
+			wantInBody: []string{
+				api.ErrorNotAuthorized.String(),
+				"no bearer token provided",
+			},
+		},
+		{
+			name:       "owner unauthorized",
+			actor:      policyCreator,
+			oldItem:    pendingItem,
+			wantStatus: http.StatusNotFound,
+			wantInBody: []string{"actor not allowed to perform that action on this resource"},
+		},
+		{
+			name:       "bad start status",
+			actor:      adminUser,
+			oldItem:    approvedItem,
+			wantStatus: http.StatusNotFound,
+			wantInBody: []string{api.ErrorNotAuthorized.String()},
+		},
+		{
+			name:       "good item",
+			actor:      adminUser,
+			oldItem:    pendingItem,
+			wantStatus: http.StatusOK,
+			wantInBody: []string{
+				`"name":"` + pendingItem.Name,
+				`"category_id":"` + pendingItem.CategoryID.String(),
+				fmt.Sprintf(`"in_storage":%t`, pendingItem.InStorage),
+				`"country":"` + pendingItem.Country,
+				`"description":"` + pendingItem.Description,
+				`"policy_id":"` + policy.ID.String(),
+				`"make":"` + pendingItem.Make,
+				`"model":"` + pendingItem.Model,
+				`"serial_number":"` + pendingItem.SerialNumber,
+				// keeps pendingItem coverage_amount
+				fmt.Sprintf(`"coverage_amount":%v`, pendingItem.CoverageAmount),
+				`"purchase_date":"` + pendingItem.PurchaseDate.Format(domain.DateFormat) + `"`,
+				`"coverage_status":"` + string(api.ItemCoverageStatusApproved),
+				`"category":{"id":"` + iCatID.String(),
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		as.T().Run(tt.name, func(t *testing.T) {
+			req := as.JSON("/%s/%s/%s", domain.TypeItem, tt.oldItem.ID.String(), models.ItemApprove)
+			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
+			req.Headers["content-type"] = "application/json"
+			res := req.Post(nil)
+
+			body := res.Body.String()
+			as.Equal(tt.wantStatus, res.Code, "incorrect status code returned, body: %s", body)
+
+			as.verifyResponseData(tt.wantInBody, body, "Items Approve")
+
+			if res.Code != http.StatusOK {
+				return
+			}
+
+			var item models.Item
+			as.NoError(as.DB.Find(&item, tt.oldItem.ID),
+				"error finding submitted item.")
+
+			as.Equal(api.ItemCoverageStatusApproved, item.CoverageStatus, "incorrect coverage status after submission")
+		})
+	}
+}
+
+func (as *ActionSuite) Test_ItemsDeny() {
+	fixConfig := models.FixturesConfig{
+		NumberOfPolicies:    2,
+		ItemsPerPolicy:      2,
+		UsersPerPolicy:      1,
+		DependentsPerPolicy: 0,
+	}
+
+	fixtures := models.CreateItemFixtures(as.DB, fixConfig)
+
+	approvedItem := fixtures.Items[1]
+
+	pendingItem := fixtures.Items[0]
+	pendingItem.CoverageStatus = api.ItemCoverageStatusPending
+	as.NoError(as.DB.Update(&pendingItem), "error trying to change item status for test")
+
+	policy := fixtures.Policies[0]
+	policyCreator := policy.Members[0]
+
+	adminUser := fixtures.Policies[1].Members[0]
+	adminUser.AppRole = models.AppRoleAdmin
+	as.NoError(as.DB.Save(&adminUser), "failed saving admin user")
+
+	iCatID := pendingItem.CategoryID
+
+	tests := []struct {
+		name       string
+		actor      models.User
+		oldItem    models.Item
+		wantStatus int
+		wantInBody []string
+	}{
+		{
+			name:       "unauthenticated",
+			actor:      models.User{},
+			oldItem:    pendingItem,
+			wantStatus: http.StatusUnauthorized,
+			wantInBody: []string{
+				api.ErrorNotAuthorized.String(),
+				"no bearer token provided",
+			},
+		},
+		{
+			name:       "owner unauthorized",
+			actor:      policyCreator,
+			oldItem:    pendingItem,
+			wantStatus: http.StatusNotFound,
+			wantInBody: []string{"actor not allowed to perform that action on this resource"},
+		},
+		{
+			name:       "bad start status",
+			actor:      adminUser,
+			oldItem:    approvedItem,
+			wantStatus: http.StatusNotFound,
+			wantInBody: []string{api.ErrorNotAuthorized.String()},
+		},
+		{
+			name:       "good item",
+			actor:      adminUser,
+			oldItem:    pendingItem,
+			wantStatus: http.StatusOK,
+			wantInBody: []string{
+				`"name":"` + pendingItem.Name,
+				`"category_id":"` + pendingItem.CategoryID.String(),
+				fmt.Sprintf(`"in_storage":%t`, pendingItem.InStorage),
+				`"country":"` + pendingItem.Country,
+				`"description":"` + pendingItem.Description,
+				`"policy_id":"` + policy.ID.String(),
+				`"make":"` + pendingItem.Make,
+				`"model":"` + pendingItem.Model,
+				`"serial_number":"` + pendingItem.SerialNumber,
+				// keeps pendingItem coverage_amount
+				fmt.Sprintf(`"coverage_amount":%v`, pendingItem.CoverageAmount),
+				`"purchase_date":"` + pendingItem.PurchaseDate.Format(domain.DateFormat) + `"`,
+				`"coverage_status":"` + string(api.ItemCoverageStatusDenied),
+				`"category":{"id":"` + iCatID.String(),
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		as.T().Run(tt.name, func(t *testing.T) {
+			req := as.JSON("/%s/%s/%s", domain.TypeItem, tt.oldItem.ID.String(), models.ItemDeny)
+			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
+			req.Headers["content-type"] = "application/json"
+			res := req.Post(nil)
+
+			body := res.Body.String()
+			as.Equal(tt.wantStatus, res.Code, "incorrect status code returned, body: %s", body)
+
+			as.verifyResponseData(tt.wantInBody, body, "Items Deny")
+
+			if res.Code != http.StatusOK {
+				return
+			}
+
+			var item models.Item
+			as.NoError(as.DB.Find(&item, tt.oldItem.ID),
+				"error finding submitted item.")
+
+			as.Equal(api.ItemCoverageStatusDenied, item.CoverageStatus, "incorrect coverage status after submission")
 		})
 	}
 }

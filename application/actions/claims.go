@@ -69,9 +69,6 @@ func claimsListMine(c buffalo.Context) error {
 func claimsView(c buffalo.Context) error {
 	tx := models.Tx(c)
 	claim := getReferencedClaimFromCtx(c)
-	if claim == nil {
-		panic("claim not found in context")
-	}
 	return renderOk(c, models.ConvertClaim(tx, *claim))
 }
 
@@ -95,9 +92,6 @@ func claimsView(c buffalo.Context) error {
 func claimsUpdate(c buffalo.Context) error {
 	tx := models.Tx(c)
 	claim := getReferencedClaimFromCtx(c)
-	if claim == nil {
-		panic("claim not found in context")
-	}
 
 	var input api.ClaimUpdateInput
 	if err := StrictBind(c, &input); err != nil {
@@ -143,9 +137,6 @@ func claimsUpdate(c buffalo.Context) error {
 //       "$ref": "#/definitions/Claim"
 func claimsCreate(c buffalo.Context) error {
 	policy := getReferencedPolicyFromCtx(c)
-	if policy == nil {
-		panic("policy not found in route")
-	}
 
 	var input api.ClaimCreateInput
 	if err := StrictBind(c, &input); err != nil {
@@ -186,9 +177,6 @@ func claimsCreate(c buffalo.Context) error {
 //       "$ref": "#/definitions/ClaimItem"
 func claimsItemsCreate(c buffalo.Context) error {
 	claim := getReferencedClaimFromCtx(c)
-	if claim == nil {
-		panic("claim not found in route")
-	}
 
 	var input api.ClaimItemCreateInput
 	if err := StrictBind(c, &input); err != nil {
@@ -209,7 +197,7 @@ func claimsItemsCreate(c buffalo.Context) error {
 func getReferencedClaimFromCtx(c buffalo.Context) *models.Claim {
 	claim, ok := c.Value(domain.TypeClaim).(*models.Claim)
 	if !ok {
-		return nil
+		panic("claim not found in context")
 	}
 	return claim
 }

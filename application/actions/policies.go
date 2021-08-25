@@ -81,9 +81,6 @@ func policiesListMine(c buffalo.Context) error {
 func policiesUpdate(c buffalo.Context) error {
 	tx := models.Tx(c)
 	policy := getReferencedPolicyFromCtx(c)
-	if policy == nil {
-		panic("policy not found in context")
-	}
 
 	var update api.PolicyUpdate
 	if err := StrictBind(c, &update); err != nil {
@@ -132,9 +129,6 @@ func policiesUpdate(c buffalo.Context) error {
 func policiesListMembers(c buffalo.Context) error {
 	tx := models.Tx(c)
 	policy := getReferencedPolicyFromCtx(c)
-	if policy == nil {
-		panic("policy not found in context")
-	}
 
 	policy.LoadMembers(tx, false)
 
@@ -146,7 +140,7 @@ func policiesListMembers(c buffalo.Context) error {
 func getReferencedPolicyFromCtx(c buffalo.Context) *models.Policy {
 	policy, ok := c.Value(domain.TypePolicy).(*models.Policy)
 	if !ok {
-		return nil
+		panic("policy not found in context")
 	}
 	return policy
 }

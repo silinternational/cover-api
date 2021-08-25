@@ -17,7 +17,10 @@ import (
 )
 
 const (
-	ItemSubmit = "submit"
+	ItemSubmit   = "submit"
+	ItemApprove  = "approve"
+	ItemRevision = "revision"
+	ItemDeny     = "deny"
 )
 
 var ValidItemCoverageStatuses = map[api.ItemCoverageStatus]struct{}{
@@ -138,17 +141,12 @@ func (i *Item) Inactivate(tx *pop.Connection) error {
 
 // IsActorAllowedTo ensure the actor is either an admin, or a member of this policy to perform any permission
 func (i *Item) IsActorAllowedTo(tx *pop.Connection, actor User, perm Permission, sub SubResource, req *http.Request) bool {
-	if i.CoverageStatus != api.ItemCoverageStatusDraft && i.CoverageStatus != api.ItemCoverageStatusRevision {
-		// Don't allow updating an item itself if it has the wrong status
-		if perm == PermissionUpdate && sub == "" {
-			return false
-			// Don't allow submitting an item if it has the wrong status
-		} else if perm == PermissionCreate && sub == ItemSubmit {
-			return false
-		}
+	isAdmin := actor.IsAdmin()
+	if !isItemActionAllowed(isAdmin, i.CoverageStatus, perm, sub) {
+		return false
 	}
 
-	if actor.IsAdmin() {
+	if isAdmin {
 		return true
 	}
 
@@ -210,6 +208,37 @@ func isItemTransitionValid(status1, status2 api.ItemCoverageStatus) (bool, error
 	return false, nil
 }
 
+// isItemActionAllowed does not check whether the actor is the owner of the item.
+//  Otherwise it checks whether the item can be acted on using a certain action based on its
+//    current coverage status and "sub-resource" (e.g. submit, approve, ...)
+func isItemActionAllowed(actorIsAdmin bool, oldStatus api.ItemCoverageStatus, perm Permission, sub SubResource) bool {
+	switch oldStatus {
+
+	// An item with Draft or Revision coverage status can have an update done on it itself or a create done on its "submit"
+	// It can also be deleted/inactivated
+	case api.ItemCoverageStatusDraft, api.ItemCoverageStatusRevision:
+		if sub == "" && (perm == PermissionUpdate || perm == PermissionDelete) {
+			return true
+		}
+
+		return sub == ItemSubmit && perm == PermissionCreate
+
+	// An item with Pending status can have a create done on it by an admin for revision, approve, deny
+	// A non-admin can delete/inactivate it
+	case api.ItemCoverageStatusPending:
+		if !actorIsAdmin {
+			return perm == PermissionDelete && sub == ""
+		}
+		return perm == PermissionCreate && (sub == ItemApprove || sub == ItemRevision || sub == ItemDeny)
+
+	// An item with approved status can only be deleted/inactivated
+	case api.ItemCoverageStatusApproved:
+		return sub == "" && perm == PermissionDelete
+	}
+
+	return false
+}
+
 // SubmitForApproval takes the item from Draft or Revision status to Pending or Approved status.
 // It assumes that the item's current status has already been validated.
 // TODO decide whether the item can be auto-approved
@@ -217,6 +246,24 @@ func isItemTransitionValid(status1, status2 api.ItemCoverageStatus) (bool, error
 func (i *Item) SubmitForApproval(tx *pop.Connection) error {
 	oldStatus := i.CoverageStatus
 	i.CoverageStatus = api.ItemCoverageStatusPending
+	return i.Update(tx, oldStatus)
+}
+
+// Approve takes the item from Pending coverage status to Approved.
+// It assumes that the item's current status has already been validated.
+// TODO emit an event for the the status transition
+func (i *Item) Approve(tx *pop.Connection) error {
+	oldStatus := i.CoverageStatus
+	i.CoverageStatus = api.ItemCoverageStatusApproved
+	return i.Update(tx, oldStatus)
+}
+
+// Deny takes the item from Pending coverage status to Denied.
+// It assumes that the item's current status has already been validated.
+// TODO emit an event for the the status transition
+func (i *Item) Deny(tx *pop.Connection) error {
+	oldStatus := i.CoverageStatus
+	i.CoverageStatus = api.ItemCoverageStatusDenied
 	return i.Update(tx, oldStatus)
 }
 
