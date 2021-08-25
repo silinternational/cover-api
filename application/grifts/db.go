@@ -213,7 +213,7 @@ func createCategories() ([]*models.ItemCategory, error) {
 			Name:           fmt.Sprintf("ItemCat-%d", i),
 			HelpText:       fmt.Sprintf("This is help text for ItemCat-%d", i),
 			Status:         api.ItemCategoryStatusEnabled,
-			AutoApproveMax: 100 * i,
+			AutoApproveMax: 10000 * i, // increments of $100 starting at $0
 		}
 		err := models.DB.Create(fixCats[i])
 		if err != nil {
@@ -262,7 +262,7 @@ func createItemFixtures(fixPolicies []*models.Policy, fixICats []*models.ItemCat
 			Make:              fmt.Sprintf("IMake-%d", i),
 			Model:             fmt.Sprintf("IModel-%d", i),
 			SerialNumber:      fmt.Sprintf("ISN-%d", i),
-			CoverageAmount:    100,
+			CoverageAmount:    5000 * (i + 1), // increments of $50 starting at $50
 			CoverageStatus:    api.ItemCoverageStatusApproved,
 			CoverageStartDate: time.Now().UTC().Add(time.Hour * time.Duration((i+1)*-40)),
 			PurchaseDate:      time.Now().UTC().Add(time.Hour * time.Duration((i+1)*-48)),

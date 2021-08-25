@@ -69,7 +69,7 @@ func (i *Item) CreateGrift(tx *pop.Connection) error {
 	return create(tx, i)
 }
 
-func (i *Item) VetAndCreate(tx *pop.Connection) error {
+func (i *Item) vetAmount(tx *pop.Connection) error {
 	i.LoadPolicy(tx, false)
 	coverageTotals := i.Policy.itemCoverageTotals(tx)
 	policyTotal := coverageTotals[i.PolicyID]
@@ -79,19 +79,21 @@ func (i *Item) VetAndCreate(tx *pop.Connection) error {
 		appErr := api.NewAppError(err, api.ErrorItemCoverageAmount, api.CategoryUser)
 		return appErr
 	}
+	return nil
+}
 
-	if i.PolicyDependentID.Valid {
-		depTotal := coverageTotals[i.PolicyDependentID.UUID]
-		if depTotal+i.CoverageAmount > domain.Env.DependantMaxCoverage {
-			err := fmt.Errorf("item coverage amount (%v) pushes policy dependant total over max allowed", i.CoverageAmount)
-			appErr := api.NewAppError(err, api.ErrorItemCoverageAmount, api.CategoryUser)
-			return appErr
-		}
+func (i *Item) VetAndCreate(tx *pop.Connection) error {
+	if err := i.vetAmount(tx); err != nil {
+		return err
 	}
 
 	i.CoverageStatus = api.ItemCoverageStatusDraft
 
-	return create(tx, i)
+	if err := create(tx, i); err != nil {
+		panic("error creating new item: " + err.Error())
+	}
+
+	return nil
 }
 
 func (i *Item) Update(tx *pop.Connection, oldStatus api.ItemCoverageStatus) error {
@@ -105,7 +107,10 @@ func (i *Item) Update(tx *pop.Connection, oldStatus api.ItemCoverageStatus) erro
 		appErr := api.NewAppError(err, api.ErrorValidation, api.CategoryUser)
 		return appErr
 	}
-	return update(tx, i)
+	if err := update(tx, i); err != nil {
+		panic("error updating item: " + err.Error())
+	}
+	return nil
 }
 
 func (i *Item) GetID() uuid.UUID {
@@ -192,6 +197,7 @@ func itemStatusTransitions() map[api.ItemCoverageStatus][]api.ItemCoverageStatus
 	return map[api.ItemCoverageStatus][]api.ItemCoverageStatus{
 		api.ItemCoverageStatusDraft: {
 			api.ItemCoverageStatusPending,
+			api.ItemCoverageStatusApproved,
 			api.ItemCoverageStatusInactive,
 		},
 		api.ItemCoverageStatusPending: {
@@ -266,15 +272,29 @@ func isItemActionAllowed(actorIsAdmin bool, oldStatus api.ItemCoverageStatus, pe
 
 // SubmitForApproval takes the item from Draft or Revision status to Pending or Approved status.
 // It assumes that the item's current status has already been validated.
-// TODO decide whether the item can be auto-approved
 // TODO emit an event for the correct status transition
 func (i *Item) SubmitForApproval(tx *pop.Connection) error {
 	oldStatus := i.CoverageStatus
 	i.CoverageStatus = api.ItemCoverageStatusPending
 
 	i.LoadCategory(tx, false)
+
+	if err := i.vetAmount(tx); err != nil {
+		return err
+	}
+
 	if i.CoverageAmount <= i.Category.AutoApproveMax {
-		i.CoverageStatus = api.ItemCoverageStatusApproved
+		// Dependents have different rules based on the total amounts of all their items
+		if i.PolicyDependentID.Valid {
+			i.LoadPolicy(tx, false)
+			totals := i.Policy.itemCoverageTotals(tx)
+			depTotal := totals[i.PolicyDependentID.UUID]
+			if depTotal+i.CoverageAmount <= domain.Env.DependantAutoApproveMax {
+				i.CoverageStatus = api.ItemCoverageStatusApproved
+			}
+		} else {
+			i.CoverageStatus = api.ItemCoverageStatusApproved
+		}
 	}
 	return i.Update(tx, oldStatus)
 }

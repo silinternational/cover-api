@@ -144,8 +144,9 @@ var Env struct {
 
 	MaxFileDelete int `default:"10" split_words:"true"`
 
-	PolicyMaxCoverage    int `default:"50000" split_words:"true"`
-	DependantMaxCoverage int `default:"10000" split_words:"true"`
+	// Ensure these reflect cents and not just dollars
+	PolicyMaxCoverage       int `default:"5000000" split_words:"true"` // $50,000
+	DependantAutoApproveMax int `default:"400000" split_words:"true"`  // $4,000
 }
 
 func init() {

@@ -241,7 +241,7 @@ func (ms *ModelSuite) Test_isItemActionAllowed() {
 	}
 }
 
-func (ms *ModelSuite) TestPolicy_VetAndCreate() {
+func (ms *ModelSuite) TestItem_VetAndCreate() {
 	t := ms.T()
 
 	fixConfig := FixturesConfig{
@@ -291,10 +291,6 @@ func (ms *ModelSuite) TestPolicy_VetAndCreate() {
 	itemExceeedsPolicy := goodItem
 	itemExceeedsPolicy.CoverageAmount = domain.Env.PolicyMaxCoverage - coverageForPolicy + 1
 
-	itemExceeedsDependent := goodItem
-	itemExceeedsDependent.PolicyDependentID = nulls.NewUUID(dependant.ID)
-	itemExceeedsDependent.CoverageAmount = domain.Env.DependantMaxCoverage - coverageForDep + 1
-
 	tests := []struct {
 		name            string
 		item            Item
@@ -304,11 +300,6 @@ func (ms *ModelSuite) TestPolicy_VetAndCreate() {
 			name:            "item exceeds policy max",
 			item:            itemExceeedsPolicy,
 			wantErrContains: "pushes policy total over max allowed",
-		},
-		{
-			name:            "item exceeds dependant max",
-			item:            itemExceeedsDependent,
-			wantErrContains: "pushes policy dependant total over max allowed",
 		},
 		{
 			name: "good item",
@@ -329,6 +320,85 @@ func (ms *ModelSuite) TestPolicy_VetAndCreate() {
 
 			ms.NotEqual(uuid.Nil, tt.item.ID, "expected item to have been given an ID")
 			ms.Equal(api.ItemCoverageStatusDraft, tt.item.CoverageStatus, "incorrect status")
+
+		})
+	}
+}
+
+func (ms *ModelSuite) TestItem_SubmitForApproval() {
+	t := ms.T()
+
+	fixConfig := FixturesConfig{
+		NumberOfPolicies:    2,
+		UsersPerPolicy:      2,
+		DependentsPerPolicy: 2,
+		ItemsPerPolicy:      5,
+	}
+
+	fixtures := CreateItemFixtures(ms.DB, fixConfig)
+	policy := fixtures.Policies[0]
+	policy.LoadItems(ms.DB, false)
+	items := policy.Items
+	dependent := policy.Dependents[0]
+
+	itemDependent := items[1]
+	itemDependent.PolicyDependentID = nulls.NewUUID(dependent.ID)
+	itemDependent.CoverageAmount = 200000 // $2000
+	ms.NoError(ms.DB.Update(&itemDependent), "error updating item fixture for test")
+
+	itemManualApprove := items[2]
+	itemManualApproveDependent := items[3]
+	itemAutoApproveDependent := items[4]
+
+	// set them all to Draft status
+	itemManualApprove.CoverageStatus = api.ItemCoverageStatusDraft
+	itemManualApproveDependent.CoverageStatus = api.ItemCoverageStatusDraft
+	itemAutoApproveDependent.CoverageStatus = api.ItemCoverageStatusDraft
+
+	// set there coverage amounts to be helpful for the tests and set the dependent as needed
+	itemManualApprove.LoadCategory(ms.DB, false)
+	itemManualApprove.CoverageAmount = itemManualApprove.Category.AutoApproveMax + 1
+	ms.NoError(ms.DB.Update(&itemManualApprove), "error updating item fixture for test")
+
+	itemManualApproveDependent.CoverageAmount = domain.Env.DependantAutoApproveMax - itemDependent.CoverageAmount + 1
+	itemManualApproveDependent.PolicyDependentID = nulls.NewUUID(dependent.ID)
+	ms.NoError(ms.DB.Update(&itemManualApproveDependent), "error updating item fixture for test")
+
+	itemAutoApproveDependent.CoverageAmount = domain.Env.DependantAutoApproveMax - itemDependent.CoverageAmount - 1
+	itemAutoApproveDependent.PolicyDependentID = nulls.NewUUID(dependent.ID)
+	ms.NoError(ms.DB.Update(&itemAutoApproveDependent), "error updating item fixture for test")
+
+	// give two items a dependant and calculate expected values
+
+	tests := []struct {
+		name       string
+		item       Item
+		wantStatus api.ItemCoverageStatus
+	}{
+		{
+			name:       "item requires manual approval",
+			item:       itemManualApprove,
+			wantStatus: api.ItemCoverageStatusPending,
+		},
+		{
+			name:       "item for dependent requires manual approval",
+			item:       itemManualApproveDependent,
+			wantStatus: api.ItemCoverageStatusPending,
+		},
+		{
+			name:       "item for dependent gets auto approval",
+			item:       itemAutoApproveDependent,
+			wantStatus: api.ItemCoverageStatusApproved,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := tt.item.SubmitForApproval(ms.DB)
+
+			ms.NoError(got)
+
+			ms.Equal(tt.wantStatus, tt.item.CoverageStatus, "incorrect status")
 
 		})
 	}

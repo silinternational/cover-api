@@ -185,7 +185,7 @@ func CreateCategoryFixtures(tx *pop.Connection, n int) Fixtures {
 		categories[i].Name = randStr(10)
 		categories[i].HelpText = randStr(40)
 		categories[i].Status = api.ItemCategoryStatusEnabled
-		categories[i].AutoApproveMax = 500
+		categories[i].AutoApproveMax = 300000 //  $3,000
 		MustCreate(tx, &categories[i])
 	}
 
