@@ -143,6 +143,9 @@ var Env struct {
 	EmailFromAddress   string `split_words:"true"`
 
 	MaxFileDelete int `default:"10" split_words:"true"`
+
+	PolicyMaxCoverage    int `default:"50000" split_words:"true"`
+	DependantMaxCoverage int `default:"10000" split_words:"true"`
 }
 
 func init() {

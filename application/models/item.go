@@ -65,7 +65,32 @@ func (i *Item) Validate(tx *pop.Connection) (*validate.Errors, error) {
 	return validateModel(i), nil
 }
 
-func (i *Item) Create(tx *pop.Connection) error {
+func (i *Item) CreateGrift(tx *pop.Connection) error {
+	return create(tx, i)
+}
+
+func (i *Item) VetAndCreate(tx *pop.Connection) error {
+	i.LoadPolicy(tx, false)
+	coverageTotals := i.Policy.ItemCoverageTotals(tx)
+	policyTotal := coverageTotals[i.PolicyID]
+
+	if policyTotal+i.CoverageAmount > domain.Env.PolicyMaxCoverage {
+		err := fmt.Errorf("item coverage amount (%v) pushes policy total over max allowed", i.CoverageAmount)
+		appErr := api.NewAppError(err, api.ErrorItemCoverageAmount, api.CategoryUser)
+		return appErr
+	}
+
+	if i.PolicyDependentID.Valid {
+		depTotal := coverageTotals[i.PolicyDependentID.UUID]
+		if depTotal+i.CoverageAmount > domain.Env.DependantMaxCoverage {
+			err := fmt.Errorf("item coverage amount (%v) pushes policy dependant total over max allowed", i.CoverageAmount)
+			appErr := api.NewAppError(err, api.ErrorItemCoverageAmount, api.CategoryUser)
+			return appErr
+		}
+	}
+
+	i.CoverageStatus = api.ItemCoverageStatusDraft
+
 	return create(tx, i)
 }
 
@@ -242,10 +267,15 @@ func isItemActionAllowed(actorIsAdmin bool, oldStatus api.ItemCoverageStatus, pe
 // SubmitForApproval takes the item from Draft or Revision status to Pending or Approved status.
 // It assumes that the item's current status has already been validated.
 // TODO decide whether the item can be auto-approved
-// TODO emit an event for the the status transition
+// TODO emit an event for the correct status transition
 func (i *Item) SubmitForApproval(tx *pop.Connection) error {
 	oldStatus := i.CoverageStatus
 	i.CoverageStatus = api.ItemCoverageStatusPending
+
+	i.LoadCategory(tx, false)
+	if i.CoverageAmount <= i.Category.AutoApproveMax {
+		i.CoverageStatus = api.ItemCoverageStatusApproved
+	}
 	return i.Update(tx, oldStatus)
 }
 

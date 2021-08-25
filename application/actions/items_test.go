@@ -321,7 +321,7 @@ func (as *ActionSuite) Test_ItemsSubmit() {
 				// keeps revisionItem coverage_amount
 				fmt.Sprintf(`"coverage_amount":%v`, revisionItem.CoverageAmount),
 				`"purchase_date":"` + revisionItem.PurchaseDate.Format(domain.DateFormat) + `"`,
-				`"coverage_status":"` + string(api.ItemCoverageStatusPending),
+				`"coverage_status":"` + string(api.ItemCoverageStatusApproved), // lower than auto-approve max
 				`"category":{"id":"` + iCatID.String(),
 			},
 		},
@@ -347,7 +347,7 @@ func (as *ActionSuite) Test_ItemsSubmit() {
 			as.NoError(as.DB.Find(&item, tt.oldItem.ID),
 				"error finding submitted item.")
 
-			as.Equal(api.ItemCoverageStatusPending, item.CoverageStatus, "incorrect coverage status after submission")
+			as.Equal(api.ItemCoverageStatusApproved, item.CoverageStatus, "incorrect coverage status after submission")
 		})
 	}
 }

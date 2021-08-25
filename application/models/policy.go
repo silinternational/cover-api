@@ -77,6 +77,33 @@ func (p *Policy) IsActorAllowedTo(tx *pop.Connection, actor User, perm Permissio
 	return false
 }
 
+// ItemCoverageTotals returns a map with an entry for the policy ID and the total
+// of all the items' coverage amounts as well as
+// an entry for each dependant with the total of each of their items' coverage amounts
+func (p *Policy) ItemCoverageTotals(tx *pop.Connection) map[uuid.UUID]int {
+	p.LoadItems(tx, false)
+
+	addToTotals := func(newKey uuid.UUID, newAmount int, totals map[uuid.UUID]int) {
+		oldTotal, ok := totals[newKey]
+		if !ok {
+			totals[newKey] = newAmount
+		} else {
+			totals[newKey] = oldTotal + newAmount
+		}
+	}
+
+	totals := map[uuid.UUID]int{}
+
+	for _, item := range p.Items {
+		if item.PolicyDependentID.Valid {
+			addToTotals(item.PolicyDependentID.UUID, item.CoverageAmount, totals)
+		}
+		addToTotals(p.ID, item.CoverageAmount, totals)
+	}
+
+	return totals
+}
+
 // LoadClaims - a simple wrapper method for loading claims on the struct
 func (p *Policy) LoadClaims(tx *pop.Connection, reload bool) {
 	if len(p.Claims) == 0 || reload {
