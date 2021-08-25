@@ -707,7 +707,7 @@ func (as *ActionSuite) Test_ItemsUpdate() {
 			oldItem:    oldItem,
 			newItem:    badCatID,
 			wantStatus: http.StatusBadRequest,
-			wantInBody: []string{api.ErrorQueryFailure.String()},
+			wantInBody: []string{api.ErrorInvalidCategory.String()},
 		},
 		{
 			name:       "has bad start status",
