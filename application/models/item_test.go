@@ -2,11 +2,16 @@ package models
 
 import (
 	"testing"
+	"time"
+
+	"github.com/gofrs/uuid"
+
+	"github.com/silinternational/cover-api/domain"
+
+	"github.com/gobuffalo/nulls"
 
 	"github.com/silinternational/cover-api/api"
 )
-
-//isItemActionAllowed
 
 func (ms *ModelSuite) Test_isItemActionAllowed() {
 	t := ms.T()
@@ -231,6 +236,99 @@ func (ms *ModelSuite) Test_isItemActionAllowed() {
 		t.Run(tt.name, func(t *testing.T) {
 			got := isItemActionAllowed(tt.actorIsAdmin, tt.startStatus, tt.permission, tt.subRes)
 			ms.Equal(tt.want, got)
+
+		})
+	}
+}
+
+func (ms *ModelSuite) TestPolicy_VetAndCreate() {
+	t := ms.T()
+
+	fixConfig := FixturesConfig{
+		NumberOfPolicies:    2,
+		UsersPerPolicy:      2,
+		DependentsPerPolicy: 2,
+		ItemsPerPolicy:      3,
+	}
+
+	fixtures := CreateItemFixtures(ms.DB, fixConfig)
+	policy := fixtures.Policies[0]
+	policy.LoadItems(ms.DB, false)
+	items := policy.Items
+
+	// give two items a dependant and calculate expected values
+	dependant := policy.Dependents[0]
+	coverageForPolicy := 0
+	coverageForDep := 0
+	for i, item := range items {
+		if item.CoverageStatus != api.ItemCoverageStatusApproved {
+			continue
+		}
+		if i == 2 {
+			items[i].PolicyDependentID = nulls.NewUUID(dependant.ID)
+			ms.NoError(ms.DB.Update(&items[i]), "error trying to change item DependantID")
+			coverageForDep += items[i].CoverageAmount
+		}
+		coverageForPolicy += items[i].CoverageAmount
+	}
+
+	iCat := fixtures.ItemCategories[0]
+
+	goodItem := Item{
+		Name:              "Good Item",
+		CategoryID:        iCat.ID,
+		PolicyID:          policy.ID,
+		InStorage:         true,
+		Country:           "Thailand",
+		Description:       "camera",
+		Make:              "Minolta",
+		Model:             "Max",
+		SerialNumber:      "MM1234",
+		CoverageAmount:    200,
+		PurchaseDate:      time.Now().UTC().Add(time.Hour * -48),
+		CoverageStartDate: time.Now().UTC().Add(time.Hour * 48),
+	}
+	itemExceeedsPolicy := goodItem
+	itemExceeedsPolicy.CoverageAmount = domain.Env.PolicyMaxCoverage - coverageForPolicy + 1
+
+	itemExceeedsDependent := goodItem
+	itemExceeedsDependent.PolicyDependentID = nulls.NewUUID(dependant.ID)
+	itemExceeedsDependent.CoverageAmount = domain.Env.DependantMaxCoverage - coverageForDep + 1
+
+	tests := []struct {
+		name            string
+		item            Item
+		wantErrContains string
+	}{
+		{
+			name:            "item exceeds policy max",
+			item:            itemExceeedsPolicy,
+			wantErrContains: "pushes policy total over max allowed",
+		},
+		{
+			name:            "item exceeds dependant max",
+			item:            itemExceeedsDependent,
+			wantErrContains: "pushes policy dependant total over max allowed",
+		},
+		{
+			name: "good item",
+			item: goodItem,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := tt.item.VetAndCreate(ms.DB)
+
+			if tt.wantErrContains != "" {
+				ms.Error(got)
+				ms.Contains(got.Error(), tt.wantErrContains)
+				return
+			}
+			ms.NoError(got)
+
+			ms.NotEqual(uuid.Nil, tt.item.ID, "expected item to have been given an ID")
+			ms.Equal(api.ItemCoverageStatusDraft, tt.item.CoverageStatus, "incorrect status")
 
 		})
 	}

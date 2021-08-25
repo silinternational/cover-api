@@ -71,7 +71,7 @@ func (i *Item) CreateGrift(tx *pop.Connection) error {
 
 func (i *Item) VetAndCreate(tx *pop.Connection) error {
 	i.LoadPolicy(tx, false)
-	coverageTotals := i.Policy.ItemCoverageTotals(tx)
+	coverageTotals := i.Policy.itemCoverageTotals(tx)
 	policyTotal := coverageTotals[i.PolicyID]
 
 	if policyTotal+i.CoverageAmount > domain.Env.PolicyMaxCoverage {

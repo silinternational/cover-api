@@ -3,6 +3,8 @@ package models
 import (
 	"testing"
 
+	"github.com/gobuffalo/nulls"
+
 	"github.com/silinternational/cover-api/api"
 )
 
@@ -119,4 +121,53 @@ func (ms *ModelSuite) TestPolicy_LoadDependents() {
 
 	policy.LoadDependents(ms.DB, false)
 	ms.Len(policy.Dependents, 1)
+}
+
+func (ms *ModelSuite) TestPolicy_itemCoverageTotals() {
+	fixConfig := FixturesConfig{
+		NumberOfPolicies:    2,
+		UsersPerPolicy:      2,
+		DependentsPerPolicy: 2,
+		ItemsPerPolicy:      5,
+	}
+
+	fixtures := CreateItemFixtures(ms.DB, fixConfig)
+	policy := fixtures.Policies[0]
+	policy.LoadItems(ms.DB, false)
+	items := policy.Items
+	notApproved := items[4]
+	notApproved.CoverageStatus = api.ItemCoverageStatusDraft
+
+	ms.NoError(ms.DB.Update(&notApproved), "error updating coverage status of item")
+
+	// give two items a dependant and calculate expected values
+	dependant := policy.Dependents[0]
+	coverageForPolicy := 0
+	coverageForDep := 0
+	for i, item := range items {
+		if item.CoverageStatus != api.ItemCoverageStatusApproved {
+			continue
+		}
+		if i == 2 || i == 3 {
+			items[i].PolicyDependentID = nulls.NewUUID(dependant.ID)
+			ms.NoError(ms.DB.Update(&items[i]), "error trying to change item DependantID")
+			coverageForDep += items[i].CoverageAmount
+		}
+		coverageForPolicy += items[i].CoverageAmount
+	}
+
+	got := policy.itemCoverageTotals(ms.DB)
+
+	ms.Equal(coverageForPolicy, got[policy.ID], "incorrect policy coverage total")
+	ms.Equal(coverageForDep, got[dependant.ID], "incorrect dependant coverage total")
+	ms.Greater(coverageForPolicy, coverageForDep, "double checking exposed a problem with the test design")
+
+	// Note this includes the dependant total twice, which is OK for testing purposes
+	gotTotal := 0
+	for _, v := range got {
+		gotTotal += v
+	}
+
+	want := coverageForPolicy + coverageForDep
+	ms.Equal(want, gotTotal, "incorrect coverage grand total")
 }

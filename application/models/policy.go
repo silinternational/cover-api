@@ -77,10 +77,10 @@ func (p *Policy) IsActorAllowedTo(tx *pop.Connection, actor User, perm Permissio
 	return false
 }
 
-// ItemCoverageTotals returns a map with an entry for the policy ID and the total
-// of all the items' coverage amounts as well as
-// an entry for each dependant with the total of each of their items' coverage amounts
-func (p *Policy) ItemCoverageTotals(tx *pop.Connection) map[uuid.UUID]int {
+// itemCoverageTotals returns a map with an entry for
+//  the policy ID with the total of all the items' coverage amounts as well as
+//  an entry for each dependant with the total of each of their items' coverage amounts
+func (p *Policy) itemCoverageTotals(tx *pop.Connection) map[uuid.UUID]int {
 	p.LoadItems(tx, false)
 
 	addToTotals := func(newKey uuid.UUID, newAmount int, totals map[uuid.UUID]int) {
@@ -95,6 +95,9 @@ func (p *Policy) ItemCoverageTotals(tx *pop.Connection) map[uuid.UUID]int {
 	totals := map[uuid.UUID]int{}
 
 	for _, item := range p.Items {
+		if item.CoverageStatus != api.ItemCoverageStatusApproved {
+			continue
+		}
 		if item.PolicyDependentID.Valid {
 			addToTotals(item.PolicyDependentID.UUID, item.CoverageAmount, totals)
 		}
