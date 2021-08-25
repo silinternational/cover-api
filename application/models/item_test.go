@@ -288,8 +288,8 @@ func (ms *ModelSuite) TestItem_VetAndCreate() {
 		PurchaseDate:      time.Now().UTC().Add(time.Hour * -48),
 		CoverageStartDate: time.Now().UTC().Add(time.Hour * 48),
 	}
-	itemExceeedsPolicy := goodItem
-	itemExceeedsPolicy.CoverageAmount = domain.Env.PolicyMaxCoverage - coverageForPolicy + 1
+	itemExceedsPolicy := goodItem
+	itemExceedsPolicy.CoverageAmount = domain.Env.PolicyMaxCoverage - coverageForPolicy + 1
 
 	tests := []struct {
 		name            string
@@ -298,7 +298,7 @@ func (ms *ModelSuite) TestItem_VetAndCreate() {
 	}{
 		{
 			name:            "item exceeds policy max",
-			item:            itemExceeedsPolicy,
+			item:            itemExceedsPolicy,
 			wantErrContains: "pushes policy total over max allowed",
 		},
 		{
@@ -368,8 +368,6 @@ func (ms *ModelSuite) TestItem_SubmitForApproval() {
 	itemAutoApproveDependent.PolicyDependentID = nulls.NewUUID(dependent.ID)
 	ms.NoError(ms.DB.Update(&itemAutoApproveDependent), "error updating item fixture for test")
 
-	// give two items a dependant and calculate expected values
-
 	tests := []struct {
 		name       string
 		item       Item
@@ -395,11 +393,9 @@ func (ms *ModelSuite) TestItem_SubmitForApproval() {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got := tt.item.SubmitForApproval(ms.DB)
-
 			ms.NoError(got)
 
 			ms.Equal(tt.wantStatus, tt.item.CoverageStatus, "incorrect status")
-
 		})
 	}
 }
