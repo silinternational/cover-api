@@ -28,9 +28,6 @@ import (
 //         "$ref": "#/definitions/PolicyDependents"
 func dependentsList(c buffalo.Context) error {
 	policy := getReferencedPolicyFromCtx(c)
-	if policy == nil {
-		panic("policy not found in context")
-	}
 
 	tx := models.Tx(c)
 	policy.LoadDependents(tx, false)
@@ -63,9 +60,6 @@ func dependentsList(c buffalo.Context) error {
 //       "$ref": "#/definitions/PolicyDependent"
 func dependentsCreate(c buffalo.Context) error {
 	policy := getReferencedPolicyFromCtx(c)
-	if policy == nil {
-		panic("policy not found in context")
-	}
 
 	var input api.PolicyDependentInput
 	if err := StrictBind(c, &input); err != nil {
