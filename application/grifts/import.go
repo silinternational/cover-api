@@ -34,6 +34,8 @@ TODO:
 	1. Import other tables (e.g. Journal Entries)
 	2. Ensure created_at and updated_at are saved correctly
 	3. Ensure text does not get truncated
+	4. Import other IDPs to match more email addresses
+	5. Import policy.notes (concatenated for multi-policy households)
 */
 
 const (
@@ -57,6 +59,12 @@ var itemIDMap = map[int]uuid.UUID{}
 
 // itemCategoryIDMap is a map of legacy ID to new ID
 var itemCategoryIDMap = map[int]uuid.UUID{}
+
+// householdPolicyMap is a map of household ID to new policy UUID
+var householdPolicyMap = map[string]uuid.UUID{}
+
+// policyUserMap is a list of existing PolicyUser records to prevent duplicates
+var policyUserMap = map[string]struct{}{}
 
 // time used in place of missing time values
 var emptyTime time.Time
@@ -250,42 +258,60 @@ func getItemCategoryStatus(itemCategory LegacyItemCategory) api.ItemCategoryStat
 }
 
 func importPolicies(tx *pop.Connection, in []LegacyPolicy) {
-	var nPolicies, nClaims, nItems, nClaimItems, nPolicyUsers int
+	var nPolicies, nClaims, nItems, nClaimItems, nPolicyUsers, nDuplicatePolicies int
+	householdsWithMultiplePolicies := map[string]struct{}{}
 
-	for i := range in {
-		if err := normalizePolicy(&in[i]); err != nil {
+	for _, p := range in {
+		if err := normalizePolicy(&p); err != nil {
 			log.Println(err)
 			continue
 		}
-		p := in[i]
 
-		policyID := stringToInt(p.Id, "Policy ID")
-		newPolicy := models.Policy{
-			Type:        getPolicyType(p),
-			HouseholdID: p.HouseholdId,
-			CostCenter:  p.CostCenter,
-			Account:     strconv.Itoa(p.Account),
-			EntityCode:  p.EntityCode.String,
-			LegacyID:    nulls.NewInt(policyID),
-			CreatedAt:   parseStringTime(p.CreatedAt, fmt.Sprintf("Policy[%d].CreatedAt", policyID)),
-			UpdatedAt:   parseNullStringTimeToTime(p.UpdatedAt, fmt.Sprintf("Policy[%d].UpdatedAt", policyID)),
-		}
-		if err := newPolicy.Create(tx); err != nil {
-			log.Fatalf("failed to create policy, %s\n%+v", err, newPolicy)
-		}
-		nPolicies++
+		var policyUUID uuid.UUID
 
-		importItems(tx, newPolicy, p.Items)
+		if id, ok := householdPolicyMap[p.HouseholdId]; ok {
+			// log.Printf("Policy[%s] has a duplicate household ID %d", p.Id, id)
+			policyUUID = id
+			nDuplicatePolicies++
+			householdsWithMultiplePolicies[p.HouseholdId] = struct{}{}
+		} else {
+			policyID := stringToInt(p.Id, "Policy ID")
+			householdID := nulls.String{}
+			if p.HouseholdId != "" {
+				householdID = nulls.NewString(p.HouseholdId)
+			}
+
+			newPolicy := models.Policy{
+				Type:        getPolicyType(p),
+				HouseholdID: householdID,
+				CostCenter:  p.CostCenter,
+				Account:     strconv.Itoa(p.Account),
+				EntityCode:  p.EntityCode.String,
+				LegacyID:    nulls.NewInt(policyID),
+				CreatedAt:   parseStringTime(p.CreatedAt, fmt.Sprintf("Policy[%d].CreatedAt", policyID)),
+				UpdatedAt:   parseNullStringTimeToTime(p.UpdatedAt, fmt.Sprintf("Policy[%d].UpdatedAt", policyID)),
+			}
+			if err := newPolicy.Create(tx); err != nil {
+				log.Fatalf("failed to create policy, %s\n%+v", err, newPolicy)
+			}
+			policyUUID = newPolicy.ID
+			householdPolicyMap[p.HouseholdId] = policyUUID
+
+			nPolicies++
+		}
+
+		importItems(tx, policyUUID, p.Items)
 		nItems += len(p.Items)
 
-		nClaimItems += importClaims(tx, newPolicy, p.Claims)
+		nClaimItems += importClaims(tx, policyUUID, p.Claims)
 		nClaims += len(p.Claims)
 
-		nPolicyUsers += importPolicyUsers(tx, p, newPolicy.ID)
+		nPolicyUsers += importPolicyUsers(tx, p, policyUUID)
 	}
 
 	fmt.Println("imported: ")
-	fmt.Printf("  Policies: %d\n", nPolicies)
+	fmt.Printf("  Policies: %d, Duplicate Household Policies: %d, Households with multiple Policies: %d\n",
+		nPolicies, nDuplicatePolicies, len(householdsWithMultiplePolicies))
 	fmt.Printf("  Claims: %d\n", nClaims)
 	fmt.Printf("  Items: %d\n", nItems)
 	fmt.Printf("  ClaimItems: %d\n", nClaimItems)
@@ -363,6 +389,11 @@ func createPolicyUser(tx *pop.Connection, email string, policyID uuid.UUID) {
 		user := createUserFromEmailAddress(tx, email)
 		userID = user.ID
 	}
+
+	if _, ok = policyUserMap[policyID.String()+userID.String()]; ok {
+		return
+	}
+
 	policyUser := models.PolicyUser{
 		PolicyID: policyID,
 		UserID:   userID,
@@ -370,6 +401,8 @@ func createPolicyUser(tx *pop.Connection, email string, policyID uuid.UUID) {
 	if err := policyUser.Create(tx); err != nil {
 		log.Fatalf("failed to create new PolicyUser, %s", err)
 	}
+
+	policyUserMap[policyID.String()+userID.String()] = struct{}{}
 }
 
 func createUserFromEmailAddress(tx *pop.Connection, email string) models.User {
@@ -398,7 +431,7 @@ func validMailAddress(address string) (string, bool) {
 	return addr.Address, true
 }
 
-func importClaims(tx *pop.Connection, policy models.Policy, claims []LegacyClaim) int {
+func importClaims(tx *pop.Connection, policyID uuid.UUID, claims []LegacyClaim) int {
 	nClaimItems := 0
 
 	for _, c := range claims {
@@ -406,7 +439,7 @@ func importClaims(tx *pop.Connection, policy models.Policy, claims []LegacyClaim
 		claimDesc := fmt.Sprintf("Claim[%d].", claimID)
 		newClaim := models.Claim{
 			LegacyID:         nulls.NewInt(claimID),
-			PolicyID:         policy.ID,
+			PolicyID:         policyID,
 			EventDate:        parseStringTime(c.EventDate, claimDesc+"EventDate"),
 			EventType:        getEventType(c),
 			EventDescription: getEventDescription(c),
@@ -550,7 +583,7 @@ func getClaimStatus(claim LegacyClaim) api.ClaimStatus {
 	return claimStatus
 }
 
-func importItems(tx *pop.Connection, policy models.Policy, items []LegacyItem) {
+func importItems(tx *pop.Connection, policyID uuid.UUID, items []LegacyItem) {
 	for _, item := range items {
 		itemID := stringToInt(item.Id, "Item ID")
 		itemDesc := fmt.Sprintf("Item[%d].", itemID)
@@ -562,7 +595,7 @@ func importItems(tx *pop.Connection, policy models.Policy, items []LegacyItem) {
 			InStorage:         false,
 			Country:           item.Country,
 			Description:       item.Description,
-			PolicyID:          policy.ID,
+			PolicyID:          policyID,
 			Make:              item.Make,
 			Model:             item.Model,
 			SerialNumber:      item.SerialNumber,
@@ -660,7 +693,7 @@ func stringToInt(s, msg string) int {
 
 func fixedPointStringToInt(s, desc string) int {
 	if s == "" {
-		log.Printf("%s is empty", desc)
+		log.Printf("%s is empty, setting to 0", desc)
 		return 0
 	}
 
