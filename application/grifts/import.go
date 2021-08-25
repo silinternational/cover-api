@@ -33,6 +33,7 @@ import (
 TODO:
 	1. Import other tables (e.g. Journal Entries)
 	2. Ensure created_at and updated_at are saved correctly
+	3. Ensure text does not get truncated
 */
 
 const (
@@ -252,7 +253,10 @@ func importPolicies(tx *pop.Connection, in []LegacyPolicy) {
 	var nPolicies, nClaims, nItems, nClaimItems, nPolicyUsers int
 
 	for i := range in {
-		normalizePolicy(&in[i])
+		if err := normalizePolicy(&in[i]); err != nil {
+			log.Println(err)
+			continue
+		}
 		p := in[i]
 
 		policyID := stringToInt(p.Id, "Policy ID")
@@ -304,31 +308,28 @@ func getPolicyType(p LegacyPolicy) api.PolicyType {
 }
 
 // normalizePolicy adjusts policy fields to pass validation checks
-func normalizePolicy(p *LegacyPolicy) {
+func normalizePolicy(p *LegacyPolicy) error {
 	if p.Type == "household" {
 		p.CostCenter = ""
 		p.EntityCode = nulls.String{}
 
-		// TODO: fix input data so this isn't needed
 		if p.HouseholdId == "" {
-			log.Printf("Policy[%s].HouseholdId is empty\n", p.Id)
-			p.HouseholdId = "-"
+			return fmt.Errorf("Policy[%s].HouseholdId is empty, dropping policy", p.Id)
 		}
 	}
 
 	if p.Type == "ou" || p.Type == "corporate" {
 		p.HouseholdId = ""
 
-		// TODO: fix input data so this isn't needed
 		if !p.EntityCode.Valid || p.EntityCode.String == "" {
-			log.Printf("Policy[%s].EntityCode is empty\n", p.Id)
-			p.EntityCode = nulls.NewString("-")
+			return fmt.Errorf("Policy[%s].EntityCode is empty, dropping policy", p.Id)
 		}
 		if p.CostCenter == "" {
-			log.Printf("Policy[%s].CostCenter is empty\n", p.Id)
-			p.CostCenter = "-"
+			return fmt.Errorf("Policy[%s].CostCenter is empty, dropping policy", p.Id)
 		}
 	}
+
+	return nil
 }
 
 func importPolicyUsers(tx *pop.Connection, p LegacyPolicy, policyID uuid.UUID) int {
