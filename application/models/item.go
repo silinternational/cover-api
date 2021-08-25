@@ -40,6 +40,7 @@ type Item struct {
 	ID                uuid.UUID              `db:"id"`
 	Name              string                 `db:"name" validate:"required"`
 	CategoryID        uuid.UUID              `db:"category_id" validate:"required"`
+	RiskCategoryID    uuid.UUID              `db:"risk_category_id" validate:"required"`
 	InStorage         bool                   `db:"in_storage"`
 	Country           string                 `db:"country"`
 	Description       string                 `db:"description"`
@@ -56,8 +57,9 @@ type Item struct {
 	CreatedAt         time.Time              `db:"created_at"`
 	UpdatedAt         time.Time              `db:"updated_at"`
 
-	Category ItemCategory `belongs_to:"item_categories" validate:"-"`
-	Policy   Policy       `belongs_to:"policies" validate:"-"`
+	Category     ItemCategory `belongs_to:"item_categories" validate:"-"`
+	RiskCategory RiskCategory `belongs_to:"risk_categories" validate:"-"`
+	Policy       Policy       `belongs_to:"policies" validate:"-"`
 }
 
 // Validate gets run every time you call pop.ValidateAndSave, pop.ValidateAndCreate, or pop.ValidateAndUpdate
@@ -300,11 +302,13 @@ func ConvertItem(tx *pop.Connection, item Item) api.Item {
 
 	iCat := ConvertItemCategory(tx, item.Category)
 
+	rCat := ConvertRiskCategory(item.RiskCategory)
+
 	return api.Item{
 		ID:                item.ID,
 		Name:              item.Name,
-		CategoryID:        item.CategoryID,
 		Category:          iCat,
+		RiskCategory:      rCat,
 		InStorage:         item.InStorage,
 		Country:           item.Country,
 		Description:       item.Description,

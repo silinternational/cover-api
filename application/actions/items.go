@@ -297,6 +297,7 @@ func convertItemApiInput(ctx context.Context, input api.ItemInput, policyID uuid
 
 	item.Name = input.Name
 	item.CategoryID = input.CategoryID
+	item.RiskCategoryID = input.RiskCategoryID
 	item.InStorage = input.InStorage
 	item.Country = input.Country
 	item.Description = input.Description

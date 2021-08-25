@@ -63,7 +63,6 @@ func (as *ActionSuite) Test_ItemsList() {
 			wantInBody: []string{
 				`{"id":"` + item2.ID.String(),
 				`"name":"` + item2.Name,
-				`"category_id":"` + item2.CategoryID.String(),
 				fmt.Sprintf(`"in_storage":%t`, item2.InStorage),
 				`"country":"` + item2.Country,
 				`"description":"` + item2.Description,
@@ -110,7 +109,7 @@ func (as *ActionSuite) Test_ItemsList() {
 	}
 }
 
-func (as *ActionSuite) Test_ItemsAdd() {
+func (as *ActionSuite) Test_ItemsCreate() {
 	fixConfig := models.FixturesConfig{
 		NumberOfPolicies:    2,
 		ItemsPerPolicy:      2,
@@ -134,6 +133,7 @@ func (as *ActionSuite) Test_ItemsAdd() {
 	badCatID := api.ItemInput{
 		Name:              "Item with missing category",
 		CategoryID:        domain.GetUUID(),
+		RiskCategoryID:    models.RiskCategoryMobileID(),
 		PurchaseDate:      "2006-01-02",
 		CoverageStartDate: "2006-01-03",
 		CoverageStatus:    api.ItemCoverageStatusDraft,
@@ -142,6 +142,7 @@ func (as *ActionSuite) Test_ItemsAdd() {
 	goodItem := api.ItemInput{
 		Name:              "Good Item",
 		CategoryID:        iCat.ID,
+		RiskCategoryID:    models.RiskCategoryMobileID(),
 		InStorage:         true,
 		Country:           "Thailand",
 		Description:       "camera",
@@ -206,7 +207,6 @@ func (as *ActionSuite) Test_ItemsAdd() {
 			wantStatus: http.StatusOK,
 			wantInBody: []string{
 				`"name":"` + goodItem.Name,
-				`"category_id":"` + goodItem.CategoryID.String(),
 				`"in_storage":true`,
 				`"country":"` + goodItem.Country,
 				`"description":"` + goodItem.Description,
@@ -233,7 +233,7 @@ func (as *ActionSuite) Test_ItemsAdd() {
 			body := res.Body.String()
 			as.Equal(tt.wantStatus, res.Code, "incorrect status code returned, body: %s", body)
 
-			as.verifyResponseData(tt.wantInBody, body, "Items Add")
+			as.verifyResponseData(tt.wantInBody, body, "Items Create")
 
 			if res.Code != http.StatusOK {
 				return
@@ -245,7 +245,7 @@ func (as *ActionSuite) Test_ItemsAdd() {
 
 			var item models.Item
 			as.NoError(as.DB.Where(`name = ?`, tt.newItem.Name).First(&item),
-				"error finding newly added item.")
+				"error finding newly created item.")
 		})
 	}
 }
@@ -310,7 +310,6 @@ func (as *ActionSuite) Test_ItemsSubmit() {
 			wantStatus: http.StatusOK,
 			wantInBody: []string{
 				`"name":"` + revisionItem.Name,
-				`"category_id":"` + revisionItem.CategoryID.String(),
 				fmt.Sprintf(`"in_storage":%t`, revisionItem.InStorage),
 				`"country":"` + revisionItem.Country,
 				`"description":"` + revisionItem.Description,
@@ -337,7 +336,7 @@ func (as *ActionSuite) Test_ItemsSubmit() {
 			body := res.Body.String()
 			as.Equal(tt.wantStatus, res.Code, "incorrect status code returned, body: %s", body)
 
-			as.verifyResponseData(tt.wantInBody, body, "Items Add")
+			as.verifyResponseData(tt.wantInBody, body, "")
 
 			if res.Code != http.StatusOK {
 				return
@@ -415,7 +414,6 @@ func (as *ActionSuite) Test_ItemsRevision() {
 			wantStatus: http.StatusOK,
 			wantInBody: []string{
 				`"name":"` + pendingItem.Name,
-				`"category_id":"` + pendingItem.CategoryID.String(),
 				fmt.Sprintf(`"in_storage":%t`, pendingItem.InStorage),
 				`"country":"` + pendingItem.Country,
 				`"description":"` + pendingItem.Description,
@@ -679,6 +677,7 @@ func (as *ActionSuite) Test_ItemsUpdate() {
 	goodItem := api.ItemInput{
 		Name:              "Good Item",
 		CategoryID:        iCat.ID,
+		RiskCategoryID:    models.RiskCategoryMobileID(),
 		InStorage:         true,
 		Country:           "Thailand",
 		Description:       "camera",
@@ -758,7 +757,6 @@ func (as *ActionSuite) Test_ItemsUpdate() {
 			wantStatus: http.StatusOK,
 			wantInBody: []string{
 				`"name":"` + goodItem.Name,
-				`"category_id":"` + goodItem.CategoryID.String(),
 				`"in_storage":true`,
 				`"country":"` + goodItem.Country,
 				`"description":"` + goodItem.Description,
@@ -786,7 +784,7 @@ func (as *ActionSuite) Test_ItemsUpdate() {
 			body := res.Body.String()
 			as.Equal(tt.wantStatus, res.Code, "incorrect status code returned, body: %s", body)
 
-			as.verifyResponseData(tt.wantInBody, body, "Items Add")
+			as.verifyResponseData(tt.wantInBody, body, "")
 
 			if res.Code != http.StatusOK {
 				return
@@ -798,7 +796,7 @@ func (as *ActionSuite) Test_ItemsUpdate() {
 
 			var item models.Item
 			as.NoError(as.DB.Where(`name = ?`, tt.newItem.Name).First(&item),
-				"error finding newly added item.")
+				"error finding newly updated item.")
 		})
 	}
 }
@@ -902,7 +900,7 @@ func (as *ActionSuite) Test_ItemsRemove() {
 			as.Equal(tt.wantHTTPStatus, res.Code, "incorrect status code returned, body: %s", body)
 
 			if res.Code != http.StatusNoContent {
-				as.verifyResponseData(tt.wantInBody, body, "Items Add")
+				as.verifyResponseData(tt.wantInBody, body, "")
 				return
 			}
 

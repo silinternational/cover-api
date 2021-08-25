@@ -35,11 +35,6 @@ type Item struct {
 
 	Name string `json:"name"`
 
-	// category ID
-	//
-	// swagger:strfmt uuid4
-	CategoryID uuid.UUID `json:"category_id"`
-
 	// is item in storage?
 	InStorage bool `json:"in_storage"`
 
@@ -87,6 +82,9 @@ type Item struct {
 
 	// item category
 	Category ItemCategory `json:"category"`
+
+	// risk category
+	RiskCategory RiskCategory `json:"risk_category"`
 }
 
 // ItemInput represents payload for adding an item
@@ -99,6 +97,11 @@ type ItemInput struct {
 	//
 	// swagger:strfmt uuid4
 	CategoryID uuid.UUID `json:"category_id"`
+
+	// risk category ID
+	//
+	// swagger:strfmt uuid4
+	RiskCategoryID uuid.UUID `json:"risk_category_id"`
 
 	// is item in storage?
 	InStorage bool `json:"in_storage"`

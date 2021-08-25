@@ -123,6 +123,7 @@ func createItemFixture(tx *pop.Connection, policyID uuid.UUID, categoryID uuid.U
 	item := Item{
 		Name:              randStr(10),
 		CategoryID:        categoryID,
+		RiskCategoryID:    RiskCategoryStationaryID(),
 		Country:           randStr(10),
 		Description:       randStr(40),
 		PolicyID:          policyID,
