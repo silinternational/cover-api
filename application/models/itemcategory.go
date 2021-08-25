@@ -1,6 +1,7 @@
 package models
 
 import (
+	"errors"
 	"time"
 
 	"github.com/gobuffalo/nulls"
@@ -55,15 +56,10 @@ func (i *ItemCategory) Create(tx *pop.Connection) error {
 
 func (i *ItemCategory) FindByID(tx *pop.Connection, id uuid.UUID) error {
 	if err := tx.Find(i, id); err != nil {
-		appErr := api.AppError{
-			Err:      err,
-			Key:      api.ErrorQueryFailure,
-			Category: api.CategoryInternal,
+		if domain.IsOtherThanNoRows(err) {
+			return api.NewAppError(err, api.ErrorQueryFailure, api.CategoryInternal)
 		}
-		if !domain.IsOtherThanNoRows(err) {
-			appErr.Category = api.CategoryUser
-		}
-		return &appErr
+		return api.NewAppError(errors.New("invalid category"), api.ErrorInvalidCategory, api.CategoryUser)
 	}
 	return nil
 }
