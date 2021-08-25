@@ -309,7 +309,8 @@ func convertItemApiInput(ctx context.Context, input api.ItemInput, policyID uuid
 		riskCatID = input.RiskCategoryID.UUID
 	} else {
 		if !itemCat.RiskCategoryID.Valid {
-			return item, api.NewAppError(errors.New("no risk category specified"), api.ErrorNoRiskCategorySpecified, api.CategoryUser)
+			err := errors.New("no risk category specified")
+			return item, api.NewAppError(err, api.ErrorNoRiskCategorySpecified, api.CategoryUser)
 		}
 		riskCatID = itemCat.RiskCategoryID.UUID
 	}
