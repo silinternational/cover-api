@@ -261,11 +261,12 @@ func importPolicies(tx *pop.Connection, in []LegacyPolicy) {
 	var nPolicies, nClaims, nItems, nClaimItems, nPolicyUsers, nDuplicatePolicies int
 	householdsWithMultiplePolicies := map[string]struct{}{}
 
-	for _, p := range in {
-		if err := normalizePolicy(&p); err != nil { // #nosec G601
+	for i := range in {
+		if err := normalizePolicy(&in[i]); err != nil {
 			log.Println(err)
 			continue
 		}
+		p := in[i]
 
 		var policyUUID uuid.UUID
 
