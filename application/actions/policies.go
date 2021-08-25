@@ -2,6 +2,7 @@ package actions
 
 import (
 	"github.com/gobuffalo/buffalo"
+	"github.com/gobuffalo/nulls"
 
 	"github.com/silinternational/cover-api/api"
 	"github.com/silinternational/cover-api/domain"
@@ -89,12 +90,12 @@ func policiesUpdate(c buffalo.Context) error {
 
 	switch policy.Type {
 	case api.PolicyTypeHousehold:
-		policy.HouseholdID = update.HouseholdID
+		policy.HouseholdID = nulls.NewString(update.HouseholdID)
 		policy.CostCenter = ""
 		policy.Account = ""
 		policy.EntityCode = ""
 	case api.PolicyTypeCorporate:
-		policy.HouseholdID = ""
+		policy.HouseholdID = nulls.String{}
 		policy.CostCenter = update.CostCenter
 		policy.Account = update.Account
 		policy.EntityCode = update.EntityCode

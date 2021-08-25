@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/gobuffalo/nulls"
+
 	"github.com/silinternational/cover-api/api"
 
 	"github.com/gofrs/uuid"
@@ -157,7 +159,7 @@ func createPolicyFixtures(fixUsers []*models.User) ([]*models.Policy, error) {
 		fixPolicies[i] = &models.Policy{
 			ID:          uuid.FromStringOrNil(uu),
 			Type:        api.PolicyTypeHousehold,
-			HouseholdID: fmt.Sprintf("HID-%s-%s", user.FirstName, user.LastName),
+			HouseholdID: nulls.NewString(fmt.Sprintf("HID-%s-%s", user.FirstName, user.LastName)),
 		}
 
 		err := models.DB.Create(fixPolicies[i])

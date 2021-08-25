@@ -23,7 +23,7 @@ var ValidPolicyTypes = map[api.PolicyType]struct{}{
 type Policy struct {
 	ID          uuid.UUID      `db:"id"`
 	Type        api.PolicyType `db:"type" validate:"policyType"`
-	HouseholdID string         `db:"household_id" validate:"required_if=Type Household"`
+	HouseholdID nulls.String   `db:"household_id" validate:"required_if=Type Household"`
 	CostCenter  string         `db:"cost_center" validate:"required_if=Type Corporate"`
 	Account     string         `db:"account" validate:"required_if=Type Corporate"`
 	EntityCode  string         `db:"entity_code" validate:"required_if=Type Corporate"`
@@ -128,7 +128,7 @@ func ConvertPolicy(tx *pop.Connection, p Policy) api.Policy {
 	return api.Policy{
 		ID:          p.ID,
 		Type:        p.Type,
-		HouseholdID: p.HouseholdID,
+		HouseholdID: p.HouseholdID.String,
 		CostCenter:  p.CostCenter,
 		Account:     p.Account,
 		EntityCode:  p.EntityCode,

@@ -211,7 +211,7 @@ func (u *User) CreateInitialPolicy(tx *pop.Connection) error {
 	policy := Policy{
 		Type:        api.PolicyTypeHousehold,
 		CostCenter:  fmt.Sprintf("CC-%s-%s", u.FirstName, u.LastName),
-		HouseholdID: fmt.Sprintf("HHID-%s-%s", u.FirstName, u.LastName),
+		HouseholdID: nulls.NewString(fmt.Sprintf("HHID-%s-%s", u.FirstName, u.LastName)),
 	}
 
 	if err := tx.Create(&policy); err != nil {
