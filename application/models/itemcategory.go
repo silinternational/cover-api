@@ -27,7 +27,7 @@ type ItemCategories []ItemCategory
 // ItemCategory model
 type ItemCategory struct {
 	ID             uuid.UUID              `db:"id"`
-	RiskCategoryID uuid.UUID              `db:"risk_category_id"`
+	RiskCategoryID nulls.UUID             `db:"risk_category_id"`
 	Name           string                 `db:"name" validate:"required"`
 	HelpText       string                 `db:"help_text"`
 	Status         api.ItemCategoryStatus `db:"status" validate:"itemCategoryStatus"`

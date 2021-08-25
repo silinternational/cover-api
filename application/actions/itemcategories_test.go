@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/gobuffalo/nulls"
+
 	"github.com/silinternational/cover-api/api"
 	"github.com/silinternational/cover-api/models"
 )
@@ -25,7 +27,7 @@ func (as *ActionSuite) Test_ItemCategoriesList() {
 	cats := make(models.ItemCategories, 3)
 	for i := range cats {
 		cats[i] = models.ItemCategory{
-			RiskCategoryID: rc.ID,
+			RiskCategoryID: nulls.NewUUID(rc.ID),
 			Name:           fmt.Sprintf("Cat%v", i),
 			Status:         api.ItemCategoryStatusEnabled,
 			AutoApproveMax: 10,
@@ -35,7 +37,7 @@ func (as *ActionSuite) Test_ItemCategoriesList() {
 
 	// create 1 disabled category
 	disabled := models.ItemCategory{
-		RiskCategoryID: rc.ID,
+		RiskCategoryID: nulls.NewUUID(rc.ID),
 		Name:           "disabled",
 		Status:         api.ItemCategoryStatusDisabled,
 		AutoApproveMax: 100,

@@ -182,7 +182,7 @@ func CreateCategoryFixtures(tx *pop.Connection, n int) Fixtures {
 
 	categories := make(ItemCategories, n)
 	for i := range categories {
-		categories[i].RiskCategoryID = RiskCategoryMobileID()
+		categories[i].RiskCategoryID = nulls.NewUUID(RiskCategoryMobileID())
 		categories[i].Name = randStr(10)
 		categories[i].HelpText = randStr(40)
 		categories[i].Status = api.ItemCategoryStatusEnabled

@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/gobuffalo/nulls"
+
 	"github.com/silinternational/cover-api/api"
 
 	"github.com/gofrs/uuid"
@@ -209,7 +211,7 @@ func createCategories() ([]*models.ItemCategory, error) {
 
 		fixCats[i] = &models.ItemCategory{
 			ID:             uuid.FromStringOrNil(uu),
-			RiskCategoryID: riskCats[i/3].ID,
+			RiskCategoryID: nulls.NewUUID(riskCats[i/3].ID),
 			Name:           fmt.Sprintf("ItemCat-%d", i),
 			HelpText:       fmt.Sprintf("This is help text for ItemCat-%d", i),
 			Status:         api.ItemCategoryStatusEnabled,
