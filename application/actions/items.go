@@ -172,6 +172,35 @@ func itemsSubmit(c buffalo.Context) error {
 	return c.Render(http.StatusOK, r.JSON(output))
 }
 
+// swagger:operation POST /items/{id}/revision PolicyItems PolicyItemsRevision
+//
+// PolicyItemsRevision
+//
+// admin requires changes on a policy item
+//
+// ---
+// parameters:
+//   - name: id
+//     in: path
+//     required: true
+//     description: item ID
+// responses:
+//   '200':
+//     description: Policy Item
+//     schema:
+//       "$ref": "#/definitions/Item"
+func itemsRevision(c buffalo.Context) error {
+	tx := models.Tx(c)
+	item := getReferencedItemFromCtx(c)
+
+	if err := item.Revision(tx); err != nil {
+		return reportError(c, err)
+	}
+
+	output := models.ConvertItem(tx, *item)
+	return c.Render(http.StatusOK, r.JSON(output))
+}
+
 // swagger:operation POST /items/{id}/approve PolicyItems PolicyItemsApprove
 //
 // PolicyItemsApprove

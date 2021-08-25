@@ -249,6 +249,15 @@ func (i *Item) SubmitForApproval(tx *pop.Connection) error {
 	return i.Update(tx, oldStatus)
 }
 
+// Revision takes the item from Pending coverage status to Revision.
+// It assumes that the item's current status has already been validated.
+// TODO emit an event for the the status transition
+func (i *Item) Revision(tx *pop.Connection) error {
+	oldStatus := i.CoverageStatus
+	i.CoverageStatus = api.ItemCoverageStatusRevision
+	return i.Update(tx, oldStatus)
+}
+
 // Approve takes the item from Pending coverage status to Approved.
 // It assumes that the item's current status has already been validated.
 // TODO emit an event for the the status transition
