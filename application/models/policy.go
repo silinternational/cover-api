@@ -23,7 +23,7 @@ var ValidPolicyTypes = map[api.PolicyType]struct{}{
 type Policy struct {
 	ID          uuid.UUID      `db:"id"`
 	Type        api.PolicyType `db:"type" validate:"policyType"`
-	HouseholdID nulls.String   `db:"household_id" validate:"required_if=Type Household"`
+	HouseholdID nulls.String   `db:"household_id"`
 	CostCenter  string         `db:"cost_center" validate:"required_if=Type Corporate"`
 	Account     string         `db:"account" validate:"required_if=Type Corporate"`
 	EntityCode  string         `db:"entity_code" validate:"required_if=Type Corporate"`

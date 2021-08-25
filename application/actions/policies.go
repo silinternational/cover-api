@@ -90,7 +90,7 @@ func policiesUpdate(c buffalo.Context) error {
 
 	switch policy.Type {
 	case api.PolicyTypeHousehold:
-		policy.HouseholdID = nulls.NewString(update.HouseholdID)
+		policy.HouseholdID = update.HouseholdID
 		policy.CostCenter = ""
 		policy.Account = ""
 		policy.EntityCode = ""
