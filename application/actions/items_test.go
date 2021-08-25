@@ -442,7 +442,7 @@ func (as *ActionSuite) Test_ItemsRevision() {
 			body := res.Body.String()
 			as.Equal(tt.wantStatus, res.Code, "incorrect status code returned, body: %s", body)
 
-			as.verifyResponseData(tt.wantInBody, body, "Items Approve")
+			as.verifyResponseData(tt.wantInBody, body, "Items Revision")
 
 			if res.Code != http.StatusOK {
 				return
