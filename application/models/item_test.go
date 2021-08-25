@@ -332,7 +332,7 @@ func (ms *ModelSuite) TestItem_SubmitForApproval() {
 		NumberOfPolicies:    2,
 		UsersPerPolicy:      2,
 		DependentsPerPolicy: 2,
-		ItemsPerPolicy:      5,
+		ItemsPerPolicy:      6,
 	}
 
 	fixtures := CreateItemFixtures(ms.DB, fixConfig)
@@ -349,11 +349,13 @@ func (ms *ModelSuite) TestItem_SubmitForApproval() {
 	itemManualApprove := items[2]
 	itemManualApproveDependent := items[3]
 	itemAutoApproveDependent := items[4]
+	itemExceedsMax := items[5]
 
 	// set them all to Draft status
 	itemManualApprove.CoverageStatus = api.ItemCoverageStatusDraft
 	itemManualApproveDependent.CoverageStatus = api.ItemCoverageStatusDraft
 	itemAutoApproveDependent.CoverageStatus = api.ItemCoverageStatusDraft
+	itemExceedsMax.CoverageStatus = api.ItemCoverageStatusDraft
 
 	// set there coverage amounts to be helpful for the tests and set the dependent as needed
 	itemManualApprove.LoadCategory(ms.DB, false)
@@ -368,10 +370,14 @@ func (ms *ModelSuite) TestItem_SubmitForApproval() {
 	itemAutoApproveDependent.PolicyDependentID = nulls.NewUUID(dependent.ID)
 	ms.NoError(ms.DB.Update(&itemAutoApproveDependent), "error updating item fixture for test")
 
+	itemExceedsMax.CoverageAmount = domain.Env.PolicyMaxCoverage
+	ms.NoError(ms.DB.Update(&itemExceedsMax), "error updating item fixture for test")
+
 	tests := []struct {
-		name       string
-		item       Item
-		wantStatus api.ItemCoverageStatus
+		name            string
+		item            Item
+		wantStatus      api.ItemCoverageStatus
+		wantErrContains string
 	}{
 		{
 			name:       "item requires manual approval",
@@ -388,11 +394,23 @@ func (ms *ModelSuite) TestItem_SubmitForApproval() {
 			item:       itemAutoApproveDependent,
 			wantStatus: api.ItemCoverageStatusApproved,
 		},
+		{
+			name:            "item coverage amount exceeds max",
+			item:            itemExceedsMax,
+			wantErrContains: "pushes policy total over max allowed",
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got := tt.item.SubmitForApproval(ms.DB)
+
+			if tt.wantErrContains != "" {
+				ms.Error(got)
+				ms.Contains(got.Error(), tt.wantErrContains, "incorrect error")
+				return
+			}
+
 			ms.NoError(got)
 
 			ms.Equal(tt.wantStatus, tt.item.CoverageStatus, "incorrect status")
