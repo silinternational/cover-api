@@ -3,6 +3,7 @@ package api
 import (
 	"time"
 
+	"github.com/gobuffalo/nulls"
 	"github.com/gofrs/uuid"
 )
 
@@ -101,7 +102,7 @@ type ItemInput struct {
 	// risk category ID
 	//
 	// swagger:strfmt uuid4
-	RiskCategoryID uuid.UUID `json:"risk_category_id"`
+	RiskCategoryID nulls.UUID `json:"risk_category_id"`
 
 	// is item in storage?
 	InStorage bool `json:"in_storage"`

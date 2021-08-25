@@ -287,28 +287,22 @@ func (i *Item) LoadPolicy(tx *pop.Connection, reload bool) {
 	}
 }
 
-// LoadCategory - a simple wrapper method for loading an item category on the struct
-func (i *Item) LoadCategory(tx *pop.Connection, reload bool) {
-	if i.Category.ID == uuid.Nil || reload {
-		if err := tx.Load(i, "Category"); err != nil {
-			msg := "error loading item category: " + err.Error()
-			panic(msg)
+// Load - a simple wrapper method for loading child objects
+func (i *Item) Load(tx *pop.Connection) {
+	if i.Category.ID == uuid.Nil {
+		if err := tx.Load(i, "Category", "RiskCategory"); err != nil {
+			panic("error loading item child objects: " + err.Error())
 		}
 	}
 }
 
 func ConvertItem(tx *pop.Connection, item Item) api.Item {
-	item.LoadCategory(tx, false)
-
-	iCat := ConvertItemCategory(tx, item.Category)
-
-	rCat := ConvertRiskCategory(item.RiskCategory)
-
+	item.Load(tx)
 	return api.Item{
 		ID:                item.ID,
 		Name:              item.Name,
-		Category:          iCat,
-		RiskCategory:      rCat,
+		Category:          ConvertItemCategory(tx, item.Category),
+		RiskCategory:      ConvertRiskCategory(item.RiskCategory),
 		InStorage:         item.InStorage,
 		Country:           item.Country,
 		Description:       item.Description,

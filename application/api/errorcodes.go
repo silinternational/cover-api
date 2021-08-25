@@ -59,6 +59,9 @@ const (
 	ErrorItemFromContext              = ErrorKey("ErrorItemFromContext")
 	ErrorItemInvalidPurchaseDate      = ErrorKey("ErrorItemInvalidPurchaseDate")
 	ErrorItemInvalidCoverageStartDate = ErrorKey("ErrorItemInvalidCoverageStartDate")
+	ErrorInvalidCategory              = ErrorKey("ErrorInvalidCategory")
+	ErrorNoRiskCategorySpecified      = ErrorKey("ErrorNoRiskCategorySpecified")
+	ErrorConflictingRiskCategory      = ErrorKey("ErrorConflictingRiskCategory")
 
 	// Policy
 	ErrorPolicyFromContext        = ErrorKey("ErrorPolicyFromContext")

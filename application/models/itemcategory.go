@@ -54,6 +54,10 @@ func (i *ItemCategory) Create(tx *pop.Connection) error {
 	return create(tx, i)
 }
 
+func (i *ItemCategory) Update(tx *pop.Connection) error {
+	return update(tx, i)
+}
+
 func (i *ItemCategory) FindByID(tx *pop.Connection, id uuid.UUID) error {
 	if err := tx.Find(i, id); err != nil {
 		if domain.IsOtherThanNoRows(err) {
