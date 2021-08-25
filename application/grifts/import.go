@@ -262,7 +262,7 @@ func importPolicies(tx *pop.Connection, in []LegacyPolicy) {
 	householdsWithMultiplePolicies := map[string]struct{}{}
 
 	for _, p := range in {
-		if err := normalizePolicy(&p); err != nil {
+		if err := normalizePolicy(&p); err != nil { // #nosec G601
 			log.Println(err)
 			continue
 		}
