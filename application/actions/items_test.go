@@ -442,7 +442,7 @@ func (as *ActionSuite) Test_ItemsApprove() {
 			body := res.Body.String()
 			as.Equal(tt.wantStatus, res.Code, "incorrect status code returned, body: %s", body)
 
-			as.verifyResponseData(tt.wantInBody, body, "Items Add")
+			as.verifyResponseData(tt.wantInBody, body, "Items Approve")
 
 			if res.Code != http.StatusOK {
 				return
@@ -547,7 +547,7 @@ func (as *ActionSuite) Test_ItemsDeny() {
 			body := res.Body.String()
 			as.Equal(tt.wantStatus, res.Code, "incorrect status code returned, body: %s", body)
 
-			as.verifyResponseData(tt.wantInBody, body, "Items Add")
+			as.verifyResponseData(tt.wantInBody, body, "Items Deny")
 
 			if res.Code != http.StatusOK {
 				return
