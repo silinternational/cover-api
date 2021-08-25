@@ -63,7 +63,7 @@ func dependentsCreate(c buffalo.Context) error {
 
 	var input api.PolicyDependentInput
 	if err := StrictBind(c, &input); err != nil {
-		return reportError(c, api.NewAppError(err, api.ErrorPolicyDependentCreateInvalidInput, api.CategoryUser))
+		return reportError(c, err)
 	}
 
 	tx := models.Tx(c)
