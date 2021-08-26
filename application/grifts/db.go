@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/gobuffalo/nulls"
+
 	"github.com/silinternational/cover-api/api"
 
 	"github.com/gofrs/uuid"
@@ -157,7 +159,7 @@ func createPolicyFixtures(fixUsers []*models.User) ([]*models.Policy, error) {
 		fixPolicies[i] = &models.Policy{
 			ID:          uuid.FromStringOrNil(uu),
 			Type:        api.PolicyTypeHousehold,
-			HouseholdID: fmt.Sprintf("HID-%s-%s", user.FirstName, user.LastName),
+			HouseholdID: nulls.NewString(fmt.Sprintf("HID-%s-%s", user.FirstName, user.LastName)),
 		}
 
 		err := models.DB.Create(fixPolicies[i])
@@ -213,7 +215,7 @@ func createCategories() ([]*models.ItemCategory, error) {
 			Name:           fmt.Sprintf("ItemCat-%d", i),
 			HelpText:       fmt.Sprintf("This is help text for ItemCat-%d", i),
 			Status:         api.ItemCategoryStatusEnabled,
-			AutoApproveMax: 100 * i,
+			AutoApproveMax: 100 * i * domain.CurrencyFactor, // increments of $100 starting at $0
 		}
 		err := models.DB.Create(fixCats[i])
 		if err != nil {
@@ -262,7 +264,7 @@ func createItemFixtures(fixPolicies []*models.Policy, fixICats []*models.ItemCat
 			Make:              fmt.Sprintf("IMake-%d", i),
 			Model:             fmt.Sprintf("IModel-%d", i),
 			SerialNumber:      fmt.Sprintf("ISN-%d", i),
-			CoverageAmount:    100,
+			CoverageAmount:    50 * (i + 1) * domain.CurrencyFactor, // increments of $50 starting at $50
 			CoverageStatus:    api.ItemCoverageStatusApproved,
 			CoverageStartDate: time.Now().UTC().Add(time.Hour * time.Duration((i+1)*-40)),
 			PurchaseDate:      time.Now().UTC().Add(time.Hour * time.Duration((i+1)*-48)),

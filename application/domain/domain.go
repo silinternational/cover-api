@@ -76,7 +76,8 @@ const (
 )
 
 const (
-	DateFormat = "2006-01-02"
+	CurrencyFactor = 100
+	DateFormat     = "2006-01-02"
 
 	// How many hours old an item can be until it's not allowed to be deleted
 	ItemDeleteCutOffHours = 72
@@ -143,6 +144,10 @@ var Env struct {
 	EmailFromAddress   string `split_words:"true"`
 
 	MaxFileDelete int `default:"10" split_words:"true"`
+
+	// Ensure these reflect cents and not just dollars
+	PolicyMaxCoverage       int `default:"50000" split_words:"true"` // will be multiplied by CurrencyFactor in readEnv()
+	DependantAutoApproveMax int `default:"4000" split_words:"true"`  // will be multiplied by CurrencyFactor in readEnv()
 }
 
 func init() {
@@ -162,6 +167,9 @@ func readEnv() {
 	if err != nil {
 		log.Fatal(errors.New("error loading env vars: " + err.Error()))
 	}
+
+	Env.PolicyMaxCoverage *= 100
+	Env.DependantAutoApproveMax *= 100
 
 	// Doing this separately to avoid needing two environment variables for the same thing
 	Env.GoEnv = envy.Get("GO_ENV", "development")

@@ -6,16 +6,16 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/silinternational/cover-api/api"
-
 	"github.com/gobuffalo/nulls"
 	"github.com/gobuffalo/pop/v5"
 	"github.com/gobuffalo/validate/v3"
 	"github.com/gofrs/uuid"
 
+	"github.com/silinternational/cover-api/api"
 	"github.com/silinternational/cover-api/domain"
 )
 
+// Const
 const (
 	ItemSubmit   = "submit"
 	ItemApprove  = "approve"
@@ -67,7 +67,30 @@ func (i *Item) Validate(tx *pop.Connection) (*validate.Errors, error) {
 	return validateModel(i), nil
 }
 
+func (i *Item) CreateNoVetting(tx *pop.Connection) error {
+	return create(tx, i)
+}
+
+func (i *Item) vetAmount(tx *pop.Connection) error {
+	policy := Policy{ID: i.PolicyID}
+	coverageTotals := policy.itemCoverageTotals(tx)
+	policyTotal := coverageTotals[i.PolicyID]
+
+	if policyTotal+i.CoverageAmount > domain.Env.PolicyMaxCoverage {
+		err := fmt.Errorf("item coverage amount (%v) pushes policy total over max allowed", i.CoverageAmount)
+		appErr := api.NewAppError(err, api.ErrorItemCoverageAmount, api.CategoryUser)
+		return appErr
+	}
+	return nil
+}
+
 func (i *Item) Create(tx *pop.Connection) error {
+	if err := i.vetAmount(tx); err != nil {
+		return err
+	}
+
+	i.CoverageStatus = api.ItemCoverageStatusDraft
+
 	return create(tx, i)
 }
 
@@ -169,6 +192,7 @@ func itemStatusTransitions() map[api.ItemCoverageStatus][]api.ItemCoverageStatus
 	return map[api.ItemCoverageStatus][]api.ItemCoverageStatus{
 		api.ItemCoverageStatusDraft: {
 			api.ItemCoverageStatusPending,
+			api.ItemCoverageStatusApproved,
 			api.ItemCoverageStatusInactive,
 		},
 		api.ItemCoverageStatusPending: {
@@ -211,7 +235,7 @@ func isItemTransitionValid(status1, status2 api.ItemCoverageStatus) (bool, error
 }
 
 // isItemActionAllowed does not check whether the actor is the owner of the item.
-//  Otherwise it checks whether the item can be acted on using a certain action based on its
+//  Otherwise, it checks whether the item can be acted on using a certain action based on its
 //    current coverage status and "sub-resource" (e.g. submit, approve, ...)
 func isItemActionAllowed(actorIsAdmin bool, oldStatus api.ItemCoverageStatus, perm Permission, sub SubResource) bool {
 	switch oldStatus {
@@ -243,12 +267,39 @@ func isItemActionAllowed(actorIsAdmin bool, oldStatus api.ItemCoverageStatus, pe
 
 // SubmitForApproval takes the item from Draft or Revision status to Pending or Approved status.
 // It assumes that the item's current status has already been validated.
-// TODO decide whether the item can be auto-approved
-// TODO emit an event for the the status transition
+// TODO emit an event for the correct status transition
 func (i *Item) SubmitForApproval(tx *pop.Connection) error {
 	oldStatus := i.CoverageStatus
 	i.CoverageStatus = api.ItemCoverageStatusPending
+
+	i.LoadCategory(tx, false)
+
+	if err := i.vetAmount(tx); err != nil {
+		return err
+	}
+
+	if i.canAutoApprove(tx) {
+		i.CoverageStatus = api.ItemCoverageStatusApproved
+	}
+
 	return i.Update(tx, oldStatus)
+}
+
+// Assumes the item already has its Category loaded
+func (i *Item) canAutoApprove(tx *pop.Connection) bool {
+	if i.CoverageAmount > i.Category.AutoApproveMax {
+		return false
+	}
+
+	if !i.PolicyDependentID.Valid {
+		return true
+	}
+
+	// Dependents have different rules based on the total amounts of all their items
+	policy := Policy{ID: i.PolicyID}
+	totals := policy.itemCoverageTotals(tx)
+	depTotal := totals[i.PolicyDependentID.UUID]
+	return depTotal+i.CoverageAmount <= domain.Env.DependantAutoApproveMax
 }
 
 // Revision takes the item from Pending coverage status to Revision.
@@ -264,6 +315,10 @@ func (i *Item) Revision(tx *pop.Connection) error {
 // It assumes that the item's current status has already been validated.
 // TODO emit an event for the the status transition
 func (i *Item) Approve(tx *pop.Connection) error {
+	if err := i.vetAmount(tx); err != nil {
+		return err
+	}
+
 	oldStatus := i.CoverageStatus
 	i.CoverageStatus = api.ItemCoverageStatusApproved
 	return i.Update(tx, oldStatus)

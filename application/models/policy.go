@@ -23,7 +23,7 @@ var ValidPolicyTypes = map[api.PolicyType]struct{}{
 type Policy struct {
 	ID          uuid.UUID      `db:"id"`
 	Type        api.PolicyType `db:"type" validate:"policyType"`
-	HouseholdID string         `db:"household_id" validate:"required_if=Type Household"`
+	HouseholdID nulls.String   `db:"household_id"`
 	CostCenter  string         `db:"cost_center" validate:"required_if=Type Corporate"`
 	Account     string         `db:"account" validate:"required_if=Type Corporate"`
 	EntityCode  string         `db:"entity_code" validate:"required_if=Type Corporate"`
@@ -77,6 +77,36 @@ func (p *Policy) IsActorAllowedTo(tx *pop.Connection, actor User, perm Permissio
 	return false
 }
 
+// itemCoverageTotals returns a map with an entry for
+//  the policy ID with the total of all the items' coverage amounts as well as
+//  an entry for each dependant with the total of each of their items' coverage amounts
+func (p *Policy) itemCoverageTotals(tx *pop.Connection) map[uuid.UUID]int {
+	p.LoadItems(tx, false)
+
+	addToTotals := func(newKey uuid.UUID, newAmount int, totals map[uuid.UUID]int) {
+		oldTotal, ok := totals[newKey]
+		if !ok {
+			totals[newKey] = newAmount
+		} else {
+			totals[newKey] = oldTotal + newAmount
+		}
+	}
+
+	totals := map[uuid.UUID]int{}
+
+	for _, item := range p.Items {
+		if item.CoverageStatus != api.ItemCoverageStatusApproved {
+			continue
+		}
+		if item.PolicyDependentID.Valid {
+			addToTotals(item.PolicyDependentID.UUID, item.CoverageAmount, totals)
+		}
+		addToTotals(p.ID, item.CoverageAmount, totals)
+	}
+
+	return totals
+}
+
 // LoadClaims - a simple wrapper method for loading claims on the struct
 func (p *Policy) LoadClaims(tx *pop.Connection, reload bool) {
 	if len(p.Claims) == 0 || reload {
@@ -128,7 +158,7 @@ func ConvertPolicy(tx *pop.Connection, p Policy) api.Policy {
 	return api.Policy{
 		ID:          p.ID,
 		Type:        p.Type,
-		HouseholdID: p.HouseholdID,
+		HouseholdID: p.HouseholdID.String,
 		CostCenter:  p.CostCenter,
 		Account:     p.Account,
 		EntityCode:  p.EntityCode,
