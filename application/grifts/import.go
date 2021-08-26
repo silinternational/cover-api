@@ -482,7 +482,7 @@ func importClaimItems(tx *pop.Connection, claim models.Claim, items []LegacyClai
 			RepairActual:    fixedPointStringToInt(c.RepairActual, "ClaimItem.RepairActual"),
 			ReplaceEstimate: fixedPointStringToInt(c.ReplaceEstimate, "ClaimItem.ReplaceEstimate"),
 			ReplaceActual:   fixedPointStringToInt(c.ReplaceActual, "ClaimItem.ReplaceActual"),
-			PayoutOption:    getPayoutOption(c.PayoutOption),
+			PayoutOption:    getPayoutOption(c.PayoutOption, itemDesc+"PayoutOption"),
 			PayoutAmount:    fixedPointStringToInt(c.PayoutAmount, "ClaimItem.PayoutAmount"),
 			FMV:             fixedPointStringToInt(c.Fmv, "ClaimItem.FMV"),
 			ReviewDate:      parseStringTimeToNullTime(c.ReviewDate, itemDesc+"ReviewDate"),
@@ -498,8 +498,13 @@ func importClaimItems(tx *pop.Connection, claim models.Claim, items []LegacyClai
 	}
 }
 
-func getPayoutOption(s string) api.PayoutOption {
+func getPayoutOption(s, desc string) api.PayoutOption {
 	var option api.PayoutOption
+
+	if s == "" {
+		log.Printf("%s is empty, setting to 'FMV'", desc)
+		return api.PayoutOptionFMV
+	}
 
 	switch s {
 	case "repair":
@@ -509,8 +514,7 @@ func getPayoutOption(s string) api.PayoutOption {
 	case "fmv":
 		option = api.PayoutOptionFMV
 	default:
-		log.Printf("unrecognized payout option: %s\n", s)
-		option = api.PayoutOptionFMV
+		log.Fatalf("%s unrecognized payout option: '%s'\n", desc, s)
 	}
 
 	return option
