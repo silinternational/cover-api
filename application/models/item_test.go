@@ -241,7 +241,7 @@ func (ms *ModelSuite) Test_isItemActionAllowed() {
 	}
 }
 
-func (ms *ModelSuite) TestItem_VetAndCreate() {
+func (ms *ModelSuite) TestItem_Create() {
 	t := ms.T()
 
 	fixConfig := FixturesConfig{
@@ -256,8 +256,8 @@ func (ms *ModelSuite) TestItem_VetAndCreate() {
 	policy.LoadItems(ms.DB, false)
 	items := policy.Items
 
-	// give two items a dependant and calculate expected values
-	dependant := policy.Dependents[0]
+	// give two items a dependent and calculate expected values
+	dependent := policy.Dependents[0]
 	coverageForPolicy := 0
 	coverageForDep := 0
 	for i, item := range items {
@@ -265,8 +265,8 @@ func (ms *ModelSuite) TestItem_VetAndCreate() {
 			continue
 		}
 		if i == 2 {
-			items[i].PolicyDependentID = nulls.NewUUID(dependant.ID)
-			ms.NoError(ms.DB.Update(&items[i]), "error trying to change item DependantID")
+			items[i].PolicyDependentID = nulls.NewUUID(dependent.ID)
+			ms.NoError(ms.DB.Update(&items[i]), "error trying to change item DependentID")
 			coverageForDep += items[i].CoverageAmount
 		}
 		coverageForPolicy += items[i].CoverageAmount
@@ -309,7 +309,7 @@ func (ms *ModelSuite) TestItem_VetAndCreate() {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := tt.item.VetAndCreate(ms.DB)
+			got := tt.item.Create(ms.DB)
 
 			if tt.wantErrContains != "" {
 				ms.Error(got)
@@ -341,23 +341,31 @@ func (ms *ModelSuite) TestItem_SubmitForApproval() {
 	items := policy.Items
 	dependent := policy.Dependents[0]
 
+	// first set the PolicyDependentID and CoverageAmount on an approved item
 	itemDependent := items[1]
 	itemDependent.PolicyDependentID = nulls.NewUUID(dependent.ID)
-	itemDependent.CoverageAmount = 200000 // $2000
+	itemDependent.CoverageAmount = 2000 * domain.CurrencyFactor // $2000
 	ms.NoError(ms.DB.Update(&itemDependent), "error updating item fixture for test")
 
+	// specify other items for testing
+	itemAutoApprove := fixtures.Policies[1].Items[0]
 	itemManualApprove := items[2]
 	itemManualApproveDependent := items[3]
 	itemAutoApproveDependent := items[4]
 	itemExceedsMax := items[5]
 
 	// set them all to Draft status
+	itemAutoApprove.CoverageStatus = api.ItemCoverageStatusDraft
 	itemManualApprove.CoverageStatus = api.ItemCoverageStatusDraft
 	itemManualApproveDependent.CoverageStatus = api.ItemCoverageStatusDraft
 	itemAutoApproveDependent.CoverageStatus = api.ItemCoverageStatusDraft
 	itemExceedsMax.CoverageStatus = api.ItemCoverageStatusDraft
 
 	// set there coverage amounts to be helpful for the tests and set the dependent as needed
+	itemAutoApprove.LoadCategory(ms.DB, false)
+	itemAutoApprove.CoverageAmount = itemAutoApprove.Category.AutoApproveMax - 1
+	ms.NoError(ms.DB.Update(&itemAutoApprove), "error updating item fixture for test")
+
 	itemManualApprove.LoadCategory(ms.DB, false)
 	itemManualApprove.CoverageAmount = itemManualApprove.Category.AutoApproveMax + 1
 	ms.NoError(ms.DB.Update(&itemManualApprove), "error updating item fixture for test")
@@ -379,6 +387,11 @@ func (ms *ModelSuite) TestItem_SubmitForApproval() {
 		wantStatus      api.ItemCoverageStatus
 		wantErrContains string
 	}{
+		{
+			name:       "item without dependent gets auto approval",
+			item:       itemAutoApprove,
+			wantStatus: api.ItemCoverageStatusApproved,
+		},
 		{
 			name:       "item requires manual approval",
 			item:       itemManualApprove,

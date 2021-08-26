@@ -81,7 +81,7 @@ func itemsCreate(c buffalo.Context) error {
 		return reportError(c, err)
 	}
 
-	if err := item.VetAndCreate(tx); err != nil {
+	if err := item.Create(tx); err != nil {
 		return reportError(c, err)
 	}
 

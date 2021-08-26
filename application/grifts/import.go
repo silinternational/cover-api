@@ -573,7 +573,7 @@ func importItems(tx *pop.Connection, policy models.Policy, items []LegacyItem) {
 			CreatedAt:         parseStringTime(item.CreatedAt, itemDesc+"CreatedAt"),
 			UpdatedAt:         parseNullStringTimeToTime(item.UpdatedAt, itemDesc+"UpdatedAt"),
 		}
-		if err := newItem.CreateGrift(tx); err != nil {
+		if err := newItem.CreateNoVetting(tx); err != nil {
 			log.Fatalf("failed to create item, %s\n%+v", err, newItem)
 		}
 		itemIDMap[itemID] = newItem.ID

@@ -135,10 +135,10 @@ func (ms *ModelSuite) TestPolicy_itemCoverageTotals() {
 	policy := fixtures.Policies[0]
 	policy.LoadItems(ms.DB, false)
 	items := policy.Items
-	notApproved := items[4]
-	notApproved.CoverageStatus = api.ItemCoverageStatusDraft
 
-	ms.NoError(ms.DB.Update(&notApproved), "error updating coverage status of item")
+	// Not approved yet
+	items[4].CoverageStatus = api.ItemCoverageStatusDraft
+	ms.NoError(ms.DB.Update(&items[4]), "error updating coverage status of item")
 
 	// give two items a dependant and calculate expected values
 	dependant := policy.Dependents[0]
@@ -155,6 +155,8 @@ func (ms *ModelSuite) TestPolicy_itemCoverageTotals() {
 		}
 		coverageForPolicy += items[i].CoverageAmount
 	}
+
+	policy.Items = Items{} // ensure the LoadItems gets called
 
 	got := policy.itemCoverageTotals(ms.DB)
 
