@@ -19,6 +19,7 @@ var fieldValidators = map[string]func(validator.FieldLevel) bool{
 	"claimEventType":                validateClaimEventType,
 	"claimStatus":                   validateClaimStatus,
 	"claimItemStatus":               validateClaimItemStatus,
+	"payoutOption":                  validatePayoutOption,
 	"policyDependentChildBirthYear": validatePolicyDependentChildBirthYear,
 	"policyDependentRelationship":   validatePolicyDependentRelationship,
 	"policyType":                    validatePolicyType,
@@ -66,6 +67,14 @@ func validateClaimStatus(field validator.FieldLevel) bool {
 func validateClaimItemStatus(field validator.FieldLevel) bool {
 	if value, ok := field.Field().Interface().(api.ClaimItemStatus); ok {
 		_, valid := ValidClaimItemStatus[value]
+		return valid
+	}
+	return false
+}
+
+func validatePayoutOption(field validator.FieldLevel) bool {
+	if value, ok := field.Field().Interface().(api.PayoutOption); ok {
+		_, valid := ValidPayoutOptions[value]
 		return valid
 	}
 	return false

@@ -23,6 +23,12 @@ var ValidClaimItemStatus = map[api.ClaimItemStatus]struct{}{
 	api.ClaimItemStatusDenied:   {},
 }
 
+var ValidPayoutOptions = map[api.PayoutOption]struct{}{
+	api.PayoutOptionRepair:      {},
+	api.PayoutOptionReplacement: {},
+	api.PayoutOptionFMV:         {},
+}
+
 type ClaimItems []ClaimItem
 
 type ClaimItem struct {
@@ -35,7 +41,7 @@ type ClaimItem struct {
 	RepairActual    int                 `db:"repair_actual"`
 	ReplaceEstimate int                 `db:"replace_estimate"`
 	ReplaceActual   int                 `db:"replace_actual"`
-	PayoutOption    string              `db:"payout_option"`
+	PayoutOption    api.PayoutOption    `db:"payout_option" validate:"payoutOption"`
 	PayoutAmount    int                 `db:"payout_amount"`
 	FMV             int                 `db:"fmv"`
 	ReviewDate      nulls.Time          `db:"review_date"`
