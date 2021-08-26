@@ -482,7 +482,7 @@ func importClaimItems(tx *pop.Connection, claim models.Claim, items []LegacyClai
 			RepairActual:    fixedPointStringToInt(c.RepairActual, "ClaimItem.RepairActual"),
 			ReplaceEstimate: fixedPointStringToInt(c.ReplaceEstimate, "ClaimItem.ReplaceEstimate"),
 			ReplaceActual:   fixedPointStringToInt(c.ReplaceActual, "ClaimItem.ReplaceActual"),
-			PayoutOption:    c.PayoutOption,
+			PayoutOption:    getPayoutOption(c.PayoutOption),
 			PayoutAmount:    fixedPointStringToInt(c.PayoutAmount, "ClaimItem.PayoutAmount"),
 			FMV:             fixedPointStringToInt(c.Fmv, "ClaimItem.FMV"),
 			ReviewDate:      parseStringTimeToNullTime(c.ReviewDate, itemDesc+"ReviewDate"),
@@ -496,6 +496,24 @@ func importClaimItems(tx *pop.Connection, claim models.Claim, items []LegacyClai
 			log.Fatalf("failed to create claim item %d, %s\nClaimItem:\n%+v", claimItemID, err, newClaimItem)
 		}
 	}
+}
+
+func getPayoutOption(s string) api.PayoutOption {
+	var option api.PayoutOption
+
+	switch s {
+	case "repair":
+		option = api.PayoutOptionRepair
+	case "replace":
+		option = api.PayoutOptionReplacement
+	case "fmv":
+		option = api.PayoutOptionFMV
+	default:
+		log.Printf("unrecognized payout option: %s\n", s)
+		option = api.PayoutOptionFMV
+	}
+
+	return option
 }
 
 func getClaimItemStatus(status string) api.ClaimItemStatus {
