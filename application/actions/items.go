@@ -1,7 +1,6 @@
 package actions
 
 import (
-	"context"
 	"errors"
 	"net/http"
 	"time"
@@ -289,14 +288,26 @@ func itemsRemove(c buffalo.Context) error {
 }
 
 // convertItemApiInput creates a new `Item` from a `ItemInput`.
-func convertItemApiInput(ctx context.Context, input api.ItemInput, policyID uuid.UUID) (models.Item, error) {
+func convertItemApiInput(c buffalo.Context, input api.ItemInput, policyID uuid.UUID) (models.Item, error) {
 	item := models.Item{}
 	if err := parseItemDates(input, &item); err != nil {
-		return models.Item{}, err
+		return item, err
+	}
+
+	var itemCat models.ItemCategory
+	if err := itemCat.FindByID(models.Tx(c), input.CategoryID); err != nil {
+		return item, err
+	}
+
+	user := models.CurrentUser(c)
+	riskCatID := itemCat.RiskCategoryID
+	if input.RiskCategoryID.Valid && user.IsAdmin() {
+		riskCatID = input.RiskCategoryID.UUID
 	}
 
 	item.Name = input.Name
 	item.CategoryID = input.CategoryID
+	item.RiskCategoryID = riskCatID
 	item.InStorage = input.InStorage
 	item.Country = input.Country
 	item.Description = input.Description

@@ -229,12 +229,12 @@ func importItemCategories(tx *pop.Connection, in []LegacyItemCategory) {
 func getRiskCategoryUUID(legacyID int) uuid.UUID {
 	switch legacyID {
 	case 1:
-		return uuid.FromStringOrNil(models.RiskCategoryStationaryIDString)
-	case 2, 3:
-		return uuid.FromStringOrNil(models.RiskCategoryMobileIDString)
+		return models.RiskCategoryStationaryID()
+	case 2:
+		return models.RiskCategoryMobileID()
 	}
 	log.Printf("unrecognized risk category ID %d", legacyID)
-	return uuid.FromStringOrNil(models.RiskCategoryMobileIDString)
+	return models.RiskCategoryMobileID()
 }
 
 func getItemCategoryStatus(itemCategory LegacyItemCategory) api.ItemCategoryStatus {

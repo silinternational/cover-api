@@ -40,6 +40,7 @@ type Item struct {
 	ID                uuid.UUID              `db:"id"`
 	Name              string                 `db:"name" validate:"required"`
 	CategoryID        uuid.UUID              `db:"category_id" validate:"required"`
+	RiskCategoryID    uuid.UUID              `db:"risk_category_id" validate:"required"`
 	InStorage         bool                   `db:"in_storage"`
 	Country           string                 `db:"country"`
 	Description       string                 `db:"description"`
@@ -56,8 +57,9 @@ type Item struct {
 	CreatedAt         time.Time              `db:"created_at"`
 	UpdatedAt         time.Time              `db:"updated_at"`
 
-	Category ItemCategory `belongs_to:"item_categories" validate:"-"`
-	Policy   Policy       `belongs_to:"policies" validate:"-"`
+	Category     ItemCategory `belongs_to:"item_categories" validate:"-"`
+	RiskCategory RiskCategory `belongs_to:"risk_categories" validate:"-"`
+	Policy       Policy       `belongs_to:"policies" validate:"-"`
 }
 
 // Validate gets run every time you call pop.ValidateAndSave, pop.ValidateAndCreate, or pop.ValidateAndUpdate
@@ -270,7 +272,7 @@ func (i *Item) SubmitForApproval(tx *pop.Connection) error {
 	oldStatus := i.CoverageStatus
 	i.CoverageStatus = api.ItemCoverageStatusPending
 
-	i.LoadCategory(tx, false)
+	i.Load(tx)
 
 	if err := i.vetAmount(tx); err != nil {
 		return err
@@ -340,26 +342,22 @@ func (i *Item) LoadPolicy(tx *pop.Connection, reload bool) {
 	}
 }
 
-// LoadCategory - a simple wrapper method for loading an item category on the struct
-func (i *Item) LoadCategory(tx *pop.Connection, reload bool) {
-	if i.Category.ID == uuid.Nil || reload {
-		if err := tx.Load(i, "Category"); err != nil {
-			msg := "error loading item category: " + err.Error()
-			panic(msg)
+// Load - a simple wrapper method for loading child objects
+func (i *Item) Load(tx *pop.Connection) {
+	if i.Category.ID == uuid.Nil {
+		if err := tx.Load(i, "Category", "RiskCategory"); err != nil {
+			panic("error loading item child objects: " + err.Error())
 		}
 	}
 }
 
 func ConvertItem(tx *pop.Connection, item Item) api.Item {
-	item.LoadCategory(tx, false)
-
-	iCat := ConvertItemCategory(tx, item.Category)
-
+	item.Load(tx)
 	return api.Item{
 		ID:                item.ID,
 		Name:              item.Name,
-		CategoryID:        item.CategoryID,
-		Category:          iCat,
+		Category:          ConvertItemCategory(tx, item.Category),
+		RiskCategory:      ConvertRiskCategory(item.RiskCategory),
 		InStorage:         item.InStorage,
 		Country:           item.Country,
 		Description:       item.Description,

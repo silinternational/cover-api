@@ -123,6 +123,7 @@ func createItemFixture(tx *pop.Connection, policyID uuid.UUID, categoryID uuid.U
 	item := Item{
 		Name:              randStr(10),
 		CategoryID:        categoryID,
+		RiskCategoryID:    RiskCategoryStationaryID(),
 		Country:           randStr(10),
 		Description:       randStr(40),
 		PolicyID:          policyID,
@@ -192,6 +193,15 @@ func CreateCategoryFixtures(tx *pop.Connection, n int) Fixtures {
 	return Fixtures{
 		ItemCategories: categories,
 	}
+}
+
+func CreateAdminUser(tx *pop.Connection) User {
+	user := CreateUserFixtures(tx, 1).Users[0]
+	user.AppRole = AppRoleAdmin
+	if err := user.Update(tx); err != nil {
+		panic("failed to update user as an admin " + err.Error())
+	}
+	return user
 }
 
 // CreateUserFixtures generates any number of user records for testing. The access token for

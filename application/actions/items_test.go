@@ -2,14 +2,17 @@ package actions
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"testing"
 	"time"
 
-	"github.com/silinternational/cover-api/domain"
+	"github.com/gobuffalo/nulls"
+	"github.com/gofrs/uuid"
 
 	"github.com/silinternational/cover-api/api"
+	"github.com/silinternational/cover-api/domain"
 	"github.com/silinternational/cover-api/models"
 )
 
@@ -63,7 +66,6 @@ func (as *ActionSuite) Test_ItemsList() {
 			wantInBody: []string{
 				`{"id":"` + item2.ID.String(),
 				`"name":"` + item2.Name,
-				`"category_id":"` + item2.CategoryID.String(),
 				fmt.Sprintf(`"in_storage":%t`, item2.InStorage),
 				`"country":"` + item2.Country,
 				`"description":"` + item2.Description,
@@ -110,7 +112,7 @@ func (as *ActionSuite) Test_ItemsList() {
 	}
 }
 
-func (as *ActionSuite) Test_ItemsAdd() {
+func (as *ActionSuite) Test_ItemsCreate() {
 	fixConfig := models.FixturesConfig{
 		NumberOfPolicies:    2,
 		ItemsPerPolicy:      2,
@@ -126,22 +128,10 @@ func (as *ActionSuite) Test_ItemsAdd() {
 
 	iCat := fixtures.ItemCategories[0]
 
-	badItemDate := api.ItemInput{
-		Name:       "Item with bad purchase date",
-		CategoryID: domain.GetUUID(),
-	}
-
-	badCatID := api.ItemInput{
-		Name:              "Item with missing category",
-		CategoryID:        domain.GetUUID(),
-		PurchaseDate:      "2006-01-02",
-		CoverageStartDate: "2006-01-03",
-		CoverageStatus:    api.ItemCoverageStatusDraft,
-	}
-
 	goodItem := api.ItemInput{
 		Name:              "Good Item",
 		CategoryID:        iCat.ID,
+		RiskCategoryID:    nulls.NewUUID(models.RiskCategoryMobileID()),
 		InStorage:         true,
 		Country:           "Thailand",
 		Description:       "camera",
@@ -153,6 +143,9 @@ func (as *ActionSuite) Test_ItemsAdd() {
 		CoverageStatus:    api.ItemCoverageStatusDraft,
 		CoverageStartDate: "2006-01-03",
 	}
+
+	badItemDate := goodItem
+	badItemDate.PurchaseDate = "1/1/2020"
 
 	tests := []struct {
 		name       string
@@ -180,46 +173,20 @@ func (as *ActionSuite) Test_ItemsAdd() {
 			wantInBody: []string{"actor not allowed to perform that action on this resource"},
 		},
 		{
-			name:       "has bad purchase date",
+			name:       "bad request",
 			actor:      policyCreator,
 			policy:     policy,
 			newItem:    badItemDate,
 			wantStatus: http.StatusBadRequest,
-			wantInBody: []string{
-				api.ErrorItemInvalidPurchaseDate.String(),
-				"failed to parse item purchase date",
-			},
+			wantInBody: []string{api.ErrorItemInvalidPurchaseDate.String()},
 		},
 		{
-			name:       "has bad category id",
-			actor:      policyCreator,
-			policy:     policy,
-			newItem:    badCatID,
-			wantStatus: http.StatusInternalServerError,
-			wantInBody: []string{`violates foreign key constraint`},
-		},
-		{
-			name:       "good item",
+			name:       "ok",
 			actor:      policyCreator,
 			policy:     policy,
 			newItem:    goodItem,
 			wantStatus: http.StatusOK,
-			wantInBody: []string{
-				`"name":"` + goodItem.Name,
-				`"category_id":"` + goodItem.CategoryID.String(),
-				`"in_storage":true`,
-				`"country":"` + goodItem.Country,
-				`"description":"` + goodItem.Description,
-				`"policy_id":"` + policy.ID.String(),
-				`"make":"` + goodItem.Make,
-				`"model":"` + goodItem.Model,
-				`"serial_number":"` + goodItem.SerialNumber,
-				fmt.Sprintf(`"coverage_amount":%v`, goodItem.CoverageAmount),
-				`"purchase_date":"` + goodItem.PurchaseDate + `"`,
-				`"coverage_status":"` + string(goodItem.CoverageStatus),
-				`"category":{"id":"` + iCat.ID.String(),
-				`"name":"` + iCat.Name,
-			},
+			wantInBody: []string{`"name":"` + goodItem.Name},
 		},
 	}
 
@@ -233,7 +200,7 @@ func (as *ActionSuite) Test_ItemsAdd() {
 			body := res.Body.String()
 			as.Equal(tt.wantStatus, res.Code, "incorrect status code returned, body: %s", body)
 
-			as.verifyResponseData(tt.wantInBody, body, "Items Add")
+			as.verifyResponseData(tt.wantInBody, body, "Items Create")
 
 			if res.Code != http.StatusOK {
 				return
@@ -245,7 +212,7 @@ func (as *ActionSuite) Test_ItemsAdd() {
 
 			var item models.Item
 			as.NoError(as.DB.Where(`name = ?`, tt.newItem.Name).First(&item),
-				"error finding newly added item.")
+				"error finding newly created item.")
 		})
 	}
 }
@@ -310,7 +277,6 @@ func (as *ActionSuite) Test_ItemsSubmit() {
 			wantStatus: http.StatusOK,
 			wantInBody: []string{
 				`"name":"` + revisionItem.Name,
-				`"category_id":"` + revisionItem.CategoryID.String(),
 				fmt.Sprintf(`"in_storage":%t`, revisionItem.InStorage),
 				`"country":"` + revisionItem.Country,
 				`"description":"` + revisionItem.Description,
@@ -337,7 +303,7 @@ func (as *ActionSuite) Test_ItemsSubmit() {
 			body := res.Body.String()
 			as.Equal(tt.wantStatus, res.Code, "incorrect status code returned, body: %s", body)
 
-			as.verifyResponseData(tt.wantInBody, body, "Items Add")
+			as.verifyResponseData(tt.wantInBody, body, "")
 
 			if res.Code != http.StatusOK {
 				return
@@ -415,7 +381,6 @@ func (as *ActionSuite) Test_ItemsRevision() {
 			wantStatus: http.StatusOK,
 			wantInBody: []string{
 				`"name":"` + pendingItem.Name,
-				`"category_id":"` + pendingItem.CategoryID.String(),
 				fmt.Sprintf(`"in_storage":%t`, pendingItem.InStorage),
 				`"country":"` + pendingItem.Country,
 				`"description":"` + pendingItem.Description,
@@ -679,6 +644,7 @@ func (as *ActionSuite) Test_ItemsUpdate() {
 	goodItem := api.ItemInput{
 		Name:              "Good Item",
 		CategoryID:        iCat.ID,
+		RiskCategoryID:    nulls.NewUUID(models.RiskCategoryMobileID()),
 		InStorage:         true,
 		Country:           "Thailand",
 		Description:       "camera",
@@ -740,7 +706,7 @@ func (as *ActionSuite) Test_ItemsUpdate() {
 			oldItem:    oldItem,
 			newItem:    badCatID,
 			wantStatus: http.StatusBadRequest,
-			wantInBody: []string{api.ErrorQueryFailure.String()},
+			wantInBody: []string{api.ErrorInvalidCategory.String()},
 		},
 		{
 			name:       "has bad start status",
@@ -758,7 +724,6 @@ func (as *ActionSuite) Test_ItemsUpdate() {
 			wantStatus: http.StatusOK,
 			wantInBody: []string{
 				`"name":"` + goodItem.Name,
-				`"category_id":"` + goodItem.CategoryID.String(),
 				`"in_storage":true`,
 				`"country":"` + goodItem.Country,
 				`"description":"` + goodItem.Description,
@@ -786,7 +751,7 @@ func (as *ActionSuite) Test_ItemsUpdate() {
 			body := res.Body.String()
 			as.Equal(tt.wantStatus, res.Code, "incorrect status code returned, body: %s", body)
 
-			as.verifyResponseData(tt.wantInBody, body, "Items Add")
+			as.verifyResponseData(tt.wantInBody, body, "")
 
 			if res.Code != http.StatusOK {
 				return
@@ -798,7 +763,7 @@ func (as *ActionSuite) Test_ItemsUpdate() {
 
 			var item models.Item
 			as.NoError(as.DB.Where(`name = ?`, tt.newItem.Name).First(&item),
-				"error finding newly added item.")
+				"error finding newly updated item.")
 		})
 	}
 }
@@ -902,7 +867,7 @@ func (as *ActionSuite) Test_ItemsRemove() {
 			as.Equal(tt.wantHTTPStatus, res.Code, "incorrect status code returned, body: %s", body)
 
 			if res.Code != http.StatusNoContent {
-				as.verifyResponseData(tt.wantInBody, body, "Items Add")
+				as.verifyResponseData(tt.wantInBody, body, "")
 				return
 			}
 
@@ -917,6 +882,136 @@ func (as *ActionSuite) Test_ItemsRemove() {
 				as.NoError(as.DB.Find(&dbItem, tt.item.ID))
 				as.Equal(tt.wantItemStatus, dbItem.CoverageStatus, "incorrect item status")
 			}
+		})
+	}
+}
+
+func (as *ActionSuite) Test_convertItemApiInput() {
+	fixConfig := models.FixturesConfig{
+		NumberOfPolicies:    2,
+		ItemsPerPolicy:      2,
+		UsersPerPolicy:      1,
+		DependentsPerPolicy: 0,
+	}
+
+	fixtures := models.CreateItemFixtures(as.DB, fixConfig)
+	user := fixtures.Users[0]
+	admin := models.CreateAdminUser(as.DB)
+
+	policy := fixtures.Policies[0]
+
+	itemCategory := fixtures.ItemCategories[0]
+
+	item := api.ItemInput{
+		Name:              "Good Item",
+		CategoryID:        itemCategory.ID,
+		InStorage:         true,
+		Country:           "Thailand",
+		Description:       "camera",
+		Make:              "Minolta",
+		Model:             "Max",
+		SerialNumber:      "MM1234",
+		CoverageAmount:    101,
+		PurchaseDate:      "2006-01-02",
+		CoverageStatus:    api.ItemCoverageStatusDraft,
+		CoverageStartDate: "2006-01-03",
+	}
+
+	itemWithBadPurchaseDate := item
+	itemWithBadPurchaseDate.Name = "Item with bad purchase date"
+	itemWithBadPurchaseDate.PurchaseDate = "1/1/2020"
+
+	itemWithBadCategory := item
+	itemWithBadCategory.Name = "Item with bad category"
+	itemWithBadCategory.CategoryID = domain.GetUUID()
+
+	itemWithNoRiskCategory := item
+	itemWithNoRiskCategory.Name = "Item with no risk category"
+
+	itemWithRiskCategory := item
+	itemWithRiskCategory.Name = "Item with a specified risk category"
+	itemWithRiskCategory.RiskCategoryID = nulls.NewUUID(models.RiskCategoryMobileID())
+
+	tests := []struct {
+		name        string
+		policy      models.Policy
+		input       api.ItemInput
+		user        models.User
+		wantErr     string
+		wantErrKey  api.ErrorKey
+		wantErrCat  api.ErrorCategory
+		wantRiskCat uuid.UUID
+	}{
+		{
+			name:       itemWithBadPurchaseDate.Name,
+			policy:     policy,
+			input:      itemWithBadPurchaseDate,
+			user:       user,
+			wantErr:    "failed to parse item purchase date",
+			wantErrKey: api.ErrorItemInvalidPurchaseDate,
+			wantErrCat: api.CategoryUser,
+		},
+		{
+			name:       itemWithBadCategory.Name,
+			policy:     policy,
+			input:      itemWithBadCategory,
+			user:       user,
+			wantErr:    "invalid category",
+			wantErrKey: api.ErrorInvalidCategory,
+			wantErrCat: api.CategoryUser,
+		},
+		{
+			name:        itemWithNoRiskCategory.Name,
+			policy:      policy,
+			input:       itemWithRiskCategory,
+			user:        user,
+			wantRiskCat: itemCategory.RiskCategoryID,
+		},
+		{
+			name:        itemWithRiskCategory.Name + " normal user",
+			policy:      policy,
+			input:       itemWithRiskCategory,
+			user:        user,
+			wantRiskCat: itemCategory.RiskCategoryID, // normal user cannot override
+		},
+		{
+			name:        itemWithRiskCategory.Name + " admin user",
+			policy:      policy,
+			input:       itemWithRiskCategory,
+			user:        admin,
+			wantRiskCat: itemWithRiskCategory.RiskCategoryID.UUID, // admin user can override
+		},
+	}
+
+	for _, tt := range tests {
+		as.T().Run(tt.name, func(t *testing.T) {
+			got, err := convertItemApiInput(models.CreateTestContext(tt.user), tt.input, tt.policy.ID)
+
+			if tt.wantErr != "" {
+				as.Error(err, "UUT did not return expected error")
+				var appErr *api.AppError
+				as.True(errors.As(err, &appErr), "UUT returned an error that is not an AppError")
+				as.Contains(appErr.Error(), tt.wantErr, "error message is not correct")
+				as.Equal(appErr.Key, tt.wantErrKey, "error key is not correct")
+				as.Equal(appErr.Category, tt.wantErrCat, "error category is not correct")
+				return
+			}
+
+			as.NoError(err, "UUT returned an unexpected error")
+
+			as.Equal(tt.wantRiskCat, got.RiskCategoryID, "RiskCategoryID is not correct")
+			as.Equal(tt.policy.ID, got.PolicyID, "PolicyID is not correct")
+
+			as.Equal(tt.input.Name, got.Name, "Name is not correct")
+			as.Equal(tt.input.CategoryID, got.CategoryID, "CategoryID is not correct")
+			as.Equal(tt.input.InStorage, got.InStorage, "InStorage is not correct")
+			as.Equal(tt.input.Country, got.Country, "Country is not correct")
+			as.Equal(tt.input.Description, got.Description, "Description is not correct")
+			as.Equal(tt.input.Make, got.Make, "Make is not correct")
+			as.Equal(tt.input.Model, got.Model, "Model is not correct")
+			as.Equal(tt.input.SerialNumber, got.SerialNumber, "SerialNumber is not correct")
+			as.Equal(tt.input.CoverageAmount, got.CoverageAmount, "CoverageAmount is not correct")
+			as.Equal(tt.input.CoverageStatus, got.CoverageStatus, "CoverageStatus is not correct")
 		})
 	}
 }

@@ -1,6 +1,7 @@
 package models
 
 import (
+	"errors"
 	"time"
 
 	"github.com/gobuffalo/nulls"
@@ -53,30 +54,37 @@ func (i *ItemCategory) Create(tx *pop.Connection) error {
 	return create(tx, i)
 }
 
+func (i *ItemCategory) Update(tx *pop.Connection) error {
+	return update(tx, i)
+}
+
 func (i *ItemCategory) FindByID(tx *pop.Connection, id uuid.UUID) error {
 	if err := tx.Find(i, id); err != nil {
-		appErr := api.AppError{
-			Err:      err,
-			Key:      api.ErrorQueryFailure,
-			Category: api.CategoryInternal,
+		if domain.IsOtherThanNoRows(err) {
+			return api.NewAppError(err, api.ErrorQueryFailure, api.CategoryInternal)
 		}
-		if !domain.IsOtherThanNoRows(err) {
-			appErr.Category = api.CategoryUser
-		}
-		return &appErr
+		return api.NewAppError(errors.New("invalid category"), api.ErrorInvalidCategory, api.CategoryUser)
 	}
 	return nil
 }
 
 func ConvertItemCategory(tx *pop.Connection, ic ItemCategory) api.ItemCategory {
+	ic.LoadRiskCategory(tx)
 	return api.ItemCategory{
 		ID:             ic.ID,
 		Name:           ic.Name,
 		HelpText:       ic.HelpText,
 		Status:         ic.Status,
 		AutoApproveMax: ic.AutoApproveMax,
+		RiskCategory:   ConvertRiskCategory(ic.RiskCategory),
 		CreatedAt:      ic.CreatedAt,
 		UpdatedAt:      ic.UpdatedAt,
+	}
+}
+
+func (i *ItemCategory) LoadRiskCategory(tx *pop.Connection) {
+	if err := tx.Load(i, "RiskCategory"); err != nil {
+		panic("database error loading ItemCategory.RiskCategory, " + err.Error())
 	}
 }
 

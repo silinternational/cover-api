@@ -1,0 +1,1 @@
+drop_column("items", "risk_category_id")
