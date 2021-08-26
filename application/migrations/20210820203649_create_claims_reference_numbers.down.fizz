@@ -1,1 +1,1 @@
-drop_column("{{claims}}", "reference_number")
+drop_column("claims", "reference_number")
