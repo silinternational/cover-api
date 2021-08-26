@@ -6,6 +6,7 @@ import (
 	"errors"
 	"io"
 	"log"
+	"math/rand"
 	"net/http"
 	"os"
 	"regexp"
@@ -328,4 +329,16 @@ func IsStringInSlice(needle string, haystack []string) bool {
 	}
 
 	return false
+}
+
+func RandomString(n int, includeLetters string) string {
+	if includeLetters == "" {
+		includeLetters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+	}
+	letters := []rune(includeLetters)
+	b := make([]rune, n)
+	for i := range b {
+		b[i] = letters[rand.Intn(len(letters))] // #nosec G404
+	}
+	return string(b)
 }

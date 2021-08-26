@@ -24,6 +24,7 @@ func (ms *ModelSuite) TestClaim_Validate() {
 		{
 			name: "valid status",
 			claim: &Claim{
+				ReferenceNumber:  domain.RandomString(ClaimReferenceNumberLength, ""),
 				PolicyID:         domain.GetUUID(),
 				EventType:        api.ClaimEventTypeImpact,
 				EventDate:        time.Now(),
@@ -48,4 +49,19 @@ func (ms *ModelSuite) TestClaim_Validate() {
 			}
 		})
 	}
+}
+
+func (ms *ModelSuite) TestClaim_ReferenceNumber() {
+	fixtures := CreatePolicyFixtures(ms.DB, FixturesConfig{
+		NumberOfPolicies: 1,
+	})
+	claim := &Claim{
+		PolicyID:         fixtures.Policies[0].ID,
+		EventDate:        time.Now().UTC(),
+		EventType:        api.ClaimEventTypeImpact,
+		EventDescription: "fell",
+		Status:           api.ClaimStatusPending,
+	}
+	ms.NoError(claim.Create(ms.DB))
+	ms.Len(claim.ReferenceNumber, ClaimReferenceNumberLength)
 }

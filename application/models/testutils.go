@@ -316,9 +316,9 @@ func CreateRiskCategories(tx *pop.Connection) {
 }
 
 // MustCreate saves a record to the database with validation. Panics if any error occurs.
-func MustCreate(tx *pop.Connection, f interface{}) {
+func MustCreate(tx *pop.Connection, f Createable) {
 	// Use `create` instead of `tx.Create` to check validation rules
-	err := create(tx, f)
+	err := f.Create(tx)
 	if err != nil {
 		panic(fmt.Sprintf("error creating %T fixture, %s", f, err))
 	}

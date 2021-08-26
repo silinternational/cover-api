@@ -21,3 +21,9 @@ func (ts *TestSuite) Test_emptyUUIDValue() {
 	val := uuid.UUID{}
 	ts.Equal("00000000-0000-0000-0000-000000000000", val.String(), "incorrect empty uuid value")
 }
+
+func (ts *TestSuite) Test_RandomString() {
+	for i := 1; i < 30; i++ {
+		ts.Len(RandomString(i, ""), i)
+	}
+}

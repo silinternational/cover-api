@@ -1,0 +1,2 @@
+add_column("claims", "reference_number", "string", {})
+add_index("claims", "reference_number", {"unique": true})

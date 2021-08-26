@@ -47,6 +47,10 @@ type Authable interface {
 	IsActorAllowedTo(*pop.Connection, User, Permission, SubResource, *http.Request) bool
 }
 
+type Createable interface {
+	Create(tx *pop.Connection) error
+}
+
 func init() {
 	var err error
 	env := domain.Env.GoEnv

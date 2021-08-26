@@ -27,6 +27,10 @@ type RiskCategory struct {
 	UpdatedAt time.Time `db:"updated_at"`
 }
 
+func (r *RiskCategory) Create(tx *pop.Connection) error {
+	return create(tx, r)
+}
+
 // Validate gets run every time you call a "pop.Validate*" (pop.ValidateAndSave, pop.ValidateAndCreate, pop.ValidateAndUpdate) method.
 func (r *RiskCategory) Validate(tx *pop.Connection) (*validate.Errors, error) {
 	return validateModel(r), nil
