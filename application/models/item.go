@@ -272,7 +272,7 @@ func (i *Item) SubmitForApproval(tx *pop.Connection) error {
 	oldStatus := i.CoverageStatus
 	i.CoverageStatus = api.ItemCoverageStatusPending
 
-	i.LoadCategory(tx, false)
+	i.Load(tx)
 
 	if err := i.vetAmount(tx); err != nil {
 		return err

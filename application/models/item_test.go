@@ -236,7 +236,6 @@ func (ms *ModelSuite) Test_isItemActionAllowed() {
 		t.Run(tt.name, func(t *testing.T) {
 			got := isItemActionAllowed(tt.actorIsAdmin, tt.startStatus, tt.permission, tt.subRes)
 			ms.Equal(tt.want, got)
-
 		})
 	}
 }
@@ -320,7 +319,6 @@ func (ms *ModelSuite) TestItem_Create() {
 
 			ms.NotEqual(uuid.Nil, tt.item.ID, "expected item to have been given an ID")
 			ms.Equal(api.ItemCoverageStatusDraft, tt.item.CoverageStatus, "incorrect status")
-
 		})
 	}
 }
@@ -362,11 +360,11 @@ func (ms *ModelSuite) TestItem_SubmitForApproval() {
 	itemExceedsMax.CoverageStatus = api.ItemCoverageStatusDraft
 
 	// set there coverage amounts to be helpful for the tests and set the dependent as needed
-	itemAutoApprove.LoadCategory(ms.DB, false)
+	itemAutoApprove.Load(ms.DB)
 	itemAutoApprove.CoverageAmount = itemAutoApprove.Category.AutoApproveMax - 1
 	ms.NoError(ms.DB.Update(&itemAutoApprove), "error updating item fixture for test")
 
-	itemManualApprove.LoadCategory(ms.DB, false)
+	itemManualApprove.Load(ms.DB)
 	itemManualApprove.CoverageAmount = itemManualApprove.Category.AutoApproveMax + 1
 	ms.NoError(ms.DB.Update(&itemManualApprove), "error updating item fixture for test")
 
