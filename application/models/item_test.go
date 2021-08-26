@@ -276,6 +276,7 @@ func (ms *ModelSuite) TestItem_Create() {
 	goodItem := Item{
 		Name:              "Good Item",
 		CategoryID:        iCat.ID,
+		RiskCategoryID:    RiskCategoryStationaryID(),
 		PolicyID:          policy.ID,
 		InStorage:         true,
 		Country:           "Thailand",
