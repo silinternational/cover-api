@@ -309,7 +309,7 @@ func createClaimFixtures(fixPolicies []*models.Policy) ([]models.Claim, error) {
 
 		err := fixClaims[i].Create(models.DB)
 		if err != nil {
-			err = fmt.Errorf("error creating policy fixture ... %+v\n %v",
+			err = fmt.Errorf("error creating claim fixture ... %+v\n %v",
 				fixClaims[i], err.Error())
 			return nil, err
 		}
