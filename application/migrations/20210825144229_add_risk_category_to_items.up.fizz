@@ -1,2 +1,1 @@
 add_column("items", "risk_category_id", "uuid", {"default": "7bed3c00-23cf-4282-b2b8-da89426cef2f"})
-change_column("item_categories", "risk_category_id", "uuid", {null: true})

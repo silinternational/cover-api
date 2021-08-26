@@ -896,18 +896,16 @@ func (as *ActionSuite) Test_convertItemApiInput() {
 	}
 
 	fixtures := models.CreateItemFixtures(as.DB, fixConfig)
+	user := fixtures.Users[0]
+	admin := models.CreateAdminUser(as.DB)
 
 	policy := fixtures.Policies[0]
 
-	categoryWithRiskCategory := fixtures.ItemCategories[0]
-
-	categoryWithoutRiskCategory := fixtures.ItemCategories[1]
-	categoryWithoutRiskCategory.RiskCategoryID = nulls.UUID{}
-	as.NoError(categoryWithoutRiskCategory.Update(as.DB))
+	itemCategory := fixtures.ItemCategories[0]
 
 	item := api.ItemInput{
 		Name:              "Good Item",
-		CategoryID:        categoryWithRiskCategory.ID,
+		CategoryID:        itemCategory.ID,
 		InStorage:         true,
 		Country:           "Thailand",
 		Description:       "camera",
@@ -928,26 +926,18 @@ func (as *ActionSuite) Test_convertItemApiInput() {
 	itemWithBadCategory.Name = "Item with bad category"
 	itemWithBadCategory.CategoryID = domain.GetUUID()
 
-	itemWithConflictingRiskCategory := item
-	itemWithConflictingRiskCategory.Name = "Item with conflicting risk category"
-	itemWithConflictingRiskCategory.RiskCategoryID = nulls.NewUUID(models.RiskCategoryStationaryID())
-
 	itemWithNoRiskCategory := item
 	itemWithNoRiskCategory.Name = "Item with no risk category"
-	itemWithNoRiskCategory.CategoryID = categoryWithoutRiskCategory.ID
 
-	itemWithInheritedRiskCategory := item
-	itemWithInheritedRiskCategory.Name = "Item with risk category inherited from the category"
-
-	itemWithExplicitRiskCategory := item
-	itemWithExplicitRiskCategory.Name = "Item with an explicit risk category"
-	itemWithExplicitRiskCategory.CategoryID = categoryWithoutRiskCategory.ID
-	itemWithExplicitRiskCategory.RiskCategoryID = nulls.NewUUID(models.RiskCategoryMobileID())
+	itemWithRiskCategory := item
+	itemWithRiskCategory.Name = "Item with a specified risk category"
+	itemWithRiskCategory.RiskCategoryID = nulls.NewUUID(models.RiskCategoryMobileID())
 
 	tests := []struct {
 		name        string
 		policy      models.Policy
 		input       api.ItemInput
+		user        models.User
 		wantErr     string
 		wantErrKey  api.ErrorKey
 		wantErrCat  api.ErrorCategory
@@ -957,6 +947,7 @@ func (as *ActionSuite) Test_convertItemApiInput() {
 			name:       itemWithBadPurchaseDate.Name,
 			policy:     policy,
 			input:      itemWithBadPurchaseDate,
+			user:       user,
 			wantErr:    "failed to parse item purchase date",
 			wantErrKey: api.ErrorItemInvalidPurchaseDate,
 			wantErrCat: api.CategoryUser,
@@ -965,43 +956,37 @@ func (as *ActionSuite) Test_convertItemApiInput() {
 			name:       itemWithBadCategory.Name,
 			policy:     policy,
 			input:      itemWithBadCategory,
+			user:       user,
 			wantErr:    "invalid category",
 			wantErrKey: api.ErrorInvalidCategory,
 			wantErrCat: api.CategoryUser,
 		},
 		{
-			name:       itemWithNoRiskCategory.Name,
-			policy:     policy,
-			input:      itemWithNoRiskCategory,
-			wantErr:    "no risk category specified",
-			wantErrKey: api.ErrorNoRiskCategorySpecified,
-			wantErrCat: api.CategoryUser,
-		},
-		{
-			name:       itemWithConflictingRiskCategory.Name,
-			policy:     policy,
-			input:      itemWithConflictingRiskCategory,
-			wantErr:    "risk category different than the item category allows",
-			wantErrKey: api.ErrorConflictingRiskCategory,
-			wantErrCat: api.CategoryUser,
-		},
-		{
-			name:        itemWithInheritedRiskCategory.Name,
+			name:        itemWithNoRiskCategory.Name,
 			policy:      policy,
-			input:       itemWithInheritedRiskCategory,
-			wantRiskCat: categoryWithRiskCategory.RiskCategoryID.UUID,
+			input:       itemWithRiskCategory,
+			user:        user,
+			wantRiskCat: itemCategory.RiskCategoryID,
 		},
 		{
-			name:        itemWithExplicitRiskCategory.Name,
+			name:        itemWithRiskCategory.Name,
 			policy:      policy,
-			input:       itemWithExplicitRiskCategory,
-			wantRiskCat: itemWithExplicitRiskCategory.RiskCategoryID.UUID,
+			input:       itemWithRiskCategory,
+			user:        user,
+			wantRiskCat: itemCategory.RiskCategoryID, // normal user cannot override
+		},
+		{
+			name:        itemWithRiskCategory.Name,
+			policy:      policy,
+			input:       itemWithRiskCategory,
+			user:        admin,
+			wantRiskCat: itemWithRiskCategory.RiskCategoryID.UUID, // admin user can override
 		},
 	}
 
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
-			got, err := convertItemApiInput(models.CreateTestContext(models.User{}), tt.input, tt.policy.ID)
+			got, err := convertItemApiInput(models.CreateTestContext(tt.user), tt.input, tt.policy.ID)
 
 			if tt.wantErr != "" {
 				as.Error(err, "UUT did not return expected error")

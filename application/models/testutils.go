@@ -182,7 +182,7 @@ func CreateCategoryFixtures(tx *pop.Connection, n int) Fixtures {
 
 	categories := make(ItemCategories, n)
 	for i := range categories {
-		categories[i].RiskCategoryID = nulls.NewUUID(RiskCategoryMobileID())
+		categories[i].RiskCategoryID = RiskCategoryMobileID()
 		categories[i].Name = randStr(10)
 		categories[i].HelpText = randStr(40)
 		categories[i].Status = api.ItemCategoryStatusEnabled
@@ -193,6 +193,15 @@ func CreateCategoryFixtures(tx *pop.Connection, n int) Fixtures {
 	return Fixtures{
 		ItemCategories: categories,
 	}
+}
+
+func CreateAdminUser(tx *pop.Connection) User {
+	user := CreateUserFixtures(tx, 1).Users[0]
+	user.AppRole = AppRoleAdmin
+	if err := user.Update(tx); err != nil {
+		panic("failed to update user as an admin " + err.Error())
+	}
+	return user
 }
 
 // CreateUserFixtures generates any number of user records for testing. The access token for

@@ -210,22 +210,22 @@ func importItemCategories(tx *pop.Connection, in []LegacyItemCategory) {
 
 		fmt.Printf(`%d,"%s","%s",%s,"%s",%d,"%s"`+"\n",
 			newItemCategory.LegacyID.Int, newItemCategory.ID, newItemCategory.Status,
-			newItemCategory.RiskCategoryID.UUID, newItemCategory.Name, newItemCategory.AutoApproveMax,
+			newItemCategory.RiskCategoryID, newItemCategory.Name, newItemCategory.AutoApproveMax,
 			newItemCategory.HelpText)
 	}
 
 	fmt.Println("")
 }
 
-func getRiskCategoryUUID(legacyID int) nulls.UUID {
-	id := nulls.UUID{}
+func getRiskCategoryUUID(legacyID int) uuid.UUID {
 	switch legacyID {
 	case 1:
-		id = nulls.NewUUID(uuid.FromStringOrNil(models.RiskCategoryStationaryIDString))
+		return models.RiskCategoryStationaryID()
 	case 2:
-		id = nulls.NewUUID(uuid.FromStringOrNil(models.RiskCategoryMobileIDString))
+		return models.RiskCategoryMobileID()
 	}
-	return id
+	log.Printf("unrecognized risk category ID %d", legacyID)
+	return models.RiskCategoryMobileID()
 }
 
 func getItemCategoryStatus(itemCategory LegacyItemCategory) api.ItemCategoryStatus {

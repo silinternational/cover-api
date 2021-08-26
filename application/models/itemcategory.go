@@ -28,7 +28,7 @@ type ItemCategories []ItemCategory
 // ItemCategory model
 type ItemCategory struct {
 	ID             uuid.UUID              `db:"id"`
-	RiskCategoryID nulls.UUID             `db:"risk_category_id"`
+	RiskCategoryID uuid.UUID              `db:"risk_category_id"`
 	Name           string                 `db:"name" validate:"required"`
 	HelpText       string                 `db:"help_text"`
 	Status         api.ItemCategoryStatus `db:"status" validate:"itemCategoryStatus"`
@@ -69,14 +69,22 @@ func (i *ItemCategory) FindByID(tx *pop.Connection, id uuid.UUID) error {
 }
 
 func ConvertItemCategory(tx *pop.Connection, ic ItemCategory) api.ItemCategory {
+	ic.LoadRiskCategory(tx)
 	return api.ItemCategory{
 		ID:             ic.ID,
 		Name:           ic.Name,
 		HelpText:       ic.HelpText,
 		Status:         ic.Status,
 		AutoApproveMax: ic.AutoApproveMax,
+		RiskCategory:   ConvertRiskCategory(ic.RiskCategory),
 		CreatedAt:      ic.CreatedAt,
 		UpdatedAt:      ic.UpdatedAt,
+	}
+}
+
+func (i *ItemCategory) LoadRiskCategory(tx *pop.Connection) {
+	if err := tx.Load(i, "RiskCategory"); err != nil {
+		panic("database error loading ItemCategory.RiskCategory, " + err.Error())
 	}
 }
 

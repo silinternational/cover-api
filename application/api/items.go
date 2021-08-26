@@ -99,7 +99,8 @@ type ItemInput struct {
 	// swagger:strfmt uuid4
 	CategoryID uuid.UUID `json:"category_id"`
 
-	// risk category ID, should not be specified if the item category (`category_id`) has an assigned risk category
+	// risk category ID, should only be set if the user has adequate permissions to override the risk category
+	// assigned to the item's category
 	//
 	// swagger:strfmt uuid4
 	RiskCategoryID nulls.UUID `json:"risk_category_id"`

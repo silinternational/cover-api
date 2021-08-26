@@ -1,7 +1,6 @@
 package actions
 
 import (
-	"context"
 	"errors"
 	"net/http"
 	"time"
@@ -289,30 +288,21 @@ func itemsRemove(c buffalo.Context) error {
 }
 
 // convertItemApiInput creates a new `Item` from a `ItemInput`.
-func convertItemApiInput(ctx context.Context, input api.ItemInput, policyID uuid.UUID) (models.Item, error) {
+func convertItemApiInput(c buffalo.Context, input api.ItemInput, policyID uuid.UUID) (models.Item, error) {
 	item := models.Item{}
 	if err := parseItemDates(input, &item); err != nil {
 		return item, err
 	}
 
 	var itemCat models.ItemCategory
-	if err := itemCat.FindByID(models.Tx(ctx), input.CategoryID); err != nil {
+	if err := itemCat.FindByID(models.Tx(c), input.CategoryID); err != nil {
 		return item, err
 	}
 
-	var riskCatID uuid.UUID
-	if input.RiskCategoryID.Valid {
-		if itemCat.RiskCategoryID.Valid && input.RiskCategoryID.UUID != itemCat.RiskCategoryID.UUID {
-			err := errors.New("item requested a risk category different than the item category allows")
-			return item, api.NewAppError(err, api.ErrorConflictingRiskCategory, api.CategoryUser)
-		}
+	user := models.CurrentUser(c)
+	riskCatID := itemCat.RiskCategoryID
+	if input.RiskCategoryID.Valid && user.IsAdmin() {
 		riskCatID = input.RiskCategoryID.UUID
-	} else {
-		if !itemCat.RiskCategoryID.Valid {
-			err := errors.New("no risk category specified")
-			return item, api.NewAppError(err, api.ErrorNoRiskCategorySpecified, api.CategoryUser)
-		}
-		riskCatID = itemCat.RiskCategoryID.UUID
 	}
 
 	item.Name = input.Name
