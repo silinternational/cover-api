@@ -129,7 +129,7 @@ func createItemFixture(tx *pop.Connection, policyID uuid.UUID, categoryID uuid.U
 		Make:              randStr(10),
 		Model:             randStr(10),
 		SerialNumber:      randStr(10),
-		CoverageAmount:    int(rand.Int31n(100)) + 100,
+		CoverageAmount:    (int(rand.Int31n(100)) + 100) * domain.CurrencyFactor,
 		PurchaseDate:      time.Date(2010, 4, 1, 12, 0, 0, 0, time.UTC),
 		CoverageStartDate: time.Date(2010, 4, 1, 13, 0, 0, 0, time.UTC),
 		CoverageStatus:    api.ItemCoverageStatusApproved,
@@ -161,11 +161,11 @@ func createClaimFixture(tx *pop.Connection, policyID uuid.UUID, config FixturesC
 			IsRepairable:    false,
 			RepairEstimate:  0,
 			RepairActual:    0,
-			ReplaceEstimate: 10000,
-			ReplaceActual:   8500,
+			ReplaceEstimate: 100 * domain.CurrencyFactor,
+			ReplaceActual:   85 * domain.CurrencyFactor,
 			PayoutOption:    "",
-			PayoutAmount:    8500,
-			FMV:             13000,
+			PayoutAmount:    85 * domain.CurrencyFactor,
+			FMV:             130 * domain.CurrencyFactor,
 			ReviewDate:      nulls.Time{},
 			ReviewerID:      nulls.UUID{},
 		}
@@ -185,7 +185,7 @@ func CreateCategoryFixtures(tx *pop.Connection, n int) Fixtures {
 		categories[i].Name = randStr(10)
 		categories[i].HelpText = randStr(40)
 		categories[i].Status = api.ItemCategoryStatusEnabled
-		categories[i].AutoApproveMax = 500
+		categories[i].AutoApproveMax = 3000 * domain.CurrencyFactor //  $3,000
 		MustCreate(tx, &categories[i])
 	}
 
