@@ -127,7 +127,7 @@ func claimStructLevelValidation(sl validator.StructLevel) {
 	}
 
 	if !claim.ReviewerID.Valid {
-		sl.ReportError(claim.Status, "reviewer_id", "ReviewerID", "reviewer_required", "foo")
+		sl.ReportError(claim.Status, "reviewer_id", "ReviewerID", "reviewer_required", "")
 	}
 
 	if !claim.ReviewDate.Valid {
@@ -146,10 +146,21 @@ func claimItemStructLevelValidation(sl validator.StructLevel) {
 	}
 
 	if !claimItem.ReviewerID.Valid {
-		sl.ReportError(claimItem.Status, "reviewer_id", "ReviewerID", "reviewer_required", "foo")
+		sl.ReportError(claimItem.Status, "reviewer_id", "ReviewerID", "reviewer_required", "")
 	}
 
 	if !claimItem.ReviewDate.Valid {
 		sl.ReportError(claimItem.Status, "review_date", "ReviewDate", "review_date_required", "")
+	}
+}
+
+func policyStructLevelValidation(sl validator.StructLevel) {
+	policy, ok := sl.Current().Interface().(Policy)
+	if !ok {
+		panic("policyStructLevelValidation registered to a type other than Policy")
+	}
+
+	if policy.Type == api.PolicyTypeHousehold && !policy.HouseholdID.Valid {
+		sl.ReportError(policy.HouseholdID, "household_id", "HouseholdID", "household_id_required", "")
 	}
 }

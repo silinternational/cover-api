@@ -237,7 +237,7 @@ func CreatePolicyFixtures(tx *pop.Connection, config FixturesConfig) Fixtures {
 		policies[i].Account = randStr(10)
 		policies[i].EntityCode = randStr(10)
 		policies[i].CostCenter = randStr(10)
-		policies[i].HouseholdID = randStr(10)
+		policies[i].HouseholdID = nulls.NewString(randStr(10))
 		MustCreate(tx, &policies[i])
 
 		f := CreatePolicyUserFixtures(tx, policies[i], config.UsersPerPolicy)

@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/gobuffalo/nulls"
+
 	"github.com/silinternational/cover-api/api"
 	"github.com/silinternational/cover-api/models"
 )
@@ -139,7 +141,7 @@ func (as *ActionSuite) Test_PoliciesUpdate() {
 			actor:  normalUser,
 			policy: fixtures.Policies[1],
 			update: api.PolicyUpdate{
-				HouseholdID: "654978",
+				HouseholdID: nulls.NewString("654978"),
 			},
 			wantStatus: http.StatusOK,
 			wantInBody: fixtures.Policies[1].ID.String(),
@@ -149,7 +151,7 @@ func (as *ActionSuite) Test_PoliciesUpdate() {
 			actor:  normalUser,
 			policy: fixtures.Policies[0],
 			update: api.PolicyUpdate{
-				HouseholdID: "09876",
+				HouseholdID: nulls.NewString("09876"),
 			},
 			wantStatus:    http.StatusNotFound,
 			notWantInBody: fixtures.Policies[0].ID.String(),
@@ -159,7 +161,7 @@ func (as *ActionSuite) Test_PoliciesUpdate() {
 			actor:  appAdmin,
 			policy: fixtures.Policies[1],
 			update: api.PolicyUpdate{
-				HouseholdID: "998877",
+				HouseholdID: nulls.NewString("998877"),
 			},
 			wantStatus: http.StatusOK,
 			wantInBody: fixtures.Policies[1].ID.String(),
@@ -187,7 +189,7 @@ func (as *ActionSuite) Test_PoliciesUpdate() {
 			}
 			var policy api.Policy
 			as.NoError(json.Unmarshal([]byte(body), &policy))
-			as.Equal(tt.update.HouseholdID, policy.HouseholdID)
+			as.Equal(tt.update.HouseholdID.String, policy.HouseholdID)
 		})
 	}
 }

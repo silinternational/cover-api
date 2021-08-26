@@ -42,7 +42,7 @@ func (ms *ModelSuite) TestPolicy_Validate() {
 			name: "valid type",
 			Policy: Policy{
 				Type:        api.PolicyTypeHousehold,
-				HouseholdID: "123456",
+				HouseholdID: nulls.NewString("123456"),
 			},
 			wantErr:  false,
 			errField: "",
@@ -68,7 +68,7 @@ func (ms *ModelSuite) TestPolicy_LoadMembers() {
 	rando := randStr(6)
 	policy := Policy{
 		Type:        api.PolicyTypeHousehold,
-		HouseholdID: rando,
+		HouseholdID: nulls.NewString(rando),
 	}
 	MustCreate(ms.DB, &policy)
 
@@ -96,7 +96,7 @@ func (ms *ModelSuite) TestPolicy_LoadDependents() {
 	rando := randStr(6)
 	policy := Policy{
 		Type:        api.PolicyTypeHousehold,
-		HouseholdID: rando,
+		HouseholdID: nulls.NewString(rando),
 	}
 	MustCreate(ms.DB, &policy)
 
