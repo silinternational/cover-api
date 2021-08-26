@@ -301,11 +301,13 @@ func createClaimFixtures(fixPolicies []*models.Policy) ([]models.Claim, error) {
 
 	for i, uu := range claimUUIDs {
 		fixClaims[i] = models.Claim{
-			ID:       uuid.FromStringOrNil(uu),
-			PolicyID: fixPolicies[i].ID,
+			ID:        uuid.FromStringOrNil(uu),
+			PolicyID:  fixPolicies[i].ID,
+			Status:    api.ClaimStatusDraft,
+			EventType: api.ClaimEventTypeOther,
 		}
 
-		err := models.DB.Create(&fixClaims[i])
+		err := fixClaims[i].Create(models.DB)
 		if err != nil {
 			err = fmt.Errorf("error creating policy fixture ... %+v\n %v",
 				fixClaims[i], err.Error())
