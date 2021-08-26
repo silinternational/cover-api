@@ -968,14 +968,14 @@ func (as *ActionSuite) Test_convertItemApiInput() {
 			wantRiskCat: itemCategory.RiskCategoryID,
 		},
 		{
-			name:        itemWithRiskCategory.Name,
+			name:        itemWithRiskCategory.Name + " normal user",
 			policy:      policy,
 			input:       itemWithRiskCategory,
 			user:        user,
 			wantRiskCat: itemCategory.RiskCategoryID, // normal user cannot override
 		},
 		{
-			name:        itemWithRiskCategory.Name,
+			name:        itemWithRiskCategory.Name + " admin user",
 			policy:      policy,
 			input:       itemWithRiskCategory,
 			user:        admin,
