@@ -259,11 +259,12 @@ func uniqueClaimReferenceNumber(tx *pop.Connection) string {
 		ref := fmt.Sprintf("C%s%s",
 			domain.RandomString(2, "ABCDEFGHIJKLMNOPQRSTUVWXYZ"),
 			domain.RandomString(4, "1234567890"))
-		var claim Claim
-		err := claim.FindByReferenceNumber(tx, ref)
-		if err != nil && !domain.IsOtherThanNoRows(err) {
+
+		count, err := tx.Where("reference_number = ?", ref).Count(Claim{})
+		if count == 0 && err == nil {
 			return ref
 		}
+
 		attempts++
 		if attempts > 100 {
 			panic(fmt.Errorf("failed to find unique claim reference number after 100 attempts"))
