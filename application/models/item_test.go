@@ -297,11 +297,6 @@ func (ms *ModelSuite) TestItem_Create() {
 		wantErrContains string
 	}{
 		{
-			name:            "item exceeds policy max",
-			item:            itemExceedsPolicy,
-			wantErrContains: "pushes policy total over max allowed",
-		},
-		{
 			name: "good item",
 			item: goodItem,
 		},
@@ -344,6 +339,7 @@ func (ms *ModelSuite) TestItem_SubmitForApproval() {
 	itemDependent := items[1]
 	itemDependent.PolicyDependentID = nulls.NewUUID(dependent.ID)
 	itemDependent.CoverageAmount = 2000 * domain.CurrencyFactor // $2000
+	itemDependent.CoverageStatus = api.ItemCoverageStatusApproved
 	ms.NoError(ms.DB.Update(&itemDependent), "error updating item fixture for test")
 
 	// specify other items for testing
@@ -381,10 +377,9 @@ func (ms *ModelSuite) TestItem_SubmitForApproval() {
 	ms.NoError(ms.DB.Update(&itemExceedsMax), "error updating item fixture for test")
 
 	tests := []struct {
-		name            string
-		item            Item
-		wantStatus      api.ItemCoverageStatus
-		wantErrContains string
+		name       string
+		item       Item
+		wantStatus api.ItemCoverageStatus
 	}{
 		{
 			name:       "item without dependent gets auto approval",
@@ -407,22 +402,15 @@ func (ms *ModelSuite) TestItem_SubmitForApproval() {
 			wantStatus: api.ItemCoverageStatusApproved,
 		},
 		{
-			name:            "item coverage amount exceeds max",
-			item:            itemExceedsMax,
-			wantErrContains: "pushes policy total over max allowed",
+			name:       "item coverage amount exceeds max",
+			item:       itemExceedsMax,
+			wantStatus: api.ItemCoverageStatusPending,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got := tt.item.SubmitForApproval(ms.DB)
-
-			if tt.wantErrContains != "" {
-				ms.Error(got)
-				ms.Contains(got.Error(), tt.wantErrContains, "incorrect error")
-				return
-			}
-
 			ms.NoError(got)
 
 			ms.Equal(tt.wantStatus, tt.item.CoverageStatus, "incorrect status")
