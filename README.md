@@ -7,7 +7,7 @@ with many / most of the common features needed in a web application / API.
 The only system requirement for running this application is Docker. Once the source is cloned, all you have 
 to do to get it running is:
 
-1. Copy `.env.example` to `.env` and update values as described in the file. Secrets may be provided by another team member via Signal or other secure communication tool.
+1. Copy `.env.example` to `local.env` and update values as described in the file. Secrets may be provided by another team member via Signal or other secure communication tool.
 1. Add `127.0.0.1 minio` to `/etc/hosts` (or equivalent for your OS)
 1. Run `make`
 
