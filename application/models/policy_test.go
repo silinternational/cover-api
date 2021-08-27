@@ -143,8 +143,7 @@ func (ms *ModelSuite) TestPolicy_itemCoverageTotals() {
 	for i, _ := range items {
 		// Set to approved
 		if i < 4 {
-			items[i].CoverageStatus = api.ItemCoverageStatusApproved
-			ms.NoError(ms.DB.Update(&items[i]), "error updating coverage status of item")
+			items[i] = UpdateItemStatus(ms.DB, items[i], api.ItemCoverageStatusApproved)
 			coverageForPolicy += items[i].CoverageAmount
 		}
 

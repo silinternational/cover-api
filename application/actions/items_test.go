@@ -227,13 +227,8 @@ func (as *ActionSuite) Test_ItemsSubmit() {
 
 	fixtures := models.CreateItemFixtures(as.DB, fixConfig)
 
-	approvedItem := fixtures.Items[1]
-	approvedItem.CoverageStatus = api.ItemCoverageStatusApproved
-	as.NoError(as.DB.Update(&approvedItem), "error trying to change item status for test")
-
-	revisionItem := fixtures.Items[0]
-	revisionItem.CoverageStatus = api.ItemCoverageStatusRevision
-	as.NoError(as.DB.Update(&revisionItem), "error trying to change item status for test")
+	approvedItem := models.UpdateItemStatus(as.DB, fixtures.Items[1], api.ItemCoverageStatusApproved)
+	revisionItem := models.UpdateItemStatus(as.DB, fixtures.Items[0], api.ItemCoverageStatusRevision)
 
 	policy := fixtures.Policies[0]
 	policyCreator := policy.Members[0]
@@ -330,11 +325,8 @@ func (as *ActionSuite) Test_ItemsRevision() {
 
 	fixtures := models.CreateItemFixtures(as.DB, fixConfig)
 
-	approvedItem := fixtures.Items[1]
-
-	pendingItem := fixtures.Items[0]
-	pendingItem.CoverageStatus = api.ItemCoverageStatusPending
-	as.NoError(as.DB.Update(&pendingItem), "error trying to change item status for test")
+	approvedItem := models.UpdateItemStatus(as.DB, fixtures.Items[1], api.ItemCoverageStatusApproved)
+	pendingItem := models.UpdateItemStatus(as.DB, fixtures.Items[0], api.ItemCoverageStatusPending)
 
 	policy := fixtures.Policies[0]
 	policyCreator := policy.Members[0]
@@ -434,11 +426,8 @@ func (as *ActionSuite) Test_ItemsApprove() {
 
 	fixtures := models.CreateItemFixtures(as.DB, fixConfig)
 
-	approvedItem := fixtures.Items[1]
-
-	pendingItem := fixtures.Items[0]
-	pendingItem.CoverageStatus = api.ItemCoverageStatusPending
-	as.NoError(as.DB.Update(&pendingItem), "error trying to change item status for test")
+	approvedItem := models.UpdateItemStatus(as.DB, fixtures.Items[1], api.ItemCoverageStatusApproved)
+	pendingItem := models.UpdateItemStatus(as.DB, fixtures.Items[0], api.ItemCoverageStatusPending)
 
 	policy := fixtures.Policies[0]
 	policyCreator := policy.Members[0]
@@ -526,11 +515,8 @@ func (as *ActionSuite) Test_ItemsDeny() {
 
 	fixtures := models.CreateItemFixtures(as.DB, fixConfig)
 
-	approvedItem := fixtures.Items[1]
-
-	pendingItem := fixtures.Items[0]
-	pendingItem.CoverageStatus = api.ItemCoverageStatusPending
-	as.NoError(as.DB.Update(&pendingItem), "error trying to change item status for test")
+	approvedItem := models.UpdateItemStatus(as.DB, fixtures.Items[1], api.ItemCoverageStatusApproved)
+	pendingItem := models.UpdateItemStatus(as.DB, fixtures.Items[0], api.ItemCoverageStatusPending)
 
 	policy := fixtures.Policies[0]
 	policyCreator := policy.Members[0]
@@ -618,13 +604,8 @@ func (as *ActionSuite) Test_ItemsUpdate() {
 
 	fixtures := models.CreateItemFixtures(as.DB, fixConfig)
 
-	oldItem := fixtures.Items[0]
-	oldItem.CoverageStatus = api.ItemCoverageStatusRevision
-	as.NoError(as.DB.Update(&oldItem), "error trying to change item status for test")
-
-	approvedItem := fixtures.Items[1]
-	approvedItem.CoverageStatus = api.ItemCoverageStatusApproved
-	as.NoError(as.DB.Update(&approvedItem), "error trying to change item status for test")
+	revisionItem := models.UpdateItemStatus(as.DB, fixtures.Items[0], api.ItemCoverageStatusRevision)
+	approvedItem := models.UpdateItemStatus(as.DB, fixtures.Items[1], api.ItemCoverageStatusApproved)
 
 	policy := fixtures.Policies[0]
 	policyCreator := policy.Members[0]
@@ -634,7 +615,7 @@ func (as *ActionSuite) Test_ItemsUpdate() {
 
 	badItemDate := api.ItemInput{
 		Name:       "Item with bad purchase date",
-		CategoryID: oldItem.CategoryID,
+		CategoryID: revisionItem.CategoryID,
 	}
 
 	badCatID := api.ItemInput{
@@ -655,7 +636,7 @@ func (as *ActionSuite) Test_ItemsUpdate() {
 		Make:              "Minolta",
 		Model:             "Max",
 		SerialNumber:      "MM1234",
-		CoverageAmount:    oldItem.CoverageAmount,
+		CoverageAmount:    revisionItem.CoverageAmount,
 		PurchaseDate:      "2006-01-02",
 		CoverageStatus:    api.ItemCoverageStatusRevision,
 		CoverageStartDate: "2006-01-03",
@@ -672,7 +653,7 @@ func (as *ActionSuite) Test_ItemsUpdate() {
 		{
 			name:       "unauthenticated",
 			actor:      models.User{},
-			oldItem:    oldItem,
+			oldItem:    revisionItem,
 			wantStatus: http.StatusUnauthorized,
 			wantInBody: []string{
 				api.ErrorNotAuthorized.String(),
@@ -682,7 +663,7 @@ func (as *ActionSuite) Test_ItemsUpdate() {
 		{
 			name:       "unauthorized",
 			actor:      otherUser,
-			oldItem:    oldItem,
+			oldItem:    revisionItem,
 			wantStatus: http.StatusNotFound,
 			wantInBody: []string{"actor not allowed to perform that action on this resource"},
 		},
@@ -696,7 +677,7 @@ func (as *ActionSuite) Test_ItemsUpdate() {
 		{
 			name:       "has bad purchase date",
 			actor:      policyCreator,
-			oldItem:    oldItem,
+			oldItem:    revisionItem,
 			newItem:    badItemDate,
 			wantStatus: http.StatusBadRequest,
 			wantInBody: []string{
@@ -707,7 +688,7 @@ func (as *ActionSuite) Test_ItemsUpdate() {
 		{
 			name:       "has bad category id",
 			actor:      policyCreator,
-			oldItem:    oldItem,
+			oldItem:    revisionItem,
 			newItem:    badCatID,
 			wantStatus: http.StatusBadRequest,
 			wantInBody: []string{api.ErrorInvalidCategory.String()},
@@ -723,7 +704,7 @@ func (as *ActionSuite) Test_ItemsUpdate() {
 		{
 			name:       "good item",
 			actor:      policyCreator,
-			oldItem:    oldItem,
+			oldItem:    revisionItem,
 			newItem:    goodItem,
 			wantStatus: http.StatusOK,
 			wantInBody: []string{

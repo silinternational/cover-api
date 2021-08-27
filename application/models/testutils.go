@@ -139,6 +139,14 @@ func createItemFixture(tx *pop.Connection, policyID uuid.UUID, categoryID uuid.U
 	return item
 }
 
+func UpdateItemStatus(tx *pop.Connection, item Item, status api.ItemCoverageStatus) Item {
+	item.CoverageStatus = status
+	if err := tx.Update(&item); err != nil {
+		panic("error trying to update item status for test: " + err.Error())
+	}
+	return item
+}
+
 func createClaimFixture(tx *pop.Connection, policyID uuid.UUID, config FixturesConfig) Claim {
 	claim := Claim{
 		PolicyID:         policyID,
