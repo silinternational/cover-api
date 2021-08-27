@@ -153,7 +153,7 @@ func createClaimFixture(tx *pop.Connection, policyID uuid.UUID, config FixturesC
 		EventDate:        time.Date(2020, 5, 1, 12, 0, 0, 0, time.UTC),
 		EventType:        api.ClaimEventTypeImpact,
 		EventDescription: randStr(25),
-		Status:           api.ClaimStatusPending,
+		// Status is set to Draft by default
 	}
 	MustCreate(tx, &claim)
 
