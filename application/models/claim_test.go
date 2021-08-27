@@ -29,7 +29,7 @@ func (ms *ModelSuite) TestClaim_Validate() {
 				EventType:        api.ClaimEventTypeImpact,
 				EventDate:        time.Now(),
 				EventDescription: "testing123",
-				Status:           api.ClaimStatusPending,
+				Status:           api.ClaimStatusReview1,
 			},
 			errField: "",
 			wantErr:  false,
@@ -60,7 +60,7 @@ func (ms *ModelSuite) TestClaim_ReferenceNumber() {
 		EventDate:        time.Now().UTC(),
 		EventType:        api.ClaimEventTypeImpact,
 		EventDescription: "fell",
-		Status:           api.ClaimStatusPending,
+		Status:           api.ClaimStatusReview1,
 	}
 	ms.NoError(claim.Create(ms.DB))
 	ms.Len(claim.ReferenceNumber, ClaimReferenceNumberLength)

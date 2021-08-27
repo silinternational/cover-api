@@ -30,10 +30,15 @@ var ValidClaimEventTypes = map[api.ClaimEventType]struct{}{
 
 var ValidClaimStatus = map[api.ClaimStatus]struct{}{
 	api.ClaimStatusDraft:    {},
-	api.ClaimStatusPending:  {},
+	api.ClaimStatusReview1:  {},
+	api.ClaimStatusReview2:  {},
+	api.ClaimStatusReview3:  {},
 	api.ClaimStatusRevision: {},
+	api.ClaimStatusReceipt:  {},
 	api.ClaimStatusApproved: {},
+	api.ClaimStatusPaid:     {},
 	api.ClaimStatusDenied:   {},
+	api.ClaimStatusInactive: {},
 }
 
 type Claims []Claim
@@ -65,8 +70,12 @@ func (c *Claim) Validate(tx *pop.Connection) (*validate.Errors, error) {
 }
 
 // Create stores the Claim data as a new record in the database.
+// If its status is not valid, it is created in Draft status.
 func (c *Claim) Create(tx *pop.Connection) error {
 	c.ReferenceNumber = uniqueClaimReferenceNumber(tx)
+	if _, ok := ValidClaimStatus[c.Status]; !ok {
+		c.Status = api.ClaimStatusDraft
+	}
 	return create(tx, c)
 }
 
@@ -127,18 +136,39 @@ func (c *Claim) IsActorAllowedTo(tx *pop.Connection, actor User, perm Permission
 func claimStatusTransitions() map[api.ClaimStatus][]api.ClaimStatus {
 	return map[api.ClaimStatus][]api.ClaimStatus{
 		api.ClaimStatusDraft: {
-			api.ClaimStatusPending,
+			api.ClaimStatusReview1,
+			api.ClaimStatusInactive,
 		},
-		api.ClaimStatusPending: {
+		api.ClaimStatusReview1: {
+			api.ClaimStatusRevision,
+			api.ClaimStatusReceipt,
+			api.ClaimStatusReview3,
+			api.ClaimStatusDenied,
+		},
+		api.ClaimStatusRevision: {
+			api.ClaimStatusReview1,
+			api.ClaimStatusInactive,
+		},
+		api.ClaimStatusReceipt: {
+			api.ClaimStatusReview2,
+			api.ClaimStatusInactive,
+		},
+		api.ClaimStatusReview2: {
+			api.ClaimStatusReceipt,
+			api.ClaimStatusReview3,
+			api.ClaimStatusDenied,
+		},
+		api.ClaimStatusReview3: {
+			api.ClaimStatusReceipt,
 			api.ClaimStatusRevision,
 			api.ClaimStatusApproved,
 			api.ClaimStatusDenied,
 		},
-		api.ClaimStatusRevision: {
-			api.ClaimStatusPending,
+		api.ClaimStatusApproved: {
+			api.ClaimStatusPaid,
 		},
-		api.ClaimStatusApproved: {},
 		api.ClaimStatusDenied:   {},
+		api.ClaimStatusInactive: {},
 	}
 }
 
