@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func Test_getResourceIDSubresource(t *testing.T) {
+func (as *ActionSuite) Test_getResourceIDSubresource() {
 	tests := []struct {
 		name           string
 		path           string
@@ -74,7 +74,7 @@ func Test_getResourceIDSubresource(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+		as.T().Run(tt.name, func(t *testing.T) {
 			gotResource, gotID, gotSub, partsCount := getResourceIDSubresource(tt.path)
 			assert.Equal(t, tt.wantResource, gotResource)
 			assert.Equal(t, tt.wantID, gotID)
