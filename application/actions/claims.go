@@ -84,6 +84,12 @@ func claimsView(c buffalo.Context) error {
 //   in: path
 //   required: true
 //   description: claim ID
+// - name: claim input
+//   in: body
+//   description: claim create input object
+//   required: true
+//   schema:
+//     "$ref": "#/definitions/ClaimUpdateInput"
 // responses:
 //   '200':
 //     description: a Claim
