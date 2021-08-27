@@ -133,9 +133,17 @@ func createItemFixture(tx *pop.Connection, policyID uuid.UUID, categoryID uuid.U
 		CoverageAmount:    (int(rand.Int31n(100)) + 100) * domain.CurrencyFactor,
 		PurchaseDate:      time.Date(2010, 4, 1, 12, 0, 0, 0, time.UTC),
 		CoverageStartDate: time.Date(2010, 4, 1, 13, 0, 0, 0, time.UTC),
-		CoverageStatus:    api.ItemCoverageStatusApproved,
+		// By default, CoverageStatus gets set to Draft by the Item.Create function
 	}
 	MustCreate(tx, &item)
+	return item
+}
+
+func UpdateItemStatus(tx *pop.Connection, item Item, status api.ItemCoverageStatus) Item {
+	item.CoverageStatus = status
+	if err := tx.Update(&item); err != nil {
+		panic("error trying to update item status for test: " + err.Error())
+	}
 	return item
 }
 
