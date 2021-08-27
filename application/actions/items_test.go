@@ -228,6 +228,8 @@ func (as *ActionSuite) Test_ItemsSubmit() {
 	fixtures := models.CreateItemFixtures(as.DB, fixConfig)
 
 	approvedItem := fixtures.Items[1]
+	approvedItem.CoverageStatus = api.ItemCoverageStatusApproved
+	as.NoError(as.DB.Update(&approvedItem), "error trying to change item status for test")
 
 	revisionItem := fixtures.Items[0]
 	revisionItem.CoverageStatus = api.ItemCoverageStatusRevision
@@ -621,6 +623,8 @@ func (as *ActionSuite) Test_ItemsUpdate() {
 	as.NoError(as.DB.Update(&oldItem), "error trying to change item status for test")
 
 	approvedItem := fixtures.Items[1]
+	approvedItem.CoverageStatus = api.ItemCoverageStatusApproved
+	as.NoError(as.DB.Update(&approvedItem), "error trying to change item status for test")
 
 	policy := fixtures.Policies[0]
 	policyCreator := policy.Members[0]
