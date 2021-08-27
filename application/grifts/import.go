@@ -67,6 +67,9 @@ var householdPolicyMap = map[string]uuid.UUID{}
 // policyUserMap is a list of existing PolicyUser records to prevent duplicates
 var policyUserMap = map[string]struct{}{}
 
+// policyNotes is used for accumulating policy notes as policies are merged
+var policyNotes = map[uuid.UUID]string{}
+
 // time used in place of missing time values
 var emptyTime time.Time
 
@@ -286,6 +289,7 @@ func importPolicies(tx *pop.Connection, in []LegacyPolicy) {
 			policyUUID = id
 			nDuplicatePolicies++
 			householdsWithMultiplePolicies[p.HouseholdId] = struct{}{}
+			appendNotesToPolicy(tx, policyUUID, p.Notes)
 		} else {
 			policyID := stringToInt(p.Id, "Policy ID")
 			householdID := nulls.String{}
@@ -300,6 +304,7 @@ func importPolicies(tx *pop.Connection, in []LegacyPolicy) {
 				CostCenter:  p.CostCenter,
 				Account:     strconv.Itoa(p.Account),
 				EntityCode:  p.EntityCode.String,
+				Notes:       p.Notes,
 				LegacyID:    nulls.NewInt(policyID),
 				CreatedAt:   parseStringTime(p.CreatedAt, desc+"CreatedAt"),
 			}
@@ -313,6 +318,7 @@ func importPolicies(tx *pop.Connection, in []LegacyPolicy) {
 				parseNullStringTimeToTime(p.UpdatedAt, desc+"UpdatedAt"), newPolicy.ID).Exec(); err != nil {
 				log.Fatalf("failed to set updated_at on policies, %s", err)
 			}
+			policyNotes[id] = p.Notes
 
 			nPolicies++
 		}
@@ -334,6 +340,26 @@ func importPolicies(tx *pop.Connection, in []LegacyPolicy) {
 	fmt.Printf("  ClaimItems: %d\n", nClaimItems)
 	fmt.Printf("  PolicyUsers: %d w/staffID: %d\n", nPolicyUsers, nPolicyUsersWithStaffID)
 	fmt.Println("")
+}
+
+func appendNotesToPolicy(tx *pop.Connection, policyUUID uuid.UUID, newNotes string) {
+	if newNotes == "" {
+		return
+	}
+
+	if policyNotes[policyUUID] != "" {
+		policyNotes[policyUUID] += " ---- " + newNotes
+	} else {
+		policyNotes[policyUUID] = newNotes
+	}
+
+	policy := models.Policy{
+		ID:    policyUUID,
+		Notes: policyNotes[policyUUID],
+	}
+	if err := tx.UpdateColumns(&policy, "notes"); err != nil {
+		panic(err.Error())
+	}
 }
 
 // getPolicyType gets the correct policy type
