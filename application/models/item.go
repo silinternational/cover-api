@@ -71,24 +71,7 @@ func (i *Item) CreateNoVetting(tx *pop.Connection) error {
 	return create(tx, i)
 }
 
-func (i *Item) vetAmount(tx *pop.Connection) error {
-	policy := Policy{ID: i.PolicyID}
-	coverageTotals := policy.itemCoverageTotals(tx)
-	policyTotal := coverageTotals[i.PolicyID]
-
-	if policyTotal+i.CoverageAmount > domain.Env.PolicyMaxCoverage {
-		err := fmt.Errorf("item coverage amount (%v) pushes policy total over max allowed", i.CoverageAmount)
-		appErr := api.NewAppError(err, api.ErrorItemCoverageAmount, api.CategoryUser)
-		return appErr
-	}
-	return nil
-}
-
 func (i *Item) Create(tx *pop.Connection) error {
-	if err := i.vetAmount(tx); err != nil {
-		return err
-	}
-
 	i.CoverageStatus = api.ItemCoverageStatusDraft
 
 	return create(tx, i)
@@ -274,10 +257,6 @@ func (i *Item) SubmitForApproval(tx *pop.Connection) error {
 
 	i.Load(tx)
 
-	if err := i.vetAmount(tx); err != nil {
-		return err
-	}
-
 	if i.canAutoApprove(tx) {
 		i.CoverageStatus = api.ItemCoverageStatusApproved
 	}
@@ -291,13 +270,20 @@ func (i *Item) canAutoApprove(tx *pop.Connection) bool {
 		return false
 	}
 
+	policy := Policy{ID: i.PolicyID}
+	totals := policy.itemCoverageTotals(tx)
+
+	policyTotal := totals[i.PolicyID]
+
+	if policyTotal+i.CoverageAmount > domain.Env.PolicyMaxCoverage {
+		return false
+	}
+
 	if !i.PolicyDependentID.Valid {
 		return true
 	}
 
 	// Dependents have different rules based on the total amounts of all their items
-	policy := Policy{ID: i.PolicyID}
-	totals := policy.itemCoverageTotals(tx)
 	depTotal := totals[i.PolicyDependentID.UUID]
 	return depTotal+i.CoverageAmount <= domain.Env.DependantAutoApproveMax
 }
@@ -315,10 +301,6 @@ func (i *Item) Revision(tx *pop.Connection) error {
 // It assumes that the item's current status has already been validated.
 // TODO emit an event for the the status transition
 func (i *Item) Approve(tx *pop.Connection) error {
-	if err := i.vetAmount(tx); err != nil {
-		return err
-	}
-
 	oldStatus := i.CoverageStatus
 	i.CoverageStatus = api.ItemCoverageStatusApproved
 	return i.Update(tx, oldStatus)
