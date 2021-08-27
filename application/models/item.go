@@ -67,10 +67,6 @@ func (i *Item) Validate(tx *pop.Connection) (*validate.Errors, error) {
 	return validateModel(i), nil
 }
 
-func (i *Item) CreateNoVetting(tx *pop.Connection) error {
-	return create(tx, i)
-}
-
 func (i *Item) Create(tx *pop.Connection) error {
 	if _, ok := ValidItemCoverageStatuses[i.CoverageStatus]; !ok {
 		i.CoverageStatus = api.ItemCoverageStatusDraft

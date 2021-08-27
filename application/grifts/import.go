@@ -633,7 +633,7 @@ func importItems(tx *pop.Connection, policyID uuid.UUID, items []LegacyItem) {
 			LegacyID:          nulls.NewInt(itemID),
 			CreatedAt:         parseStringTime(item.CreatedAt, itemDesc+"CreatedAt"),
 		}
-		if err := newItem.CreateNoVetting(tx); err != nil {
+		if err := newItem.Create(tx); err != nil {
 			log.Fatalf("failed to create item, %s\n%+v", err, newItem)
 		}
 		itemIDMap[itemID] = newItem.ID
@@ -656,8 +656,7 @@ func getCoverageStatus(item LegacyItem) api.ItemCoverageStatus {
 		coverageStatus = api.ItemCoverageStatusInactive
 
 	default:
-		log.Printf("unknown coverage status %s\n", item.CoverageStatus)
-		coverageStatus = api.ItemCoverageStatus(item.CoverageStatus)
+		log.Fatalf("unknown coverage status %s\n", item.CoverageStatus)
 	}
 
 	return coverageStatus
