@@ -208,8 +208,9 @@ func importItemCategories(tx *pop.Connection, in []LegacyItemCategory) {
 		categoryID := stringToInt(i.Id, "ItemCategory ID")
 
 		desc := fmt.Sprintf("ItemCategory[%d].", categoryID)
+		riskCategoryUUID := getRiskCategoryUUID(i.RiskCategoryId)
 		newItemCategory := models.ItemCategory{
-			RiskCategoryID: getRiskCategoryUUID(i.RiskCategoryId),
+			RiskCategoryID: riskCategoryUUID,
 			Name:           i.Name,
 			HelpText:       i.HelpText,
 			Status:         getItemCategoryStatus(i),
@@ -223,7 +224,7 @@ func importItemCategories(tx *pop.Connection, in []LegacyItemCategory) {
 		}
 
 		itemCategoryIDMap[categoryID] = newItemCategory.ID
-		riskCategoryMap[categoryID] = getRiskCategoryUUID(i.RiskCategoryId)
+		riskCategoryMap[categoryID] = riskCategoryUUID
 
 		if err := tx.RawQuery("update item_categories set updated_at = ? where id = ?",
 			parseStringTime(i.UpdatedAt, desc+"UpdatedAt"), newItemCategory.ID).Exec(); err != nil {
