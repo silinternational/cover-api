@@ -136,24 +136,22 @@ func (ms *ModelSuite) TestPolicy_itemCoverageTotals() {
 	policy.LoadItems(ms.DB, false)
 	items := policy.Items
 
-	// Not approved yet
-	items[4].CoverageStatus = api.ItemCoverageStatusDraft
-	ms.NoError(ms.DB.Update(&items[4]), "error updating coverage status of item")
-
 	// give two items a dependant and calculate expected values
 	dependant := policy.Dependents[0]
 	coverageForPolicy := 0
 	coverageForDep := 0
-	for i, item := range items {
-		if item.CoverageStatus != api.ItemCoverageStatusApproved {
-			continue
+	for i := range items {
+		// Set to approved
+		if i < 4 {
+			items[i] = UpdateItemStatus(ms.DB, items[i], api.ItemCoverageStatusApproved)
+			coverageForPolicy += items[i].CoverageAmount
 		}
+
 		if i == 2 || i == 3 {
 			items[i].PolicyDependentID = nulls.NewUUID(dependant.ID)
 			ms.NoError(ms.DB.Update(&items[i]), "error trying to change item DependantID")
 			coverageForDep += items[i].CoverageAmount
 		}
-		coverageForPolicy += items[i].CoverageAmount
 	}
 
 	policy.Items = Items{} // ensure the LoadItems gets called

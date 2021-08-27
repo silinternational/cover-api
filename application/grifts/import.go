@@ -60,6 +60,9 @@ var itemIDMap = map[int]uuid.UUID{}
 // itemCategoryIDMap is a map of legacy ID to new ID
 var itemCategoryIDMap = map[int]uuid.UUID{}
 
+// itemCategoryIDMap is a map of legacy ID to new ID
+var riskCategoryMap = map[int]uuid.UUID{}
+
 // householdPolicyMap is a map of household ID to new policy UUID
 var householdPolicyMap = map[string]uuid.UUID{}
 
@@ -216,6 +219,7 @@ func importItemCategories(tx *pop.Connection, in []LegacyItemCategory) {
 		}
 
 		itemCategoryIDMap[categoryID] = newItemCategory.ID
+		riskCategoryMap[categoryID] = getRiskCategoryUUID(i.RiskCategoryId)
 
 		fmt.Printf(`%d,"%s","%s",%s,"%s",%d,"%s"`+"\n",
 			newItemCategory.LegacyID.Int, newItemCategory.ID, newItemCategory.Status,
@@ -615,6 +619,7 @@ func importItems(tx *pop.Connection, policyID uuid.UUID, items []LegacyItem) {
 			// TODO: name/policy needs to be unique
 			Name:              item.Name + domain.GetUUID().String(),
 			CategoryID:        itemCategoryIDMap[item.CategoryId],
+			RiskCategoryID:    riskCategoryMap[item.CategoryId],
 			InStorage:         false,
 			Country:           item.Country,
 			Description:       item.Description,

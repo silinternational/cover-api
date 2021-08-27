@@ -258,7 +258,7 @@ func uniqueClaimReferenceNumber(tx *pop.Connection) string {
 		// create reference number in format CAB1234
 		ref := fmt.Sprintf("C%s%s",
 			domain.RandomString(2, "ABCDEFGHIJKLMNOPQRSTUVWXYZ"),
-			domain.RandomString(4, "1234567890"))
+			domain.RandomString(ClaimReferenceNumberLength-3, "1234567890"))
 
 		count, err := tx.Where("reference_number = ?", ref).Count(Claim{})
 		if count == 0 && err == nil {
