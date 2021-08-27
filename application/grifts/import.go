@@ -353,11 +353,8 @@ func appendNotesToPolicy(tx *pop.Connection, policyUUID uuid.UUID, newNotes stri
 		policyNotes[policyUUID] = newNotes
 	}
 
-	policy := models.Policy{
-		ID:    policyUUID,
-		Notes: policyNotes[policyUUID],
-	}
-	if err := tx.UpdateColumns(&policy, "notes"); err != nil {
+	err := tx.RawQuery("update policies set notes = ? where id = ?", policyNotes[policyUUID], policyUUID).Exec()
+	if err != nil {
 		panic(err.Error())
 	}
 }
