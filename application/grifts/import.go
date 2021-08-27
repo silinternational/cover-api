@@ -41,6 +41,11 @@ const (
 	SilenceBadEmailWarning   = true
 )
 
+const (
+	SILUsersFilename      = "./sil-users.csv"
+	PartnersUsersFilename = "./partners-users.csv"
+)
+
 // userEmailStaffIDMap is a map of email address to staff ID
 var userEmailStaffIDMap = map[string]string{}
 
@@ -123,15 +128,16 @@ var _ = grift.Namespace("db", func() {
 })
 
 func importIdpUsers() {
-	nSilUsers := importIdpUsersFromFile("./sil-users.csv")
+	nSilUsers := importIdpUsersFromFile("SIL")
 	fmt.Printf("SIL users: %d\n", nSilUsers)
 
-	nPartnersUsers := importIdpUsersFromFile("./partners-users.csv")
+	nPartnersUsers := importIdpUsersFromFile("Partners")
 	fmt.Printf("Partners users: %d\n", nPartnersUsers)
 }
 
-func importIdpUsersFromFile(filename string) int {
-	f, err := os.Open(filename)
+func importIdpUsersFromFile(idpName string) int {
+	filenames := map[string]string{"SIL": SILUsersFilename, "Partners": PartnersUsersFilename}
+	f, err := os.Open(filenames[idpName])
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -150,7 +156,7 @@ func importIdpUsersFromFile(filename string) int {
 			break
 		}
 		if err != nil {
-			log.Fatalf("failed to read from IDP data file %s, %s", filename, err)
+			log.Fatalf("failed to read from IDP data file %s, %s", filenames[idpName], err)
 		}
 
 		staffID := csvLine[2]
@@ -165,7 +171,7 @@ func importIdpUsersFromFile(filename string) int {
 		} else {
 			if userEmailStaffIDMap[strings.ToLower(email)] != staffID {
 				log.Fatalf("in file %s, email address '%s' maps to two different staff IDs: '%s' and '%s'",
-					filename, email, userEmailStaffIDMap[strings.ToLower(email)], staffID)
+					filenames[idpName], email, userEmailStaffIDMap[strings.ToLower(email)], staffID)
 			}
 		}
 	}
