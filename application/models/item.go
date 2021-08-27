@@ -15,14 +15,6 @@ import (
 	"github.com/silinternational/cover-api/domain"
 )
 
-// Const
-const (
-	ItemSubmit   = "submit"
-	ItemApprove  = "approve"
-	ItemRevision = "revision"
-	ItemDeny     = "deny"
-)
-
 var ValidItemCoverageStatuses = map[api.ItemCoverageStatus]struct{}{
 	api.ItemCoverageStatusDraft:    {},
 	api.ItemCoverageStatusPending:  {},
@@ -232,7 +224,7 @@ func isItemActionAllowed(actorIsAdmin bool, oldStatus api.ItemCoverageStatus, pe
 			return true
 		}
 
-		return sub == ItemSubmit && perm == PermissionCreate
+		return sub == ModelSubmit && perm == PermissionCreate
 
 	// An item with Pending status can have a create done on it by an admin for revision, approve, deny
 	// A non-admin can delete/inactivate it
@@ -240,7 +232,7 @@ func isItemActionAllowed(actorIsAdmin bool, oldStatus api.ItemCoverageStatus, pe
 		if !actorIsAdmin {
 			return perm == PermissionDelete && sub == ""
 		}
-		return perm == PermissionCreate && (sub == ItemApprove || sub == ItemRevision || sub == ItemDeny)
+		return perm == PermissionCreate && (sub == ModelApprove || sub == ModelRevision || sub == ModelDeny)
 
 	// An item with approved status can only be deleted/inactivated
 	case api.ItemCoverageStatusApproved:

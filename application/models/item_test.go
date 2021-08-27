@@ -44,7 +44,7 @@ func (ms *ModelSuite) Test_isItemActionAllowed() {
 			actorIsAdmin: false,
 			startStatus:  api.ItemCoverageStatusDraft,
 			permission:   PermissionUpdate,
-			subRes:       ItemSubmit,
+			subRes:       ModelSubmit,
 			want:         false,
 		},
 		{
@@ -52,7 +52,7 @@ func (ms *ModelSuite) Test_isItemActionAllowed() {
 			actorIsAdmin: false,
 			startStatus:  api.ItemCoverageStatusDraft,
 			permission:   PermissionCreate,
-			subRes:       ItemApprove,
+			subRes:       ModelApprove,
 			want:         false,
 		},
 		{
@@ -60,7 +60,7 @@ func (ms *ModelSuite) Test_isItemActionAllowed() {
 			actorIsAdmin: false,
 			startStatus:  api.ItemCoverageStatusDraft,
 			permission:   PermissionCreate,
-			subRes:       ItemSubmit,
+			subRes:       ModelSubmit,
 			want:         true,
 		},
 		{
@@ -76,7 +76,7 @@ func (ms *ModelSuite) Test_isItemActionAllowed() {
 			actorIsAdmin: false,
 			startStatus:  api.ItemCoverageStatusDraft,
 			permission:   PermissionDelete,
-			subRes:       ItemSubmit,
+			subRes:       ModelSubmit,
 			want:         false,
 		},
 		{
@@ -100,7 +100,7 @@ func (ms *ModelSuite) Test_isItemActionAllowed() {
 			actorIsAdmin: false,
 			startStatus:  api.ItemCoverageStatusRevision,
 			permission:   PermissionUpdate,
-			subRes:       ItemSubmit,
+			subRes:       ModelSubmit,
 			want:         false,
 		},
 		{
@@ -108,7 +108,7 @@ func (ms *ModelSuite) Test_isItemActionAllowed() {
 			actorIsAdmin: false,
 			startStatus:  api.ItemCoverageStatusRevision,
 			permission:   PermissionCreate,
-			subRes:       ItemApprove,
+			subRes:       ModelApprove,
 			want:         false,
 		},
 		{
@@ -116,7 +116,7 @@ func (ms *ModelSuite) Test_isItemActionAllowed() {
 			actorIsAdmin: false,
 			startStatus:  api.ItemCoverageStatusRevision,
 			permission:   PermissionCreate,
-			subRes:       ItemSubmit,
+			subRes:       ModelSubmit,
 			want:         true,
 		},
 		{
@@ -132,7 +132,7 @@ func (ms *ModelSuite) Test_isItemActionAllowed() {
 			actorIsAdmin: false,
 			startStatus:  api.ItemCoverageStatusRevision,
 			permission:   PermissionDelete,
-			subRes:       ItemSubmit,
+			subRes:       ModelSubmit,
 			want:         false,
 		},
 		{
@@ -148,7 +148,7 @@ func (ms *ModelSuite) Test_isItemActionAllowed() {
 			actorIsAdmin: true,
 			startStatus:  api.ItemCoverageStatusPending,
 			permission:   PermissionCreate,
-			subRes:       ItemRevision,
+			subRes:       ModelRevision,
 			want:         true,
 		},
 		{
@@ -156,7 +156,7 @@ func (ms *ModelSuite) Test_isItemActionAllowed() {
 			actorIsAdmin: true,
 			startStatus:  api.ItemCoverageStatusPending,
 			permission:   PermissionCreate,
-			subRes:       ItemApprove,
+			subRes:       ModelApprove,
 			want:         true,
 		},
 		{
@@ -164,7 +164,7 @@ func (ms *ModelSuite) Test_isItemActionAllowed() {
 			actorIsAdmin: true,
 			startStatus:  api.ItemCoverageStatusPending,
 			permission:   PermissionCreate,
-			subRes:       ItemDeny,
+			subRes:       ModelDeny,
 			want:         true,
 		},
 		{
@@ -172,7 +172,7 @@ func (ms *ModelSuite) Test_isItemActionAllowed() {
 			actorIsAdmin: false,
 			startStatus:  api.ItemCoverageStatusPending,
 			permission:   PermissionCreate,
-			subRes:       ItemRevision,
+			subRes:       ModelRevision,
 			want:         false,
 		},
 		{
@@ -188,7 +188,7 @@ func (ms *ModelSuite) Test_isItemActionAllowed() {
 			actorIsAdmin: false,
 			startStatus:  api.ItemCoverageStatusPending,
 			permission:   PermissionDelete,
-			subRes:       ItemSubmit,
+			subRes:       ModelSubmit,
 			want:         false,
 		},
 		{
@@ -204,7 +204,7 @@ func (ms *ModelSuite) Test_isItemActionAllowed() {
 			actorIsAdmin: true,
 			startStatus:  api.ItemCoverageStatusApproved,
 			permission:   PermissionCreate,
-			subRes:       ItemDeny,
+			subRes:       ModelDeny,
 			want:         false,
 		},
 		{
@@ -228,7 +228,7 @@ func (ms *ModelSuite) Test_isItemActionAllowed() {
 			actorIsAdmin: true,
 			startStatus:  api.ItemCoverageStatusApproved,
 			permission:   PermissionDelete,
-			subRes:       ItemDeny,
+			subRes:       ModelDeny,
 			want:         false,
 		},
 	}

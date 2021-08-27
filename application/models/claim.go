@@ -223,6 +223,35 @@ func (c *Claim) AddItem(tx *pop.Connection, claim Claim, input api.ClaimItemCrea
 	return clmItem, nil
 }
 
+// SubmitForApproval changes the status of the claim to either Review1 or Review2
+//   depending on its current status.
+// TODO ensure the associated claimItem is valid
+// TODO emit an appropriate event
+func (c *Claim) SubmitForApproval(tx *pop.Connection) error {
+	oldStatus := c.Status
+
+	c.LoadClaimItems(tx, false)
+	if len(c.ClaimItems) == 0 {
+		err := errors.New("claim must have a claimItem to submit")
+		appErr := api.NewAppError(err, api.ErrorClaimMissingClaimItem, api.CategoryUser)
+		return appErr
+	}
+
+	switch oldStatus {
+	case api.ClaimStatusDraft, api.ClaimStatusRevision:
+		c.Status = api.ClaimStatusReview1
+	case api.ClaimStatusReceipt:
+		// TODO ensure there is a file attached for a receipt
+		c.Status = api.ClaimStatusReview2
+	default:
+		err := fmt.Errorf("invalid claim status for submit: %s", oldStatus)
+		appErr := api.NewAppError(err, api.ErrorClaimStatus, api.CategoryUser)
+		return appErr
+	}
+
+	return c.Update(tx, oldStatus)
+}
+
 func (c *Claim) LoadClaimItems(tx *pop.Connection, reload bool) {
 	if len(c.ClaimItems) == 0 || reload {
 		if err := tx.Load(c, "ClaimItems"); err != nil {

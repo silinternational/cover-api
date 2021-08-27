@@ -53,7 +53,9 @@ const (
 	ErrorUnableToStoreFile       = ErrorKey("ErrorUnableToStoreFile")
 
 	// Claim
-	ErrorClaimFromContext = ErrorKey("ErrorClaimFromContext")
+	ErrorClaimFromContext      = ErrorKey("ErrorClaimFromContext")
+	ErrorClaimStatus           = ErrorKey("ErrorClaimStatus")
+	ErrorClaimMissingClaimItem = ErrorKey("ErrorClaimMissingClaimItem")
 
 	// Item
 	ErrorItemFromContext              = ErrorKey("ErrorItemFromContext")

@@ -144,6 +144,7 @@ func App() *buffalo.App {
 		claimsGroup.GET(idRegex, claimsView)
 		claimsGroup.PUT(idRegex, claimsUpdate)
 		claimsGroup.POST(idRegex+itemsPath, claimsItemsCreate)
+		claimsGroup.POST(idRegex+"/"+models.ModelSubmit, claimsSubmit)
 
 		// config
 		configGroup := app.Group("/config")
@@ -152,10 +153,10 @@ func App() *buffalo.App {
 
 		// item
 		itemsGroup := app.Group(itemsPath)
-		itemsGroup.POST(idRegex+"/"+models.ItemSubmit, itemsSubmit)
-		itemsGroup.POST(idRegex+"/"+models.ItemRevision, itemsRevision)
-		itemsGroup.POST(idRegex+"/"+models.ItemApprove, itemsApprove)
-		itemsGroup.POST(idRegex+"/"+models.ItemDeny, itemsDeny)
+		itemsGroup.POST(idRegex+"/"+models.ModelSubmit, itemsSubmit)
+		itemsGroup.POST(idRegex+"/"+models.ModelRevision, itemsRevision)
+		itemsGroup.POST(idRegex+"/"+models.ModelApprove, itemsApprove)
+		itemsGroup.POST(idRegex+"/"+models.ModelDeny, itemsDeny)
 		itemsGroup.PUT(idRegex, itemsUpdate)
 		itemsGroup.DELETE(idRegex, itemsRemove)
 

@@ -494,3 +494,79 @@ func (as *ActionSuite) Test_ClaimsItemsCreate() {
 		})
 	}
 }
+
+func (as *ActionSuite) Test_ClaimsSubmit() {
+	fixConfig := models.FixturesConfig{
+		NumberOfPolicies:    2,
+		ItemsPerPolicy:      2,
+		UsersPerPolicy:      1,
+		DependentsPerPolicy: 0,
+		ClaimsPerPolicy:     3,
+		ClaimItemsPerClaim:  1,
+	}
+
+	fixtures := models.CreateItemFixtures(as.DB, fixConfig)
+	policy := fixtures.Policies[0]
+	policyCreator := policy.Members[0]
+
+	draftClaim := policy.Claims[0]
+	approvedClaim := models.UpdateClaimStatus(as.DB, policy.Claims[1], api.ClaimStatusApproved)
+
+	otherUser := fixtures.Policies[1].Members[0]
+
+	tests := []struct {
+		name       string
+		actor      models.User
+		oldClaim   models.Claim
+		wantStatus int
+		wantInBody []string
+	}{
+		{
+			name:       "unauthorized user",
+			actor:      otherUser,
+			oldClaim:   draftClaim,
+			wantStatus: http.StatusNotFound,
+		},
+		{
+			name:       "bad start status",
+			actor:      policyCreator,
+			oldClaim:   approvedClaim,
+			wantStatus: http.StatusBadRequest,
+			wantInBody: []string{api.ErrorClaimStatus.String()},
+		},
+		{
+			name:       "good claim",
+			actor:      policyCreator,
+			oldClaim:   draftClaim,
+			wantStatus: http.StatusOK,
+			wantInBody: []string{
+				`"event_description":"` + draftClaim.EventDescription,
+				`"status":"` + string(api.ClaimStatusReview1),
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		as.T().Run(tt.name, func(t *testing.T) {
+			req := as.JSON("/%s/%s/%s", domain.TypeClaim, tt.oldClaim.ID.String(), models.ModelSubmit)
+			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
+			req.Headers["content-type"] = "application/json"
+			res := req.Post(nil)
+
+			body := res.Body.String()
+			as.Equal(tt.wantStatus, res.Code, "incorrect status code returned, body: %s", body)
+
+			as.verifyResponseData(tt.wantInBody, body, "")
+
+			if res.Code != http.StatusOK {
+				return
+			}
+
+			var claim models.Claim
+			as.NoError(as.DB.Find(&claim, tt.oldClaim.ID),
+				"error finding submitted item.")
+
+			as.Equal(api.ClaimStatusReview1, claim.Status, "incorrect status after submission")
+		})
+	}
+}

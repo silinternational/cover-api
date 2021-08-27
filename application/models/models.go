@@ -41,6 +41,14 @@ const (
 	PermissionDenied
 )
 
+const (
+	ModelSubmit     = "submit"
+	ModelRevision   = "revision"
+	ModelPreapprove = "preapprove"
+	ModelApprove    = "approve"
+	ModelDeny       = "deny"
+)
+
 type Authable interface {
 	GetID() uuid.UUID
 	FindByID(*pop.Connection, uuid.UUID) error
