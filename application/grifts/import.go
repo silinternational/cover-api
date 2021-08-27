@@ -33,7 +33,6 @@ import (
 TODO:
 	1. Import other tables (e.g. Journal Entries)
 	2. Import other IDPs to match more email addresses
-	3. Import policy.notes (concatenated for multi-policy households)
 */
 
 const (
@@ -66,6 +65,9 @@ var householdPolicyMap = map[string]uuid.UUID{}
 
 // policyUserMap is a list of existing PolicyUser records to prevent duplicates
 var policyUserMap = map[string]struct{}{}
+
+// policyNotes is used for accumulating policy notes as policies are merged
+var policyNotes = map[uuid.UUID]string{}
 
 // time used in place of missing time values
 var emptyTime time.Time
@@ -281,11 +283,11 @@ func importPolicies(tx *pop.Connection, in []LegacyPolicy) {
 
 		var policyUUID uuid.UUID
 
-		if id, ok := householdPolicyMap[p.HouseholdId]; ok {
-			// log.Printf("Policy[%s] has a duplicate household ID %d", p.Id, id)
+		if id, ok := householdPolicyMap[p.HouseholdId]; ok && p.Type == "household" {
 			policyUUID = id
 			nDuplicatePolicies++
 			householdsWithMultiplePolicies[p.HouseholdId] = struct{}{}
+			appendNotesToPolicy(tx, policyUUID, p.Notes)
 		} else {
 			policyID := stringToInt(p.Id, "Policy ID")
 			householdID := nulls.String{}
@@ -300,6 +302,7 @@ func importPolicies(tx *pop.Connection, in []LegacyPolicy) {
 				CostCenter:  p.CostCenter,
 				Account:     strconv.Itoa(p.Account),
 				EntityCode:  p.EntityCode.String,
+				Notes:       p.Notes,
 				LegacyID:    nulls.NewInt(policyID),
 				CreatedAt:   parseStringTime(p.CreatedAt, desc+"CreatedAt"),
 			}
@@ -313,6 +316,7 @@ func importPolicies(tx *pop.Connection, in []LegacyPolicy) {
 				parseNullStringTimeToTime(p.UpdatedAt, desc+"UpdatedAt"), newPolicy.ID).Exec(); err != nil {
 				log.Fatalf("failed to set updated_at on policies, %s", err)
 			}
+			policyNotes[id] = p.Notes
 
 			nPolicies++
 		}
@@ -336,6 +340,23 @@ func importPolicies(tx *pop.Connection, in []LegacyPolicy) {
 	fmt.Println("")
 }
 
+func appendNotesToPolicy(tx *pop.Connection, policyUUID uuid.UUID, newNotes string) {
+	if newNotes == "" {
+		return
+	}
+
+	if policyNotes[policyUUID] != "" {
+		policyNotes[policyUUID] += " ---- " + newNotes
+	} else {
+		policyNotes[policyUUID] = newNotes
+	}
+
+	err := tx.RawQuery("update policies set notes = ? where id = ?", policyNotes[policyUUID], policyUUID).Exec()
+	if err != nil {
+		panic(err.Error())
+	}
+}
+
 // getPolicyType gets the correct policy type
 func getPolicyType(p LegacyPolicy) api.PolicyType {
 	var policyType api.PolicyType
@@ -345,6 +366,8 @@ func getPolicyType(p LegacyPolicy) api.PolicyType {
 		policyType = api.PolicyTypeHousehold
 	case "ou", "corporate":
 		policyType = api.PolicyTypeCorporate
+	default:
+		log.Fatalf("no policy type in policy '" + p.Id + "'")
 	}
 
 	return policyType
