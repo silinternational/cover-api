@@ -27,7 +27,8 @@ func (ms *ModelSuite) TestClaimItem_Validate() {
 		{
 			name: "valid status, not approved",
 			claimItem: &ClaimItem{
-				Status: api.ClaimItemStatusPending,
+				Status:       api.ClaimItemStatusPending,
+				PayoutOption: api.PayoutOptionRepair,
 			},
 			errField: "",
 			wantErr:  false,
@@ -35,8 +36,9 @@ func (ms *ModelSuite) TestClaimItem_Validate() {
 		{
 			name: "approved, but no reviewer",
 			claimItem: &ClaimItem{
-				Status:     api.ClaimItemStatusApproved,
-				ReviewDate: nulls.NewTime(time.Now()),
+				Status:       api.ClaimItemStatusApproved,
+				PayoutOption: api.PayoutOptionRepair,
+				ReviewDate:   nulls.NewTime(time.Now()),
 			},
 			errField: "ClaimItem.ReviewerID",
 			wantErr:  true,
@@ -44,18 +46,31 @@ func (ms *ModelSuite) TestClaimItem_Validate() {
 		{
 			name: "denied, but no review date",
 			claimItem: &ClaimItem{
-				Status:     api.ClaimItemStatusDenied,
-				ReviewerID: nulls.NewUUID(user.ID),
+				Status:       api.ClaimItemStatusDenied,
+				PayoutOption: api.PayoutOptionRepair,
+				ReviewerID:   nulls.NewUUID(user.ID),
 			},
 			errField: "ClaimItem.ReviewDate",
 			wantErr:  true,
 		},
 		{
+			name: "invalid payout option",
+			claimItem: &ClaimItem{
+				Status:       api.ClaimItemStatusDenied,
+				PayoutOption: api.PayoutOption("bitcoin"),
+				ReviewerID:   nulls.NewUUID(user.ID),
+				ReviewDate:   nulls.NewTime(time.Now()),
+			},
+			errField: "ClaimItem.PayoutOption",
+			wantErr:  true,
+		},
+		{
 			name: "valid status, approved",
 			claimItem: &ClaimItem{
-				Status:     api.ClaimItemStatusApproved,
-				ReviewerID: nulls.NewUUID(user.ID),
-				ReviewDate: nulls.NewTime(time.Now()),
+				Status:       api.ClaimItemStatusApproved,
+				PayoutOption: api.PayoutOptionRepair,
+				ReviewerID:   nulls.NewUUID(user.ID),
+				ReviewDate:   nulls.NewTime(time.Now()),
 			},
 			errField: "",
 			wantErr:  false,
