@@ -403,7 +403,7 @@ func (as *ActionSuite) Test_ClaimsItemsCreate() {
 		RepairActual:    0,
 		ReplaceEstimate: 300,
 		ReplaceActual:   0,
-		PayoutOption:    "my account",
+		PayoutOption:    api.PayoutOptionRepair,
 		PayoutAmount:    0,
 		FMV:             250,
 	}
@@ -452,7 +452,7 @@ func (as *ActionSuite) Test_ClaimsItemsCreate() {
 				fmt.Sprintf(`"is_repairable":%t`, input.IsRepairable),
 				fmt.Sprintf(`"repair_estimate":%v`, input.RepairEstimate),
 				fmt.Sprintf(`"replace_estimate":%v`, input.ReplaceEstimate),
-				`"payout_option":"` + input.PayoutOption,
+				`"payout_option":"` + string(input.PayoutOption),
 				fmt.Sprintf(`"fmv":%v`, input.FMV),
 			},
 		},
