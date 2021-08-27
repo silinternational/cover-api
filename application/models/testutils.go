@@ -182,7 +182,7 @@ func createClaimFixture(tx *pop.Connection, policyID uuid.UUID, config FixturesC
 			RepairActual:    0,
 			ReplaceEstimate: 100 * domain.CurrencyFactor,
 			ReplaceActual:   85 * domain.CurrencyFactor,
-			PayoutOption:    "",
+			PayoutOption:    api.PayoutOptionRepair,
 			PayoutAmount:    85 * domain.CurrencyFactor,
 			FMV:             130 * domain.CurrencyFactor,
 			ReviewDate:      nulls.Time{},

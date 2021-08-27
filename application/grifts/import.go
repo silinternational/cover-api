@@ -32,10 +32,7 @@ import (
 
 TODO:
 	1. Import other tables (e.g. Journal Entries)
-	2. Ensure created_at and updated_at are saved correctly
-	3. Ensure text does not get truncated
-	4. Import other IDPs to match more email addresses
-	5. Import policy.notes (concatenated for multi-policy households)
+	2. Import other IDPs to match more email addresses
 */
 
 const (
@@ -69,6 +66,9 @@ var householdPolicyMap = map[string]uuid.UUID{}
 // policyUserMap is a list of existing PolicyUser records to prevent duplicates
 var policyUserMap = map[string]struct{}{}
 
+// policyNotes is used for accumulating policy notes as policies are merged
+var policyNotes = map[uuid.UUID]string{}
+
 // time used in place of missing time values
 var emptyTime time.Time
 
@@ -98,18 +98,18 @@ var _ = grift.Namespace("db", func() {
 			return errors.New("json decode error: " + err.Error())
 		}
 
-		if err := models.DB.Transaction(func(tx *pop.Connection) error {
-			fmt.Println("record counts: ")
-			fmt.Printf("  Admin Users: %d\n", len(obj.Users))
-			fmt.Printf("  Policies: %d\n", len(obj.Policies))
-			fmt.Printf("  PolicyTypes: %d\n", len(obj.PolicyTypes))
-			fmt.Printf("  Maintenance: %d\n", len(obj.Maintenance))
-			fmt.Printf("  JournalEntries: %d\n", len(obj.JournalEntries))
-			fmt.Printf("  ItemCategories: %d\n", len(obj.ItemCategories))
-			fmt.Printf("  RiskCategories: %d\n", len(obj.RiskCategories))
-			fmt.Printf("  LossReasons: %d\n", len(obj.LossReasons))
-			fmt.Println("")
+		fmt.Println("record counts: ")
+		fmt.Printf("  Admin Users: %d\n", len(obj.Users))
+		fmt.Printf("  Policies: %d\n", len(obj.Policies))
+		fmt.Printf("  PolicyTypes: %d\n", len(obj.PolicyTypes))
+		fmt.Printf("  Maintenance: %d\n", len(obj.Maintenance))
+		fmt.Printf("  JournalEntries: %d\n", len(obj.JournalEntries))
+		fmt.Printf("  ItemCategories: %d\n", len(obj.ItemCategories))
+		fmt.Printf("  RiskCategories: %d\n", len(obj.RiskCategories))
+		fmt.Printf("  LossReasons: %d\n", len(obj.LossReasons))
+		fmt.Println("")
 
+		if err := models.DB.Transaction(func(tx *pop.Connection) error {
 			importAdminUsers(tx, obj.Users)
 			importItemCategories(tx, obj.ItemCategories)
 			importPolicies(tx, obj.Policies)
@@ -178,7 +178,6 @@ func importAdminUsers(tx *pop.Connection, in []LegacyUser) {
 			StaffID:       user.StaffId,
 			AppRole:       models.AppRoleAdmin,
 			CreatedAt:     parseStringTime(user.CreatedAt, userDesc+"CreatedAt"),
-			UpdatedAt:     parseStringTime(user.UpdatedAt, userDesc+"UpdatedAt"),
 		}
 
 		if err := newUser.Create(tx); err != nil {
@@ -186,6 +185,11 @@ func importAdminUsers(tx *pop.Connection, in []LegacyUser) {
 		}
 
 		userStaffIDMap[user.StaffId] = newUser.ID
+
+		if err := tx.RawQuery("update users set updated_at = ? where id = ?",
+			parseStringTime(user.UpdatedAt, userDesc+"UpdatedAt"), newUser.ID).Exec(); err != nil {
+			log.Fatalf("failed to set updated_at on users, %s", err)
+		}
 
 		fmt.Printf(`"%s","%s","%s","%s","%s","%s","%s","%s","%s"`+"\n",
 			newUser.ID, newUser.Email, newUser.EmailOverride, newUser.FirstName, newUser.LastName,
@@ -203,15 +207,15 @@ func importItemCategories(tx *pop.Connection, in []LegacyItemCategory) {
 	for _, i := range in {
 		categoryID := stringToInt(i.Id, "ItemCategory ID")
 
+		desc := fmt.Sprintf("ItemCategory[%d].", categoryID)
 		newItemCategory := models.ItemCategory{
 			RiskCategoryID: getRiskCategoryUUID(i.RiskCategoryId),
 			Name:           i.Name,
 			HelpText:       i.HelpText,
 			Status:         getItemCategoryStatus(i),
 			AutoApproveMax: fixedPointStringToInt(i.AutoApproveMax, "ItemCategory.AutoApproveMax"),
-			CreatedAt:      parseStringTime(i.CreatedAt, fmt.Sprintf("ItemCategory[%d].CreatedAt", categoryID)),
-			UpdatedAt:      parseStringTime(i.UpdatedAt, fmt.Sprintf("ItemCategory[%d].UpdatedAt", categoryID)),
 			LegacyID:       nulls.NewInt(categoryID),
+			CreatedAt:      parseStringTime(i.CreatedAt, desc+"CreatedAt"),
 		}
 
 		if err := newItemCategory.Create(tx); err != nil {
@@ -220,6 +224,11 @@ func importItemCategories(tx *pop.Connection, in []LegacyItemCategory) {
 
 		itemCategoryIDMap[categoryID] = newItemCategory.ID
 		riskCategoryMap[categoryID] = getRiskCategoryUUID(i.RiskCategoryId)
+
+		if err := tx.RawQuery("update item_categories set updated_at = ? where id = ?",
+			parseStringTime(i.UpdatedAt, desc+"UpdatedAt"), newItemCategory.ID).Exec(); err != nil {
+			log.Fatalf("failed to set updated_at on item_categories, %s", err)
+		}
 
 		fmt.Printf(`%d,"%s","%s",%s,"%s",%d,"%s"`+"\n",
 			newItemCategory.LegacyID.Int, newItemCategory.ID, newItemCategory.Status,
@@ -274,11 +283,11 @@ func importPolicies(tx *pop.Connection, in []LegacyPolicy) {
 
 		var policyUUID uuid.UUID
 
-		if id, ok := householdPolicyMap[p.HouseholdId]; ok {
-			// log.Printf("Policy[%s] has a duplicate household ID %d", p.Id, id)
+		if id, ok := householdPolicyMap[p.HouseholdId]; ok && p.Type == "household" {
 			policyUUID = id
 			nDuplicatePolicies++
 			householdsWithMultiplePolicies[p.HouseholdId] = struct{}{}
+			appendNotesToPolicy(tx, policyUUID, p.Notes)
 		} else {
 			policyID := stringToInt(p.Id, "Policy ID")
 			householdID := nulls.String{}
@@ -286,21 +295,28 @@ func importPolicies(tx *pop.Connection, in []LegacyPolicy) {
 				householdID = nulls.NewString(p.HouseholdId)
 			}
 
+			desc := fmt.Sprintf("Policy[%d].", policyID)
 			newPolicy := models.Policy{
 				Type:        getPolicyType(p),
 				HouseholdID: householdID,
 				CostCenter:  p.CostCenter,
 				Account:     strconv.Itoa(p.Account),
 				EntityCode:  p.EntityCode.String,
+				Notes:       p.Notes,
 				LegacyID:    nulls.NewInt(policyID),
-				CreatedAt:   parseStringTime(p.CreatedAt, fmt.Sprintf("Policy[%d].CreatedAt", policyID)),
-				UpdatedAt:   parseNullStringTimeToTime(p.UpdatedAt, fmt.Sprintf("Policy[%d].UpdatedAt", policyID)),
+				CreatedAt:   parseStringTime(p.CreatedAt, desc+"CreatedAt"),
 			}
 			if err := newPolicy.Create(tx); err != nil {
 				log.Fatalf("failed to create policy, %s\n%+v", err, newPolicy)
 			}
 			policyUUID = newPolicy.ID
 			householdPolicyMap[p.HouseholdId] = policyUUID
+
+			if err := tx.RawQuery("update policies set updated_at = ? where id = ?",
+				parseNullStringTimeToTime(p.UpdatedAt, desc+"UpdatedAt"), newPolicy.ID).Exec(); err != nil {
+				log.Fatalf("failed to set updated_at on policies, %s", err)
+			}
+			policyNotes[id] = p.Notes
 
 			nPolicies++
 		}
@@ -324,6 +340,23 @@ func importPolicies(tx *pop.Connection, in []LegacyPolicy) {
 	fmt.Println("")
 }
 
+func appendNotesToPolicy(tx *pop.Connection, policyUUID uuid.UUID, newNotes string) {
+	if newNotes == "" {
+		return
+	}
+
+	if policyNotes[policyUUID] != "" {
+		policyNotes[policyUUID] += " ---- " + newNotes
+	} else {
+		policyNotes[policyUUID] = newNotes
+	}
+
+	err := tx.RawQuery("update policies set notes = ? where id = ?", policyNotes[policyUUID], policyUUID).Exec()
+	if err != nil {
+		panic(err.Error())
+	}
+}
+
 // getPolicyType gets the correct policy type
 func getPolicyType(p LegacyPolicy) api.PolicyType {
 	var policyType api.PolicyType
@@ -333,6 +366,8 @@ func getPolicyType(p LegacyPolicy) api.PolicyType {
 		policyType = api.PolicyTypeHousehold
 	case "ou", "corporate":
 		policyType = api.PolicyTypeCorporate
+	default:
+		log.Fatalf("no policy type in policy '" + p.Id + "'")
 	}
 
 	return policyType
@@ -454,10 +489,14 @@ func importClaims(tx *pop.Connection, policyID uuid.UUID, claims []LegacyClaim) 
 			PaymentDate:      nulls.NewTime(parseStringTime(c.PaymentDate, claimDesc+"PaymentDate")),
 			TotalPayout:      fixedPointStringToInt(c.TotalPayout, "Claim.TotalPayout"),
 			CreatedAt:        parseStringTime(c.CreatedAt, claimDesc+"CreatedAt"),
-			UpdatedAt:        parseStringTime(c.UpdatedAt, claimDesc+"UpdatedAt"),
 		}
 		if err := newClaim.Create(tx); err != nil {
 			log.Fatalf("failed to create claim, %s\n%+v", err, newClaim)
+		}
+
+		if err := tx.RawQuery("update claims set updated_at = ? where id = ?",
+			parseStringTime(c.UpdatedAt, claimDesc+"UpdatedAt"), newClaim.ID).Exec(); err != nil {
+			log.Fatalf("failed to set updated_at on claims, %s", err)
 		}
 
 		importClaimItems(tx, newClaim, c.ClaimItems)
@@ -486,20 +525,47 @@ func importClaimItems(tx *pop.Connection, claim models.Claim, items []LegacyClai
 			RepairActual:    fixedPointStringToInt(c.RepairActual, "ClaimItem.RepairActual"),
 			ReplaceEstimate: fixedPointStringToInt(c.ReplaceEstimate, "ClaimItem.ReplaceEstimate"),
 			ReplaceActual:   fixedPointStringToInt(c.ReplaceActual, "ClaimItem.ReplaceActual"),
-			PayoutOption:    c.PayoutOption,
+			PayoutOption:    getPayoutOption(c.PayoutOption, itemDesc+"PayoutOption"),
 			PayoutAmount:    fixedPointStringToInt(c.PayoutAmount, "ClaimItem.PayoutAmount"),
 			FMV:             fixedPointStringToInt(c.Fmv, "ClaimItem.FMV"),
 			ReviewDate:      parseStringTimeToNullTime(c.ReviewDate, itemDesc+"ReviewDate"),
 			ReviewerID:      getAdminUserUUID(strconv.Itoa(c.ReviewerId), itemDesc+"ReviewerID"),
 			LegacyID:        nulls.NewInt(claimItemID),
 			CreatedAt:       parseStringTime(c.CreatedAt, itemDesc+"CreatedAt"),
-			UpdatedAt:       parseStringTime(c.UpdatedAt, itemDesc+"UpdatedAt"),
 		}
 
 		if err := newClaimItem.Create(tx); err != nil {
 			log.Fatalf("failed to create claim item %d, %s\nClaimItem:\n%+v", claimItemID, err, newClaimItem)
 		}
+
+		if err := tx.RawQuery("update claim_items set updated_at = ? where id = ?",
+			parseStringTime(c.UpdatedAt, itemDesc+"UpdatedAt"), newClaimItem.ID).Exec(); err != nil {
+			log.Fatalf("failed to set updated_at on claim_items, %s", err)
+		}
+
 	}
+}
+
+func getPayoutOption(s, desc string) api.PayoutOption {
+	var option api.PayoutOption
+
+	if s == "" {
+		log.Printf("%s is empty, setting to 'FMV'", desc)
+		return api.PayoutOptionFMV
+	}
+
+	switch s {
+	case "repair":
+		option = api.PayoutOptionRepair
+	case "replace":
+		option = api.PayoutOptionReplacement
+	case "fmv":
+		option = api.PayoutOptionFMV
+	default:
+		log.Fatalf("%s unrecognized payout option: '%s'\n", desc, s)
+	}
+
+	return option
 }
 
 func getClaimItemStatus(status string) api.ClaimItemStatus {
@@ -611,12 +677,16 @@ func importItems(tx *pop.Connection, policyID uuid.UUID, items []LegacyItem) {
 			CoverageStartDate: parseStringTime(item.CoverageStartDate, itemDesc+"CoverageStartDate"),
 			LegacyID:          nulls.NewInt(itemID),
 			CreatedAt:         parseStringTime(item.CreatedAt, itemDesc+"CreatedAt"),
-			UpdatedAt:         parseNullStringTimeToTime(item.UpdatedAt, itemDesc+"UpdatedAt"),
 		}
-		if err := newItem.CreateNoVetting(tx); err != nil {
+		if err := newItem.Create(tx); err != nil {
 			log.Fatalf("failed to create item, %s\n%+v", err, newItem)
 		}
 		itemIDMap[itemID] = newItem.ID
+
+		if err := tx.RawQuery("update items set updated_at = ? where id = ?",
+			parseStringTime(item.CreatedAt, itemDesc+"CreatedAt"), newItem.ID).Exec(); err != nil {
+			log.Fatalf("failed to set updated_at on item, %s", err)
+		}
 	}
 }
 
@@ -631,8 +701,7 @@ func getCoverageStatus(item LegacyItem) api.ItemCoverageStatus {
 		coverageStatus = api.ItemCoverageStatusInactive
 
 	default:
-		log.Printf("unknown coverage status %s\n", item.CoverageStatus)
-		coverageStatus = api.ItemCoverageStatus(item.CoverageStatus)
+		log.Fatalf("unknown coverage status %s\n", item.CoverageStatus)
 	}
 
 	return coverageStatus

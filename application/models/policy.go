@@ -27,6 +27,7 @@ type Policy struct {
 	CostCenter  string         `db:"cost_center" validate:"required_if=Type Corporate"`
 	Account     string         `db:"account" validate:"required_if=Type Corporate"`
 	EntityCode  string         `db:"entity_code" validate:"required_if=Type Corporate"`
+	Notes       string         `db:"notes"`
 	LegacyID    nulls.Int      `db:"legacy_id"`
 	CreatedAt   time.Time      `db:"created_at"`
 	UpdatedAt   time.Time      `db:"updated_at"`
