@@ -33,7 +33,6 @@ import (
 TODO:
 	1. Import other tables (e.g. Journal Entries)
 	2. Import other IDPs to match more email addresses
-	3. Import policy.notes (concatenated for multi-policy households)
 */
 
 const (
@@ -284,8 +283,7 @@ func importPolicies(tx *pop.Connection, in []LegacyPolicy) {
 
 		var policyUUID uuid.UUID
 
-		if id, ok := householdPolicyMap[p.HouseholdId]; ok {
-			// log.Printf("Policy[%s] has a duplicate household ID %d", p.Id, id)
+		if id, ok := householdPolicyMap[p.HouseholdId]; ok && p.Type == "household" {
 			policyUUID = id
 			nDuplicatePolicies++
 			householdsWithMultiplePolicies[p.HouseholdId] = struct{}{}
@@ -368,6 +366,8 @@ func getPolicyType(p LegacyPolicy) api.PolicyType {
 		policyType = api.PolicyTypeHousehold
 	case "ou", "corporate":
 		policyType = api.PolicyTypeCorporate
+	default:
+		log.Fatalf("no policy type in policy '" + p.Id + "'")
 	}
 
 	return policyType
