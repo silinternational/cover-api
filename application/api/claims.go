@@ -47,10 +47,15 @@ var AllClaimEventTypes = []ClaimEventTypeStruct{
 
 const (
 	ClaimStatusDraft    = ClaimStatus("Draft")
-	ClaimStatusPending  = ClaimStatus("Pending")
+	ClaimStatusReview1  = ClaimStatus("Review1")
+	ClaimStatusReview2  = ClaimStatus("Review2")
+	ClaimStatusReview3  = ClaimStatus("Review3")
 	ClaimStatusRevision = ClaimStatus("Revision")
+	ClaimStatusReceipt  = ClaimStatus("Receipt")
 	ClaimStatusApproved = ClaimStatus("Approved")
+	ClaimStatusPaid     = ClaimStatus("Paid")
 	ClaimStatusDenied   = ClaimStatus("Denied")
+	ClaimStatusInactive = ClaimStatus("Inactive")
 )
 
 // swagger:model
