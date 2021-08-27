@@ -21,6 +21,19 @@ const (
 	ClaimItemStatusDenied   = ClaimItemStatus("Denied")
 )
 
+// PayoutOption
+//
+// may be one of: Repair, Replacement, FMV
+//
+// swagger:model
+type PayoutOption string
+
+const (
+	PayoutOptionRepair      = PayoutOption("Repair")
+	PayoutOptionReplacement = PayoutOption("Replacement")
+	PayoutOptionFMV         = PayoutOption("FMV")
+)
+
 // swagger:model
 type ClaimItems []ClaimItem
 
@@ -97,7 +110,7 @@ type ClaimItem struct {
 	ReplaceActual int `json:"replace_actual,omitempty"`
 
 	// payout option
-	PayoutOption string `json:"payout_option,omitempty"`
+	PayoutOption PayoutOption `json:"payout_option,omitempty"`
 
 	// payout amount (0.01 USD)
 	PayoutAmount int `json:"payout_amount,omitempty"`
@@ -149,7 +162,7 @@ type ClaimItemCreateInput struct {
 	ReplaceActual int `json:"replace_actual"`
 
 	// payout option
-	PayoutOption string `json:"payout_option"`
+	PayoutOption PayoutOption `json:"payout_option"`
 
 	// payout amount (0.01 USD)
 	PayoutAmount int `json:"payout_amount"`
