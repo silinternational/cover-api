@@ -72,7 +72,9 @@ func (i *Item) CreateNoVetting(tx *pop.Connection) error {
 }
 
 func (i *Item) Create(tx *pop.Connection) error {
-	i.CoverageStatus = api.ItemCoverageStatusDraft
+	if _, ok := ValidItemCoverageStatuses[i.CoverageStatus]; !ok {
+		i.CoverageStatus = api.ItemCoverageStatusDraft
+	}
 
 	return create(tx, i)
 }
