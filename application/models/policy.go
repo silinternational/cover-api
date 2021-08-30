@@ -152,7 +152,7 @@ func ConvertPolicy(tx *pop.Connection, p Policy) api.Policy {
 	p.LoadDependents(tx, true)
 	p.LoadMembers(tx, true)
 
-	claims := ConvertClaims(tx, p.Claims)
+	claims := p.Claims.ConvertToAPI(tx)
 	dependents := ConvertPolicyDependents(tx, p.Dependents)
 	members := ConvertPolicyMembers(tx, p.Members)
 
