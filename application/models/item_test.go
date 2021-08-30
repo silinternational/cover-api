@@ -44,7 +44,7 @@ func (ms *ModelSuite) Test_isItemActionAllowed() {
 			actorIsAdmin: false,
 			startStatus:  api.ItemCoverageStatusDraft,
 			permission:   PermissionUpdate,
-			subRes:       ModelSubmit,
+			subRes:       api.ResourceSubmit,
 			want:         false,
 		},
 		{
@@ -52,7 +52,7 @@ func (ms *ModelSuite) Test_isItemActionAllowed() {
 			actorIsAdmin: false,
 			startStatus:  api.ItemCoverageStatusDraft,
 			permission:   PermissionCreate,
-			subRes:       ModelApprove,
+			subRes:       api.ResourceApprove,
 			want:         false,
 		},
 		{
@@ -60,7 +60,7 @@ func (ms *ModelSuite) Test_isItemActionAllowed() {
 			actorIsAdmin: false,
 			startStatus:  api.ItemCoverageStatusDraft,
 			permission:   PermissionCreate,
-			subRes:       ModelSubmit,
+			subRes:       api.ResourceSubmit,
 			want:         true,
 		},
 		{
@@ -76,7 +76,7 @@ func (ms *ModelSuite) Test_isItemActionAllowed() {
 			actorIsAdmin: false,
 			startStatus:  api.ItemCoverageStatusDraft,
 			permission:   PermissionDelete,
-			subRes:       ModelSubmit,
+			subRes:       api.ResourceSubmit,
 			want:         false,
 		},
 		{
@@ -100,7 +100,7 @@ func (ms *ModelSuite) Test_isItemActionAllowed() {
 			actorIsAdmin: false,
 			startStatus:  api.ItemCoverageStatusRevision,
 			permission:   PermissionUpdate,
-			subRes:       ModelSubmit,
+			subRes:       api.ResourceSubmit,
 			want:         false,
 		},
 		{
@@ -108,7 +108,7 @@ func (ms *ModelSuite) Test_isItemActionAllowed() {
 			actorIsAdmin: false,
 			startStatus:  api.ItemCoverageStatusRevision,
 			permission:   PermissionCreate,
-			subRes:       ModelApprove,
+			subRes:       api.ResourceApprove,
 			want:         false,
 		},
 		{
@@ -116,7 +116,7 @@ func (ms *ModelSuite) Test_isItemActionAllowed() {
 			actorIsAdmin: false,
 			startStatus:  api.ItemCoverageStatusRevision,
 			permission:   PermissionCreate,
-			subRes:       ModelSubmit,
+			subRes:       api.ResourceSubmit,
 			want:         true,
 		},
 		{
@@ -132,7 +132,7 @@ func (ms *ModelSuite) Test_isItemActionAllowed() {
 			actorIsAdmin: false,
 			startStatus:  api.ItemCoverageStatusRevision,
 			permission:   PermissionDelete,
-			subRes:       ModelSubmit,
+			subRes:       api.ResourceSubmit,
 			want:         false,
 		},
 		{
@@ -148,7 +148,7 @@ func (ms *ModelSuite) Test_isItemActionAllowed() {
 			actorIsAdmin: true,
 			startStatus:  api.ItemCoverageStatusPending,
 			permission:   PermissionCreate,
-			subRes:       ModelRevision,
+			subRes:       api.ResourceRevision,
 			want:         true,
 		},
 		{
@@ -156,7 +156,7 @@ func (ms *ModelSuite) Test_isItemActionAllowed() {
 			actorIsAdmin: true,
 			startStatus:  api.ItemCoverageStatusPending,
 			permission:   PermissionCreate,
-			subRes:       ModelApprove,
+			subRes:       api.ResourceApprove,
 			want:         true,
 		},
 		{
@@ -164,7 +164,7 @@ func (ms *ModelSuite) Test_isItemActionAllowed() {
 			actorIsAdmin: true,
 			startStatus:  api.ItemCoverageStatusPending,
 			permission:   PermissionCreate,
-			subRes:       ModelDeny,
+			subRes:       api.ResourceDeny,
 			want:         true,
 		},
 		{
@@ -172,7 +172,7 @@ func (ms *ModelSuite) Test_isItemActionAllowed() {
 			actorIsAdmin: false,
 			startStatus:  api.ItemCoverageStatusPending,
 			permission:   PermissionCreate,
-			subRes:       ModelRevision,
+			subRes:       api.ResourceRevision,
 			want:         false,
 		},
 		{
@@ -188,7 +188,7 @@ func (ms *ModelSuite) Test_isItemActionAllowed() {
 			actorIsAdmin: false,
 			startStatus:  api.ItemCoverageStatusPending,
 			permission:   PermissionDelete,
-			subRes:       ModelSubmit,
+			subRes:       api.ResourceSubmit,
 			want:         false,
 		},
 		{
@@ -204,7 +204,7 @@ func (ms *ModelSuite) Test_isItemActionAllowed() {
 			actorIsAdmin: true,
 			startStatus:  api.ItemCoverageStatusApproved,
 			permission:   PermissionCreate,
-			subRes:       ModelDeny,
+			subRes:       api.ResourceDeny,
 			want:         false,
 		},
 		{
@@ -228,7 +228,7 @@ func (ms *ModelSuite) Test_isItemActionAllowed() {
 			actorIsAdmin: true,
 			startStatus:  api.ItemCoverageStatusApproved,
 			permission:   PermissionDelete,
-			subRes:       ModelDeny,
+			subRes:       api.ResourceDeny,
 			want:         false,
 		},
 	}

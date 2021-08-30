@@ -1,6 +1,7 @@
 package models
 
 import (
+	"errors"
 	"testing"
 	"time"
 
@@ -94,16 +95,22 @@ func (ms *ModelSuite) TestClaim_SubmitForApproval() {
 		name            string
 		claim           Claim
 		wantErrContains string
+		wantErrKey      api.ErrorKey
+		wantErrCat      api.ErrorCategory
 		wantStatus      api.ClaimStatus
 	}{
 		{
 			name:            "bad start status",
 			claim:           reviewClaim,
+			wantErrKey:      api.ErrorClaimStatus,
+			wantErrCat:      api.CategoryUser,
 			wantErrContains: "invalid claim status for submit",
 		},
 		{
 			name:            "claim with no ClaimItem",
 			claim:           emptyClaim,
+			wantErrKey:      api.ErrorClaimMissingClaimItem,
+			wantErrCat:      api.CategoryUser,
 			wantErrContains: "claim must have a claimItem to submit",
 		},
 		{
@@ -123,8 +130,12 @@ func (ms *ModelSuite) TestClaim_SubmitForApproval() {
 			got := tt.claim.SubmitForApproval(ms.DB)
 
 			if tt.wantErrContains != "" {
-				ms.Error(got)
-				ms.Contains(got.Error(), tt.wantErrContains, "incorrect error")
+				ms.Error(got, " did not return expected error")
+				var appErr *api.AppError
+				ms.True(errors.As(got, &appErr), "returned an error that is not an AppError")
+				ms.Contains(got.Error(), tt.wantErrContains, "error message is not correct")
+				ms.Equal(appErr.Key, tt.wantErrKey, "error key is not correct")
+				ms.Equal(appErr.Category, tt.wantErrCat, "error category is not correct")
 				return
 			}
 			ms.NoError(got)

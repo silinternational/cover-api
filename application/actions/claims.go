@@ -164,14 +164,15 @@ func claimsCreate(c buffalo.Context) error {
 //
 // ClaimsSubmit
 //
-// submit a claim for review
+// Submit a claim for review.  Can be used at state "Draft" to submit for pre-approval or
+//  "Receipt" to submit for payout approval.
 //
 // ---
 // parameters:
 //   - name: id
 //     in: path
 //     required: true
-//     description: item ID
+//     description: claim ID
 // responses:
 //   '200':
 //     description: submitted Claim

@@ -548,7 +548,7 @@ func (as *ActionSuite) Test_ClaimsSubmit() {
 
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
-			req := as.JSON("/%s/%s/%s", domain.TypeClaim, tt.oldClaim.ID.String(), models.ModelSubmit)
+			req := as.JSON("/%s/%s/%s", domain.TypeClaim, tt.oldClaim.ID.String(), api.ResourceSubmit)
 			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
 			req.Headers["content-type"] = "application/json"
 			res := req.Post(nil)
