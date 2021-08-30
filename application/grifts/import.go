@@ -32,7 +32,6 @@ import (
 
 TODO:
 	1. Import other tables (e.g. Journal Entries)
-	2. Import other IDPs to match more email addresses
 */
 
 const (
@@ -40,6 +39,11 @@ const (
 	EmptyTime                = "1970-01-01 00:00:00"
 	SilenceEmptyTimeWarnings = true
 	SilenceBadEmailWarning   = true
+)
+
+const (
+	SILUsersFilename      = "./sil-users.csv"
+	PartnersUsersFilename = "./partners-users.csv"
 )
 
 // userEmailStaffIDMap is a map of email address to staff ID
@@ -124,7 +128,16 @@ var _ = grift.Namespace("db", func() {
 })
 
 func importIdpUsers() {
-	f, err := os.Open("./sil-users.csv")
+	nSilUsers := importIdpUsersFromFile("SIL")
+	fmt.Printf("SIL users: %d\n", nSilUsers)
+
+	nPartnersUsers := importIdpUsersFromFile("Partners")
+	fmt.Printf("Partners users: %d\n", nPartnersUsers)
+}
+
+func importIdpUsersFromFile(idpName string) int {
+	filenames := map[string]string{"SIL": SILUsersFilename, "Partners": PartnersUsersFilename}
+	f, err := os.Open(filenames[idpName])
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -136,13 +149,14 @@ func importIdpUsers() {
 
 	r := csv.NewReader(bufio.NewReader(f))
 
+	n := 0
 	for {
 		csvLine, err := r.Read()
 		if err == io.EOF {
 			break
 		}
 		if err != nil {
-			log.Fatalf("failed to read from IDP data file, %s", err)
+			log.Fatalf("failed to read from IDP data file %s, %s", filenames[idpName], err)
 		}
 
 		staffID := csvLine[2]
@@ -151,8 +165,17 @@ func importIdpUsers() {
 			continue
 		}
 
-		userEmailStaffIDMap[strings.ToLower(email)] = staffID
+		if userEmailStaffIDMap[strings.ToLower(email)] == "" {
+			userEmailStaffIDMap[strings.ToLower(email)] = staffID
+			n++
+		} else {
+			if userEmailStaffIDMap[strings.ToLower(email)] != staffID {
+				log.Fatalf("in file %s, email address '%s' maps to two different staff IDs: '%s' and '%s'",
+					filenames[idpName], email, userEmailStaffIDMap[strings.ToLower(email)], staffID)
+			}
+		}
 	}
+	return n
 }
 
 func init() {
