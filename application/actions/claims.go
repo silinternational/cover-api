@@ -190,6 +190,35 @@ func claimsSubmit(c buffalo.Context) error {
 	return c.Render(http.StatusOK, r.JSON(output))
 }
 
+// swagger:operation POST /claims/{id}/revision Claims ClaimsRequestRevision
+//
+// ClaimsRequestRevision
+//
+// Admin requests revisions on a claim.  Can be used at state "Review1" or "Review3".
+//
+// ---
+// parameters:
+//   - name: id
+//     in: path
+//     required: true
+//     description: claim ID
+// responses:
+//   '200':
+//     description: submitted Claim
+//     schema:
+//       "$ref": "#/definitions/Claim"
+func claimsRequestRevision(c buffalo.Context) error {
+	tx := models.Tx(c)
+	claim := getReferencedClaimFromCtx(c)
+
+	if err := claim.RequestRevision(tx); err != nil {
+		return reportError(c, err)
+	}
+
+	output := models.ConvertClaim(tx, *claim)
+	return c.Render(http.StatusOK, r.JSON(output))
+}
+
 // swagger:operation POST /claims/{id}/items Claims ClaimsItemsCreate
 //
 // ClaimsItemsCreate
