@@ -347,7 +347,7 @@ func claimsItemsCreate(c buffalo.Context) error {
 		return reportError(c, err)
 	}
 
-	return renderOk(c, models.ConvertClaimItem(tx, claimItem))
+	return renderOk(c, claimItem.ConvertToAPI(tx))
 }
 
 // getReferencedClaimFromCtx pulls the models.Claim resource from context that was put there

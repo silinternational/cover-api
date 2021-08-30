@@ -385,7 +385,7 @@ func (c *Claim) ConvertToAPI(tx *pop.Connection) api.Claim {
 		ReviewerID:       c.ReviewerID,
 		PaymentDate:      c.PaymentDate,
 		TotalPayout:      c.TotalPayout,
-		Items:            ConvertClaimItems(tx, c.ClaimItems),
+		Items:            c.ClaimItems.ConvertToAPI(tx),
 	}
 }
 
