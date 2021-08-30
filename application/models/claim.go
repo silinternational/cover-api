@@ -124,7 +124,8 @@ func (c *Claim) IsActorAllowedTo(tx *pop.Connection, actor User, perm Permission
 	}
 
 	// Only admin can do these
-	adminSubs := []string{api.ResourceRevision, api.ResourceApprove, api.ResourcePreapprove, api.ResourceReceipt}
+	adminSubs := []string{api.ResourceRevision, api.ResourceApprove,
+		api.ResourcePreapprove, api.ResourceReceipt, api.ResourceDeny}
 	if domain.IsStringInSlice(string(sub), adminSubs) {
 		return false
 	}
@@ -317,6 +318,26 @@ func (c *Claim) Approve(tx *pop.Connection, actor User) error {
 		appErr := api.NewAppError(err, api.ErrorClaimStatus, api.CategoryUser)
 		return appErr
 	}
+
+	c.ReviewerID = nulls.NewUUID(actor.ID)
+	c.ReviewDate = nulls.NewTime(time.Now().UTC())
+
+	return c.Update(tx, oldStatus)
+}
+
+// Deny changes the status of the claim to Denied.
+// TODO emit an appropriate event
+func (c *Claim) Deny(tx *pop.Connection, actor User) error {
+	oldStatus := c.Status
+
+	if oldStatus != api.ClaimStatusReview1 && oldStatus != api.ClaimStatusReview2 &&
+		oldStatus != api.ClaimStatusReview3 {
+		err := fmt.Errorf("invalid claim status for deny: %s", oldStatus)
+		appErr := api.NewAppError(err, api.ErrorClaimStatus, api.CategoryUser)
+		return appErr
+	}
+
+	c.Status = api.ClaimStatusDenied
 
 	c.ReviewerID = nulls.NewUUID(actor.ID)
 	c.ReviewDate = nulls.NewTime(time.Now().UTC())

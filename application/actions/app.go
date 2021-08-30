@@ -149,6 +149,7 @@ func App() *buffalo.App {
 		claimsGroup.POST(idRegex+"/"+api.ResourceRevision, claimsRequestRevision)
 		claimsGroup.POST(idRegex+"/"+api.ResourcePreapprove, claimsPreapprove)
 		claimsGroup.POST(idRegex+"/"+api.ResourceApprove, claimsApprove)
+		claimsGroup.POST(idRegex+"/"+api.ResourceDeny, claimsDeny)
 
 		// config
 		configGroup := app.Group("/config")
