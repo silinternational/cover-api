@@ -27,7 +27,6 @@ func (as *ActionSuite) Test_ClaimsList() {
 
 	fixtures := models.CreateItemFixtures(as.DB, fixConfig)
 
-	// alias a couple users
 	appAdmin := models.CreateAdminUser(as.DB)
 	normalUser := fixtures.Policies[1].Members[0]
 

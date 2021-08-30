@@ -91,6 +91,16 @@ func (c *Claim) Update(tx *pop.Connection, oldStatus api.ClaimStatus) error {
 		appErr := api.NewAppError(err, api.ErrorValidation, api.CategoryUser)
 		return appErr
 	}
+
+	if c.Status != api.ClaimStatusDraft {
+		c.LoadClaimItems(tx, false)
+		if len(c.ClaimItems) == 0 {
+			err := errors.New("claim must have a claimItem if no longer in draft")
+			appErr := api.NewAppError(err, api.ErrorClaimMissingClaimItem, api.CategoryUser)
+			return appErr
+		}
+	}
+
 	return update(tx, c)
 }
 
@@ -237,13 +247,6 @@ func (c *Claim) AddItem(tx *pop.Connection, claim Claim, input api.ClaimItemCrea
 func (c *Claim) SubmitForApproval(tx *pop.Connection) error {
 	oldStatus := c.Status
 
-	c.LoadClaimItems(tx, false)
-	if len(c.ClaimItems) == 0 {
-		err := errors.New("claim must have a claimItem to submit")
-		appErr := api.NewAppError(err, api.ErrorClaimMissingClaimItem, api.CategoryUser)
-		return appErr
-	}
-
 	switch oldStatus {
 	case api.ClaimStatusDraft, api.ClaimStatusRevision:
 		c.Status = api.ClaimStatusReview1
@@ -265,13 +268,6 @@ func (c *Claim) SubmitForApproval(tx *pop.Connection) error {
 // TODO emit an appropriate event
 func (c *Claim) RequestRevision(tx *pop.Connection) error {
 	oldStatus := c.Status
-
-	c.LoadClaimItems(tx, false)
-	if len(c.ClaimItems) == 0 {
-		err := errors.New("claim must have a claimItem to request revision")
-		appErr := api.NewAppError(err, api.ErrorClaimMissingClaimItem, api.CategoryUser)
-		return appErr
-	}
 
 	switch oldStatus {
 	case api.ClaimStatusReview1, api.ClaimStatusReview3:
