@@ -718,3 +718,113 @@ func (as *ActionSuite) Test_ClaimsPreapprove() {
 		})
 	}
 }
+
+func (as *ActionSuite) Test_ClaimsApprove() {
+	fixConfig := models.FixturesConfig{
+		NumberOfPolicies:    2,
+		ItemsPerPolicy:      2,
+		UsersPerPolicy:      1,
+		DependentsPerPolicy: 0,
+		ClaimsPerPolicy:     4,
+		ClaimItemsPerClaim:  1,
+	}
+
+	fixtures := models.CreateItemFixtures(as.DB, fixConfig)
+	policy := fixtures.Policies[0]
+	policyCreator := policy.Members[0]
+
+	// TODO when code distinguishes between admin types, then check that here
+	appAdmin := models.CreateAdminUser(as.DB)
+
+	draftClaim := policy.Claims[0]
+	review1Claim := models.UpdateClaimStatus(as.DB, policy.Claims[1], api.ClaimStatusReview1)
+	review2Claim := models.UpdateClaimStatus(as.DB, policy.Claims[2], api.ClaimStatusReview2)
+	review3Claim := models.UpdateClaimStatus(as.DB, policy.Claims[3], api.ClaimStatusReview3)
+
+	tests := []struct {
+		name            string
+		actor           models.User
+		oldClaim        models.Claim
+		wantStatus      int
+		wantClaimStatus api.ClaimStatus
+		wantInBody      []string
+	}{
+		{
+			name:       "bad start status",
+			actor:      appAdmin,
+			oldClaim:   draftClaim,
+			wantStatus: http.StatusBadRequest,
+			wantInBody: []string{api.ErrorClaimStatus.String()},
+		},
+		{
+			name:       "non-admin user",
+			actor:      policyCreator,
+			oldClaim:   review1Claim,
+			wantStatus: http.StatusNotFound,
+		},
+		{
+			name:            "review1 to review3",
+			actor:           appAdmin,
+			oldClaim:        review1Claim,
+			wantStatus:      http.StatusOK,
+			wantClaimStatus: api.ClaimStatusReview3,
+			wantInBody: []string{
+				`"event_description":"` + review1Claim.EventDescription,
+				`"status":"` + string(api.ClaimStatusReview3),
+				`"review_date":"` + time.Now().UTC().Format(domain.DateFormat),
+				`"reviewer_id":"` + appAdmin.ID.String(),
+			},
+		},
+		{
+			name:            "review2 to review3",
+			actor:           appAdmin,
+			oldClaim:        review2Claim,
+			wantStatus:      http.StatusOK,
+			wantClaimStatus: api.ClaimStatusReview3,
+			wantInBody: []string{
+				`"event_description":"` + review2Claim.EventDescription,
+				`"status":"` + string(api.ClaimStatusReview3),
+				`"review_date":"` + time.Now().UTC().Format(domain.DateFormat),
+				`"reviewer_id":"` + appAdmin.ID.String(),
+			},
+		},
+		{
+			name:            "review3 to approved",
+			actor:           appAdmin,
+			oldClaim:        review3Claim,
+			wantStatus:      http.StatusOK,
+			wantClaimStatus: api.ClaimStatusApproved,
+			wantInBody: []string{
+				`"event_description":"` + review3Claim.EventDescription,
+				`"status":"` + string(api.ClaimStatusApproved),
+				`"review_date":"` + time.Now().UTC().Format(domain.DateFormat),
+				`"reviewer_id":"` + appAdmin.ID.String(),
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		as.T().Run(tt.name, func(t *testing.T) {
+			req := as.JSON("/%s/%s/%s",
+				domain.TypeClaim, tt.oldClaim.ID.String(), api.ResourceApprove)
+			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
+			req.Headers["content-type"] = "application/json"
+			res := req.Post(nil)
+
+			body := res.Body.String()
+			as.Equal(tt.wantStatus, res.Code, "incorrect status code returned, body: %s", body)
+
+			as.verifyResponseData(tt.wantInBody, body, "")
+
+			if res.Code != http.StatusOK {
+				return
+			}
+
+			var claim models.Claim
+			as.NoError(as.DB.Find(&claim, tt.oldClaim.ID),
+				"error finding submitted item.")
+
+			as.Equal(tt.wantClaimStatus, claim.Status, "incorrect status after submission")
+		})
+	}
+}

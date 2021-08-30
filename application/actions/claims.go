@@ -240,7 +240,38 @@ func claimsPreapprove(c buffalo.Context) error {
 	tx := models.Tx(c)
 	claim := getReferencedClaimFromCtx(c)
 
-	if err := claim.PreApprove(tx); err != nil {
+	if err := claim.Preapprove(tx); err != nil {
+		return reportError(c, err)
+	}
+
+	output := models.ConvertClaim(tx, *claim)
+	return c.Render(http.StatusOK, r.JSON(output))
+}
+
+// swagger:operation POST /claims/{id}/approve Claims ClaimsApprove
+//
+// ClaimsApprove
+//
+// Admin approves a claim.  Can be used at states "Review1","Review2","Review3".
+//
+// ---
+// parameters:
+//   - name: id
+//     in: path
+//     required: true
+//     description: claim ID
+// responses:
+//   '200':
+//     description: Claim in focus
+//     schema:
+//       "$ref": "#/definitions/Claim"
+func claimsApprove(c buffalo.Context) error {
+	tx := models.Tx(c)
+	user := models.CurrentUser(c)
+
+	claim := getReferencedClaimFromCtx(c)
+
+	if err := claim.Approve(tx, user); err != nil {
 		return reportError(c, err)
 	}
 
