@@ -10,6 +10,14 @@ import (
 	"github.com/silinternational/cover-api/domain"
 )
 
+const (
+	ResourceSubmit     = "submit"
+	ResourceRevision   = "revision"
+	ResourcePreapprove = "preapprove"
+	ResourceApprove    = "approve"
+	ResourceDeny       = "deny"
+)
+
 type ErrorKey string
 
 func (e ErrorKey) String() string {

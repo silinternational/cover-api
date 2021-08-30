@@ -33,6 +33,7 @@ type FixturesConfig struct {
 
 // Fixtures hold slices of model objects created for test fixtures
 type Fixtures struct {
+	Claims
 	Files
 	Items
 	ItemCategories
@@ -115,6 +116,7 @@ func CreateItemFixtures(tx *pop.Connection, config FixturesConfig) Fixtures {
 
 	fixtures.Items = items
 	fixtures.ItemCategories = categories
+	fixtures.Claims = claims
 
 	return fixtures
 }
@@ -145,6 +147,14 @@ func UpdateItemStatus(tx *pop.Connection, item Item, status api.ItemCoverageStat
 		panic("error trying to update item status for test: " + err.Error())
 	}
 	return item
+}
+
+func UpdateClaimStatus(tx *pop.Connection, claim Claim, status api.ClaimStatus) Claim {
+	claim.Status = status
+	if err := tx.Update(&claim); err != nil {
+		panic("error trying to update claim status for test: " + err.Error())
+	}
+	return claim
 }
 
 func createClaimFixture(tx *pop.Connection, policyID uuid.UUID, config FixturesConfig) Claim {

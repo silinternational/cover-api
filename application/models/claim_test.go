@@ -1,6 +1,7 @@
 package models
 
 import (
+	"errors"
 	"testing"
 	"time"
 
@@ -64,4 +65,82 @@ func (ms *ModelSuite) TestClaim_ReferenceNumber() {
 	}
 	ms.NoError(claim.Create(ms.DB))
 	ms.Len(claim.ReferenceNumber, ClaimReferenceNumberLength)
+}
+
+func (ms *ModelSuite) TestClaim_SubmitForApproval() {
+	t := ms.T()
+
+	fixConfig := FixturesConfig{
+		NumberOfPolicies:    2,
+		UsersPerPolicy:      2,
+		DependentsPerPolicy: 2,
+		ItemsPerPolicy:      4,
+		ClaimsPerPolicy:     4,
+		ClaimItemsPerClaim:  1,
+	}
+
+	fixtures := CreateItemFixtures(ms.DB, fixConfig)
+	policy := fixtures.Policies[0]
+	draftClaim := policy.Claims[0]
+	revisionClaim := UpdateClaimStatus(ms.DB, policy.Claims[1], api.ClaimStatusRevision)
+	reviewClaim := UpdateClaimStatus(ms.DB, policy.Claims[2], api.ClaimStatusReview1)
+	emptyClaim := UpdateClaimStatus(ms.DB, policy.Claims[3], api.ClaimStatusDraft)
+
+	tempClaim := emptyClaim
+	tempClaim.LoadClaimItems(ms.DB, false)
+	ms.NoError(ms.DB.Destroy(&tempClaim.ClaimItems[0]),
+		"error trying to destroy ClaimItem fixture for test")
+
+	tests := []struct {
+		name            string
+		claim           Claim
+		wantErrContains string
+		wantErrKey      api.ErrorKey
+		wantErrCat      api.ErrorCategory
+		wantStatus      api.ClaimStatus
+	}{
+		{
+			name:            "bad start status",
+			claim:           reviewClaim,
+			wantErrKey:      api.ErrorClaimStatus,
+			wantErrCat:      api.CategoryUser,
+			wantErrContains: "invalid claim status for submit",
+		},
+		{
+			name:            "claim with no ClaimItem",
+			claim:           emptyClaim,
+			wantErrKey:      api.ErrorClaimMissingClaimItem,
+			wantErrCat:      api.CategoryUser,
+			wantErrContains: "claim must have a claimItem to submit",
+		},
+		{
+			name:       "from draft to review1",
+			claim:      draftClaim,
+			wantStatus: api.ClaimStatusReview1,
+		},
+		{
+			name:       "from revision to review1",
+			claim:      revisionClaim,
+			wantStatus: api.ClaimStatusReview1,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := tt.claim.SubmitForApproval(ms.DB)
+
+			if tt.wantErrContains != "" {
+				ms.Error(got, " did not return expected error")
+				var appErr *api.AppError
+				ms.True(errors.As(got, &appErr), "returned an error that is not an AppError")
+				ms.Contains(got.Error(), tt.wantErrContains, "error message is not correct")
+				ms.Equal(appErr.Key, tt.wantErrKey, "error key is not correct")
+				ms.Equal(appErr.Category, tt.wantErrCat, "error category is not correct")
+				return
+			}
+			ms.NoError(got)
+
+			ms.Equal(tt.wantStatus, tt.claim.Status, "incorrect status")
+		})
+	}
 }

@@ -1,6 +1,8 @@
 package actions
 
 import (
+	"net/http"
+
 	"github.com/gobuffalo/buffalo"
 
 	"github.com/silinternational/cover-api/api"
@@ -156,6 +158,36 @@ func claimsCreate(c buffalo.Context) error {
 	}
 
 	return renderOk(c, models.ConvertClaim(tx, dbClaim))
+}
+
+// swagger:operation POST /claims/{id}/submit Claims ClaimsSubmit
+//
+// ClaimsSubmit
+//
+// Submit a claim for review.  Can be used at state "Draft" to submit for pre-approval or
+//  "Receipt" to submit for payout approval.
+//
+// ---
+// parameters:
+//   - name: id
+//     in: path
+//     required: true
+//     description: claim ID
+// responses:
+//   '200':
+//     description: submitted Claim
+//     schema:
+//       "$ref": "#/definitions/Claim"
+func claimsSubmit(c buffalo.Context) error {
+	tx := models.Tx(c)
+	claim := getReferencedClaimFromCtx(c)
+
+	if err := claim.SubmitForApproval(tx); err != nil {
+		return reportError(c, err)
+	}
+
+	output := models.ConvertClaim(tx, *claim)
+	return c.Render(http.StatusOK, r.JSON(output))
 }
 
 // swagger:operation POST /claims/{id}/items Claims ClaimsItemsCreate
