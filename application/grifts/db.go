@@ -2,6 +2,7 @@ package grifts
 
 import (
 	"fmt"
+	"regexp"
 	"time"
 
 	"github.com/gobuffalo/nulls"
@@ -190,45 +191,46 @@ func createPolicyFixtures(fixUsers []*models.User) ([]*models.Policy, error) {
 	return fixPolicies, nil
 }
 
-func createCategories() ([]*models.ItemCategory, error) {
-	riskCats := models.RiskCategories{}
-	err := models.DB.All(&riskCats)
+func createCategories() ([]uuid.UUID, error) {
+	const itemCategoriesSql = `
+INSERT INTO "item_categories" ("id", "risk_category_id", "name", "help_text", "status", "auto_approve_max", "created_at", "updated_at", "legacy_id") VALUES
+('d4632d64-67b5-4795-a7de-66b95312fa7e',	'3be38915-7092-44f2-90ef-26f48214b34f',	'Computers, tablets, and phones',	'Includes printers, screens, peripherals, and extras',	'Enabled',	300000,	'2021-08-27 19:46:28',	'2021-08-27 19:46:28',	1),
+('9c682e38-78fd-475b-9810-3a7f2e9f1fe4',	'7bed3c00-23cf-4282-b2b8-da89426cef2f',	'Clothing',	'-',	'Enabled',	300000,	'2021-08-27 19:46:28',	'2021-08-27 19:46:28',	10),
+('4b06f087-3fb0-4345-82e8-803645962db0',	'3be38915-7092-44f2-90ef-26f48214b34f',	'Medical',	'Eyewear, insulin pumps, CPAP, prosthetics, and more',	'Enabled',	300000,	'2021-08-27 19:46:28',	'2021-08-27 19:46:28',	11),
+('61081c4d-b6e3-47c5-aca7-373fa7d30896',	'3be38915-7092-44f2-90ef-26f48214b34f',	'Photography and recording',	'Includes video, audio, peripherals, and extras',	'Enabled',	300000,	'2021-08-27 19:46:28',	'2021-08-27 19:46:28',	2),
+('863a3306-78f9-4aca-add5-0abda3a1ef02',	'3be38915-7092-44f2-90ef-26f48214b34f',	'Other',	'-',	'Enabled',	300000,	'2021-08-27 19:46:28',	'2021-08-27 19:46:28',	3),
+('faa39da0-981e-4fcf-92fc-2c047fd21f15',	'3be38915-7092-44f2-90ef-26f48214b34f',	'Musical instruments',	'Includes peripherals and extras',	'Enabled',	300000,	'2021-08-27 19:46:28',	'2021-08-27 19:46:28',	4),
+('660629ef-ff63-4ace-8263-993897de7d6b',	'7bed3c00-23cf-4282-b2b8-da89426cef2f',	'Appliances and home electronics',	'Washing machines, ovens, theater equipment, and more',	'Enabled',	300000,	'2021-08-27 19:46:28',	'2021-08-27 19:46:28',	5),
+('aa304ce5-be3d-45eb-929e-b4575973c0d3',	'7bed3c00-23cf-4282-b2b8-da89426cef2f',	'Home goods',	'Furniture, kitchenware, decorations, linens, and more',	'Enabled',	300000,	'2021-08-27 19:46:28',	'2021-08-27 19:46:28',	6),
+('722c03e5-7852-44b9-b86a-af5d63b39d0e',	'7bed3c00-23cf-4282-b2b8-da89426cef2f',	'Field site electronics',	'Solar panels, power systems, antennae, and more',	'Enabled',	300000,	'2021-08-27 19:46:28',	'2021-08-27 19:46:28',	7),
+('0f7aa101-bfdb-4a19-a182-c5ff1d16f6b2',	'7bed3c00-23cf-4282-b2b8-da89426cef2f',	'Books and media',	'Books, CDs, DVDs, and more',	'Enabled',	300000,	'2021-08-27 19:46:28',	'2021-08-27 19:46:28',	8),
+('036e5315-18ca-4404-8435-72a695f2c9a7',	'3be38915-7092-44f2-90ef-26f48214b34f',	'Travel and recreation',	'Includes suitcases, travel bags, cycling, skating, sports. No motorized vehicles.',	'Enabled',	300000,	'2021-08-27 19:46:28',	'2021-08-27 19:46:28',	9);
+`
+	if err := models.DB.RawQuery(itemCategoriesSql).Exec(); err != nil {
+		panic("error loading item categories, " + err.Error())
+	}
+
+	r, err := regexp.Compile(`\('([0-9a-f-]*)`)
 	if err != nil {
-		return []*models.ItemCategory{}, err
+		panic("invalid regular expression, " + err.Error())
+	}
+	matches := r.FindAllStringSubmatch(itemCategoriesSql, -1)
+	if len(matches) == 0 {
+		panic("found no category UUIDs in SQL query")
 	}
 
-	itemCatUUIDs := []string{
-		"61447366-26b2-4256-b2ab-58c92c3d54cc",
-		"6279902f-c204-4922-b479-57f0ec41eabe",
-		"63bcf980-e1f0-42d3-b2b0-2e4704159f4f",
-		"64dc63fa-1227-4bea-b34a-416a26c3e077",
-		"6596a5a6-971a-403d-8276-c41657bc57ce",
-	}
-
-	fixCats := make([]*models.ItemCategory, len(itemCatUUIDs))
-
-	for i, uu := range itemCatUUIDs {
-
-		fixCats[i] = &models.ItemCategory{
-			ID:             uuid.FromStringOrNil(uu),
-			RiskCategoryID: riskCats[i/3].ID,
-			Name:           fmt.Sprintf("ItemCat-%d", i),
-			HelpText:       fmt.Sprintf("This is help text for ItemCat-%d", i),
-			Status:         api.ItemCategoryStatusEnabled,
-			AutoApproveMax: 100 * i * domain.CurrencyFactor, // increments of $100 starting at $0
-		}
-		err := models.DB.Create(fixCats[i])
+	categoryUUIDs := make([]uuid.UUID, len(matches))
+	for i, match := range matches {
+		categoryUUIDs[i], err = uuid.FromString(match[1])
 		if err != nil {
-			err = fmt.Errorf("error creating item category fixture ... %+v\n %v",
-				fixCats[i], err.Error())
-			return []*models.ItemCategory{}, err
+			panic(fmt.Sprintf("invalid UUID %s, %s", match, err))
 		}
 	}
 
-	return fixCats, nil
+	return categoryUUIDs, nil
 }
 
-func createItemFixtures(fixPolicies []*models.Policy, fixICats []*models.ItemCategory) ([]*models.Item, error) {
+func createItemFixtures(fixPolicies []*models.Policy, fixICats []uuid.UUID) ([]*models.Item, error) {
 	itemUUIDs := []string{
 		"71117366-26b2-4256-b2ab-58c92c3d54cc",
 		"7212902f-c204-4922-b479-57f0ec41eabe",
@@ -256,7 +258,7 @@ func createItemFixtures(fixPolicies []*models.Policy, fixICats []*models.ItemCat
 		fixItems[i] = &models.Item{
 			ID:                uuid.FromStringOrNil(uu),
 			Name:              fmt.Sprintf("IName-%d", i),
-			CategoryID:        fixICats[i%countICats].ID, // cycle through item categories
+			CategoryID:        fixICats[i%countICats], // cycle through item categories
 			InStorage:         false,
 			Country:           fmt.Sprintf("ICountry%d", i),
 			Description:       fmt.Sprintf("This is the description for item %d.", i),

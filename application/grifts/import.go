@@ -32,6 +32,7 @@ import (
 
 TODO:
 	1. Import other tables (e.g. Journal Entries)
+	2. Make name/policy unique
 */
 
 const (
@@ -276,8 +277,6 @@ func getRiskCategoryUUID(legacyID int) uuid.UUID {
 
 func getItemCategoryStatus(itemCategory LegacyItemCategory) api.ItemCategoryStatus {
 	var status api.ItemCategoryStatus
-
-	// TODO: add other status values to this function
 
 	switch itemCategory.Status {
 	case "enabled":
@@ -631,8 +630,6 @@ func getAdminUserUUID(staffID, desc string) nulls.UUID {
 func getEventType(claim LegacyClaim) api.ClaimEventType {
 	var eventType api.ClaimEventType
 
-	// TODO: resolve "missing" types
-
 	switch claim.EventType {
 	case "Broken", "Dropped":
 		eventType = api.ClaimEventTypeImpact
@@ -654,17 +651,13 @@ func getEventType(claim LegacyClaim) api.ClaimEventType {
 
 func getEventDescription(claim LegacyClaim) string {
 	if claim.EventDescription == "" {
-		// TODO: provide event descriptions on source data
-		// log.Printf("missing event description on claim %s\n", claim.Id)
-		return "-"
+		return "[no description provided]"
 	}
 	return claim.EventDescription
 }
 
 func getClaimStatus(claim LegacyClaim) api.ClaimStatus {
 	var claimStatus api.ClaimStatus
-
-	// TODO: add other status values to this function
 
 	switch claim.Status {
 	case "approved":
