@@ -281,6 +281,24 @@ func (c *Claim) RequestRevision(tx *pop.Connection) error {
 	return c.Update(tx, oldStatus)
 }
 
+// PreApprove changes the status of the claim to Receipt
+//   provided that the current status is Review1.
+// TODO consider how to communicate what kind of receipt is needed
+// TODO emit an appropriate event
+func (c *Claim) PreApprove(tx *pop.Connection) error {
+	oldStatus := c.Status
+
+	if oldStatus != api.ClaimStatusReview1 {
+		err := fmt.Errorf("invalid claim status for preapprove: %s", oldStatus)
+		appErr := api.NewAppError(err, api.ErrorClaimStatus, api.CategoryUser)
+		return appErr
+	}
+
+	c.Status = api.ClaimStatusReceipt
+
+	return c.Update(tx, oldStatus)
+}
+
 func (c *Claim) LoadClaimItems(tx *pop.Connection, reload bool) {
 	if len(c.ClaimItems) == 0 || reload {
 		if err := tx.Load(c, "ClaimItems"); err != nil {

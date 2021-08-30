@@ -564,6 +564,7 @@ func (as *ActionSuite) Test_ClaimsSubmit() {
 		})
 	}
 }
+
 func (as *ActionSuite) Test_ClaimsRequestRevision() {
 	fixConfig := models.FixturesConfig{
 		NumberOfPolicies:    2,
@@ -637,6 +638,83 @@ func (as *ActionSuite) Test_ClaimsRequestRevision() {
 				"error finding submitted item.")
 
 			as.Equal(api.ClaimStatusRevision, claim.Status, "incorrect status after submission")
+		})
+	}
+}
+
+func (as *ActionSuite) Test_ClaimsPreapprove() {
+	fixConfig := models.FixturesConfig{
+		NumberOfPolicies:    2,
+		ItemsPerPolicy:      2,
+		UsersPerPolicy:      1,
+		DependentsPerPolicy: 0,
+		ClaimsPerPolicy:     3,
+		ClaimItemsPerClaim:  1,
+	}
+
+	fixtures := models.CreateItemFixtures(as.DB, fixConfig)
+	policy := fixtures.Policies[0]
+	policyCreator := policy.Members[0]
+
+	appAdmin := models.CreateAdminUser(as.DB)
+
+	draftClaim := policy.Claims[0]
+	review1Claim := models.UpdateClaimStatus(as.DB, policy.Claims[1], api.ClaimStatusReview1)
+
+	tests := []struct {
+		name       string
+		actor      models.User
+		oldClaim   models.Claim
+		wantStatus int
+		wantInBody []string
+	}{
+		{
+			name:       "bad start status",
+			actor:      appAdmin,
+			oldClaim:   draftClaim,
+			wantStatus: http.StatusBadRequest,
+			wantInBody: []string{api.ErrorClaimStatus.String()},
+		},
+		{
+			name:       "non-admin user",
+			actor:      policyCreator,
+			oldClaim:   review1Claim,
+			wantStatus: http.StatusNotFound,
+		},
+		{
+			name:       "good claim",
+			actor:      appAdmin,
+			oldClaim:   review1Claim,
+			wantStatus: http.StatusOK,
+			wantInBody: []string{
+				`"event_description":"` + review1Claim.EventDescription,
+				`"status":"` + string(api.ClaimStatusReceipt),
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		as.T().Run(tt.name, func(t *testing.T) {
+			req := as.JSON("/%s/%s/%s",
+				domain.TypeClaim, tt.oldClaim.ID.String(), api.ResourcePreapprove)
+			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
+			req.Headers["content-type"] = "application/json"
+			res := req.Post(nil)
+
+			body := res.Body.String()
+			as.Equal(tt.wantStatus, res.Code, "incorrect status code returned, body: %s", body)
+
+			as.verifyResponseData(tt.wantInBody, body, "")
+
+			if res.Code != http.StatusOK {
+				return
+			}
+
+			var claim models.Claim
+			as.NoError(as.DB.Find(&claim, tt.oldClaim.ID),
+				"error finding submitted item.")
+
+			as.Equal(api.ClaimStatusReceipt, claim.Status, "incorrect status after submission")
 		})
 	}
 }
