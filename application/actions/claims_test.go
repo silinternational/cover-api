@@ -873,7 +873,7 @@ func (as *ActionSuite) Test_ClaimsDeny() {
 			wantStatus: http.StatusNotFound,
 		},
 		{
-			name:       "review1 to review3",
+			name:       "review1 to denied",
 			actor:      appAdmin,
 			oldClaim:   review1Claim,
 			wantStatus: http.StatusOK,
@@ -885,7 +885,7 @@ func (as *ActionSuite) Test_ClaimsDeny() {
 			},
 		},
 		{
-			name:       "review2 to review3",
+			name:       "review2 to denied",
 			actor:      appAdmin,
 			oldClaim:   review2Claim,
 			wantStatus: http.StatusOK,
@@ -897,7 +897,7 @@ func (as *ActionSuite) Test_ClaimsDeny() {
 			},
 		},
 		{
-			name:       "review3 to approved",
+			name:       "review3 to denied",
 			actor:      appAdmin,
 			oldClaim:   review3Claim,
 			wantStatus: http.StatusOK,
