@@ -362,15 +362,17 @@ func randStr(n int) string {
 }
 
 func DestroyAll() {
+	// delete all ClaimItems
+	var claimItems ClaimItems
+	destroyTable(&claimItems)
+
+	// delete all Claims
+	var claims Claims
+	destroyTable(&claims)
+
 	// delete all Users and UserAccessTokens
 	var users Users
 	destroyTable(&users)
-
-	// delete all Claims and ClaimItems
-	var claimItems ClaimItems
-	destroyTable(&claimItems)
-	var claims Claims
-	destroyTable(&claims)
 
 	// delete all Policies, PolicyUsers, PolicyDependents, PolicyHistory records, and Items
 	var policies Policies
