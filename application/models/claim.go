@@ -301,7 +301,7 @@ func (c *Claim) Preapprove(tx *pop.Connection) error {
 }
 
 // Approve changes the status of the claim from either Review1, Review2 to Review3 or
-//  from Review3 to Approved.
+//  from Review3 to Approved. It also adds the ReviewerID and ReviewDate.
 // TODO distinguish between admin types (steward vs. boss)
 // TODO emit an appropriate event
 // TODO do whatever post-processing is needed for payment
@@ -325,7 +325,7 @@ func (c *Claim) Approve(tx *pop.Connection, actor User) error {
 	return c.Update(tx, oldStatus)
 }
 
-// Deny changes the status of the claim to Denied.
+// Deny changes the status of the claim to Denied and adds the ReviewerID and ReviewDate.
 // TODO emit an appropriate event
 func (c *Claim) Deny(tx *pop.Connection, actor User) error {
 	oldStatus := c.Status
