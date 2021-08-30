@@ -39,3 +39,7 @@ generated/
 jhw.*
 tmp/
 go-build/
+
+# Data files
+*.csv
+*.json
