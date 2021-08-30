@@ -14,6 +14,7 @@ const (
 	ResourceSubmit     = "submit"
 	ResourceRevision   = "revision"
 	ResourcePreapprove = "preapprove"
+	ResourceReceipt    = "receipt"
 	ResourceApprove    = "approve"
 	ResourceDeny       = "deny"
 )
