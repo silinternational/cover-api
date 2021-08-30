@@ -147,14 +147,14 @@ func (p *Policy) LoadMembers(tx *pop.Connection, reload bool) {
 	}
 }
 
-func ConvertPolicy(tx *pop.Connection, p Policy) api.Policy {
+func (p *Policy) ConvertToAPI(tx *pop.Connection) api.Policy {
 	p.LoadClaims(tx, true)
 	p.LoadDependents(tx, true)
 	p.LoadMembers(tx, true)
 
 	claims := p.Claims.ConvertToAPI(tx)
-	dependents := ConvertPolicyDependents(tx, p.Dependents)
-	members := ConvertPolicyMembers(tx, p.Members)
+	dependents := p.Dependents.ConvertToAPI()
+	members := p.Members.ConvertToPolicyMembers()
 
 	return api.Policy{
 		ID:          p.ID,
@@ -171,10 +171,10 @@ func ConvertPolicy(tx *pop.Connection, p Policy) api.Policy {
 	}
 }
 
-func ConvertPolicies(tx *pop.Connection, ps Policies) api.Policies {
-	policies := make(api.Policies, len(ps))
-	for i, p := range ps {
-		policies[i] = ConvertPolicy(tx, p)
+func (p *Policies) ConvertToAPI(tx *pop.Connection) api.Policies {
+	policies := make(api.Policies, len(*p))
+	for i, pp := range *p {
+		policies[i] = pp.ConvertToAPI(tx)
 	}
 
 	return policies

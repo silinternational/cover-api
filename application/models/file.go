@@ -272,15 +272,15 @@ func (f *Files) FindByIDs(tx *pop.Connection, ids []int) error {
 	return tx.Where("id in (?)", ids).All(f)
 }
 
-// convertFile converts a models.File to an api.File
-func convertFile(file File) api.File {
+// ConvertToAPI converts a models.File to an api.File
+func (f *File) ConvertToAPI() api.File {
 	return api.File{
-		ID:            file.ID,
-		URL:           file.URL,
-		URLExpiration: file.URLExpiration,
-		Name:          file.Name,
-		Size:          file.Size,
-		ContentType:   file.ContentType,
-		CreatedByID:   file.CreatedByID,
+		ID:            f.ID,
+		URL:           f.URL,
+		URLExpiration: f.URLExpiration,
+		Name:          f.Name,
+		Size:          f.Size,
+		ContentType:   f.ContentType,
+		CreatedByID:   f.CreatedByID,
 	}
 }

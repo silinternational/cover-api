@@ -172,7 +172,7 @@ func (c *ClaimItem) LoadReviewer(tx *pop.Connection, reload bool) {
 
 func (c *ClaimItem) ConvertToAPI(tx *pop.Connection) api.ClaimItem {
 	c.LoadItem(tx, false)
-	item := ConvertItem(tx, c.Item)
+	item := c.Item.ConvertToAPI(tx)
 	return api.ClaimItem{
 		ItemID:            c.ItemID,
 		Name:              item.Name,

@@ -40,7 +40,7 @@ func itemsList(c buffalo.Context) error {
 
 	policy.LoadItems(tx, true)
 
-	return renderOk(c, models.ConvertItems(tx, policy.Items))
+	return renderOk(c, policy.Items.ConvertToAPI(tx))
 }
 
 // swagger:operation POST /policies/{id}/items PolicyItems PolicyItemsCreate
@@ -84,7 +84,7 @@ func itemsCreate(c buffalo.Context) error {
 		return reportError(c, err)
 	}
 
-	output := models.ConvertItem(tx, item)
+	output := item.ConvertToAPI(tx)
 
 	return c.Render(http.StatusOK, r.JSON(output))
 }
@@ -138,7 +138,7 @@ func itemsUpdate(c buffalo.Context) error {
 		return reportError(c, err)
 	}
 
-	output := models.ConvertItem(tx, newItem)
+	output := newItem.ConvertToAPI(tx)
 	return c.Render(http.StatusOK, r.JSON(output))
 }
 
@@ -167,7 +167,7 @@ func itemsSubmit(c buffalo.Context) error {
 		return reportError(c, err)
 	}
 
-	output := models.ConvertItem(tx, *item)
+	output := item.ConvertToAPI(tx)
 	return c.Render(http.StatusOK, r.JSON(output))
 }
 
@@ -196,7 +196,7 @@ func itemsRevision(c buffalo.Context) error {
 		return reportError(c, err)
 	}
 
-	output := models.ConvertItem(tx, *item)
+	output := item.ConvertToAPI(tx)
 	return c.Render(http.StatusOK, r.JSON(output))
 }
 
@@ -225,7 +225,7 @@ func itemsApprove(c buffalo.Context) error {
 		return reportError(c, err)
 	}
 
-	output := models.ConvertItem(tx, *item)
+	output := item.ConvertToAPI(tx)
 	return c.Render(http.StatusOK, r.JSON(output))
 }
 
@@ -254,7 +254,7 @@ func itemsDeny(c buffalo.Context) error {
 		return reportError(c, err)
 	}
 
-	output := models.ConvertItem(tx, *item)
+	output := item.ConvertToAPI(tx)
 	return c.Render(http.StatusOK, r.JSON(output))
 }
 
