@@ -91,6 +91,16 @@ func (c *Claim) Update(tx *pop.Connection, oldStatus api.ClaimStatus) error {
 		appErr := api.NewAppError(err, api.ErrorValidation, api.CategoryUser)
 		return appErr
 	}
+
+	if c.Status != api.ClaimStatusDraft {
+		c.LoadClaimItems(tx, false)
+		if len(c.ClaimItems) == 0 {
+			err := errors.New("claim must have a claimItem if no longer in draft")
+			appErr := api.NewAppError(err, api.ErrorClaimMissingClaimItem, api.CategoryUser)
+			return appErr
+		}
+	}
+
 	return update(tx, c)
 }
 
@@ -107,9 +117,16 @@ func (c *Claim) FindByReferenceNumber(tx *pop.Connection, ref string) error {
 }
 
 // IsActorAllowedTo ensure the actor is either an admin, or a member of this policy to perform any permission
+// TODO Differentiate between admins (steward and boss)
 func (c *Claim) IsActorAllowedTo(tx *pop.Connection, actor User, perm Permission, sub SubResource, r *http.Request) bool {
 	if actor.IsAdmin() {
 		return true
+	}
+
+	// Only admin can do these
+	adminSubs := []string{api.ResourceRevision, api.ResourceApprove, api.ResourcePreapprove, api.ResourceReceipt}
+	if domain.IsStringInSlice(string(sub), adminSubs) {
+		return false
 	}
 
 	if perm == PermissionList || (perm == PermissionCreate && sub == "") {
@@ -230,13 +247,6 @@ func (c *Claim) AddItem(tx *pop.Connection, claim Claim, input api.ClaimItemCrea
 func (c *Claim) SubmitForApproval(tx *pop.Connection) error {
 	oldStatus := c.Status
 
-	c.LoadClaimItems(tx, false)
-	if len(c.ClaimItems) == 0 {
-		err := errors.New("claim must have a claimItem to submit")
-		appErr := api.NewAppError(err, api.ErrorClaimMissingClaimItem, api.CategoryUser)
-		return appErr
-	}
-
 	switch oldStatus {
 	case api.ClaimStatusDraft, api.ClaimStatusRevision:
 		c.Status = api.ClaimStatusReview1
@@ -245,6 +255,25 @@ func (c *Claim) SubmitForApproval(tx *pop.Connection) error {
 		c.Status = api.ClaimStatusReview2
 	default:
 		err := fmt.Errorf("invalid claim status for submit: %s", oldStatus)
+		appErr := api.NewAppError(err, api.ErrorClaimStatus, api.CategoryUser)
+		return appErr
+	}
+
+	return c.Update(tx, oldStatus)
+}
+
+// RequestRevision changes the status of the claim to Revision
+//   provided that the current status is Review1 or Review3.
+// TODO record the particular revisions that are needed
+// TODO emit an appropriate event
+func (c *Claim) RequestRevision(tx *pop.Connection) error {
+	oldStatus := c.Status
+
+	switch oldStatus {
+	case api.ClaimStatusReview1, api.ClaimStatusReview3:
+		c.Status = api.ClaimStatusRevision
+	default:
+		err := fmt.Errorf("invalid claim status for request revision: %s", oldStatus)
 		appErr := api.NewAppError(err, api.ErrorClaimStatus, api.CategoryUser)
 		return appErr
 	}
