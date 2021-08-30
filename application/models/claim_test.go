@@ -239,7 +239,7 @@ func (ms *ModelSuite) TestClaim_Preapprove() {
 	policy := fixtures.Policies[0]
 	draftClaim := policy.Claims[0]
 	review1Claim := UpdateClaimStatus(ms.DB, policy.Claims[2], api.ClaimStatusReview1)
-	emptyClaim := UpdateClaimStatus(ms.DB, policy.Claims[3], api.ClaimStatusDraft)
+	emptyClaim := UpdateClaimStatus(ms.DB, policy.Claims[3], api.ClaimStatusReview1)
 
 	tempClaim := emptyClaim
 	tempClaim.LoadClaimItems(ms.DB, false)
@@ -266,7 +266,7 @@ func (ms *ModelSuite) TestClaim_Preapprove() {
 			claim:           emptyClaim,
 			wantErrKey:      api.ErrorClaimMissingClaimItem,
 			wantErrCat:      api.CategoryUser,
-			wantErrContains: "claim must have a claimItem to preapprove",
+			wantErrContains: "claim must have a claimItem if no longer in draft",
 		},
 		{
 			name:       "from review1 to receipt",

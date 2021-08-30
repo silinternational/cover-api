@@ -204,7 +204,7 @@ func claimsSubmit(c buffalo.Context) error {
 //     description: claim ID
 // responses:
 //   '200':
-//     description: submitted Claim
+//     description: Claim in focus
 //     schema:
 //       "$ref": "#/definitions/Claim"
 func claimsRequestRevision(c buffalo.Context) error {
@@ -212,6 +212,35 @@ func claimsRequestRevision(c buffalo.Context) error {
 	claim := getReferencedClaimFromCtx(c)
 
 	if err := claim.RequestRevision(tx); err != nil {
+		return reportError(c, err)
+	}
+
+	output := models.ConvertClaim(tx, *claim)
+	return c.Render(http.StatusOK, r.JSON(output))
+}
+
+// swagger:operation POST /claims/{id}/preapprove Claims ClaimsPreapprove
+//
+// ClaimsPreapprove
+//
+// Admin preapproves a claim and requests a receipt.  Can only be used at state "Review1".
+//
+// ---
+// parameters:
+//   - name: id
+//     in: path
+//     required: true
+//     description: claim ID
+// responses:
+//   '200':
+//     description: Claim in focus
+//     schema:
+//       "$ref": "#/definitions/Claim"
+func claimsPreapprove(c buffalo.Context) error {
+	tx := models.Tx(c)
+	claim := getReferencedClaimFromCtx(c)
+
+	if err := claim.PreApprove(tx); err != nil {
 		return reportError(c, err)
 	}
 
