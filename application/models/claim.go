@@ -281,11 +281,11 @@ func (c *Claim) RequestRevision(tx *pop.Connection) error {
 	return c.Update(tx, oldStatus)
 }
 
-// PreApprove changes the status of the claim to Receipt
+// Preapprove changes the status of the claim to Receipt
 //   provided that the current status is Review1.
 // TODO consider how to communicate what kind of receipt is needed
 // TODO emit an appropriate event
-func (c *Claim) PreApprove(tx *pop.Connection) error {
+func (c *Claim) Preapprove(tx *pop.Connection) error {
 	oldStatus := c.Status
 
 	if oldStatus != api.ClaimStatusReview1 {
@@ -295,6 +295,31 @@ func (c *Claim) PreApprove(tx *pop.Connection) error {
 	}
 
 	c.Status = api.ClaimStatusReceipt
+
+	return c.Update(tx, oldStatus)
+}
+
+// Approve changes the status of the claim from either Review1, Review2 to Review3 or
+//  from Review3 to Approved.
+// TODO distinguish between admin types (steward vs. boss)
+// TODO emit an appropriate event
+// TODO do whatever post-processing is needed for payment
+func (c *Claim) Approve(tx *pop.Connection, actor User) error {
+	oldStatus := c.Status
+
+	switch oldStatus {
+	case api.ClaimStatusReview1, api.ClaimStatusReview2:
+		c.Status = api.ClaimStatusReview3
+	case api.ClaimStatusReview3:
+		c.Status = api.ClaimStatusApproved
+	default:
+		err := fmt.Errorf("invalid claim status for approve: %s", oldStatus)
+		appErr := api.NewAppError(err, api.ErrorClaimStatus, api.CategoryUser)
+		return appErr
+	}
+
+	c.ReviewerID = nulls.NewUUID(actor.ID)
+	c.ReviewDate = nulls.NewTime(time.Now().UTC())
 
 	return c.Update(tx, oldStatus)
 }
