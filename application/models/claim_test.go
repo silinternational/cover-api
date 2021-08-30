@@ -111,7 +111,7 @@ func (ms *ModelSuite) TestClaim_SubmitForApproval() {
 			claim:           emptyClaim,
 			wantErrKey:      api.ErrorClaimMissingClaimItem,
 			wantErrCat:      api.CategoryUser,
-			wantErrContains: "claim must have a claimItem to submit",
+			wantErrContains: "claim must have a claimItem if no longer in draft",
 		},
 		{
 			name:       "from draft to review1",
@@ -162,7 +162,7 @@ func (ms *ModelSuite) TestClaim_RequestRevision() {
 	draftClaim := policy.Claims[0]
 	review1Claim := UpdateClaimStatus(ms.DB, policy.Claims[2], api.ClaimStatusReview1)
 	review3Claim := UpdateClaimStatus(ms.DB, policy.Claims[2], api.ClaimStatusReview3)
-	emptyClaim := UpdateClaimStatus(ms.DB, policy.Claims[3], api.ClaimStatusDraft)
+	emptyClaim := UpdateClaimStatus(ms.DB, policy.Claims[3], api.ClaimStatusReview1)
 
 	tempClaim := emptyClaim
 	tempClaim.LoadClaimItems(ms.DB, false)
@@ -189,7 +189,7 @@ func (ms *ModelSuite) TestClaim_RequestRevision() {
 			claim:           emptyClaim,
 			wantErrKey:      api.ErrorClaimMissingClaimItem,
 			wantErrCat:      api.CategoryUser,
-			wantErrContains: "claim must have a claimItem to request revision",
+			wantErrContains: "claim must have a claimItem if no longer in draft",
 		},
 		{
 			name:       "from review1 to revision",
