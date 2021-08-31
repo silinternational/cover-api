@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/gobuffalo/events"
 	"github.com/gobuffalo/nulls"
 	"github.com/gobuffalo/pop/v5"
 	"github.com/gobuffalo/validate/v3"
@@ -240,7 +241,6 @@ func isItemActionAllowed(actorIsAdmin bool, oldStatus api.ItemCoverageStatus, pe
 
 // SubmitForApproval takes the item from Draft or Revision status to Pending or Approved status.
 // It assumes that the item's current status has already been validated.
-// TODO emit an event for the correct status transition
 func (i *Item) SubmitForApproval(tx *pop.Connection) error {
 	oldStatus := i.CoverageStatus
 	i.CoverageStatus = api.ItemCoverageStatusPending
@@ -251,7 +251,18 @@ func (i *Item) SubmitForApproval(tx *pop.Connection) error {
 		i.CoverageStatus = api.ItemCoverageStatusApproved
 	}
 
-	return i.Update(tx, oldStatus)
+	if err := i.Update(tx, oldStatus); err != nil {
+		return err
+	}
+
+	e := events.Event{
+		Kind:    domain.EventApiItemSubmitted,
+		Message: fmt.Sprintf("Item Submitted: %s  ID: %s", i.Name, i.ID.String()),
+		Payload: events.Payload{domain.EventPayloadID: i.ID.String()},
+	}
+	emitEvent(e)
+
+	return nil
 }
 
 // Assumes the item already has its Category loaded
@@ -280,29 +291,60 @@ func (i *Item) canAutoApprove(tx *pop.Connection) bool {
 
 // Revision takes the item from Pending coverage status to Revision.
 // It assumes that the item's current status has already been validated.
-// TODO emit an event for the the status transition
 func (i *Item) Revision(tx *pop.Connection) error {
 	oldStatus := i.CoverageStatus
 	i.CoverageStatus = api.ItemCoverageStatusRevision
-	return i.Update(tx, oldStatus)
+	if err := i.Update(tx, oldStatus); err != nil {
+		return err
+	}
+
+	e := events.Event{
+		Kind:    domain.EventApiItemRevision,
+		Message: fmt.Sprintf("Item to Revision: %s  ID: %s", i.Name, i.ID.String()),
+		Payload: events.Payload{domain.EventPayloadID: i.ID.String()},
+	}
+	emitEvent(e)
+
+	return nil
 }
 
 // Approve takes the item from Pending coverage status to Approved.
 // It assumes that the item's current status has already been validated.
-// TODO emit an event for the the status transition
 func (i *Item) Approve(tx *pop.Connection) error {
 	oldStatus := i.CoverageStatus
 	i.CoverageStatus = api.ItemCoverageStatusApproved
-	return i.Update(tx, oldStatus)
+	if err := i.Update(tx, oldStatus); err != nil {
+		return err
+	}
+
+	e := events.Event{
+		Kind:    domain.EventApiItemApproved,
+		Message: fmt.Sprintf("Item Approved: %s  ID: %s", i.Name, i.ID.String()),
+		Payload: events.Payload{domain.EventPayloadID: i.ID.String()},
+	}
+	emitEvent(e)
+
+	return nil
 }
 
 // Deny takes the item from Pending coverage status to Denied.
 // It assumes that the item's current status has already been validated.
-// TODO emit an event for the the status transition
+// TODO create a listener for the emitted event
 func (i *Item) Deny(tx *pop.Connection) error {
 	oldStatus := i.CoverageStatus
 	i.CoverageStatus = api.ItemCoverageStatusDenied
-	return i.Update(tx, oldStatus)
+	if err := i.Update(tx, oldStatus); err != nil {
+		return err
+	}
+
+	e := events.Event{
+		Kind:    domain.EventApiItemDenied,
+		Message: fmt.Sprintf("Item Denied: %s  ID: %s", i.Name, i.ID.String()),
+		Payload: events.Payload{domain.EventPayloadID: i.ID.String()},
+	}
+	emitEvent(e)
+
+	return nil
 }
 
 // LoadPolicy - a simple wrapper method for loading the policy
