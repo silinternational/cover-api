@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/gobuffalo/events"
 	"github.com/gobuffalo/nulls"
 	"github.com/gobuffalo/pop/v5"
 	"github.com/gobuffalo/validate/v3"
@@ -246,29 +247,41 @@ func (c *Claim) AddItem(tx *pop.Connection, claim Claim, input api.ClaimItemCrea
 // SubmitForApproval changes the status of the claim to either Review1 or Review2
 //   depending on its current status.
 // TODO ensure the associated claimItem is valid
-// TODO emit an appropriate event
 func (c *Claim) SubmitForApproval(tx *pop.Connection) error {
 	oldStatus := c.Status
+	var eventType string
 
 	switch oldStatus {
 	case api.ClaimStatusDraft, api.ClaimStatusRevision:
 		c.Status = api.ClaimStatusReview1
+		eventType = domain.EventApiClaimSubmitted
 	case api.ClaimStatusReceipt:
 		// TODO ensure there is a file attached for a receipt
 		c.Status = api.ClaimStatusReview2
+		eventType = domain.EventApiClaimReview2
 	default:
 		err := fmt.Errorf("invalid claim status for submit: %s", oldStatus)
 		appErr := api.NewAppError(err, api.ErrorClaimStatus, api.CategoryUser)
 		return appErr
 	}
 
-	return c.Update(tx, oldStatus)
+	if err := c.Update(tx, oldStatus); err != nil {
+		return err
+	}
+
+	e := events.Event{
+		Kind:    eventType,
+		Message: fmt.Sprintf("Claim Submitted: %s  ID: %s", c.EventDescription, c.ID.String()),
+		Payload: events.Payload{domain.EventPayloadID: c.ID.String()},
+	}
+	emitEvent(e)
+
+	return nil
 }
 
 // RequestRevision changes the status of the claim to Revision
 //   provided that the current status is Review1 or Review3.
 // TODO record the particular revisions that are needed
-// TODO emit an appropriate event
 func (c *Claim) RequestRevision(tx *pop.Connection) error {
 	oldStatus := c.Status
 
@@ -281,40 +294,69 @@ func (c *Claim) RequestRevision(tx *pop.Connection) error {
 		return appErr
 	}
 
-	return c.Update(tx, oldStatus)
+	if err := c.Update(tx, oldStatus); err != nil {
+		return err
+	}
+
+	e := events.Event{
+		Kind:    domain.EventApiClaimRevision,
+		Message: fmt.Sprintf("Claim Revision: %s  ID: %s", c.EventDescription, c.ID.String()),
+		Payload: events.Payload{domain.EventPayloadID: c.ID.String()},
+	}
+	emitEvent(e)
+
+	return nil
 }
 
-// Preapprove changes the status of the claim to Receipt
+// RequestReceipt changes the status of the claim to Receipt
 //   provided that the current status is Review1.
 // TODO consider how to communicate what kind of receipt is needed
-// TODO emit an appropriate event
-func (c *Claim) Preapprove(tx *pop.Connection) error {
+func (c *Claim) RequestReceipt(tx *pop.Connection) error {
 	oldStatus := c.Status
+	var eventType string
 
-	if oldStatus != api.ClaimStatusReview1 {
-		err := fmt.Errorf("invalid claim status for preapprove: %s", oldStatus)
+	switch oldStatus {
+	case api.ClaimStatusReview1:
+		eventType = domain.EventApiClaimPreapproved
+	case api.ClaimStatusReview2, api.ClaimStatusReview3:
+		eventType = domain.EventApiClaimReceipt
+	default:
+		err := fmt.Errorf("invalid claim status for request receipt: %s", oldStatus)
 		appErr := api.NewAppError(err, api.ErrorClaimStatus, api.CategoryUser)
 		return appErr
 	}
 
 	c.Status = api.ClaimStatusReceipt
 
-	return c.Update(tx, oldStatus)
+	if err := c.Update(tx, oldStatus); err != nil {
+		return err
+	}
+
+	e := events.Event{
+		Kind:    eventType,
+		Message: fmt.Sprintf("Claim Request Receipt: %s  ID: %s", c.EventDescription, c.ID.String()),
+		Payload: events.Payload{domain.EventPayloadID: c.ID.String()},
+	}
+	emitEvent(e)
+
+	return nil
 }
 
 // Approve changes the status of the claim from either Review1, Review2 to Review3 or
 //  from Review3 to Approved. It also adds the ReviewerID and ReviewDate.
 // TODO distinguish between admin types (steward vs. boss)
-// TODO emit an appropriate event
 // TODO do whatever post-processing is needed for payment
 func (c *Claim) Approve(tx *pop.Connection, actor User) error {
 	oldStatus := c.Status
+	var eventType string
 
 	switch oldStatus {
 	case api.ClaimStatusReview1, api.ClaimStatusReview2:
 		c.Status = api.ClaimStatusReview3
+		eventType = domain.EventApiClaimReview3
 	case api.ClaimStatusReview3:
 		c.Status = api.ClaimStatusApproved
+		eventType = domain.EventApiClaimApproved
 	default:
 		err := fmt.Errorf("invalid claim status for approve: %s", oldStatus)
 		appErr := api.NewAppError(err, api.ErrorClaimStatus, api.CategoryUser)
@@ -324,11 +366,21 @@ func (c *Claim) Approve(tx *pop.Connection, actor User) error {
 	c.ReviewerID = nulls.NewUUID(actor.ID)
 	c.ReviewDate = nulls.NewTime(time.Now().UTC())
 
-	return c.Update(tx, oldStatus)
+	if err := c.Update(tx, oldStatus); err != nil {
+		return err
+	}
+
+	e := events.Event{
+		Kind:    eventType,
+		Message: fmt.Sprintf("Claim Approved: %s  ID: %s", c.EventDescription, c.ID.String()),
+		Payload: events.Payload{domain.EventPayloadID: c.ID.String()},
+	}
+	emitEvent(e)
+
+	return nil
 }
 
 // Deny changes the status of the claim to Denied and adds the ReviewerID and ReviewDate.
-// TODO emit an appropriate event
 func (c *Claim) Deny(tx *pop.Connection, actor User) error {
 	oldStatus := c.Status
 
@@ -344,7 +396,18 @@ func (c *Claim) Deny(tx *pop.Connection, actor User) error {
 	c.ReviewerID = nulls.NewUUID(actor.ID)
 	c.ReviewDate = nulls.NewTime(time.Now().UTC())
 
-	return c.Update(tx, oldStatus)
+	if err := c.Update(tx, oldStatus); err != nil {
+		return err
+	}
+
+	e := events.Event{
+		Kind:    domain.EventApiClaimDenied,
+		Message: fmt.Sprintf("Claim Denied: %s  ID: %s", c.EventDescription, c.ID.String()),
+		Payload: events.Payload{domain.EventPayloadID: c.ID.String()},
+	}
+	emitEvent(e)
+
+	return nil
 }
 
 func (c *Claim) LoadClaimItems(tx *pop.Connection, reload bool) {

@@ -35,8 +35,9 @@ func (ts *TestSuite) Test_findObject() {
 	}
 
 	f := models.CreateItemFixtures(db, fixConfig)
-	item := f.Items[1]
 	user := f.Users[0]
+	item := f.Items[1]
+	claim := f.Claims[0]
 
 	tests := []struct {
 		name            string
@@ -62,6 +63,15 @@ func (ts *TestSuite) Test_findObject() {
 			wantContains: []string{
 				"ID:" + item.ID.String(),
 				"Name:" + item.Name,
+			},
+		},
+		{
+			name:    "find claim",
+			payload: events.Payload{domain.EventPayloadID: claim.ID.String()},
+			object:  &models.Claim{},
+			wantContains: []string{
+				"ID:" + claim.ID.String(),
+				"EventDescription:" + claim.EventDescription,
 			},
 		},
 	}

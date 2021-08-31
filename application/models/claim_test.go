@@ -259,7 +259,7 @@ func (ms *ModelSuite) TestClaim_Preapprove() {
 			claim:           draftClaim,
 			wantErrKey:      api.ErrorClaimStatus,
 			wantErrCat:      api.CategoryUser,
-			wantErrContains: "invalid claim status for preapprove",
+			wantErrContains: "invalid claim status for request receipt",
 		},
 		{
 			name:            "claim with no ClaimItem",
@@ -277,7 +277,7 @@ func (ms *ModelSuite) TestClaim_Preapprove() {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := tt.claim.Preapprove(ms.DB)
+			got := tt.claim.RequestReceipt(ms.DB)
 
 			if tt.wantErrContains != "" {
 				ms.Error(got, " did not return expected error")

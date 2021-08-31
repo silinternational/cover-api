@@ -97,6 +97,15 @@ const (
 	EventApiItemRevision  = "api:item:revision"
 	EventApiItemApproved  = "api:item:approved"
 	EventApiItemDenied    = "api:item:denied"
+
+	EventApiClaimSubmitted   = "api:claim:submitted"
+	EventApiClaimRevision    = "api:claim:revision"
+	EventApiClaimPreapproved = "api:claim:preapproved"
+	EventApiClaimReceipt     = "api:claim:receipt"
+	EventApiClaimReview2     = "api:claim:review2"
+	EventApiClaimReview3     = "api:claim:review3"
+	EventApiClaimApproved    = "api:claim:approved"
+	EventApiClaimDenied      = "api:claim:denied"
 )
 
 // redirect url for after logout
