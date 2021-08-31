@@ -389,9 +389,9 @@ func (c *Claim) ConvertToAPI(tx *pop.Connection) api.Claim {
 	}
 }
 
-func (c Claims) ConvertToAPI(tx *pop.Connection) api.Claims {
-	claims := make(api.Claims, len(c))
-	for i, cc := range c {
+func (c *Claims) ConvertToAPI(tx *pop.Connection) api.Claims {
+	claims := make(api.Claims, len(*c))
+	for i, cc := range *c {
 		claims[i] = cc.ConvertToAPI(tx)
 	}
 	return claims
