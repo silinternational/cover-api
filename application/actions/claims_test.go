@@ -952,7 +952,10 @@ func (as *ActionSuite) Test_ClaimsFilesAttach() {
 	claim := fixtures.Claims[0]
 	newFileID := models.CreateFileFixtures(as.DB, 1, policyCreator.ID).Files[0].ID
 
-	existingFileID := fixtures.Claims[1].ClaimFiles[0].FileID
+	existingFileID := fixtures.Claims[0].ClaimFiles[0].FileID
+
+	linkedFile := models.CreateFileFixtures(as.DB, 1, policyCreator.ID).Files[0]
+	as.NoError(linkedFile.SetLinked(as.DB))
 
 	tests := []struct {
 		name       string
@@ -979,12 +982,20 @@ func (as *ActionSuite) Test_ClaimsFilesAttach() {
 			wantInBody: fmt.Sprintf(`"key":"%s"`, api.ErrorForeignKeyViolation),
 		},
 		{
-			name:       "file linked",
+			name:       "file already linked to the claim",
 			actor:      policyCreator,
 			claim:      claim,
 			request:    api.ClaimFileAttachInput{FileID: existingFileID},
 			wantStatus: http.StatusBadRequest,
 			wantInBody: fmt.Sprintf(`"key":"%s"`, api.ErrorUniqueKeyViolation),
+		},
+		{
+			name:       "file linked to something else",
+			actor:      policyCreator,
+			claim:      claim,
+			request:    api.ClaimFileAttachInput{FileID: linkedFile.ID},
+			wantStatus: http.StatusBadRequest,
+			wantInBody: fmt.Sprintf(`"key":"%s"`, api.ErrorFileAlreadyLinked),
 		},
 		{
 			name:       "ok",

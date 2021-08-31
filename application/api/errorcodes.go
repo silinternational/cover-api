@@ -48,6 +48,7 @@ const (
 	ErrorResourceNotFound  = ErrorKey("ErrorResourceNotFound")
 
 	// File
+	ErrorFileAlreadyLinked       = ErrorKey("ErrorFileAlreadyLinked")
 	ErrorReceivingFile           = ErrorKey("ErrorReceivingFile")
 	ErrorStoreFileBadContentType = ErrorKey("ErrorStoreFileBadContentType")
 	ErrorStoreFileTooLarge       = ErrorKey("ErrorStoreFileTooLarge")

@@ -1,7 +1,6 @@
 package models
 
 import (
-	"errors"
 	"fmt"
 	"time"
 
@@ -40,7 +39,7 @@ func (c *ClaimFile) Create(tx *pop.Connection) error {
 
 	file := File{ID: c.FileID}
 	if err := file.SetLinked(tx); err != nil {
-		return errors.New("could not link new ClaimFile, " + err.Error())
+		return fmt.Errorf("could not link new ClaimFile, %w", err)
 	}
 
 	return nil
