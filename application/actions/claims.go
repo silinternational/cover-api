@@ -350,6 +350,44 @@ func claimsItemsCreate(c buffalo.Context) error {
 	return renderOk(c, claimItem.ConvertToAPI(tx))
 }
 
+// swagger:operation POST /claims/{id}/files Claims ClaimsFileAttach
+//
+// ClaimsFileAttach
+//
+// attach a File to a Claim
+//
+// ---
+// parameters:
+//   - name: id
+//     in: path
+//     required: true
+//     description: claim ID
+//   - name: claim file input
+//     in: body
+//     description: claim file attach input object
+//     required: true
+//     schema:
+//       "$ref": "#/definitions/ClaimFileAttachInput"
+// responses:
+//   '200':
+//     description: the new ClaimFile
+//     schema:
+//       "$ref": "#/definitions/ClaimFile"
+func claimsFilesAttach(c buffalo.Context) error {
+	var input api.ClaimFileAttachInput
+	if err := StrictBind(c, &input); err != nil {
+		return reportError(c, err)
+	}
+
+	claim := getReferencedClaimFromCtx(c)
+	claimFile, err := claim.AttachFile(models.Tx(c), input.FileID)
+	if err != nil {
+		return reportError(c, err)
+	}
+
+	return renderOk(c, claimFile.ConvertToAPI())
+}
+
 // getReferencedClaimFromCtx pulls the models.Claim resource from context that was put there
 // by the AuthZ middleware
 func getReferencedClaimFromCtx(c buffalo.Context) *models.Claim {

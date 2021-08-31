@@ -935,3 +935,68 @@ func (as *ActionSuite) Test_ClaimsDeny() {
 		})
 	}
 }
+
+func (as *ActionSuite) Test_ClaimsFilesAttach() {
+	fixConfig := models.FixturesConfig{
+		NumberOfPolicies:   2,
+		ItemsPerPolicy:     2,
+		UsersPerPolicy:     1,
+		ClaimsPerPolicy:    4,
+		ClaimItemsPerClaim: 1,
+	}
+
+	fixtures := models.CreateItemFixtures(as.DB, fixConfig)
+	policyCreator := fixtures.Policies[0].Members[0]
+	otherUser := fixtures.Policies[1].Members[0]
+	claim := fixtures.Claims[0]
+	fileID := models.CreateFileFixtures(as.DB, 1, policyCreator.ID).Files[0].ID
+
+	tests := []struct {
+		name       string
+		actor      models.User
+		claim      models.Claim
+		request    api.ClaimFileAttachInput
+		wantStatus int
+		wantInBody string
+	}{
+		{
+			name:       "not allowed",
+			actor:      otherUser,
+			claim:      claim,
+			request:    api.ClaimFileAttachInput{FileID: fileID},
+			wantStatus: http.StatusNotFound,
+			wantInBody: `"key":"ErrorNotAuthorized"`,
+		},
+		{
+			name:       "ok",
+			actor:      policyCreator,
+			claim:      claim,
+			request:    api.ClaimFileAttachInput{FileID: fileID},
+			wantStatus: http.StatusOK,
+			wantInBody: fmt.Sprintf(`"claim_id":"%s"`, claim.ID),
+		},
+	}
+	for _, tt := range tests {
+		as.T().Run(tt.name, func(t *testing.T) {
+			claimID := tt.claim.ID
+			req := as.JSON("/%s/%s/%s",
+				domain.TypeClaim, claimID.String(), domain.TypeFile)
+			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
+			req.Headers["content-type"] = "application/json"
+			res := req.Post(tt.request)
+
+			body := res.Body.String()
+			as.Equal(tt.wantStatus, res.Code, "incorrect status code returned, body: %s", body)
+
+			as.verifyResponseData([]string{tt.wantInBody}, body, "")
+
+			if res.Code != http.StatusOK {
+				return
+			}
+
+			var claimFile models.ClaimFile
+			as.NoError(as.DB.Where("claim_id = ? AND file_id = ?", claimID, tt.request.FileID).First(&claimFile),
+				"new ClaimFile not found in database")
+		})
+	}
+}
