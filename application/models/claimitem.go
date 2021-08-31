@@ -170,9 +170,9 @@ func (c *ClaimItem) LoadReviewer(tx *pop.Connection, reload bool) {
 	}
 }
 
-func ConvertClaimItem(tx *pop.Connection, c ClaimItem) api.ClaimItem {
+func (c *ClaimItem) ConvertToAPI(tx *pop.Connection) api.ClaimItem {
 	c.LoadItem(tx, false)
-	item := ConvertItem(tx, c.Item)
+	item := c.Item.ConvertToAPI(tx)
 	return api.ClaimItem{
 		ItemID:            c.ItemID,
 		Name:              item.Name,
@@ -205,10 +205,10 @@ func ConvertClaimItem(tx *pop.Connection, c ClaimItem) api.ClaimItem {
 	}
 }
 
-func ConvertClaimItems(tx *pop.Connection, cs ClaimItems) api.ClaimItems {
-	claimItems := make(api.ClaimItems, len(cs))
-	for i, c := range cs {
-		claimItems[i] = ConvertClaimItem(tx, c)
+func (c *ClaimItems) ConvertToAPI(tx *pop.Connection) api.ClaimItems {
+	claimItems := make(api.ClaimItems, len(*c))
+	for i, cc := range *c {
+		claimItems[i] = cc.ConvertToAPI(tx)
 	}
 	return claimItems
 }

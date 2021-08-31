@@ -52,21 +52,12 @@ func RiskCategoryStationaryID() uuid.UUID {
 	return uuid.FromStringOrNil(RiskCategoryStationaryIDString)
 }
 
-func ConvertRiskCategory(rCat RiskCategory) api.RiskCategory {
+func (r *RiskCategory) ConvertToAPI() api.RiskCategory {
 	return api.RiskCategory{
-		ID:        rCat.ID,
-		Name:      rCat.Name,
-		PolicyMax: rCat.PolicyMax,
-		CreatedAt: rCat.CreatedAt,
-		UpdatedAt: rCat.UpdatedAt,
+		ID:        r.ID,
+		Name:      r.Name,
+		PolicyMax: r.PolicyMax,
+		CreatedAt: r.CreatedAt,
+		UpdatedAt: r.UpdatedAt,
 	}
-}
-
-func ConvertRiskCategories(iCats RiskCategories) api.RiskCategories {
-	apiICs := make(api.RiskCategories, len(iCats))
-	for i, c := range iCats {
-		apiICs[i] = ConvertRiskCategory(c)
-	}
-
-	return apiICs
 }

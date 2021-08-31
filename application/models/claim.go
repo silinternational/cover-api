@@ -124,8 +124,10 @@ func (c *Claim) IsActorAllowedTo(tx *pop.Connection, actor User, perm Permission
 	}
 
 	// Only admin can do these
-	adminSubs := []string{api.ResourceRevision, api.ResourceApprove,
-		api.ResourcePreapprove, api.ResourceReceipt, api.ResourceDeny}
+	adminSubs := []string{
+		api.ResourceRevision, api.ResourceApprove,
+		api.ResourcePreapprove, api.ResourceReceipt, api.ResourceDeny,
+	}
 	if domain.IsStringInSlice(string(sub), adminSubs) {
 		return false
 	}
@@ -369,7 +371,7 @@ func (c *Claim) LoadReviewer(tx *pop.Connection, reload bool) {
 	}
 }
 
-func ConvertClaim(tx *pop.Connection, c Claim) api.Claim {
+func (c *Claim) ConvertToAPI(tx *pop.Connection) api.Claim {
 	c.LoadClaimItems(tx, true)
 
 	return api.Claim{
@@ -383,14 +385,14 @@ func ConvertClaim(tx *pop.Connection, c Claim) api.Claim {
 		ReviewerID:       c.ReviewerID,
 		PaymentDate:      c.PaymentDate,
 		TotalPayout:      c.TotalPayout,
-		Items:            ConvertClaimItems(tx, c.ClaimItems),
+		Items:            c.ClaimItems.ConvertToAPI(tx),
 	}
 }
 
-func ConvertClaims(tx *pop.Connection, cs Claims) api.Claims {
-	claims := make(api.Claims, len(cs))
-	for i, c := range cs {
-		claims[i] = ConvertClaim(tx, c)
+func (c *Claims) ConvertToAPI(tx *pop.Connection) api.Claims {
+	claims := make(api.Claims, len(*c))
+	for i, cc := range *c {
+		claims[i] = cc.ConvertToAPI(tx)
 	}
 	return claims
 }

@@ -178,7 +178,7 @@ func (u *User) MyClaims(tx *pop.Connection) Claims {
 	return claims
 }
 
-func ConvertPolicyMember(tx *pop.Connection, u User) api.PolicyMember {
+func (u *User) ConvertToPolicyMember() api.PolicyMember {
 	return api.PolicyMember{
 		ID:            u.ID,
 		FirstName:     u.FirstName,
@@ -190,10 +190,10 @@ func ConvertPolicyMember(tx *pop.Connection, u User) api.PolicyMember {
 	}
 }
 
-func ConvertPolicyMembers(tx *pop.Connection, us Users) api.PolicyMembers {
-	members := make(api.PolicyMembers, len(us))
-	for i, u := range us {
-		members[i] = ConvertPolicyMember(tx, u)
+func (u *Users) ConvertToPolicyMembers() api.PolicyMembers {
+	members := make(api.PolicyMembers, len(*u))
+	for i, uu := range *u {
+		members[i] = uu.ConvertToPolicyMember()
 	}
 
 	return members
@@ -271,15 +271,15 @@ func (u *User) LoadPhotoFile(tx *pop.Connection) {
 	}
 }
 
-func ConvertUsers(tx *pop.Connection, in Users) api.Users {
-	out := make(api.Users, len(in))
-	for i := range in {
-		out[i] = ConvertUser(tx, in[i])
+func (u *Users) ConvertToAPI(tx *pop.Connection) api.Users {
+	out := make(api.Users, len(*u))
+	for i, uu := range *u {
+		out[i] = uu.ConvertToAPI(tx)
 	}
 	return out
 }
 
-func ConvertUser(tx *pop.Connection, u User) api.User {
+func (u *User) ConvertToAPI(tx *pop.Connection) api.User {
 	u.LoadPhotoFile(tx)
 
 	// TODO: provide more than one policy
@@ -301,7 +301,7 @@ func ConvertUser(tx *pop.Connection, u User) api.User {
 	}
 
 	if u.PhotoFile != nil {
-		f := convertFile(*u.PhotoFile)
+		f := u.PhotoFile.ConvertToAPI()
 		output.PhotoFile = &f
 	}
 

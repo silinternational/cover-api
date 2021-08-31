@@ -40,7 +40,7 @@ func policiesListAll(c buffalo.Context) error {
 		return reportError(c, err)
 	}
 
-	apiPolicies := models.ConvertPolicies(tx, policies)
+	apiPolicies := policies.ConvertToAPI(tx)
 
 	return renderOk(c, apiPolicies)
 }
@@ -51,7 +51,7 @@ func policiesListMine(c buffalo.Context) error {
 
 	user.LoadPolicies(tx, false)
 
-	apiPolicies := models.ConvertPolicies(tx, user.Policies)
+	apiPolicies := user.Policies.ConvertToAPI(tx)
 
 	return renderOk(c, apiPolicies)
 }
@@ -105,7 +105,7 @@ func policiesUpdate(c buffalo.Context) error {
 		return reportError(c, err)
 	}
 
-	return renderOk(c, models.ConvertPolicy(tx, *policy))
+	return renderOk(c, policy.ConvertToAPI(tx))
 }
 
 // swagger:operation GET /policies/{id}/members PolicyMembers PolicyMembersList
@@ -133,7 +133,7 @@ func policiesListMembers(c buffalo.Context) error {
 
 	policy.LoadMembers(tx, false)
 
-	return renderOk(c, models.ConvertPolicyMembers(tx, policy.Members))
+	return renderOk(c, policy.Members.ConvertToPolicyMembers())
 }
 
 // getReferencedPolicyFromCtx pulls the models.Policy resource from context that was put there
