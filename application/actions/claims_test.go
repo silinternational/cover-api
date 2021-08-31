@@ -949,7 +949,8 @@ func (as *ActionSuite) Test_ClaimsFilesAttach() {
 	policyCreator := fixtures.Policies[0].Members[0]
 	otherUser := fixtures.Policies[1].Members[0]
 	claim := fixtures.Claims[0]
-	fileID := models.CreateFileFixtures(as.DB, 1, policyCreator.ID).Files[0].ID
+	files := models.CreateFileFixtures(as.DB, 1, policyCreator.ID).Files
+	fileID := files[0].ID
 
 	tests := []struct {
 		name       string
@@ -965,7 +966,15 @@ func (as *ActionSuite) Test_ClaimsFilesAttach() {
 			claim:      claim,
 			request:    api.ClaimFileAttachInput{FileID: fileID},
 			wantStatus: http.StatusNotFound,
-			wantInBody: `"key":"ErrorNotAuthorized"`,
+			wantInBody: fmt.Sprintf(`"key":"%s"`, api.ErrorNotAuthorized),
+		},
+		{
+			name:       "bad input",
+			actor:      policyCreator,
+			claim:      claim,
+			request:    api.ClaimFileAttachInput{FileID: domain.GetUUID()},
+			wantStatus: http.StatusBadRequest,
+			wantInBody: fmt.Sprintf(`"key":"%s"`, api.ErrorForeignKeyViolation),
 		},
 		{
 			name:       "ok",

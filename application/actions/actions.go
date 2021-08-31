@@ -2,6 +2,7 @@ package actions
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"runtime"
@@ -38,7 +39,8 @@ func StrictBind(c buffalo.Context, dest interface{}) error {
 // reportError logs an error with details and renders the error with buffalo.Render.
 // If the HTTP status code provided is in the 300 family, buffalo.Redirect is used instead.
 func reportError(c buffalo.Context, err error) error {
-	appErr, ok := err.(*api.AppError)
+	var appErr *api.AppError
+	ok := errors.As(err, &appErr)
 	if !ok {
 		appErr = appErrorFromErr(err)
 	}
@@ -86,14 +88,6 @@ func reportErrorAndClearSession(c buffalo.Context, err error) error {
 }
 
 func appErrorFromErr(err error) *api.AppError {
-	terr, ok := err.(*api.AppError)
-	if ok {
-		return &api.AppError{
-			Key:      terr.Key,
-			DebugMsg: terr.Error(),
-		}
-	}
-
 	return &api.AppError{
 		HttpStatus: http.StatusInternalServerError,
 		Key:        api.ErrorUnknown,

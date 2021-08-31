@@ -11,3 +11,5 @@
   translation: Sorry, you are not allowed to perform that action
 - id: Error.ErrorValidation
   translation: There is a problem with the information provided, please check it and try again
+- id: Error.ErrorForeignKeyViolation
+  translation: The provided ID was not found in the system

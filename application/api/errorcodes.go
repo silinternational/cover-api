@@ -15,6 +15,7 @@ const (
 	ErrorCreateFailure            = ErrorKey("ErrorCreateFailure")
 	ErrorGenericInternalServer    = ErrorKey("ErrorGenericInternalServer")
 	ErrorFailedToConvertToAPIType = ErrorKey("ErrorFailedToConvertToAPIType")
+	ErrorForeignKeyViolation      = ErrorKey("ErrorForeignKeyViolation")
 	ErrorInvalidRequestBody       = ErrorKey("ErrorInvalidRequestBody")
 	ErrorMissingSessionKey        = ErrorKey("ErrorMissingSessionKey")
 	ErrorMustBeAValidUUID         = ErrorKey("ErrorMustBeAValidUUID")

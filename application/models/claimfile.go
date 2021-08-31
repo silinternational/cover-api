@@ -2,6 +2,7 @@ package models
 
 import (
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/gobuffalo/pop/v5"
@@ -32,7 +33,7 @@ func (c *ClaimFile) Validate(tx *pop.Connection) (*validate.Errors, error) {
 // Create stores the file and marks it as linked.
 func (c *ClaimFile) Create(tx *pop.Connection) error {
 	if err := create(tx, c); err != nil {
-		return errors.New("could not create new ClaimFile, " + err.Error())
+		return fmt.Errorf("could not create new ClaimFile, %w", err)
 	}
 
 	file := File{ID: c.FileID}
