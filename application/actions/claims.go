@@ -380,7 +380,7 @@ func claimsFilesAttach(c buffalo.Context) error {
 	}
 
 	claim := getReferencedClaimFromCtx(c)
-	claimFile, err := claim.AttachFile(models.Tx(c), input.FileID)
+	claimFile, err := claim.AttachFile(models.Tx(c), input)
 	if err != nil {
 		return reportError(c, err)
 	}
