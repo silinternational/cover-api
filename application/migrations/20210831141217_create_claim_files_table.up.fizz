@@ -1,0 +1,11 @@
+create_table("claim_files") {
+	t.Column("id", "uuid", {primary: true})
+	t.Column("claim_id", "uuid")
+	t.Column("file_id", "uuid")
+	t.Timestamps()
+
+	t.Index("file_id", {"unique": true})
+
+	t.ForeignKey("claim_id", {"claims": ["id"]}, {"on_delete": "cascade"})
+	t.ForeignKey("file_id", {"files": ["id"]}, {"on_delete": "cascade"})
+}

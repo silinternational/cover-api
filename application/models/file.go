@@ -102,7 +102,7 @@ func (f *File) Store(tx *pop.Connection) *FileUploadError {
 		e := FileUploadError{
 			HttpStatus: http.StatusInternalServerError,
 			ErrorCode:  api.ErrorUnableToStoreFile,
-			Message:    err.Error(),
+			Message:    fmt.Sprintf("error %s storing file: %+v", err, f),
 		}
 		return &e
 	}
@@ -110,11 +110,11 @@ func (f *File) Store(tx *pop.Connection) *FileUploadError {
 	f.URL = url.Url
 	f.URLExpiration = url.Expiration
 	f.Size = len(f.Content)
-	if err := f.Create(tx); err != nil {
+	if err = f.Create(tx); err != nil {
 		e := FileUploadError{
 			HttpStatus: http.StatusInternalServerError,
 			ErrorCode:  api.ErrorUnableToStoreFile,
-			Message:    err.Error(),
+			Message:    fmt.Sprintf("error %s creating file: %+v", err, f),
 		}
 		return &e
 	}

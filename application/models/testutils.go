@@ -362,6 +362,10 @@ func randStr(n int) string {
 }
 
 func DestroyAll() {
+	// delete all Files and ClaimFiles
+	var files Files
+	destroyTable(&files)
+
 	// delete all ClaimItems
 	var claimItems ClaimItems
 	destroyTable(&claimItems)
