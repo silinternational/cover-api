@@ -127,7 +127,6 @@ func findObject(payload events.Payload, object interface{}, listenerName string)
 			return findErr
 		}
 	}
-	domain.Logger.Printf("listener %s required %d retries with delay %d", listenerName, i-1, domain.Env.ListenerDelayMilliseconds)
 
 	if !foundObject {
 		err := fmt.Errorf("Failed to find object in %s, %s", listenerName, findErr)
