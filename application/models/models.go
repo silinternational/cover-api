@@ -152,6 +152,9 @@ func appErrorFromDB(err error, defaultKey api.ErrorKey) error {
 		case "23503":
 			appErr.Key = api.ErrorForeignKeyViolation
 			appErr.Category = api.CategoryUser
+		case "23505":
+			appErr.Key = api.ErrorUniqueKeyViolation
+			appErr.Category = api.CategoryUser
 		}
 	}
 

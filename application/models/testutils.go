@@ -27,6 +27,7 @@ type FixturesConfig struct {
 	ItemsPerPolicy      int
 	ClaimsPerPolicy     int
 	ClaimItemsPerClaim  int
+	ClaimFilesPerClaim  int
 	UsersPerPolicy      int
 	DependentsPerPolicy int
 }
@@ -92,7 +93,8 @@ func CreateFileFixtures(tx *pop.Connection, n int, createdByID uuid.UUID) Fixtur
 }
 
 // CreateItemFixtures generates any number of item records for testing
-// Uses FixturesConfig fields: NumberOfPolices, DependentsPerPolicy, UsersPerPolicy, ItemsPerPolicy
+// Uses FixturesConfig fields: NumberOfPolices, DependentsPerPolicy, UsersPerPolicy, ItemsPerPolicy, ClaimsPerPolicy,
+// ClaimItemsPerClaim, ClaimFilesPerClaim
 func CreateItemFixtures(tx *pop.Connection, config FixturesConfig) Fixtures {
 	fixtures := CreatePolicyFixtures(tx, config)
 	policies := fixtures.Policies
@@ -107,9 +109,11 @@ func CreateItemFixtures(tx *pop.Connection, config FixturesConfig) Fixtures {
 		}
 		policies[i].LoadItems(tx, false)
 
+		policies[i].LoadMembers(tx, false)
+
 		for k := 0; k < config.ClaimsPerPolicy; k++ {
 			idx := i*config.ClaimsPerPolicy + k
-			claims[idx] = createClaimFixture(tx, policies[i].ID, config)
+			claims[idx] = createClaimFixture(tx, policies[i], config)
 		}
 		policies[i].LoadClaims(tx, false)
 	}
@@ -157,9 +161,11 @@ func UpdateClaimStatus(tx *pop.Connection, claim Claim, status api.ClaimStatus) 
 	return claim
 }
 
-func createClaimFixture(tx *pop.Connection, policyID uuid.UUID, config FixturesConfig) Claim {
+// createClaimFixture generates a Claim, a number of ClaimItems, and a number of ClaimFiles
+// Uses FixturesConfig fields: ClaimItemsPerClaim, ClaimFilesPerClaim
+func createClaimFixture(tx *pop.Connection, policy Policy, config FixturesConfig) Claim {
 	claim := Claim{
-		PolicyID:         policyID,
+		PolicyID:         policy.ID,
 		EventDate:        time.Date(2020, 5, 1, 12, 0, 0, 0, time.UTC),
 		EventType:        api.ClaimEventTypeImpact,
 		EventDescription: randStr(25),
@@ -171,7 +177,7 @@ func createClaimFixture(tx *pop.Connection, policyID uuid.UUID, config FixturesC
 
 	claim.ClaimItems = make(ClaimItems, config.ClaimItemsPerClaim)
 	for i := range claim.ClaimItems {
-		item := createItemFixture(tx, policyID, icFixtures.ItemCategories[i].ID)
+		item := createItemFixture(tx, policy.ID, icFixtures.ItemCategories[i].ID)
 		claim.ClaimItems[i] = ClaimItem{
 			ID:              uuid.UUID{},
 			ClaimID:         claim.ID,
@@ -190,6 +196,16 @@ func createClaimFixture(tx *pop.Connection, policyID uuid.UUID, config FixturesC
 		}
 		MustCreate(tx, &claim.ClaimItems[i])
 	}
+
+	files := CreateFileFixtures(tx, config.ClaimFilesPerClaim, policy.Members[0].ID).Files
+	for _, file := range files {
+		if _, err := claim.AttachFile(tx, api.ClaimFileAttachInput{FileID: file.ID}); err != nil {
+			panic("failed to attach claim file, " + err.Error())
+		}
+	}
+
+	claim.LoadClaimItems(tx, true)
+	claim.LoadClaimFiles(tx, true)
 
 	return claim
 }

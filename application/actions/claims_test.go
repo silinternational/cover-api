@@ -943,14 +943,16 @@ func (as *ActionSuite) Test_ClaimsFilesAttach() {
 		UsersPerPolicy:     1,
 		ClaimsPerPolicy:    4,
 		ClaimItemsPerClaim: 1,
+		ClaimFilesPerClaim: 1,
 	}
 
 	fixtures := models.CreateItemFixtures(as.DB, fixConfig)
 	policyCreator := fixtures.Policies[0].Members[0]
 	otherUser := fixtures.Policies[1].Members[0]
 	claim := fixtures.Claims[0]
-	files := models.CreateFileFixtures(as.DB, 1, policyCreator.ID).Files
-	fileID := files[0].ID
+	newFileID := models.CreateFileFixtures(as.DB, 1, policyCreator.ID).Files[0].ID
+
+	existingFileID := fixtures.Claims[1].ClaimFiles[0].FileID
 
 	tests := []struct {
 		name       string
@@ -964,7 +966,7 @@ func (as *ActionSuite) Test_ClaimsFilesAttach() {
 			name:       "not allowed",
 			actor:      otherUser,
 			claim:      claim,
-			request:    api.ClaimFileAttachInput{FileID: fileID},
+			request:    api.ClaimFileAttachInput{FileID: newFileID},
 			wantStatus: http.StatusNotFound,
 			wantInBody: fmt.Sprintf(`"key":"%s"`, api.ErrorNotAuthorized),
 		},
@@ -977,10 +979,18 @@ func (as *ActionSuite) Test_ClaimsFilesAttach() {
 			wantInBody: fmt.Sprintf(`"key":"%s"`, api.ErrorForeignKeyViolation),
 		},
 		{
+			name:       "file linked",
+			actor:      policyCreator,
+			claim:      claim,
+			request:    api.ClaimFileAttachInput{FileID: existingFileID},
+			wantStatus: http.StatusBadRequest,
+			wantInBody: fmt.Sprintf(`"key":"%s"`, api.ErrorUniqueKeyViolation),
+		},
+		{
 			name:       "ok",
 			actor:      policyCreator,
 			claim:      claim,
-			request:    api.ClaimFileAttachInput{FileID: fileID},
+			request:    api.ClaimFileAttachInput{FileID: newFileID},
 			wantStatus: http.StatusOK,
 			wantInBody: fmt.Sprintf(`"claim_id":"%s"`, claim.ID),
 		},

@@ -61,6 +61,7 @@ type Claim struct {
 
 	Policy     Policy     `belongs_to:"policies" validate:"-"`
 	ClaimItems ClaimItems `has_many:"claim_items" validate:"-"`
+	ClaimFiles ClaimFiles `has_many:"claim_files" validate:"-"`
 	Reviewer   User       `belongs_to:"users" validate:"-"`
 }
 
@@ -367,6 +368,14 @@ func (c *Claim) LoadReviewer(tx *pop.Connection, reload bool) {
 	if c.ReviewerID.Valid && (c.Reviewer.ID == uuid.Nil || reload) {
 		if err := tx.Load(c, "Reviewer"); err != nil {
 			panic("database error loading Claim.Reviewer, " + err.Error())
+		}
+	}
+}
+
+func (c *Claim) LoadClaimFiles(tx *pop.Connection, reload bool) {
+	if len(c.ClaimFiles) == 0 || reload {
+		if err := tx.Load(c, "ClaimFiles"); err != nil {
+			panic("database error loading Claim.ClaimFiles, " + err.Error())
 		}
 	}
 }

@@ -24,6 +24,7 @@ const (
 	ErrorQueryFailure             = ErrorKey("ErrorQueryFailure")
 	ErrorSaveFailure              = ErrorKey("ErrorSaveFailure")
 	ErrorTransactionNotFound      = ErrorKey("ErrorTransactionNotFound")
+	ErrorUniqueKeyViolation       = ErrorKey("ErrorUniqueKeyViolation")
 	ErrorUnknown                  = ErrorKey("ErrorUnknown")
 	ErrorUpdateFailure            = ErrorKey("ErrorUpdateFailure")
 	ErrorValidation               = ErrorKey("ErrorValidation")
