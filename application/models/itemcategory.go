@@ -68,17 +68,17 @@ func (i *ItemCategory) FindByID(tx *pop.Connection, id uuid.UUID) error {
 	return nil
 }
 
-func ConvertItemCategory(tx *pop.Connection, ic ItemCategory) api.ItemCategory {
-	ic.LoadRiskCategory(tx)
+func (i *ItemCategory) ConvertToAPI(tx *pop.Connection) api.ItemCategory {
+	i.LoadRiskCategory(tx)
 	return api.ItemCategory{
-		ID:             ic.ID,
-		Name:           ic.Name,
-		HelpText:       ic.HelpText,
-		Status:         ic.Status,
-		AutoApproveMax: ic.AutoApproveMax,
-		RiskCategory:   ConvertRiskCategory(ic.RiskCategory),
-		CreatedAt:      ic.CreatedAt,
-		UpdatedAt:      ic.UpdatedAt,
+		ID:             i.ID,
+		Name:           i.Name,
+		HelpText:       i.HelpText,
+		Status:         i.Status,
+		AutoApproveMax: i.AutoApproveMax,
+		RiskCategory:   i.RiskCategory.ConvertToAPI(),
+		CreatedAt:      i.CreatedAt,
+		UpdatedAt:      i.UpdatedAt,
 	}
 }
 
@@ -88,10 +88,10 @@ func (i *ItemCategory) LoadRiskCategory(tx *pop.Connection) {
 	}
 }
 
-func ConvertItemCategories(tx *pop.Connection, ics ItemCategories) api.ItemCategories {
-	cats := make(api.ItemCategories, len(ics))
-	for i, ic := range ics {
-		cats[i] = ConvertItemCategory(tx, ic)
+func (i *ItemCategories) ConvertToAPI(tx *pop.Connection) api.ItemCategories {
+	cats := make(api.ItemCategories, len(*i))
+	for j, ii := range *i {
+		cats[j] = ii.ConvertToAPI(tx)
 	}
 	return cats
 }

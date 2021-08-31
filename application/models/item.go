@@ -323,33 +323,33 @@ func (i *Item) Load(tx *pop.Connection) {
 	}
 }
 
-func ConvertItem(tx *pop.Connection, item Item) api.Item {
-	item.Load(tx)
+func (i *Item) ConvertToAPI(tx *pop.Connection) api.Item {
+	i.Load(tx)
 	return api.Item{
-		ID:                item.ID,
-		Name:              item.Name,
-		Category:          ConvertItemCategory(tx, item.Category),
-		RiskCategory:      ConvertRiskCategory(item.RiskCategory),
-		InStorage:         item.InStorage,
-		Country:           item.Country,
-		Description:       item.Description,
-		PolicyID:          item.PolicyID,
-		Make:              item.Make,
-		Model:             item.Model,
-		SerialNumber:      item.SerialNumber,
-		CoverageAmount:    item.CoverageAmount,
-		PurchaseDate:      item.PurchaseDate.Format(domain.DateFormat),
-		CoverageStatus:    item.CoverageStatus,
-		CoverageStartDate: item.CoverageStartDate.Format(domain.DateFormat),
-		CreatedAt:         item.CreatedAt,
-		UpdatedAt:         item.UpdatedAt,
+		ID:                i.ID,
+		Name:              i.Name,
+		Category:          i.Category.ConvertToAPI(tx),
+		RiskCategory:      i.RiskCategory.ConvertToAPI(),
+		InStorage:         i.InStorage,
+		Country:           i.Country,
+		Description:       i.Description,
+		PolicyID:          i.PolicyID,
+		Make:              i.Make,
+		Model:             i.Model,
+		SerialNumber:      i.SerialNumber,
+		CoverageAmount:    i.CoverageAmount,
+		PurchaseDate:      i.PurchaseDate.Format(domain.DateFormat),
+		CoverageStatus:    i.CoverageStatus,
+		CoverageStartDate: i.CoverageStartDate.Format(domain.DateFormat),
+		CreatedAt:         i.CreatedAt,
+		UpdatedAt:         i.UpdatedAt,
 	}
 }
 
-func ConvertItems(tx *pop.Connection, items Items) api.Items {
-	apiItems := make(api.Items, len(items))
-	for i, p := range items {
-		apiItems[i] = ConvertItem(tx, p)
+func (i *Items) ConvertToAPI(tx *pop.Connection) api.Items {
+	apiItems := make(api.Items, len(*i))
+	for j, ii := range *i {
+		apiItems[j] = ii.ConvertToAPI(tx)
 	}
 
 	return apiItems

@@ -29,7 +29,7 @@ func itemCategoriesList(c buffalo.Context) error {
 		return reportError(c, err)
 	}
 
-	apiCats := models.ConvertItemCategories(tx, itemCategories)
+	apiCats := itemCategories.ConvertToAPI(tx)
 
 	return renderOk(c, apiCats)
 }
