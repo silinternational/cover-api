@@ -1,6 +1,7 @@
 package listeners
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
@@ -29,6 +30,30 @@ var apiListeners = map[string][]apiListener{
 			listener: createUserPolicy,
 		},
 	},
+	domain.EventApiItemSubmitted: {
+		{
+			name:     "item-submitted",
+			listener: itemSubmitted,
+		},
+	},
+	domain.EventApiItemRevision: {
+		{
+			name:     "item-revision",
+			listener: itemRevision,
+		},
+	},
+	domain.EventApiItemApproved: {
+		{
+			name:     "item-approved",
+			listener: itemApproved,
+		},
+	},
+	domain.EventApiItemDenied: {
+		{
+			name:     "item-denied",
+			listener: itemDenied,
+		},
+	},
 }
 
 // RegisterListeners registers all the listeners to be used by the app
@@ -48,36 +73,15 @@ func createUserPolicy(e events.Event) {
 		return
 	}
 
-	defer panicRecover("createUserPolicy")
+	defer panicRecover(e.Kind)
 
-	userID, err := getID(e.Payload)
-	if err != nil {
-		domain.ErrLogger.Printf("Failed to get User ID from event payload, %s", err)
-		return
-	}
-
-	foundUser := false
 	var user models.User
-	var findErr error
-
-	i := 1
-	for ; i <= domain.Env.ListenerMaxRetries; i++ {
-		findErr = models.DB.Find(&user, userID)
-		if findErr == nil {
-			foundUser = true
-			break
-		}
-		time.Sleep(getDelayDuration(i * i))
-	}
-	domain.Logger.Printf("listener createUserPolicy required %d retries with delay %d", i-1, domain.Env.ListenerDelayMilliseconds)
-
-	if !foundUser {
-		domain.ErrLogger.Printf("Failed to find User in createUserPolicy, %s", findErr)
+	if err := findObject(e.Payload, &user, e.Kind); err != nil {
 		return
 	}
 
 	if err := user.CreateInitialPolicy(nil); err != nil {
-		domain.ErrLogger.Printf("Failed to create initial policy in createUserPolicy, %s", err)
+		domain.ErrLogger.Printf("Failed to create initial policy in %s, %s", e.Kind, err)
 		return
 	}
 }
@@ -98,6 +102,39 @@ func getID(p events.Payload) (uuid.UUID, error) {
 	default:
 		return uuid.UUID{}, fmt.Errorf("id not a valid type: %T", id)
 	}
+}
+
+func findObject(payload events.Payload, object interface{}, listenerName string) error {
+	id, err := getID(payload)
+	if err != nil {
+		err := errors.New("Failed to get object ID from event payload: " + err.Error())
+		domain.ErrLogger.Printf(err.Error())
+		return err
+	}
+
+	foundObject := false
+	var findErr error
+
+	i := 1
+	for ; i <= domain.Env.ListenerMaxRetries; i++ {
+		findErr = models.DB.Find(object, id)
+		if findErr == nil {
+			foundObject = true
+			break
+		}
+		time.Sleep(getDelayDuration(i * i))
+		if i > 3 {
+			return findErr
+		}
+	}
+	domain.Logger.Printf("listener %s required %d retries with delay %d", listenerName, i-1, domain.Env.ListenerDelayMilliseconds)
+
+	if !foundObject {
+		err := fmt.Errorf("Failed to find object in %s, %s", listenerName, findErr)
+		domain.ErrLogger.Printf("Failed to find object in %s, %s", listenerName, findErr)
+		return err
+	}
+	return nil
 }
 
 func panicRecover(name string) {

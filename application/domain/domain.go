@@ -92,7 +92,11 @@ const (
 
 // Event Kinds
 const (
-	EventApiUserCreated = "api:user:created"
+	EventApiUserCreated   = "api:user:created"
+	EventApiItemSubmitted = "api:item:submitted"
+	EventApiItemRevision  = "api:item:revision"
+	EventApiItemApproved  = "api:item:approved"
+	EventApiItemDenied    = "api:item:denied"
 )
 
 // redirect url for after logout
