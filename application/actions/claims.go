@@ -266,7 +266,7 @@ func claimsPreapprove(c buffalo.Context) error {
 //     description: Claim in focus
 //     schema:
 //       "$ref": "#/definitions/Claim"
-func claimsReceipt(c buffalo.Context) error {
+func claimsRequestReceipt(c buffalo.Context) error {
 	tx := models.Tx(c)
 	claim := getReferencedClaimFromCtx(c)
 
