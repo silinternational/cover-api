@@ -7,6 +7,8 @@ import (
 	"github.com/gobuffalo/pop/v5"
 	"github.com/gobuffalo/validate/v3"
 	"github.com/gofrs/uuid"
+
+	"github.com/silinternational/cover-api/api"
 )
 
 type ClaimFile struct {
@@ -39,4 +41,15 @@ func (c *ClaimFile) Create(tx *pop.Connection) error {
 	}
 
 	return nil
+}
+
+// ConvertToAPI converts a ClaimFile to api.ClaimFile
+func (c *ClaimFile) ConvertToAPI() api.ClaimFile {
+	return api.ClaimFile{
+		ID:        c.ID,
+		ClaimID:   c.ClaimID,
+		FileID:    c.FileID,
+		CreatedAt: c.CreatedAt,
+		UpdatedAt: c.UpdatedAt,
+	}
 }

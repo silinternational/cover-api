@@ -2,6 +2,7 @@ package models
 
 import (
 	"testing"
+	"time"
 
 	"github.com/silinternational/cover-api/domain"
 )
@@ -92,4 +93,27 @@ func (ms *ModelSuite) TestClaimFile_Create() {
 				"new ClaimFile not found in database")
 		})
 	}
+}
+
+func (ms *ModelSuite) TestClaimFile_ConvertToAPI() {
+	id := domain.GetUUID()
+	claimID := domain.GetUUID()
+	fileID := domain.GetUUID()
+	now := time.Now()
+	createdAt := now.Add(-1 * time.Hour)
+	c := &ClaimFile{
+		ID:        id,
+		ClaimID:   claimID,
+		FileID:    fileID,
+		CreatedAt: createdAt,
+		UpdatedAt: now,
+	}
+
+	got := c.ConvertToAPI()
+
+	ms.Equal(id, got.ID)
+	ms.Equal(claimID, got.ClaimID)
+	ms.Equal(fileID, got.FileID)
+	ms.Equal(createdAt, got.CreatedAt)
+	ms.Equal(now, got.UpdatedAt)
 }
