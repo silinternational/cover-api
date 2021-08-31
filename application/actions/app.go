@@ -53,8 +53,8 @@ const idRegex = `/{id:[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-4[a-fA-F0-9]{3}-[8|9|aA|bB][
 
 const (
 	claimsPath   = "/" + domain.TypeClaim
-	itemsPath    = "/" + domain.TypeItem
 	filesPath    = "/" + domain.TypeFile
+	itemsPath    = "/" + domain.TypeItem
 	policiesPath = "/" + domain.TypePolicy
 )
 
