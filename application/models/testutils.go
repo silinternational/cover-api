@@ -109,8 +109,6 @@ func CreateItemFixtures(tx *pop.Connection, config FixturesConfig) Fixtures {
 		}
 		policies[i].LoadItems(tx, false)
 
-		policies[i].LoadMembers(tx, false)
-
 		for k := 0; k < config.ClaimsPerPolicy; k++ {
 			idx := i*config.ClaimsPerPolicy + k
 			claims[idx] = createClaimFixture(tx, policies[i], config)
@@ -197,7 +195,9 @@ func createClaimFixture(tx *pop.Connection, policy Policy, config FixturesConfig
 		MustCreate(tx, &claim.ClaimItems[i])
 	}
 
-	files := CreateFileFixtures(tx, config.ClaimFilesPerClaim, policy.Members[0].ID).Files
+	policyCopy := policy
+	policyCopy.LoadMembers(tx, false)
+	files := CreateFileFixtures(tx, config.ClaimFilesPerClaim, policyCopy.Members[0].ID).Files
 	for _, file := range files {
 		if _, err := claim.AttachFile(tx, api.ClaimFileAttachInput{FileID: file.ID}); err != nil {
 			panic("failed to attach claim file, " + err.Error())
@@ -271,6 +271,13 @@ func CreateUserFixtures(tx *pop.Connection, n int) Fixtures {
 // CreatePolicyFixtures generates any number of policy records and associated policy users
 // Uses FixturesConfig fields: NumberOfPolicies, DependentsPerPolicy, UsersPerPolicy
 func CreatePolicyFixtures(tx *pop.Connection, config FixturesConfig) Fixtures {
+	if config.UsersPerPolicy < 1 {
+		config.UsersPerPolicy = 1
+	}
+	if config.ItemsPerPolicy < 1 {
+		config.ItemsPerPolicy = 1
+	}
+
 	var policyUsers PolicyUsers
 	var policyDependents PolicyDependents
 	var users Users
