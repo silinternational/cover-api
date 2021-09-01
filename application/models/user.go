@@ -86,6 +86,10 @@ func (u *User) FindByID(tx *pop.Connection, id uuid.UUID) error {
 	return tx.Find(u, id)
 }
 
+func (u *User) FindByEmail(tx *pop.Connection, email string) error {
+	return tx.Where("email = ?", email).First(u)
+}
+
 func (u *User) FindByStaffID(tx *pop.Connection, id string) error {
 	return tx.Where("staff_id = ?", id).First(u)
 }
@@ -109,11 +113,19 @@ func (u *User) IsAdmin() bool {
 
 func (u *User) FindOrCreateFromAuthUser(tx *pop.Connection, authUser *auth.User) error {
 	isNewUser := false
+
+	// Try finding user by StaffID first and otherwise by Email
 	if err := u.FindByStaffID(tx, authUser.StaffID); err != nil {
 		if domain.IsOtherThanNoRows(err) {
 			return err
 		}
-		isNewUser = true
+
+		if err := u.FindByEmail(tx, authUser.Email); err != nil {
+			if domain.IsOtherThanNoRows(err) {
+				return err
+			}
+			isNewUser = true
+		}
 	}
 
 	// update attributes from authUser
