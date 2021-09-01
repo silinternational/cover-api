@@ -17,6 +17,8 @@ type ClaimFile struct {
 	FileID    uuid.UUID `db:"file_id" validate:"required"`
 	CreatedAt time.Time `db:"created_at"`
 	UpdatedAt time.Time `db:"updated_at"`
+
+	File File `belongs_to:"files" validate:"-"`
 }
 
 type ClaimFiles []ClaimFile
@@ -46,12 +48,35 @@ func (c *ClaimFile) Create(tx *pop.Connection) error {
 }
 
 // ConvertToAPI converts a ClaimFile to api.ClaimFile
-func (c *ClaimFile) ConvertToAPI() api.ClaimFile {
+func (c *ClaimFiles) ConvertToAPI(tx *pop.Connection) []api.ClaimFile {
+	claims := make([]api.ClaimFile, len(*c))
+	for i, cc := range *c {
+		claims[i] = cc.ConvertToAPI(tx)
+	}
+	return claims
+}
+
+// ConvertToAPI converts a ClaimFile to api.ClaimFile
+func (c *ClaimFile) ConvertToAPI(tx *pop.Connection) api.ClaimFile {
+	c.LoadFile(tx, true)
+
 	return api.ClaimFile{
 		ID:        c.ID,
 		ClaimID:   c.ClaimID,
 		FileID:    c.FileID,
+		File:      c.File.ConvertToAPI(),
 		CreatedAt: c.CreatedAt,
 		UpdatedAt: c.UpdatedAt,
+	}
+}
+
+func (c *ClaimFile) LoadFile(tx *pop.Connection, reload bool) {
+	if c.File.ID == uuid.Nil || reload {
+		if err := tx.Load(c, "File"); err != nil {
+			panic("database error loading Claim.File, " + err.Error())
+		}
+	}
+	if err := c.File.RefreshURL(tx); err != nil {
+		panic("failed to refresh Claim.File URL, " + err.Error())
 	}
 }

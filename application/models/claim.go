@@ -445,6 +445,7 @@ func (c *Claim) LoadClaimFiles(tx *pop.Connection, reload bool) {
 
 func (c *Claim) ConvertToAPI(tx *pop.Connection) api.Claim {
 	c.LoadClaimItems(tx, true)
+	c.LoadClaimFiles(tx, true)
 
 	return api.Claim{
 		ID:               c.ID,
@@ -458,6 +459,7 @@ func (c *Claim) ConvertToAPI(tx *pop.Connection) api.Claim {
 		PaymentDate:      c.PaymentDate,
 		TotalPayout:      c.TotalPayout,
 		Items:            c.ClaimItems.ConvertToAPI(tx),
+		Files:            c.ClaimFiles.ConvertToAPI(tx),
 	}
 }
 

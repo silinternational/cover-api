@@ -113,6 +113,9 @@ type Claim struct {
 
 	// list of items included in claim
 	Items ClaimItems `json:"claim_items"`
+
+	// list of files attached to the claim
+	Files []ClaimFile `json:"claim_files"`
 }
 
 // swagger:model
@@ -163,4 +166,7 @@ type ClaimFile struct {
 	//
 	// swagger:strfmt date-time
 	UpdatedAt time.Time `json:"updated_at"`
+
+	// file object
+	File File `json:"file"`
 }
