@@ -12,6 +12,7 @@ import (
 
 	"github.com/silinternational/cover-api/api"
 	"github.com/silinternational/cover-api/domain"
+	"github.com/silinternational/cover-api/models"
 )
 
 var r *render.Engine
@@ -121,5 +122,11 @@ func GetFunctionName(skip int) string {
 }
 
 func renderOk(c buffalo.Context, v interface{}) error {
-	return c.Render(http.StatusOK, r.JSON(v))
+	convertable, ok := v.(models.Convertable)
+	if ok {
+		return c.Render(http.StatusOK, r.JSON(convertable.ConvertToAPI(models.Tx(c))))
+	}
+
+	// Return an error to protect against rendering model data directly
+	return c.Render(http.StatusInternalServerError, nil)
 }

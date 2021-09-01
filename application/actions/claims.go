@@ -1,8 +1,6 @@
 package actions
 
 import (
-	"net/http"
-
 	"github.com/gobuffalo/buffalo"
 
 	"github.com/silinternational/cover-api/api"
@@ -35,20 +33,18 @@ func claimsList(c buffalo.Context) error {
 }
 
 func claimsListAll(c buffalo.Context) error {
-	tx := models.Tx(c)
 	var claims models.Claims
 	if err := models.Tx(c).All(&claims); err != nil {
 		return reportError(c, err)
 	}
 
-	return renderOk(c, claims.ConvertToAPI(tx))
+	return renderOk(c, &claims)
 }
 
 func claimsListMine(c buffalo.Context) error {
-	tx := models.Tx(c)
 	currentUser := models.CurrentUser(c)
 	claims := currentUser.MyClaims(models.Tx(c))
-	return renderOk(c, claims.ConvertToAPI(tx))
+	return renderOk(c, &claims)
 }
 
 // swagger:operation GET /claims/{id} Claims ClaimsView
@@ -69,9 +65,8 @@ func claimsListMine(c buffalo.Context) error {
 //     schema:
 //       "$ref": "#/definitions/Claim"
 func claimsView(c buffalo.Context) error {
-	tx := models.Tx(c)
 	claim := getReferencedClaimFromCtx(c)
-	return renderOk(c, claim.ConvertToAPI(tx))
+	return renderOk(c, claim)
 }
 
 // swagger:operation PUT /claims/{id} Claims ClaimsUpdate
@@ -98,7 +93,6 @@ func claimsView(c buffalo.Context) error {
 //     schema:
 //       "$ref": "#/definitions/Claim"
 func claimsUpdate(c buffalo.Context) error {
-	tx := models.Tx(c)
 	claim := getReferencedClaimFromCtx(c)
 
 	var input api.ClaimUpdateInput
@@ -117,7 +111,7 @@ func claimsUpdate(c buffalo.Context) error {
 		return reportError(c, err)
 	}
 
-	return renderOk(c, claim.ConvertToAPI(tx))
+	return renderOk(c, claim)
 }
 
 // swagger:operation POST /policies/{id}/claims Claims ClaimsCreate
@@ -157,7 +151,7 @@ func claimsCreate(c buffalo.Context) error {
 		return reportError(c, err)
 	}
 
-	return renderOk(c, dbClaim.ConvertToAPI(tx))
+	return renderOk(c, &dbClaim)
 }
 
 // swagger:operation POST /claims/{id}/submit Claims ClaimsSubmit
@@ -186,8 +180,7 @@ func claimsSubmit(c buffalo.Context) error {
 		return reportError(c, err)
 	}
 
-	output := claim.ConvertToAPI(tx)
-	return c.Render(http.StatusOK, r.JSON(output))
+	return renderOk(c, claim)
 }
 
 // swagger:operation POST /claims/{id}/revision Claims ClaimsRequestRevision
@@ -215,8 +208,7 @@ func claimsRequestRevision(c buffalo.Context) error {
 		return reportError(c, err)
 	}
 
-	output := claim.ConvertToAPI(tx)
-	return c.Render(http.StatusOK, r.JSON(output))
+	return renderOk(c, claim)
 }
 
 // swagger:operation POST /claims/{id}/preapprove Claims ClaimsPreapprove
@@ -244,8 +236,7 @@ func claimsPreapprove(c buffalo.Context) error {
 		return reportError(c, err)
 	}
 
-	output := claim.ConvertToAPI(tx)
-	return c.Render(http.StatusOK, r.JSON(output))
+	return renderOk(c, claim)
 }
 
 // swagger:operation POST /claims/{id}/receipt Claims ClaimsFixReceipt
@@ -274,8 +265,7 @@ func claimsRequestReceipt(c buffalo.Context) error {
 		return reportError(c, err)
 	}
 
-	output := claim.ConvertToAPI(tx)
-	return c.Render(http.StatusOK, r.JSON(output))
+	return renderOk(c, claim)
 }
 
 // swagger:operation POST /claims/{id}/approve Claims ClaimsApprove
@@ -305,8 +295,7 @@ func claimsApprove(c buffalo.Context) error {
 		return reportError(c, err)
 	}
 
-	output := claim.ConvertToAPI(tx)
-	return c.Render(http.StatusOK, r.JSON(output))
+	return renderOk(c, claim)
 }
 
 // swagger:operation POST /claims/{id}/deny Claims ClaimsDeny
@@ -336,8 +325,7 @@ func claimsDeny(c buffalo.Context) error {
 		return reportError(c, err)
 	}
 
-	output := claim.ConvertToAPI(tx)
-	return c.Render(http.StatusOK, r.JSON(output))
+	return renderOk(c, claim)
 }
 
 // swagger:operation POST /claims/{id}/items Claims ClaimsItemsCreate
@@ -377,7 +365,7 @@ func claimsItemsCreate(c buffalo.Context) error {
 		return reportError(c, err)
 	}
 
-	return renderOk(c, claimItem.ConvertToAPI(tx))
+	return renderOk(c, &claimItem)
 }
 
 // swagger:operation POST /claims/{id}/files Claims ClaimsFileAttach
@@ -417,7 +405,7 @@ func claimsFilesAttach(c buffalo.Context) error {
 		return reportError(c, err)
 	}
 
-	return renderOk(c, claimFile.ConvertToAPI(tx))
+	return renderOk(c, &claimFile)
 }
 
 // getReferencedClaimFromCtx pulls the models.Claim resource from context that was put there

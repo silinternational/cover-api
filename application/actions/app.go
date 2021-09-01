@@ -111,8 +111,8 @@ func App() *buffalo.App {
 
 		//  Add authentication and authorization
 		app.Use(AuthN, AuthZ)
-		app.Middleware.Skip(AuthN, HomeHandler, statusHandler)
-		app.Middleware.Skip(AuthZ, HomeHandler, statusHandler, uploadHandler, itemCategoriesList)
+		app.Middleware.Skip(AuthN, statusHandler)
+		app.Middleware.Skip(AuthZ, statusHandler, uploadHandler, itemCategoriesList)
 
 		// Set the request content type to JSON
 		app.Use(contenttype.Set("application/json"))
@@ -120,7 +120,6 @@ func App() *buffalo.App {
 		// Wraps each request in a transaction.
 		app.Use(popmw.Transaction(models.DB))
 
-		app.GET("/", HomeHandler)
 		app.GET("/status", statusHandler)
 		app.GET("/item-categories", itemCategoriesList)
 

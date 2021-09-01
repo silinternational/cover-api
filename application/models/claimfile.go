@@ -47,24 +47,25 @@ func (c *ClaimFile) Create(tx *pop.Connection) error {
 	return nil
 }
 
-// ConvertToAPI converts a ClaimFile to api.ClaimFile
-func (c *ClaimFiles) ConvertToAPI(tx *pop.Connection) []api.ClaimFile {
+// ConvertToAPI converts ClaimFiles to []api.ClaimFile
+func (c *ClaimFiles) ConvertToAPI(tx *pop.Connection) interface{} {
 	claims := make([]api.ClaimFile, len(*c))
 	for i, cc := range *c {
-		claims[i] = cc.ConvertToAPI(tx)
+		claims[i] = cc.ConvertToAPI(tx).(api.ClaimFile)
 	}
 	return claims
 }
 
 // ConvertToAPI converts a ClaimFile to api.ClaimFile
-func (c *ClaimFile) ConvertToAPI(tx *pop.Connection) api.ClaimFile {
+func (c *ClaimFile) ConvertToAPI(tx *pop.Connection) interface{} {
 	c.LoadFile(tx, true)
 
+	file := c.File.ConvertToAPI(tx).(api.File)
 	return api.ClaimFile{
 		ID:        c.ID,
 		ClaimID:   c.ClaimID,
 		FileID:    c.FileID,
-		File:      c.File.ConvertToAPI(tx),
+		File:      file,
 		CreatedAt: c.CreatedAt,
 		UpdatedAt: c.UpdatedAt,
 	}

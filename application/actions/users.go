@@ -31,7 +31,7 @@ func usersList(c buffalo.Context) error {
 		}
 		return reportError(c, api.NewAppError(err, api.ErrorNoRows, api.CategoryNotFound))
 	}
-	return renderOk(c, users.ConvertToAPI(tx))
+	return renderOk(c, &users)
 }
 
 // swagger:operation GET /users/{id} Users UsersView
@@ -75,7 +75,7 @@ func usersMe(c buffalo.Context) error {
 func renderUser(c buffalo.Context, user models.User) error {
 	tx := models.Tx(c)
 	user.LoadPolicies(tx, false)
-	return renderOk(c, user.ConvertToAPI(tx))
+	return renderOk(c, &user)
 }
 
 // getReferencedUserFromCtx pulls the models.User resource from context that was put there

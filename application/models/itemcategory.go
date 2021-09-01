@@ -68,7 +68,7 @@ func (i *ItemCategory) FindByID(tx *pop.Connection, id uuid.UUID) error {
 	return nil
 }
 
-func (i *ItemCategory) ConvertToAPI(tx *pop.Connection) api.ItemCategory {
+func (i *ItemCategory) ConvertToAPI(tx *pop.Connection) interface{} {
 	i.LoadRiskCategory(tx)
 	return api.ItemCategory{
 		ID:             i.ID,
@@ -76,7 +76,7 @@ func (i *ItemCategory) ConvertToAPI(tx *pop.Connection) api.ItemCategory {
 		HelpText:       i.HelpText,
 		Status:         i.Status,
 		AutoApproveMax: i.AutoApproveMax,
-		RiskCategory:   i.RiskCategory.ConvertToAPI(),
+		RiskCategory:   i.RiskCategory.ConvertToAPI(tx).(api.RiskCategory),
 		CreatedAt:      i.CreatedAt,
 		UpdatedAt:      i.UpdatedAt,
 	}
@@ -88,10 +88,10 @@ func (i *ItemCategory) LoadRiskCategory(tx *pop.Connection) {
 	}
 }
 
-func (i *ItemCategories) ConvertToAPI(tx *pop.Connection) api.ItemCategories {
+func (i *ItemCategories) ConvertToAPI(tx *pop.Connection) interface{} {
 	cats := make(api.ItemCategories, len(*i))
 	for j, ii := range *i {
-		cats[j] = ii.ConvertToAPI(tx)
+		cats[j] = ii.ConvertToAPI(tx).(api.ItemCategory)
 	}
 	return cats
 }

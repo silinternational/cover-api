@@ -71,7 +71,7 @@ func (p *PolicyDependent) IsActorAllowedTo(tx *pop.Connection, actor User, perm 
 	return false
 }
 
-func (p *PolicyDependent) ConvertToAPI() api.PolicyDependent {
+func (p *PolicyDependent) ConvertToAPI(tx *pop.Connection) interface{} {
 	return api.PolicyDependent{
 		ID:             p.ID,
 		Name:           p.Name,
@@ -81,10 +81,10 @@ func (p *PolicyDependent) ConvertToAPI() api.PolicyDependent {
 	}
 }
 
-func (p *PolicyDependents) ConvertToAPI() api.PolicyDependents {
+func (p *PolicyDependents) ConvertToAPI(tx *pop.Connection) interface{} {
 	deps := make(api.PolicyDependents, len(*p))
 	for i, pp := range *p {
-		deps[i] = pp.ConvertToAPI()
+		deps[i] = pp.ConvertToAPI(tx).(api.PolicyDependent)
 	}
 	return deps
 }

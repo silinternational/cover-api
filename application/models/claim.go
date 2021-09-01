@@ -443,7 +443,7 @@ func (c *Claim) LoadClaimFiles(tx *pop.Connection, reload bool) {
 	}
 }
 
-func (c *Claim) ConvertToAPI(tx *pop.Connection) api.Claim {
+func (c *Claim) ConvertToAPI(tx *pop.Connection) interface{} {
 	c.LoadClaimItems(tx, true)
 	c.LoadClaimFiles(tx, true)
 
@@ -458,15 +458,15 @@ func (c *Claim) ConvertToAPI(tx *pop.Connection) api.Claim {
 		ReviewerID:       c.ReviewerID,
 		PaymentDate:      c.PaymentDate,
 		TotalPayout:      c.TotalPayout,
-		Items:            c.ClaimItems.ConvertToAPI(tx),
-		Files:            c.ClaimFiles.ConvertToAPI(tx),
+		Items:            c.ClaimItems.ConvertToAPI(tx).(api.ClaimItems),
+		Files:            c.ClaimFiles.ConvertToAPI(tx).([]api.ClaimFile),
 	}
 }
 
-func (c *Claims) ConvertToAPI(tx *pop.Connection) api.Claims {
+func (c *Claims) ConvertToAPI(tx *pop.Connection) interface{} {
 	claims := make(api.Claims, len(*c))
 	for i, cc := range *c {
-		claims[i] = cc.ConvertToAPI(tx)
+		claims[i] = cc.ConvertToAPI(tx).(api.Claim)
 	}
 	return claims
 }

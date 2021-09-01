@@ -4,6 +4,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/silinternational/cover-api/api"
 	"github.com/silinternational/cover-api/domain"
 )
 
@@ -110,7 +111,7 @@ func (ms *ModelSuite) TestClaimFile_ConvertToAPI() {
 		UpdatedAt: now,
 	}
 
-	got := c.ConvertToAPI(ms.DB)
+	got := c.ConvertToAPI(ms.DB).(api.ClaimFile)
 
 	ms.Equal(id, got.ID)
 	ms.Equal(claimID, got.ClaimID)

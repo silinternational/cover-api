@@ -372,13 +372,13 @@ func (i *Item) Load(tx *pop.Connection) {
 	}
 }
 
-func (i *Item) ConvertToAPI(tx *pop.Connection) api.Item {
+func (i *Item) ConvertToAPI(tx *pop.Connection) interface{} {
 	i.Load(tx)
 	return api.Item{
 		ID:                i.ID,
 		Name:              i.Name,
-		Category:          i.Category.ConvertToAPI(tx),
-		RiskCategory:      i.RiskCategory.ConvertToAPI(),
+		Category:          i.Category.ConvertToAPI(tx).(api.ItemCategory),
+		RiskCategory:      i.RiskCategory.ConvertToAPI(tx).(api.RiskCategory),
 		InStorage:         i.InStorage,
 		Country:           i.Country,
 		Description:       i.Description,
@@ -395,10 +395,10 @@ func (i *Item) ConvertToAPI(tx *pop.Connection) api.Item {
 	}
 }
 
-func (i *Items) ConvertToAPI(tx *pop.Connection) api.Items {
+func (i *Items) ConvertToAPI(tx *pop.Connection) interface{} {
 	apiItems := make(api.Items, len(*i))
 	for j, ii := range *i {
-		apiItems[j] = ii.ConvertToAPI(tx)
+		apiItems[j] = ii.ConvertToAPI(tx).(api.Item)
 	}
 
 	return apiItems

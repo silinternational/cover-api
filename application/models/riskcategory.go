@@ -52,7 +52,7 @@ func RiskCategoryStationaryID() uuid.UUID {
 	return uuid.FromStringOrNil(RiskCategoryStationaryIDString)
 }
 
-func (r *RiskCategory) ConvertToAPI() api.RiskCategory {
+func (r *RiskCategory) ConvertToAPI(tx *pop.Connection) interface{} {
 	return api.RiskCategory{
 		ID:        r.ID,
 		Name:      r.Name,

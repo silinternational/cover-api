@@ -52,6 +52,10 @@ type Createable interface {
 	Create(tx *pop.Connection) error
 }
 
+type Convertable interface {
+	ConvertToAPI(*pop.Connection) interface{}
+}
+
 func init() {
 	var err error
 	env := domain.Env.GoEnv

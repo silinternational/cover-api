@@ -1,6 +1,8 @@
 package actions
 
 import (
+	"net/http"
+
 	"github.com/gobuffalo/buffalo"
 	"github.com/gobuffalo/nulls"
 
@@ -40,9 +42,7 @@ func policiesListAll(c buffalo.Context) error {
 		return reportError(c, err)
 	}
 
-	apiPolicies := policies.ConvertToAPI(tx)
-
-	return renderOk(c, apiPolicies)
+	return renderOk(c, &policies)
 }
 
 func policiesListMine(c buffalo.Context) error {
@@ -51,9 +51,7 @@ func policiesListMine(c buffalo.Context) error {
 
 	user.LoadPolicies(tx, false)
 
-	apiPolicies := user.Policies.ConvertToAPI(tx)
-
-	return renderOk(c, apiPolicies)
+	return renderOk(c, &user.Policies)
 }
 
 // swagger:operation PUT /policies/{id} Policies PoliciesUpdate
@@ -105,7 +103,7 @@ func policiesUpdate(c buffalo.Context) error {
 		return reportError(c, err)
 	}
 
-	return renderOk(c, policy.ConvertToAPI(tx))
+	return renderOk(c, policy)
 }
 
 // swagger:operation GET /policies/{id}/members PolicyMembers PolicyMembersList
@@ -133,7 +131,7 @@ func policiesListMembers(c buffalo.Context) error {
 
 	policy.LoadMembers(tx, false)
 
-	return renderOk(c, policy.Members.ConvertToPolicyMembers())
+	return c.Render(http.StatusOK, r.JSON(policy.Members.ConvertToPolicyMembers()))
 }
 
 // getReferencedPolicyFromCtx pulls the models.Policy resource from context that was put there

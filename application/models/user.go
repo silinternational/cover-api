@@ -283,15 +283,15 @@ func (u *User) LoadPhotoFile(tx *pop.Connection) {
 	}
 }
 
-func (u *Users) ConvertToAPI(tx *pop.Connection) api.Users {
+func (u *Users) ConvertToAPI(tx *pop.Connection) interface{} {
 	out := make(api.Users, len(*u))
 	for i, uu := range *u {
-		out[i] = uu.ConvertToAPI(tx)
+		out[i] = uu.ConvertToAPI(tx).(api.User)
 	}
 	return out
 }
 
-func (u *User) ConvertToAPI(tx *pop.Connection) api.User {
+func (u *User) ConvertToAPI(tx *pop.Connection) interface{} {
 	u.LoadPhotoFile(tx)
 
 	// TODO: provide more than one policy
@@ -313,7 +313,7 @@ func (u *User) ConvertToAPI(tx *pop.Connection) api.User {
 	}
 
 	if u.PhotoFile != nil {
-		f := u.PhotoFile.ConvertToAPI(tx)
+		f := u.PhotoFile.ConvertToAPI(tx).(api.File)
 		output.PhotoFile = &f
 	}
 
