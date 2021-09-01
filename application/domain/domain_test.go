@@ -1,6 +1,7 @@
 package domain
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/gofrs/uuid"
@@ -39,12 +40,12 @@ func (ts *TestSuite) TestEmailFromAddress() {
 		{
 			name: "name given",
 			arg:  &nickname,
-			want: "nickname via Cover <no_reply@example.com>",
+			want: fmt.Sprintf("nickname via %s <%s>", Env.AppName, Env.EmailFromAddress),
 		},
 		{
 			name: "no name given",
 			arg:  nil,
-			want: "Cover <no_reply@example.com>",
+			want: fmt.Sprintf("%s <%s>", Env.AppName, Env.EmailFromAddress),
 		},
 	}
 	for _, tt := range tests {
