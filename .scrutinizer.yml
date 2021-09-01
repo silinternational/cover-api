@@ -1,0 +1,68 @@
+checks:
+  go: true
+build:
+  environment:
+    go: go1.16.4
+    variables:
+      GO_ENV: test
+      DATABASE_URL: postgres://cover:cover@db:5432/cover?sslmode=disable
+      ACCESS_TOKEN_LIFETIME_SECONDS: 3600
+      API_BASE_URL: localhost
+      APP_NAME: cover
+      AWS_ACCESS_KEY_ID: abc123
+      AWS_SECRET_ACCESS_KEY: abcd1234
+      AWS_REGION: us-east-1
+      AWS_S3_ENDPOINT: http://minio:9000
+      AWS_S3_DISABLE_SSL: true
+      AWS_S3_BUCKET: cover-test-bucket
+      EMAIL_FROM_ADDRESS: no_reply@example.com
+      LISTENER_DELAY_MILLISECONDS: 1000
+      LISTENER_MAX_RETRIES: 10
+      SAML_SP_ENTITY_ID: http://example.local:3000
+      SAML_AUDIENCE_URI: http://example.local:3000
+      SAML_IDP_ENTITY_ID: our.idp.net
+      SAML_IDP_CERT: -----BEGIN CERTIFICATE-----\nMIIDXTC...2bb\nPw==\n-----END CERTIFICATE-----\n
+      SAML_SP_CERT: -----BEGIN CERTIFICATE-----\nMIIDXTC...3cc\nPw==\n-----END CERTIFICATE-----\n
+      SAML_SP_PRIVATE_KEY: -----BEGIN PRIVATE KEY-----\nMIIG/gIB...OJxmEMBgT\n-----END PRIVATE KEY-----\n
+      SAML_ASSERTION_CONSUMER_SERVICE_URL: http://example.local:3000/auth/callback
+      SAML_SSO_URL: https://our.idp.net/saml2/idp/SSOService.php
+      SAML_SLO_URL: https://our.idp.net/saml2/idp/SingleLogoutService.php
+      SAML_CHECK_RESPONSE_SIGNING: true
+      SAML_SIGN_REQUEST: true
+      SAML_REQUIRE_ENCRYPTED_ASSERTION: true
+      ROLLBAR_SERVER_ROOT: github.com/myorg/myapp
+      SESSION_SECRET: abc123
+      UIURL: https://uiurl
+  nodes:
+    analysis:
+      project_setup:
+        override:
+          - 'true'
+      tests:
+        override:
+          - go-scrutinizer-run
+          - govet-run
+          - golint-run
+    # coverage:
+    #   services:
+    #     postgres: 11.5
+    #     minio:
+    #       image: silintl/minio-default-server
+    #       ports:
+    #         - 9000
+    #       env:
+    #         MINIO_ACCESS_KEY: abc123
+    #         MINIO_SECRET_KEY: abcd1234
+    #       ramdisks:
+    #         - /data
+    #   tests:
+    #     override:
+    #       - command: ./scrutinizer-test.sh
+    #         coverage:
+    #           file: 'cover.out'
+    #           format: 'go-cc'
+  root_path: './application'
+filter:
+  excluded_paths:
+    - "*_test.go"
+    - "*_fixtures_test.go"
