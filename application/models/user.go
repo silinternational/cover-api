@@ -4,6 +4,7 @@ import (
 	"crypto/sha256"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/gobuffalo/events"
@@ -140,6 +141,13 @@ func (u *User) FindOrCreateFromAuthUser(tx *pop.Connection, authUser *auth.User)
 	return nil
 }
 
+//  TODO Consider making this smarter
+func (u *User) FindSteward(tx *pop.Connection) {
+	if err := tx.Where("app_role = ?", AppRoleAdmin).First(u); err != nil {
+		panic("error finding steward " + err.Error())
+	}
+}
+
 // CreateAccessToken - Create and store new UserAccessToken
 func (u *User) CreateAccessToken(tx *pop.Connection, clientID string) (UserAccessToken, error) {
 	if clientID == "" {
@@ -176,6 +184,10 @@ func (u *User) MyClaims(tx *pop.Connection) Claims {
 	}
 
 	return claims
+}
+
+func (u *User) Name() string {
+	return strings.TrimSpace(strings.TrimSpace(u.FirstName) + " " + strings.TrimSpace(u.LastName))
 }
 
 func (u *User) ConvertToPolicyMember() api.PolicyMember {

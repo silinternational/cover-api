@@ -356,6 +356,13 @@ func (i *Item) LoadPolicy(tx *pop.Connection, reload bool) {
 	}
 }
 
+// LoadPolicyMembers - a simple wrapper method for loading the policy and its members
+func (i *Item) LoadPolicyMembers(tx *pop.Connection, reload bool) {
+	i.LoadPolicy(tx, reload)
+
+	i.Policy.LoadMembers(tx, reload)
+}
+
 // Load - a simple wrapper method for loading child objects
 func (i *Item) Load(tx *pop.Connection) {
 	if i.Category.ID == uuid.Nil {

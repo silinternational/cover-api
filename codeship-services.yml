@@ -15,7 +15,7 @@ app:
     GO_ENV: test
     TEST_DATABASE_URL: postgres://cover:cover@testdb:5432/cover_test?sslmode=disable
     API_BASE_URL: http://cover.local:3000
-    APP_NAME: cover
+    APP_NAME: Cover
     SESSION_SECRET: kljsLSDJ83jF^kj3LKNEKn435LDKnt
     AWS_ACCESS_KEY_ID: abc123
     AWS_SECRET_ACCESS_KEY: abcd1234
@@ -23,6 +23,7 @@ app:
     AWS_S3_ENDPOINT: http://minio:9000
     AWS_S3_DISABLE_SSL: true
     AWS_S3_BUCKET: cover-test-bucket
+    EMAIL_FROM_ADDRESS: no_reply@example.com
     SAML_SP_ENTITY_ID: http://example.local:3000
     SAML_AUDIENCE_URI: http://example.local:3000
     SAML_IDP_ENTITY_ID: our.idp.net
