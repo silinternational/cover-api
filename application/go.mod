@@ -24,11 +24,14 @@ require (
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/markbates/goth v1.68.0
 	github.com/markbates/grift v1.5.0
+	github.com/olekukonko/tablewriter v0.0.5 // indirect
 	github.com/pkg/errors v0.9.1
 	github.com/rollbar/rollbar-go v1.4.1
 	github.com/rs/cors v1.8.0
 	github.com/russellhaering/gosaml2 v0.6.0
 	github.com/russellhaering/goxmldsig v1.1.0
+	github.com/ssor/bom v0.0.0-20170718123548-6386211fdfcf // indirect
 	github.com/stretchr/testify v1.7.0
 	golang.org/x/image v0.0.0-20190802002840-cff245a6509b
+	jaytaylor.com/html2text v0.0.0-20200412013138-3577fbdbcff7
 )

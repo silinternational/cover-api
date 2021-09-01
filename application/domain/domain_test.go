@@ -1,6 +1,7 @@
 package domain
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/gofrs/uuid"
@@ -25,5 +26,33 @@ func (ts *TestSuite) Test_emptyUUIDValue() {
 func (ts *TestSuite) Test_RandomString() {
 	for i := 1; i < 30; i++ {
 		ts.Len(RandomString(i, ""), i)
+	}
+}
+
+func (ts *TestSuite) TestEmailFromAddress() {
+	nickname := "nickname"
+
+	tests := []struct {
+		name string
+		arg  *string
+		want string
+	}{
+		{
+			name: "name given",
+			arg:  &nickname,
+			want: fmt.Sprintf("nickname via %s <%s>", Env.AppName, Env.EmailFromAddress),
+		},
+		{
+			name: "no name given",
+			arg:  nil,
+			want: fmt.Sprintf("%s <%s>", Env.AppName, Env.EmailFromAddress),
+		},
+	}
+	for _, tt := range tests {
+		ts.T().Run(tt.name, func(t *testing.T) {
+			if got := EmailFromAddress(tt.arg); got != tt.want {
+				t.Errorf("EmailFromAddress() = %v, want %v", got, tt.want)
+			}
+		})
 	}
 }
