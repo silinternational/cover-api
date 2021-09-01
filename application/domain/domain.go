@@ -109,6 +109,11 @@ const (
 	EventApiClaimDenied      = "api:claim:denied"
 )
 
+//  Notification templates
+const (
+	MessageTemplateItemSubmitted = "item_submitted"
+)
+
 // redirect url for after logout
 var LogoutRedirectURL = "missing.ui.url/logged-out"
 
@@ -127,7 +132,7 @@ var Env struct {
 	GoEnv                      string `ignored:"true"`
 	ApiBaseURL                 string `required:"true" split_words:"true"`
 	AccessTokenLifetimeSeconds int    `default:"1166400" split_words:"true"` // 13.5 days
-	AppName                    string `default:"cover" split_words:"true"`
+	AppName                    string `default:"Cover" split_words:"true"`
 
 	ListenerDelayMilliseconds int `default:"1000" split_words:"true"`
 	ListenerMaxRetries        int `default:"10" split_words:"true"`
@@ -156,7 +161,8 @@ var Env struct {
 	AwsS3Bucket        string `split_words:"true"`
 	AwsAccessKeyID     string `split_words:"true"`
 	AwsSecretAccessKey string `split_words:"true"`
-	EmailFromAddress   string `split_words:"true"`
+	EmailService       string `default:"ses" split_words:"true"`
+	EmailFromAddress   string `required:"true" split_words:"true"`
 
 	MaxFileDelete int `default:"10" split_words:"true"`
 
@@ -272,6 +278,16 @@ func RollbarMiddleware(next buffalo.Handler) buffalo.Handler {
 
 		return next(c)
 	}
+}
+
+// EmailFromAddress combines a name with the configured from address for use in an email From header. If name is nil,
+// only the App Name will be used.
+func EmailFromAddress(name *string) string {
+	addr := Env.AppName + " <" + Env.EmailFromAddress + ">"
+	if name != nil {
+		addr = *name + " via " + addr
+	}
+	return addr
 }
 
 // GetBearerTokenFromRequest obtains the token from an Authorization header beginning
