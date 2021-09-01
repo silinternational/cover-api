@@ -2,7 +2,8 @@ checks:
   go: true
 build:
   environment:
-    go: go1.16.4
+    go: 
+      version: 'go1.17'
     variables:
       GO_ENV: test
       DATABASE_URL: postgres://cover:cover@db:5432/cover?sslmode=disable
