@@ -398,7 +398,6 @@ func (as *ActionSuite) Test_ClaimsItemsCreate() {
 		ReplaceEstimate: 300,
 		ReplaceActual:   0,
 		PayoutOption:    api.PayoutOptionRepair,
-		PayoutAmount:    0,
 		FMV:             250,
 	}
 

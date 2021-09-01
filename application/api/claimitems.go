@@ -164,9 +164,6 @@ type ClaimItemCreateInput struct {
 	// payout option
 	PayoutOption PayoutOption `json:"payout_option"`
 
-	// payout amount (0.01 USD)
-	PayoutAmount int `json:"payout_amount"`
-
 	// fair market value (0.01 USD)
 	FMV int `json:"fmv"`
 }

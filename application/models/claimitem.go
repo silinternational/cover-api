@@ -222,7 +222,6 @@ func ConvertClaimItemCreateInput(input api.ClaimItemCreateInput) ClaimItem {
 		ReplaceEstimate: input.ReplaceEstimate,
 		ReplaceActual:   input.ReplaceActual,
 		PayoutOption:    input.PayoutOption,
-		PayoutAmount:    input.PayoutAmount,
 		FMV:             input.FMV,
 	}
 
