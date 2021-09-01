@@ -240,7 +240,37 @@ func claimsPreapprove(c buffalo.Context) error {
 	tx := models.Tx(c)
 	claim := getReferencedClaimFromCtx(c)
 
-	if err := claim.Preapprove(tx); err != nil {
+	if err := claim.RequestReceipt(tx); err != nil {
+		return reportError(c, err)
+	}
+
+	output := claim.ConvertToAPI(tx)
+	return c.Render(http.StatusOK, r.JSON(output))
+}
+
+// swagger:operation POST /claims/{id}/receipt Claims ClaimsFixReceipt
+//
+// ClaimsFixReceipt
+//
+// Admin reverts a claim to request a new/better receipt.
+// Can be used at state "Review2" or "Review3".
+//
+// ---
+// parameters:
+//   - name: id
+//     in: path
+//     required: true
+//     description: claim ID
+// responses:
+//   '200':
+//     description: Claim in focus
+//     schema:
+//       "$ref": "#/definitions/Claim"
+func claimsRequestReceipt(c buffalo.Context) error {
+	tx := models.Tx(c)
+	claim := getReferencedClaimFromCtx(c)
+
+	if err := claim.RequestReceipt(tx); err != nil {
 		return reportError(c, err)
 	}
 

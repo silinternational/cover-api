@@ -54,6 +54,54 @@ var apiListeners = map[string][]apiListener{
 			listener: itemDenied,
 		},
 	},
+	domain.EventApiClaimSubmitted: {
+		{
+			name:     "claim-submitted",
+			listener: claimSubmitted,
+		},
+	},
+	domain.EventApiClaimRevision: {
+		{
+			name:     "claim-revision",
+			listener: claimRevision,
+		},
+	},
+	domain.EventApiClaimPreapproved: {
+		{
+			name:     "claim-preapproved",
+			listener: claimPreapproved,
+		},
+	},
+	domain.EventApiClaimReceipt: {
+		{
+			name:     "claim-receipt",
+			listener: claimReceipt,
+		},
+	},
+	domain.EventApiClaimReview2: {
+		{
+			name:     "claim-review2",
+			listener: claimReview2,
+		},
+	},
+	domain.EventApiClaimReview3: {
+		{
+			name:     "claim-review3",
+			listener: claimReview3,
+		},
+	},
+	domain.EventApiClaimApproved: {
+		{
+			name:     "claim-approved",
+			listener: claimApproved,
+		},
+	},
+	domain.EventApiClaimDenied: {
+		{
+			name:     "claim-denied",
+			listener: claimDenied,
+		},
+	},
 }
 
 // RegisterListeners registers all the listeners to be used by the app
@@ -67,25 +115,6 @@ func RegisterListeners() {
 		}
 	}
 }
-
-func createUserPolicy(e events.Event) {
-	if e.Kind != domain.EventApiUserCreated {
-		return
-	}
-
-	defer panicRecover(e.Kind)
-
-	var user models.User
-	if err := findObject(e.Payload, &user, e.Kind); err != nil {
-		return
-	}
-
-	if err := user.CreateInitialPolicy(nil); err != nil {
-		domain.ErrLogger.Printf("Failed to create initial policy in %s, %s", e.Kind, err)
-		return
-	}
-}
-
 func getID(p events.Payload) (uuid.UUID, error) {
 	i, ok := p[domain.EventPayloadID]
 	if !ok {
