@@ -272,7 +272,7 @@ func (c *Claim) SubmitForApproval(tx *pop.Connection) error {
 	e := events.Event{
 		Kind:    eventType,
 		Message: fmt.Sprintf("Claim Submitted: %s  ID: %s", c.EventDescription, c.ID.String()),
-		Payload: events.Payload{domain.EventPayloadID: c.ID.String()},
+		Payload: events.Payload{domain.EventPayloadID: c.ID},
 	}
 	emitEvent(e)
 
@@ -301,7 +301,7 @@ func (c *Claim) RequestRevision(tx *pop.Connection) error {
 	e := events.Event{
 		Kind:    domain.EventApiClaimRevision,
 		Message: fmt.Sprintf("Claim Revision: %s  ID: %s", c.EventDescription, c.ID.String()),
-		Payload: events.Payload{domain.EventPayloadID: c.ID.String()},
+		Payload: events.Payload{domain.EventPayloadID: c.ID},
 	}
 	emitEvent(e)
 
@@ -335,7 +335,7 @@ func (c *Claim) RequestReceipt(tx *pop.Connection) error {
 	e := events.Event{
 		Kind:    eventType,
 		Message: fmt.Sprintf("Claim Request Receipt: %s  ID: %s", c.EventDescription, c.ID.String()),
-		Payload: events.Payload{domain.EventPayloadID: c.ID.String()},
+		Payload: events.Payload{domain.EventPayloadID: c.ID},
 	}
 	emitEvent(e)
 
@@ -373,7 +373,7 @@ func (c *Claim) Approve(tx *pop.Connection, actor User) error {
 	e := events.Event{
 		Kind:    eventType,
 		Message: fmt.Sprintf("Claim Approved: %s  ID: %s", c.EventDescription, c.ID.String()),
-		Payload: events.Payload{domain.EventPayloadID: c.ID.String()},
+		Payload: events.Payload{domain.EventPayloadID: c.ID},
 	}
 	emitEvent(e)
 
@@ -403,7 +403,7 @@ func (c *Claim) Deny(tx *pop.Connection, actor User) error {
 	e := events.Event{
 		Kind:    domain.EventApiClaimDenied,
 		Message: fmt.Sprintf("Claim Denied: %s  ID: %s", c.EventDescription, c.ID.String()),
-		Payload: events.Payload{domain.EventPayloadID: c.ID.String()},
+		Payload: events.Payload{domain.EventPayloadID: c.ID},
 	}
 	emitEvent(e)
 

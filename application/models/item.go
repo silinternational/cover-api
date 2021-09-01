@@ -258,7 +258,7 @@ func (i *Item) SubmitForApproval(tx *pop.Connection) error {
 	e := events.Event{
 		Kind:    domain.EventApiItemSubmitted,
 		Message: fmt.Sprintf("Item Submitted: %s  ID: %s", i.Name, i.ID.String()),
-		Payload: events.Payload{domain.EventPayloadID: i.ID.String()},
+		Payload: events.Payload{domain.EventPayloadID: i.ID},
 	}
 	emitEvent(e)
 
@@ -301,7 +301,7 @@ func (i *Item) Revision(tx *pop.Connection) error {
 	e := events.Event{
 		Kind:    domain.EventApiItemRevision,
 		Message: fmt.Sprintf("Item to Revision: %s  ID: %s", i.Name, i.ID.String()),
-		Payload: events.Payload{domain.EventPayloadID: i.ID.String()},
+		Payload: events.Payload{domain.EventPayloadID: i.ID},
 	}
 	emitEvent(e)
 
@@ -320,7 +320,7 @@ func (i *Item) Approve(tx *pop.Connection) error {
 	e := events.Event{
 		Kind:    domain.EventApiItemApproved,
 		Message: fmt.Sprintf("Item Approved: %s  ID: %s", i.Name, i.ID.String()),
-		Payload: events.Payload{domain.EventPayloadID: i.ID.String()},
+		Payload: events.Payload{domain.EventPayloadID: i.ID},
 	}
 	emitEvent(e)
 
@@ -340,7 +340,7 @@ func (i *Item) Deny(tx *pop.Connection) error {
 	e := events.Event{
 		Kind:    domain.EventApiItemDenied,
 		Message: fmt.Sprintf("Item Denied: %s  ID: %s", i.Name, i.ID.String()),
-		Payload: events.Payload{domain.EventPayloadID: i.ID.String()},
+		Payload: events.Payload{domain.EventPayloadID: i.ID},
 	}
 	emitEvent(e)
 

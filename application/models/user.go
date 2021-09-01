@@ -133,7 +133,7 @@ func (u *User) FindOrCreateFromAuthUser(tx *pop.Connection, authUser *auth.User)
 	e := events.Event{
 		Kind:    domain.EventApiUserCreated,
 		Message: fmt.Sprintf("Username: %s %s  ID: %s", u.FirstName, u.LastName, u.ID.String()),
-		Payload: events.Payload{domain.EventPayloadID: u.ID.String()},
+		Payload: events.Payload{domain.EventPayloadID: u.ID},
 	}
 	emitEvent(e)
 
