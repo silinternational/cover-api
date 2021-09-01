@@ -417,3 +417,24 @@ func (ms *ModelSuite) TestItem_SubmitForApproval() {
 		})
 	}
 }
+
+func (ms *ModelSuite) TestItem_LoadPolicyMembers() {
+	fixConfig := FixturesConfig{
+		NumberOfPolicies: 2,
+		UsersPerPolicy:   2,
+		ItemsPerPolicy:   1,
+	}
+
+	fixtures := CreateItemFixtures(ms.DB, fixConfig)
+	policy := fixtures.Policies[0]
+	members := policy.Members
+
+	item := Item{ID: policy.Items[0].ID, PolicyID: policy.ID}
+
+	item.LoadPolicyMembers(ms.DB, true)
+	ms.NotEqual(uuid.Nil, item.Policy.ID, "didn't load item policy")
+	ms.Len(item.Policy.Members, 2, "didn't load correct number of policy members")
+	ms.Equal(members[0].ID, item.Policy.Members[0].ID, "incorrect member0 ID")
+	ms.Equal(members[1].ID, item.Policy.Members[1].ID, "incorrect member1 ID")
+
+}
