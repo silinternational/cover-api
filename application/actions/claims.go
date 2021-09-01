@@ -409,13 +409,15 @@ func claimsFilesAttach(c buffalo.Context) error {
 		return reportError(c, err)
 	}
 
+	tx := models.Tx(c)
+
 	claim := getReferencedClaimFromCtx(c)
-	claimFile, err := claim.AttachFile(models.Tx(c), input)
+	claimFile, err := claim.AttachFile(tx, input)
 	if err != nil {
 		return reportError(c, err)
 	}
 
-	return renderOk(c, claimFile.ConvertToAPI())
+	return renderOk(c, claimFile.ConvertToAPI(tx))
 }
 
 // getReferencedClaimFromCtx pulls the models.Claim resource from context that was put there

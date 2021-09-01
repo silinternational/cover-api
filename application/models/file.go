@@ -24,6 +24,8 @@ import (
 	"github.com/silinternational/cover-api/storage"
 )
 
+const minimumFileLifespan = time.Minute * 5
+
 type FileUploadError struct {
 	HttpStatus int
 	ErrorCode  api.ErrorKey
@@ -173,7 +175,7 @@ func (f *File) Find(tx *pop.Connection, id uuid.UUID) error {
 
 // RefreshURL ensures the file URL is good for at least a few minutes
 func (f *File) RefreshURL(tx *pop.Connection) error {
-	if f.URLExpiration.After(time.Now().Add(time.Minute * 5)) {
+	if f.URLExpiration.After(time.Now().Add(minimumFileLifespan)) {
 		return nil
 	}
 

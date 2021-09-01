@@ -98,7 +98,8 @@ func (ms *ModelSuite) TestClaimFile_Create() {
 func (ms *ModelSuite) TestClaimFile_ConvertToAPI() {
 	id := domain.GetUUID()
 	claimID := domain.GetUUID()
-	fileID := domain.GetUUID()
+	user := CreateUserFixtures(ms.DB, 1).Users[0]
+	fileID := CreateFileFixtures(ms.DB, 1, user.ID).Files[0].ID
 	now := time.Now()
 	createdAt := now.Add(-1 * time.Hour)
 	c := &ClaimFile{
@@ -109,11 +110,14 @@ func (ms *ModelSuite) TestClaimFile_ConvertToAPI() {
 		UpdatedAt: now,
 	}
 
-	got := c.ConvertToAPI()
+	got := c.ConvertToAPI(ms.DB)
 
 	ms.Equal(id, got.ID)
 	ms.Equal(claimID, got.ClaimID)
 	ms.Equal(fileID, got.FileID)
 	ms.Equal(createdAt, got.CreatedAt)
 	ms.Equal(now, got.UpdatedAt)
+
+	// At least make sure the URL expiration is set. The File.ConvertToAPI test should cover the rest.
+	ms.WithinDuration(now.Add(time.Minute*10), got.File.URLExpiration, time.Minute*2)
 }
