@@ -145,7 +145,7 @@ func appErrorFromDB(err error, defaultKey api.ErrorKey) error {
 	appErr := api.NewAppError(err, defaultKey, api.CategoryInternal)
 
 	var pgError *pgconn.PgError
-	if ok := errors.As(err, &pgError); ok {
+	if errors.As(err, &pgError) {
 		appErr.Err = fmt.Errorf("%w Detail: %s", pgError, pgError.Detail)
 
 		switch pgError.Code {

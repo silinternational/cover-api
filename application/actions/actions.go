@@ -40,8 +40,7 @@ func StrictBind(c buffalo.Context, dest interface{}) error {
 // If the HTTP status code provided is in the 300 family, buffalo.Redirect is used instead.
 func reportError(c buffalo.Context, err error) error {
 	var appErr *api.AppError
-	ok := errors.As(err, &appErr)
-	if !ok {
+	if !errors.As(err, &appErr) {
 		appErr = appErrorFromErr(err)
 	}
 	appErr.SetHttpStatusFromCategory()
