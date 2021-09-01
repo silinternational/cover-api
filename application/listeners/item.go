@@ -1,12 +1,16 @@
 package listeners
 
 import (
+	"fmt"
+
 	"github.com/gobuffalo/events"
 
 	"github.com/silinternational/cover-api/domain"
 	"github.com/silinternational/cover-api/models"
+	"github.com/silinternational/cover-api/notifications"
 )
 
+// TODO consider sending different email contents depending on auto-approval
 func itemSubmitted(e events.Event) {
 	if e.Kind != domain.EventApiItemSubmitted {
 		return
@@ -19,7 +23,29 @@ func itemSubmitted(e events.Event) {
 		return
 	}
 
-	// TODO Notify admin and do whatever else needs doing
+	var steward models.User
+	steward.FindSteward(models.DB)
+
+	item.LoadPolicyMembers(models.DB, false)
+	itemMemberName := item.Policy.Members[0].Name()
+
+	msg := notifications.Message{
+		Template:  domain.MessageTemplateItemSubmitted,
+		ToName:    steward.Name(),
+		ToEmail:   steward.Email,
+		FromEmail: domain.EmailFromAddress(nil),
+		Subject:   "Email.Subject.Welcome",
+		Data: map[string]interface{}{
+			"appName":        domain.Env.AppName,
+			"uiURL":          domain.Env.UIURL,
+			"itemMemberName": itemMemberName,
+			"itemURL":        fmt.Sprintf("%s/items/%s", domain.Env.UIURL, item.ID),
+			"itemName":       item.Name,
+		},
+	}
+	if err := notifications.Send(msg); err != nil {
+		domain.ErrLogger.Printf("error sending item submitted notification, %s", err)
+	}
 }
 
 func itemRevision(e events.Event) {
