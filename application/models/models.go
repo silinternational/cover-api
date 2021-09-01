@@ -17,6 +17,7 @@ import (
 	"github.com/gobuffalo/pop/v5"
 	"github.com/gofrs/uuid"
 	"github.com/jackc/pgconn"
+	"github.com/jackc/pgerrcode"
 
 	"github.com/silinternational/cover-api/api"
 	"github.com/silinternational/cover-api/domain"
@@ -149,10 +150,10 @@ func appErrorFromDB(err error, defaultKey api.ErrorKey) error {
 		appErr.Err = fmt.Errorf("%w Detail: %s", pgError, pgError.Detail)
 
 		switch pgError.Code {
-		case "23503":
+		case pgerrcode.ForeignKeyViolation:
 			appErr.Key = api.ErrorForeignKeyViolation
 			appErr.Category = api.CategoryUser
-		case "23505":
+		case pgerrcode.UniqueViolation:
 			appErr.Key = api.ErrorUniqueKeyViolation
 			appErr.Category = api.CategoryUser
 		}
