@@ -279,7 +279,10 @@ func (f *Files) FindByIDs(tx *pop.Connection, ids []int) error {
 }
 
 // ConvertToAPI converts a models.File to an api.File
-func (f *File) ConvertToAPI() api.File {
+func (f *File) ConvertToAPI(tx *pop.Connection) api.File {
+	if err := f.RefreshURL(tx); err != nil {
+		panic(err.Error())
+	}
 	return api.File{
 		ID:            f.ID,
 		URL:           f.URL,
