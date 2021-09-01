@@ -102,7 +102,7 @@ func (f *File) Store(tx *pop.Connection) *FileUploadError {
 		e := FileUploadError{
 			HttpStatus: http.StatusInternalServerError,
 			ErrorCode:  api.ErrorUnableToStoreFile,
-			Message:    err.Error(),
+			Message:    fmt.Sprintf("error %s storing file: %+v", err, f),
 		}
 		return &e
 	}
@@ -110,11 +110,11 @@ func (f *File) Store(tx *pop.Connection) *FileUploadError {
 	f.URL = url.Url
 	f.URLExpiration = url.Expiration
 	f.Size = len(f.Content)
-	if err := f.Create(tx); err != nil {
+	if err = f.Create(tx); err != nil {
 		e := FileUploadError{
 			HttpStatus: http.StatusInternalServerError,
 			ErrorCode:  api.ErrorUnableToStoreFile,
-			Message:    err.Error(),
+			Message:    fmt.Sprintf("error %s creating file: %+v", err, f),
 		}
 		return &e
 	}
@@ -252,13 +252,17 @@ func (f *Files) DeleteUnlinked(tx *pop.Connection) error {
 // The File struct need not be hydrated; only the ID is needed.
 func (f *File) SetLinked(tx *pop.Connection) error {
 	if err := tx.Reload(f); err != nil {
-		return fmt.Errorf("failed to load file for setting linked flag, %w", err)
+		panic(fmt.Sprintf("failed to load file for setting linked flag, %s", err))
 	}
 	if f.Linked {
-		return fmt.Errorf("cannot link file, it is already linked")
+		err := fmt.Errorf("cannot link file, it is already linked")
+		return api.NewAppError(err, api.ErrorFileAlreadyLinked, api.CategoryUser)
 	}
 	f.Linked = true
-	return tx.UpdateColumns(f, "linked", "updated_at")
+	if err := tx.UpdateColumns(f, "linked", "updated_at"); err != nil {
+		return appErrorFromDB(err, api.ErrorUpdateFailure)
+	}
+	return nil
 }
 
 // ClearLinked marks the file as unlinked. The struct need not be hydrated; only the ID is needed.

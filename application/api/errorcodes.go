@@ -15,6 +15,7 @@ const (
 	ErrorCreateFailure            = ErrorKey("ErrorCreateFailure")
 	ErrorGenericInternalServer    = ErrorKey("ErrorGenericInternalServer")
 	ErrorFailedToConvertToAPIType = ErrorKey("ErrorFailedToConvertToAPIType")
+	ErrorForeignKeyViolation      = ErrorKey("ErrorForeignKeyViolation")
 	ErrorInvalidRequestBody       = ErrorKey("ErrorInvalidRequestBody")
 	ErrorMissingSessionKey        = ErrorKey("ErrorMissingSessionKey")
 	ErrorMustBeAValidUUID         = ErrorKey("ErrorMustBeAValidUUID")
@@ -23,6 +24,7 @@ const (
 	ErrorQueryFailure             = ErrorKey("ErrorQueryFailure")
 	ErrorSaveFailure              = ErrorKey("ErrorSaveFailure")
 	ErrorTransactionNotFound      = ErrorKey("ErrorTransactionNotFound")
+	ErrorUniqueKeyViolation       = ErrorKey("ErrorUniqueKeyViolation")
 	ErrorUnknown                  = ErrorKey("ErrorUnknown")
 	ErrorUpdateFailure            = ErrorKey("ErrorUpdateFailure")
 	ErrorValidation               = ErrorKey("ErrorValidation")
@@ -46,6 +48,7 @@ const (
 	ErrorResourceNotFound  = ErrorKey("ErrorResourceNotFound")
 
 	// File
+	ErrorFileAlreadyLinked       = ErrorKey("ErrorFileAlreadyLinked")
 	ErrorReceivingFile           = ErrorKey("ErrorReceivingFile")
 	ErrorStoreFileBadContentType = ErrorKey("ErrorStoreFileBadContentType")
 	ErrorStoreFileTooLarge       = ErrorKey("ErrorStoreFileTooLarge")

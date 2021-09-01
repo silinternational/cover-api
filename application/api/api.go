@@ -94,8 +94,8 @@ func (a *AppError) SetHttpStatusFromCategory() {
 	}
 }
 
-// LoadTranslatedMessage assigns the error message by translating the Key into a user-friendly string, unless
-// the HttpStatus is 500 in which case a standard message is used.
+// LoadTranslatedMessage assigns the error message by translating the Key into a user-friendly string, either
+// from a list of translated strings (see errors.en) or by breaking down the Key into individual words
 func (a *AppError) LoadTranslatedMessage(c buffalo.Context) {
 	key := a.Key
 

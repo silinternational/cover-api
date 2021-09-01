@@ -52,9 +52,10 @@ import (
 const idRegex = `/{id:[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-4[a-fA-F0-9]{3}-[8|9|aA|bB][a-fA-F0-9]{3}-[a-fA-F0-9]{12}}`
 
 const (
-	policiesPath = "/" + domain.TypePolicy
-	itemsPath    = "/" + domain.TypeItem
 	claimsPath   = "/" + domain.TypeClaim
+	filesPath    = "/" + domain.TypeFile
+	itemsPath    = "/" + domain.TypeItem
+	policiesPath = "/" + domain.TypePolicy
 )
 
 // ENV is used to help switch settings based on where the
@@ -145,6 +146,7 @@ func App() *buffalo.App {
 		claimsGroup.GET(idRegex, claimsView)
 		claimsGroup.PUT(idRegex, claimsUpdate)
 		claimsGroup.POST(idRegex+itemsPath, claimsItemsCreate)
+		claimsGroup.POST(idRegex+filesPath, claimsFilesAttach)
 		claimsGroup.POST(idRegex+"/"+api.ResourceSubmit, claimsSubmit)
 		claimsGroup.POST(idRegex+"/"+api.ResourceRevision, claimsRequestRevision)
 		claimsGroup.POST(idRegex+"/"+api.ResourcePreapprove, claimsPreapprove)
