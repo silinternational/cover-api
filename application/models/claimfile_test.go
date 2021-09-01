@@ -117,5 +117,7 @@ func (ms *ModelSuite) TestClaimFile_ConvertToAPI() {
 	ms.Equal(fileID, got.FileID)
 	ms.Equal(createdAt, got.CreatedAt)
 	ms.Equal(now, got.UpdatedAt)
+
+	// At least make sure the URL expiration is set. The File.ConvertToAPI test should cover the rest.
 	ms.WithinDuration(now.Add(time.Minute*10), got.File.URLExpiration, time.Minute*2)
 }
