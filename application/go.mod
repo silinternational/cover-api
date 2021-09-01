@@ -19,6 +19,8 @@ require (
 	github.com/gobuffalo/validate/v3 v3.1.0
 	github.com/gofrs/uuid v3.2.0+incompatible
 	github.com/gorilla/sessions v1.2.1
+	github.com/jackc/pgconn v1.10.0
+	github.com/jackc/pgerrcode v0.0.0-20201024163028-a0d42d470451
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/markbates/goth v1.68.0
 	github.com/markbates/grift v1.5.0

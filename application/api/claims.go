@@ -113,6 +113,9 @@ type Claim struct {
 
 	// list of items included in claim
 	Items ClaimItems `json:"claim_items"`
+
+	// list of files attached to the claim
+	Files []ClaimFile `json:"claim_files"`
 }
 
 // swagger:model
@@ -135,4 +138,35 @@ type ClaimUpdateInput struct {
 
 	// event description
 	EventDescription string `json:"event_description"`
+}
+
+// swagger:model
+type ClaimFile struct {
+	// ID of the ClaimFile
+	//
+	// swagger:strfmt uuid4
+	ID uuid.UUID `json:"id"`
+
+	// ID of the Claim
+	//
+	// swagger:strfmt uuid4
+	ClaimID uuid.UUID `json:"claim_id"`
+
+	// ID of the File
+	//
+	// swagger:strfmt uuid4
+	FileID uuid.UUID `json:"file_id"`
+
+	// created time
+	//
+	// swagger:strfmt date-time
+	CreatedAt time.Time `json:"created_at"`
+
+	// last updated time
+	//
+	// swagger:strfmt date-time
+	UpdatedAt time.Time `json:"updated_at"`
+
+	// file object
+	File File `json:"file"`
 }

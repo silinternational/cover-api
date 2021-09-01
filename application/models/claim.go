@@ -62,6 +62,7 @@ type Claim struct {
 
 	Policy     Policy     `belongs_to:"policies" validate:"-"`
 	ClaimItems ClaimItems `has_many:"claim_items" validate:"-"`
+	ClaimFiles ClaimFiles `has_many:"claim_files" validate:"-"`
 	Reviewer   User       `belongs_to:"users" validate:"-"`
 }
 
@@ -434,8 +435,17 @@ func (c *Claim) LoadReviewer(tx *pop.Connection, reload bool) {
 	}
 }
 
+func (c *Claim) LoadClaimFiles(tx *pop.Connection, reload bool) {
+	if len(c.ClaimFiles) == 0 || reload {
+		if err := tx.Load(c, "ClaimFiles"); err != nil {
+			panic("database error loading Claim.ClaimFiles, " + err.Error())
+		}
+	}
+}
+
 func (c *Claim) ConvertToAPI(tx *pop.Connection) api.Claim {
 	c.LoadClaimItems(tx, true)
+	c.LoadClaimFiles(tx, true)
 
 	return api.Claim{
 		ID:               c.ID,
@@ -449,6 +459,7 @@ func (c *Claim) ConvertToAPI(tx *pop.Connection) api.Claim {
 		PaymentDate:      c.PaymentDate,
 		TotalPayout:      c.TotalPayout,
 		Items:            c.ClaimItems.ConvertToAPI(tx),
+		Files:            c.ClaimFiles.ConvertToAPI(tx),
 	}
 }
 
@@ -487,4 +498,10 @@ func uniqueClaimReferenceNumber(tx *pop.Connection) string {
 			panic(fmt.Errorf("failed to find unique claim reference number after 100 attempts"))
 		}
 	}
+}
+
+// AttachFile adds a previously-stored File to this Claim
+func (c *Claim) AttachFile(tx *pop.Connection, input api.ClaimFileAttachInput) (ClaimFile, error) {
+	claimFile := NewClaimFile(c.ID, input.FileID)
+	return *claimFile, claimFile.Create(tx)
 }

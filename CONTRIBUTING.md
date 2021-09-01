@@ -76,12 +76,8 @@ To run all tests, run `make test`.
 1. Set `development` custom build tag (see [Custom tags](#custom-tags))
 2. Edit test configuration template (Run -> Edit Configurations... -> Edit configuration templates... -> Go Test) as follows:
 - check "Use all custom build tags"
-- set environment variables:
-
-```
-GO_ENV=test
-```
-4. Add `127.0.0.1 testdb` to `/etc/hosts` (or equivalent)
+- set all environment variables defined in `test.env`
+4. Add `127.0.0.1 testdb minio` to `/etc/hosts` (or equivalent)
 5. Click the green arrow next to the test or test step
 
 ### Database Queries

@@ -10,13 +10,14 @@ import (
 	"net/http"
 	"reflect"
 
-	"github.com/gobuffalo/nulls"
-
 	"github.com/go-playground/validator/v10"
 	"github.com/gobuffalo/buffalo"
 	"github.com/gobuffalo/events"
+	"github.com/gobuffalo/nulls"
 	"github.com/gobuffalo/pop/v5"
 	"github.com/gofrs/uuid"
+	"github.com/jackc/pgconn"
+	"github.com/jackc/pgerrcode"
 
 	"github.com/silinternational/cover-api/api"
 	"github.com/silinternational/cover-api/domain"
@@ -128,7 +129,7 @@ func create(tx *pop.Connection, m interface{}) error {
 
 	valErrs, err := tx.ValidateAndCreate(m)
 	if err != nil {
-		return api.NewAppError(err, api.ErrorCreateFailure, api.CategoryInternal)
+		return appErrorFromDB(err, api.ErrorCreateFailure)
 	}
 
 	if valErrs.HasAny() {
@@ -139,6 +140,26 @@ func create(tx *pop.Connection, m interface{}) error {
 		)
 	}
 	return nil
+}
+
+func appErrorFromDB(err error, defaultKey api.ErrorKey) error {
+	appErr := api.NewAppError(err, defaultKey, api.CategoryInternal)
+
+	var pgError *pgconn.PgError
+	if errors.As(err, &pgError) {
+		appErr.Err = fmt.Errorf("%w Detail: %s", pgError, pgError.Detail)
+
+		switch pgError.Code {
+		case pgerrcode.ForeignKeyViolation:
+			appErr.Key = api.ErrorForeignKeyViolation
+			appErr.Category = api.CategoryUser
+		case pgerrcode.UniqueViolation:
+			appErr.Key = api.ErrorUniqueKeyViolation
+			appErr.Category = api.CategoryUser
+		}
+	}
+
+	return appErr
 }
 
 func save(tx *pop.Connection, m interface{}) error {
@@ -166,7 +187,7 @@ func save(tx *pop.Connection, m interface{}) error {
 func update(tx *pop.Connection, m interface{}) error {
 	valErrs, err := tx.ValidateAndUpdate(m)
 	if err != nil {
-		return api.NewAppError(err, api.ErrorUpdateFailure, api.CategoryInternal)
+		return appErrorFromDB(err, api.ErrorUpdateFailure)
 	}
 
 	if valErrs.HasAny() {
