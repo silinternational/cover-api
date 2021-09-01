@@ -161,8 +161,8 @@ var Env struct {
 	AwsS3Bucket        string `split_words:"true"`
 	AwsAccessKeyID     string `split_words:"true"`
 	AwsSecretAccessKey string `split_words:"true"`
-	EmailService       string `default:"ses" split_words:"true"`
 	EmailFromAddress   string `required:"true" split_words:"true"`
+	EmailService       string `default:"ses" split_words:"true"`
 
 	MaxFileDelete int `default:"10" split_words:"true"`
 

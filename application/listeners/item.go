@@ -27,18 +27,18 @@ func itemSubmitted(e events.Event) {
 	steward.FindSteward(models.DB)
 
 	item.LoadPolicyMembers(models.DB, false)
-	itemMemberName := item.Policy.Members[0].Name()
+	memberName := item.Policy.Members[0].Name()
 
 	msg := notifications.Message{
 		Template:  domain.MessageTemplateItemSubmitted,
 		ToName:    steward.Name(),
 		ToEmail:   steward.Email,
 		FromEmail: domain.EmailFromAddress(nil),
-		Subject:   "Email.Subject.Welcome",
+		Subject:   "a new policy item was submitted for approval",
 		Data: map[string]interface{}{
 			"appName":        domain.Env.AppName,
 			"uiURL":          domain.Env.UIURL,
-			"itemMemberName": itemMemberName,
+			"itemMemberName": memberName,
 			"itemURL":        fmt.Sprintf("%s/items/%s", domain.Env.UIURL, item.ID),
 			"itemName":       item.Name,
 		},

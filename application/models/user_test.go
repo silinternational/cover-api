@@ -101,7 +101,7 @@ func (ms *ModelSuite) TestUser_FindSteward() {
 
 	var user User
 	user.FindSteward(ms.DB)
-	ms.Equal(appAdmin.ID, user.ID, "incorrect user iD")
+	ms.Equal(appAdmin.ID, user.ID, "incorrect user ID")
 }
 
 func (ms *ModelSuite) TestUser_Name() {
