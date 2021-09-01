@@ -94,6 +94,52 @@ func (ms *ModelSuite) TestUser_CreateInitialPolicy() {
 	}
 }
 
+func (ms *ModelSuite) TestUser_FindSteward() {
+	CreateUserFixtures(ms.DB, 3)
+	appAdmin := CreateAdminUser(ms.DB)
+	CreateAdminUser(ms.DB)
+
+	var user User
+	user.FindSteward(ms.DB)
+	ms.Equal(appAdmin.ID, user.ID, "incorrect user iD")
+}
+
+func (ms *ModelSuite) TestUser_Name() {
+	t := ms.T()
+	tests := []struct {
+		name string
+		user User
+		want string
+	}{
+		{
+			name: "only first",
+			user: User{FirstName: "  OnlyFirst "},
+			want: "OnlyFirst",
+		},
+		{
+			name: "only last",
+			user: User{LastName: "  OnlyLast "},
+			want: "OnlyLast",
+		},
+		{
+			name: "no extra spaces",
+			user: User{FirstName: "First", LastName: "Last"},
+			want: "First Last",
+		},
+		{
+			name: "has extra spaces",
+			user: User{FirstName: "  First  ", LastName: "  Last  "},
+			want: "First Last",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := tt.user.Name()
+			ms.Equal(tt.want, got, "incorrect user name")
+		})
+	}
+}
+
 func (ms *ModelSuite) TestUser_OwnsFile() {
 	userFixtures := CreateUserFixtures(ms.DB, 2)
 	userOwnsFile := userFixtures.Users[1]
