@@ -313,7 +313,7 @@ func (u *User) ConvertToAPI(tx *pop.Connection) api.User {
 	}
 
 	if u.PhotoFile != nil {
-		f := u.PhotoFile.ConvertToAPI()
+		f := u.PhotoFile.ConvertToAPI(tx)
 		output.PhotoFile = &f
 	}
 

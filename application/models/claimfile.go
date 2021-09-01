@@ -64,7 +64,7 @@ func (c *ClaimFile) ConvertToAPI(tx *pop.Connection) api.ClaimFile {
 		ID:        c.ID,
 		ClaimID:   c.ClaimID,
 		FileID:    c.FileID,
-		File:      c.File.ConvertToAPI(),
+		File:      c.File.ConvertToAPI(tx),
 		CreatedAt: c.CreatedAt,
 		UpdatedAt: c.UpdatedAt,
 	}
