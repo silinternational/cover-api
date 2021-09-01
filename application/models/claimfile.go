@@ -21,7 +21,7 @@ type ClaimFile struct {
 
 type ClaimFiles []ClaimFile
 
-// NewClaimFile maken a new ClaimFile but does not save it to the database
+// NewClaimFile makes a new ClaimFile but does not save it to the database
 func NewClaimFile(claimID, fileID uuid.UUID) *ClaimFile {
 	return &ClaimFile{ClaimID: claimID, FileID: fileID}
 }
