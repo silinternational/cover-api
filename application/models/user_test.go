@@ -104,6 +104,18 @@ func (ms *ModelSuite) TestUser_FindSteward() {
 	ms.Equal(appAdmin.ID, user.ID, "incorrect user ID")
 }
 
+func (ms *ModelSuite) TestUser_EmailOfChoice() {
+
+	justEmail := User{Email: "justemail@example.com"}
+	hasOverride := User{Email: "main@example.com", EmailOverride: "override@example.com"}
+
+	got := justEmail.EmailOfChoice()
+	ms.Equal(justEmail.Email, got, "incorrect Email for user with no override email")
+
+	got = hasOverride.EmailOfChoice()
+	ms.Equal(hasOverride.EmailOverride, got, "incorrect Email for user with an override email")
+}
+
 func (ms *ModelSuite) TestUser_Name() {
 	t := ms.T()
 	tests := []struct {
