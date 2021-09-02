@@ -24,13 +24,13 @@ func (ts *TestSuite) TestSend() {
 		},
 	}
 	var emailService EmailService
-	var testService DummyEmailService
+	testService := NewDummyEmailService()
 	emailService = &testService
 
 	err := emailService.Send(msg)
 	ts.NoError(err, "error sending message")
 
-	n := len(testService.sentMessages)
+	n := len(testService.GetSentMessages())
 	ts.Require().Equal(1, n, "incorrect number of messages sent")
 
 	body := testService.GetLastBody()
