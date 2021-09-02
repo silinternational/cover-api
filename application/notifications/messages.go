@@ -30,10 +30,11 @@ func NewEmailMessage() Message {
 }
 
 // sets the msg ToName and ToEmail based on the steward's information
-func (m *Message) AddToSteward() {
+func (m Message) AddToSteward() Message {
 	var steward models.User
 	steward.FindSteward(models.DB)
 
 	m.ToName = steward.Name()
 	m.ToEmail = steward.EmailOfChoice()
+	return m
 }

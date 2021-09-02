@@ -111,9 +111,9 @@ const (
 
 //  Notification templates
 const (
-	MessageTemplateItemSubmitted      = "item_submitted"
-	MessageTemplateItemApprovedMember = "item_approved_member"
-	MessageTemplateItemAutoSteward    = "item_auto_approved_steward"
+	MessageTemplateItemSubmittedSteward = "item_submitted_steward"
+	MessageTemplateItemApprovedMember   = "item_approved_member"
+	MessageTemplateItemAutoSteward      = "item_auto_approved_steward"
 )
 
 // redirect url for after logout

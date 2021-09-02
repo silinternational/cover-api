@@ -18,8 +18,7 @@ func addMessageItemData(msg *notifications.Message, item models.Item) {
 }
 
 func newItemMessageForSteward(item models.Item) notifications.Message {
-	msg := notifications.NewEmailMessage()
-	msg.AddToSteward()
+	msg := notifications.NewEmailMessage().AddToSteward()
 	addMessageItemData(&msg, item)
 	return msg
 }
@@ -51,7 +50,7 @@ func itemSubmitted(e events.Event) {
 
 	notifiers := getNotifiersFromEventPayload(e.Payload)
 
-	if _, isApproved := e.Payload[string(api.ItemCoverageStatusApproved)]; isApproved {
+	if item.CoverageStatus == api.ItemCoverageStatusApproved {
 		notifyItemApprovedMember(item, notifiers)
 		notifyItemAutoApprovedSteward(item, memberName, notifiers)
 	} else { // Was submitted but not auto approved
@@ -83,7 +82,7 @@ func notifyItemAutoApprovedSteward(item models.Item, memberName string, notifier
 
 func notifyItemSubmitted(item models.Item, memberName string, notifiers []interface{}) {
 	msg := newItemMessageForSteward(item)
-	msg.Template = domain.MessageTemplateItemSubmitted
+	msg.Template = domain.MessageTemplateItemSubmittedSteward
 	msg.Subject = "Action Required. " + memberName + " just submitted a new policy item for approval"
 	msg.Data["itemMemberName"] = memberName
 
