@@ -24,7 +24,7 @@ func (ts *TestSuite) TestSend() {
 		},
 	}
 	var emailService EmailService
-	testService := NewDummyEmailService()
+	testService := DummyEmailService{}
 	emailService = &testService
 
 	err := emailService.Send(msg)
