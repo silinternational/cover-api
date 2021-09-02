@@ -104,7 +104,19 @@ func itemRevision(e events.Event) {
 		return
 	}
 
-	// TODO Notify item creator and do whatever else needs doing
+	item.LoadPolicyMembers(models.DB, false)
+	notifiers := getNotifiersFromEventPayload(e.Payload)
+
+	// TODO figure out how to specify required revisions
+
+	for _, m := range item.Policy.Members {
+		msg := newItemMessageForMember(item, m)
+		msg.Template = domain.MessageTemplateItemRevision
+		msg.Subject = "changes have been requested on your new policy item"
+		if err := notifications.Send(msg, notifiers...); err != nil {
+			domain.ErrLogger.Printf("error sending item revision notification to member, %s", err)
+		}
+	}
 }
 
 func itemApproved(e events.Event) {
@@ -138,5 +150,17 @@ func itemDenied(e events.Event) {
 		return
 	}
 
-	// TODO Notify item creator and do whatever else needs doing
+	item.LoadPolicyMembers(models.DB, false)
+	notifiers := getNotifiersFromEventPayload(e.Payload)
+
+	// TODO figure out how to give a reason for the denial
+
+	for _, m := range item.Policy.Members {
+		msg := newItemMessageForMember(item, m)
+		msg.Template = domain.MessageTemplateItemRevision
+		msg.Subject = "coverage on your new policy item has been denied"
+		if err := notifications.Send(msg, notifiers...); err != nil {
+			domain.ErrLogger.Printf("error sending item denied notification to member, %s", err)
+		}
+	}
 }

@@ -114,6 +114,8 @@ const (
 	MessageTemplateItemSubmitted      = "item_submitted"
 	MessageTemplateItemApprovedMember = "item_approved_member"
 	MessageTemplateItemAutoSteward    = "item_auto_approved_steward"
+	MessageTemplateItemRevision       = "item_revision"
+	MessageTemplateItemDenied         = "item_denied"
 )
 
 // redirect url for after logout
