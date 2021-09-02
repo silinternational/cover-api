@@ -258,7 +258,10 @@ func (i *Item) SubmitForApproval(tx *pop.Connection) error {
 	e := events.Event{
 		Kind:    domain.EventApiItemSubmitted,
 		Message: fmt.Sprintf("Item Submitted: %s  ID: %s", i.Name, i.ID.String()),
-		Payload: events.Payload{domain.EventPayloadID: i.ID},
+		Payload: events.Payload{
+			domain.EventPayloadID:    i.ID,
+			string(i.CoverageStatus): true,
+		},
 	}
 	emitEvent(e)
 
