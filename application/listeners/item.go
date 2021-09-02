@@ -110,7 +110,7 @@ func itemRevision(e events.Event) {
 
 	for _, m := range item.Policy.Members {
 		msg := newItemMessageForMember(item, m)
-		msg.Template = domain.MessageTemplateItemRevision
+		msg.Template = domain.MessageTemplateItemRevisionMember
 		msg.Subject = "changes have been requested on your new policy item"
 		if err := notifications.Send(msg, notifiers...); err != nil {
 			domain.ErrLogger.Printf("error sending item revision notification to member, %s", err)
@@ -156,7 +156,7 @@ func itemDenied(e events.Event) {
 
 	for _, m := range item.Policy.Members {
 		msg := newItemMessageForMember(item, m)
-		msg.Template = domain.MessageTemplateItemRevision
+		msg.Template = domain.MessageTemplateItemDeniedMember
 		msg.Subject = "coverage on your new policy item has been denied"
 		if err := notifications.Send(msg, notifiers...); err != nil {
 			domain.ErrLogger.Printf("error sending item denied notification to member, %s", err)

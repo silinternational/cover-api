@@ -127,7 +127,7 @@ func (ts *TestSuite) Test_itemRevision() {
 				Kind: domain.EventApiItemRevision,
 				Payload: events.Payload{
 					domain.EventPayloadID: revisionItem.ID,
-					NotifierKey:           &testEmailer,
+					EventPayloadNotifier:  &testEmailer,
 				},
 			},
 			wantToEmails: []string{member0.EmailOfChoice(), member1.EmailOfChoice()},
@@ -191,7 +191,7 @@ func (ts *TestSuite) Test_itemDenied() {
 				Kind: domain.EventApiItemDenied,
 				Payload: events.Payload{
 					domain.EventPayloadID: revisionItem.ID,
-					NotifierKey:           &testEmailer,
+					EventPayloadNotifier:  &testEmailer,
 				},
 			},
 			wantToEmails: []string{member0.EmailOfChoice(), member1.EmailOfChoice()},
