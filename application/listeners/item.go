@@ -11,6 +11,8 @@ import (
 	"github.com/silinternational/cover-api/notifications"
 )
 
+const wrongStatusMsg = "error with %s listener. Item has wrong status: %s"
+
 func addMessageItemData(msg *notifications.Message, item models.Item) {
 	msg.Data["itemURL"] = fmt.Sprintf("%s/items/%s", domain.Env.UIURL, item.ID)
 	msg.Data["itemName"] = item.Name
@@ -53,8 +55,10 @@ func itemSubmitted(e events.Event) {
 	if item.CoverageStatus == api.ItemCoverageStatusApproved {
 		notifyItemApprovedMember(item, notifiers)
 		notifyItemAutoApprovedSteward(item, memberName, notifiers)
-	} else { // Was submitted but not auto approved
+	} else if item.CoverageStatus == api.ItemCoverageStatusPending { // Was submitted but not auto approved
 		notifyItemSubmitted(item, memberName, notifiers)
+	} else {
+		domain.ErrLogger.Printf(wrongStatusMsg, "itemSubmitted", item.CoverageStatus)
 	}
 }
 
@@ -103,6 +107,11 @@ func itemRevision(e events.Event) {
 		return
 	}
 
+	if item.CoverageStatus != api.ItemCoverageStatusRevision {
+		domain.ErrLogger.Printf(wrongStatusMsg, "itemRevision", item.CoverageStatus)
+		return
+	}
+
 	item.LoadPolicyMembers(models.DB, false)
 	notifiers := getNotifiersFromEventPayload(e.Payload)
 
@@ -130,6 +139,11 @@ func itemApproved(e events.Event) {
 		return
 	}
 
+	if item.CoverageStatus != api.ItemCoverageStatusApproved {
+		domain.ErrLogger.Printf(wrongStatusMsg, "itemApproved", item.CoverageStatus)
+		return
+	}
+
 	item.LoadPolicyMembers(models.DB, false)
 
 	notifiers := getNotifiersFromEventPayload(e.Payload)
@@ -146,6 +160,11 @@ func itemDenied(e events.Event) {
 
 	var item models.Item
 	if err := findObject(e.Payload, &item, e.Kind); err != nil {
+		return
+	}
+
+	if item.CoverageStatus != api.ItemCoverageStatusDenied {
+		domain.ErrLogger.Printf(wrongStatusMsg, "itemDenied", item.CoverageStatus)
 		return
 	}
 
