@@ -1,7 +1,6 @@
 package models
 
 import (
-	"errors"
 	"fmt"
 	"net/http"
 	"time"
@@ -60,24 +59,30 @@ func (c *ClaimItem) Validate(tx *pop.Connection) (*validate.Errors, error) {
 	return validateModel(c), nil
 }
 
-// Create stores the Policy data as a new record in the database.
+// Create validates and stores the data as a new record in the database, assigning a new ID if needed.
 func (c *ClaimItem) Create(tx *pop.Connection) error {
 	return create(tx, c)
 }
 
-// Update writes the Policy data to an existing database record.
-func (c *ClaimItem) Update(tx *pop.Connection, oldStatus api.ClaimItemStatus) error {
-	validTrans, err := isClaimItemTransitionValid(oldStatus, c.Status)
-	if err != nil {
-		panic(err)
-	}
-	if !validTrans {
-		err := fmt.Errorf("invalid claim item status transition from %s to %s",
-			oldStatus, c.Status)
+// Update changes the status if it is a valid transition.
+func (c *ClaimItem) Update(tx *pop.Connection, newStatus api.ClaimItemStatus, user User) error {
+	oldStatus := c.Status
+	if !isClaimItemTransitionValid(oldStatus, newStatus) {
+		err := fmt.Errorf("invalid claim item status transition from %s to %s", oldStatus, newStatus)
 		appErr := api.NewAppError(err, api.ErrorValidation, api.CategoryUser)
 		return appErr
 	}
-	return update(tx, c)
+
+	c.Status = newStatus
+	if newStatus == api.ClaimItemStatusDenied || newStatus == api.ClaimItemStatusRevision || newStatus == api.ClaimItemStatusApproved {
+		c.ReviewerID = nulls.NewUUID(user.ID)
+		c.ReviewDate = nulls.NewTime(time.Now())
+	}
+	if err := update(tx, c); err != nil {
+		c.Status = oldStatus
+		return err
+	}
+	return nil
 }
 
 func (c *ClaimItem) GetID() uuid.UUID {
@@ -128,22 +133,22 @@ func claimItemStatusTransitions() map[api.ClaimItemStatus][]api.ClaimItemStatus 
 	}
 }
 
-func isClaimItemTransitionValid(status1, status2 api.ClaimItemStatus) (bool, error) {
+func isClaimItemTransitionValid(status1, status2 api.ClaimItemStatus) bool {
 	if status1 == status2 {
-		return true, nil
+		return true
 	}
 	targets, ok := claimItemStatusTransitions()[status1]
 	if !ok {
-		return false, errors.New("unexpected initial claim item status - " + string(status1))
+		panic("unexpected initial claim item status - " + string(status1))
 	}
 
 	for _, target := range targets {
 		if status2 == target {
-			return true, nil
+			return true
 		}
 	}
 
-	return false, nil
+	return false
 }
 
 func (c *ClaimItem) LoadClaim(tx *pop.Connection, reload bool) {

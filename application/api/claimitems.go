@@ -175,3 +175,16 @@ type ClaimFileAttachInput struct {
 	// swagger:strfmt uuid4
 	FileID uuid.UUID `json:"file_id"`
 }
+
+type ClaimItemUpdateInput struct {
+	// ClaimItem ID to update
+	//
+	// swagger:strfmt uuid4
+	ClaimItemID uuid.UUID `json:"claim_item_id"`
+
+	// actual repair cost (0.01 USD)
+	RepairActual int `json:"repair_actual"`
+
+	// actual replacement cost (0.01 USD)
+	ReplaceActual int `json:"replace_actual"`
+}

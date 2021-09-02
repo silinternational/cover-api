@@ -212,9 +212,9 @@ func isClaimTransitionValid(status1, status2 api.ClaimStatus) (bool, error) {
 	return false, nil
 }
 
-func (c *Claim) AddItem(tx *pop.Connection, claim Claim, input api.ClaimItemCreateInput) (ClaimItem, error) {
+func (c *Claim) AddItem(tx *pop.Connection, input api.ClaimItemCreateInput) (ClaimItem, error) {
 	if c == nil {
-		return ClaimItem{}, errors.New("claim is nil in AddItem")
+		panic("claim is nil in AddItem")
 	}
 
 	// ensure item and claim belong to the same policy
@@ -228,15 +228,15 @@ func (c *Claim) AddItem(tx *pop.Connection, claim Claim, input api.ClaimItemCrea
 		return ClaimItem{}, appErr
 	}
 
-	if claim.PolicyID != item.PolicyID {
+	if c.PolicyID != item.PolicyID {
 		err := fmt.Errorf("claim and item do not have same policy id: %s vs. %s",
-			claim.PolicyID.String(), item.PolicyID.String())
+			c.PolicyID.String(), item.PolicyID.String())
 		appErr := api.NewAppError(err, api.ErrorClaimItemCreateInvalidInput, api.CategoryUser)
 		return ClaimItem{}, appErr
 	}
 
 	clmItem := ConvertClaimItemCreateInput(input)
-	clmItem.ClaimID = claim.ID
+	clmItem.ClaimID = c.ID
 
 	if err := clmItem.Create(tx); err != nil {
 		return ClaimItem{}, err
