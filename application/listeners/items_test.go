@@ -35,8 +35,7 @@ func (ts *TestSuite) Test_itemSubmitted() {
 	approvedItem := f.Items[1]
 	models.UpdateItemStatus(db, approvedItem, api.ItemCoverageStatusApproved)
 
-	testEmailer := notifications.NewDummyEmailService()
-	defer testEmailer.DeleteSentMessages()
+	testEmailer := notifications.DummyEmailService{}
 
 	tests := []struct {
 		name                string
@@ -50,7 +49,7 @@ func (ts *TestSuite) Test_itemSubmitted() {
 				Kind: domain.EventApiItemSubmitted,
 				Payload: events.Payload{
 					domain.EventPayloadID: submittedItem.ID,
-					NotifierKey:           testEmailer,
+					NotifierKey:           &testEmailer,
 				},
 			},
 			wantToEmails:        []string{steward.EmailOfChoice()},
@@ -63,7 +62,7 @@ func (ts *TestSuite) Test_itemSubmitted() {
 				Payload: events.Payload{
 					domain.EventPayloadID:                  approvedItem.ID,
 					string(api.ItemCoverageStatusApproved): true,
-					NotifierKey:                            testEmailer,
+					NotifierKey:                            &testEmailer,
 				},
 			},
 			wantToEmails: []string{member0.EmailOfChoice(), member1.EmailOfChoice(), steward.EmailOfChoice()},
