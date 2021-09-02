@@ -36,6 +36,7 @@ func (ts *TestSuite) Test_itemSubmitted() {
 	models.UpdateItemStatus(db, approvedItem, api.ItemCoverageStatusApproved)
 
 	testEmailer := notifications.NewDummyEmailService()
+	defer testEmailer.DeleteSentMessages()
 
 	tests := []struct {
 		name                string

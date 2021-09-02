@@ -61,7 +61,7 @@ func (t *DummyEmailService) GetNumberOfMessagesSent() int {
 
 // DeleteSentMessages erases the store of sent messages
 func (t *DummyEmailService) DeleteSentMessages() {
-	sentMessages[t.timestamp] = []dummyMessage{}
+	delete(sentMessages, t.timestamp)
 }
 
 func (t *DummyEmailService) GetLastToEmail() string {
