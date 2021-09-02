@@ -170,3 +170,11 @@ type ClaimFile struct {
 	// file object
 	File File `json:"file"`
 }
+
+// swagger:model
+type ClaimFileAttachInput struct {
+	// File ID to attach to the claim
+	//
+	// swagger:strfmt uuid4
+	FileID uuid.UUID `json:"file_id"`
+}

@@ -167,11 +167,3 @@ type ClaimItemCreateInput struct {
 	// fair market value (0.01 USD)
 	FMV int `json:"fmv"`
 }
-
-// swagger:model
-type ClaimFileAttachInput struct {
-	// File ID to attach to the claim
-	//
-	// swagger:strfmt uuid4
-	FileID uuid.UUID `json:"file_id"`
-}
