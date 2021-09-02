@@ -175,7 +175,7 @@ func (ts *TestSuite) Test_itemDenied() {
 	member1 := f.Policies[0].Members[1]
 
 	revisionItem := f.Items[0]
-	models.UpdateItemStatus(db, revisionItem, api.ItemCoverageStatusRevision)
+	models.UpdateItemStatus(db, revisionItem, api.ItemCoverageStatusDenied)
 
 	testEmailer := notifications.DummyEmailService{}
 
@@ -186,7 +186,7 @@ func (ts *TestSuite) Test_itemDenied() {
 		wantSubjectsContain []string
 	}{
 		{
-			name: "covverage denied",
+			name: "coverage denied",
 			event: events.Event{
 				Kind: domain.EventApiItemDenied,
 				Payload: events.Payload{
