@@ -153,6 +153,13 @@ func (u *User) FindOrCreateFromAuthUser(tx *pop.Connection, authUser *auth.User)
 	return nil
 }
 
+func (u *User) EmailOfChoice() string {
+	if u.EmailOverride != "" {
+		return u.EmailOverride
+	}
+	return u.Email
+}
+
 //  TODO Consider making this smarter
 func (u *User) FindSteward(tx *pop.Connection) {
 	if err := tx.Where("app_role = ?", AppRoleAdmin).First(u); err != nil {

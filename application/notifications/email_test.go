@@ -13,7 +13,7 @@ func (ts *TestSuite) TestSend() {
 		FromEmail: domain.EmailFromAddress(&nickname),
 		ToName:    "to name",
 		ToEmail:   "to@example.com",
-		Template:  domain.MessageTemplateItemSubmitted,
+		Template:  domain.MessageTemplateItemSubmittedSteward,
 		Data: map[string]interface{}{
 			"uiURL":          "example.com",
 			"appName":        "Our App",
@@ -30,7 +30,7 @@ func (ts *TestSuite) TestSend() {
 	err := emailService.Send(msg)
 	ts.NoError(err, "error sending message")
 
-	n := len(testService.sentMessages)
+	n := len(testService.GetSentMessages())
 	ts.Require().Equal(1, n, "incorrect number of messages sent")
 
 	body := testService.GetLastBody()

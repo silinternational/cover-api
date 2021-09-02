@@ -5,6 +5,8 @@ import (
 	"testing"
 
 	"github.com/gobuffalo/events"
+	"github.com/gobuffalo/pop/v5"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/silinternational/cover-api/domain"
@@ -14,16 +16,27 @@ import (
 // TestSuite establishes a test suite for domain tests
 type TestSuite struct {
 	suite.Suite
+	*require.Assertions
+	DB *pop.Connection
+}
+
+func (ts *TestSuite) SetupTest() {
+	ts.Assertions = require.New(ts.T())
+	models.DestroyAll()
 }
 
 // Test_TestSuite runs the test suite
 func Test_TestSuite(t *testing.T) {
-	suite.Run(t, new(TestSuite))
+	ts := &TestSuite{}
+	c, err := pop.Connect(domain.Env.GoEnv)
+	if err == nil {
+		ts.DB = c
+	}
+	suite.Run(t, ts)
 }
 
 func (ts *TestSuite) Test_findObject() {
 	t := ts.T()
-	db := models.DB
 
 	fixConfig := models.FixturesConfig{
 		NumberOfPolicies:    1,
@@ -34,7 +47,7 @@ func (ts *TestSuite) Test_findObject() {
 		ItemsPerPolicy:      2,
 	}
 
-	f := models.CreateItemFixtures(db, fixConfig)
+	f := models.CreateItemFixtures(ts.DB, fixConfig)
 	user := f.Users[0]
 	item := f.Items[1]
 	claim := f.Claims[0]

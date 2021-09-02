@@ -13,6 +13,8 @@ import (
 	"github.com/silinternational/cover-api/models"
 )
 
+const EventPayloadNotifier = "notifier"
+
 type apiListener struct {
 	name     string
 	listener func(events.Event)
@@ -174,4 +176,16 @@ func panicRecover(name string) {
 // getDelayDuration is a helper function to calculate delay in milliseconds before processing event
 func getDelayDuration(multiplier int) time.Duration {
 	return time.Duration(domain.Env.ListenerDelayMilliseconds) * time.Millisecond * time.Duration(multiplier)
+}
+
+// This is meant to allow tests to use the dummy EmailService
+func getNotifiersFromEventPayload(p events.Payload) []interface{} {
+	var notifiers []interface{}
+	notifier, ok := p[EventPayloadNotifier]
+
+	if ok {
+		notifiers = []interface{}{notifier}
+
+	}
+	return notifiers
 }
