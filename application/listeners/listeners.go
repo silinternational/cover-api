@@ -13,7 +13,7 @@ import (
 	"github.com/silinternational/cover-api/models"
 )
 
-const NotifierKey = "notifier"
+const EventPayloadNotifier = "notifier"
 
 type apiListener struct {
 	name     string
@@ -181,7 +181,7 @@ func getDelayDuration(multiplier int) time.Duration {
 // This is meant to allow tests to use the dummy EmailService
 func getNotifiersFromEventPayload(p events.Payload) []interface{} {
 	var notifiers []interface{}
-	notifier, ok := p[NotifierKey]
+	notifier, ok := p[EventPayloadNotifier]
 
 	if ok {
 		notifiers = []interface{}{notifier}

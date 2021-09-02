@@ -49,7 +49,7 @@ func (ts *TestSuite) Test_itemSubmitted() {
 				Kind: domain.EventApiItemSubmitted,
 				Payload: events.Payload{
 					domain.EventPayloadID: submittedItem.ID,
-					NotifierKey:           &testEmailer,
+					EventPayloadNotifier:  &testEmailer,
 				},
 			},
 			wantToEmails:        []string{steward.EmailOfChoice()},
@@ -62,7 +62,7 @@ func (ts *TestSuite) Test_itemSubmitted() {
 				Payload: events.Payload{
 					domain.EventPayloadID:                  approvedItem.ID,
 					string(api.ItemCoverageStatusApproved): true,
-					NotifierKey:                            &testEmailer,
+					EventPayloadNotifier:                   &testEmailer,
 				},
 			},
 			wantToEmails: []string{member0.EmailOfChoice(), member1.EmailOfChoice(), steward.EmailOfChoice()},
