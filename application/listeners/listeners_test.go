@@ -6,11 +6,13 @@ import (
 
 	"github.com/gobuffalo/events"
 	"github.com/gobuffalo/pop/v5"
+	"github.com/gofrs/uuid"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/silinternational/cover-api/domain"
 	"github.com/silinternational/cover-api/models"
+	"github.com/silinternational/cover-api/notifications"
 )
 
 // TestSuite establishes a test suite for domain tests
@@ -33,6 +35,13 @@ func Test_TestSuite(t *testing.T) {
 		ts.DB = c
 	}
 	suite.Run(t, ts)
+}
+
+func getTestPayload(id uuid.UUID, emailer *notifications.DummyEmailService) events.Payload {
+	return events.Payload{
+		domain.EventPayloadID: id,
+		EventPayloadNotifier:  emailer,
+	}
 }
 
 func (ts *TestSuite) Test_findObject() {

@@ -14,7 +14,7 @@ import (
 const wrongStatusMsg = "error with %s listener. Item has wrong status: %s"
 
 func addMessageItemData(msg *notifications.Message, item models.Item) {
-	msg.Data["itemURL"] = fmt.Sprintf("%s/items/%s", domain.Env.UIURL, item.ID)
+	msg.Data["itemURL"] = fmt.Sprintf("%s/%s/%s", domain.Env.UIURL, domain.TypeItem, item.ID)
 	msg.Data["itemName"] = item.Name
 	return
 }
@@ -30,7 +30,7 @@ func newItemMessageForMember(item models.Item, member models.User) notifications
 	addMessageItemData(&msg, item)
 	msg.ToName = member.Name()
 	msg.ToEmail = member.EmailOfChoice()
-	msg.Data["itemMemberName"] = member.Name()
+	msg.Data["memberName"] = member.Name()
 
 	return msg
 }
@@ -77,7 +77,7 @@ func notifyItemAutoApprovedSteward(item models.Item, memberName string, notifier
 	msg := newItemMessageForSteward(item)
 	msg.Template = domain.MessageTemplateItemAutoSteward
 	msg.Subject = memberName + " just submitted a new policy item that has been auto approved"
-	msg.Data["itemMemberName"] = memberName
+	msg.Data["memberName"] = memberName
 
 	if err := notifications.Send(msg, notifiers...); err != nil {
 		domain.ErrLogger.Printf("error sending item auto approved notification to steward, %s", err)
@@ -88,7 +88,7 @@ func notifyItemSubmitted(item models.Item, memberName string, notifiers []interf
 	msg := newItemMessageForSteward(item)
 	msg.Template = domain.MessageTemplateItemSubmittedSteward
 	msg.Subject = "Action Required. " + memberName + " just submitted a new policy item for approval"
-	msg.Data["itemMemberName"] = memberName
+	msg.Data["memberName"] = memberName
 
 	if err := notifications.Send(msg, notifiers...); err != nil {
 		domain.ErrLogger.Printf("error sending item submitted notification, %s", err)
