@@ -170,7 +170,23 @@ func claimReview2(e events.Event) {
 		return
 	}
 
-	// TODO Notify admin and do whatever else needs doing
+	if claim.Status != api.ClaimStatusReview2 {
+		domain.ErrLogger.Printf(wrongStatusMsg, "claimReview2", claim.Status)
+	}
+
+	claim.LoadPolicyMembers(models.DB, false)
+	memberName := claim.Policy.Members[0].Name()
+
+	msg := notifications.NewEmailMessage().AddToSteward()
+	addMessageClaimData(&msg, claim)
+	msg.Template = domain.MessageTemplateClaimReview2Steward
+	msg.Data["memberName"] = memberName
+	msg.Subject = "Action Required. " + memberName + " just resubmitted a claim for approval"
+
+	notifiers := getNotifiersFromEventPayload(e.Payload)
+	if err := notifications.Send(msg, notifiers...); err != nil {
+		domain.ErrLogger.Printf("error sending claim review2 notification, %s", err)
+	}
 }
 
 func claimReview3(e events.Event) {
@@ -185,7 +201,23 @@ func claimReview3(e events.Event) {
 		return
 	}
 
-	// TODO Notify admin boss and do whatever else needs doing
+	if claim.Status != api.ClaimStatusReview3 {
+		domain.ErrLogger.Printf(wrongStatusMsg, "claimReview3", claim.Status)
+	}
+
+	claim.LoadPolicyMembers(models.DB, false)
+	memberName := claim.Policy.Members[0].Name()
+
+	msg := notifications.NewEmailMessage().AddToSteward()
+	addMessageClaimData(&msg, claim)
+	msg.Template = domain.MessageTemplateClaimReview3Boss
+	msg.Data["memberName"] = memberName
+	msg.Subject = "Action Required. " + memberName + " has a claim waiting for your approval"
+
+	notifiers := getNotifiersFromEventPayload(e.Payload)
+	if err := notifications.Send(msg, notifiers...); err != nil {
+		domain.ErrLogger.Printf("error sending claim review3 notification, %s", err)
+	}
 }
 
 func claimApproved(e events.Event) {
