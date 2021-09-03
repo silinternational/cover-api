@@ -79,3 +79,131 @@ func (ts *TestSuite) Test_claimSubmitted() {
 		})
 	}
 }
+
+func (ts *TestSuite) Test_claimRevision() {
+	t := ts.T()
+	db := ts.DB
+
+	fixConfig := models.FixturesConfig{
+		NumberOfPolicies:    1,
+		UsersPerPolicy:      2,
+		ClaimsPerPolicy:     2,
+		ClaimItemsPerClaim:  1,
+		DependentsPerPolicy: 0,
+		ItemsPerPolicy:      2,
+	}
+
+	f := models.CreateItemFixtures(db, fixConfig)
+
+	member0 := f.Policies[0].Members[0]
+	member1 := f.Policies[0].Members[1]
+
+	revisionClaim := f.Claims[0]
+	models.UpdateClaimStatus(db, revisionClaim, api.ClaimStatusRevision)
+
+	testEmailer := notifications.DummyEmailService{}
+
+	tests := []struct {
+		name                string
+		event               events.Event
+		wantToEmails        []string
+		wantSubjectsContain []string
+	}{
+		{
+			name: "revisions required",
+			event: events.Event{
+				Kind:    domain.EventApiClaimRevision,
+				Payload: getTestPayload(revisionClaim.ID, &testEmailer),
+			},
+			wantToEmails: []string{member0.EmailOfChoice(), member1.EmailOfChoice()},
+			wantSubjectsContain: []string{
+				"changes have been requested on your claim",
+				"changes have been requested on your claim",
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			testEmailer.DeleteSentMessages()
+
+			claimRevision(tt.event)
+
+			wantCount := len(tt.wantToEmails)
+
+			msgs := testEmailer.GetSentMessages()
+			ts.Len(msgs, wantCount, "incorrect message count")
+
+			gotTos := testEmailer.GetAllToAddresses()
+			ts.Equal(tt.wantToEmails, gotTos)
+
+			for i, w := range tt.wantSubjectsContain {
+				ts.Contains(msgs[i].Subject, w, "incorrect email subject")
+			}
+		})
+	}
+}
+
+func (ts *TestSuite) Test_claimPreapproved() {
+	t := ts.T()
+	db := ts.DB
+
+	fixConfig := models.FixturesConfig{
+		NumberOfPolicies:    1,
+		UsersPerPolicy:      2,
+		ClaimsPerPolicy:     2,
+		ClaimItemsPerClaim:  1,
+		DependentsPerPolicy: 0,
+		ItemsPerPolicy:      2,
+	}
+
+	f := models.CreateItemFixtures(db, fixConfig)
+
+	member0 := f.Policies[0].Members[0]
+	member1 := f.Policies[0].Members[1]
+
+	receiptClaim := f.Claims[0]
+	models.UpdateClaimStatus(db, receiptClaim, api.ClaimStatusReceipt)
+
+	testEmailer := notifications.DummyEmailService{}
+
+	tests := []struct {
+		name                string
+		event               events.Event
+		wantToEmails        []string
+		wantSubjectsContain []string
+	}{
+		{
+			name: "receipt required",
+			event: events.Event{
+				Kind:    domain.EventApiClaimPreapproved,
+				Payload: getTestPayload(receiptClaim.ID, &testEmailer),
+			},
+			wantToEmails: []string{member0.EmailOfChoice(), member1.EmailOfChoice()},
+			wantSubjectsContain: []string{
+				"receipts are needed on your new claim",
+				"receipts are needed on your new claim",
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			testEmailer.DeleteSentMessages()
+
+			claimPreapproved(tt.event)
+
+			wantCount := len(tt.wantToEmails)
+
+			msgs := testEmailer.GetSentMessages()
+			ts.Len(msgs, wantCount, "incorrect message count")
+
+			gotTos := testEmailer.GetAllToAddresses()
+			ts.Equal(tt.wantToEmails, gotTos)
+
+			for i, w := range tt.wantSubjectsContain {
+				ts.Contains(msgs[i].Subject, w, "incorrect email subject")
+			}
+		})
+	}
+}

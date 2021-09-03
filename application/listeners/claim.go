@@ -17,6 +17,16 @@ func addMessageClaimData(msg *notifications.Message, claim models.Claim) {
 	return
 }
 
+func newClaimMessageForMember(claim models.Claim, member models.User) notifications.Message {
+	msg := notifications.NewEmailMessage()
+	addMessageClaimData(&msg, claim)
+	msg.ToName = member.Name()
+	msg.ToEmail = member.EmailOfChoice()
+	msg.Data["memberName"] = member.Name()
+
+	return msg
+}
+
 func claimSubmitted(e events.Event) {
 	if e.Kind != domain.EventApiClaimSubmitted {
 		return
@@ -64,7 +74,24 @@ func claimRevision(e events.Event) {
 		return
 	}
 
-	// TODO Notify user and do whatever else needs doing
+	if claim.Status != api.ClaimStatusRevision {
+		domain.ErrLogger.Printf(wrongStatusMsg, "claimRevision", claim.Status)
+		return
+	}
+
+	claim.LoadPolicyMembers(models.DB, false)
+	notifiers := getNotifiersFromEventPayload(e.Payload)
+
+	// TODO figure out how to specify required revisions
+
+	for _, m := range claim.Policy.Members {
+		msg := newClaimMessageForMember(claim, m)
+		msg.Template = domain.MessageTemplateClaimRevisionMember
+		msg.Subject = "changes have been requested on your claim"
+		if err := notifications.Send(msg, notifiers...); err != nil {
+			domain.ErrLogger.Printf("error sending claim revision notification to member, %s", err)
+		}
+	}
 }
 
 func claimPreapproved(e events.Event) {
@@ -79,7 +106,24 @@ func claimPreapproved(e events.Event) {
 		return
 	}
 
-	// TODO Notify user and do whatever else needs doing
+	if claim.Status != api.ClaimStatusReceipt {
+		domain.ErrLogger.Printf(wrongStatusMsg, "claimReceipt", claim.Status)
+		return
+	}
+
+	claim.LoadPolicyMembers(models.DB, false)
+	notifiers := getNotifiersFromEventPayload(e.Payload)
+
+	// TODO Figure out how to tell the members what receipts are needed
+
+	for _, m := range claim.Policy.Members {
+		msg := newClaimMessageForMember(claim, m)
+		msg.Template = domain.MessageTemplateClaimPreapprovedMember
+		msg.Subject = "receipts are needed on your new claim"
+		if err := notifications.Send(msg, notifiers...); err != nil {
+			domain.ErrLogger.Printf("error sending claim receipt notification to member, %s", err)
+		}
+	}
 }
 
 func claimReceipt(e events.Event) {
