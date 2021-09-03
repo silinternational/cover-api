@@ -121,7 +121,7 @@ func claimPreapproved(e events.Event) {
 		msg.Template = domain.MessageTemplateClaimPreapprovedMember
 		msg.Subject = "receipts are needed on your new claim"
 		if err := notifications.Send(msg, notifiers...); err != nil {
-			domain.ErrLogger.Printf("error sending claim receipt notification to member, %s", err)
+			domain.ErrLogger.Printf("error sending claim preapproved notification to member, %s", err)
 		}
 	}
 }
@@ -138,7 +138,24 @@ func claimReceipt(e events.Event) {
 		return
 	}
 
-	// TODO Notify user and do whatever else needs doing
+	if claim.Status != api.ClaimStatusReceipt {
+		domain.ErrLogger.Printf(wrongStatusMsg, "claimReceipt", claim.Status)
+		return
+	}
+
+	claim.LoadPolicyMembers(models.DB, false)
+	notifiers := getNotifiersFromEventPayload(e.Payload)
+
+	// TODO Figure out how to tell the members what receipts are needed
+
+	for _, m := range claim.Policy.Members {
+		msg := newClaimMessageForMember(claim, m)
+		msg.Template = domain.MessageTemplateClaimReceiptMember
+		msg.Subject = "new receipts are needed on your claim"
+		if err := notifications.Send(msg, notifiers...); err != nil {
+			domain.ErrLogger.Printf("error sending claim receipt notification to member, %s", err)
+		}
+	}
 }
 
 func claimReview2(e events.Event) {
