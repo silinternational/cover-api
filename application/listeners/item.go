@@ -11,10 +11,10 @@ import (
 	"github.com/silinternational/cover-api/notifications"
 )
 
-const wrongStatusMsg = "error with %s listener. Item has wrong status: %s"
+const wrongStatusMsg = "error with %s listener. Object has wrong status: %s"
 
 func addMessageItemData(msg *notifications.Message, item models.Item) {
-	msg.Data["itemURL"] = fmt.Sprintf("%s/%s/%s", domain.Env.UIURL, domain.TypeItem, item.ID)
+	msg.Data["itemURL"] = fmt.Sprintf("%s/items/%s", domain.Env.UIURL, item.ID)
 	msg.Data["itemName"] = item.Name
 	return
 }

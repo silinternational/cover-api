@@ -37,7 +37,7 @@ func Test_TestSuite(t *testing.T) {
 	suite.Run(t, ts)
 }
 
-func getTestPayload(id uuid.UUID, emailer *notifications.DummyEmailService) events.Payload {
+func newTestPayload(id uuid.UUID, emailer *notifications.DummyEmailService) events.Payload {
 	return events.Payload{
 		domain.EventPayloadID: id,
 		EventPayloadNotifier:  emailer,

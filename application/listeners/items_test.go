@@ -47,7 +47,7 @@ func (ts *TestSuite) Test_itemSubmitted() {
 			name: "just submitted, not approved",
 			event: events.Event{
 				Kind:    domain.EventApiItemSubmitted,
-				Payload: getTestPayload(submittedItem.ID, &testEmailer),
+				Payload: newTestPayload(submittedItem.ID, &testEmailer),
 			},
 			wantToEmails:        []string{steward.EmailOfChoice()},
 			wantSubjectsContain: []string{"just submitted a new policy item for approval"},
@@ -122,7 +122,7 @@ func (ts *TestSuite) Test_itemRevision() {
 			name: "revisions required",
 			event: events.Event{
 				Kind:    domain.EventApiItemRevision,
-				Payload: getTestPayload(revisionItem.ID, &testEmailer),
+				Payload: newTestPayload(revisionItem.ID, &testEmailer),
 			},
 			wantToEmails: []string{member0.EmailOfChoice(), member1.EmailOfChoice()},
 			wantSubjectsContain: []string{
@@ -183,7 +183,7 @@ func (ts *TestSuite) Test_itemDenied() {
 			name: "coverage denied",
 			event: events.Event{
 				Kind:    domain.EventApiItemDenied,
-				Payload: getTestPayload(revisionItem.ID, &testEmailer),
+				Payload: newTestPayload(revisionItem.ID, &testEmailer),
 			},
 			wantToEmails: []string{member0.EmailOfChoice(), member1.EmailOfChoice()},
 			wantSubjectsContain: []string{

@@ -12,7 +12,7 @@ import (
 )
 
 func addMessageClaimData(msg *notifications.Message, claim models.Claim) {
-	msg.Data["claimURL"] = fmt.Sprintf("%s/%s/%s", domain.Env.UIURL, domain.TypeClaim, claim.ID)
+	msg.Data["claimURL"] = fmt.Sprintf("%s/claims/%s", domain.Env.UIURL, claim.ID)
 	msg.Data["claimRefNum"] = claim.ReferenceNumber
 	return
 }
@@ -40,7 +40,7 @@ func claimReview1(e events.Event) {
 	}
 
 	if claim.Status != api.ClaimStatusReview1 {
-		domain.ErrLogger.Printf(wrongStatusMsg, "claimReview1", claim.Status)
+		panic(fmt.Sprintf(wrongStatusMsg, "claimReview1", claim.Status))
 	}
 
 	claim.LoadPolicyMembers(models.DB, false)
@@ -72,8 +72,7 @@ func claimRevision(e events.Event) {
 	}
 
 	if claim.Status != api.ClaimStatusRevision {
-		domain.ErrLogger.Printf(wrongStatusMsg, "claimRevision", claim.Status)
-		return
+		panic(fmt.Sprintf(wrongStatusMsg, "claimRevision", claim.Status))
 	}
 
 	claim.LoadPolicyMembers(models.DB, false)
@@ -104,8 +103,7 @@ func claimPreapproved(e events.Event) {
 	}
 
 	if claim.Status != api.ClaimStatusReceipt {
-		domain.ErrLogger.Printf(wrongStatusMsg, "claimReceipt", claim.Status)
-		return
+		panic(fmt.Sprintf(wrongStatusMsg, "claimReceipt", claim.Status))
 	}
 
 	claim.LoadPolicyMembers(models.DB, false)
@@ -136,8 +134,7 @@ func claimReceipt(e events.Event) {
 	}
 
 	if claim.Status != api.ClaimStatusReceipt {
-		domain.ErrLogger.Printf(wrongStatusMsg, "claimReceipt", claim.Status)
-		return
+		panic(fmt.Sprintf(wrongStatusMsg, "claimReceipt", claim.Status))
 	}
 
 	claim.LoadPolicyMembers(models.DB, false)
@@ -168,7 +165,7 @@ func claimReview2(e events.Event) {
 	}
 
 	if claim.Status != api.ClaimStatusReview2 {
-		domain.ErrLogger.Printf(wrongStatusMsg, "claimReview2", claim.Status)
+		panic(fmt.Sprintf(wrongStatusMsg, "claimReview2", claim.Status))
 	}
 
 	claim.LoadPolicyMembers(models.DB, false)
@@ -199,7 +196,7 @@ func claimReview3(e events.Event) {
 	}
 
 	if claim.Status != api.ClaimStatusReview3 {
-		domain.ErrLogger.Printf(wrongStatusMsg, "claimReview3", claim.Status)
+		panic(fmt.Sprintf(wrongStatusMsg, "claimReview3", claim.Status))
 	}
 
 	claim.LoadPolicyMembers(models.DB, false)
