@@ -37,11 +37,19 @@ var eventTypes = map[string]func(event events.Event){
 }
 
 func listener(e events.Event) {
-	handler, ok := eventTypes[e.Kind]
-	if ok {
-		time.Sleep(time.Second * 5) // a rough guess at the longest time it takes for the database transaction to close
-		handler(e)
+	if err := recover(); err != nil {
+		domain.Logger.Printf("panic occurred in %s: %s", e.Kind, err)
 	}
+
+	handler, ok := eventTypes[e.Kind]
+	if !ok {
+		panic("event '" + e.Kind + "' has no handler")
+		return
+	}
+
+	time.Sleep(time.Second * 5) // a rough guess at the longest time it takes for the database transaction to close
+
+	handler(e)
 }
 
 // RegisterListener registers the event listener
@@ -101,12 +109,6 @@ func findObject(payload events.Payload, object interface{}, listenerName string)
 	return nil
 }
 
-func panicRecover(name string) {
-	if err := recover(); err != nil {
-		domain.Logger.Printf("panic occurred in %s: %s", name, err)
-	}
-}
-
 // getDelayDuration is a helper function to calculate delay in milliseconds before processing event
 func getDelayDuration(multiplier int) time.Duration {
 	return time.Duration(domain.Env.ListenerDelayMilliseconds) * time.Millisecond * time.Duration(multiplier)
@@ -119,7 +121,6 @@ func getNotifiersFromEventPayload(p events.Payload) []interface{} {
 
 	if ok {
 		notifiers = []interface{}{notifier}
-
 	}
 	return notifiers
 }

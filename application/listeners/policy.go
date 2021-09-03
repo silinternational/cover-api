@@ -8,12 +8,6 @@ import (
 )
 
 func createUserPolicy(e events.Event) {
-	if e.Kind != domain.EventApiUserCreated {
-		return
-	}
-
-	defer panicRecover(e.Kind)
-
 	var user models.User
 	if err := findObject(e.Payload, &user, e.Kind); err != nil {
 		return
