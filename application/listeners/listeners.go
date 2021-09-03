@@ -56,10 +56,10 @@ var apiListeners = map[string][]apiListener{
 			listener: itemDenied,
 		},
 	},
-	domain.EventApiClaimSubmitted: {
+	domain.EventApiClaimReview1: {
 		{
-			name:     "claim-submitted",
-			listener: claimSubmitted,
+			name:     "claim-review1",
+			listener: claimReview1,
 		},
 	},
 	domain.EventApiClaimRevision: {

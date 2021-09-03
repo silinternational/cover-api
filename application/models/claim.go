@@ -255,7 +255,7 @@ func (c *Claim) SubmitForApproval(tx *pop.Connection) error {
 	switch oldStatus {
 	case api.ClaimStatusDraft, api.ClaimStatusRevision:
 		c.Status = api.ClaimStatusReview1
-		eventType = domain.EventApiClaimSubmitted
+		eventType = domain.EventApiClaimReview1
 	case api.ClaimStatusReceipt:
 		// TODO ensure there is a file attached for a receipt
 		c.Status = api.ClaimStatusReview2
@@ -425,6 +425,12 @@ func (c *Claim) LoadPolicy(tx *pop.Connection, reload bool) {
 			panic("database error loading Claim.Policy, " + err.Error())
 		}
 	}
+}
+
+func (c *Claim) LoadPolicyMembers(tx *pop.Connection, reload bool) {
+	c.LoadPolicy(tx, reload)
+
+	c.Policy.LoadMembers(tx, reload)
 }
 
 func (c *Claim) LoadReviewer(tx *pop.Connection, reload bool) {
