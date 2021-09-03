@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/gobuffalo/events"
+	"github.com/gobuffalo/pop/v5"
 
 	"github.com/silinternational/cover-api/api"
 	"github.com/silinternational/cover-api/domain"
@@ -11,10 +12,7 @@ import (
 	"github.com/silinternational/cover-api/notifications"
 )
 
-func (ts *TestSuite) Test_claimReview1() {
-	t := ts.T()
-	db := ts.DB
-
+func getClaimFixtures(db *pop.Connection) models.Fixtures {
 	fixConfig := models.FixturesConfig{
 		NumberOfPolicies:    1,
 		UsersPerPolicy:      2,
@@ -24,7 +22,14 @@ func (ts *TestSuite) Test_claimReview1() {
 		ItemsPerPolicy:      2,
 	}
 
-	f := models.CreateItemFixtures(db, fixConfig)
+	return models.CreateItemFixtures(db, fixConfig)
+}
+
+func (ts *TestSuite) Test_claimReview1() {
+	t := ts.T()
+	db := ts.DB
+
+	getClaimFixtures(db)
 
 	steward := models.CreateAdminUser(db)
 
@@ -43,7 +48,7 @@ func (ts *TestSuite) Test_claimReview1() {
 			name: "submitted to review1",
 			event: events.Event{
 				Kind:    domain.EventApiClaimReview1,
-				Payload: getTestPayload(review1Claim.ID, &testEmailer),
+				Payload: newTestPayload(review1Claim.ID, &testEmailer),
 			},
 			wantToEmails:        []string{steward.EmailOfChoice()},
 			wantSubjectContains: "just (re)submitted a claim for approval",
@@ -101,7 +106,7 @@ func (ts *TestSuite) Test_claimRevision() {
 			name: "revisions required",
 			event: events.Event{
 				Kind:    domain.EventApiClaimRevision,
-				Payload: getTestPayload(revisionClaim.ID, &testEmailer),
+				Payload: newTestPayload(revisionClaim.ID, &testEmailer),
 			},
 			wantToEmails: []string{member0.EmailOfChoice(), member1.EmailOfChoice()},
 			wantSubjectsContain: []string{
@@ -165,7 +170,7 @@ func (ts *TestSuite) Test_claimPreapproved() {
 			name: "preapproved",
 			event: events.Event{
 				Kind:    domain.EventApiClaimPreapproved,
-				Payload: getTestPayload(receiptClaim.ID, &testEmailer),
+				Payload: newTestPayload(receiptClaim.ID, &testEmailer),
 			},
 			wantToEmails: []string{member0.EmailOfChoice(), member1.EmailOfChoice()},
 			wantSubjectsContain: []string{
@@ -229,7 +234,7 @@ func (ts *TestSuite) Test_claimReceipt() {
 			name: "receipt required",
 			event: events.Event{
 				Kind:    domain.EventApiClaimReceipt,
-				Payload: getTestPayload(receiptClaim.ID, &testEmailer),
+				Payload: newTestPayload(receiptClaim.ID, &testEmailer),
 			},
 			wantToEmails: []string{member0.EmailOfChoice(), member1.EmailOfChoice()},
 			wantSubjectsContain: []string{
@@ -292,7 +297,7 @@ func (ts *TestSuite) Test_claimReview2() {
 			name: "submitted to review2",
 			event: events.Event{
 				Kind:    domain.EventApiClaimReview2,
-				Payload: getTestPayload(review2Claim.ID, &testEmailer),
+				Payload: newTestPayload(review2Claim.ID, &testEmailer),
 			},
 			wantToEmails:        []string{steward.EmailOfChoice()},
 			wantSubjectContains: "just resubmitted a claim for approval",
@@ -348,7 +353,7 @@ func (ts *TestSuite) Test_claimReview3() {
 			name: "submitted to review3",
 			event: events.Event{
 				Kind:    domain.EventApiClaimReview3,
-				Payload: getTestPayload(review3Claim.ID, &testEmailer),
+				Payload: newTestPayload(review3Claim.ID, &testEmailer),
 			},
 			wantToEmails:        []string{steward.EmailOfChoice()},
 			wantSubjectContains: "has a claim waiting for your approval",
