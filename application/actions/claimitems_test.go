@@ -34,7 +34,6 @@ func (as *ActionSuite) Test_ClaimItemsUpdate() {
 	claimItem := claim.ClaimItems[0]
 
 	input := api.ClaimItemUpdateInput{
-		ClaimItemID:   claimItem.ID,
 		RepairActual:  100,
 		ReplaceActual: 200,
 	}

@@ -169,11 +169,6 @@ type ClaimItemCreateInput struct {
 }
 
 type ClaimItemUpdateInput struct {
-	// ClaimItem ID to update
-	//
-	// swagger:strfmt uuid4
-	ClaimItemID uuid.UUID `json:"claim_item_id"`
-
 	// actual repair cost (0.01 USD)
 	RepairActual int `json:"repair_actual"`
 
