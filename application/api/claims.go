@@ -75,8 +75,8 @@ type Claim struct {
 
 	// reference number
 	//
-	// human friendly six character string
-	// example: AB4331
+	// human friendly seven character string
+	// example: AB43312
 	ReferenceNumber string `json:"reference_number"`
 
 	// event date

@@ -113,7 +113,7 @@ func claimsUpdate(c buffalo.Context) error {
 	claim.EventDescription = input.EventDescription
 	claim.EventDate = input.EventDate
 
-	if err := claim.Update(models.Tx(c), oldStatus); err != nil {
+	if err := claim.Update(tx, oldStatus); err != nil {
 		return reportError(c, err)
 	}
 
@@ -372,7 +372,7 @@ func claimsItemsCreate(c buffalo.Context) error {
 	}
 
 	tx := models.Tx(c)
-	claimItem, err := claim.AddItem(tx, *claim, input)
+	claimItem, err := claim.AddItem(tx, input)
 	if err != nil {
 		return reportError(c, err)
 	}
