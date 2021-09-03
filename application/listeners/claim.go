@@ -7,6 +7,7 @@ import (
 
 	"github.com/silinternational/cover-api/api"
 	"github.com/silinternational/cover-api/domain"
+	"github.com/silinternational/cover-api/messages"
 	"github.com/silinternational/cover-api/models"
 	"github.com/silinternational/cover-api/notifications"
 )
@@ -43,20 +44,8 @@ func claimReview1(e events.Event) {
 		panic(fmt.Sprintf(wrongStatusMsg, "claimReview1", claim.Status))
 	}
 
-	claim.LoadPolicyMembers(models.DB, false)
-	memberName := claim.Policy.Members[0].Name()
-
-	msg := notifications.NewEmailMessage().AddToSteward()
-	addMessageClaimData(&msg, claim)
-	msg.Template = domain.MessageTemplateClaimReview1Steward
-	msg.Data["memberName"] = memberName
-	msg.Subject = "Action Required. " + memberName + " just (re)submitted a claim for approval"
-
 	notifiers := getNotifiersFromEventPayload(e.Payload)
-	if err := notifications.Send(msg, notifiers...); err != nil {
-		domain.ErrLogger.Printf("error sending claim review1 notification, %s", err)
-	}
-
+	messages.ClaimReview1(claim, notifiers)
 }
 
 func claimRevision(e events.Event) {
