@@ -15,12 +15,12 @@ func (ts *TestSuite) TestSend() {
 		ToEmail:   "to@example.com",
 		Template:  domain.MessageTemplateItemSubmittedSteward,
 		Data: map[string]interface{}{
-			"uiURL":          "example.com",
-			"appName":        "Our App",
-			"itemURL":        "my-item.example.com",
-			"itemName":       "My Item",
-			"itemMemberName": "John Doe",
-			"supportEmail":   "support@example.com",
+			"uiURL":        "example.com",
+			"appName":      "Our App",
+			"itemURL":      "my-item.example.com",
+			"itemName":     "My Item",
+			"memberName":   "John Doe",
+			"supportEmail": "support@example.com",
 		},
 	}
 	var emailService EmailService

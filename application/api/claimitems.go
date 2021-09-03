@@ -168,14 +168,6 @@ type ClaimItemCreateInput struct {
 	FMV int `json:"fmv"`
 }
 
-// swagger:model
-type ClaimFileAttachInput struct {
-	// File ID to attach to the claim
-	//
-	// swagger:strfmt uuid4
-	FileID uuid.UUID `json:"file_id"`
-}
-
 type ClaimItemUpdateInput struct {
 	// ClaimItem ID to update
 	//
