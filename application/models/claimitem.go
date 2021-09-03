@@ -78,11 +78,7 @@ func (c *ClaimItem) Update(tx *pop.Connection, newStatus api.ClaimItemStatus, us
 		c.ReviewerID = nulls.NewUUID(user.ID)
 		c.ReviewDate = nulls.NewTime(time.Now().UTC())
 	}
-	if err := update(tx, c); err != nil {
-		c.Status = oldStatus
-		return err
-	}
-	return nil
+	return update(tx, c)
 }
 
 func (c *ClaimItem) GetID() uuid.UUID {

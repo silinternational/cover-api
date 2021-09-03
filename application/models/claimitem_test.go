@@ -134,15 +134,13 @@ func (ms *ModelSuite) TestClaimItem_Update() {
 	}
 	for _, tt := range tests {
 		ms.T().Run(tt.name, func(t *testing.T) {
-			claimItemCopy := *tt.claimItem
-			err := claimItemCopy.Update(db, tt.newStatus, user)
+			err := (*tt.claimItem).Update(db, tt.newStatus, user)
 			var fromDB ClaimItem
 			ms.NoError(fromDB.FindByID(db, tt.claimItem.ID))
 
 			if tt.wantErr {
 				ms.Error(err)
 				ms.EqualAppError(tt.appError, err)
-				ms.Equal(tt.claimItem.Status, claimItemCopy.Status, "status should not have changed")
 				return
 			}
 			ms.NoError(err)
