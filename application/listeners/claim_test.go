@@ -11,7 +11,7 @@ import (
 	"github.com/silinternational/cover-api/notifications"
 )
 
-func (ts *TestSuite) Test_claimSubmitted() {
+func (ts *TestSuite) Test_claimReview1() {
 	t := ts.T()
 	db := ts.DB
 
@@ -31,9 +31,6 @@ func (ts *TestSuite) Test_claimSubmitted() {
 	review1Claim := f.Claims[0]
 	models.UpdateClaimStatus(db, review1Claim, api.ClaimStatusReview1)
 
-	review2Claim := f.Claims[1]
-	models.UpdateClaimStatus(db, review2Claim, api.ClaimStatusReview2)
-
 	testEmailer := notifications.DummyEmailService{}
 
 	tests := []struct {
@@ -45,20 +42,11 @@ func (ts *TestSuite) Test_claimSubmitted() {
 		{
 			name: "submitted to review1",
 			event: events.Event{
-				Kind:    domain.EventApiClaimSubmitted,
+				Kind:    domain.EventApiClaimReview1,
 				Payload: getTestPayload(review1Claim.ID, &testEmailer),
 			},
 			wantToEmails:        []string{steward.EmailOfChoice()},
-			wantSubjectContains: "just submitted a new claim for approval",
-		},
-		{
-			name: "submitted to review2",
-			event: events.Event{
-				Kind:    domain.EventApiClaimSubmitted,
-				Payload: getTestPayload(review2Claim.ID, &testEmailer),
-			},
-			wantToEmails:        []string{steward.EmailOfChoice()},
-			wantSubjectContains: "just resubmitted a claim for approval",
+			wantSubjectContains: "just (re)submitted a claim for approval",
 		},
 	}
 
@@ -66,7 +54,7 @@ func (ts *TestSuite) Test_claimSubmitted() {
 		t.Run(tt.name, func(t *testing.T) {
 			testEmailer.DeleteSentMessages()
 
-			claimSubmitted(tt.event)
+			claimReview1(tt.event)
 
 			msgs := testEmailer.GetSentMessages()
 			ts.Len(msgs, 1, "incorrect message count")

@@ -27,8 +27,8 @@ func newClaimMessageForMember(claim models.Claim, member models.User) notificati
 	return msg
 }
 
-func claimSubmitted(e events.Event) {
-	if e.Kind != domain.EventApiClaimSubmitted {
+func claimReview1(e events.Event) {
+	if e.Kind != domain.EventApiClaimReview1 {
 		return
 	}
 
@@ -39,25 +39,22 @@ func claimSubmitted(e events.Event) {
 		return
 	}
 
+	if claim.Status != api.ClaimStatusReview1 {
+		domain.ErrLogger.Printf(wrongStatusMsg, "claimReview1", claim.Status)
+	}
+
 	claim.LoadPolicyMembers(models.DB, false)
 	memberName := claim.Policy.Members[0].Name()
 
 	msg := notifications.NewEmailMessage().AddToSteward()
 	addMessageClaimData(&msg, claim)
-	msg.Template = domain.MessageTemplateClaimSubmittedSteward
+	msg.Template = domain.MessageTemplateClaimReview1Steward
 	msg.Data["memberName"] = memberName
-
-	if claim.Status == api.ClaimStatusReview1 {
-		msg.Subject = "Action Required. " + memberName + " just submitted a new claim for approval"
-	} else if claim.Status == api.ClaimStatusReview2 {
-		msg.Subject = "Action Required. " + memberName + " just resubmitted a claim for approval"
-	} else {
-		domain.ErrLogger.Printf(wrongStatusMsg, "claimSubmitted", claim.Status)
-	}
+	msg.Subject = "Action Required. " + memberName + " just (re)submitted a claim for approval"
 
 	notifiers := getNotifiersFromEventPayload(e.Payload)
 	if err := notifications.Send(msg, notifiers...); err != nil {
-		domain.ErrLogger.Printf("error sending claim submitted notification, %s", err)
+		domain.ErrLogger.Printf("error sending claim review1 notification, %s", err)
 	}
 
 }

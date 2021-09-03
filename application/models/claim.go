@@ -255,7 +255,7 @@ func (c *Claim) SubmitForApproval(tx *pop.Connection) error {
 	switch oldStatus {
 	case api.ClaimStatusDraft, api.ClaimStatusRevision:
 		c.Status = api.ClaimStatusReview1
-		eventType = domain.EventApiClaimSubmitted
+		eventType = domain.EventApiClaimReview1
 	case api.ClaimStatusReceipt:
 		// TODO ensure there is a file attached for a receipt
 		c.Status = api.ClaimStatusReview2
