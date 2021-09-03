@@ -11,6 +11,8 @@ import (
 	"github.com/silinternational/cover-api/notifications"
 )
 
+const wrongStatusMsg = "error with %s listener. Item has wrong status: %s"
+
 func addMessageItemData(msg *notifications.Message, item models.Item) {
 	msg.Data["itemURL"] = fmt.Sprintf("%s/items/%s", domain.Env.UIURL, item.ID)
 	msg.Data["itemName"] = item.Name
@@ -53,8 +55,10 @@ func itemSubmitted(e events.Event) {
 	if item.CoverageStatus == api.ItemCoverageStatusApproved {
 		notifyItemApprovedMember(item, notifiers)
 		notifyItemAutoApprovedSteward(item, memberName, notifiers)
-	} else { // Was submitted but not auto approved
+	} else if item.CoverageStatus == api.ItemCoverageStatusPending { // Was submitted but not auto approved
 		notifyItemSubmitted(item, memberName, notifiers)
+	} else {
+		domain.ErrLogger.Printf(wrongStatusMsg, "itemSubmitted", item.CoverageStatus)
 	}
 }
 
@@ -103,7 +107,24 @@ func itemRevision(e events.Event) {
 		return
 	}
 
-	// TODO Notify item creator and do whatever else needs doing
+	if item.CoverageStatus != api.ItemCoverageStatusRevision {
+		domain.ErrLogger.Printf(wrongStatusMsg, "itemRevision", item.CoverageStatus)
+		return
+	}
+
+	item.LoadPolicyMembers(models.DB, false)
+	notifiers := getNotifiersFromEventPayload(e.Payload)
+
+	// TODO figure out how to specify required revisions
+
+	for _, m := range item.Policy.Members {
+		msg := newItemMessageForMember(item, m)
+		msg.Template = domain.MessageTemplateItemRevisionMember
+		msg.Subject = "changes have been requested on your new policy item"
+		if err := notifications.Send(msg, notifiers...); err != nil {
+			domain.ErrLogger.Printf("error sending item revision notification to member, %s", err)
+		}
+	}
 }
 
 func itemApproved(e events.Event) {
@@ -115,6 +136,11 @@ func itemApproved(e events.Event) {
 
 	var item models.Item
 	if err := findObject(e.Payload, &item, e.Kind); err != nil {
+		return
+	}
+
+	if item.CoverageStatus != api.ItemCoverageStatusApproved {
+		domain.ErrLogger.Printf(wrongStatusMsg, "itemApproved", item.CoverageStatus)
 		return
 	}
 
@@ -137,5 +163,22 @@ func itemDenied(e events.Event) {
 		return
 	}
 
-	// TODO Notify item creator and do whatever else needs doing
+	if item.CoverageStatus != api.ItemCoverageStatusDenied {
+		domain.ErrLogger.Printf(wrongStatusMsg, "itemDenied", item.CoverageStatus)
+		return
+	}
+
+	item.LoadPolicyMembers(models.DB, false)
+	notifiers := getNotifiersFromEventPayload(e.Payload)
+
+	// TODO figure out how to give a reason for the denial
+
+	for _, m := range item.Policy.Members {
+		msg := newItemMessageForMember(item, m)
+		msg.Template = domain.MessageTemplateItemDeniedMember
+		msg.Subject = "coverage on your new policy item has been denied"
+		if err := notifications.Send(msg, notifiers...); err != nil {
+			domain.ErrLogger.Printf("error sending item denied notification to member, %s", err)
+		}
+	}
 }
