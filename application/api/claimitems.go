@@ -167,3 +167,11 @@ type ClaimItemCreateInput struct {
 	// fair market value (0.01 USD)
 	FMV int `json:"fmv"`
 }
+
+type ClaimItemUpdateInput struct {
+	// actual repair cost (0.01 USD)
+	RepairActual int `json:"repair_actual"`
+
+	// actual replacement cost (0.01 USD)
+	ReplaceActual int `json:"replace_actual"`
+}

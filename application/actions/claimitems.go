@@ -1,0 +1,61 @@
+package actions
+
+import (
+	"github.com/gobuffalo/buffalo"
+
+	"github.com/silinternational/cover-api/api"
+	"github.com/silinternational/cover-api/domain"
+	"github.com/silinternational/cover-api/models"
+)
+
+// swagger:operation PUT /claimitems/{id} ClaimItems ClaimItemsUpdate
+//
+// ClaimItemsUpdate
+//
+// update a claim item
+//
+// ---
+// parameters:
+// - name: id
+//   in: path
+//   required: true
+//   description: claim item ID
+// - name: claim item input
+//   in: body
+//   description: claim item update input object
+//   required: true
+//   schema:
+//     "$ref": "#/definitions/ClaimItemUpdateInput"
+// responses:
+//   '200':
+//     description: the updated ClaimItem
+//     schema:
+//       "$ref": "#/definitions/ClaimItem"
+func claimItemsUpdate(c buffalo.Context) error {
+	tx := models.Tx(c)
+	claimItem := getReferencedClaimItemFromCtx(c)
+
+	var input api.ClaimItemUpdateInput
+	if err := StrictBind(c, &input); err != nil {
+		return reportError(c, err)
+	}
+
+	claimItem.RepairActual = input.RepairActual
+	claimItem.ReplaceActual = input.ReplaceActual
+
+	if err := claimItem.Update(tx, claimItem.Status, models.CurrentUser(c)); err != nil {
+		return reportError(c, err)
+	}
+
+	return renderOk(c, claimItem.ConvertToAPI(tx))
+}
+
+// getReferencedClaimItemFromCtx pulls the models.ClaimItem resource from context that was put there
+// by the AuthZ middleware
+func getReferencedClaimItemFromCtx(c buffalo.Context) *models.ClaimItem {
+	claimItem, ok := c.Value(domain.TypeClaimItem).(*models.ClaimItem)
+	if !ok {
+		panic("claim item not found in context")
+	}
+	return claimItem
+}

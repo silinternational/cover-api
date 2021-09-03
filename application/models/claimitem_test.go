@@ -78,7 +78,7 @@ func (ms *ModelSuite) TestClaimItem_Validate() {
 	}
 	for _, tt := range tests {
 		ms.T().Run(tt.name, func(t *testing.T) {
-			vErr, _ := tt.claimItem.Validate(DB)
+			vErr, _ := tt.claimItem.Validate(ms.DB)
 			if tt.wantErr {
 				if vErr.Count() == 0 {
 					t.Errorf("Expected an error, but did not get one")
@@ -88,6 +88,64 @@ func (ms *ModelSuite) TestClaimItem_Validate() {
 			} else if vErr.HasAny() {
 				t.Errorf("Unexpected error: %+v", vErr)
 			}
+		})
+	}
+}
+
+func (ms *ModelSuite) TestClaimItem_Update() {
+	fixConfig := FixturesConfig{
+		NumberOfPolicies:    2,
+		UsersPerPolicy:      1,
+		ClaimsPerPolicy:     4,
+		ClaimItemsPerClaim:  3,
+		DependentsPerPolicy: 0,
+		ItemsPerPolicy:      5,
+	}
+
+	db := ms.DB
+	fixtures := CreateItemFixtures(db, fixConfig)
+
+	user := CreateAdminUser(db)
+
+	claim := fixtures.Claims[0]
+	claim.LoadClaimItems(db, false)
+	claimItem := claim.ClaimItems[0]
+
+	tests := []struct {
+		name      string
+		claimItem *ClaimItem
+		newStatus api.ClaimItemStatus
+		wantErr   bool
+		appError  api.AppError
+	}{
+		{
+			name:      "invalid transition",
+			claimItem: &claimItem,
+			newStatus: api.ClaimItemStatusDraft,
+			appError:  api.AppError{Key: api.ErrorValidation, Category: api.CategoryUser},
+			wantErr:   true,
+		},
+		{
+			name:      "ok",
+			claimItem: &claimItem,
+			newStatus: api.ClaimItemStatusDenied,
+			wantErr:   false,
+		},
+	}
+	for _, tt := range tests {
+		ms.T().Run(tt.name, func(t *testing.T) {
+			err := (*tt.claimItem).Update(db, tt.newStatus, user)
+			var fromDB ClaimItem
+			ms.NoError(fromDB.FindByID(db, tt.claimItem.ID))
+
+			if tt.wantErr {
+				ms.Error(err)
+				ms.EqualAppError(tt.appError, err)
+				return
+			}
+			ms.NoError(err)
+
+			ms.Equal(tt.newStatus, fromDB.Status, "incorrect status")
 		})
 	}
 }

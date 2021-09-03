@@ -1,6 +1,7 @@
 package models
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/gobuffalo/buffalo"
@@ -8,6 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
+	"github.com/silinternational/cover-api/api"
 	"github.com/silinternational/cover-api/domain"
 )
 
@@ -65,4 +67,12 @@ func (ms *ModelSuite) Test_CurrentUser() {
 			ms.Equal(tt.wantUser.ID, got.ID)
 		})
 	}
+}
+
+// EqualAppError verifies that the actual error contains an AppError and that a subset of the fields match
+func (ms *ModelSuite) EqualAppError(expected api.AppError, actual error) {
+	var appErr *api.AppError
+	ms.True(errors.As(actual, &appErr), "error does not contain an api.AppError")
+	ms.Equal(appErr.Key, expected.Key, "error key does not match")
+	ms.Equal(appErr.Category, expected.Category, "error category does not match")
 }

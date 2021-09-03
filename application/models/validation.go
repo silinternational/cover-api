@@ -150,7 +150,7 @@ func claimItemStructLevelValidation(sl validator.StructLevel) {
 		panic("claimItemStructLevelValidation registered to a type other than ClaimItem")
 	}
 
-	if claimItem.Status != api.ClaimItemStatusApproved && claimItem.Status != api.ClaimItemStatusDenied {
+	if claimItem.Status == api.ClaimItemStatusPending || claimItem.Status == api.ClaimItemStatusDraft {
 		return
 	}
 
