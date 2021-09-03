@@ -427,6 +427,12 @@ func (c *Claim) LoadPolicy(tx *pop.Connection, reload bool) {
 	}
 }
 
+func (c *Claim) LoadPolicyMembers(tx *pop.Connection, reload bool) {
+	c.LoadPolicy(tx, reload)
+
+	c.Policy.LoadMembers(tx, reload)
+}
+
 func (c *Claim) LoadReviewer(tx *pop.Connection, reload bool) {
 	if c.ReviewerID.Valid && (c.Reviewer.ID == uuid.Nil || reload) {
 		if err := tx.Load(c, "Reviewer"); err != nil {

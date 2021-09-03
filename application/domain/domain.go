@@ -111,6 +111,8 @@ const (
 
 //  Notification templates
 const (
+	MessageTemplateClaimSubmittedSteward = "claim_submitted_steward"
+
 	MessageTemplateItemSubmittedSteward = "item_submitted_steward"
 	MessageTemplateItemApprovedMember   = "item_approved_member"
 	MessageTemplateItemAutoSteward      = "item_auto_approved_steward"

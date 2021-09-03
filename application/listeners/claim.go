@@ -1,11 +1,21 @@
 package listeners
 
 import (
+	"fmt"
+
 	"github.com/gobuffalo/events"
 
+	"github.com/silinternational/cover-api/api"
 	"github.com/silinternational/cover-api/domain"
 	"github.com/silinternational/cover-api/models"
+	"github.com/silinternational/cover-api/notifications"
 )
+
+func addMessageClaimData(msg *notifications.Message, claim models.Claim) {
+	msg.Data["claimURL"] = fmt.Sprintf("%s/%s/%s", domain.Env.UIURL, domain.TypeClaim, claim.ID)
+	msg.Data["claimRefNum"] = claim.ReferenceNumber
+	return
+}
 
 func claimSubmitted(e events.Event) {
 	if e.Kind != domain.EventApiClaimSubmitted {
@@ -19,7 +29,27 @@ func claimSubmitted(e events.Event) {
 		return
 	}
 
-	// TODO Notify admin and do whatever else needs doing
+	claim.LoadPolicyMembers(models.DB, false)
+	memberName := claim.Policy.Members[0].Name()
+
+	msg := notifications.NewEmailMessage().AddToSteward()
+	addMessageClaimData(&msg, claim)
+	msg.Template = domain.MessageTemplateClaimSubmittedSteward
+	msg.Data["memberName"] = memberName
+
+	if claim.Status == api.ClaimStatusReview1 {
+		msg.Subject = "Action Required. " + memberName + " just submitted a new claim for approval"
+	} else if claim.Status == api.ClaimStatusReview2 {
+		msg.Subject = "Action Required. " + memberName + " just resubmitted a claim for approval"
+	} else {
+		domain.ErrLogger.Printf(wrongStatusMsg, "claimSubmitted", claim.Status)
+	}
+
+	notifiers := getNotifiersFromEventPayload(e.Payload)
+	if err := notifications.Send(msg, notifiers...); err != nil {
+		domain.ErrLogger.Printf("error sending claim submitted notification, %s", err)
+	}
+
 }
 
 func claimRevision(e events.Event) {
