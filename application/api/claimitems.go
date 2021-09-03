@@ -168,6 +168,7 @@ type ClaimItemCreateInput struct {
 	FMV int `json:"fmv"`
 }
 
+// swagger:model
 type ClaimItemUpdateInput struct {
 	// actual repair cost (0.01 USD)
 	RepairActual int `json:"repair_actual"`
