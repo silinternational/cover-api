@@ -23,26 +23,6 @@ func getClaimFixtures(db *pop.Connection) models.Fixtures {
 	return models.CreateItemFixtures(db, fixConfig)
 }
 
-type testData struct {
-	name                string
-	wantToEmails        []string
-	wantSubjectsContain []string
-}
-
-func validateClaimEmails(ts *TestSuite, td testData, testEmailer notifications.DummyEmailService) {
-	wantCount := len(td.wantToEmails)
-
-	msgs := testEmailer.GetSentMessages()
-	ts.Len(msgs, wantCount, "incorrect message count")
-
-	gotTos := testEmailer.GetAllToAddresses()
-	ts.Equal(td.wantToEmails, gotTos)
-
-	for i, w := range td.wantSubjectsContain {
-		ts.Contains(msgs[i].Subject, w, "incorrect email subject")
-	}
-}
-
 func (ts *TestSuite) Test_ClaimReview1Send() {
 	t := ts.T()
 	db := ts.DB
@@ -67,7 +47,7 @@ func (ts *TestSuite) Test_ClaimReview1Send() {
 		t.Run(tt.name, func(t *testing.T) {
 			testEmailer.DeleteSentMessages()
 			ClaimReview1Send(review1Claim, []interface{}{&testEmailer})
-			validateClaimEmails(ts, tt, testEmailer)
+			validateEmails(ts, tt, testEmailer)
 		})
 	}
 }
@@ -100,7 +80,7 @@ func (ts *TestSuite) Test_ClaimRevisionSend() {
 		t.Run(tt.name, func(t *testing.T) {
 			testEmailer.DeleteSentMessages()
 			ClaimRevisionSend(revisionClaim, []interface{}{&testEmailer})
-			validateClaimEmails(ts, tt, testEmailer)
+			validateEmails(ts, tt, testEmailer)
 		})
 	}
 }
@@ -133,7 +113,7 @@ func (ts *TestSuite) Test_ClaimPreapprovedSend() {
 		t.Run(tt.name, func(t *testing.T) {
 			testEmailer.DeleteSentMessages()
 			ClaimPreapprovedSend(receiptClaim, []interface{}{&testEmailer})
-			validateClaimEmails(ts, tt, testEmailer)
+			validateEmails(ts, tt, testEmailer)
 		})
 	}
 }
@@ -166,7 +146,7 @@ func (ts *TestSuite) Test_ClaimReceiptSend() {
 		t.Run(tt.name, func(t *testing.T) {
 			testEmailer.DeleteSentMessages()
 			ClaimReceiptSend(receiptClaim, []interface{}{&testEmailer})
-			validateClaimEmails(ts, tt, testEmailer)
+			validateEmails(ts, tt, testEmailer)
 		})
 	}
 }
@@ -195,7 +175,7 @@ func (ts *TestSuite) Test_ClaimReview2Send() {
 		t.Run(tt.name, func(t *testing.T) {
 			testEmailer.DeleteSentMessages()
 			ClaimReview2Send(review2Claim, []interface{}{&testEmailer})
-			validateClaimEmails(ts, tt, testEmailer)
+			validateEmails(ts, tt, testEmailer)
 		})
 	}
 }
@@ -224,7 +204,7 @@ func (ts *TestSuite) Test_claimReview3() {
 		t.Run(tt.name, func(t *testing.T) {
 			testEmailer.DeleteSentMessages()
 			ClaimReview3Send(review3Claim, []interface{}{&testEmailer})
-			validateClaimEmails(ts, tt, testEmailer)
+			validateEmails(ts, tt, testEmailer)
 		})
 	}
 }
