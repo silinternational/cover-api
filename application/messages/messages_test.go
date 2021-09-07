@@ -9,6 +9,7 @@ import (
 
 	"github.com/silinternational/cover-api/domain"
 	"github.com/silinternational/cover-api/models"
+	"github.com/silinternational/cover-api/notifications"
 )
 
 // TestSuite establishes a test suite for domain tests
@@ -31,4 +32,24 @@ func Test_TestSuite(t *testing.T) {
 		ts.DB = c
 	}
 	suite.Run(t, ts)
+}
+
+type testData struct {
+	name                string
+	wantToEmails        []string
+	wantSubjectsContain []string
+}
+
+func validateEmails(ts *TestSuite, td testData, testEmailer notifications.DummyEmailService) {
+	wantCount := len(td.wantToEmails)
+
+	msgs := testEmailer.GetSentMessages()
+	ts.Len(msgs, wantCount, "incorrect message count")
+
+	gotTos := testEmailer.GetAllToAddresses()
+	ts.Equal(td.wantToEmails, gotTos)
+
+	for i, w := range td.wantSubjectsContain {
+		ts.Contains(msgs[i].Subject, w, "incorrect email subject")
+	}
 }

@@ -32,46 +32,36 @@ func (ts *TestSuite) Test_ItemSubmittedSend() {
 	testEmailer := notifications.DummyEmailService{}
 
 	tests := []struct {
-		name                string
-		item                models.Item
-		wantToEmails        []string
-		wantSubjectsContain []string
+		data testData
+		item models.Item
 	}{
 		{
-			name:                "just submitted, not approved",
-			item:                submittedItem,
-			wantToEmails:        []string{steward.EmailOfChoice()},
-			wantSubjectsContain: []string{"just submitted a new policy item for approval"},
+			data: testData{
+				name:                "just submitted, not approved",
+				wantToEmails:        []string{steward.EmailOfChoice()},
+				wantSubjectsContain: []string{"just submitted a new policy item for approval"},
+			},
+			item: submittedItem,
 		},
 		{
-			name:         "auto approved",
-			item:         approvedItem,
-			wantToEmails: []string{member0.EmailOfChoice(), member1.EmailOfChoice(), steward.EmailOfChoice()},
-			wantSubjectsContain: []string{
-				"your new policy item has been approved",
-				"your new policy item has been approved",
-				"a new policy item that has been auto approved",
+			data: testData{
+				name:         "auto approved",
+				wantToEmails: []string{member0.EmailOfChoice(), member1.EmailOfChoice(), steward.EmailOfChoice()},
+				wantSubjectsContain: []string{
+					"your new policy item has been approved",
+					"your new policy item has been approved",
+					"a new policy item that has been auto approved",
+				},
 			},
+			item: approvedItem,
 		},
 	}
 
 	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+		t.Run(tt.data.name, func(t *testing.T) {
 			testEmailer.DeleteSentMessages()
-
 			ItemSubmittedSend(tt.item, []interface{}{&testEmailer})
-
-			wantCount := len(tt.wantToEmails)
-
-			msgs := testEmailer.GetSentMessages()
-			ts.Len(msgs, wantCount, "incorrect message count")
-
-			gotTos := testEmailer.GetAllToAddresses()
-			ts.Equal(tt.wantToEmails, gotTos)
-
-			for i, w := range tt.wantSubjectsContain {
-				ts.Contains(msgs[i].Subject, w, "incorrect email subject")
-			}
+			validateEmails(ts, tt.data, testEmailer)
 		})
 	}
 }
@@ -96,15 +86,9 @@ func (ts *TestSuite) Test_ItemRevisionSend() {
 
 	testEmailer := notifications.DummyEmailService{}
 
-	tests := []struct {
-		name                string
-		item                models.Item
-		wantToEmails        []string
-		wantSubjectsContain []string
-	}{
+	tests := []testData{
 		{
 			name:         "revisions required",
-			item:         revisionItem,
 			wantToEmails: []string{member0.EmailOfChoice(), member1.EmailOfChoice()},
 			wantSubjectsContain: []string{
 				"changes have been requested on your new policy item",
@@ -116,20 +100,8 @@ func (ts *TestSuite) Test_ItemRevisionSend() {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			testEmailer.DeleteSentMessages()
-
-			ItemRevisionSend(tt.item, []interface{}{&testEmailer})
-
-			wantCount := len(tt.wantToEmails)
-
-			msgs := testEmailer.GetSentMessages()
-			ts.Len(msgs, wantCount, "incorrect message count")
-
-			gotTos := testEmailer.GetAllToAddresses()
-			ts.Equal(tt.wantToEmails, gotTos)
-
-			for i, w := range tt.wantSubjectsContain {
-				ts.Contains(msgs[i].Subject, w, "incorrect email subject")
-			}
+			ItemRevisionSend(revisionItem, []interface{}{&testEmailer})
+			validateEmails(ts, tt, testEmailer)
 		})
 	}
 }
@@ -154,15 +126,9 @@ func (ts *TestSuite) Test_ItemDeniedSend() {
 
 	testEmailer := notifications.DummyEmailService{}
 
-	tests := []struct {
-		name                string
-		item                models.Item
-		wantToEmails        []string
-		wantSubjectsContain []string
-	}{
+	tests := []testData{
 		{
 			name:         "coverage denied",
-			item:         revisionItem,
 			wantToEmails: []string{member0.EmailOfChoice(), member1.EmailOfChoice()},
 			wantSubjectsContain: []string{
 				"coverage on your new policy item has been denied",
@@ -174,20 +140,8 @@ func (ts *TestSuite) Test_ItemDeniedSend() {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			testEmailer.DeleteSentMessages()
-
-			ItemDeniedSend(tt.item, []interface{}{&testEmailer})
-
-			wantCount := len(tt.wantToEmails)
-
-			msgs := testEmailer.GetSentMessages()
-			ts.Len(msgs, wantCount, "incorrect message count")
-
-			gotTos := testEmailer.GetAllToAddresses()
-			ts.Equal(tt.wantToEmails, gotTos)
-
-			for i, w := range tt.wantSubjectsContain {
-				ts.Contains(msgs[i].Subject, w, "incorrect email subject")
-			}
+			ItemDeniedSend(revisionItem, []interface{}{&testEmailer})
+			validateEmails(ts, tt, testEmailer)
 		})
 	}
 }
