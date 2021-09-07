@@ -456,6 +456,7 @@ func (c *Claim) ConvertToAPI(tx *pop.Connection) api.Claim {
 	return api.Claim{
 		ID:               c.ID,
 		PolicyID:         c.PolicyID,
+		ReferenceNumber:  c.ReferenceNumber,
 		EventDate:        c.EventDate,
 		EventType:        c.EventType,
 		EventDescription: c.EventDescription,

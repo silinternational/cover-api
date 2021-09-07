@@ -65,16 +65,14 @@ func (c *ClaimItem) Create(tx *pop.Connection) error {
 }
 
 // Update changes the status if it is a valid transition.
-func (c *ClaimItem) Update(tx *pop.Connection, newStatus api.ClaimItemStatus, user User) error {
-	oldStatus := c.Status
-	if !isClaimItemTransitionValid(oldStatus, newStatus) {
-		err := fmt.Errorf("invalid claim item status transition from %s to %s", oldStatus, newStatus)
+func (c *ClaimItem) Update(tx *pop.Connection, oldStatus api.ClaimItemStatus, user User) error {
+	if !isClaimItemTransitionValid(oldStatus, c.Status) {
+		err := fmt.Errorf("invalid claim item status transition from %s to %s", oldStatus, c.Status)
 		appErr := api.NewAppError(err, api.ErrorValidation, api.CategoryUser)
 		return appErr
 	}
 
-	c.Status = newStatus
-	if newStatus == api.ClaimItemStatusDenied || newStatus == api.ClaimItemStatusRevision || newStatus == api.ClaimItemStatusApproved {
+	if c.Status == api.ClaimItemStatusDenied || c.Status == api.ClaimItemStatusRevision || c.Status == api.ClaimItemStatusApproved {
 		c.ReviewerID = nulls.NewUUID(user.ID)
 		c.ReviewDate = nulls.NewTime(time.Now().UTC())
 	}
