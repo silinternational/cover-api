@@ -7,6 +7,7 @@ import (
 
 	"github.com/silinternational/cover-api/api"
 	"github.com/silinternational/cover-api/domain"
+	"github.com/silinternational/cover-api/messages"
 	"github.com/silinternational/cover-api/models"
 	"github.com/silinternational/cover-api/notifications"
 )
@@ -17,12 +18,6 @@ func addMessageItemData(msg *notifications.Message, item models.Item) {
 	msg.Data["itemURL"] = fmt.Sprintf("%s/items/%s", domain.Env.UIURL, item.ID)
 	msg.Data["itemName"] = item.Name
 	return
-}
-
-func newItemMessageForSteward(item models.Item) notifications.Message {
-	msg := notifications.NewEmailMessage().AddToSteward()
-	addMessageItemData(&msg, item)
-	return msg
 }
 
 func newItemMessageForMember(item models.Item, member models.User) notifications.Message {
@@ -41,19 +36,15 @@ func itemSubmitted(e events.Event) {
 		return
 	}
 
-	item.LoadPolicyMembers(models.DB, false)
-	memberName := item.Policy.Members[0].Name()
-
-	notifiers := getNotifiersFromEventPayload(e.Payload)
-
 	if item.CoverageStatus == api.ItemCoverageStatusApproved {
-		notifyItemApprovedMember(item, notifiers)
-		notifyItemAutoApprovedSteward(item, memberName, notifiers)
+		// TODO any business rules to deal with here
 	} else if item.CoverageStatus == api.ItemCoverageStatusPending { // Was submitted but not auto approved
-		notifyItemSubmitted(item, memberName, notifiers)
+		// TODO any business rules to deal with here
 	} else {
 		domain.ErrLogger.Printf(wrongStatusMsg, "itemSubmitted", item.CoverageStatus)
 	}
+
+	messages.ItemSubmittedSend(item, getNotifiersFromEventPayload(e.Payload))
 }
 
 func notifyItemApprovedMember(item models.Item, notifiers []interface{}) {
@@ -67,28 +58,6 @@ func notifyItemApprovedMember(item models.Item, notifiers []interface{}) {
 	}
 }
 
-func notifyItemAutoApprovedSteward(item models.Item, memberName string, notifiers []interface{}) {
-	msg := newItemMessageForSteward(item)
-	msg.Template = domain.MessageTemplateItemAutoSteward
-	msg.Subject = memberName + " just submitted a new policy item that has been auto approved"
-	msg.Data["memberName"] = memberName
-
-	if err := notifications.Send(msg, notifiers...); err != nil {
-		domain.ErrLogger.Printf("error sending item auto approved notification to steward, %s", err)
-	}
-}
-
-func notifyItemSubmitted(item models.Item, memberName string, notifiers []interface{}) {
-	msg := newItemMessageForSteward(item)
-	msg.Template = domain.MessageTemplateItemSubmittedSteward
-	msg.Subject = "Action Required. " + memberName + " just submitted a new policy item for approval"
-	msg.Data["memberName"] = memberName
-
-	if err := notifications.Send(msg, notifiers...); err != nil {
-		domain.ErrLogger.Printf("error sending item submitted notification, %s", err)
-	}
-}
-
 func itemRevision(e events.Event) {
 	var item models.Item
 	if err := findObject(e.Payload, &item, e.Kind); err != nil {
@@ -96,8 +65,7 @@ func itemRevision(e events.Event) {
 	}
 
 	if item.CoverageStatus != api.ItemCoverageStatusRevision {
-		domain.ErrLogger.Printf(wrongStatusMsg, "itemRevision", item.CoverageStatus)
-		return
+		panic(fmt.Sprintf(wrongStatusMsg, "itemRevision", item.CoverageStatus))
 	}
 
 	item.LoadPolicyMembers(models.DB, false)

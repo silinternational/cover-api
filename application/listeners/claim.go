@@ -6,7 +6,6 @@ import (
 	"github.com/gobuffalo/events"
 
 	"github.com/silinternational/cover-api/api"
-	"github.com/silinternational/cover-api/domain"
 	"github.com/silinternational/cover-api/messages"
 	"github.com/silinternational/cover-api/models"
 )
