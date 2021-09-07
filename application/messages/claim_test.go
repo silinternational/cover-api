@@ -30,8 +30,7 @@ func (ts *TestSuite) Test_ClaimReview1Send() {
 	f := getClaimFixtures(db)
 	steward := models.CreateAdminUser(db)
 
-	review1Claim := f.Claims[0]
-	models.UpdateClaimStatus(db, review1Claim, api.ClaimStatusReview1)
+	review1Claim := models.UpdateClaimStatus(db, f.Claims[0], api.ClaimStatusReview1)
 
 	testEmailer := notifications.DummyEmailService{}
 
@@ -60,8 +59,7 @@ func (ts *TestSuite) Test_ClaimRevisionSend() {
 	member0 := f.Policies[0].Members[0]
 	member1 := f.Policies[0].Members[1]
 
-	revisionClaim := f.Claims[0]
-	models.UpdateClaimStatus(db, revisionClaim, api.ClaimStatusRevision)
+	revisionClaim := models.UpdateClaimStatus(db, f.Claims[0], api.ClaimStatusRevision)
 
 	testEmailer := notifications.DummyEmailService{}
 
@@ -93,8 +91,7 @@ func (ts *TestSuite) Test_ClaimPreapprovedSend() {
 	member0 := f.Policies[0].Members[0]
 	member1 := f.Policies[0].Members[1]
 
-	receiptClaim := f.Claims[0]
-	models.UpdateClaimStatus(db, receiptClaim, api.ClaimStatusReceipt)
+	receiptClaim := models.UpdateClaimStatus(db, f.Claims[0], api.ClaimStatusReceipt)
 
 	testEmailer := notifications.DummyEmailService{}
 
@@ -126,8 +123,7 @@ func (ts *TestSuite) Test_ClaimReceiptSend() {
 	member0 := f.Policies[0].Members[0]
 	member1 := f.Policies[0].Members[1]
 
-	receiptClaim := f.Claims[0]
-	models.UpdateClaimStatus(db, receiptClaim, api.ClaimStatusReceipt)
+	receiptClaim := models.UpdateClaimStatus(db, f.Claims[0], api.ClaimStatusReceipt)
 
 	testEmailer := notifications.DummyEmailService{}
 
@@ -158,8 +154,7 @@ func (ts *TestSuite) Test_ClaimReview2Send() {
 	f := getClaimFixtures(db)
 	steward := models.CreateAdminUser(db)
 
-	review2Claim := f.Claims[0]
-	models.UpdateClaimStatus(db, review2Claim, api.ClaimStatusReview2)
+	review2Claim := models.UpdateClaimStatus(db, f.Claims[0], api.ClaimStatusReview2)
 
 	testEmailer := notifications.DummyEmailService{}
 
@@ -187,8 +182,7 @@ func (ts *TestSuite) Test_claimReview3() {
 	f := getClaimFixtures(db)
 	steward := models.CreateAdminUser(db)
 
-	review3Claim := f.Claims[0]
-	models.UpdateClaimStatus(db, review3Claim, api.ClaimStatusReview3)
+	review3Claim := models.UpdateClaimStatus(db, f.Claims[0], api.ClaimStatusReview3)
 
 	testEmailer := notifications.DummyEmailService{}
 
@@ -204,6 +198,70 @@ func (ts *TestSuite) Test_claimReview3() {
 		t.Run(tt.name, func(t *testing.T) {
 			testEmailer.DeleteSentMessages()
 			ClaimReview3Send(review3Claim, []interface{}{&testEmailer})
+			validateEmails(ts, tt, testEmailer)
+		})
+	}
+}
+
+func (ts *TestSuite) Test_ClaimApprovedSend() {
+	t := ts.T()
+	db := ts.DB
+
+	f := getClaimFixtures(db)
+	member0 := f.Policies[0].Members[0]
+	member1 := f.Policies[0].Members[1]
+
+	approvedClaim := models.UpdateClaimStatus(db, f.Claims[0], api.ClaimStatusApproved)
+
+	testEmailer := notifications.DummyEmailService{}
+
+	tests := []testData{
+		{
+			name:         "claim approved",
+			wantToEmails: []string{member0.EmailOfChoice(), member1.EmailOfChoice()},
+			wantSubjectsContain: []string{
+				"your claim has been approved",
+				"your claim has been approved",
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			testEmailer.DeleteSentMessages()
+			ClaimApprovedSend(approvedClaim, []interface{}{&testEmailer})
+			validateEmails(ts, tt, testEmailer)
+		})
+	}
+}
+
+func (ts *TestSuite) Test_ClaimDeniedSend() {
+	t := ts.T()
+	db := ts.DB
+
+	f := getClaimFixtures(db)
+	member0 := f.Policies[0].Members[0]
+	member1 := f.Policies[0].Members[1]
+
+	deniedClaim := models.UpdateClaimStatus(db, f.Claims[0], api.ClaimStatusDenied)
+
+	testEmailer := notifications.DummyEmailService{}
+
+	tests := []testData{
+		{
+			name:         "claim denied",
+			wantToEmails: []string{member0.EmailOfChoice(), member1.EmailOfChoice()},
+			wantSubjectsContain: []string{
+				"your claim has been denied",
+				"your claim has been denied",
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			testEmailer.DeleteSentMessages()
+			ClaimDeniedSend(deniedClaim, []interface{}{&testEmailer})
 			validateEmails(ts, tt, testEmailer)
 		})
 	}

@@ -112,3 +112,32 @@ func ClaimReview3Send(claim models.Claim, notifiers []interface{}) {
 		domain.ErrLogger.Printf("error sending claim review3 notification, %s", err)
 	}
 }
+
+func ClaimApprovedSend(claim models.Claim, notifiers []interface{}) {
+	claim.LoadPolicyMembers(models.DB, false)
+
+	for _, m := range claim.Policy.Members {
+		msg := newClaimMessageForMember(claim, m)
+		msg.Template = MessageTemplateClaimApprovedMember
+		msg.Subject = "your claim has been approved"
+		if err := notifications.Send(msg, notifiers...); err != nil {
+			domain.ErrLogger.Printf("error sending claim approved notification to member, %s", err)
+		}
+	}
+}
+
+func ClaimDeniedSend(claim models.Claim, notifiers []interface{}) {
+	claim.LoadPolicyMembers(models.DB, false)
+
+	// TODO check if it was denied by the boss and if so, email the steward
+	// TODO figure out how to notify the members of the reason for the denial
+
+	for _, m := range claim.Policy.Members {
+		msg := newClaimMessageForMember(claim, m)
+		msg.Template = MessageTemplateClaimDeniedMember
+		msg.Subject = "your claim has been denied"
+		if err := notifications.Send(msg, notifiers...); err != nil {
+			domain.ErrLogger.Printf("error sending claim approved notification to member, %s", err)
+		}
+	}
+}
