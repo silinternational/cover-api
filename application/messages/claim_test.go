@@ -28,7 +28,7 @@ func (ts *TestSuite) Test_ClaimReview1Send() {
 	db := ts.DB
 
 	f := getClaimFixtures(db)
-	steward := models.CreateAdminUser(db)
+	steward := models.CreateAdminUsers(db)[models.AppRoleSteward]
 
 	review1Claim := models.UpdateClaimStatus(db, f.Claims[0], api.ClaimStatusReview1)
 
@@ -152,7 +152,7 @@ func (ts *TestSuite) Test_ClaimReview2Send() {
 	db := ts.DB
 
 	f := getClaimFixtures(db)
-	steward := models.CreateAdminUser(db)
+	steward := models.CreateAdminUsers(db)[models.AppRoleSteward]
 
 	review2Claim := models.UpdateClaimStatus(db, f.Claims[0], api.ClaimStatusReview2)
 
@@ -180,7 +180,7 @@ func (ts *TestSuite) Test_claimReview3() {
 	db := ts.DB
 
 	f := getClaimFixtures(db)
-	steward := models.CreateAdminUser(db)
+	boss := models.CreateAdminUsers(db)[models.AppRoleSteward]
 
 	review3Claim := models.UpdateClaimStatus(db, f.Claims[0], api.ClaimStatusReview3)
 
@@ -189,7 +189,7 @@ func (ts *TestSuite) Test_claimReview3() {
 	tests := []testData{
 		{
 			name:                "submitted to review3",
-			wantToEmails:        []string{steward.EmailOfChoice()},
+			wantToEmails:        []string{boss.EmailOfChoice()},
 			wantSubjectsContain: []string{"has a claim waiting for your approval"},
 		},
 	}

@@ -309,7 +309,7 @@ func (ms *ModelSuite) TestClaim_Approve() {
 
 	fixtures := CreateItemFixtures(ms.DB, fixConfig)
 
-	appAdmin := CreateAdminUser(ms.DB)
+	appAdmin := CreateAdminUsers(ms.DB)[AppRoleAdmin]
 
 	policy := fixtures.Policies[0]
 	draftClaim := policy.Claims[0]
@@ -404,7 +404,7 @@ func (ms *ModelSuite) TestClaim_Deny() {
 
 	fixtures := CreateItemFixtures(ms.DB, fixConfig)
 
-	appAdmin := CreateAdminUser(ms.DB)
+	appAdmin := CreateAdminUsers(ms.DB)[AppRoleAdmin]
 
 	policy := fixtures.Policies[0]
 	draftClaim := policy.Claims[0]

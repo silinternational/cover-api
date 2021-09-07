@@ -881,7 +881,7 @@ func (as *ActionSuite) Test_convertItemApiInput() {
 
 	fixtures := models.CreateItemFixtures(as.DB, fixConfig)
 	user := fixtures.Users[0]
-	admin := models.CreateAdminUser(as.DB)
+	admin := models.CreateAdminUsers(as.DB)[models.AppRoleAdmin]
 
 	policy := fixtures.Policies[0]
 

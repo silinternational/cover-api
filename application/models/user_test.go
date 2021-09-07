@@ -96,12 +96,12 @@ func (ms *ModelSuite) TestUser_CreateInitialPolicy() {
 
 func (ms *ModelSuite) TestUser_FindSteward() {
 	CreateUserFixtures(ms.DB, 3)
-	appAdmin := CreateAdminUser(ms.DB)
-	CreateAdminUser(ms.DB)
+	steward := CreateAdminUsers(ms.DB)[AppRoleSteward]
+	CreateAdminUsers(ms.DB)
 
 	var user User
 	user.FindSteward(ms.DB)
-	ms.Equal(appAdmin.ID, user.ID, "incorrect user ID")
+	ms.Equal(steward.ID, user.ID, "incorrect user ID")
 }
 
 func (ms *ModelSuite) TestUser_EmailOfChoice() {

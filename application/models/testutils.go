@@ -229,13 +229,21 @@ func CreateCategoryFixtures(tx *pop.Connection, n int) Fixtures {
 	}
 }
 
-func CreateAdminUser(tx *pop.Connection) User {
+func createAdminUserWithRole(tx *pop.Connection, role UserAppRole) User {
 	user := CreateUserFixtures(tx, 1).Users[0]
-	user.AppRole = AppRoleAdmin
+	user.AppRole = role
 	if err := user.Update(tx); err != nil {
 		panic("failed to update user as an admin " + err.Error())
 	}
 	return user
+}
+
+func CreateAdminUsers(tx *pop.Connection) map[UserAppRole]User {
+	return map[UserAppRole]User{
+		AppRoleAdmin:   createAdminUserWithRole(tx, AppRoleAdmin),
+		AppRoleSteward: createAdminUserWithRole(tx, AppRoleSteward),
+		AppRoleBoss:    createAdminUserWithRole(tx, AppRoleBoss),
+	}
 }
 
 // CreateUserFixtures generates any number of user records for testing. The access token for

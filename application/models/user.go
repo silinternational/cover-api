@@ -22,13 +22,17 @@ import (
 type UserAppRole string
 
 const (
-	AppRoleAdmin = UserAppRole("Admin")
-	AppRoleUser  = UserAppRole("User")
+	AppRoleAdmin   = UserAppRole("Admin")
+	AppRoleSteward = UserAppRole("Steward")
+	AppRoleBoss    = UserAppRole("Boss")
+	AppRoleUser    = UserAppRole("User")
 )
 
 var validUserAppRoles = map[UserAppRole]struct{}{
-	AppRoleAdmin: {},
-	AppRoleUser:  {},
+	AppRoleAdmin:   {},
+	AppRoleSteward: {},
+	AppRoleBoss:    {},
+	AppRoleUser:    {},
 }
 
 // Users is a slice of User objects
@@ -160,10 +164,15 @@ func (u *User) EmailOfChoice() string {
 	return u.Email
 }
 
-//  TODO Consider making this smarter
 func (u *User) FindSteward(tx *pop.Connection) {
-	if err := tx.Where("app_role = ?", AppRoleAdmin).First(u); err != nil {
-		panic("error finding steward " + err.Error())
+	if err := tx.Where("app_role = ?", AppRoleSteward).First(u); err != nil {
+		panic("error finding steward user" + err.Error())
+	}
+}
+
+func (u *User) FindBoss(tx *pop.Connection) {
+	if err := tx.Where("app_role = ?", AppRoleBoss).First(u); err != nil {
+		panic("error finding boss user " + err.Error())
 	}
 }
 
