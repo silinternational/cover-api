@@ -184,7 +184,7 @@ func App() *buffalo.App {
 		policiesGroup.GET(idRegex+"/members", policiesListMembers)
 	}
 
-	listeners.RegisterListeners()
+	listeners.RegisterListener()
 
 	return app
 }
