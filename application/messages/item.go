@@ -34,7 +34,7 @@ func newItemMessageForMember(item models.Item, member models.User) notifications
 func notifyItemApprovedMember(item models.Item, notifiers []interface{}) {
 	for _, m := range item.Policy.Members {
 		msg := newItemMessageForMember(item, m)
-		msg.Template = domain.MessageTemplateItemApprovedMember
+		msg.Template = MessageTemplateItemApprovedMember
 		msg.Subject = "your new policy item has been approved"
 		if err := notifications.Send(msg, notifiers...); err != nil {
 			domain.ErrLogger.Printf("error sending item auto approved notification to member, %s", err)
@@ -44,7 +44,7 @@ func notifyItemApprovedMember(item models.Item, notifiers []interface{}) {
 
 func notifyItemAutoApprovedSteward(item models.Item, memberName string, notifiers []interface{}) {
 	msg := newItemMessageForSteward(item)
-	msg.Template = domain.MessageTemplateItemAutoSteward
+	msg.Template = MessageTemplateItemAutoSteward
 	msg.Subject = memberName + " just submitted a new policy item that has been auto approved"
 	msg.Data["memberName"] = memberName
 
@@ -55,7 +55,7 @@ func notifyItemAutoApprovedSteward(item models.Item, memberName string, notifier
 
 func notifyItemSubmitted(item models.Item, memberName string, notifiers []interface{}) {
 	msg := newItemMessageForSteward(item)
-	msg.Template = domain.MessageTemplateItemSubmittedSteward
+	msg.Template = MessageTemplateItemSubmittedSteward
 	msg.Subject = "Action Required. " + memberName + " just submitted a new policy item for approval"
 	msg.Data["memberName"] = memberName
 
@@ -72,5 +72,41 @@ func ItemSubmittedSend(item models.Item, notifiers []interface{}) {
 		notifyItemAutoApprovedSteward(item, memberName, notifiers)
 	} else if item.CoverageStatus == api.ItemCoverageStatusPending { // Was submitted but not auto approved
 		notifyItemSubmitted(item, memberName, notifiers)
+	}
+}
+
+func ItemRevisionSend(item models.Item, notifiers []interface{}) {
+	item.LoadPolicyMembers(models.DB, false)
+
+	// TODO figure out how to specify required revisions
+
+	for _, m := range item.Policy.Members {
+		msg := newItemMessageForMember(item, m)
+		msg.Template = MessageTemplateItemRevisionMember
+		msg.Subject = "changes have been requested on your new policy item"
+		if err := notifications.Send(msg, notifiers...); err != nil {
+			domain.ErrLogger.Printf("error sending item revision notification to member, %s", err)
+		}
+	}
+}
+
+func ItemApprovedSend(item models.Item, notifiers []interface{}) {
+	item.LoadPolicyMembers(models.DB, false)
+	notifyItemApprovedMember(item, notifiers)
+}
+
+func ItemDeniedSend(item models.Item, notifiers []interface{}) {
+
+	item.LoadPolicyMembers(models.DB, false)
+
+	// TODO figure out how to give a reason for the denial
+
+	for _, m := range item.Policy.Members {
+		msg := newItemMessageForMember(item, m)
+		msg.Template = MessageTemplateItemDeniedMember
+		msg.Subject = "coverage on your new policy item has been denied"
+		if err := notifications.Send(msg, notifiers...); err != nil {
+			domain.ErrLogger.Printf("error sending item denied notification to member, %s", err)
+		}
 	}
 }
