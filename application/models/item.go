@@ -423,7 +423,7 @@ func (i *Item) GetAccountablePerson(tx *pop.Connection) string {
 		}
 		return policyDependent.Name
 	}
-	panic("no accountable person defined for item " + i.ID.String())
+	return ""
 }
 
 func (i *Item) GetAnnualPremium() int {
