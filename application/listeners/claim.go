@@ -94,7 +94,8 @@ func claimApproved(e events.Event) {
 		return
 	}
 
-	// TODO Notify user and do whatever else needs doing
+	messages.ClaimApprovedSend(claim, getNotifiersFromEventPayload(e.Payload))
+	// TODO whatever else needs doing, e.g. trigger payments
 }
 
 func claimDenied(e events.Event) {
@@ -103,5 +104,5 @@ func claimDenied(e events.Event) {
 		return
 	}
 
-	// TODO Notify user and do whatever else needs doing
+	messages.ClaimDeniedSend(claim, getNotifiersFromEventPayload(e.Payload))
 }

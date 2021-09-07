@@ -8,6 +8,8 @@ const (
 	MessageTemplateClaimReceiptMember     = "claim_receipt_member"
 	MessageTemplateClaimReview2Steward    = "claim_review2_steward"
 	MessageTemplateClaimReview3Boss       = "claim_review3_boss"
+	MessageTemplateClaimApprovedMember    = "claim_approved_member"
+	MessageTemplateClaimDeniedMember      = "claim_denied_member"
 
 	MessageTemplateItemSubmittedSteward = "item_submitted_steward"
 	MessageTemplateItemApprovedMember   = "item_approved_member"

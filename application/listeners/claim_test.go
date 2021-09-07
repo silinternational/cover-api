@@ -32,8 +32,7 @@ func (ts *TestSuite) Test_claimReview1() {
 
 	f := getClaimFixtures(db)
 
-	review1Claim := f.Claims[0]
-	models.UpdateClaimStatus(db, review1Claim, api.ClaimStatusReview1)
+	review1Claim := models.UpdateClaimStatus(db, f.Claims[0], api.ClaimStatusReview1)
 
 	testEmailer := notifications.DummyEmailService{}
 
@@ -66,8 +65,7 @@ func (ts *TestSuite) Test_claimRevision() {
 
 	f := getClaimFixtures(db)
 
-	revisionClaim := f.Claims[0]
-	models.UpdateClaimStatus(db, revisionClaim, api.ClaimStatusRevision)
+	revisionClaim := models.UpdateClaimStatus(db, f.Claims[0], api.ClaimStatusRevision)
 
 	testEmailer := notifications.DummyEmailService{}
 
@@ -100,8 +98,7 @@ func (ts *TestSuite) Test_claimPreapproved() {
 
 	f := getClaimFixtures(db)
 
-	receiptClaim := f.Claims[0]
-	models.UpdateClaimStatus(db, receiptClaim, api.ClaimStatusReceipt)
+	receiptClaim := models.UpdateClaimStatus(db, f.Claims[0], api.ClaimStatusReceipt)
 
 	testEmailer := notifications.DummyEmailService{}
 
@@ -134,8 +131,7 @@ func (ts *TestSuite) Test_claimReceipt() {
 
 	f := getClaimFixtures(db)
 
-	receiptClaim := f.Claims[0]
-	models.UpdateClaimStatus(db, receiptClaim, api.ClaimStatusReceipt)
+	receiptClaim := models.UpdateClaimStatus(db, f.Claims[0], api.ClaimStatusReceipt)
 
 	testEmailer := notifications.DummyEmailService{}
 
@@ -168,8 +164,7 @@ func (ts *TestSuite) Test_claimReview2() {
 
 	f := getClaimFixtures(db)
 
-	review2Claim := f.Claims[0]
-	models.UpdateClaimStatus(db, review2Claim, api.ClaimStatusReview2)
+	review2Claim := models.UpdateClaimStatus(db, f.Claims[0], api.ClaimStatusReview2)
 
 	testEmailer := notifications.DummyEmailService{}
 
@@ -202,8 +197,7 @@ func (ts *TestSuite) Test_claimReview3() {
 
 	f := getClaimFixtures(db)
 
-	review3Claim := f.Claims[0]
-	models.UpdateClaimStatus(db, review3Claim, api.ClaimStatusReview3)
+	review3Claim := models.UpdateClaimStatus(db, f.Claims[0], api.ClaimStatusReview3)
 
 	testEmailer := notifications.DummyEmailService{}
 
@@ -224,6 +218,72 @@ func (ts *TestSuite) Test_claimReview3() {
 		t.Run(tt.name, func(t *testing.T) {
 			testEmailer.DeleteSentMessages()
 			claimReview3(tt.event)
+
+			ts.Greater(testEmailer.GetNumberOfMessagesSent(), 0, "no email messages sent")
+		})
+	}
+}
+
+func (ts *TestSuite) Test_claimApproved() {
+	t := ts.T()
+	db := ts.DB
+
+	f := getClaimFixtures(db)
+
+	approvedClaim := models.UpdateClaimStatus(db, f.Claims[0], api.ClaimStatusApproved)
+
+	testEmailer := notifications.DummyEmailService{}
+
+	tests := []struct {
+		name  string
+		event events.Event
+	}{
+		{
+			name: "approved",
+			event: events.Event{
+				Kind:    domain.EventApiClaimApproved,
+				Payload: newTestPayload(approvedClaim.ID, &testEmailer),
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			testEmailer.DeleteSentMessages()
+			claimApproved(tt.event)
+
+			ts.Greater(testEmailer.GetNumberOfMessagesSent(), 0, "no email messages sent")
+		})
+	}
+}
+
+func (ts *TestSuite) Test_claimDenied() {
+	t := ts.T()
+	db := ts.DB
+
+	f := getClaimFixtures(db)
+
+	deniedClaim := models.UpdateClaimStatus(db, f.Claims[0], api.ClaimStatusDenied)
+
+	testEmailer := notifications.DummyEmailService{}
+
+	tests := []struct {
+		name  string
+		event events.Event
+	}{
+		{
+			name: "claim denied",
+			event: events.Event{
+				Kind:    domain.EventApiClaimDenied,
+				Payload: newTestPayload(deniedClaim.ID, &testEmailer),
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			testEmailer.DeleteSentMessages()
+			claimDenied(tt.event)
 
 			ts.Greater(testEmailer.GetNumberOfMessagesSent(), 0, "no email messages sent")
 		})
