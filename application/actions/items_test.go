@@ -871,7 +871,7 @@ func (as *ActionSuite) Test_ItemsRemove() {
 	}
 }
 
-func (as *ActionSuite) Test_convertItemApiInput() {
+func (as *ActionSuite) Test_NewItemFromApiInput() {
 	fixConfig := models.FixturesConfig{
 		NumberOfPolicies:    2,
 		ItemsPerPolicy:      2,
@@ -970,7 +970,7 @@ func (as *ActionSuite) Test_convertItemApiInput() {
 
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
-			got, err := convertItemApiInput(models.CreateTestContext(tt.user), tt.input, tt.policy.ID)
+			got, err := models.NewItemFromApiInput(models.CreateTestContext(tt.user), tt.input, tt.policy.ID)
 
 			if tt.wantErr != "" {
 				as.Error(err, "UUT did not return expected error")
