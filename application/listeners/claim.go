@@ -12,12 +12,6 @@ import (
 )
 
 func claimReview1(e events.Event) {
-	if e.Kind != domain.EventApiClaimReview1 {
-		return
-	}
-
-	defer panicRecover(e.Kind)
-
 	var claim models.Claim
 	if err := findObject(e.Payload, &claim, e.Kind); err != nil {
 		return
@@ -31,12 +25,6 @@ func claimReview1(e events.Event) {
 }
 
 func claimRevision(e events.Event) {
-	if e.Kind != domain.EventApiClaimRevision {
-		return
-	}
-
-	defer panicRecover(e.Kind)
-
 	var claim models.Claim
 	if err := findObject(e.Payload, &claim, e.Kind); err != nil {
 		return
@@ -50,12 +38,6 @@ func claimRevision(e events.Event) {
 }
 
 func claimPreapproved(e events.Event) {
-	if e.Kind != domain.EventApiClaimPreapproved {
-		return
-	}
-
-	defer panicRecover(e.Kind)
-
 	var claim models.Claim
 	if err := findObject(e.Payload, &claim, e.Kind); err != nil {
 		return
@@ -69,12 +51,6 @@ func claimPreapproved(e events.Event) {
 }
 
 func claimReceipt(e events.Event) {
-	if e.Kind != domain.EventApiClaimReceipt {
-		return
-	}
-
-	defer panicRecover(e.Kind)
-
 	var claim models.Claim
 	if err := findObject(e.Payload, &claim, e.Kind); err != nil {
 		return
@@ -88,12 +64,6 @@ func claimReceipt(e events.Event) {
 }
 
 func claimReview2(e events.Event) {
-	if e.Kind != domain.EventApiClaimReview2 {
-		return
-	}
-
-	defer panicRecover(e.Kind)
-
 	var claim models.Claim
 	if err := findObject(e.Payload, &claim, e.Kind); err != nil {
 		return
@@ -107,12 +77,6 @@ func claimReview2(e events.Event) {
 }
 
 func claimReview3(e events.Event) {
-	if e.Kind != domain.EventApiClaimReview3 {
-		return
-	}
-
-	defer panicRecover(e.Kind)
-
 	var claim models.Claim
 	if err := findObject(e.Payload, &claim, e.Kind); err != nil {
 		return
@@ -126,12 +90,6 @@ func claimReview3(e events.Event) {
 }
 
 func claimApproved(e events.Event) {
-	if e.Kind != domain.EventApiClaimApproved {
-		return
-	}
-
-	defer panicRecover(e.Kind)
-
 	var claim models.Claim
 	if err := findObject(e.Payload, &claim, e.Kind); err != nil {
 		return
@@ -141,12 +99,6 @@ func claimApproved(e events.Event) {
 }
 
 func claimDenied(e events.Event) {
-	if e.Kind != domain.EventApiClaimDenied {
-		return
-	}
-
-	defer panicRecover(e.Kind)
-
 	var claim models.Claim
 	if err := findObject(e.Payload, &claim, e.Kind); err != nil {
 		return

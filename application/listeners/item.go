@@ -36,12 +36,6 @@ func newItemMessageForMember(item models.Item, member models.User) notifications
 }
 
 func itemSubmitted(e events.Event) {
-	if e.Kind != domain.EventApiItemSubmitted {
-		return
-	}
-
-	defer panicRecover(e.Kind)
-
 	var item models.Item
 	if err := findObject(e.Payload, &item, e.Kind); err != nil {
 		return
@@ -96,12 +90,6 @@ func notifyItemSubmitted(item models.Item, memberName string, notifiers []interf
 }
 
 func itemRevision(e events.Event) {
-	if e.Kind != domain.EventApiItemRevision {
-		return
-	}
-
-	defer panicRecover(e.Kind)
-
 	var item models.Item
 	if err := findObject(e.Payload, &item, e.Kind); err != nil {
 		return
@@ -128,12 +116,6 @@ func itemRevision(e events.Event) {
 }
 
 func itemApproved(e events.Event) {
-	if e.Kind != domain.EventApiItemApproved {
-		return
-	}
-
-	defer panicRecover(e.Kind)
-
 	var item models.Item
 	if err := findObject(e.Payload, &item, e.Kind); err != nil {
 		return
@@ -152,12 +134,6 @@ func itemApproved(e events.Event) {
 }
 
 func itemDenied(e events.Event) {
-	if e.Kind != domain.EventApiItemDenied {
-		return
-	}
-
-	defer panicRecover(e.Kind)
-
 	var item models.Item
 	if err := findObject(e.Payload, &item, e.Kind); err != nil {
 		return
