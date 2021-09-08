@@ -27,15 +27,16 @@ type ItemCategories []ItemCategory
 
 // ItemCategory model
 type ItemCategory struct {
-	ID             uuid.UUID              `db:"id"`
-	RiskCategoryID uuid.UUID              `db:"risk_category_id"`
-	Name           string                 `db:"name" validate:"required"`
-	HelpText       string                 `db:"help_text"`
-	Status         api.ItemCategoryStatus `db:"status" validate:"itemCategoryStatus"`
-	AutoApproveMax int                    `db:"auto_approve_max"`
-	LegacyID       nulls.Int              `db:"legacy_id"`
-	CreatedAt      time.Time              `db:"created_at"`
-	UpdatedAt      time.Time              `db:"updated_at"`
+	ID               uuid.UUID              `db:"id"`
+	RiskCategoryID   uuid.UUID              `db:"risk_category_id"`
+	Name             string                 `db:"name" validate:"required"`
+	HelpText         string                 `db:"help_text"`
+	Status           api.ItemCategoryStatus `db:"status" validate:"itemCategoryStatus"`
+	AutoApproveMax   int                    `db:"auto_approve_max"`
+	RequireMakeModel bool                   `db:"require_make_model"`
+	LegacyID         nulls.Int              `db:"legacy_id"`
+	CreatedAt        time.Time              `db:"created_at"`
+	UpdatedAt        time.Time              `db:"updated_at"`
 
 	RiskCategory RiskCategory `belongs_to:"risk_categories" fk_id:"RiskCategoryID" validate:"-"`
 }
@@ -71,14 +72,15 @@ func (i *ItemCategory) FindByID(tx *pop.Connection, id uuid.UUID) error {
 func (i *ItemCategory) ConvertToAPI(tx *pop.Connection) api.ItemCategory {
 	i.LoadRiskCategory(tx)
 	return api.ItemCategory{
-		ID:             i.ID,
-		Name:           i.Name,
-		HelpText:       i.HelpText,
-		Status:         i.Status,
-		AutoApproveMax: i.AutoApproveMax,
-		RiskCategory:   i.RiskCategory.ConvertToAPI(),
-		CreatedAt:      i.CreatedAt,
-		UpdatedAt:      i.UpdatedAt,
+		ID:               i.ID,
+		Name:             i.Name,
+		HelpText:         i.HelpText,
+		Status:           i.Status,
+		AutoApproveMax:   i.AutoApproveMax,
+		RequireMakeModel: i.RequireMakeModel,
+		RiskCategory:     i.RiskCategory.ConvertToAPI(),
+		CreatedAt:        i.CreatedAt,
+		UpdatedAt:        i.UpdatedAt,
 	}
 }
 

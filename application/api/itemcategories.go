@@ -45,6 +45,9 @@ type ItemCategory struct {
 	// auto-approve maximum claim amount
 	AutoApproveMax int `json:"auto_approve_max"`
 
+	// whether the make and model fields are required for auto-approval
+	RequireMakeModel bool `json:"require_make_model"`
+
 	// date-time created
 	//
 	// swagger:strfmt date-time

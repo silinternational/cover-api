@@ -1,0 +1,1 @@
+drop_column("risk_categories", "require_make_model")
