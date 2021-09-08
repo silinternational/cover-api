@@ -216,16 +216,14 @@ func CreateCategoryFixtures(tx *pop.Connection, n int) Fixtures {
 	CreateRiskCategories(tx)
 
 	categories := make(ItemCategories, n)
-	even := true
+
 	for i := range categories {
-		if even {
+		if i%2 == 0 {
 			categories[i].RiskCategoryID = RiskCategoryStationaryID()
 			categories[i].RequireMakeModel = false
-			even = false
 		} else {
 			categories[i].RiskCategoryID = RiskCategoryMobileID()
 			categories[i].RequireMakeModel = true
-			even = true
 		}
 
 		categories[i].Name = randStr(10)
