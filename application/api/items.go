@@ -86,6 +86,12 @@ type Item struct {
 
 	// risk category
 	RiskCategory RiskCategory `json:"risk_category"`
+
+	// annual premium (0.01 USD)
+	AnnualPremium int `json:"annual_premium"`
+
+	// Name of accountable person
+	AccountablePerson string `json:"accountable_person"`
 }
 
 // ItemInput represents payload for adding an item
@@ -134,4 +140,7 @@ type ItemInput struct {
 
 	// date (yyyy-mm-dd) of item's coverage start date
 	CoverageStartDate string `json:"coverage_start_date"`
+
+	// Accountable person ID. Can be either a policy dependent ID or a user ID
+	AccountablePersonID uuid.UUID `json:"accountable_person_id"`
 }
