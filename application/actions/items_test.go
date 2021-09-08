@@ -129,19 +129,20 @@ func (as *ActionSuite) Test_ItemsCreate() {
 	iCat := fixtures.ItemCategories[0]
 
 	goodItem := api.ItemInput{
-		Name:              "Good Item",
-		CategoryID:        iCat.ID,
-		RiskCategoryID:    nulls.NewUUID(models.RiskCategoryMobileID()),
-		InStorage:         true,
-		Country:           "Thailand",
-		Description:       "camera",
-		Make:              "Minolta",
-		Model:             "Max",
-		SerialNumber:      "MM1234",
-		CoverageAmount:    101,
-		PurchaseDate:      "2006-01-02",
-		CoverageStatus:    api.ItemCoverageStatusDraft,
-		CoverageStartDate: "2006-01-03",
+		Name:                "Good Item",
+		CategoryID:          iCat.ID,
+		RiskCategoryID:      nulls.NewUUID(models.RiskCategoryMobileID()),
+		InStorage:           true,
+		Country:             "Thailand",
+		Description:         "camera",
+		Make:                "Minolta",
+		Model:               "Max",
+		SerialNumber:        "MM1234",
+		CoverageAmount:      101,
+		PurchaseDate:        "2006-01-02",
+		CoverageStatus:      api.ItemCoverageStatusDraft,
+		CoverageStartDate:   "2006-01-03",
+		AccountablePersonID: policyCreator.ID,
 	}
 
 	badItemDate := goodItem
@@ -627,19 +628,20 @@ func (as *ActionSuite) Test_ItemsUpdate() {
 	}
 
 	goodItem := api.ItemInput{
-		Name:              "Good Item",
-		CategoryID:        iCat.ID,
-		RiskCategoryID:    nulls.NewUUID(models.RiskCategoryMobileID()),
-		InStorage:         true,
-		Country:           "Thailand",
-		Description:       "camera",
-		Make:              "Minolta",
-		Model:             "Max",
-		SerialNumber:      "MM1234",
-		CoverageAmount:    revisionItem.CoverageAmount,
-		PurchaseDate:      "2006-01-02",
-		CoverageStatus:    api.ItemCoverageStatusRevision,
-		CoverageStartDate: "2006-01-03",
+		Name:                "Good Item",
+		CategoryID:          iCat.ID,
+		RiskCategoryID:      nulls.NewUUID(models.RiskCategoryMobileID()),
+		InStorage:           true,
+		Country:             "Thailand",
+		Description:         "camera",
+		Make:                "Minolta",
+		Model:               "Max",
+		SerialNumber:        "MM1234",
+		CoverageAmount:      revisionItem.CoverageAmount,
+		PurchaseDate:        "2006-01-02",
+		CoverageStatus:      api.ItemCoverageStatusRevision,
+		CoverageStartDate:   "2006-01-03",
+		AccountablePersonID: policyCreator.ID,
 	}
 
 	tests := []struct {
@@ -871,7 +873,7 @@ func (as *ActionSuite) Test_ItemsRemove() {
 	}
 }
 
-func (as *ActionSuite) Test_convertItemApiInput() {
+func (as *ActionSuite) Test_NewItemFromApiInput() {
 	fixConfig := models.FixturesConfig{
 		NumberOfPolicies:    2,
 		ItemsPerPolicy:      2,
@@ -888,18 +890,19 @@ func (as *ActionSuite) Test_convertItemApiInput() {
 	itemCategory := fixtures.ItemCategories[0]
 
 	item := api.ItemInput{
-		Name:              "Good Item",
-		CategoryID:        itemCategory.ID,
-		InStorage:         true,
-		Country:           "Thailand",
-		Description:       "camera",
-		Make:              "Minolta",
-		Model:             "Max",
-		SerialNumber:      "MM1234",
-		CoverageAmount:    101,
-		PurchaseDate:      "2006-01-02",
-		CoverageStatus:    api.ItemCoverageStatusDraft,
-		CoverageStartDate: "2006-01-03",
+		Name:                "Good Item",
+		CategoryID:          itemCategory.ID,
+		InStorage:           true,
+		Country:             "Thailand",
+		Description:         "camera",
+		Make:                "Minolta",
+		Model:               "Max",
+		SerialNumber:        "MM1234",
+		CoverageAmount:      101,
+		PurchaseDate:        "2006-01-02",
+		CoverageStatus:      api.ItemCoverageStatusDraft,
+		CoverageStartDate:   "2006-01-03",
+		AccountablePersonID: user.ID,
 	}
 
 	itemWithBadPurchaseDate := item
@@ -970,7 +973,7 @@ func (as *ActionSuite) Test_convertItemApiInput() {
 
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
-			got, err := convertItemApiInput(models.CreateTestContext(tt.user), tt.input, tt.policy.ID)
+			got, err := models.NewItemFromApiInput(models.CreateTestContext(tt.user), tt.input, tt.policy.ID)
 
 			if tt.wantErr != "" {
 				as.Error(err, "UUT did not return expected error")

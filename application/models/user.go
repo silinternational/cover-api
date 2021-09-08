@@ -334,6 +334,7 @@ func (u *User) ConvertToAPI(tx *pop.Connection) api.User {
 		EmailOverride: u.EmailOverride,
 		FirstName:     u.FirstName,
 		LastName:      u.LastName,
+		Name:          u.Name(),
 		LastLoginUTC:  u.LastLoginUTC,
 		Location:      u.Location,
 		PhotoFileID:   u.PhotoFileID,

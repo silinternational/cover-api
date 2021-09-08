@@ -1,0 +1,2 @@
+add_column("items", "policy_user_id", "uuid", {"null": true})
+add_foreign_key("items", "policy_user_id", {"users": ["id"]}, {"on_delete": "set null"})
