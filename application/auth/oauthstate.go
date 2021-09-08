@@ -14,6 +14,7 @@ import (
 
 	"github.com/gorilla/sessions"
 	"github.com/markbates/goth"
+
 	"github.com/silinternational/cover-api/domain"
 )
 
@@ -33,6 +34,7 @@ func init() {
 
 	cookieStore := sessions.NewCookieStore([]byte(key))
 	cookieStore.Options.HttpOnly = true
+	cookieStore.Options.Secure = true
 	store = cookieStore
 	defaultStore = store
 }
