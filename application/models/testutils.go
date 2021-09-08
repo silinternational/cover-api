@@ -96,6 +96,13 @@ func CreateFileFixtures(tx *pop.Connection, n int, createdByID uuid.UUID) Fixtur
 // Uses FixturesConfig fields: NumberOfPolices, DependentsPerPolicy, UsersPerPolicy, ItemsPerPolicy, ClaimsPerPolicy,
 // ClaimItemsPerClaim, ClaimFilesPerClaim
 func CreateItemFixtures(tx *pop.Connection, config FixturesConfig) Fixtures {
+	if config.NumberOfPolicies < 1 {
+		config.NumberOfPolicies = 1
+	}
+	if config.ItemsPerPolicy < 1 {
+		config.ItemsPerPolicy = 1
+	}
+
 	fixtures := CreatePolicyFixtures(tx, config)
 	policies := fixtures.Policies
 	items := make(Items, config.ItemsPerPolicy*config.NumberOfPolicies)
@@ -273,9 +280,6 @@ func CreateUserFixtures(tx *pop.Connection, n int) Fixtures {
 func CreatePolicyFixtures(tx *pop.Connection, config FixturesConfig) Fixtures {
 	if config.UsersPerPolicy < 1 {
 		config.UsersPerPolicy = 1
-	}
-	if config.ItemsPerPolicy < 1 {
-		config.ItemsPerPolicy = 1
 	}
 
 	var policyUsers PolicyUsers
