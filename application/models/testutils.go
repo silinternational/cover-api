@@ -211,12 +211,23 @@ func createClaimFixture(tx *pop.Connection, policy Policy, config FixturesConfig
 }
 
 // CreateCategoryFixtures generates any number of category records for testing
+//   even indexed categories are Stationary and odd indexed ones are Mobile
 func CreateCategoryFixtures(tx *pop.Connection, n int) Fixtures {
 	CreateRiskCategories(tx)
 
 	categories := make(ItemCategories, n)
+	even := true
 	for i := range categories {
-		categories[i].RiskCategoryID = RiskCategoryMobileID()
+		if even {
+			categories[i].RiskCategoryID = RiskCategoryStationaryID()
+			categories[i].RequireMakeModel = false
+			even = false
+		} else {
+			categories[i].RiskCategoryID = RiskCategoryMobileID()
+			categories[i].RequireMakeModel = true
+			even = true
+		}
+
 		categories[i].Name = randStr(10)
 		categories[i].HelpText = randStr(40)
 		categories[i].Status = api.ItemCategoryStatusEnabled
@@ -352,16 +363,18 @@ func CreateRiskCategories(tx *pop.Connection) {
 	}
 
 	riskCategoryMobile := RiskCategory{
-		ID:        RiskCategoryMobileID(),
-		Name:      "mobile",
-		PolicyMax: 25000,
+		ID:               RiskCategoryMobileID(),
+		Name:             "mobile",
+		PolicyMax:        25000,
+		RequireMakeModel: true,
 	}
 	MustCreate(tx, &riskCategoryMobile)
 
 	riskCategoryStationary := RiskCategory{
-		ID:        RiskCategoryStationaryID(),
-		Name:      "stationary",
-		PolicyMax: 25000,
+		ID:               RiskCategoryStationaryID(),
+		Name:             "stationary",
+		PolicyMax:        25000,
+		RequireMakeModel: false,
 	}
 	MustCreate(tx, &riskCategoryStationary)
 }

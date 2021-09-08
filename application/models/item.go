@@ -266,8 +266,19 @@ func (i *Item) SubmitForApproval(tx *pop.Connection) error {
 }
 
 // Assumes the item already has its Category loaded
+func (i *Item) isMissingRequiredFields(tx *pop.Connection) bool {
+	if !i.Category.RequireMakeModel {
+		return false
+	}
+	return i.Make == `` || i.Model == ``
+}
+
+// Assumes the item already has its Category loaded
 func (i *Item) canAutoApprove(tx *pop.Connection) bool {
 	if i.CoverageAmount > i.Category.AutoApproveMax {
+		return false
+	}
+	if i.isMissingRequiredFields(tx) {
 		return false
 	}
 
