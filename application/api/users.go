@@ -31,7 +31,7 @@ type User struct {
 	LastName string `json:"last_name"`
 
 	// full name
-	Name string `json_"name"`
+	Name string `json:"name"`
 
 	// last login date and time (UTC)
 	LastLoginUTC time.Time `json:"last_login_utc"`
