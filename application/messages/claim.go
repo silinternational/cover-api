@@ -102,9 +102,9 @@ func ClaimReview3Send(claim models.Claim, notifiers []interface{}) {
 	claim.LoadPolicyMembers(models.DB, false)
 	memberName := claim.Policy.Members[0].Name()
 
-	msg := notifications.NewEmailMessage().AddToSteward()
+	msg := notifications.NewEmailMessage().AddToSignator()
 	addMessageClaimData(&msg, claim)
-	msg.Template = MessageTemplateClaimReview3Boss
+	msg.Template = MessageTemplateClaimReview3Signator
 	msg.Data["memberName"] = memberName
 	msg.Subject = "Action Required. " + memberName + " has a claim waiting for your approval"
 
@@ -129,7 +129,7 @@ func ClaimApprovedSend(claim models.Claim, notifiers []interface{}) {
 func ClaimDeniedSend(claim models.Claim, notifiers []interface{}) {
 	claim.LoadPolicyMembers(models.DB, false)
 
-	// TODO check if it was denied by the boss and if so, email the steward
+	// TODO check if it was denied by the signator and if so, email the steward
 	// TODO figure out how to notify the members of the reason for the denial
 
 	for _, m := range claim.Policy.Members {

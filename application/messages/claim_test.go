@@ -180,7 +180,7 @@ func (ts *TestSuite) Test_claimReview3() {
 	db := ts.DB
 
 	f := getClaimFixtures(db)
-	boss := models.CreateAdminUsers(db)[models.AppRoleSteward]
+	signator := models.CreateAdminUsers(db)[models.AppRoleSignator]
 
 	review3Claim := models.UpdateClaimStatus(db, f.Claims[0], api.ClaimStatusReview3)
 
@@ -189,7 +189,7 @@ func (ts *TestSuite) Test_claimReview3() {
 	tests := []testData{
 		{
 			name:                "submitted to review3",
-			wantToEmails:        []string{boss.EmailOfChoice()},
+			wantToEmails:        []string{signator.EmailOfChoice()},
 			wantSubjectsContain: []string{"has a claim waiting for your approval"},
 		},
 	}

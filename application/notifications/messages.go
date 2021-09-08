@@ -38,3 +38,13 @@ func (m Message) AddToSteward() Message {
 	m.ToEmail = steward.EmailOfChoice()
 	return m
 }
+
+// sets the msg ToName and ToEmail based on the signator's information
+func (m Message) AddToSignator() Message {
+	var signator models.User
+	signator.FindSignator(models.DB)
+
+	m.ToName = signator.Name()
+	m.ToEmail = signator.EmailOfChoice()
+	return m
+}

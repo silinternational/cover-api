@@ -22,17 +22,17 @@ import (
 type UserAppRole string
 
 const (
-	AppRoleAdmin   = UserAppRole("Admin")
-	AppRoleSteward = UserAppRole("Steward")
-	AppRoleBoss    = UserAppRole("Boss")
-	AppRoleUser    = UserAppRole("User")
+	AppRoleAdmin    = UserAppRole("Admin")
+	AppRoleSteward  = UserAppRole("Steward")
+	AppRoleSignator = UserAppRole("Signator")
+	AppRoleUser     = UserAppRole("User")
 )
 
 var validUserAppRoles = map[UserAppRole]struct{}{
-	AppRoleAdmin:   {},
-	AppRoleSteward: {},
-	AppRoleBoss:    {},
-	AppRoleUser:    {},
+	AppRoleAdmin:    {},
+	AppRoleSteward:  {},
+	AppRoleSignator: {},
+	AppRoleUser:     {},
 }
 
 // Users is a slice of User objects
@@ -112,7 +112,7 @@ func (u *User) IsActorAllowedTo(tx *pop.Connection, actor User, p Permission, su
 }
 
 func (u *User) IsAdmin() bool {
-	return u.AppRole == AppRoleAdmin
+	return u.AppRole == AppRoleAdmin || u.AppRole == AppRoleSteward || u.AppRole == AppRoleSignator
 }
 
 func (u *User) FindOrCreateFromAuthUser(tx *pop.Connection, authUser *auth.User) error {
@@ -170,9 +170,9 @@ func (u *User) FindSteward(tx *pop.Connection) {
 	}
 }
 
-func (u *User) FindBoss(tx *pop.Connection) {
-	if err := tx.Where("app_role = ?", AppRoleBoss).First(u); err != nil {
-		panic("error finding boss user " + err.Error())
+func (u *User) FindSignator(tx *pop.Connection) {
+	if err := tx.Where("app_role = ?", AppRoleSignator).First(u); err != nil {
+		panic("error finding signator user " + err.Error())
 	}
 }
 
