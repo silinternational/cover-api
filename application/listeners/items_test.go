@@ -25,7 +25,7 @@ func (ts *TestSuite) Test_itemSubmitted() {
 
 	f := models.CreateItemFixtures(db, fixConfig)
 
-	models.CreateAdminUser(db)
+	models.CreateAdminUsers(db)
 
 	submittedItem := f.Items[0]
 	models.UpdateItemStatus(db, submittedItem, api.ItemCoverageStatusPending)

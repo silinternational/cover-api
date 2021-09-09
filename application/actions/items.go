@@ -1,11 +1,7 @@
 package actions
 
 import (
-	"errors"
 	"net/http"
-	"time"
-
-	"github.com/gofrs/uuid"
 
 	"github.com/gobuffalo/buffalo"
 
@@ -75,7 +71,7 @@ func itemsCreate(c buffalo.Context) error {
 		return reportError(c, err)
 	}
 
-	item, err := convertItemApiInput(c, itemPost, policy.ID)
+	item, err := models.NewItemFromApiInput(c, itemPost, policy.ID)
 	if err != nil {
 		return reportError(c, err)
 	}
@@ -128,7 +124,7 @@ func itemsUpdate(c buffalo.Context) error {
 		}
 	}
 
-	newItem, err := convertItemApiInput(c, itemPut, item.PolicyID)
+	newItem, err := models.NewItemFromApiInput(c, itemPut, item.PolicyID)
 	if err != nil {
 		return reportError(c, err)
 	}
@@ -285,60 +281,6 @@ func itemsRemove(c buffalo.Context) error {
 	}
 
 	return c.Render(http.StatusNoContent, nil)
-}
-
-// convertItemApiInput creates a new `Item` from a `ItemInput`.
-func convertItemApiInput(c buffalo.Context, input api.ItemInput, policyID uuid.UUID) (models.Item, error) {
-	item := models.Item{}
-	if err := parseItemDates(input, &item); err != nil {
-		return item, err
-	}
-
-	var itemCat models.ItemCategory
-	if err := itemCat.FindByID(models.Tx(c), input.CategoryID); err != nil {
-		return item, err
-	}
-
-	user := models.CurrentUser(c)
-	riskCatID := itemCat.RiskCategoryID
-	if input.RiskCategoryID.Valid && user.IsAdmin() {
-		riskCatID = input.RiskCategoryID.UUID
-	}
-
-	item.Name = input.Name
-	item.CategoryID = input.CategoryID
-	item.RiskCategoryID = riskCatID
-	item.InStorage = input.InStorage
-	item.Country = input.Country
-	item.Description = input.Description
-	item.PolicyID = policyID
-	item.Make = input.Make
-	item.Model = input.Model
-	item.SerialNumber = input.SerialNumber
-	item.CoverageAmount = input.CoverageAmount
-	item.CoverageStatus = input.CoverageStatus
-
-	return item, nil
-}
-
-func parseItemDates(input api.ItemInput, modelItem *models.Item) error {
-	pDate, err := time.Parse(domain.DateFormat, input.PurchaseDate)
-	if err != nil {
-		err = errors.New("failed to parse item purchase date, " + err.Error())
-		appErr := api.NewAppError(err, api.ErrorItemInvalidPurchaseDate, api.CategoryUser)
-		return appErr
-	}
-	modelItem.PurchaseDate = pDate
-
-	csDate, err := time.Parse(domain.DateFormat, input.CoverageStartDate)
-	if err != nil {
-		err = errors.New("failed to parse item coverage start date, " + err.Error())
-		appErr := api.NewAppError(err, api.ErrorItemInvalidCoverageStartDate, api.CategoryUser)
-		return appErr
-	}
-	modelItem.CoverageStartDate = csDate
-
-	return nil
 }
 
 // getReferencedItemFromCtx pulls the models.Item resource from context that was put there

@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/gobuffalo/buffalo"
 	"github.com/gobuffalo/events"
 	"github.com/gobuffalo/nulls"
 	"github.com/gobuffalo/pop/v5"
@@ -39,6 +40,7 @@ type Item struct {
 	Description       string                 `db:"description"`
 	PolicyID          uuid.UUID              `db:"policy_id" validate:"required"`
 	PolicyDependentID nulls.UUID             `db:"policy_dependent_id"`
+	PolicyUserID      nulls.UUID             `db:"policy_user_id"`
 	Make              string                 `db:"make"`
 	Model             string                 `db:"model"`
 	SerialNumber      string                 `db:"serial_number"`
@@ -404,6 +406,8 @@ func (i *Item) ConvertToAPI(tx *pop.Connection) api.Item {
 		PurchaseDate:      i.PurchaseDate.Format(domain.DateFormat),
 		CoverageStatus:    i.CoverageStatus,
 		CoverageStartDate: i.CoverageStartDate.Format(domain.DateFormat),
+		AccountablePerson: i.GetAccountablePerson(tx),
+		AnnualPremium:     i.GetAnnualPremium(),
 		CreatedAt:         i.CreatedAt,
 		UpdatedAt:         i.UpdatedAt,
 	}
@@ -416,4 +420,104 @@ func (i *Items) ConvertToAPI(tx *pop.Connection) api.Items {
 	}
 
 	return apiItems
+}
+
+func (i *Item) GetAccountablePerson(tx *pop.Connection) string {
+	if i.PolicyUserID.Valid {
+		var policyUser User
+		if err := policyUser.FindByID(tx, i.PolicyUserID.UUID); err != nil {
+			panic("error finding policy user " + i.PolicyUserID.UUID.String())
+		}
+		return policyUser.Name()
+	}
+	if i.PolicyDependentID.Valid {
+		var policyDependent PolicyDependent
+		if err := policyDependent.FindByID(tx, i.PolicyDependentID.UUID); err != nil {
+			panic("error finding policy dependent " + i.PolicyDependentID.UUID.String())
+		}
+		return policyDependent.Name
+	}
+	return ""
+}
+
+func (i *Item) GetAnnualPremium() int {
+	return (i.CoverageAmount + 25) / 50 // 2% rounded to the nearest cent
+}
+
+// NewItemFromApiInput creates a new `Item` from a `ItemInput`.
+func NewItemFromApiInput(c buffalo.Context, input api.ItemInput, policyID uuid.UUID) (Item, error) {
+	item := Item{}
+	if err := parseItemDates(input, &item); err != nil {
+		return item, err
+	}
+
+	tx := Tx(c)
+
+	var itemCat ItemCategory
+	if err := itemCat.FindByID(tx, input.CategoryID); err != nil {
+		return item, err
+	}
+
+	user := CurrentUser(c)
+	riskCatID := itemCat.RiskCategoryID
+	if input.RiskCategoryID.Valid && user.IsAdmin() {
+		riskCatID = input.RiskCategoryID.UUID
+	}
+
+	item.Name = input.Name
+	item.CategoryID = input.CategoryID
+	item.RiskCategoryID = riskCatID
+	item.InStorage = input.InStorage
+	item.Country = input.Country
+	item.Description = input.Description
+	item.PolicyID = policyID
+	item.Make = input.Make
+	item.Model = input.Model
+	item.SerialNumber = input.SerialNumber
+	item.CoverageAmount = input.CoverageAmount
+	item.CoverageStatus = input.CoverageStatus
+
+	if err := item.setAccountablePerson(tx, input.AccountablePersonID); err != nil {
+		return item, err
+	}
+
+	return item, nil
+}
+
+func parseItemDates(input api.ItemInput, modelItem *Item) error {
+	pDate, err := time.Parse(domain.DateFormat, input.PurchaseDate)
+	if err != nil {
+		err = errors.New("failed to parse item purchase date, " + err.Error())
+		appErr := api.NewAppError(err, api.ErrorItemInvalidPurchaseDate, api.CategoryUser)
+		return appErr
+	}
+	modelItem.PurchaseDate = pDate
+
+	csDate, err := time.Parse(domain.DateFormat, input.CoverageStartDate)
+	if err != nil {
+		err = errors.New("failed to parse item coverage start date, " + err.Error())
+		appErr := api.NewAppError(err, api.ErrorItemInvalidCoverageStartDate, api.CategoryUser)
+		return appErr
+	}
+	modelItem.CoverageStartDate = csDate
+
+	return nil
+}
+
+func (i *Item) setAccountablePerson(tx *pop.Connection, id uuid.UUID) error {
+	i.LoadPolicy(tx, false)
+
+	if i.Policy.isMember(tx, id) {
+		i.PolicyUserID = nulls.NewUUID(id)
+		i.PolicyDependentID = nulls.UUID{}
+		return nil
+	}
+
+	if i.Policy.isDependent(tx, id) {
+		i.PolicyDependentID = nulls.NewUUID(id)
+		i.PolicyUserID = nulls.UUID{}
+		return nil
+	}
+
+	return api.NewAppError(errors.New("accountable person ID not found"), api.ErrorNoRows, api.CategoryUser)
 }

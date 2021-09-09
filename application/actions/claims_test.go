@@ -27,7 +27,7 @@ func (as *ActionSuite) Test_ClaimsList() {
 
 	fixtures := models.CreateItemFixtures(as.DB, fixConfig)
 
-	appAdmin := models.CreateAdminUser(as.DB)
+	appAdmin := models.CreateAdminUsers(as.DB)[models.AppRoleAdmin]
 	normalUser := fixtures.Policies[1].Members[0]
 
 	tests := []struct {
@@ -578,7 +578,7 @@ func (as *ActionSuite) Test_ClaimsRequestRevision() {
 	policy := fixtures.Policies[0]
 	policyCreator := policy.Members[0]
 
-	appAdmin := models.CreateAdminUser(as.DB)
+	appAdmin := models.CreateAdminUsers(as.DB)[models.AppRoleAdmin]
 
 	draftClaim := policy.Claims[0]
 	review1Claim := models.UpdateClaimStatus(as.DB, policy.Claims[1], api.ClaimStatusReview1)
@@ -655,7 +655,7 @@ func (as *ActionSuite) Test_ClaimsPreapprove() {
 	policy := fixtures.Policies[0]
 	policyCreator := policy.Members[0]
 
-	appAdmin := models.CreateAdminUser(as.DB)
+	appAdmin := models.CreateAdminUsers(as.DB)[models.AppRoleAdmin]
 
 	draftClaim := policy.Claims[0]
 	review1Claim := models.UpdateClaimStatus(as.DB, policy.Claims[1], api.ClaimStatusReview1)
@@ -733,7 +733,7 @@ func (as *ActionSuite) Test_ClaimsApprove() {
 	policyCreator := policy.Members[0]
 
 	// TODO when code distinguishes between admin types, then check that here
-	appAdmin := models.CreateAdminUser(as.DB)
+	appAdmin := models.CreateAdminUsers(as.DB)[models.AppRoleAdmin]
 
 	draftClaim := policy.Claims[0]
 	review1Claim := models.UpdateClaimStatus(as.DB, policy.Claims[1], api.ClaimStatusReview1)
@@ -843,7 +843,7 @@ func (as *ActionSuite) Test_ClaimsDeny() {
 	policyCreator := policy.Members[0]
 
 	// TODO when code distinguishes between admin types, then try with both
-	appAdmin := models.CreateAdminUser(as.DB)
+	appAdmin := models.CreateAdminUsers(as.DB)[models.AppRoleAdmin]
 
 	draftClaim := policy.Claims[0]
 	review1Claim := models.UpdateClaimStatus(as.DB, policy.Claims[1], api.ClaimStatusReview1)

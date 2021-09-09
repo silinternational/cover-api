@@ -31,10 +31,20 @@ func NewEmailMessage() Message {
 
 // sets the msg ToName and ToEmail based on the steward's information
 func (m Message) AddToSteward() Message {
-	var steward models.User
-	steward.FindSteward(models.DB)
+	var stewards models.Users
+	stewards.FindStewards(models.DB)
 
-	m.ToName = steward.Name()
-	m.ToEmail = steward.EmailOfChoice()
+	m.ToName = stewards[0].Name()
+	m.ToEmail = stewards[0].EmailOfChoice()
+	return m
+}
+
+// sets the msg ToName and ToEmail based on the signator's information
+func (m Message) AddToSignator() Message {
+	var signators models.Users
+	signators.FindSignators(models.DB)
+
+	m.ToName = signators[0].Name()
+	m.ToEmail = signators[0].EmailOfChoice()
 	return m
 }

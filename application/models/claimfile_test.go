@@ -21,7 +21,7 @@ func (ms *ModelSuite) TestClaimFile_Create() {
 	policy := CreatePolicyFixtures(db, FixturesConfig{NumberOfPolicies: 1}).Policies[0]
 	claim := createClaimFixture(db, policy, FixturesConfig{})
 
-	files := CreateFileFixtures(db, 3, CreateAdminUser(db).ID).Files
+	files := CreateFileFixtures(db, 3, CreateAdminUsers(db)[AppRoleAdmin].ID).Files
 	claim1File := files[0]
 	ms.NoError(NewClaimFile(claim.ID, claim1File.ID).Create(db))
 	linkedFile := files[1]

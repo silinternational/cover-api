@@ -470,5 +470,66 @@ func (ms *ModelSuite) TestItem_LoadPolicyMembers() {
 	ms.Len(item.Policy.Members, 2, "didn't load correct number of policy members")
 	ms.Equal(members[0].ID, item.Policy.Members[0].ID, "incorrect member0 ID")
 	ms.Equal(members[1].ID, item.Policy.Members[1].ID, "incorrect member1 ID")
+}
 
+func (ms *ModelSuite) TestItem_setAccountablePerson() {
+	config := FixturesConfig{
+		NumberOfPolicies:    2,
+		DependentsPerPolicy: 1,
+	}
+	fixtures := CreateItemFixtures(ms.DB, config)
+	policyUser := fixtures.Policies[0].Members[0]
+	policyDependent := fixtures.Policies[0].Dependents[0]
+	otherUser := fixtures.Policies[1].Members[0]
+	otherDependent := fixtures.Policies[1].Dependents[0]
+
+	tests := []struct {
+		name     string
+		item     Item
+		id       uuid.UUID
+		appError *api.AppError
+	}{
+		{
+			name: "policy user",
+			item: fixtures.Items[0],
+			id:   policyUser.ID,
+		},
+		{
+			name:     "other user",
+			item:     fixtures.Items[0],
+			id:       otherUser.ID,
+			appError: &api.AppError{Key: api.ErrorNoRows, Category: api.CategoryUser},
+		},
+		{
+			name: "policy dependent",
+			item: fixtures.Items[0],
+			id:   policyDependent.ID,
+		},
+		{
+			name:     "other dependent",
+			item:     fixtures.Items[0],
+			id:       otherDependent.ID,
+			appError: &api.AppError{Key: api.ErrorNoRows, Category: api.CategoryUser},
+		},
+	}
+
+	for _, tt := range tests {
+		ms.T().Run(tt.name, func(t *testing.T) {
+			err := tt.item.setAccountablePerson(ms.DB, tt.id)
+			if tt.appError != nil {
+				ms.Error(err, "test should have produced an error")
+				ms.EqualAppError(*tt.appError, err)
+				return
+			}
+			ms.NoError(err)
+
+			if tt.item.PolicyUserID.Valid {
+				ms.Equal(tt.id, tt.item.PolicyUserID.UUID)
+			} else if tt.item.PolicyDependentID.Valid {
+				ms.Equal(tt.id, tt.item.PolicyDependentID.UUID)
+			} else {
+				ms.Fail("neither PolicyUserID nor PolicyDependentID are valid")
+			}
+		})
+	}
 }

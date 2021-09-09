@@ -22,7 +22,7 @@ func (ts *TestSuite) Test_ItemSubmittedSend() {
 
 	f := models.CreateItemFixtures(db, fixConfig)
 
-	steward := models.CreateAdminUser(db)
+	steward := models.CreateAdminUsers(db)[models.AppRoleSteward]
 	member0 := f.Policies[0].Members[0]
 	member1 := f.Policies[0].Members[1]
 
