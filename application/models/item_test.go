@@ -326,7 +326,7 @@ func (ms *ModelSuite) TestItem_SubmitForApproval() {
 		NumberOfPolicies:    2,
 		UsersPerPolicy:      2,
 		DependentsPerPolicy: 2,
-		ItemsPerPolicy:      6,
+		ItemsPerPolicy:      14,
 	}
 
 	fixtures := CreateItemFixtures(ms.DB, fixConfig)
@@ -343,11 +343,14 @@ func (ms *ModelSuite) TestItem_SubmitForApproval() {
 	ms.NoError(ms.DB.Update(&itemDependent), "error updating item fixture for test")
 
 	// specify other items for testing
-	itemAutoApprove := fixtures.Policies[1].Items[0]
-	itemManualApprove := items[2]
-	itemManualApproveDependent := items[3]
-	itemAutoApproveDependent := items[4]
-	itemExceedsMax := items[5]
+	itemAutoApprove := fixtures.Policies[1].Items[0] // stationary
+	itemManualApprove := items[2]                    // stationary
+	itemManualApproveDependent := items[4]           // stationary
+	itemAutoApproveDependent := items[6]             // stationary
+	itemExceedsMax := items[8]                       // stationary
+	itemStationaryMissingFields := items[10]         // stationary
+	itemMobileMissingMake := items[11]               // mobile
+	itemMobileMissingModel := items[13]              // mobile
 
 	// set them all to Draft status
 	itemAutoApprove.CoverageStatus = api.ItemCoverageStatusDraft
@@ -355,8 +358,11 @@ func (ms *ModelSuite) TestItem_SubmitForApproval() {
 	itemManualApproveDependent.CoverageStatus = api.ItemCoverageStatusDraft
 	itemAutoApproveDependent.CoverageStatus = api.ItemCoverageStatusDraft
 	itemExceedsMax.CoverageStatus = api.ItemCoverageStatusDraft
+	itemStationaryMissingFields.CoverageStatus = api.ItemCoverageStatusDraft
+	itemMobileMissingMake.CoverageStatus = api.ItemCoverageStatusDraft
+	itemMobileMissingModel.CoverageStatus = api.ItemCoverageStatusDraft
 
-	// set there coverage amounts to be helpful for the tests and set the dependent as needed
+	// set their coverage amounts to be helpful for the tests and set the dependent as needed
 	itemAutoApprove.Load(ms.DB)
 	itemAutoApprove.CoverageAmount = itemAutoApprove.Category.AutoApproveMax - 1
 	ms.NoError(ms.DB.Update(&itemAutoApprove), "error updating item fixture for test")
@@ -375,6 +381,19 @@ func (ms *ModelSuite) TestItem_SubmitForApproval() {
 
 	itemExceedsMax.CoverageAmount = domain.Env.PolicyMaxCoverage
 	ms.NoError(ms.DB.Update(&itemExceedsMax), "error updating item fixture for test")
+
+	itemStationaryMissingFields.CoverageAmount = 500
+	itemStationaryMissingFields.Make = ""
+	itemStationaryMissingFields.Model = ""
+	ms.NoError(ms.DB.Update(&itemStationaryMissingFields), "error updating item fixture for test")
+
+	itemMobileMissingMake.CoverageAmount = 500
+	itemMobileMissingMake.Make = ""
+	ms.NoError(ms.DB.Update(&itemMobileMissingMake), "error updating item fixture for test")
+
+	itemMobileMissingModel.CoverageAmount = 500
+	itemMobileMissingModel.Model = ""
+	ms.NoError(ms.DB.Update(&itemMobileMissingModel), "error updating item fixture for test")
 
 	tests := []struct {
 		name       string
@@ -404,6 +423,21 @@ func (ms *ModelSuite) TestItem_SubmitForApproval() {
 		{
 			name:       "item coverage amount exceeds max",
 			item:       itemExceedsMax,
+			wantStatus: api.ItemCoverageStatusPending,
+		},
+		{
+			name:       "item missing fields but stationary",
+			item:       itemStationaryMissingFields,
+			wantStatus: api.ItemCoverageStatusApproved,
+		},
+		{
+			name:       "mobile item missing make",
+			item:       itemMobileMissingMake,
+			wantStatus: api.ItemCoverageStatusPending,
+		},
+		{
+			name:       "mobile item missing model",
+			item:       itemMobileMissingModel,
 			wantStatus: api.ItemCoverageStatusPending,
 		},
 	}
