@@ -23,7 +23,7 @@ import (
 func entityCodesList(c buffalo.Context) error {
 	tx := models.Tx(c)
 	var entityCodes models.EntityCodes
-	if err := models.Tx(c).All(&entityCodes); err != nil {
+	if err := tx.All(&entityCodes); err != nil {
 		return reportError(c, err)
 	}
 
