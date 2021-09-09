@@ -11,6 +11,8 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/gobuffalo/events"
+
 	"github.com/silinternational/cover-api/storage"
 
 	"github.com/gobuffalo/buffalo"
@@ -433,4 +435,15 @@ func destroyTable(i interface{}) {
 	if err := DB.Destroy(i); err != nil {
 		panic(err.Error())
 	}
+}
+
+// RegisterEventDetector is a helper method for testing if events are triggered
+// call with the kind of event and a pointer to a boolean and it'll update the boolean
+// to true if the event kind is detected. A 10ms delay may be required between emit and detection
+func RegisterEventDetector(kind string, detected *bool) (events.DeleteFn, error) {
+	return events.Listen(func(e events.Event) {
+		if e.Kind == kind {
+			*detected = true
+		}
+	})
 }

@@ -16,14 +16,10 @@ func (ts *TestSuite) Test_PolicyUserInviteSend() {
 	db := ts.DB
 
 	fixConfig := models.FixturesConfig{
-		NumberOfPolicies: 2,
+		NumberOfPolicies: 1,
 		UsersPerPolicy:   1,
 	}
-
 	f := models.CreateItemFixtures(db, fixConfig)
-
-	// member0 := f.Policies[0].Members[0]
-	// member1 := f.Policies[1].Members[0]
 
 	testEmailer := &notifications.TestEmailService
 
@@ -34,18 +30,6 @@ func (ts *TestSuite) Test_PolicyUserInviteSend() {
 		wantEmailsSent      int
 		wantSubjectsContain []string
 	}{
-		//{
-		//	name:           "existing policy member",
-		//	policyID:       f.Policies[0].ID,
-		//	inviteEmail:    member0.Email,
-		//	wantEmailsSent: 0,
-		//},
-		//{
-		//	name:           "existing user, new to policy",
-		//	policyID:       f.Policies[0].ID,
-		//	inviteEmail:    member1.Email,
-		//	wantEmailsSent: 0,
-		//},
 		{
 			name:                "new user",
 			policyID:            f.Policies[0].ID,

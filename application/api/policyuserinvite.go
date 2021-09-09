@@ -63,12 +63,6 @@ type PolicyUserInvite struct {
 }
 
 type PolicyUserInviteCreate struct {
-	// unique id (uuid) for the policy being invited to co-manage
-	//
-	// required: true
-	// swagger:strfmt uuid4
-	PolicyID uuid.UUID `json:"policy_id"`
-
 	// user's email address
 	//
 	// required: true
