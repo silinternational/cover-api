@@ -94,14 +94,38 @@ func (ms *ModelSuite) TestUser_CreateInitialPolicy() {
 	}
 }
 
-func (ms *ModelSuite) TestUser_FindSteward() {
+func (ms *ModelSuite) TestUser_FindStewards() {
 	CreateUserFixtures(ms.DB, 3)
-	steward := CreateAdminUsers(ms.DB)[AppRoleSteward]
-	CreateAdminUsers(ms.DB)
+	steward0 := CreateAdminUsers(ms.DB)[AppRoleSteward]
+	steward1 := CreateAdminUsers(ms.DB)[AppRoleSteward]
 
-	var user User
-	user.FindSteward(ms.DB)
-	ms.Equal(steward.ID, user.ID, "incorrect user ID")
+	var users Users
+	users.FindStewards(ms.DB)
+	want := map[uuid.UUID]bool{steward0.ID: true, steward1.ID: true}
+
+	got := map[uuid.UUID]bool{}
+	for _, s := range users {
+		got[s.ID] = true
+	}
+
+	ms.EqualValues(want, got, "incorrect steward ids")
+}
+
+func (ms *ModelSuite) TestUser_FindSignators() {
+	CreateUserFixtures(ms.DB, 3)
+	signator0 := CreateAdminUsers(ms.DB)[AppRoleSignator]
+	signator1 := CreateAdminUsers(ms.DB)[AppRoleSignator]
+
+	var users Users
+	users.FindSignators(ms.DB)
+	want := map[uuid.UUID]bool{signator0.ID: true, signator1.ID: true}
+
+	got := map[uuid.UUID]bool{}
+	for _, s := range users {
+		got[s.ID] = true
+	}
+
+	ms.EqualValues(want, got, "incorrect signator ids")
 }
 
 func (ms *ModelSuite) TestUser_EmailOfChoice() {

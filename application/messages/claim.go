@@ -27,7 +27,7 @@ func newClaimMessageForMember(claim models.Claim, member models.User) notificati
 func ClaimReview1Send(claim models.Claim, notifiers []interface{}) {
 	claim.LoadPolicyMembers(models.DB, false)
 	memberName := claim.Policy.Members[0].Name()
-
+	// TODO send email to all stewards?
 	msg := notifications.NewEmailMessage().AddToSteward()
 	addMessageClaimData(&msg, claim)
 	msg.Template = MessageTemplateClaimReview1Steward
@@ -88,6 +88,7 @@ func ClaimReview2Send(claim models.Claim, notifiers []interface{}) {
 	claim.LoadPolicyMembers(models.DB, false)
 	memberName := claim.Policy.Members[0].Name()
 
+	// TODO send email to all stewards?
 	msg := notifications.NewEmailMessage().AddToSteward()
 	addMessageClaimData(&msg, claim)
 	msg.Template = MessageTemplateClaimReview2Steward

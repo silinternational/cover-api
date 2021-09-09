@@ -42,6 +42,7 @@ func notifyItemApprovedMember(item models.Item, notifiers []interface{}) {
 	}
 }
 
+// TODO send email to all stewards?
 func notifyItemAutoApprovedSteward(item models.Item, memberName string, notifiers []interface{}) {
 	msg := newItemMessageForSteward(item)
 	msg.Template = MessageTemplateItemAutoSteward
@@ -54,6 +55,7 @@ func notifyItemAutoApprovedSteward(item models.Item, memberName string, notifier
 }
 
 func notifyItemSubmitted(item models.Item, memberName string, notifiers []interface{}) {
+	// TODO send email to all stewards?
 	msg := newItemMessageForSteward(item)
 	msg.Template = MessageTemplateItemSubmittedSteward
 	msg.Subject = "Action Required. " + memberName + " just submitted a new policy item for approval"

@@ -111,6 +111,7 @@ func (u *User) IsActorAllowedTo(tx *pop.Connection, actor User, p Permission, su
 	}
 }
 
+// IsAdmin returns true if the user has AppRole of Admin, Steward or Signator
 func (u *User) IsAdmin() bool {
 	return u.AppRole == AppRoleAdmin || u.AppRole == AppRoleSteward || u.AppRole == AppRoleSignator
 }
@@ -157,6 +158,8 @@ func (u *User) FindOrCreateFromAuthUser(tx *pop.Connection, authUser *auth.User)
 	return nil
 }
 
+// EmailOfChoice returns the user's EmailOverride value if it's not blank.
+//   Otherwise it returns the user's Email value.
 func (u *User) EmailOfChoice() string {
 	if u.EmailOverride != "" {
 		return u.EmailOverride
@@ -164,15 +167,17 @@ func (u *User) EmailOfChoice() string {
 	return u.Email
 }
 
-func (u *User) FindSteward(tx *pop.Connection) {
-	if err := tx.Where("app_role = ?", AppRoleSteward).First(u); err != nil {
-		panic("error finding steward user" + err.Error())
+// FindStewards finds all the users with AppRoleSteward
+func (u *Users) FindStewards(tx *pop.Connection) {
+	if err := tx.Where("app_role = ?", AppRoleSteward).All(u); err != nil {
+		panic("error finding steward users " + err.Error())
 	}
 }
 
-func (u *User) FindSignator(tx *pop.Connection) {
-	if err := tx.Where("app_role = ?", AppRoleSignator).First(u); err != nil {
-		panic("error finding signator user " + err.Error())
+// FindSignators finds all the users with AppRoleSignator
+func (u *Users) FindSignators(tx *pop.Connection) {
+	if err := tx.Where("app_role = ?", AppRoleSignator).All(u); err != nil {
+		panic("error finding signator users " + err.Error())
 	}
 }
 
