@@ -51,11 +51,12 @@ import (
 const idRegex = `/{id:[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-4[a-fA-F0-9]{3}-[8|9|aA|bB][a-fA-F0-9]{3}-[a-fA-F0-9]{12}}`
 
 const (
-	claimsPath     = "/" + domain.TypeClaim
-	claimItemsPath = "/" + domain.TypeClaimItem
-	filesPath      = "/" + domain.TypeFile
-	itemsPath      = "/" + domain.TypeItem
-	policiesPath   = "/" + domain.TypePolicy
+	claimsPath      = "/" + domain.TypeClaim
+	claimItemsPath  = "/" + domain.TypeClaimItem
+	entityCodesPath = "/" + domain.TypeEntityCode
+	filesPath       = "/" + domain.TypeFile
+	itemsPath       = "/" + domain.TypeItem
+	policiesPath    = "/" + domain.TypePolicy
 )
 
 // ENV is used to help switch settings based on where the
@@ -161,6 +162,9 @@ func App() *buffalo.App {
 		configGroup := app.Group("/config")
 		configGroup.Middleware.Skip(AuthZ, claimEventTypes)
 		configGroup.GET("/claim-event-types", claimEventTypes)
+
+		// entity-codes
+		app.GET(entityCodesPath, entityCodesList)
 
 		// item
 		itemsGroup := app.Group(itemsPath)

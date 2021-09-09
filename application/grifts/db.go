@@ -31,12 +31,17 @@ var _ = grift.Namespace("db", func() {
 			return nil
 		}
 
+		entityCodes, err := createEntityCodes(models.DB)
+		if err != nil {
+			return err
+		}
+
 		fixUsers, err := createUserFixtures()
 		if err != nil {
 			return err
 		}
 
-		fixPolicies, err := createPolicyFixtures(fixUsers)
+		fixPolicies, err := createPolicyFixtures(fixUsers, entityCodes)
 		if err != nil {
 			return err
 		}
@@ -157,7 +162,24 @@ func createUserFixtures() ([]*models.User, error) {
 	return fixUsers, nil
 }
 
-func createPolicyFixtures(fixUsers []*models.User) ([]*models.Policy, error) {
+func createEntityCodes(tx *pop.Connection) ([]models.EntityCode, error) {
+	ec1 := models.EntityCode{
+		ID:   uuid.FromStringOrNil("d10e4de5-9cb9-47e0-b382-386a9513820b"),
+		Code: "XYZ",
+		Name: "XYZ entity code",
+	}
+	if err := ec1.Create(tx); err != nil {
+		return []models.EntityCode{}, err
+	}
+	ec2 := models.EntityCode{
+		ID:   uuid.FromStringOrNil("b16e1cff-effb-4f14-a60d-8160fc155185"),
+		Code: "ABC",
+		Name: "ABC entity code",
+	}
+	return []models.EntityCode{ec1, ec2}, ec2.Create(tx)
+}
+
+func createPolicyFixtures(fixUsers []*models.User, entityCodes models.EntityCodes) ([]*models.Policy, error) {
 	policyUUIDs := []string{
 		"31147366-26b2-4256-b2ab-58c92c3d54cc",
 		"31247366-26b2-4256-b2ab-58c92c3d54cc",
@@ -183,6 +205,11 @@ func createPolicyFixtures(fixUsers []*models.User) ([]*models.Policy, error) {
 			ID:          uuid.FromStringOrNil(uu),
 			Type:        api.PolicyTypeHousehold,
 			HouseholdID: nulls.NewString(fmt.Sprintf("HID-%s-%s", user.FirstName, user.LastName)),
+		}
+		if i < len(entityCodes) {
+			fixPolicies[i].EntityCodeID = nulls.NewUUID(entityCodes[i].ID)
+			fixPolicies[i].Account = domain.RandomString(6, "0123456789")
+			fixPolicies[i].Type = api.PolicyTypeCorporate
 		}
 
 		err := models.DB.Create(fixPolicies[i])

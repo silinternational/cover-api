@@ -18,6 +18,7 @@ func AuthZ(next buffalo.Handler) buffalo.Handler {
 		authableResources := map[string]models.Authable{
 			domain.TypeClaim:           &models.Claim{},
 			domain.TypeClaimItem:       &models.ClaimItem{},
+			domain.TypeEntityCode:      &models.EntityCode{},
 			domain.TypeItem:            &models.Item{},
 			domain.TypePolicy:          &models.Policy{},
 			domain.TypePolicyDependent: &models.PolicyDependent{},

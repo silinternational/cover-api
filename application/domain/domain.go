@@ -70,6 +70,7 @@ const (
 
 	TypeClaim           = "claims"
 	TypeClaimItem       = "claim-items"
+	TypeEntityCode      = "entity-codes"
 	TypeFile            = "files"
 	TypeItem            = "items"
 	TypePolicy          = "policies"

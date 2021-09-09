@@ -324,7 +324,7 @@ func importPolicies(tx *pop.Connection, in []LegacyPolicy) {
 				HouseholdID: householdID,
 				CostCenter:  p.CostCenter,
 				Account:     strconv.Itoa(p.Account),
-				EntityCode:  p.EntityCode.String,
+				// EntityCode:  p.EntityCode.String,
 				Notes:       p.Notes,
 				LegacyID:    nulls.NewInt(policyID),
 				CreatedAt:   parseStringTime(p.CreatedAt, desc+"CreatedAt"),

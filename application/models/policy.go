@@ -21,21 +21,22 @@ var ValidPolicyTypes = map[api.PolicyType]struct{}{
 }
 
 type Policy struct {
-	ID          uuid.UUID      `db:"id"`
-	Type        api.PolicyType `db:"type" validate:"policyType"`
-	HouseholdID nulls.String   `db:"household_id"`
-	CostCenter  string         `db:"cost_center" validate:"required_if=Type Corporate"`
-	Account     string         `db:"account" validate:"required_if=Type Corporate"`
-	EntityCode  string         `db:"entity_code" validate:"required_if=Type Corporate"`
-	Notes       string         `db:"notes"`
-	LegacyID    nulls.Int      `db:"legacy_id"`
-	CreatedAt   time.Time      `db:"created_at"`
-	UpdatedAt   time.Time      `db:"updated_at"`
+	ID           uuid.UUID      `db:"id"`
+	Type         api.PolicyType `db:"type" validate:"policyType"`
+	HouseholdID  nulls.String   `db:"household_id"` // validation is checked at the struct level
+	CostCenter   string         `db:"cost_center" validate:"required_if=Type Corporate"`
+	Account      string         `db:"account" validate:"required_if=Type Corporate"`
+	EntityCodeID nulls.UUID     `db:"entity_code_id"` // validation is checked at the struct level
+	Notes        string         `db:"notes"`
+	LegacyID     nulls.Int      `db:"legacy_id"`
+	CreatedAt    time.Time      `db:"created_at"`
+	UpdatedAt    time.Time      `db:"updated_at"`
 
 	Claims     Claims           `has_many:"claims" validate:"-"`
 	Dependents PolicyDependents `has_many:"policy_dependents" validate:"-"`
 	Items      Items            `has_many:"items" validate:"-"`
 	Members    Users            `many_to_many:"policy_users" validate:"-"`
+	EntityCode EntityCode       `belongs_to:"entity_codes" validate:"-"`
 }
 
 // Validate gets run every time you call a "pop.Validate*" (pop.ValidateAndSave, pop.ValidateAndCreate, pop.ValidateAndUpdate) method.
@@ -159,10 +160,20 @@ func (p *Policy) LoadMembers(tx *pop.Connection, reload bool) {
 	}
 }
 
+// LoadEntityCode - a simple wrapper method for loading the entity code on the struct
+func (p *Policy) LoadEntityCode(tx *pop.Connection, reload bool) {
+	if p.EntityCode.ID == uuid.Nil || reload {
+		if err := tx.Load(p, "EntityCode"); err != nil {
+			panic("database error loading Policy.EntityCode, " + err.Error())
+		}
+	}
+}
+
 func (p *Policy) ConvertToAPI(tx *pop.Connection) api.Policy {
 	p.LoadClaims(tx, true)
 	p.LoadDependents(tx, true)
 	p.LoadMembers(tx, true)
+	p.LoadEntityCode(tx, true)
 
 	claims := p.Claims.ConvertToAPI(tx)
 	dependents := p.Dependents.ConvertToAPI()
@@ -174,7 +185,7 @@ func (p *Policy) ConvertToAPI(tx *pop.Connection) api.Policy {
 		HouseholdID: p.HouseholdID.String,
 		CostCenter:  p.CostCenter,
 		Account:     p.Account,
-		EntityCode:  p.EntityCode,
+		EntityCode:  p.EntityCode.ConvertToAPI(tx),
 		CreatedAt:   p.CreatedAt,
 		UpdatedAt:   p.UpdatedAt,
 		Claims:      claims,
