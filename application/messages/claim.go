@@ -27,15 +27,18 @@ func newClaimMessageForMember(claim models.Claim, member models.User) notificati
 func ClaimReview1Send(claim models.Claim, notifiers []interface{}) {
 	claim.LoadPolicyMembers(models.DB, false)
 	memberName := claim.Policy.Members[0].Name()
-	// TODO send email to all stewards?
-	msg := notifications.NewEmailMessage().AddToSteward()
+
+	msg := notifications.NewEmailMessage()
 	addMessageClaimData(&msg, claim)
 	msg.Template = MessageTemplateClaimReview1Steward
 	msg.Data["memberName"] = memberName
 	msg.Subject = "Action Required. " + memberName + " just (re)submitted a claim for approval"
 
-	if err := notifications.Send(msg, notifiers...); err != nil {
-		domain.ErrLogger.Printf("error sending claim review1 notification, %s", err)
+	msgs := msg.CopyToStewards()
+	for _, m := range msgs {
+		if err := notifications.Send(m, notifiers...); err != nil {
+			domain.ErrLogger.Printf("error sending claim review1 notification, %s", err)
+		}
 	}
 }
 
@@ -88,14 +91,17 @@ func ClaimReview2Send(claim models.Claim, notifiers []interface{}) {
 	claim.LoadPolicyMembers(models.DB, false)
 	memberName := claim.Policy.Members[0].Name()
 
-	// TODO send email to all stewards?
-	msg := notifications.NewEmailMessage().AddToSteward()
+	msg := notifications.NewEmailMessage()
 	addMessageClaimData(&msg, claim)
 	msg.Template = MessageTemplateClaimReview2Steward
 	msg.Data["memberName"] = memberName
 	msg.Subject = "Action Required. " + memberName + " just resubmitted a claim for approval"
-	if err := notifications.Send(msg, notifiers...); err != nil {
-		domain.ErrLogger.Printf("error sending claim review2 notification, %s", err)
+
+	msgs := msg.CopyToStewards()
+	for _, m := range msgs {
+		if err := notifications.Send(m, notifiers...); err != nil {
+			domain.ErrLogger.Printf("error sending claim review2 notification, %s", err)
+		}
 	}
 }
 
@@ -103,14 +109,17 @@ func ClaimReview3Send(claim models.Claim, notifiers []interface{}) {
 	claim.LoadPolicyMembers(models.DB, false)
 	memberName := claim.Policy.Members[0].Name()
 
-	msg := notifications.NewEmailMessage().AddToSignator()
+	msg := notifications.NewEmailMessage()
 	addMessageClaimData(&msg, claim)
 	msg.Template = MessageTemplateClaimReview3Signator
 	msg.Data["memberName"] = memberName
 	msg.Subject = "Action Required. " + memberName + " has a claim waiting for your approval"
 
-	if err := notifications.Send(msg, notifiers...); err != nil {
-		domain.ErrLogger.Printf("error sending claim review3 notification, %s", err)
+	msgs := msg.CopyToSignators()
+	for _, m := range msgs {
+		if err := notifications.Send(m, notifiers...); err != nil {
+			domain.ErrLogger.Printf("error sending claim review3 notification, %s", err)
+		}
 	}
 }
 
