@@ -170,37 +170,23 @@ func (c *ClaimItem) LoadReviewer(tx *pop.Connection, reload bool) {
 }
 
 func (c *ClaimItem) ConvertToAPI(tx *pop.Connection) api.ClaimItem {
-	c.LoadItem(tx, false)
-	item := c.Item.ConvertToAPI(tx)
 	return api.ClaimItem{
-		ItemID:            c.ItemID,
-		Name:              item.Name,
-		Category:          item.Category,
-		InStorage:         item.InStorage,
-		Country:           item.Country,
-		Description:       item.Description,
-		PolicyID:          item.PolicyID,
-		Make:              item.Make,
-		Model:             item.Model,
-		SerialNumber:      item.SerialNumber,
-		CoverageAmount:    item.CoverageAmount,
-		PurchaseDate:      item.PurchaseDate,
-		CoverageStatus:    item.CoverageStatus,
-		CoverageStartDate: item.CoverageStartDate,
-		ClaimID:           c.ClaimID,
-		Status:            c.Status,
-		IsRepairable:      c.IsRepairable,
-		RepairEstimate:    c.RepairEstimate,
-		RepairActual:      c.RepairActual,
-		ReplaceEstimate:   c.ReplaceEstimate,
-		ReplaceActual:     c.ReplaceActual,
-		PayoutOption:      c.PayoutOption,
-		PayoutAmount:      c.PayoutAmount,
-		FMV:               c.FMV,
-		ReviewDate:        c.ReviewDate.Time,
-		ReviewerID:        c.ReviewerID.UUID,
-		CreatedAt:         c.CreatedAt,
-		UpdatedAt:         c.UpdatedAt,
+		ID:              c.ID,
+		ItemID:          c.ItemID,
+		ClaimID:         c.ClaimID,
+		Status:          c.Status,
+		IsRepairable:    c.IsRepairable,
+		RepairEstimate:  c.RepairEstimate,
+		RepairActual:    c.RepairActual,
+		ReplaceEstimate: c.ReplaceEstimate,
+		ReplaceActual:   c.ReplaceActual,
+		PayoutOption:    c.PayoutOption,
+		PayoutAmount:    c.PayoutAmount,
+		FMV:             c.FMV,
+		ReviewDate:      c.ReviewDate.Time,
+		ReviewerID:      c.ReviewerID.UUID,
+		CreatedAt:       c.CreatedAt,
+		UpdatedAt:       c.UpdatedAt,
 	}
 }
 
