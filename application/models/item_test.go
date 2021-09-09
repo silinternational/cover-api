@@ -487,7 +487,7 @@ func (ms *ModelSuite) TestItem_setAccountablePerson() {
 				ms.EqualAppError(*tt.appError, err)
 				return
 			}
-			ms.NoError(err, "test produce an unexpected error")
+			ms.NoError(err)
 
 			if tt.item.PolicyUserID.Valid {
 				ms.Equal(tt.id, tt.item.PolicyUserID.UUID)
