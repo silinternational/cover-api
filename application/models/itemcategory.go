@@ -71,14 +71,12 @@ func (i *ItemCategory) FindByID(tx *pop.Connection, id uuid.UUID) error {
 func (i *ItemCategory) ConvertToAPI(tx *pop.Connection) api.ItemCategory {
 	i.LoadRiskCategory(tx)
 	return api.ItemCategory{
-		ID:             i.ID,
-		Name:           i.Name,
-		HelpText:       i.HelpText,
-		Status:         i.Status,
-		AutoApproveMax: i.AutoApproveMax,
-		RiskCategory:   i.RiskCategory.ConvertToAPI(),
-		CreatedAt:      i.CreatedAt,
-		UpdatedAt:      i.UpdatedAt,
+		ID:           i.ID,
+		Name:         i.Name,
+		HelpText:     i.HelpText,
+		RiskCategory: i.RiskCategory.ConvertToAPI(),
+		CreatedAt:    i.CreatedAt,
+		UpdatedAt:    i.UpdatedAt,
 	}
 }
 
