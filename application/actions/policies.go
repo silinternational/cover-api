@@ -153,11 +153,7 @@ func policiesListMembers(c buffalo.Context) error {
 //     description: policy ID
 // responses:
 //   '204':
-//     description: the policy member invite
-//     schema:
-//       type: array
-//       items:
-//         "$ref": "#/definitions/PolicyUserInvite"
+//     description: success, no content
 //   '400':
 //	   description: bad request, check the error and fix your code
 func policiesInviteMember(c buffalo.Context) error {
