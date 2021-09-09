@@ -1,8 +1,11 @@
 package actions
 
 import (
+	"net/http"
+
 	"github.com/gobuffalo/buffalo"
 	"github.com/gobuffalo/nulls"
+	"github.com/gofrs/uuid"
 
 	"github.com/silinternational/cover-api/api"
 	"github.com/silinternational/cover-api/domain"
@@ -134,6 +137,78 @@ func policiesListMembers(c buffalo.Context) error {
 	policy.LoadMembers(tx, false)
 
 	return renderOk(c, policy.Members.ConvertToPolicyMembers())
+}
+
+// swagger:operation POST /policies/{id}/members PolicyMembers PolicyMembersInvite
+//
+// PolicyMembersInvite
+//
+// invite new user to co-manage policy
+//
+// ---
+// parameters:
+//   - name: id
+//     in: path
+//     required: true
+//     description: policy ID
+// responses:
+//   '204':
+//     description: the policy member invite
+//     schema:
+//       type: array
+//       items:
+//         "$ref": "#/definitions/PolicyUserInvite"
+//   '400':
+//	   description: bad request, check the error and fix your code
+func policiesInviteMember(c buffalo.Context) error {
+	tx := models.Tx(c)
+	policy := getReferencedPolicyFromCtx(c)
+
+	policy.LoadMembers(tx, false)
+
+	var invite api.PolicyUserInviteCreate
+	if err := StrictBind(c, &invite); err != nil {
+		return reportError(c, err)
+	}
+
+	// make sure user is not already a member of this policy
+	for _, m := range policy.Members {
+		if m.Email == invite.Email {
+			return c.Render(http.StatusNoContent, nil)
+		}
+	}
+
+	// check if user already exists
+	var user models.User
+	if err := user.FindByEmail(tx, invite.Email); domain.IsOtherThanNoRows(err) {
+		return reportError(c, err)
+	}
+	if user.ID != uuid.Nil {
+		pUser := models.PolicyUser{
+			PolicyID: policy.ID,
+			UserID:   user.ID,
+		}
+		if err := pUser.Create(tx); err != nil {
+			return reportError(c, err)
+		}
+
+		return c.Render(http.StatusNoContent, nil)
+	}
+
+	// create invite
+	cUser := models.CurrentUser(c)
+	puInvite := models.PolicyUserInvite{
+		PolicyID:       policy.ID,
+		Email:          invite.Email,
+		InviterName:    cUser.Name(),
+		InviterEmail:   cUser.Email,
+		InviterMessage: invite.InviterMessage,
+	}
+	if err := puInvite.Create(tx); err != nil {
+		return reportError(c, err)
+	}
+
+	return c.Render(http.StatusNoContent, nil)
 }
 
 // getReferencedPolicyFromCtx pulls the models.Policy resource from context that was put there

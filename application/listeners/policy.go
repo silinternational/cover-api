@@ -4,6 +4,7 @@ import (
 	"github.com/gobuffalo/events"
 
 	"github.com/silinternational/cover-api/domain"
+	"github.com/silinternational/cover-api/messages"
 	"github.com/silinternational/cover-api/models"
 )
 
@@ -17,4 +18,13 @@ func createUserPolicy(e events.Event) {
 		domain.ErrLogger.Printf("Failed to create initial policy in %s, %s", e.Kind, err)
 		return
 	}
+}
+
+func policyUserInviteCreated(e events.Event) {
+	var invite models.PolicyUserInvite
+	if err := findObject(e.Payload, &invite, e.Kind); err != nil {
+		return
+	}
+
+	messages.PolicyUserInviteSend(invite, getNotifiersFromEventPayload(e.Payload))
 }

@@ -16,4 +16,6 @@ const (
 	MessageTemplateItemAutoSteward      = "item_auto_approved_steward"
 	MessageTemplateItemRevisionMember   = "item_revision_member"
 	MessageTemplateItemDeniedMember     = "item_denied_member"
+
+	MessageTemplatePolicyUserInvite = "policy_user_invite"
 )
