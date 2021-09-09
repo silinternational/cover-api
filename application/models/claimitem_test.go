@@ -105,7 +105,7 @@ func (ms *ModelSuite) TestClaimItem_Update() {
 	db := ms.DB
 	fixtures := CreateItemFixtures(db, fixConfig)
 
-	user := CreateAdminUser(db)
+	user := CreateAdminUsers(db)[AppRoleAdmin]
 
 	claim := fixtures.Claims[0]
 	claim.LoadClaimItems(db, false)

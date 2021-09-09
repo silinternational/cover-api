@@ -21,7 +21,7 @@ func getClaimFixtures(db *pop.Connection) models.Fixtures {
 		DependentsPerPolicy: 0,
 		ItemsPerPolicy:      2,
 	}
-	models.CreateAdminUser(db)
+	models.CreateAdminUsers(db)
 
 	return models.CreateItemFixtures(db, fixConfig)
 }
