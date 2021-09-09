@@ -27,7 +27,7 @@ func (as *ActionSuite) Test_ClaimItemsUpdate() {
 	unauthorizedUser := fixtures.Policies[1].Members[0]
 
 	// make an admin
-	appAdmin := models.CreateAdminUser(as.DB)
+	appAdmin := models.CreateAdminUsers(as.DB)[models.AppRoleAdmin]
 
 	claim := fixtures.Claims[0]
 	claim.LoadClaimItems(as.DB, false)

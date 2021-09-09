@@ -4,16 +4,18 @@ import (
 	"testing"
 	"time"
 
+	"github.com/silinternational/cover-api/api"
 	"github.com/silinternational/cover-api/domain"
 )
 
 func (ms *ModelSuite) TestNewClaimFile() {
 	claimID := domain.GetUUID()
 	fileID := domain.GetUUID()
-	got := NewClaimFile(claimID, fileID)
+	got := NewClaimFile(claimID, fileID, api.ClaimFilePurposeReceipt)
 	ms.NotNil(got, "UUT returned a nil pointer")
 	ms.Equal(claimID, got.ClaimID)
 	ms.Equal(fileID, got.FileID)
+	ms.Equal(api.ClaimFilePurposeReceipt, got.Purpose)
 }
 
 func (ms *ModelSuite) TestClaimFile_Create() {
@@ -21,9 +23,9 @@ func (ms *ModelSuite) TestClaimFile_Create() {
 	policy := CreatePolicyFixtures(db, FixturesConfig{NumberOfPolicies: 1}).Policies[0]
 	claim := createClaimFixture(db, policy, FixturesConfig{})
 
-	files := CreateFileFixtures(db, 3, CreateAdminUser(db).ID).Files
+	files := CreateFileFixtures(db, 3, CreateAdminUsers(db)[AppRoleAdmin].ID).Files
 	claim1File := files[0]
-	ms.NoError(NewClaimFile(claim.ID, claim1File.ID).Create(db))
+	ms.NoError(NewClaimFile(claim.ID, claim1File.ID, api.ClaimFilePurposeReceipt).Create(db))
 	linkedFile := files[1]
 	ms.NoError(linkedFile.SetLinked(db))
 	newFile := files[2]
@@ -68,6 +70,7 @@ func (ms *ModelSuite) TestClaimFile_Create() {
 			claimFile: ClaimFile{
 				ClaimID: claim.ID,
 				FileID:  newFile.ID,
+				Purpose: api.ClaimFilePurposeRepairEstimate,
 			},
 		},
 	}
@@ -89,8 +92,10 @@ func (ms *ModelSuite) TestClaimFile_Create() {
 				return
 			}
 			ms.NoError(err)
-			ms.NoError(db.Where("claim_id = ? AND file_id = ?", claimID, fileID).First(&claimFile),
+			var fromDB ClaimFile
+			ms.NoError(db.Where("claim_id = ? AND file_id = ?", claimID, fileID).First(&fromDB),
 				"new ClaimFile not found in database")
+			ms.Equal(api.ClaimFilePurposeRepairEstimate, fromDB.Purpose, "file purpose did not save correctly")
 		})
 	}
 }

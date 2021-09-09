@@ -62,11 +62,13 @@ var _ = grift.Namespace("db", func() {
 
 func createUserFixtures() ([]*models.User, error) {
 	userUUIDs := []string{
-		"e5447366-26b2-4256-b2ab-58c92c3d54cc",
-		"3d79902f-c204-4922-b479-57f0ec41eabe",
-		"babcf980-e1f0-42d3-b2b0-2e4704159f4f",
-		"44dc63fa-1227-4bea-b34a-416a26c3e077",
-		"2a96a5a6-971a-403d-8276-c41657bc57ce",
+		"11147366-26b2-4256-b2ab-58c92c3d54c1",
+		"11247366-26b2-4256-b2ab-58c92c3d54c2",
+		"11347366-26b2-4256-b2ab-58c92c3d54c3",
+		"1249902f-c204-4922-b479-57f0ec41eab4",
+		"125cf980-e1f0-42d3-b2b0-2e4704159f45",
+		"126c63fa-1227-4bea-b34a-416a26c3e076",
+		"1276a5a6-971a-403d-8276-c41657bc57c7",
 	}
 
 	fixUsers := []*models.User{
@@ -77,6 +79,24 @@ func createUserFixtures() ([]*models.User, error) {
 			LastLoginUTC: time.Now().UTC().Add(time.Hour * -48),
 			StaffID:      "111111",
 			AppRole:      models.AppRoleAdmin,
+		},
+		{
+			Email:         "bruce.wayne@example.org",
+			EmailOverride: "batman@example.org",
+			FirstName:     "Bruce",
+			LastName:      "Wayne",
+			LastLoginUTC:  time.Now().UTC().Add(time.Hour * -47),
+			StaffID:       "111222",
+			AppRole:       models.AppRoleSignator,
+		},
+		{
+			Email:         "Jason.Todd@example.org",
+			EmailOverride: "robin@example.org",
+			FirstName:     "Jason",
+			LastName:      "Todd",
+			LastLoginUTC:  time.Now().UTC().Add(time.Hour * -46),
+			StaffID:       "111333",
+			AppRole:       models.AppRoleSteward,
 		},
 		{
 			Email:        "jane.eyre@example.org",
@@ -139,7 +159,9 @@ func createUserFixtures() ([]*models.User, error) {
 
 func createPolicyFixtures(fixUsers []*models.User) ([]*models.Policy, error) {
 	policyUUIDs := []string{
-		"31447366-26b2-4256-b2ab-58c92c3d54cc",
+		"31147366-26b2-4256-b2ab-58c92c3d54cc",
+		"31247366-26b2-4256-b2ab-58c92c3d54cc",
+		"31347366-26b2-4256-b2ab-58c92c3d54cc",
 		"3279902f-c204-4922-b479-57f0ec41eabe",
 		"33bcf980-e1f0-42d3-b2b0-2e4704159f4f",
 		"34dc63fa-1227-4bea-b34a-416a26c3e077",
@@ -193,18 +215,30 @@ func createPolicyFixtures(fixUsers []*models.User) ([]*models.Policy, error) {
 
 func createCategories() ([]uuid.UUID, error) {
 	const itemCategoriesSql = `
-INSERT INTO "item_categories" ("id", "risk_category_id", "name", "help_text", "status", "auto_approve_max", "created_at", "updated_at", "legacy_id") VALUES
-('d4632d64-67b5-4795-a7de-66b95312fa7e',	'3be38915-7092-44f2-90ef-26f48214b34f',	'Computers, tablets, and phones',	'Includes printers, screens, peripherals, and extras',	'Enabled',	300000,	'2021-08-27 19:46:28',	'2021-08-27 19:46:28',	1),
-('9c682e38-78fd-475b-9810-3a7f2e9f1fe4',	'7bed3c00-23cf-4282-b2b8-da89426cef2f',	'Clothing',	'-',	'Enabled',	300000,	'2021-08-27 19:46:28',	'2021-08-27 19:46:28',	10),
-('4b06f087-3fb0-4345-82e8-803645962db0',	'3be38915-7092-44f2-90ef-26f48214b34f',	'Medical',	'Eyewear, insulin pumps, CPAP, prosthetics, and more',	'Enabled',	300000,	'2021-08-27 19:46:28',	'2021-08-27 19:46:28',	11),
-('61081c4d-b6e3-47c5-aca7-373fa7d30896',	'3be38915-7092-44f2-90ef-26f48214b34f',	'Photography and recording',	'Includes video, audio, peripherals, and extras',	'Enabled',	300000,	'2021-08-27 19:46:28',	'2021-08-27 19:46:28',	2),
-('863a3306-78f9-4aca-add5-0abda3a1ef02',	'3be38915-7092-44f2-90ef-26f48214b34f',	'Other',	'-',	'Enabled',	300000,	'2021-08-27 19:46:28',	'2021-08-27 19:46:28',	3),
-('faa39da0-981e-4fcf-92fc-2c047fd21f15',	'3be38915-7092-44f2-90ef-26f48214b34f',	'Musical instruments',	'Includes peripherals and extras',	'Enabled',	300000,	'2021-08-27 19:46:28',	'2021-08-27 19:46:28',	4),
-('660629ef-ff63-4ace-8263-993897de7d6b',	'7bed3c00-23cf-4282-b2b8-da89426cef2f',	'Appliances and home electronics',	'Washing machines, ovens, theater equipment, and more',	'Enabled',	300000,	'2021-08-27 19:46:28',	'2021-08-27 19:46:28',	5),
-('aa304ce5-be3d-45eb-929e-b4575973c0d3',	'7bed3c00-23cf-4282-b2b8-da89426cef2f',	'Home goods',	'Furniture, kitchenware, decorations, linens, and more',	'Enabled',	300000,	'2021-08-27 19:46:28',	'2021-08-27 19:46:28',	6),
-('722c03e5-7852-44b9-b86a-af5d63b39d0e',	'7bed3c00-23cf-4282-b2b8-da89426cef2f',	'Field site electronics',	'Solar panels, power systems, antennae, and more',	'Enabled',	300000,	'2021-08-27 19:46:28',	'2021-08-27 19:46:28',	7),
-('0f7aa101-bfdb-4a19-a182-c5ff1d16f6b2',	'7bed3c00-23cf-4282-b2b8-da89426cef2f',	'Books and media',	'Books, CDs, DVDs, and more',	'Enabled',	300000,	'2021-08-27 19:46:28',	'2021-08-27 19:46:28',	8),
-('036e5315-18ca-4404-8435-72a695f2c9a7',	'3be38915-7092-44f2-90ef-26f48214b34f',	'Travel and recreation',	'Includes suitcases, travel bags, cycling, skating, sports. No motorized vehicles.',	'Enabled',	300000,	'2021-08-27 19:46:28',	'2021-08-27 19:46:28',	9);
+INSERT INTO "item_categories" ("id", "risk_category_id", "name", "help_text",
+	"status", "auto_approve_max", "created_at", "updated_at", "legacy_id", "require_make_model") VALUES
+('d4632d64-67b5-4795-a7de-66b95312fa7e',	'3be38915-7092-44f2-90ef-26f48214b34f',	'Computers, tablets, and phones',	'Includes printers, screens, peripherals, and extras',
+    'Enabled',	300000,	'2021-08-27 19:46:28',	'2021-08-27 19:46:28',	1, true),
+('9c682e38-78fd-475b-9810-3a7f2e9f1fe4',	'7bed3c00-23cf-4282-b2b8-da89426cef2f',	'Clothing',	'-',
+    'Enabled',	300000,	'2021-08-27 19:46:28',	'2021-08-27 19:46:28',	10, false),
+('4b06f087-3fb0-4345-82e8-803645962db0',	'3be38915-7092-44f2-90ef-26f48214b34f',	'Medical',	'Eyewear, insulin pumps, CPAP, prosthetics, and more',
+    'Enabled',	300000,	'2021-08-27 19:46:28',	'2021-08-27 19:46:28',	11, true),
+('61081c4d-b6e3-47c5-aca7-373fa7d30896',	'3be38915-7092-44f2-90ef-26f48214b34f',	'Photography and recording',	'Includes video, audio, peripherals, and extras',
+    'Enabled',	300000,	'2021-08-27 19:46:28',	'2021-08-27 19:46:28',	2, true),
+('863a3306-78f9-4aca-add5-0abda3a1ef02',	'3be38915-7092-44f2-90ef-26f48214b34f',	'Other',	'-',
+    'Enabled',	300000,	'2021-08-27 19:46:28',	'2021-08-27 19:46:28',	3, true),
+('faa39da0-981e-4fcf-92fc-2c047fd21f15',	'3be38915-7092-44f2-90ef-26f48214b34f',	'Musical instruments',	'Includes peripherals and extras',
+    'Enabled',	300000,	'2021-08-27 19:46:28',	'2021-08-27 19:46:28',	4, true),
+('660629ef-ff63-4ace-8263-993897de7d6b',	'7bed3c00-23cf-4282-b2b8-da89426cef2f',	'Appliances and home electronics',	'Washing machines, ovens, theater equipment, and more',
+    'Enabled',	300000,	'2021-08-27 19:46:28',	'2021-08-27 19:46:28',	5, false),
+('aa304ce5-be3d-45eb-929e-b4575973c0d3',	'7bed3c00-23cf-4282-b2b8-da89426cef2f',	'Home goods',	'Furniture, kitchenware, decorations, linens, and more',
+    'Enabled',	300000,	'2021-08-27 19:46:28',	'2021-08-27 19:46:28',	6, false),
+('722c03e5-7852-44b9-b86a-af5d63b39d0e',	'7bed3c00-23cf-4282-b2b8-da89426cef2f',	'Field site electronics',	'Solar panels, power systems, antennae, and more',
+    'Enabled',	300000,	'2021-08-27 19:46:28',	'2021-08-27 19:46:28',	7, false),
+('0f7aa101-bfdb-4a19-a182-c5ff1d16f6b2',	'7bed3c00-23cf-4282-b2b8-da89426cef2f',	'Books and media',	'Books, CDs, DVDs, and more',
+    'Enabled',	300000,	'2021-08-27 19:46:28',	'2021-08-27 19:46:28',	8, false),
+('036e5315-18ca-4404-8435-72a695f2c9a7',	'3be38915-7092-44f2-90ef-26f48214b34f',	'Travel and recreation',	'Includes suitcases, travel bags, cycling, skating, sports. No motorized vehicles.',
+    'Enabled',	300000,	'2021-08-27 19:46:28',	'2021-08-27 19:46:28',	9, true);
 `
 	if err := models.DB.RawQuery(itemCategoriesSql).Exec(); err != nil {
 		panic("error loading item categories, " + err.Error())
@@ -232,16 +266,20 @@ INSERT INTO "item_categories" ("id", "risk_category_id", "name", "help_text", "s
 
 func createItemFixtures(fixPolicies []*models.Policy, fixICats []uuid.UUID) ([]*models.Item, error) {
 	itemUUIDs := []string{
-		"71117366-26b2-4256-b2ab-58c92c3d54cc",
-		"7212902f-c204-4922-b479-57f0ec41eabe",
-		"7321f980-e1f0-42d3-b2b0-2e4704159f4f",
-		"742263fa-1227-4bea-b34a-416a26c3e077",
-		"7531a5a6-971a-403d-8276-c41657bc57ce",
-		"76327366-26b2-4256-b2ab-58c92c3d54cc",
-		"7741902f-c204-4922-b479-57f0ec41eabe",
-		"7842f980-e1f0-42d3-b2b0-2e4704159f4f",
-		"795163fa-1227-4bea-b34a-416a26c3e077",
-		"7052a5a6-971a-403d-8276-c41657bc57ce",
+		"71117366-26b2-4256-b2ab-58c92c3d54c1",
+		"71127366-26b2-4256-b2ab-58c92c3d54c2",
+		"72217366-26b2-4256-b2ab-58c92c3d54c3",
+		"72227366-26b2-4256-b2ab-58c92c3d54c4",
+		"73317366-26b2-4256-b2ab-58c92c3d54c5",
+		"73327366-26b2-4256-b2ab-58c92c3d54c6",
+		"7411f980-e1f0-42d3-b2b0-2e4704159f47",
+		"742263fa-1227-4bea-b34a-416a26c3e078",
+		"7511a5a6-971a-403d-8276-c41657bc57c9",
+		"75227366-26b2-4256-b2ab-58c92c3d54ca",
+		"7611902f-c204-4922-b479-57f0ec41eabb",
+		"7622f980-e1f0-42d3-b2b0-2e4704159f4c",
+		"771163fa-1227-4bea-b34a-416a26c3e07d",
+		"7722a5a6-971a-403d-8276-c41657bc57ce",
 	}
 
 	if len(itemUUIDs)/2 != len(fixPolicies) {

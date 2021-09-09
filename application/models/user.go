@@ -22,13 +22,17 @@ import (
 type UserAppRole string
 
 const (
-	AppRoleAdmin = UserAppRole("Admin")
-	AppRoleUser  = UserAppRole("User")
+	AppRoleAdmin    = UserAppRole("Admin")
+	AppRoleSteward  = UserAppRole("Steward")
+	AppRoleSignator = UserAppRole("Signator")
+	AppRoleUser     = UserAppRole("User")
 )
 
 var validUserAppRoles = map[UserAppRole]struct{}{
-	AppRoleAdmin: {},
-	AppRoleUser:  {},
+	AppRoleAdmin:    {},
+	AppRoleSteward:  {},
+	AppRoleSignator: {},
+	AppRoleUser:     {},
 }
 
 // Users is a slice of User objects
@@ -107,8 +111,9 @@ func (u *User) IsActorAllowedTo(tx *pop.Connection, actor User, p Permission, su
 	}
 }
 
+// IsAdmin returns true if the user has AppRole of Admin, Steward or Signator
 func (u *User) IsAdmin() bool {
-	return u.AppRole == AppRoleAdmin
+	return u.AppRole == AppRoleAdmin || u.AppRole == AppRoleSteward || u.AppRole == AppRoleSignator
 }
 
 func (u *User) FindOrCreateFromAuthUser(tx *pop.Connection, authUser *auth.User) error {
@@ -153,6 +158,8 @@ func (u *User) FindOrCreateFromAuthUser(tx *pop.Connection, authUser *auth.User)
 	return nil
 }
 
+// EmailOfChoice returns the user's EmailOverride value if it's not blank.
+//   Otherwise it returns the user's Email value.
 func (u *User) EmailOfChoice() string {
 	if u.EmailOverride != "" {
 		return u.EmailOverride
@@ -160,10 +167,17 @@ func (u *User) EmailOfChoice() string {
 	return u.Email
 }
 
-//  TODO Consider making this smarter
-func (u *User) FindSteward(tx *pop.Connection) {
-	if err := tx.Where("app_role = ?", AppRoleAdmin).First(u); err != nil {
-		panic("error finding steward " + err.Error())
+// FindStewards finds all the users with AppRoleSteward
+func (u *Users) FindStewards(tx *pop.Connection) {
+	if err := tx.Where("app_role = ?", AppRoleSteward).All(u); err != nil {
+		panic("error finding steward users " + err.Error())
+	}
+}
+
+// FindSignators finds all the users with AppRoleSignator
+func (u *Users) FindSignators(tx *pop.Connection) {
+	if err := tx.Where("app_role = ?", AppRoleSignator).All(u); err != nil {
+		panic("error finding signator users " + err.Error())
 	}
 }
 
@@ -325,6 +339,7 @@ func (u *User) ConvertToAPI(tx *pop.Connection) api.User {
 		EmailOverride: u.EmailOverride,
 		FirstName:     u.FirstName,
 		LastName:      u.LastName,
+		Name:          u.Name(),
 		LastLoginUTC:  u.LastLoginUTC,
 		Location:      u.Location,
 		PhotoFileID:   u.PhotoFileID,

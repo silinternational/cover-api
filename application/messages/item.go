@@ -15,12 +15,6 @@ func addMessageItemData(msg *notifications.Message, item models.Item) {
 	return
 }
 
-func newItemMessageForSteward(item models.Item) notifications.Message {
-	msg := notifications.NewEmailMessage().AddToSteward()
-	addMessageItemData(&msg, item)
-	return msg
-}
-
 func newItemMessageForMember(item models.Item, member models.User) notifications.Message {
 	msg := notifications.NewEmailMessage()
 	addMessageItemData(&msg, item)
@@ -43,24 +37,33 @@ func notifyItemApprovedMember(item models.Item, notifiers []interface{}) {
 }
 
 func notifyItemAutoApprovedSteward(item models.Item, memberName string, notifiers []interface{}) {
-	msg := newItemMessageForSteward(item)
+	msg := notifications.NewEmailMessage()
+	addMessageItemData(&msg, item)
 	msg.Template = MessageTemplateItemAutoSteward
 	msg.Subject = memberName + " just submitted a new policy item that has been auto approved"
 	msg.Data["memberName"] = memberName
 
-	if err := notifications.Send(msg, notifiers...); err != nil {
-		domain.ErrLogger.Printf("error sending item auto approved notification to steward, %s", err)
+	msgs := msg.CopyToStewards()
+
+	for _, m := range msgs {
+		if err := notifications.Send(m, notifiers...); err != nil {
+			domain.ErrLogger.Printf("error sending item auto approved notification to steward, %s", err)
+		}
 	}
 }
 
 func notifyItemSubmitted(item models.Item, memberName string, notifiers []interface{}) {
-	msg := newItemMessageForSteward(item)
+	msg := notifications.NewEmailMessage()
+	addMessageItemData(&msg, item)
 	msg.Template = MessageTemplateItemSubmittedSteward
 	msg.Subject = "Action Required. " + memberName + " just submitted a new policy item for approval"
 	msg.Data["memberName"] = memberName
 
-	if err := notifications.Send(msg, notifiers...); err != nil {
-		domain.ErrLogger.Printf("error sending item submitted notification, %s", err)
+	msgs := msg.CopyToStewards()
+	for _, m := range msgs {
+		if err := notifications.Send(m, notifiers...); err != nil {
+			domain.ErrLogger.Printf("error sending item submitted notification, %s", err)
+		}
 	}
 }
 func ItemSubmittedSend(item models.Item, notifiers []interface{}) {

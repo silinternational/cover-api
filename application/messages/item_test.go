@@ -22,7 +22,8 @@ func (ts *TestSuite) Test_ItemSubmittedSend() {
 
 	f := models.CreateItemFixtures(db, fixConfig)
 
-	steward := models.CreateAdminUser(db)
+	steward0 := models.CreateAdminUsers(db)[models.AppRoleSteward]
+	steward1 := models.CreateAdminUsers(db)[models.AppRoleSteward]
 	member0 := f.Policies[0].Members[0]
 	member1 := f.Policies[0].Members[1]
 
@@ -37,19 +38,25 @@ func (ts *TestSuite) Test_ItemSubmittedSend() {
 	}{
 		{
 			data: testData{
-				name:                "just submitted, not approved",
-				wantToEmails:        []string{steward.EmailOfChoice()},
-				wantSubjectsContain: []string{"just submitted a new policy item for approval"},
+				name:         "just submitted, not approved",
+				wantToEmails: []string{steward0.EmailOfChoice(), steward1.EmailOfChoice()},
+				wantSubjectsContain: []string{
+					"just submitted a new policy item for approval",
+					"just submitted a new policy item for approval",
+				},
 			},
 			item: submittedItem,
 		},
 		{
 			data: testData{
-				name:         "auto approved",
-				wantToEmails: []string{member0.EmailOfChoice(), member1.EmailOfChoice(), steward.EmailOfChoice()},
+				name: "auto approved",
+				wantToEmails: []string{member0.EmailOfChoice(), member1.EmailOfChoice(),
+					steward0.EmailOfChoice(), steward1.EmailOfChoice(),
+				},
 				wantSubjectsContain: []string{
 					"your new policy item has been approved",
 					"your new policy item has been approved",
+					"a new policy item that has been auto approved",
 					"a new policy item that has been auto approved",
 				},
 			},

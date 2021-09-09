@@ -96,6 +96,13 @@ func CreateFileFixtures(tx *pop.Connection, n int, createdByID uuid.UUID) Fixtur
 // Uses FixturesConfig fields: NumberOfPolices, DependentsPerPolicy, UsersPerPolicy, ItemsPerPolicy, ClaimsPerPolicy,
 // ClaimItemsPerClaim, ClaimFilesPerClaim
 func CreateItemFixtures(tx *pop.Connection, config FixturesConfig) Fixtures {
+	if config.NumberOfPolicies < 1 {
+		config.NumberOfPolicies = 1
+	}
+	if config.ItemsPerPolicy < 1 {
+		config.ItemsPerPolicy = 1
+	}
+
 	fixtures := CreatePolicyFixtures(tx, config)
 	policies := fixtures.Policies
 	items := make(Items, config.ItemsPerPolicy*config.NumberOfPolicies)
@@ -211,12 +218,21 @@ func createClaimFixture(tx *pop.Connection, policy Policy, config FixturesConfig
 }
 
 // CreateCategoryFixtures generates any number of category records for testing
+//   even indexed categories are Stationary and odd indexed ones are Mobile
 func CreateCategoryFixtures(tx *pop.Connection, n int) Fixtures {
 	CreateRiskCategories(tx)
 
 	categories := make(ItemCategories, n)
+
 	for i := range categories {
-		categories[i].RiskCategoryID = RiskCategoryMobileID()
+		if i%2 == 0 {
+			categories[i].RiskCategoryID = RiskCategoryStationaryID()
+			categories[i].RequireMakeModel = false
+		} else {
+			categories[i].RiskCategoryID = RiskCategoryMobileID()
+			categories[i].RequireMakeModel = true
+		}
+
 		categories[i].Name = randStr(10)
 		categories[i].HelpText = randStr(40)
 		categories[i].Status = api.ItemCategoryStatusEnabled
@@ -229,13 +245,21 @@ func CreateCategoryFixtures(tx *pop.Connection, n int) Fixtures {
 	}
 }
 
-func CreateAdminUser(tx *pop.Connection) User {
+func createAdminUserWithRole(tx *pop.Connection, role UserAppRole) User {
 	user := CreateUserFixtures(tx, 1).Users[0]
-	user.AppRole = AppRoleAdmin
+	user.AppRole = role
 	if err := user.Update(tx); err != nil {
 		panic("failed to update user as an admin " + err.Error())
 	}
 	return user
+}
+
+func CreateAdminUsers(tx *pop.Connection) map[UserAppRole]User {
+	return map[UserAppRole]User{
+		AppRoleAdmin:    createAdminUserWithRole(tx, AppRoleAdmin),
+		AppRoleSteward:  createAdminUserWithRole(tx, AppRoleSteward),
+		AppRoleSignator: createAdminUserWithRole(tx, AppRoleSignator),
+	}
 }
 
 // CreateUserFixtures generates any number of user records for testing. The access token for
@@ -273,9 +297,6 @@ func CreateUserFixtures(tx *pop.Connection, n int) Fixtures {
 func CreatePolicyFixtures(tx *pop.Connection, config FixturesConfig) Fixtures {
 	if config.UsersPerPolicy < 1 {
 		config.UsersPerPolicy = 1
-	}
-	if config.ItemsPerPolicy < 1 {
-		config.ItemsPerPolicy = 1
 	}
 
 	var policyUsers PolicyUsers

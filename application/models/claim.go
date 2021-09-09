@@ -119,7 +119,7 @@ func (c *Claim) FindByReferenceNumber(tx *pop.Connection, ref string) error {
 }
 
 // IsActorAllowedTo ensure the actor is either an admin, or a member of this policy to perform any permission
-// TODO Differentiate between admins (steward and boss)
+// TODO Differentiate between admins (steward and signator)
 func (c *Claim) IsActorAllowedTo(tx *pop.Connection, actor User, perm Permission, sub SubResource, r *http.Request) bool {
 	if actor.IsAdmin() {
 		return true
@@ -345,7 +345,7 @@ func (c *Claim) RequestReceipt(tx *pop.Connection) error {
 
 // Approve changes the status of the claim from either Review1, Review2 to Review3 or
 //  from Review3 to Approved. It also adds the ReviewerID and ReviewDate.
-// TODO distinguish between admin types (steward vs. boss)
+// TODO distinguish between admin types (steward vs. signator)
 // TODO do whatever post-processing is needed for payment
 func (c *Claim) Approve(tx *pop.Connection, actor User) error {
 	oldStatus := c.Status
@@ -509,6 +509,6 @@ func uniqueClaimReferenceNumber(tx *pop.Connection) string {
 
 // AttachFile adds a previously-stored File to this Claim
 func (c *Claim) AttachFile(tx *pop.Connection, input api.ClaimFileAttachInput) (ClaimFile, error) {
-	claimFile := NewClaimFile(c.ID, input.FileID)
+	claimFile := NewClaimFile(c.ID, input.FileID, input.Purpose)
 	return *claimFile, claimFile.Create(tx)
 }
