@@ -62,11 +62,13 @@ var _ = grift.Namespace("db", func() {
 
 func createUserFixtures() ([]*models.User, error) {
 	userUUIDs := []string{
-		"e5447366-26b2-4256-b2ab-58c92c3d54cc",
-		"3d79902f-c204-4922-b479-57f0ec41eabe",
-		"babcf980-e1f0-42d3-b2b0-2e4704159f4f",
-		"44dc63fa-1227-4bea-b34a-416a26c3e077",
-		"2a96a5a6-971a-403d-8276-c41657bc57ce",
+		"11147366-26b2-4256-b2ab-58c92c3d54c1",
+		"11247366-26b2-4256-b2ab-58c92c3d54c2",
+		"11347366-26b2-4256-b2ab-58c92c3d54c3",
+		"1249902f-c204-4922-b479-57f0ec41eab4",
+		"125cf980-e1f0-42d3-b2b0-2e4704159f45",
+		"126c63fa-1227-4bea-b34a-416a26c3e076",
+		"1276a5a6-971a-403d-8276-c41657bc57c7",
 	}
 
 	fixUsers := []*models.User{
@@ -77,6 +79,24 @@ func createUserFixtures() ([]*models.User, error) {
 			LastLoginUTC: time.Now().UTC().Add(time.Hour * -48),
 			StaffID:      "111111",
 			AppRole:      models.AppRoleAdmin,
+		},
+		{
+			Email:         "bruce.wayne@example.org",
+			EmailOverride: "batman@example.org",
+			FirstName:     "Bruce",
+			LastName:      "Wayne",
+			LastLoginUTC:  time.Now().UTC().Add(time.Hour * -47),
+			StaffID:       "111222",
+			AppRole:       models.AppRoleSignator,
+		},
+		{
+			Email:         "Jason.Todd@example.org",
+			EmailOverride: "robin@example.org",
+			FirstName:     "Jason",
+			LastName:      "Todd",
+			LastLoginUTC:  time.Now().UTC().Add(time.Hour * -46),
+			StaffID:       "111333",
+			AppRole:       models.AppRoleSteward,
 		},
 		{
 			Email:        "jane.eyre@example.org",
@@ -139,7 +159,9 @@ func createUserFixtures() ([]*models.User, error) {
 
 func createPolicyFixtures(fixUsers []*models.User) ([]*models.Policy, error) {
 	policyUUIDs := []string{
-		"31447366-26b2-4256-b2ab-58c92c3d54cc",
+		"31147366-26b2-4256-b2ab-58c92c3d54cc",
+		"31247366-26b2-4256-b2ab-58c92c3d54cc",
+		"31347366-26b2-4256-b2ab-58c92c3d54cc",
 		"3279902f-c204-4922-b479-57f0ec41eabe",
 		"33bcf980-e1f0-42d3-b2b0-2e4704159f4f",
 		"34dc63fa-1227-4bea-b34a-416a26c3e077",
@@ -232,16 +254,20 @@ INSERT INTO "item_categories" ("id", "risk_category_id", "name", "help_text", "s
 
 func createItemFixtures(fixPolicies []*models.Policy, fixICats []uuid.UUID) ([]*models.Item, error) {
 	itemUUIDs := []string{
-		"71117366-26b2-4256-b2ab-58c92c3d54cc",
-		"7212902f-c204-4922-b479-57f0ec41eabe",
-		"7321f980-e1f0-42d3-b2b0-2e4704159f4f",
-		"742263fa-1227-4bea-b34a-416a26c3e077",
-		"7531a5a6-971a-403d-8276-c41657bc57ce",
-		"76327366-26b2-4256-b2ab-58c92c3d54cc",
-		"7741902f-c204-4922-b479-57f0ec41eabe",
-		"7842f980-e1f0-42d3-b2b0-2e4704159f4f",
-		"795163fa-1227-4bea-b34a-416a26c3e077",
-		"7052a5a6-971a-403d-8276-c41657bc57ce",
+		"71117366-26b2-4256-b2ab-58c92c3d54c1",
+		"71127366-26b2-4256-b2ab-58c92c3d54c2",
+		"72217366-26b2-4256-b2ab-58c92c3d54c3",
+		"72227366-26b2-4256-b2ab-58c92c3d54c4",
+		"73317366-26b2-4256-b2ab-58c92c3d54c5",
+		"73327366-26b2-4256-b2ab-58c92c3d54c6",
+		"7411f980-e1f0-42d3-b2b0-2e4704159f47",
+		"742263fa-1227-4bea-b34a-416a26c3e078",
+		"7511a5a6-971a-403d-8276-c41657bc57c9",
+		"75227366-26b2-4256-b2ab-58c92c3d54ca",
+		"7611902f-c204-4922-b479-57f0ec41eabb",
+		"7622f980-e1f0-42d3-b2b0-2e4704159f4c",
+		"771163fa-1227-4bea-b34a-416a26c3e07d",
+		"7722a5a6-971a-403d-8276-c41657bc57ce",
 	}
 
 	if len(itemUUIDs)/2 != len(fixPolicies) {

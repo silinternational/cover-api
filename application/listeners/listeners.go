@@ -56,7 +56,7 @@ func listener(e events.Event) {
 // RegisterListener registers the event listener
 func RegisterListener() {
 	if _, err := events.Listen(listener); err != nil {
-		panic("failed to register event listener")
+		panic("failed to register event listener " + err.Error())
 	}
 }
 

@@ -39,12 +39,6 @@ type ItemCategory struct {
 	// help text
 	HelpText string `json:"help_text"`
 
-	// status
-	Status ItemCategoryStatus `json:"status"`
-
-	// auto-approve maximum claim amount
-	AutoApproveMax int `json:"auto_approve_max"`
-
 	// date-time created
 	//
 	// swagger:strfmt date-time

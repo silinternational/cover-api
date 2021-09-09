@@ -67,14 +67,26 @@ func (p *Policy) IsActorAllowedTo(tx *pop.Connection, actor User, perm Permissio
 		return true
 	}
 
-	p.LoadMembers(tx, false)
+	return p.isMember(tx, actor.ID)
+}
 
+func (p *Policy) isMember(tx *pop.Connection, id uuid.UUID) bool {
+	p.LoadMembers(tx, false)
 	for _, m := range p.Members {
-		if m.ID == actor.ID {
+		if m.ID == id {
 			return true
 		}
 	}
+	return false
+}
 
+func (p *Policy) isDependent(tx *pop.Connection, id uuid.UUID) bool {
+	p.LoadDependents(tx, false)
+	for _, d := range p.Dependents {
+		if d.ID == id {
+			return true
+		}
+	}
 	return false
 }
 
