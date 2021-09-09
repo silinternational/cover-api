@@ -212,6 +212,7 @@ func createPolicyFixtures(tx *pop.Connection, fixUsers []*models.User, entityCod
 		if i < len(entityCodes) {
 			fixPolicies[i].EntityCodeID = nulls.NewUUID(entityCodes[i].ID)
 			fixPolicies[i].Account = domain.RandomString(6, "0123456789")
+			fixPolicies[i].CostCenter = domain.RandomString(8, "0123456789")
 			fixPolicies[i].Type = api.PolicyTypeCorporate
 		}
 
