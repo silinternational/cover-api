@@ -43,9 +43,8 @@ import (
 	"github.com/rs/cors"
 
 	"github.com/silinternational/cover-api/api"
-	"github.com/silinternational/cover-api/listeners"
-
 	"github.com/silinternational/cover-api/domain"
+	"github.com/silinternational/cover-api/listeners"
 	"github.com/silinternational/cover-api/models"
 )
 
