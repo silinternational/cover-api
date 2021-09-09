@@ -20,12 +20,11 @@ type RiskCategories []RiskCategory
 
 // RiskCategory model
 type RiskCategory struct {
-	ID               uuid.UUID `db:"id"`
-	Name             string    `db:"name" validate:"required"`
-	PolicyMax        int       `db:"policy_max" validate:"required"`
-	RequireMakeModel bool      `db:"require_make_model"`
-	CreatedAt        time.Time `db:"created_at"`
-	UpdatedAt        time.Time `db:"updated_at"`
+	ID        uuid.UUID `db:"id"`
+	Name      string    `db:"name" validate:"required"`
+	PolicyMax int       `db:"policy_max" validate:"required"`
+	CreatedAt time.Time `db:"created_at"`
+	UpdatedAt time.Time `db:"updated_at"`
 }
 
 func (r *RiskCategory) Create(tx *pop.Connection) error {
@@ -55,11 +54,10 @@ func RiskCategoryStationaryID() uuid.UUID {
 
 func (r *RiskCategory) ConvertToAPI() api.RiskCategory {
 	return api.RiskCategory{
-		ID:               r.ID,
-		Name:             r.Name,
-		PolicyMax:        r.PolicyMax,
-		RequireMakeModel: r.RequireMakeModel,
-		CreatedAt:        r.CreatedAt,
-		UpdatedAt:        r.UpdatedAt,
+		ID:        r.ID,
+		Name:      r.Name,
+		PolicyMax: r.PolicyMax,
+		CreatedAt: r.CreatedAt,
+		UpdatedAt: r.UpdatedAt,
 	}
 }
