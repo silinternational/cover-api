@@ -11,12 +11,19 @@ import (
 	"github.com/silinternational/cover-api/api"
 )
 
+var ValidClaimFilePurpose = map[api.ClaimFilePurpose]struct{}{
+	api.ClaimFilePurposeReceipt:        {},
+	api.ClaimFilePurposeRepairEstimate: {},
+	api.ClaimFilePurposeEvidenceOfFMV:  {},
+}
+
 type ClaimFile struct {
-	ID        uuid.UUID `db:"id"`
-	ClaimID   uuid.UUID `db:"claim_id" validate:"required"`
-	FileID    uuid.UUID `db:"file_id" validate:"required"`
-	CreatedAt time.Time `db:"created_at"`
-	UpdatedAt time.Time `db:"updated_at"`
+	ID        uuid.UUID            `db:"id"`
+	ClaimID   uuid.UUID            `db:"claim_id" validate:"required"`
+	FileID    uuid.UUID            `db:"file_id" validate:"required"`
+	Purpose   api.ClaimFilePurpose `db:"purpose"`
+	CreatedAt time.Time            `db:"created_at"`
+	UpdatedAt time.Time            `db:"updated_at"`
 
 	File File `belongs_to:"files" validate:"-"`
 }
@@ -24,8 +31,8 @@ type ClaimFile struct {
 type ClaimFiles []ClaimFile
 
 // NewClaimFile makes a new ClaimFile but does not save it to the database
-func NewClaimFile(claimID, fileID uuid.UUID) *ClaimFile {
-	return &ClaimFile{ClaimID: claimID, FileID: fileID}
+func NewClaimFile(claimID, fileID uuid.UUID, purpose api.ClaimFilePurpose) *ClaimFile {
+	return &ClaimFile{ClaimID: claimID, FileID: fileID, Purpose: purpose}
 }
 
 // Validate gets run every time you call a "pop.Validate*" (pop.ValidateAndSave, pop.ValidateAndCreate, pop.ValidateAndUpdate) method.
