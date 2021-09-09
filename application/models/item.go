@@ -495,11 +495,13 @@ func (i *Item) setAccountablePerson(tx *pop.Connection, id uuid.UUID) error {
 
 	if i.Policy.isMember(tx, id) {
 		i.PolicyUserID = nulls.NewUUID(id)
+		i.PolicyDependentID = nulls.UUID{}
 		return nil
 	}
 
 	if i.Policy.isDependent(tx, id) {
 		i.PolicyDependentID = nulls.NewUUID(id)
+		i.PolicyUserID = nulls.UUID{}
 		return nil
 	}
 
