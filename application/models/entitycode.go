@@ -50,7 +50,7 @@ func (ec *EntityCode) IsActorAllowedTo(tx *pop.Connection, actor User, perm Perm
 	return false
 }
 
-func (ec *EntityCodes) ConvertToAPI(tx *pop.Connection) interface{} {
+func (ec *EntityCodes) ConvertToAPI(tx *pop.Connection) []api.EntityCode {
 	entityCodes := make([]api.EntityCode, len(*ec))
 	for i, cc := range *ec {
 		entityCodes[i] = cc.ConvertToAPI(tx)
