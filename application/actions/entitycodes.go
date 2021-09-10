@@ -6,7 +6,7 @@ import (
 	"github.com/silinternational/cover-api/models"
 )
 
-// swagger:operation GET /entity-codes EntityCodes EntityCodesList
+// swagger:operation GET /config/entity-codes Config EntityCodesList
 //
 // EntityCodesList
 //

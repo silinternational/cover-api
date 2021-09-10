@@ -51,12 +51,11 @@ import (
 const idRegex = `/{id:[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-4[a-fA-F0-9]{3}-[8|9|aA|bB][a-fA-F0-9]{3}-[a-fA-F0-9]{12}}`
 
 const (
-	claimsPath      = "/" + domain.TypeClaim
-	claimItemsPath  = "/" + domain.TypeClaimItem
-	entityCodesPath = "/" + domain.TypeEntityCode
-	filesPath       = "/" + domain.TypeFile
-	itemsPath       = "/" + domain.TypeItem
-	policiesPath    = "/" + domain.TypePolicy
+	claimsPath     = "/" + domain.TypeClaim
+	claimItemsPath = "/" + domain.TypeClaimItem
+	filesPath      = "/" + domain.TypeFile
+	itemsPath      = "/" + domain.TypeItem
+	policiesPath   = "/" + domain.TypePolicy
 )
 
 // ENV is used to help switch settings based on where the
@@ -113,7 +112,7 @@ func App() *buffalo.App {
 		//  Add authentication and authorization
 		app.Use(AuthN, AuthZ)
 		app.Middleware.Skip(AuthN, HomeHandler, statusHandler)
-		app.Middleware.Skip(AuthZ, HomeHandler, statusHandler, uploadHandler, itemCategoriesList)
+		app.Middleware.Skip(AuthZ, HomeHandler, statusHandler)
 
 		// Set the request content type to JSON
 		app.Use(contenttype.Set("application/json"))
@@ -123,7 +122,6 @@ func App() *buffalo.App {
 
 		app.GET("/", HomeHandler)
 		app.GET("/status", statusHandler)
-		app.GET("/item-categories", itemCategoriesList)
 
 		app.POST("/upload", uploadHandler)
 
@@ -160,11 +158,10 @@ func App() *buffalo.App {
 
 		// config
 		configGroup := app.Group("/config")
-		configGroup.Middleware.Skip(AuthZ, claimEventTypes)
+		configGroup.Middleware.Skip(AuthZ, claimEventTypes, itemCategoriesList, entityCodesList)
 		configGroup.GET("/claim-event-types", claimEventTypes)
-
-		// entity-codes
-		app.GET(entityCodesPath, entityCodesList)
+		configGroup.GET("/item-categories", itemCategoriesList)
+		configGroup.GET("/entity-codes", entityCodesList)
 
 		// item
 		itemsGroup := app.Group(itemsPath)
