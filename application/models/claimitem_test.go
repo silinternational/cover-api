@@ -65,6 +65,87 @@ func (ms *ModelSuite) TestClaimItem_Validate() {
 			wantErr:  true,
 		},
 		{
+			name: "invalid payout option for Evacuation",
+			claimItem: &ClaimItem{
+				Claim: Claim{
+					EventType: api.ClaimEventTypeEvacuation,
+				},
+				Status:       api.ClaimItemStatusDraft,
+				PayoutOption: api.PayoutOptionFMV,
+				ReviewerID:   nulls.NewUUID(user.ID),
+				ReviewDate:   nulls.NewTime(time.Now()),
+			},
+			errField: "ClaimItem.PayoutOption",
+			wantErr:  true,
+		},
+		{
+			name: "valid payout option for Evacuation",
+			claimItem: &ClaimItem{
+				Claim: Claim{
+					EventType: api.ClaimEventTypeEvacuation,
+				},
+				Status:       api.ClaimItemStatusDraft,
+				PayoutOption: api.PayoutOptionFixedFraction,
+				ReviewerID:   nulls.NewUUID(user.ID),
+				ReviewDate:   nulls.NewTime(time.Now()),
+			},
+			wantErr: false,
+		},
+		{
+			name: "invalid payout option for Theft",
+			claimItem: &ClaimItem{
+				Claim: Claim{
+					EventType: api.ClaimEventTypeTheft,
+				},
+				Status:       api.ClaimItemStatusDraft,
+				PayoutOption: api.PayoutOptionFixedFraction,
+				ReviewerID:   nulls.NewUUID(user.ID),
+				ReviewDate:   nulls.NewTime(time.Now()),
+			},
+			errField: "ClaimItem.PayoutOption",
+			wantErr:  true,
+		},
+		{
+			name: "valid payout option for Theft",
+			claimItem: &ClaimItem{
+				Claim: Claim{
+					EventType: api.ClaimEventTypeTheft,
+				},
+				Status:       api.ClaimItemStatusDraft,
+				PayoutOption: api.PayoutOptionFMV,
+				ReviewerID:   nulls.NewUUID(user.ID),
+				ReviewDate:   nulls.NewTime(time.Now()),
+			},
+			wantErr: false,
+		},
+		{
+			name: "invalid payout option for Impact",
+			claimItem: &ClaimItem{
+				Claim: Claim{
+					EventType: api.ClaimEventTypeImpact,
+				},
+				Status:       api.ClaimItemStatusDraft,
+				PayoutOption: api.PayoutOptionFixedFraction,
+				ReviewerID:   nulls.NewUUID(user.ID),
+				ReviewDate:   nulls.NewTime(time.Now()),
+			},
+			errField: "ClaimItem.PayoutOption",
+			wantErr:  true,
+		},
+		{
+			name: "valid payout option for Impact",
+			claimItem: &ClaimItem{
+				Claim: Claim{
+					EventType: api.ClaimEventTypeImpact,
+				},
+				Status:       api.ClaimItemStatusDraft,
+				PayoutOption: api.PayoutOptionRepair,
+				ReviewerID:   nulls.NewUUID(user.ID),
+				ReviewDate:   nulls.NewTime(time.Now()),
+			},
+			wantErr: false,
+		},
+		{
 			name: "valid status, approved",
 			claimItem: &ClaimItem{
 				Status:       api.ClaimItemStatusApproved,
@@ -82,11 +163,14 @@ func (ms *ModelSuite) TestClaimItem_Validate() {
 			if tt.wantErr {
 				if vErr.Count() == 0 {
 					t.Errorf("Expected an error, but did not get one")
+					return
 				} else if len(vErr.Get(tt.errField)) == 0 {
 					t.Errorf("Expected an error on field %v, but got none (errors: %+v)", tt.errField, vErr.Errors)
+					return
 				}
 			} else if vErr.HasAny() {
 				t.Errorf("Unexpected error: %+v", vErr)
+				return
 			}
 		})
 	}

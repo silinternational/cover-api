@@ -160,7 +160,25 @@ func claimItemStructLevelValidation(sl validator.StructLevel) {
 	}
 
 	if claimItem.Status == api.ClaimItemStatusPending || claimItem.Status == api.ClaimItemStatusDraft {
+		switch claimItem.Claim.EventType {
+		case api.ClaimEventTypeEvacuation:
+			if claimItem.PayoutOption != api.PayoutOptionFixedFraction {
+				sl.ReportError(claimItem.PayoutOption, "payout_option", "PayoutOption",
+					"payout_option_must_be_fixed_fraction", "")
+			}
+		case api.ClaimEventTypeTheft:
+			if claimItem.PayoutOption != api.PayoutOptionFMV && claimItem.PayoutOption != api.PayoutOptionReplacement {
+				sl.ReportError(claimItem.PayoutOption, "payout_option", "PayoutOption",
+					"payout_option_must_be_fmv_or_replacement", "")
+			}
+		default:
+			if claimItem.PayoutOption == api.PayoutOptionFixedFraction {
+				sl.ReportError(claimItem.PayoutOption, "payout_option", "PayoutOption",
+					"payout_option_must_not_be_fixed_fraction", "")
+			}
+		}
 		return
+
 	}
 
 	if !claimItem.ReviewerID.Valid {

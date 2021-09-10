@@ -23,9 +23,10 @@ var ValidClaimItemStatus = map[api.ClaimItemStatus]struct{}{
 }
 
 var ValidPayoutOptions = map[api.PayoutOption]struct{}{
-	api.PayoutOptionRepair:      {},
-	api.PayoutOptionReplacement: {},
-	api.PayoutOptionFMV:         {},
+	api.PayoutOptionRepair:        {},
+	api.PayoutOptionReplacement:   {},
+	api.PayoutOptionFMV:           {},
+	api.PayoutOptionFixedFraction: {},
 }
 
 type ClaimItems []ClaimItem
@@ -56,6 +57,8 @@ type ClaimItem struct {
 
 // Validate gets run every time you call a "pop.Validate*" (pop.ValidateAndSave, pop.ValidateAndCreate, pop.ValidateAndUpdate) method.
 func (c *ClaimItem) Validate(tx *pop.Connection) (*validate.Errors, error) {
+	c.LoadClaim(tx, false)
+
 	return validateModel(c), nil
 }
 
