@@ -43,7 +43,7 @@ type Policy struct {
 	Account string `json:"account,omitempty"`
 
 	// Entity code for billing
-	EntityCode string `json:"entity_code,omitempty"`
+	EntityCode EntityCode `json:"entity_code,omitempty"`
 
 	// The time the policy was created
 	//

@@ -7,7 +7,7 @@ import (
 	"github.com/silinternational/cover-api/models"
 )
 
-// swagger:operation GET /item-categories ItemCategories ItemCategoriesList
+// swagger:operation GET /config/item-categories Config ItemCategoriesList
 //
 // ItemCategoriesList
 //

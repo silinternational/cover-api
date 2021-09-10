@@ -143,7 +143,17 @@ func create(tx *pop.Connection, m interface{}) error {
 }
 
 func appErrorFromDB(err error, defaultKey api.ErrorKey) error {
+	if err == nil {
+		return nil
+	}
+
 	appErr := api.NewAppError(err, defaultKey, api.CategoryInternal)
+
+	if !domain.IsOtherThanNoRows(err) {
+		appErr.Category = api.CategoryUser
+		appErr.Key = api.ErrorNoRows
+		return appErr
+	}
 
 	var pgError *pgconn.PgError
 	if errors.As(err, &pgError) {
