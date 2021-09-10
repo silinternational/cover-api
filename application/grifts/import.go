@@ -68,6 +68,9 @@ var riskCategoryMap = map[int]uuid.UUID{}
 // householdPolicyMap is a map of household ID to new policy UUID
 var householdPolicyMap = map[string]uuid.UUID{}
 
+// entityCodesMap is a map of entity code to entity code UUID
+var entityCodesMap = map[string]uuid.UUID{}
+
 // policyUserMap is a list of existing PolicyUser records to prevent duplicates
 var policyUserMap = map[string]struct{}{}
 
@@ -320,14 +323,14 @@ func importPolicies(tx *pop.Connection, in []LegacyPolicy) {
 
 			desc := fmt.Sprintf("Policy[%d].", policyID)
 			newPolicy := models.Policy{
-				Type:        getPolicyType(p),
-				HouseholdID: householdID,
-				CostCenter:  p.CostCenter,
-				Account:     strconv.Itoa(p.Account),
-				EntityCode:  p.EntityCode.String,
-				Notes:       p.Notes,
-				LegacyID:    nulls.NewInt(policyID),
-				CreatedAt:   parseStringTime(p.CreatedAt, desc+"CreatedAt"),
+				Type:         getPolicyType(p),
+				HouseholdID:  householdID,
+				CostCenter:   p.CostCenter,
+				Account:      strconv.Itoa(p.Account),
+				EntityCodeID: getEntityCodeID(tx, p.EntityCode),
+				Notes:        p.Notes,
+				LegacyID:     nulls.NewInt(policyID),
+				CreatedAt:    parseStringTime(p.CreatedAt, desc+"CreatedAt"),
 			}
 			if err := newPolicy.Create(tx); err != nil {
 				log.Fatalf("failed to create policy, %s\n%+v", err, newPolicy)
@@ -360,7 +363,31 @@ func importPolicies(tx *pop.Connection, in []LegacyPolicy) {
 	fmt.Printf("  Items: %d\n", nItems)
 	fmt.Printf("  ClaimItems: %d\n", nClaimItems)
 	fmt.Printf("  PolicyUsers: %d w/staffID: %d\n", nPolicyUsers, nPolicyUsersWithStaffID)
+	fmt.Printf("  Entity Codes: %d\n", len(entityCodesMap))
 	fmt.Println("")
+}
+
+func getEntityCodeID(tx *pop.Connection, code nulls.String) nulls.UUID {
+	if !code.Valid {
+		return nulls.UUID{}
+	}
+	if foundID, ok := entityCodesMap[code.String]; ok {
+		return nulls.NewUUID(foundID)
+	}
+	entityCodeUUID := importEntityCode(tx, code.String)
+	entityCodesMap[code.String] = entityCodeUUID
+	return nulls.NewUUID(entityCodeUUID)
+}
+
+func importEntityCode(tx *pop.Connection, code string) uuid.UUID {
+	newEntityCode := models.EntityCode{
+		Code: code,
+		Name: code,
+	}
+	if err := newEntityCode.Create(tx); err != nil {
+		log.Fatalf("failed to create entity code, %s\n%+v", err, newEntityCode)
+	}
+	return newEntityCode.ID
 }
 
 func appendNotesToPolicy(tx *pop.Connection, policyUUID uuid.UUID, newNotes string) {
