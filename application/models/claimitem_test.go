@@ -157,20 +157,18 @@ func (ms *ModelSuite) TestClaimItem_Validate() {
 			wantErr:  false,
 		},
 	}
+	mt := ms.T()
 	for _, tt := range tests {
-		ms.T().Run(tt.name, func(t *testing.T) {
+		mt.Run(tt.name, func(t *testing.T) {
 			vErr, _ := tt.claimItem.Validate(ms.DB)
 			if tt.wantErr {
 				if vErr.Count() == 0 {
-					t.Errorf("Expected an error, but did not get one")
-					return
+					mt.Fatal("Expected an error, but did not get one")
 				} else if len(vErr.Get(tt.errField)) == 0 {
-					t.Errorf("Expected an error on field %v, but got none (errors: %+v)", tt.errField, vErr.Errors)
-					return
+					mt.Fatalf("Expected an error on field %v, but got none (errors: %+v)", tt.errField, vErr.Errors)
 				}
 			} else if vErr.HasAny() {
-				t.Errorf("Unexpected error: %+v", vErr)
-				return
+				mt.Fatalf("Unexpected error: %+v", vErr)
 			}
 		})
 	}
