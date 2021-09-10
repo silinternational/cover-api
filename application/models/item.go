@@ -267,9 +267,23 @@ func (i *Item) SubmitForApproval(tx *pop.Connection) error {
 	return nil
 }
 
+// Checks whether the item has a category that expects the make and model fields
+//   to be hydrated. Returns true if they are hydrated of if the item has
+//   a lenient category.
+// Assumes the item already has its Category loaded
+func (i *Item) areFieldsValidForAutoApproval(tx *pop.Connection) bool {
+	if !i.Category.RequireMakeModel {
+		return true
+	}
+	return i.Make != `` && i.Model != ``
+}
+
 // Assumes the item already has its Category loaded
 func (i *Item) canAutoApprove(tx *pop.Connection) bool {
 	if i.CoverageAmount > i.Category.AutoApproveMax {
+		return false
+	}
+	if !i.areFieldsValidForAutoApproval(tx) {
 		return false
 	}
 

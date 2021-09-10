@@ -29,22 +29,36 @@ func NewEmailMessage() Message {
 	return msg
 }
 
-// sets the msg ToName and ToEmail based on the steward's information
-func (m Message) AddToSteward() Message {
+// CopyToStewards returns one message for each steward with
+//   the ToName and ToEmail based on the steward's information
+func (m Message) CopyToStewards() []Message {
 	var stewards models.Users
 	stewards.FindStewards(models.DB)
 
-	m.ToName = stewards[0].Name()
-	m.ToEmail = stewards[0].EmailOfChoice()
-	return m
+	msgs := make([]Message, len(stewards))
+	for i, s := range stewards {
+		newMsg := m
+		newMsg.ToName = s.Name()
+		newMsg.ToEmail = s.EmailOfChoice()
+		msgs[i] = newMsg
+	}
+
+	return msgs
 }
 
-// sets the msg ToName and ToEmail based on the signator's information
-func (m Message) AddToSignator() Message {
+// CopyToSignators returns one message for each signator with
+//   the ToName and ToEmail based on the signator's information
+func (m Message) CopyToSignators() []Message {
 	var signators models.Users
 	signators.FindSignators(models.DB)
 
-	m.ToName = signators[0].Name()
-	m.ToEmail = signators[0].EmailOfChoice()
-	return m
+	msgs := make([]Message, len(signators))
+	for i, s := range signators {
+		newMsg := m
+		newMsg.ToName = s.Name()
+		newMsg.ToEmail = s.EmailOfChoice()
+		msgs[i] = newMsg
+	}
+
+	return msgs
 }

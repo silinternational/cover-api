@@ -509,6 +509,6 @@ func uniqueClaimReferenceNumber(tx *pop.Connection) string {
 
 // AttachFile adds a previously-stored File to this Claim
 func (c *Claim) AttachFile(tx *pop.Connection, input api.ClaimFileAttachInput) (ClaimFile, error) {
-	claimFile := NewClaimFile(c.ID, input.FileID)
+	claimFile := NewClaimFile(c.ID, input.FileID, input.Purpose)
 	return *claimFile, claimFile.Create(tx)
 }
