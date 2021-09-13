@@ -42,6 +42,36 @@ var ValidClaimStatus = map[api.ClaimStatus]struct{}{
 	api.ClaimStatusInactive: {},
 }
 
+var ValidClaimEventTypePayoutOptions = map[api.ClaimEventType]map[api.PayoutOption]struct{}{
+	api.ClaimEventTypeEvacuation: {
+		api.PayoutOptionFixedFraction: {},
+	},
+	api.ClaimEventTypeTheft: {
+		api.PayoutOptionFMV:         {},
+		api.PayoutOptionReplacement: {},
+	},
+	api.ClaimEventTypeImpact: {
+		api.PayoutOptionFMV:         {},
+		api.PayoutOptionReplacement: {},
+		api.PayoutOptionRepair:      {},
+	},
+	api.ClaimEventTypeElectricalSurge: {
+		api.PayoutOptionFMV:         {},
+		api.PayoutOptionReplacement: {},
+		api.PayoutOptionRepair:      {},
+	},
+	api.ClaimEventTypeWaterDamage: {
+		api.PayoutOptionFMV:         {},
+		api.PayoutOptionReplacement: {},
+		api.PayoutOptionRepair:      {},
+	},
+	api.ClaimEventTypeOther: {
+		api.PayoutOptionFMV:         {},
+		api.PayoutOptionReplacement: {},
+		api.PayoutOptionRepair:      {},
+	},
+}
+
 type Claims []Claim
 
 type Claim struct {

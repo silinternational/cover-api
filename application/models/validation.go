@@ -160,7 +160,23 @@ func claimItemStructLevelValidation(sl validator.StructLevel) {
 	}
 
 	if claimItem.Status == api.ClaimItemStatusPending || claimItem.Status == api.ClaimItemStatusDraft {
+		eventTypePayoutOptions, ok := ValidClaimEventTypePayoutOptions[claimItem.Claim.EventType]
+		if !ok {
+			sl.ReportError(claimItem.Claim.EventType, "EventType", "EventType", "invalid event type", "")
+			return
+		}
+
+		if _, ok := eventTypePayoutOptions[claimItem.PayoutOption]; !ok {
+			var options []string
+			for k := range eventTypePayoutOptions {
+				options = append(options, string(k))
+			}
+			sl.ReportError(claimItem.PayoutOption, "payout_option", "PayoutOption",
+				fmt.Sprintf("payout option must be one of: %s", strings.Join(options, ", ")), "")
+		}
+
 		return
+
 	}
 
 	if !claimItem.ReviewerID.Valid {
