@@ -2,6 +2,7 @@ package messages
 
 import (
 	"testing"
+	"time"
 
 	"github.com/gobuffalo/pop/v5"
 	"github.com/stretchr/testify/require"
@@ -40,6 +41,15 @@ type testData struct {
 	wantSubjectsContain []string
 }
 
+// TODO when ready, delete the testData type and rename this as testData
+type testDataNew struct {
+	name                  string
+	wantToEmails          []string
+	wantSubjectContains   string
+	wantInappTextContains string
+	wantBodyContains      []string
+}
+
 func validateEmails(ts *TestSuite, td testData, testEmailer notifications.DummyEmailService) {
 	wantCount := len(td.wantToEmails)
 
@@ -51,5 +61,26 @@ func validateEmails(ts *TestSuite, td testData, testEmailer notifications.DummyE
 
 	for i, w := range td.wantSubjectsContain {
 		ts.Contains(msgs[i].Subject, w, "incorrect email subject")
+	}
+}
+
+func validateNotificationUsers(ts *TestSuite, tx *pop.Connection, td testDataNew) {
+	var notnUsers models.NotificationUsers
+	ts.NoError(tx.Where("email_address in (?)",
+		td.wantToEmails[0], td.wantToEmails[1]).All(&notnUsers))
+
+	ts.Equal(len(td.wantToEmails), len(notnUsers), "incorrect count of NotificationUsers")
+	for _, n := range notnUsers {
+		n.Load(tx)
+		notn := n.Notification
+		ts.Contains(notn.Subject, td.wantSubjectContains, "incorrect notification subject")
+		ts.Contains(notn.InappText, td.wantInappTextContains, "incorrect notification inapp text")
+
+		for _, c := range td.wantBodyContains {
+			ts.Contains(notn.Body, c, "incorrect notification body")
+		}
+
+		ts.WithinDuration(time.Now().UTC(), n.SendAfterUTC, time.Minute,
+			"incorrect NotificationUser SendAfterUTC")
 	}
 }

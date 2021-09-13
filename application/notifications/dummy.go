@@ -24,7 +24,7 @@ type DummyMessageInfo struct {
 func (t *DummyEmailService) Send(msg Message) error {
 	eTemplate := msg.Template
 	bodyBuf := &bytes.Buffer{}
-	if err := eR.HTML(eTemplate).Render(bodyBuf, msg.Data); err != nil {
+	if err := EmailRenderer.HTML(eTemplate).Render(bodyBuf, msg.Data); err != nil {
 		errMsg := "error rendering message body - " + err.Error()
 		domain.ErrLogger.Printf(errMsg)
 		return errors.New(errMsg)

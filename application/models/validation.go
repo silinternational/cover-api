@@ -186,3 +186,24 @@ func policyStructLevelValidation(sl validator.StructLevel) {
 		sl.ReportError(policy.EntityCodeID, "entity_code_id", "EntityCodeID", "entity_code_id_required", "")
 	}
 }
+
+func notificationStructLevelValidation(sl validator.StructLevel) {
+	notn, ok := sl.Current().Interface().(Notification)
+	if !ok {
+		panic("notificationStructLevelValidation registered to a type other than Notification")
+	}
+
+	// Body and Subject are both required if InappText is blank or if either
+	// of them is present
+	if notn.InappText == "" || notn.Body != "" || notn.Subject != "" {
+		if notn.Body == "" {
+			sl.ReportError(notn.Body, "body", "Body",
+				"body_required", "")
+
+		}
+		if notn.Subject == "" {
+			sl.ReportError(notn.Subject, "subject", "Subject",
+				"subject_required", "")
+		}
+	}
+}

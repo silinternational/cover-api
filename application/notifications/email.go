@@ -5,7 +5,7 @@ import (
 	"github.com/gobuffalo/packr/v2"
 )
 
-var eR = render.New(render.Options{
+var EmailRenderer = render.New(render.Options{
 	HTMLLayout:   "layout.plush.html",
 	TemplatesBox: packr.New("app:mailers:templates", "../templates/mail"),
 	Helpers:      render.Helpers{},

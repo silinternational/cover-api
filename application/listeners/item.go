@@ -40,7 +40,7 @@ func itemRevision(e events.Event) {
 		panic(fmt.Sprintf(wrongStatusMsg, "itemRevision", item.CoverageStatus))
 	}
 
-	messages.ItemRevisionSend(item, getNotifiersFromEventPayload(e.Payload))
+	messages.ItemRevisionQueueMessage(models.DB, item)
 }
 
 func itemApproved(e events.Event) {
