@@ -29,9 +29,10 @@ const (
 type PayoutOption string
 
 const (
-	PayoutOptionRepair      = PayoutOption("Repair")
-	PayoutOptionReplacement = PayoutOption("Replacement")
-	PayoutOptionFMV         = PayoutOption("FMV")
+	PayoutOptionRepair        = PayoutOption("Repair")
+	PayoutOptionReplacement   = PayoutOption("Replacement")
+	PayoutOptionFMV           = PayoutOption("FMV")
+	PayoutOptionFixedFraction = PayoutOption("FixedFraction")
 )
 
 // swagger:model
