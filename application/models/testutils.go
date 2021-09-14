@@ -170,10 +170,10 @@ func UpdateClaimStatus(tx *pop.Connection, claim Claim, status api.ClaimStatus) 
 // Uses FixturesConfig fields: ClaimItemsPerClaim, ClaimFilesPerClaim
 func createClaimFixture(tx *pop.Connection, policy Policy, config FixturesConfig) Claim {
 	claim := Claim{
-		PolicyID:         policy.ID,
-		EventDate:        time.Date(2020, 5, 1, 12, 0, 0, 0, time.UTC),
-		EventType:        api.ClaimEventTypeImpact,
-		EventDescription: randStr(25),
+		PolicyID:            policy.ID,
+		IncidentDate:        time.Date(2020, 5, 1, 12, 0, 0, 0, time.UTC),
+		IncidentType:        api.ClaimIncidentTypeImpact,
+		IncidentDescription: randStr(25),
 		// Status is set to Draft by default
 	}
 	MustCreate(tx, &claim)

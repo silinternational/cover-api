@@ -1,0 +1,3 @@
+rename_column("claims", "event_date", "incident_date")
+rename_column("claims", "event_type", "incident_type")
+rename_column("claims", "event_description", "incident_description")

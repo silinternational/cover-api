@@ -109,9 +109,9 @@ func claimsUpdate(c buffalo.Context) error {
 	// for future proofing
 	oldStatus := claim.Status
 
-	claim.EventType = input.EventType
-	claim.EventDescription = input.EventDescription
-	claim.EventDate = input.EventDate
+	claim.IncidentType = input.IncidentType
+	claim.IncidentDescription = input.IncidentDescription
+	claim.IncidentDate = input.IncidentDate
 
 	if err := claim.Update(tx, oldStatus); err != nil {
 		return reportError(c, err)
