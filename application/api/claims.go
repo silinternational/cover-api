@@ -108,7 +108,7 @@ type Claim struct {
 	// swagger:strfmt date-time
 	PaymentDate nulls.Time `json:"payment_date,omitempty"`
 
-	// total payout
+	// total payout (0.01 USD)
 	TotalPayout int `json:"total_payout,omitempty"`
 
 	// list of items included in claim

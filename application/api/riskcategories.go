@@ -13,9 +13,24 @@ type RiskCategories []RiskCategory
 // RiskCategory represents an item category's risk category
 // swagger:model
 type RiskCategory struct {
-	ID        uuid.UUID `json:"id"`
-	Name      string    `json:"name"`
-	PolicyMax int       `json:"policy_max"`
+	// unique ID
+	//
+	// swagger:strfmt uuid4
+	ID uuid.UUID `json:"id"`
+
+	// risk category name
+	Name string `json:"name"`
+
+	// maximum coverage per policy (0.01 USD)
+	PolicyMax int `json:"policy_max"`
+
+	// created date
+	//
+	// swagger:strfmt date-time
 	CreatedAt time.Time `json:"created_at"`
+
+	// updated date
+	//
+	// swagger:strfmt date-time
 	UpdatedAt time.Time `json:"updated_at"`
 }
