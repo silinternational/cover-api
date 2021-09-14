@@ -4,6 +4,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/gobuffalo/nulls"
 	"github.com/gobuffalo/pop/v5"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
@@ -82,5 +83,74 @@ func validateNotificationUsers(ts *TestSuite, tx *pop.Connection, td testDataNew
 
 		ts.WithinDuration(time.Now().UTC(), n.SendAfterUTC, time.Minute,
 			"incorrect NotificationUser SendAfterUTC")
+	}
+}
+
+func (ts *TestSuite) Test_SendQueuedNotifications() {
+	t := ts.T()
+	db := ts.DB
+
+	f := getClaimFixtures(db)
+
+	user := f.Policies[0].Members[0]
+
+	// Create queued notifications for different scenarios
+	//  (already sent, should be sent, not ready to be sent)
+
+	type notnFixture struct {
+		name      string
+		sendAfter time.Time
+		sentAt    nulls.Time
+	}
+
+	notnFixtures := []notnFixture{
+		notnFixture{
+			name:      "AlreadySent",
+			sendAfter: time.Now().UTC().Add(-domain.DurationWeek * 2),
+			sentAt:    nulls.NewTime(time.Now().UTC().Add(-domain.DurationWeek)),
+		},
+		notnFixture{
+			name:      "ToSend",
+			sendAfter: time.Now().UTC().Add(-domain.DurationWeek),
+		},
+		notnFixture{
+			name:      "NotReady",
+			sendAfter: time.Now().UTC().Add(domain.DurationWeek),
+		},
+	}
+
+	for _, n := range notnFixtures {
+		notn := models.Notification{
+			Subject: n.name + " message",
+			Body:    "Body of " + n.name + " message.",
+		}
+		models.MustCreate(db, &notn)
+
+		notnUser := models.NotificationUser{
+			NotificationID: notn.ID,
+			UserID:         user.ID,
+			EmailAddress:   user.EmailOfChoice(),
+			SendAfterUTC:   n.sendAfter,
+			SentAtUTC:      n.sentAt,
+		}
+		models.MustCreate(db, &notnUser)
+	}
+
+	testEmailer := &notifications.TestEmailService
+
+	tests := []testData{
+		{
+			name:                "send one email",
+			wantToEmails:        []string{user.EmailOfChoice()},
+			wantSubjectsContain: []string{"ToSend"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			testEmailer.DeleteSentMessages()
+			SendQueuedNotifications(db)
+			validateEmails(ts, tt, *testEmailer)
+		})
 	}
 }

@@ -28,14 +28,17 @@ type awsConfig struct {
 
 // Send a message
 func (s *SES) Send(msg Message) error {
-	msg.Data["uiURL"] = domain.Env.UIURL
-	msg.Data["appName"] = domain.Env.AppName
+	body := msg.Body
+	if body == "" {
+		msg.Data["uiURL"] = domain.Env.UIURL
+		msg.Data["appName"] = domain.Env.AppName
 
-	bodyBuf := &bytes.Buffer{}
-	if err := EmailRenderer.HTML(msg.Template).Render(bodyBuf, msg.Data); err != nil {
-		return errors.New("error rendering message body - " + err.Error())
+		bodyBuf := &bytes.Buffer{}
+		if err := EmailRenderer.HTML(msg.Template).Render(bodyBuf, msg.Data); err != nil {
+			return errors.New("error rendering ses message body - " + err.Error())
+		}
+		body = bodyBuf.String()
 	}
-	body := bodyBuf.String()
 
 	to := addressWithName(msg.ToName, msg.ToEmail)
 	from := addressWithName(msg.FromName, msg.FromEmail)

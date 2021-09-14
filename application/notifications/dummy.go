@@ -22,12 +22,17 @@ type DummyMessageInfo struct {
 }
 
 func (t *DummyEmailService) Send(msg Message) error {
-	eTemplate := msg.Template
-	bodyBuf := &bytes.Buffer{}
-	if err := EmailRenderer.HTML(eTemplate).Render(bodyBuf, msg.Data); err != nil {
-		errMsg := "error rendering message body - " + err.Error()
-		domain.ErrLogger.Printf(errMsg)
-		return errors.New(errMsg)
+	body := msg.Body
+
+	if body == "" {
+		eTemplate := msg.Template
+		bodyBuf := &bytes.Buffer{}
+		if err := EmailRenderer.HTML(eTemplate).Render(bodyBuf, msg.Data); err != nil {
+			errMsg := "error rendering dummy email message body - " + err.Error()
+			domain.ErrLogger.Printf(errMsg)
+			return errors.New(errMsg)
+		}
+		body = bodyBuf.String()
 	}
 
 	domain.Logger.Printf("dummy message subject: %s, recipient: %s",
@@ -36,7 +41,7 @@ func (t *DummyEmailService) Send(msg Message) error {
 	t.sentMessages = append(t.sentMessages,
 		dummyMessage{
 			subject:   msg.Subject,
-			body:      bodyBuf.String(),
+			body:      body,
 			fromName:  msg.FromName,
 			fromEmail: msg.FromEmail,
 			toName:    msg.ToName,

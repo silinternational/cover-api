@@ -104,7 +104,9 @@ func (ts *TestSuite) Test_itemRevision() {
 			testEmailer.DeleteSentMessages()
 			itemRevision(tt.event)
 
-			ts.Greater(testEmailer.GetNumberOfMessagesSent(), 0, "no email messages sent")
+			var notns models.Notifications
+			ts.NoError(db.All(&notns), "error fetching notifications from db")
+			ts.Equal(len(notns), 2, "no notifications queued")
 		})
 	}
 }

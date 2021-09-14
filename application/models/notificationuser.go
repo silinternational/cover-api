@@ -1,12 +1,16 @@
 package models
 
 import (
+	"errors"
+	"fmt"
 	"time"
 
 	"github.com/gobuffalo/nulls"
 	"github.com/gobuffalo/pop/v5"
 	"github.com/gobuffalo/validate/v3"
 	"github.com/gofrs/uuid"
+
+	"github.com/silinternational/cover-api/domain"
 )
 
 type NotificationUsers []NotificationUser
@@ -59,4 +63,21 @@ func (n *NotificationUser) Load(tx *pop.Connection) {
 			panic("database error loading NotificationUser.User, " + err.Error())
 		}
 	}
+}
+
+func (n *NotificationUsers) GetQueuedEmails(tx *pop.Connection) error {
+	q := fmt.Sprintf(`SELECT notification_users.*
+  FROM notification_users LEFT JOIN notifications ON notification_users.notification_id = notifications.id
+  WHERE notifications.body <> '' AND
+     sent_at_utc IS NULL AND
+     send_after_utc < now()`) // postgresql appears to use UTC as the timezone for now()
+
+	if err := tx.RawQuery(q).All(n); err != nil {
+		if domain.IsOtherThanNoRows(err) {
+			return errors.New("error getting queued notifications to send out: " + err.Error())
+		}
+	}
+
+	return nil
+
 }

@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/gobuffalo/buffalo/render"
+	"github.com/gobuffalo/pop/v5"
 
 	"github.com/silinternational/cover-api/domain"
 	"github.com/silinternational/cover-api/models"
@@ -57,4 +58,24 @@ func (m MessageData) renderHTML(template string) string {
 		panic("error rendering message body - " + err.Error())
 	}
 	return bodyBuf.String()
+}
+
+func SendQueuedNotifications(tx *pop.Connection) {
+	var notnUsers models.NotificationUsers
+	if err := notnUsers.GetQueuedEmails(tx); err != nil {
+		panic(err.Error())
+	}
+
+	for _, n := range notnUsers {
+		n.Load(tx)
+		msg := notifications.NewEmailMessage()
+		msg.ToName = n.User.Name()
+		msg.ToEmail = n.EmailAddress
+		msg.Body = n.Notification.Body
+		msg.Subject = n.Notification.Subject
+
+		if err := notifications.Send(msg); err != nil {
+			domain.ErrLogger.Printf("error sending queued notification email, %s", err)
+		}
+	}
 }
