@@ -43,6 +43,11 @@ func (n *NotificationUser) Create(tx *pop.Connection) error {
 	return create(tx, n)
 }
 
+// Update writes the NotificationUser data to an existing database record.
+func (n *NotificationUser) Update(tx *pop.Connection) error {
+	return update(tx, n)
+}
+
 func (n *NotificationUser) GetID() uuid.UUID {
 	return n.ID
 }
@@ -79,5 +84,4 @@ func (n *NotificationUsers) GetQueuedEmails(tx *pop.Connection) error {
 	}
 
 	return nil
-
 }

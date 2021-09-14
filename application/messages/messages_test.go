@@ -101,13 +101,17 @@ func (ts *TestSuite) Test_SendQueuedNotifications() {
 		name      string
 		sendAfter time.Time
 		sentAt    nulls.Time
+		notnUser  models.NotificationUser
 	}
+
+	// The database truncates the time in the fractions of seconds somehow
+	alreadySentTime := time.Now().UTC().Add(-domain.DurationWeek).Truncate(time.Second)
 
 	notnFixtures := []notnFixture{
 		notnFixture{
 			name:      "AlreadySent",
 			sendAfter: time.Now().UTC().Add(-domain.DurationWeek * 2),
-			sentAt:    nulls.NewTime(time.Now().UTC().Add(-domain.DurationWeek)),
+			sentAt:    nulls.NewTime(alreadySentTime),
 		},
 		notnFixture{
 			name:      "ToSend",
@@ -117,23 +121,37 @@ func (ts *TestSuite) Test_SendQueuedNotifications() {
 			name:      "NotReady",
 			sendAfter: time.Now().UTC().Add(domain.DurationWeek),
 		},
+		notnFixture{
+			name:      "EmailError",
+			sendAfter: time.Now().UTC().Add(-domain.DurationWeek),
+		},
 	}
 
-	for _, n := range notnFixtures {
+	notnUserFs := make([]models.NotificationUser, len(notnFixtures))
+
+	nuAlreadySent := &notnUserFs[0]
+	nuToSend := &notnUserFs[1]
+	nuNotReady := &notnUserFs[2]
+	nuEmailError := &notnUserFs[3]
+
+	for i, n := range notnFixtures {
 		notn := models.Notification{
 			Subject: n.name + " message",
 			Body:    "Body of " + n.name + " message.",
 		}
+		if n.name == "EmailError" {
+			notn.Body = "ERROR"
+		}
 		models.MustCreate(db, &notn)
 
-		notnUser := models.NotificationUser{
+		notnUserFs[i] = models.NotificationUser{
 			NotificationID: notn.ID,
 			UserID:         user.ID,
 			EmailAddress:   user.EmailOfChoice(),
 			SendAfterUTC:   n.sendAfter,
 			SentAtUTC:      n.sentAt,
 		}
-		models.MustCreate(db, &notnUser)
+		models.MustCreate(db, &notnUserFs[i])
 	}
 
 	testEmailer := &notifications.TestEmailService
@@ -151,6 +169,30 @@ func (ts *TestSuite) Test_SendQueuedNotifications() {
 			testEmailer.DeleteSentMessages()
 			SendQueuedNotifications(db)
 			validateEmails(ts, tt, *testEmailer)
+
+			ts.NoError(nuAlreadySent.FindByID(db, nuAlreadySent.ID),
+				"error fetching nuAlreadySent from database")
+			ts.Equal(nuAlreadySent.SentAtUTC.Time, alreadySentTime,
+				"incorrect SentAtUTC value for AlreadySent")
+
+			ts.NoError(nuToSend.FindByID(db, nuToSend.ID),
+				"error fetching nuToSend from database")
+			ts.True(nuToSend.SentAtUTC.Valid, "missing SentAtUTC value")
+			ts.WithinDuration(time.Now().UTC(), nuToSend.SentAtUTC.Time, time.Minute,
+				"incorrect SentAtUTC value")
+
+			ts.NoError(nuNotReady.FindByID(db, nuNotReady.ID),
+				"error fetching nuToSend from database")
+			ts.False(nuNotReady.SentAtUTC.Valid, "SentAtUTC value should not be set")
+
+			ts.NoError(nuEmailError.FindByID(db, nuEmailError.ID),
+				"error fetching nuEmailError from database")
+			ts.False(nuEmailError.SentAtUTC.Valid, "SentAtUTC value should not be set")
+			ts.WithinDuration(time.Now().UTC().Add(time.Minute*10), nuEmailError.SendAfterUTC, time.Minute,
+				"incorrect SendAfterUTC value")
+			ts.WithinDuration(time.Now().UTC(), nuEmailError.LastAttemptUTC.Time, time.Minute,
+				"incorrect LastAttemptUTC value")
+			ts.Equal(1, nuEmailError.SendAttemptCount, "incorrect SendAttemptCount")
 		})
 	}
 }

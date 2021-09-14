@@ -33,6 +33,8 @@ func (t *DummyEmailService) Send(msg Message) error {
 			return errors.New(errMsg)
 		}
 		body = bodyBuf.String()
+	} else if body == "ERROR" {
+		return errors.New("mock error for testing sending email message")
 	}
 
 	domain.Logger.Printf("dummy message subject: %s, recipient: %s",

@@ -3,8 +3,10 @@ package messages
 import (
 	"bytes"
 	"fmt"
+	"time"
 
 	"github.com/gobuffalo/buffalo/render"
+	"github.com/gobuffalo/nulls"
 	"github.com/gobuffalo/pop/v5"
 
 	"github.com/silinternational/cover-api/domain"
@@ -76,6 +78,15 @@ func SendQueuedNotifications(tx *pop.Connection) {
 
 		if err := notifications.Send(msg); err != nil {
 			domain.ErrLogger.Printf("error sending queued notification email, %s", err)
+			// TODO figure out how to have a longer delay each time
+			n.SendAfterUTC = time.Now().UTC().Add(time.Minute * 10)
+			n.LastAttemptUTC = nulls.NewTime(time.Now().UTC())
+			n.SendAttemptCount++
+		} else {
+			n.SentAtUTC = nulls.NewTime(time.Now().UTC())
+		}
+		if err := n.Update(tx); err != nil {
+			domain.ErrLogger.Printf("error updating queued NotificationUser, %s", err)
 		}
 	}
 }
