@@ -20,13 +20,13 @@ const (
 	ClaimReferenceNumberLength = 7
 )
 
-var ValidClaimEventTypes = map[api.ClaimEventType]struct{}{
-	api.ClaimEventTypeTheft:           {},
-	api.ClaimEventTypeImpact:          {},
-	api.ClaimEventTypeElectricalSurge: {},
-	api.ClaimEventTypeWaterDamage:     {},
-	api.ClaimEventTypeEvacuation:      {},
-	api.ClaimEventTypeOther:           {},
+var ValidClaimIncidentTypes = map[api.ClaimIncidentType]struct{}{
+	api.ClaimIncidentTypeTheft:           {},
+	api.ClaimIncidentTypeImpact:          {},
+	api.ClaimIncidentTypeElectricalSurge: {},
+	api.ClaimIncidentTypeWaterDamage:     {},
+	api.ClaimIncidentTypeEvacuation:      {},
+	api.ClaimIncidentTypeOther:           {},
 }
 
 var ValidClaimStatus = map[api.ClaimStatus]struct{}{
@@ -42,30 +42,30 @@ var ValidClaimStatus = map[api.ClaimStatus]struct{}{
 	api.ClaimStatusInactive: {},
 }
 
-var ValidClaimEventTypePayoutOptions = map[api.ClaimEventType]map[api.PayoutOption]struct{}{
-	api.ClaimEventTypeEvacuation: {
+var ValidClaimIncidentTypePayoutOptions = map[api.ClaimIncidentType]map[api.PayoutOption]struct{}{
+	api.ClaimIncidentTypeEvacuation: {
 		api.PayoutOptionFixedFraction: {},
 	},
-	api.ClaimEventTypeTheft: {
+	api.ClaimIncidentTypeTheft: {
 		api.PayoutOptionFMV:         {},
 		api.PayoutOptionReplacement: {},
 	},
-	api.ClaimEventTypeImpact: {
-		api.PayoutOptionFMV:         {},
-		api.PayoutOptionReplacement: {},
-		api.PayoutOptionRepair:      {},
-	},
-	api.ClaimEventTypeElectricalSurge: {
+	api.ClaimIncidentTypeImpact: {
 		api.PayoutOptionFMV:         {},
 		api.PayoutOptionReplacement: {},
 		api.PayoutOptionRepair:      {},
 	},
-	api.ClaimEventTypeWaterDamage: {
+	api.ClaimIncidentTypeElectricalSurge: {
 		api.PayoutOptionFMV:         {},
 		api.PayoutOptionReplacement: {},
 		api.PayoutOptionRepair:      {},
 	},
-	api.ClaimEventTypeOther: {
+	api.ClaimIncidentTypeWaterDamage: {
+		api.PayoutOptionFMV:         {},
+		api.PayoutOptionReplacement: {},
+		api.PayoutOptionRepair:      {},
+	},
+	api.ClaimIncidentTypeOther: {
 		api.PayoutOptionFMV:         {},
 		api.PayoutOptionReplacement: {},
 		api.PayoutOptionRepair:      {},
@@ -75,20 +75,20 @@ var ValidClaimEventTypePayoutOptions = map[api.ClaimEventType]map[api.PayoutOpti
 type Claims []Claim
 
 type Claim struct {
-	ID               uuid.UUID          `db:"id"`
-	PolicyID         uuid.UUID          `db:"policy_id" validate:"required"`
-	ReferenceNumber  string             `db:"reference_number" validate:"required,len=7"`
-	EventDate        time.Time          `db:"event_date" validate:"required_unless=Status Draft"`
-	EventType        api.ClaimEventType `db:"event_type" validate:"claimEventType,required_unless=Status Draft"`
-	EventDescription string             `db:"event_description" validate:"required_unless=Status Draft"`
-	Status           api.ClaimStatus    `db:"status" validate:"claimStatus"`
-	ReviewDate       nulls.Time         `db:"review_date"`
-	ReviewerID       nulls.UUID         `db:"reviewer_id"`
-	PaymentDate      nulls.Time         `db:"payment_date"`
-	TotalPayout      int                `db:"total_payout"`
-	LegacyID         nulls.Int          `db:"legacy_id"`
-	CreatedAt        time.Time          `db:"created_at"`
-	UpdatedAt        time.Time          `db:"updated_at"`
+	ID                  uuid.UUID             `db:"id"`
+	PolicyID            uuid.UUID             `db:"policy_id" validate:"required"`
+	ReferenceNumber     string                `db:"reference_number" validate:"required,len=7"`
+	IncidentDate        time.Time             `db:"incident_date" validate:"required_unless=Status Draft"`
+	IncidentType        api.ClaimIncidentType `db:"incident_type" validate:"claimIncidentType,required_unless=Status Draft"`
+	IncidentDescription string                `db:"incident_description" validate:"required_unless=Status Draft"`
+	Status              api.ClaimStatus       `db:"status" validate:"claimStatus"`
+	ReviewDate          nulls.Time            `db:"review_date"`
+	ReviewerID          nulls.UUID            `db:"reviewer_id"`
+	PaymentDate         nulls.Time            `db:"payment_date"`
+	TotalPayout         int                   `db:"total_payout"`
+	LegacyID            nulls.Int             `db:"legacy_id"`
+	CreatedAt           time.Time             `db:"created_at"`
+	UpdatedAt           time.Time             `db:"updated_at"`
 
 	Policy     Policy     `belongs_to:"policies" validate:"-"`
 	ClaimItems ClaimItems `has_many:"claim_items" validate:"-"`
@@ -302,7 +302,7 @@ func (c *Claim) SubmitForApproval(tx *pop.Connection) error {
 
 	e := events.Event{
 		Kind:    eventType,
-		Message: fmt.Sprintf("Claim Submitted: %s  ID: %s", c.EventDescription, c.ID.String()),
+		Message: fmt.Sprintf("Claim Submitted: %s  ID: %s", c.IncidentDescription, c.ID.String()),
 		Payload: events.Payload{domain.EventPayloadID: c.ID},
 	}
 	emitEvent(e)
@@ -331,7 +331,7 @@ func (c *Claim) RequestRevision(tx *pop.Connection) error {
 
 	e := events.Event{
 		Kind:    domain.EventApiClaimRevision,
-		Message: fmt.Sprintf("Claim Revision: %s  ID: %s", c.EventDescription, c.ID.String()),
+		Message: fmt.Sprintf("Claim Revision: %s  ID: %s", c.IncidentDescription, c.ID.String()),
 		Payload: events.Payload{domain.EventPayloadID: c.ID},
 	}
 	emitEvent(e)
@@ -365,7 +365,7 @@ func (c *Claim) RequestReceipt(tx *pop.Connection) error {
 
 	e := events.Event{
 		Kind:    eventType,
-		Message: fmt.Sprintf("Claim Request Receipt: %s  ID: %s", c.EventDescription, c.ID.String()),
+		Message: fmt.Sprintf("Claim Request Receipt: %s  ID: %s", c.IncidentDescription, c.ID.String()),
 		Payload: events.Payload{domain.EventPayloadID: c.ID},
 	}
 	emitEvent(e)
@@ -403,7 +403,7 @@ func (c *Claim) Approve(tx *pop.Connection, actor User) error {
 
 	e := events.Event{
 		Kind:    eventType,
-		Message: fmt.Sprintf("Claim Approved: %s  ID: %s", c.EventDescription, c.ID.String()),
+		Message: fmt.Sprintf("Claim Approved: %s  ID: %s", c.IncidentDescription, c.ID.String()),
 		Payload: events.Payload{domain.EventPayloadID: c.ID},
 	}
 	emitEvent(e)
@@ -433,7 +433,7 @@ func (c *Claim) Deny(tx *pop.Connection, actor User) error {
 
 	e := events.Event{
 		Kind:    domain.EventApiClaimDenied,
-		Message: fmt.Sprintf("Claim Denied: %s  ID: %s", c.EventDescription, c.ID.String()),
+		Message: fmt.Sprintf("Claim Denied: %s  ID: %s", c.IncidentDescription, c.ID.String()),
 		Payload: events.Payload{domain.EventPayloadID: c.ID},
 	}
 	emitEvent(e)
@@ -484,19 +484,19 @@ func (c *Claim) ConvertToAPI(tx *pop.Connection) api.Claim {
 	c.LoadClaimFiles(tx, true)
 
 	return api.Claim{
-		ID:               c.ID,
-		PolicyID:         c.PolicyID,
-		ReferenceNumber:  c.ReferenceNumber,
-		EventDate:        c.EventDate,
-		EventType:        c.EventType,
-		EventDescription: c.EventDescription,
-		Status:           c.Status,
-		ReviewDate:       c.ReviewDate,
-		ReviewerID:       c.ReviewerID,
-		PaymentDate:      c.PaymentDate,
-		TotalPayout:      c.TotalPayout,
-		Items:            c.ClaimItems.ConvertToAPI(tx),
-		Files:            c.ClaimFiles.ConvertToAPI(tx),
+		ID:                  c.ID,
+		PolicyID:            c.PolicyID,
+		ReferenceNumber:     c.ReferenceNumber,
+		IncidentDate:        c.IncidentDate,
+		IncidentType:        c.IncidentType,
+		IncidentDescription: c.IncidentDescription,
+		Status:              c.Status,
+		ReviewDate:          c.ReviewDate,
+		ReviewerID:          c.ReviewerID,
+		PaymentDate:         c.PaymentDate,
+		TotalPayout:         c.TotalPayout,
+		Items:               c.ClaimItems.ConvertToAPI(tx),
+		Files:               c.ClaimFiles.ConvertToAPI(tx),
 	}
 }
 
@@ -510,10 +510,10 @@ func (c *Claims) ConvertToAPI(tx *pop.Connection) api.Claims {
 
 func ConvertClaimCreateInput(input api.ClaimCreateInput) Claim {
 	return Claim{
-		EventDate:        input.EventDate,
-		EventType:        input.EventType,
-		EventDescription: input.EventDescription,
-		Status:           api.ClaimStatusDraft,
+		IncidentDate:        input.IncidentDate,
+		IncidentType:        input.IncidentType,
+		IncidentDescription: input.IncidentDescription,
+		Status:              api.ClaimStatusDraft,
 	}
 }
 

@@ -28,7 +28,7 @@ func (ms *ModelSuite) TestClaimItem_Validate() {
 			name: "valid status, not approved",
 			claimItem: &ClaimItem{
 				Claim: Claim{
-					EventType: api.ClaimEventTypeImpact,
+					IncidentType: api.ClaimIncidentTypeImpact,
 				},
 				Status:       api.ClaimItemStatusPending,
 				PayoutOption: api.PayoutOptionRepair,
@@ -37,19 +37,19 @@ func (ms *ModelSuite) TestClaimItem_Validate() {
 			wantErr:  false,
 		},
 		{
-			name: "valid status, missing claim event type",
+			name: "valid status, missing claim incident type",
 			claimItem: &ClaimItem{
 				Status:       api.ClaimItemStatusPending,
 				PayoutOption: api.PayoutOptionRepair,
 			},
-			errField: "ClaimItem.EventType",
+			errField: "ClaimItem.IncidentType",
 			wantErr:  true,
 		},
 		{
 			name: "approved, but no reviewer",
 			claimItem: &ClaimItem{
 				Claim: Claim{
-					EventType: api.ClaimEventTypeImpact,
+					IncidentType: api.ClaimIncidentTypeImpact,
 				},
 				Status:       api.ClaimItemStatusApproved,
 				PayoutOption: api.PayoutOptionRepair,
@@ -62,7 +62,7 @@ func (ms *ModelSuite) TestClaimItem_Validate() {
 			name: "denied, but no review date",
 			claimItem: &ClaimItem{
 				Claim: Claim{
-					EventType: api.ClaimEventTypeImpact,
+					IncidentType: api.ClaimIncidentTypeImpact,
 				},
 				Status:       api.ClaimItemStatusDenied,
 				PayoutOption: api.PayoutOptionRepair,
@@ -75,7 +75,7 @@ func (ms *ModelSuite) TestClaimItem_Validate() {
 			name: "invalid payout option",
 			claimItem: &ClaimItem{
 				Claim: Claim{
-					EventType: api.ClaimEventTypeImpact,
+					IncidentType: api.ClaimIncidentTypeImpact,
 				},
 				Status:       api.ClaimItemStatusDenied,
 				PayoutOption: api.PayoutOption("bitcoin"),
@@ -89,7 +89,7 @@ func (ms *ModelSuite) TestClaimItem_Validate() {
 			name: "invalid payout option for Evacuation",
 			claimItem: &ClaimItem{
 				Claim: Claim{
-					EventType: api.ClaimEventTypeEvacuation,
+					IncidentType: api.ClaimIncidentTypeEvacuation,
 				},
 				Status:       api.ClaimItemStatusDraft,
 				PayoutOption: api.PayoutOptionFMV,
@@ -103,7 +103,7 @@ func (ms *ModelSuite) TestClaimItem_Validate() {
 			name: "valid payout option for Evacuation",
 			claimItem: &ClaimItem{
 				Claim: Claim{
-					EventType: api.ClaimEventTypeEvacuation,
+					IncidentType: api.ClaimIncidentTypeEvacuation,
 				},
 				Status:       api.ClaimItemStatusDraft,
 				PayoutOption: api.PayoutOptionFixedFraction,
@@ -116,7 +116,7 @@ func (ms *ModelSuite) TestClaimItem_Validate() {
 			name: "invalid payout option for Theft",
 			claimItem: &ClaimItem{
 				Claim: Claim{
-					EventType: api.ClaimEventTypeTheft,
+					IncidentType: api.ClaimIncidentTypeTheft,
 				},
 				Status:       api.ClaimItemStatusDraft,
 				PayoutOption: api.PayoutOptionFixedFraction,
@@ -130,7 +130,7 @@ func (ms *ModelSuite) TestClaimItem_Validate() {
 			name: "valid payout option for Theft",
 			claimItem: &ClaimItem{
 				Claim: Claim{
-					EventType: api.ClaimEventTypeTheft,
+					IncidentType: api.ClaimIncidentTypeTheft,
 				},
 				Status:       api.ClaimItemStatusDraft,
 				PayoutOption: api.PayoutOptionFMV,
@@ -143,7 +143,7 @@ func (ms *ModelSuite) TestClaimItem_Validate() {
 			name: "invalid payout option for Impact",
 			claimItem: &ClaimItem{
 				Claim: Claim{
-					EventType: api.ClaimEventTypeImpact,
+					IncidentType: api.ClaimIncidentTypeImpact,
 				},
 				Status:       api.ClaimItemStatusDraft,
 				PayoutOption: api.PayoutOptionFixedFraction,
@@ -157,7 +157,7 @@ func (ms *ModelSuite) TestClaimItem_Validate() {
 			name: "valid payout option for Impact",
 			claimItem: &ClaimItem{
 				Claim: Claim{
-					EventType: api.ClaimEventTypeImpact,
+					IncidentType: api.ClaimIncidentTypeImpact,
 				},
 				Status:       api.ClaimItemStatusDraft,
 				PayoutOption: api.PayoutOptionRepair,

@@ -345,7 +345,6 @@ func (i *Item) Approve(tx *pop.Connection) error {
 
 // Deny takes the item from Pending coverage status to Denied.
 // It assumes that the item's current status has already been validated.
-// TODO create a listener for the emitted event
 func (i *Item) Deny(tx *pop.Connection) error {
 	oldStatus := i.CoverageStatus
 	i.CoverageStatus = api.ItemCoverageStatusDenied

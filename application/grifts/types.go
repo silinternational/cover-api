@@ -75,19 +75,19 @@ type LegacyItemCategory struct {
 }
 
 type LegacyClaim struct {
-	PolicyId         int               `json:"policy_id"`
-	ReviewerId       int               `json:"reviewer_id"`
-	ClaimItems       []LegacyClaimItem `json:"claim_items"`
-	CreatedAt        string            `json:"created_at"`
-	ReviewDate       string            `json:"review_date"`
-	UpdatedAt        string            `json:"updated_at"`
-	EventDescription string            `json:"event_description"`
-	Id               string            `json:"id"`
-	EventType        string            `json:"event_type"`
-	PaymentDate      string            `json:"payment_date"`
-	TotalPayout      string            `json:"total_payout"`
-	EventDate        string            `json:"event_date"`
-	Status           string            `json:"status"`
+	PolicyId            int               `json:"policy_id"`
+	ReviewerId          int               `json:"reviewer_id"`
+	ClaimItems          []LegacyClaimItem `json:"claim_items"`
+	CreatedAt           string            `json:"created_at"`
+	ReviewDate          string            `json:"review_date"`
+	UpdatedAt           string            `json:"updated_at"`
+	IncidentDescription string            `json:"event_description"`
+	Id                  string            `json:"id"`
+	IncidentType        string            `json:"event_type"`
+	PaymentDate         string            `json:"payment_date"`
+	TotalPayout         string            `json:"total_payout"`
+	IncidentDate        string            `json:"event_date"`
+	Status              string            `json:"status"`
 }
 
 type LegacyClaimItem struct {

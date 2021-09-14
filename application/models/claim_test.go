@@ -25,12 +25,12 @@ func (ms *ModelSuite) TestClaim_Validate() {
 		{
 			name: "valid status",
 			claim: &Claim{
-				ReferenceNumber:  domain.RandomString(ClaimReferenceNumberLength, ""),
-				PolicyID:         domain.GetUUID(),
-				EventType:        api.ClaimEventTypeImpact,
-				EventDate:        time.Now(),
-				EventDescription: "testing123",
-				Status:           api.ClaimStatusReview1,
+				ReferenceNumber:     domain.RandomString(ClaimReferenceNumberLength, ""),
+				PolicyID:            domain.GetUUID(),
+				IncidentType:        api.ClaimIncidentTypeImpact,
+				IncidentDate:        time.Now(),
+				IncidentDescription: "testing123",
+				Status:              api.ClaimStatusReview1,
 			},
 			errField: "",
 			wantErr:  false,
@@ -57,11 +57,11 @@ func (ms *ModelSuite) TestClaim_ReferenceNumber() {
 		NumberOfPolicies: 1,
 	})
 	claim := &Claim{
-		PolicyID:         fixtures.Policies[0].ID,
-		EventDate:        time.Now().UTC(),
-		EventType:        api.ClaimEventTypeImpact,
-		EventDescription: "fell",
-		Status:           api.ClaimStatusReview1,
+		PolicyID:            fixtures.Policies[0].ID,
+		IncidentDate:        time.Now().UTC(),
+		IncidentType:        api.ClaimIncidentTypeImpact,
+		IncidentDescription: "fell",
+		Status:              api.ClaimStatusReview1,
 	}
 	ms.NoError(claim.Create(ms.DB))
 	ms.Len(claim.ReferenceNumber, ClaimReferenceNumberLength)

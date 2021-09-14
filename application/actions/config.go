@@ -6,20 +6,20 @@ import (
 	"github.com/silinternational/cover-api/api"
 )
 
-// swagger:operation GET /config/claim-event-types Config ClaimEventTypes
+// swagger:operation GET /config/claim-Incident-types Config ClaimIncidentTypes
 //
-// ClaimEventTypes
+// ClaimIncidentTypes
 //
-// list all valid Claim Event Types
+// list all valid Claim Incident Types
 //
 // ---
 // responses:
 //   '200':
-//     description: list of valid Claim Event Types
+//     description: list of valid Claim Incident Types
 //     schema:
 //       type: array
 //       items:
-//         "$ref": "#/definitions/ClaimEventTypeStruct"
-func claimEventTypes(c buffalo.Context) error {
-	return renderOk(c, api.AllClaimEventTypes)
+//         "$ref": "#/definitions/ClaimIncidentTypeStruct"
+func claimIncidentTypes(c buffalo.Context) error {
+	return renderOk(c, api.AllClaimIncidentTypes)
 }

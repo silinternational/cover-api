@@ -184,9 +184,9 @@ func (as *ActionSuite) Test_ClaimsUpdate() {
 	as.NoError(err, "failed to make an app admin")
 
 	input := api.ClaimUpdateInput{
-		EventDate:        time.Now().UTC(),
-		EventType:        api.ClaimEventTypeTheft,
-		EventDescription: "a description",
+		IncidentDate:        time.Now().UTC(),
+		IncidentType:        api.ClaimIncidentTypeTheft,
+		IncidentDescription: "a description",
 	}
 
 	tests := []struct {
@@ -255,9 +255,9 @@ func (as *ActionSuite) Test_ClaimsUpdate() {
 }
 
 func (as *ActionSuite) verifyClaimUpdate(input api.ClaimUpdateInput, claim models.Claim) {
-	as.Equal(input.EventType, claim.EventType, "EventType not correct")
-	as.Equal(input.EventDescription, claim.EventDescription, "EventDescription not correct")
-	as.WithinDuration(input.EventDate, claim.EventDate, time.Millisecond, "EventDate not correct")
+	as.Equal(input.IncidentType, claim.IncidentType, "IncidentType not correct")
+	as.Equal(input.IncidentDescription, claim.IncidentDescription, "IncidentDescription not correct")
+	as.WithinDuration(input.IncidentDate, claim.IncidentDate, time.Millisecond, "IncidentDate not correct")
 }
 
 func (as *ActionSuite) Test_ClaimsCreate() {
@@ -284,9 +284,9 @@ func (as *ActionSuite) Test_ClaimsCreate() {
 	as.NoError(err, "failed to make an app admin")
 
 	input := api.ClaimCreateInput{
-		EventDate:        time.Now(),
-		EventType:        api.ClaimEventTypeTheft,
-		EventDescription: "a description",
+		IncidentDate:        time.Now(),
+		IncidentType:        api.ClaimIncidentTypeTheft,
+		IncidentDescription: "a description",
 	}
 
 	tests := []struct {
@@ -314,8 +314,8 @@ func (as *ActionSuite) Test_ClaimsCreate() {
 			wantStatus: http.StatusOK,
 			wantInBody: []string{
 				`"policy_id":"` + policyByUser.ID.String(),
-				`"event_type":"` + string(input.EventType),
-				`"event_description":"` + input.EventDescription,
+				`"incident_type":"` + string(input.IncidentType),
+				`"incident_description":"` + input.IncidentDescription,
 				`"status":"` + string(api.ClaimStatusDraft),
 				`"claim_items":[]`,
 			},
@@ -336,8 +336,8 @@ func (as *ActionSuite) Test_ClaimsCreate() {
 			wantStatus: http.StatusOK,
 			wantInBody: []string{
 				`"policy_id":"` + policyByAdmin.ID.String(),
-				`"event_type":"` + string(input.EventType),
-				`"event_description":"` + input.EventDescription,
+				`"incident_type":"` + string(input.IncidentType),
+				`"incident_description":"` + input.IncidentDescription,
 				`"status":"` + string(api.ClaimStatusDraft),
 				`"claim_items":[]`,
 			},
@@ -366,7 +366,7 @@ func (as *ActionSuite) Test_ClaimsCreate() {
 			var respObj api.Claim
 			as.NoError(json.Unmarshal([]byte(body), &respObj))
 
-			as.Equal(tt.input.EventDescription, respObj.EventDescription,
+			as.Equal(tt.input.IncidentDescription, respObj.IncidentDescription,
 				"response object is not correct, %+v", respObj)
 		})
 	}
@@ -520,7 +520,7 @@ func (as *ActionSuite) Test_ClaimsSubmit() {
 			oldClaim:   draftClaim,
 			wantStatus: http.StatusOK,
 			wantInBody: []string{
-				`"event_description":"` + draftClaim.EventDescription,
+				`"incident_description":"` + draftClaim.IncidentDescription,
 				`"status":"` + string(api.ClaimStatusReview1),
 			},
 		},
@@ -596,7 +596,7 @@ func (as *ActionSuite) Test_ClaimsRequestRevision() {
 			oldClaim:   review1Claim,
 			wantStatus: http.StatusOK,
 			wantInBody: []string{
-				`"event_description":"` + review1Claim.EventDescription,
+				`"incident_description":"` + review1Claim.IncidentDescription,
 				`"status":"` + string(api.ClaimStatusRevision),
 			},
 		},
@@ -673,7 +673,7 @@ func (as *ActionSuite) Test_ClaimsPreapprove() {
 			oldClaim:   review1Claim,
 			wantStatus: http.StatusOK,
 			wantInBody: []string{
-				`"event_description":"` + review1Claim.EventDescription,
+				`"incident_description":"` + review1Claim.IncidentDescription,
 				`"status":"` + string(api.ClaimStatusReceipt),
 			},
 		},
@@ -755,7 +755,7 @@ func (as *ActionSuite) Test_ClaimsApprove() {
 			wantStatus:      http.StatusOK,
 			wantClaimStatus: api.ClaimStatusReview3,
 			wantInBody: []string{
-				`"event_description":"` + review1Claim.EventDescription,
+				`"incident_description":"` + review1Claim.IncidentDescription,
 				`"status":"` + string(api.ClaimStatusReview3),
 				`"review_date":"` + time.Now().UTC().Format(domain.DateFormat),
 				`"reviewer_id":"` + appAdmin.ID.String(),
@@ -768,7 +768,7 @@ func (as *ActionSuite) Test_ClaimsApprove() {
 			wantStatus:      http.StatusOK,
 			wantClaimStatus: api.ClaimStatusReview3,
 			wantInBody: []string{
-				`"event_description":"` + review2Claim.EventDescription,
+				`"incident_description":"` + review2Claim.IncidentDescription,
 				`"status":"` + string(api.ClaimStatusReview3),
 				`"review_date":"` + time.Now().UTC().Format(domain.DateFormat),
 				`"reviewer_id":"` + appAdmin.ID.String(),
@@ -781,7 +781,7 @@ func (as *ActionSuite) Test_ClaimsApprove() {
 			wantStatus:      http.StatusOK,
 			wantClaimStatus: api.ClaimStatusApproved,
 			wantInBody: []string{
-				`"event_description":"` + review3Claim.EventDescription,
+				`"incident_description":"` + review3Claim.IncidentDescription,
 				`"status":"` + string(api.ClaimStatusApproved),
 				`"review_date":"` + time.Now().UTC().Format(domain.DateFormat),
 				`"reviewer_id":"` + appAdmin.ID.String(),
@@ -864,7 +864,7 @@ func (as *ActionSuite) Test_ClaimsDeny() {
 			oldClaim:   review1Claim,
 			wantStatus: http.StatusOK,
 			wantInBody: []string{
-				`"event_description":"` + review1Claim.EventDescription,
+				`"incident_description":"` + review1Claim.IncidentDescription,
 				`"status":"` + string(api.ClaimStatusDenied),
 				`"review_date":"` + time.Now().UTC().Format(domain.DateFormat),
 				`"reviewer_id":"` + appAdmin.ID.String(),
@@ -876,7 +876,7 @@ func (as *ActionSuite) Test_ClaimsDeny() {
 			oldClaim:   review2Claim,
 			wantStatus: http.StatusOK,
 			wantInBody: []string{
-				`"event_description":"` + review2Claim.EventDescription,
+				`"incident_description":"` + review2Claim.IncidentDescription,
 				`"status":"` + string(api.ClaimStatusDenied),
 				`"review_date":"` + time.Now().UTC().Format(domain.DateFormat),
 				`"reviewer_id":"` + appAdmin.ID.String(),
@@ -888,7 +888,7 @@ func (as *ActionSuite) Test_ClaimsDeny() {
 			oldClaim:   review3Claim,
 			wantStatus: http.StatusOK,
 			wantInBody: []string{
-				`"event_description":"` + review3Claim.EventDescription,
+				`"incident_description":"` + review3Claim.IncidentDescription,
 				`"status":"` + string(api.ClaimStatusDenied),
 				`"review_date":"` + time.Now().UTC().Format(domain.DateFormat),
 				`"reviewer_id":"` + appAdmin.ID.String(),
