@@ -7,12 +7,12 @@ import (
 	"github.com/gofrs/uuid"
 )
 
-// ClaimEventType
+// ClaimIncidentType
 //
 // may be one of: Theft, Impact, Electrical Surge, Water Damage, Evacuation, Other
 //
 // swagger:model
-type ClaimEventType string
+type ClaimIncidentType string
 
 // ClaimStatus
 //
@@ -22,27 +22,27 @@ type ClaimEventType string
 type ClaimStatus string
 
 const (
-	ClaimEventTypeTheft           = ClaimEventType("Theft")
-	ClaimEventTypeImpact          = ClaimEventType("Impact")
-	ClaimEventTypeElectricalSurge = ClaimEventType("Electrical Surge")
-	ClaimEventTypeWaterDamage     = ClaimEventType("Water Damage")
-	ClaimEventTypeEvacuation      = ClaimEventType("Evacuation")
-	ClaimEventTypeOther           = ClaimEventType("Other")
+	ClaimIncidentTypeTheft           = ClaimIncidentType("Theft")
+	ClaimIncidentTypeImpact          = ClaimIncidentType("Impact")
+	ClaimIncidentTypeElectricalSurge = ClaimIncidentType("Electrical Surge")
+	ClaimIncidentTypeWaterDamage     = ClaimIncidentType("Water Damage")
+	ClaimIncidentTypeEvacuation      = ClaimIncidentType("Evacuation")
+	ClaimIncidentTypeOther           = ClaimIncidentType("Other")
 )
 
 // swagger:model
-type ClaimEventTypeStruct struct {
-	Name         ClaimEventType `json:"name"`
-	IsRepairable bool           `json:"is_repairable"`
+type ClaimIncidentTypeStruct struct {
+	Name         ClaimIncidentType `json:"name"`
+	IsRepairable bool              `json:"is_repairable"`
 }
 
-var AllClaimEventTypes = []ClaimEventTypeStruct{
-	{ClaimEventTypeTheft, false},
-	{ClaimEventTypeImpact, true},
-	{ClaimEventTypeElectricalSurge, true},
-	{ClaimEventTypeWaterDamage, true},
-	{ClaimEventTypeEvacuation, false},
-	{ClaimEventTypeOther, true},
+var AllClaimIncidentTypes = []ClaimIncidentTypeStruct{
+	{ClaimIncidentTypeTheft, false},
+	{ClaimIncidentTypeImpact, true},
+	{ClaimIncidentTypeElectricalSurge, true},
+	{ClaimIncidentTypeWaterDamage, true},
+	{ClaimIncidentTypeEvacuation, false},
+	{ClaimIncidentTypeOther, true},
 }
 
 const (
@@ -79,18 +79,18 @@ type Claim struct {
 	// example: AB43312
 	ReferenceNumber string `json:"reference_number"`
 
-	// event date
+	// incident date
 	//
 	// swagger:strfmt date-time
-	EventDate time.Time `json:"event_date"`
+	IncidentDate time.Time `json:"incident_date"`
 
-	// event type
-	EventType ClaimEventType `json:"event_type"`
+	// incident type
+	IncidentType ClaimIncidentType `json:"incident_type"`
 
-	// event description .
-	EventDescription string `json:"event_description"`
+	// incident description .
+	IncidentDescription string `json:"incident_description"`
 
-	// event status
+	// incident status
 	Status ClaimStatus `json:"status"`
 
 	// review date
@@ -120,22 +120,22 @@ type Claim struct {
 
 // swagger:model
 type ClaimCreateInput struct {
-	// event date
-	EventDate time.Time `json:"event_date"`
+	// incident date
+	IncidentDate time.Time `json:"incident_date"`
 
-	EventType ClaimEventType `json:"event_type"`
+	IncidentType ClaimIncidentType `json:"incident_type"`
 
-	// event description
-	EventDescription string `json:"event_description"`
+	// incident description
+	IncidentDescription string `json:"incident_description"`
 }
 
 // swagger:model
 type ClaimUpdateInput struct {
-	// event date
-	EventDate time.Time `json:"event_date"`
+	// incident date
+	IncidentDate time.Time `json:"incident_date"`
 
-	EventType ClaimEventType `json:"event_type"`
+	IncidentType ClaimIncidentType `json:"incident_type"`
 
-	// event description
-	EventDescription string `json:"event_description"`
+	// incident description
+	IncidentDescription string `json:"incident_description"`
 }

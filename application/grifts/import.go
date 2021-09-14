@@ -528,17 +528,17 @@ func importClaims(tx *pop.Connection, policyID uuid.UUID, claims []LegacyClaim) 
 		claimID := stringToInt(c.Id, "Claim ID")
 		claimDesc := fmt.Sprintf("Claim[%d].", claimID)
 		newClaim := models.Claim{
-			LegacyID:         nulls.NewInt(claimID),
-			PolicyID:         policyID,
-			EventDate:        parseStringTime(c.EventDate, claimDesc+"EventDate"),
-			EventType:        getEventType(c),
-			EventDescription: getEventDescription(c),
-			Status:           getClaimStatus(c),
-			ReviewDate:       nulls.NewTime(parseStringTime(c.ReviewDate, claimDesc+"ReviewDate")),
-			ReviewerID:       getAdminUserUUID(strconv.Itoa(c.ReviewerId), claimDesc+"ReviewerID"),
-			PaymentDate:      nulls.NewTime(parseStringTime(c.PaymentDate, claimDesc+"PaymentDate")),
-			TotalPayout:      fixedPointStringToInt(c.TotalPayout, "Claim.TotalPayout"),
-			CreatedAt:        parseStringTime(c.CreatedAt, claimDesc+"CreatedAt"),
+			LegacyID:            nulls.NewInt(claimID),
+			PolicyID:            policyID,
+			IncidentDate:        parseStringTime(c.IncidentDate, claimDesc+"IncidentDate"),
+			IncidentType:        getIncidentType(c),
+			IncidentDescription: getIncidentDescription(c),
+			Status:              getClaimStatus(c),
+			ReviewDate:          nulls.NewTime(parseStringTime(c.ReviewDate, claimDesc+"ReviewDate")),
+			ReviewerID:          getAdminUserUUID(strconv.Itoa(c.ReviewerId), claimDesc+"ReviewerID"),
+			PaymentDate:         nulls.NewTime(parseStringTime(c.PaymentDate, claimDesc+"PaymentDate")),
+			TotalPayout:         fixedPointStringToInt(c.TotalPayout, "Claim.TotalPayout"),
+			CreatedAt:           parseStringTime(c.CreatedAt, claimDesc+"CreatedAt"),
 		}
 		if err := newClaim.Create(tx); err != nil {
 			log.Fatalf("failed to create claim, %s\n%+v", err, newClaim)
@@ -654,33 +654,33 @@ func getAdminUserUUID(staffID, desc string) nulls.UUID {
 	return nulls.NewUUID(userUUID)
 }
 
-func getEventType(claim LegacyClaim) api.ClaimEventType {
-	var eventType api.ClaimEventType
+func getIncidentType(claim LegacyClaim) api.ClaimIncidentType {
+	var incidentType api.ClaimIncidentType
 
-	switch claim.EventType {
+	switch claim.IncidentType {
 	case "Broken", "Dropped":
-		eventType = api.ClaimEventTypeImpact
+		incidentType = api.ClaimIncidentTypeImpact
 	case "Lightning", "Lightening":
-		eventType = api.ClaimEventTypeElectricalSurge
+		incidentType = api.ClaimIncidentTypeElectricalSurge
 	case "Theft":
-		eventType = api.ClaimEventTypeTheft
+		incidentType = api.ClaimIncidentTypeTheft
 	case "Water Damage":
-		eventType = api.ClaimEventTypeWaterDamage
+		incidentType = api.ClaimIncidentTypeWaterDamage
 	case "Fire", "Miscellaneous", "Unknown", "Vandalism", "War":
-		eventType = api.ClaimEventTypeOther
+		incidentType = api.ClaimIncidentTypeOther
 	default:
-		log.Printf("unrecognized event type: %s\n", claim.EventType)
-		eventType = api.ClaimEventTypeOther
+		log.Printf("unrecognized incident type: %s\n", claim.IncidentType)
+		incidentType = api.ClaimIncidentTypeOther
 	}
 
-	return eventType
+	return incidentType
 }
 
-func getEventDescription(claim LegacyClaim) string {
-	if claim.EventDescription == "" {
+func getIncidentDescription(claim LegacyClaim) string {
+	if claim.IncidentDescription == "" {
 		return "[no description provided]"
 	}
-	return claim.EventDescription
+	return claim.IncidentDescription
 }
 
 func getClaimStatus(claim LegacyClaim) api.ClaimStatus {

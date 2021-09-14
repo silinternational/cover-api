@@ -16,7 +16,7 @@ var mValidate *validator.Validate
 
 var fieldValidators = map[string]func(validator.FieldLevel) bool{
 	"appRole":                       validateAppRole,
-	"claimEventType":                validateClaimEventType,
+	"claimIncidentType":             validateClaimIncidentType,
 	"claimStatus":                   validateClaimStatus,
 	"claimItemStatus":               validateClaimItemStatus,
 	"claimFilePurpose":              validateClaimFilePurpose,
@@ -49,9 +49,9 @@ func flattenPopErrors(popErrs *validate.Errors) string {
 	return msg
 }
 
-func validateClaimEventType(field validator.FieldLevel) bool {
-	if value, ok := field.Field().Interface().(api.ClaimEventType); ok {
-		_, valid := ValidClaimEventTypes[value]
+func validateClaimIncidentType(field validator.FieldLevel) bool {
+	if value, ok := field.Field().Interface().(api.ClaimIncidentType); ok {
+		_, valid := ValidClaimIncidentTypes[value]
 		return valid
 	}
 	return false
@@ -160,15 +160,15 @@ func claimItemStructLevelValidation(sl validator.StructLevel) {
 	}
 
 	if claimItem.Status == api.ClaimItemStatusPending || claimItem.Status == api.ClaimItemStatusDraft {
-		eventTypePayoutOptions, ok := ValidClaimEventTypePayoutOptions[claimItem.Claim.EventType]
+		incidentTypePayoutOptions, ok := ValidClaimIncidentTypePayoutOptions[claimItem.Claim.IncidentType]
 		if !ok {
-			sl.ReportError(claimItem.Claim.EventType, "EventType", "EventType", "invalid event type", "")
+			sl.ReportError(claimItem.Claim.IncidentType, "IncidentType", "IncidentType", "invalid Incident type", "")
 			return
 		}
 
-		if _, ok := eventTypePayoutOptions[claimItem.PayoutOption]; !ok {
+		if _, ok := incidentTypePayoutOptions[claimItem.PayoutOption]; !ok {
 			var options []string
-			for k := range eventTypePayoutOptions {
+			for k := range incidentTypePayoutOptions {
 				options = append(options, string(k))
 			}
 			sl.ReportError(claimItem.PayoutOption, "payout_option", "PayoutOption",

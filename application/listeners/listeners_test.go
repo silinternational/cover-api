@@ -93,7 +93,7 @@ func (ts *TestSuite) Test_findObject() {
 			object:  &models.Claim{},
 			wantContains: []string{
 				"ID:" + claim.ID.String(),
-				"EventDescription:" + claim.EventDescription,
+				"IncidentDescription:" + claim.IncidentDescription,
 			},
 		},
 	}

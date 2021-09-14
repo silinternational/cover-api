@@ -15,11 +15,6 @@ import (
 
 const EventPayloadNotifier = "notifier"
 
-//
-// Register new listener functions here.  Remember, though, that these groupings just
-// describe what we want.  They don't make it happen this way. The listeners
-// themselves still need to verify the event kind
-//
 var eventTypes = map[string]func(event events.Event){
 	domain.EventApiUserCreated:      createUserPolicy,
 	domain.EventApiItemSubmitted:    itemSubmitted,

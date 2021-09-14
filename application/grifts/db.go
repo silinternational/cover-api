@@ -372,10 +372,10 @@ func createClaimFixtures(tx *pop.Connection, fixPolicies []*models.Policy) ([]mo
 
 	for i, uu := range claimUUIDs {
 		fixClaims[i] = models.Claim{
-			ID:        uuid.FromStringOrNil(uu),
-			PolicyID:  fixPolicies[i].ID,
-			Status:    api.ClaimStatusDraft,
-			EventType: api.ClaimEventTypeOther,
+			ID:           uuid.FromStringOrNil(uu),
+			PolicyID:     fixPolicies[i].ID,
+			Status:       api.ClaimStatusDraft,
+			IncidentType: api.ClaimIncidentTypeOther,
 		}
 
 		err := fixClaims[i].Create(tx)
