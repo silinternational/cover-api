@@ -79,7 +79,7 @@ type Claim struct {
 	// example: AB43312
 	ReferenceNumber string `json:"reference_number"`
 
-	// Incident date
+	// incident date
 	//
 	// swagger:strfmt date-time
 	IncidentDate time.Time `json:"incident_date"`

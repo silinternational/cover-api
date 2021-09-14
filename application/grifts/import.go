@@ -346,14 +346,14 @@ func importPolicies(tx *pop.Connection, in []LegacyPolicy) {
 
 			nPolicies++
 		}
-		//
-		//importItems(tx, policyUUID, p.Items)
+
+		importItems(tx, policyUUID, p.Items)
 		nItems += len(p.Items)
-		//
-		//nClaimItems += importClaims(tx, policyUUID, p.Claims)
-		//nClaims += len(p.Claims)
-		//
-		//nPolicyUsers += importPolicyUsers(tx, p, policyUUID)
+
+		nClaimItems += importClaims(tx, policyUUID, p.Claims)
+		nClaims += len(p.Claims)
+
+		nPolicyUsers += importPolicyUsers(tx, p, policyUUID)
 	}
 
 	fmt.Println("imported: ")

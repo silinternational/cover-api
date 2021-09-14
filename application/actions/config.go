@@ -6,7 +6,7 @@ import (
 	"github.com/silinternational/cover-api/api"
 )
 
-// swagger:operation GET /config/claim-Incident-types Config ClaimIncidentTypes
+// swagger:operation GET /config/claim-incident-types Config ClaimIncidentTypes
 //
 // ClaimIncidentTypes
 //
