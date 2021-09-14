@@ -111,6 +111,9 @@ type Claim struct {
 	// total payout (0.01 USD)
 	TotalPayout int `json:"total_payout,omitempty"`
 
+	// message from a reviewer detailing the revisions needed
+	RevisionMessage string `json:"revision_message"`
+
 	// list of items included in claim
 	Items ClaimItems `json:"claim_items"`
 
@@ -138,4 +141,10 @@ type ClaimUpdateInput struct {
 
 	// incident description
 	IncidentDescription string `json:"incident_description"`
+}
+
+// swagger:model
+type ClaimRevisionInput struct {
+	// message from a reviewer detailing the revisions needed
+	RevisionMessage string `json:"revision_message"`
 }

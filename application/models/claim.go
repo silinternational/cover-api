@@ -87,9 +87,10 @@ type Claim struct {
 	PaymentDate         nulls.Time            `db:"payment_date"`
 	TotalPayout         int                   `db:"total_payout"`
 	LegacyID            nulls.Int             `db:"legacy_id"`
+	RevisionMessage     string                `db:"revision_message" validate:"required_if=Status Revision"`
 	CreatedAt           time.Time             `db:"created_at"`
-	UpdatedAt           time.Time             `db:"updated_at"`
 
+	UpdatedAt  time.Time  `db:"updated_at"`
 	Policy     Policy     `belongs_to:"policies" validate:"-"`
 	ClaimItems ClaimItems `has_many:"claim_items" validate:"-"`
 	ClaimFiles ClaimFiles `has_many:"claim_files" validate:"-"`
@@ -312,13 +313,13 @@ func (c *Claim) SubmitForApproval(tx *pop.Connection) error {
 
 // RequestRevision changes the status of the claim to Revision
 //   provided that the current status is Review1 or Review3.
-// TODO record the particular revisions that are needed
-func (c *Claim) RequestRevision(tx *pop.Connection) error {
+func (c *Claim) RequestRevision(tx *pop.Connection, message string) error {
 	oldStatus := c.Status
 
 	switch oldStatus {
 	case api.ClaimStatusReview1, api.ClaimStatusReview3:
 		c.Status = api.ClaimStatusRevision
+		c.RevisionMessage = message
 	default:
 		err := fmt.Errorf("invalid claim status for request revision: %s", oldStatus)
 		appErr := api.NewAppError(err, api.ErrorClaimStatus, api.CategoryUser)
@@ -495,6 +496,7 @@ func (c *Claim) ConvertToAPI(tx *pop.Connection) api.Claim {
 		ReviewerID:          c.ReviewerID,
 		PaymentDate:         c.PaymentDate,
 		TotalPayout:         c.TotalPayout,
+		RevisionMessage:     c.RevisionMessage,
 		Items:               c.ClaimItems.ConvertToAPI(tx),
 		Files:               c.ClaimFiles.ConvertToAPI(tx),
 	}

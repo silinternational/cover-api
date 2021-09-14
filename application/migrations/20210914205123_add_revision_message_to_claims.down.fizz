@@ -1,0 +1,1 @@
+drop_column("claims", "revision_message")

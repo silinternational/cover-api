@@ -295,6 +295,9 @@ func CreateUserFixtures(tx *pop.Connection, n int) Fixtures {
 // CreatePolicyFixtures generates any number of policy records and associated policy users
 // Uses FixturesConfig fields: NumberOfPolicies, DependentsPerPolicy, UsersPerPolicy
 func CreatePolicyFixtures(tx *pop.Connection, config FixturesConfig) Fixtures {
+	if config.NumberOfPolicies < 1 {
+		config.NumberOfPolicies = 1
+	}
 	if config.UsersPerPolicy < 1 {
 		config.UsersPerPolicy = 1
 	}
