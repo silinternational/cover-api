@@ -218,7 +218,8 @@ func (ms *ModelSuite) TestClaim_RequestRevision() {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := tt.claim.RequestRevision(ms.DB, "change all the things")
+			const message = "change all the things"
+			got := tt.claim.RequestRevision(ms.DB, message)
 
 			if tt.wantErrContains != "" {
 				ms.Error(got, " did not return expected error")
@@ -232,6 +233,7 @@ func (ms *ModelSuite) TestClaim_RequestRevision() {
 			ms.NoError(got)
 
 			ms.Equal(tt.wantStatus, tt.claim.Status, "incorrect status")
+			ms.Equal(message, tt.claim.RevisionMessage, "incorrect revision message")
 		})
 	}
 }
