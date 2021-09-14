@@ -106,7 +106,7 @@ func (ts *TestSuite) Test_itemRevision() {
 
 			var notns models.Notifications
 			ts.NoError(db.All(&notns), "error fetching notifications from db")
-			ts.Equal(len(notns), 2, "no notifications queued")
+			ts.Equal(2, len(notns), "incorrect number of notifications queued")
 		})
 	}
 }
