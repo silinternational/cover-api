@@ -5,10 +5,9 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/silinternational/cover-api/domain"
-
 	"github.com/gofrs/uuid"
 
+	"github.com/silinternational/cover-api/domain"
 	"github.com/silinternational/cover-api/models"
 )
 
