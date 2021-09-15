@@ -87,6 +87,7 @@ type Claim struct {
 	PaymentDate         nulls.Time            `db:"payment_date"`
 	TotalPayout         int                   `db:"total_payout"`
 	LegacyID            nulls.Int             `db:"legacy_id"`
+	StatusReason        string                `db:"status_reason" validate:"required_if=Status Revision,required_if=Status Denied"`
 	CreatedAt           time.Time             `db:"created_at"`
 	UpdatedAt           time.Time             `db:"updated_at"`
 
@@ -312,13 +313,13 @@ func (c *Claim) SubmitForApproval(tx *pop.Connection) error {
 
 // RequestRevision changes the status of the claim to Revision
 //   provided that the current status is Review1 or Review3.
-// TODO record the particular revisions that are needed
-func (c *Claim) RequestRevision(tx *pop.Connection) error {
+func (c *Claim) RequestRevision(tx *pop.Connection, message string) error {
 	oldStatus := c.Status
 
 	switch oldStatus {
 	case api.ClaimStatusReview1, api.ClaimStatusReview3:
 		c.Status = api.ClaimStatusRevision
+		c.StatusReason = message
 	default:
 		err := fmt.Errorf("invalid claim status for request revision: %s", oldStatus)
 		appErr := api.NewAppError(err, api.ErrorClaimStatus, api.CategoryUser)
@@ -396,6 +397,7 @@ func (c *Claim) Approve(tx *pop.Connection, actor User) error {
 
 	c.ReviewerID = nulls.NewUUID(actor.ID)
 	c.ReviewDate = nulls.NewTime(time.Now().UTC())
+	c.StatusReason = ""
 
 	if err := c.Update(tx, oldStatus); err != nil {
 		return err
@@ -412,7 +414,7 @@ func (c *Claim) Approve(tx *pop.Connection, actor User) error {
 }
 
 // Deny changes the status of the claim to Denied and adds the ReviewerID and ReviewDate.
-func (c *Claim) Deny(tx *pop.Connection, actor User) error {
+func (c *Claim) Deny(tx *pop.Connection, actor User, message string) error {
 	oldStatus := c.Status
 
 	if oldStatus != api.ClaimStatusReview1 && oldStatus != api.ClaimStatusReview2 &&
@@ -423,6 +425,7 @@ func (c *Claim) Deny(tx *pop.Connection, actor User) error {
 	}
 
 	c.Status = api.ClaimStatusDenied
+	c.StatusReason = message
 
 	c.ReviewerID = nulls.NewUUID(actor.ID)
 	c.ReviewDate = nulls.NewTime(time.Now().UTC())
@@ -495,6 +498,7 @@ func (c *Claim) ConvertToAPI(tx *pop.Connection) api.Claim {
 		ReviewerID:          c.ReviewerID,
 		PaymentDate:         c.PaymentDate,
 		TotalPayout:         c.TotalPayout,
+		StatusReason:        c.StatusReason,
 		Items:               c.ClaimItems.ConvertToAPI(tx),
 		Files:               c.ClaimFiles.ConvertToAPI(tx),
 	}
