@@ -89,8 +89,8 @@ type Claim struct {
 	LegacyID            nulls.Int             `db:"legacy_id"`
 	RevisionMessage     string                `db:"revision_message" validate:"required_if=Status Revision"`
 	CreatedAt           time.Time             `db:"created_at"`
+	UpdatedAt           time.Time             `db:"updated_at"`
 
-	UpdatedAt  time.Time  `db:"updated_at"`
 	Policy     Policy     `belongs_to:"policies" validate:"-"`
 	ClaimItems ClaimItems `has_many:"claim_items" validate:"-"`
 	ClaimFiles ClaimFiles `has_many:"claim_files" validate:"-"`
