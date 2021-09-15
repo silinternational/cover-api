@@ -1,1 +1,1 @@
-drop_column("claims", "revision_message")
+drop_column("claims", "status_reason")

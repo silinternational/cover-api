@@ -87,7 +87,7 @@ type Claim struct {
 	PaymentDate         nulls.Time            `db:"payment_date"`
 	TotalPayout         int                   `db:"total_payout"`
 	LegacyID            nulls.Int             `db:"legacy_id"`
-	RevisionMessage     string                `db:"revision_message" validate:"required_if=Status Revision"`
+	StatusReason        string                `db:"status_reason" validate:"required_if=Status Revision"`
 	CreatedAt           time.Time             `db:"created_at"`
 	UpdatedAt           time.Time             `db:"updated_at"`
 
@@ -319,7 +319,7 @@ func (c *Claim) RequestRevision(tx *pop.Connection, message string) error {
 	switch oldStatus {
 	case api.ClaimStatusReview1, api.ClaimStatusReview3:
 		c.Status = api.ClaimStatusRevision
-		c.RevisionMessage = message
+		c.StatusReason = message
 	default:
 		err := fmt.Errorf("invalid claim status for request revision: %s", oldStatus)
 		appErr := api.NewAppError(err, api.ErrorClaimStatus, api.CategoryUser)
@@ -496,7 +496,7 @@ func (c *Claim) ConvertToAPI(tx *pop.Connection) api.Claim {
 		ReviewerID:          c.ReviewerID,
 		PaymentDate:         c.PaymentDate,
 		TotalPayout:         c.TotalPayout,
-		RevisionMessage:     c.RevisionMessage,
+		StatusReason:        c.StatusReason,
 		Items:               c.ClaimItems.ConvertToAPI(tx),
 		Files:               c.ClaimFiles.ConvertToAPI(tx),
 	}

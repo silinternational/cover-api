@@ -609,7 +609,7 @@ func (as *ActionSuite) Test_ClaimsRequestRevision() {
 			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
 			req.Headers["content-type"] = "application/json"
 			const message = "change all of it"
-			res := req.Post(api.ClaimRevisionInput{RevisionMessage: message})
+			res := req.Post(api.ClaimRevisionInput{StatusReason: message})
 
 			body := res.Body.String()
 			as.Equal(tt.wantStatus, res.Code, "incorrect status code returned, body: %s", body)
@@ -625,7 +625,7 @@ func (as *ActionSuite) Test_ClaimsRequestRevision() {
 				"error finding submitted item.")
 
 			as.Equal(api.ClaimStatusRevision, claim.Status, "incorrect status after submission")
-			as.Equal(message, claim.RevisionMessage, "incorrect revision message")
+			as.Equal(message, claim.StatusReason, "incorrect revision message")
 		})
 	}
 }

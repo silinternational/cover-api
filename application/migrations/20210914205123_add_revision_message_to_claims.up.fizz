@@ -1,1 +1,1 @@
-add_column("claims", "revision_message", "string", {"default": ""})
+add_column("claims", "status_reason", "string", {"default": ""})

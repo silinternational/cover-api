@@ -112,7 +112,7 @@ type Claim struct {
 	TotalPayout int `json:"total_payout,omitempty"`
 
 	// message from a reviewer detailing the revisions needed
-	RevisionMessage string `json:"revision_message"`
+	StatusReason string `json:"status_reason"`
 
 	// list of items included in claim
 	Items ClaimItems `json:"claim_items"`
@@ -146,5 +146,5 @@ type ClaimUpdateInput struct {
 // swagger:model
 type ClaimRevisionInput struct {
 	// message from a reviewer detailing the revisions needed
-	RevisionMessage string `json:"revision_message"`
+	StatusReason string `json:"status_reason"`
 }

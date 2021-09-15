@@ -222,7 +222,7 @@ func claimsRequestRevision(c buffalo.Context) error {
 		return reportError(c, err)
 	}
 
-	if err := claim.RequestRevision(tx, input.RevisionMessage); err != nil {
+	if err := claim.RequestRevision(tx, input.StatusReason); err != nil {
 		return reportError(c, err)
 	}
 

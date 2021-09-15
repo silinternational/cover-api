@@ -32,7 +32,7 @@ func (ms *ModelSuite) TestClaim_Validate() {
 				IncidentDescription: "testing123",
 				Status:              api.ClaimStatusRevision,
 			},
-			errField: "Claim.RevisionMessage",
+			errField: "Claim.StatusReason",
 			wantErr:  true,
 		},
 		{
@@ -233,7 +233,7 @@ func (ms *ModelSuite) TestClaim_RequestRevision() {
 			ms.NoError(got)
 
 			ms.Equal(tt.wantStatus, tt.claim.Status, "incorrect status")
-			ms.Equal(message, tt.claim.RevisionMessage, "incorrect revision message")
+			ms.Equal(message, tt.claim.StatusReason, "incorrect revision message")
 		})
 	}
 }
@@ -506,7 +506,7 @@ func (ms *ModelSuite) TestClaim_ConvertToAPI() {
 		ClaimItemsPerClaim: 2,
 		ClaimFilesPerClaim: 3,
 	})
-	claim.RevisionMessage = "change request " + domain.RandomString(8, "0123456789")
+	claim.StatusReason = "change request " + domain.RandomString(8, "0123456789")
 
 	got := claim.ConvertToAPI(ms.DB)
 
@@ -521,7 +521,7 @@ func (ms *ModelSuite) TestClaim_ConvertToAPI() {
 	ms.Equal(claim.ReviewerID, got.ReviewerID, "ReviewerID is not correct")
 	ms.Equal(claim.PaymentDate, got.PaymentDate, "PaymentDate is not correct")
 	ms.Equal(claim.TotalPayout, got.TotalPayout, "TotalPayout is not correct")
-	ms.Equal(claim.RevisionMessage, got.RevisionMessage, "RevisionMessage is not correct")
+	ms.Equal(claim.StatusReason, got.StatusReason, "StatusReason is not correct")
 
 	ms.Greater(len(claim.ClaimItems), 0, "test should be revised, fixture has no ClaimItems")
 	ms.Len(got.Items, len(claim.ClaimItems), "Items is not correct length")
