@@ -2,6 +2,10 @@ package messages
 
 import (
 	"fmt"
+	"time"
+
+	"github.com/gobuffalo/nulls"
+	"github.com/gobuffalo/pop/v5"
 
 	"github.com/silinternational/cover-api/api"
 	"github.com/silinternational/cover-api/domain"
@@ -78,17 +82,39 @@ func ItemSubmittedSend(item models.Item, notifiers []interface{}) {
 	}
 }
 
-func ItemRevisionSend(item models.Item, notifiers []interface{}) {
+func ItemRevisionQueueMessage(tx *pop.Connection, item models.Item) {
 	item.LoadPolicyMembers(models.DB, false)
 
 	// TODO figure out how to specify required revisions
 
+	data := newEmailMessageData()
+	data.addItemData(item)
+
+	notn := models.Notification{
+		ItemID:  nulls.NewUUID(item.ID),
+		Body:    data.renderHTML(MessageTemplateItemRevisionMember),
+		Subject: "changes have been requested on your new policy item",
+		// TODO make this more helpful
+		InappText: "changes have been requested on your new policy item",
+
+		// TODO make these constants somewhere
+		Event:         "Item Revision Required Notification",
+		EventCategory: "Item",
+	}
+	if err := notn.Create(tx); err != nil {
+		panic("error creating new Notification: " + err.Error())
+	}
+
 	for _, m := range item.Policy.Members {
-		msg := newItemMessageForMember(item, m)
-		msg.Template = MessageTemplateItemRevisionMember
-		msg.Subject = "changes have been requested on your new policy item"
-		if err := notifications.Send(msg, notifiers...); err != nil {
-			domain.ErrLogger.Printf("error sending item revision notification to member, %s", err)
+		notnUser := models.NotificationUser{
+			NotificationID: notn.ID,
+			UserID:         m.ID,
+			EmailAddress:   m.EmailOfChoice(),
+			SendAfterUTC:   time.Now().UTC(),
+		}
+
+		if err := notnUser.Create(tx); err != nil {
+			panic("error creating new NotificationUser: " + err.Error())
 		}
 	}
 }

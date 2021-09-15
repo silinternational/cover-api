@@ -32,6 +32,7 @@ func (e *EmailNotifier) Send(msg Message) error {
 	}
 
 	emailMessage := Message{
+		Body:      msg.Body,
 		FromName:  msg.FromName,
 		FromEmail: msg.FromEmail,
 		ToName:    msg.ToName,

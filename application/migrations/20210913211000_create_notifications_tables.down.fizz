@@ -1,0 +1,2 @@
+drop_table("notifications")
+drop_table("notification_users")

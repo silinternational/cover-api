@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/silinternational/cover-api/api"
+	"github.com/silinternational/cover-api/domain"
 	"github.com/silinternational/cover-api/models"
 	"github.com/silinternational/cover-api/notifications"
 )
@@ -73,7 +74,7 @@ func (ts *TestSuite) Test_ItemSubmittedSend() {
 	}
 }
 
-func (ts *TestSuite) Test_ItemRevisionSend() {
+func (ts *TestSuite) Test_ItemRevisionQueueMessage() {
 	t := ts.T()
 	db := ts.DB
 
@@ -91,24 +92,28 @@ func (ts *TestSuite) Test_ItemRevisionSend() {
 	revisionItem := f.Items[0]
 	models.UpdateItemStatus(db, revisionItem, api.ItemCoverageStatusRevision)
 
-	testEmailer := notifications.DummyEmailService{}
-
-	tests := []testData{
+	tests := []testDataNew{
 		{
-			name:         "revisions required",
-			wantToEmails: []string{member0.EmailOfChoice(), member1.EmailOfChoice()},
-			wantSubjectsContain: []string{
-				"changes have been requested on your new policy item",
-				"changes have been requested on your new policy item",
+			name:                  "revisions required",
+			wantToEmails:          []string{member0.EmailOfChoice(), member1.EmailOfChoice()},
+			wantSubjectContains:   "changes have been requested on your new policy item",
+			wantInappTextContains: "changes have been requested on your new policy item",
+			wantBodyContains: []string{
+				domain.Env.UIURL,
+				revisionItem.Name,
+				"revisions have been requested",
 			},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			testEmailer.DeleteSentMessages()
-			ItemRevisionSend(revisionItem, []interface{}{&testEmailer})
-			validateEmails(ts, tt, testEmailer)
+			ItemRevisionQueueMessage(db, revisionItem)
+			var notnUsers models.NotificationUsers
+			ts.NoError(db.Where("email_address in (?)",
+				tt.wantToEmails[0], tt.wantToEmails[1]).All(&notnUsers))
+
+			validateNotificationUsers(ts, db, tt)
 		})
 	}
 }

@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/gobuffalo/events"
+	"github.com/gobuffalo/pop/v5"
 
 	"github.com/silinternational/cover-api/api"
 	"github.com/silinternational/cover-api/domain"
@@ -40,7 +41,10 @@ func itemRevision(e events.Event) {
 		panic(fmt.Sprintf(wrongStatusMsg, "itemRevision", item.CoverageStatus))
 	}
 
-	messages.ItemRevisionSend(item, getNotifiersFromEventPayload(e.Payload))
+	models.DB.Transaction(func(tx *pop.Connection) error {
+		messages.ItemRevisionQueueMessage(tx, item)
+		return nil
+	})
 }
 
 func itemApproved(e events.Event) {

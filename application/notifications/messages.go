@@ -6,6 +6,8 @@ import (
 )
 
 type Message struct {
+	Body      string
+	Subject   string
 	Template  string
 	Data      map[string]interface{}
 	FromName  string
@@ -14,7 +16,6 @@ type Message struct {
 	ToName    string
 	ToEmail   string
 	ToPhone   string
-	Subject   string
 }
 
 // NewEmailMessage returns a message with the FromEmail, the Data.appName and Data.uiURL already set
