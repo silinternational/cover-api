@@ -33,7 +33,7 @@ type User struct {
 	// full name
 	Name string `json:"name"`
 
-	// role in the application ('user', 'steward', 'signator')
+	// role in the application ('User', 'Steward', 'Signator', 'Admin')
 	AppRole string `json:"app_role"`
 
 	// last login date and time (UTC)
