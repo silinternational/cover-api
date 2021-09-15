@@ -246,7 +246,7 @@ func (ms *ModelSuite) TestClaim_RequestRevision() {
 			ms.NoError(got)
 
 			ms.Equal(tt.wantStatus, tt.claim.Status, "incorrect status")
-			ms.Equal(message, tt.claim.StatusReason, "incorrect revision message")
+			ms.Equal(message, tt.claim.StatusReason, "incorrect status reason message")
 		})
 	}
 }
@@ -494,7 +494,8 @@ func (ms *ModelSuite) TestClaim_Deny() {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := tt.claim.Deny(ms.DB, tt.actor)
+			const message = "change all the things"
+			got := tt.claim.Deny(ms.DB, tt.actor, message)
 
 			if tt.wantErrContains != "" {
 				ms.Error(got, " did not return expected error")
@@ -510,6 +511,7 @@ func (ms *ModelSuite) TestClaim_Deny() {
 			ms.Equal(tt.wantStatus, tt.claim.Status, "incorrect status")
 			ms.Equal(tt.actor.ID.String(), tt.claim.ReviewerID.UUID.String(), "incorrect reviewer id")
 			ms.WithinDuration(time.Now().UTC(), tt.claim.ReviewDate.Time, time.Second*2, "incorrect reviewer date id")
+			ms.Equal(message, tt.claim.StatusReason, "incorrect status reason message")
 		})
 	}
 }

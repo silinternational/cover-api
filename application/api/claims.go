@@ -144,7 +144,7 @@ type ClaimUpdateInput struct {
 }
 
 // swagger:model
-type ClaimRevisionInput struct {
+type ClaimStatusInput struct {
 	// message from a reviewer detailing the revisions needed
 	StatusReason string `json:"status_reason"`
 }

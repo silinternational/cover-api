@@ -207,7 +207,7 @@ func claimsSubmit(c buffalo.Context) error {
 //     description: claim request revision input object
 //     required: true
 //     schema:
-//       "$ref": "#/definitions/ClaimRevisionInput"
+//       "$ref": "#/definitions/ClaimStatusInput"
 // responses:
 //   '200':
 //     description: Claim in focus
@@ -217,7 +217,7 @@ func claimsRequestRevision(c buffalo.Context) error {
 	tx := models.Tx(c)
 	claim := getReferencedClaimFromCtx(c)
 
-	var input api.ClaimRevisionInput
+	var input api.ClaimStatusInput
 	if err := StrictBind(c, &input); err != nil {
 		return reportError(c, err)
 	}
@@ -343,7 +343,12 @@ func claimsDeny(c buffalo.Context) error {
 
 	claim := getReferencedClaimFromCtx(c)
 
-	if err := claim.Deny(tx, user); err != nil {
+	var input api.ClaimStatusInput
+	if err := StrictBind(c, &input); err != nil {
+		return reportError(c, err)
+	}
+
+	if err := claim.Deny(tx, user, input.StatusReason); err != nil {
 		return reportError(c, err)
 	}
 

@@ -414,7 +414,7 @@ func (c *Claim) Approve(tx *pop.Connection, actor User) error {
 }
 
 // Deny changes the status of the claim to Denied and adds the ReviewerID and ReviewDate.
-func (c *Claim) Deny(tx *pop.Connection, actor User) error {
+func (c *Claim) Deny(tx *pop.Connection, actor User, message string) error {
 	oldStatus := c.Status
 
 	if oldStatus != api.ClaimStatusReview1 && oldStatus != api.ClaimStatusReview2 &&
@@ -425,6 +425,7 @@ func (c *Claim) Deny(tx *pop.Connection, actor User) error {
 	}
 
 	c.Status = api.ClaimStatusDenied
+	c.StatusReason = message
 
 	c.ReviewerID = nulls.NewUUID(actor.ID)
 	c.ReviewDate = nulls.NewTime(time.Now().UTC())
