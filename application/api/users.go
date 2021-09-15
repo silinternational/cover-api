@@ -33,6 +33,9 @@ type User struct {
 	// full name
 	Name string `json:"name"`
 
+	// role in the application e.g. 'user'
+	AppRole string `json:"app_role"`
+
 	// last login date and time (UTC)
 	LastLoginUTC time.Time `json:"last_login_utc"`
 
