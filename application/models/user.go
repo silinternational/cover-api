@@ -340,6 +340,7 @@ func (u *User) ConvertToAPI(tx *pop.Connection) api.User {
 		FirstName:     u.FirstName,
 		LastName:      u.LastName,
 		Name:          u.Name(),
+		AppRole:       string(u.AppRole),
 		LastLoginUTC:  u.LastLoginUTC,
 		Location:      u.Location,
 		PhotoFileID:   u.PhotoFileID,
