@@ -29,7 +29,7 @@ type awsConfig struct {
 // Send a message
 func (s *SES) Send(msg Message) error {
 	body := msg.Body
-	if body == "" {
+	if body == "" { // TODO decide if this is needed, where the body needs to get rendered here
 		msg.Data["uiURL"] = domain.Env.UIURL
 		msg.Data["appName"] = domain.Env.AppName
 

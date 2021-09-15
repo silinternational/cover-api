@@ -87,31 +87,27 @@ func ItemRevisionQueueMessage(tx *pop.Connection, item models.Item) {
 
 	// TODO figure out how to specify required revisions
 
-	notn := models.Notification{
-		ItemID:  nulls.NewUUID(item.ID),
-		Subject: "changes have been requested on your new policy item",
-		// TODO make this more helpful
-		InappText: "changes have been requested on your new policy item",
-	}
-
 	data := newEmailMessageData()
 	data.addItemData(item)
 
+	notn := models.Notification{
+		ItemID:  nulls.NewUUID(item.ID),
+		Body:    data.renderHTML(MessageTemplateItemRevisionMember),
+		Subject: "changes have been requested on your new policy item",
+		// TODO make this more helpful
+		InappText: "changes have been requested on your new policy item",
+
+		// TODO make these constants somewhere
+		Event:         "Item Revision Required Notification",
+		EventCategory: "Item",
+	}
+	if err := notn.Create(tx); err != nil {
+		panic("error creating new Notification: " + err.Error())
+	}
+
 	for _, m := range item.Policy.Members {
-		data["memberName"] = m.Name()
-
-		notn2 := notn
-		notn2.Body = data.renderHTML(MessageTemplateItemRevisionMember)
-		// TODO Make these constants somewhere
-		notn2.Event = "Item Revision Required Notification"
-		notn2.EventCategory = "Item"
-
-		if err := notn2.Create(tx); err != nil {
-			panic("error creating new Notification: " + err.Error())
-		}
-
 		notnUser := models.NotificationUser{
-			NotificationID: notn2.ID,
+			NotificationID: notn.ID,
 			UserID:         m.ID,
 			EmailAddress:   m.EmailOfChoice(),
 			SendAfterUTC:   time.Now().UTC(),

@@ -3,6 +3,7 @@ package messages
 import (
 	"bytes"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/gobuffalo/buffalo/render"
@@ -13,6 +14,8 @@ import (
 	"github.com/silinternational/cover-api/models"
 	"github.com/silinternational/cover-api/notifications"
 )
+
+const Greetings_Placeholder = "[Greetings]"
 
 //  Email templates
 const (
@@ -64,7 +67,7 @@ func (m MessageData) renderHTML(template string) string {
 
 func SendQueuedNotifications(tx *pop.Connection) {
 	var notnUsers models.NotificationUsers
-	if err := notnUsers.GetQueuedEmails(tx); err != nil {
+	if err := notnUsers.GetEmailsToSend(tx); err != nil {
 		panic(err.Error())
 	}
 
@@ -73,14 +76,14 @@ func SendQueuedNotifications(tx *pop.Connection) {
 		msg := notifications.NewEmailMessage()
 		msg.ToName = n.User.Name()
 		msg.ToEmail = n.EmailAddress
-		msg.Body = n.Notification.Body
 		msg.Subject = n.Notification.Subject
+		msg.Body = strings.Replace(n.Notification.Body,
+			Greetings_Placeholder, fmt.Sprintf("Greetings %s,", n.User.Name()), 1)
 
 		if err := notifications.Send(msg); err != nil {
 			domain.ErrLogger.Printf("error sending queued notification email, %s", err)
-			// TODO figure out how to have a longer delay each time
-			n.SendAfterUTC = time.Now().UTC().Add(time.Minute * 10)
 			n.LastAttemptUTC = nulls.NewTime(time.Now().UTC())
+			n.SendAfterUTC = nextAttemptTime(n.SendAttemptCount)
 			n.SendAttemptCount++
 		} else {
 			n.SentAtUTC = nulls.NewTime(time.Now().UTC())
@@ -89,4 +92,14 @@ func SendQueuedNotifications(tx *pop.Connection) {
 			domain.ErrLogger.Printf("error updating queued NotificationUser, %s", err)
 		}
 	}
+}
+
+func nextAttemptTime(attemptCount int) time.Time {
+	delayMinutes := 100
+	if attemptCount < 10 {
+		delayMinutes = attemptCount * attemptCount
+	}
+
+	delay := time.Duration(delayMinutes) * time.Minute
+	return time.Now().UTC().Add(delay)
 }

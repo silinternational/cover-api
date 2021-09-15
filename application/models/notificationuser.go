@@ -70,7 +70,7 @@ func (n *NotificationUser) Load(tx *pop.Connection) {
 	}
 }
 
-func (n *NotificationUsers) GetQueuedEmails(tx *pop.Connection) error {
+func (n *NotificationUsers) GetEmailsToSend(tx *pop.Connection) error {
 	q := fmt.Sprintf(`SELECT notification_users.*
   FROM notification_users LEFT JOIN notifications ON notification_users.notification_id = notifications.id
   WHERE notifications.body <> '' AND

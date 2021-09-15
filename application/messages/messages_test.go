@@ -105,17 +105,17 @@ func (ts *TestSuite) Test_SendQueuedNotifications() {
 	}
 
 	// The database truncates the time in the fractions of seconds somehow
-	alreadySentTime := time.Now().UTC().Add(-domain.DurationWeek).Truncate(time.Second)
+	alreadySentTime := time.Now().UTC().Add(-1 * domain.DurationWeek).Truncate(time.Second)
 
 	notnFixtures := []notnFixture{
 		notnFixture{
 			name:      "AlreadySent",
-			sendAfter: time.Now().UTC().Add(-domain.DurationWeek * 2),
+			sendAfter: time.Now().UTC().Add(-1 * domain.DurationWeek * 2),
 			sentAt:    nulls.NewTime(alreadySentTime),
 		},
 		notnFixture{
 			name:      "ToSend",
-			sendAfter: time.Now().UTC().Add(-domain.DurationWeek),
+			sendAfter: time.Now().UTC().Add(-1 * domain.DurationWeek),
 		},
 		notnFixture{
 			name:      "NotReady",
@@ -123,7 +123,7 @@ func (ts *TestSuite) Test_SendQueuedNotifications() {
 		},
 		notnFixture{
 			name:      "EmailError",
-			sendAfter: time.Now().UTC().Add(-domain.DurationWeek),
+			sendAfter: time.Now().UTC().Add(-1 * domain.DurationWeek),
 		},
 	}
 
@@ -161,6 +161,7 @@ func (ts *TestSuite) Test_SendQueuedNotifications() {
 			name:                "send one email",
 			wantToEmails:        []string{user.EmailOfChoice()},
 			wantSubjectsContain: []string{"ToSend"},
+			// TODO test whether the username is in the greeting
 		},
 	}
 
@@ -182,17 +183,56 @@ func (ts *TestSuite) Test_SendQueuedNotifications() {
 				"incorrect SentAtUTC value")
 
 			ts.NoError(nuNotReady.FindByID(db, nuNotReady.ID),
-				"error fetching nuToSend from database")
+				"error fetching nuNotReady from database")
 			ts.False(nuNotReady.SentAtUTC.Valid, "SentAtUTC value should not be set")
 
 			ts.NoError(nuEmailError.FindByID(db, nuEmailError.ID),
 				"error fetching nuEmailError from database")
 			ts.False(nuEmailError.SentAtUTC.Valid, "SentAtUTC value should not be set")
-			ts.WithinDuration(time.Now().UTC().Add(time.Minute*10), nuEmailError.SendAfterUTC, time.Minute,
+			ts.WithinDuration(time.Now().UTC(), nuEmailError.SendAfterUTC, time.Minute,
 				"incorrect SendAfterUTC value")
 			ts.WithinDuration(time.Now().UTC(), nuEmailError.LastAttemptUTC.Time, time.Minute,
 				"incorrect LastAttemptUTC value")
 			ts.Equal(1, nuEmailError.SendAttemptCount, "incorrect SendAttemptCount")
+		})
+	}
+}
+
+func (ts *TestSuite) Test_NextAttemptTime() {
+	t := ts.T()
+
+	tests := []struct {
+		name         string
+		attemptCount int
+		want         time.Time
+	}{
+		{
+			name:         "no delay",
+			attemptCount: 0,
+			want:         time.Now().UTC(),
+		},
+		{
+			name:         "short delay",
+			attemptCount: 2,
+			want:         time.Now().UTC().Add(4 * time.Minute),
+		},
+		{
+			name:         "medium delay",
+			attemptCount: 9,
+			want:         time.Now().UTC().Add(81 * time.Minute),
+		},
+		{
+			name:         "long delay",
+			attemptCount: 12,
+			want:         time.Now().UTC().Add(100 * time.Minute),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := nextAttemptTime(tt.attemptCount)
+
+			ts.WithinDuration(tt.want, got, time.Minute, "incorrect time for next attempt")
 		})
 	}
 }

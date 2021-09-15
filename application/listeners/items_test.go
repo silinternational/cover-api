@@ -104,9 +104,9 @@ func (ts *TestSuite) Test_itemRevision() {
 			testEmailer.DeleteSentMessages()
 			itemRevision(tt.event)
 
-			var notns models.Notifications
-			ts.NoError(db.All(&notns), "error fetching notifications from db")
-			ts.Equal(2, len(notns), "incorrect number of notifications queued")
+			var nus models.NotificationUsers
+			ts.NoError(db.All(&nus), "error fetching NotificationUsers from db")
+			ts.Equal(2, len(nus), "incorrect number of NotificationUsers queued")
 		})
 	}
 }
