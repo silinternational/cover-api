@@ -608,7 +608,8 @@ func (as *ActionSuite) Test_ClaimsRequestRevision() {
 				domain.TypeClaim, tt.oldClaim.ID.String(), api.ResourceRevision)
 			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
 			req.Headers["content-type"] = "application/json"
-			res := req.Post(nil)
+			const message = "change all of it"
+			res := req.Post(api.ClaimStatusInput{StatusReason: message})
 
 			body := res.Body.String()
 			as.Equal(tt.wantStatus, res.Code, "incorrect status code returned, body: %s", body)
@@ -624,6 +625,7 @@ func (as *ActionSuite) Test_ClaimsRequestRevision() {
 				"error finding submitted item.")
 
 			as.Equal(api.ClaimStatusRevision, claim.Status, "incorrect status after submission")
+			as.Equal(message, claim.StatusReason, "incorrect revision message")
 		})
 	}
 }
@@ -902,7 +904,8 @@ func (as *ActionSuite) Test_ClaimsDeny() {
 				domain.TypeClaim, tt.oldClaim.ID.String(), api.ResourceDeny)
 			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
 			req.Headers["content-type"] = "application/json"
-			res := req.Post(nil)
+			const message = "change all of it"
+			res := req.Post(api.ClaimStatusInput{StatusReason: message})
 
 			body := res.Body.String()
 			as.Equal(tt.wantStatus, res.Code, "incorrect status code returned, body: %s", body)
@@ -918,6 +921,7 @@ func (as *ActionSuite) Test_ClaimsDeny() {
 				"error finding submitted item.")
 
 			as.Equal(api.ClaimStatusDenied, claim.Status, "incorrect status after submission")
+			as.Equal(message, claim.StatusReason, "incorrect status reason")
 		})
 	}
 }

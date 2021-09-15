@@ -23,6 +23,32 @@ func (ms *ModelSuite) TestClaim_Validate() {
 			wantErr:  true,
 		},
 		{
+			name: "empty revision message - status = Revision",
+			claim: &Claim{
+				ReferenceNumber:     domain.RandomString(ClaimReferenceNumberLength, ""),
+				PolicyID:            domain.GetUUID(),
+				IncidentType:        api.ClaimIncidentTypeImpact,
+				IncidentDate:        time.Now(),
+				IncidentDescription: "testing123",
+				Status:              api.ClaimStatusRevision,
+			},
+			errField: "Claim.StatusReason",
+			wantErr:  true,
+		},
+		{
+			name: "empty revision message - status = Denied",
+			claim: &Claim{
+				ReferenceNumber:     domain.RandomString(ClaimReferenceNumberLength, ""),
+				PolicyID:            domain.GetUUID(),
+				IncidentType:        api.ClaimIncidentTypeImpact,
+				IncidentDate:        time.Now(),
+				IncidentDescription: "testing123",
+				Status:              api.ClaimStatusDenied,
+			},
+			errField: "Claim.StatusReason",
+			wantErr:  true,
+		},
+		{
 			name: "valid status",
 			claim: &Claim{
 				ReferenceNumber:     domain.RandomString(ClaimReferenceNumberLength, ""),
@@ -205,7 +231,8 @@ func (ms *ModelSuite) TestClaim_RequestRevision() {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := tt.claim.RequestRevision(ms.DB)
+			const message = "change all the things"
+			got := tt.claim.RequestRevision(ms.DB, message)
 
 			if tt.wantErrContains != "" {
 				ms.Error(got, " did not return expected error")
@@ -219,6 +246,7 @@ func (ms *ModelSuite) TestClaim_RequestRevision() {
 			ms.NoError(got)
 
 			ms.Equal(tt.wantStatus, tt.claim.Status, "incorrect status")
+			ms.Equal(message, tt.claim.StatusReason, "incorrect status reason message")
 		})
 	}
 }
@@ -386,6 +414,7 @@ func (ms *ModelSuite) TestClaim_Approve() {
 			ms.Equal(tt.wantStatus, tt.claim.Status, "incorrect status")
 			ms.Equal(tt.actor.ID.String(), tt.claim.ReviewerID.UUID.String(), "incorrect reviewer id")
 			ms.WithinDuration(time.Now().UTC(), tt.claim.ReviewDate.Time, time.Second*2, "incorrect reviewer date id")
+			ms.Equal("", tt.claim.StatusReason, "StatusReason should be empty after approval")
 		})
 	}
 }
@@ -465,7 +494,8 @@ func (ms *ModelSuite) TestClaim_Deny() {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := tt.claim.Deny(ms.DB, tt.actor)
+			const message = "change all the things"
+			got := tt.claim.Deny(ms.DB, tt.actor, message)
 
 			if tt.wantErrContains != "" {
 				ms.Error(got, " did not return expected error")
@@ -481,6 +511,37 @@ func (ms *ModelSuite) TestClaim_Deny() {
 			ms.Equal(tt.wantStatus, tt.claim.Status, "incorrect status")
 			ms.Equal(tt.actor.ID.String(), tt.claim.ReviewerID.UUID.String(), "incorrect reviewer id")
 			ms.WithinDuration(time.Now().UTC(), tt.claim.ReviewDate.Time, time.Second*2, "incorrect reviewer date id")
+			ms.Equal(message, tt.claim.StatusReason, "incorrect status reason message")
 		})
 	}
+}
+
+func (ms *ModelSuite) TestClaim_ConvertToAPI() {
+	policy := CreatePolicyFixtures(ms.DB, FixturesConfig{}).Policies[0]
+	claim := createClaimFixture(ms.DB, policy, FixturesConfig{
+		ClaimItemsPerClaim: 2,
+		ClaimFilesPerClaim: 3,
+	})
+	claim.StatusReason = "change request " + domain.RandomString(8, "0123456789")
+
+	got := claim.ConvertToAPI(ms.DB)
+
+	ms.Equal(claim.ID, got.ID, "ID is not correct")
+	ms.Equal(claim.PolicyID, got.PolicyID, "PolicyID is not correct")
+	ms.Equal(claim.ReferenceNumber, got.ReferenceNumber, "ReferenceNumber is not correct")
+	ms.Equal(claim.IncidentDate, got.IncidentDate, "IncidentDate is not correct")
+	ms.Equal(claim.IncidentType, got.IncidentType, "IncidentType is not correct")
+	ms.Equal(claim.IncidentDescription, got.IncidentDescription, "IncidentDescription is not correct")
+	ms.Equal(claim.Status, got.Status, "Status is not correct")
+	ms.Equal(claim.ReviewDate, got.ReviewDate, "ReviewDate is not correct")
+	ms.Equal(claim.ReviewerID, got.ReviewerID, "ReviewerID is not correct")
+	ms.Equal(claim.PaymentDate, got.PaymentDate, "PaymentDate is not correct")
+	ms.Equal(claim.TotalPayout, got.TotalPayout, "TotalPayout is not correct")
+	ms.Equal(claim.StatusReason, got.StatusReason, "StatusReason is not correct")
+
+	ms.Greater(len(claim.ClaimItems), 0, "test should be revised, fixture has no ClaimItems")
+	ms.Len(got.Items, len(claim.ClaimItems), "Items is not correct length")
+
+	ms.Greater(len(claim.ClaimFiles), 0, "test should be revised, fixture has no ClaimFiles")
+	ms.Len(got.Files, len(claim.ClaimFiles), "Files is not correct length")
 }
