@@ -397,6 +397,7 @@ func (c *Claim) Approve(tx *pop.Connection, actor User) error {
 
 	c.ReviewerID = nulls.NewUUID(actor.ID)
 	c.ReviewDate = nulls.NewTime(time.Now().UTC())
+	c.StatusReason = ""
 
 	if err := c.Update(tx, oldStatus); err != nil {
 		return err

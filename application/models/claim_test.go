@@ -414,6 +414,7 @@ func (ms *ModelSuite) TestClaim_Approve() {
 			ms.Equal(tt.wantStatus, tt.claim.Status, "incorrect status")
 			ms.Equal(tt.actor.ID.String(), tt.claim.ReviewerID.UUID.String(), "incorrect reviewer id")
 			ms.WithinDuration(time.Now().UTC(), tt.claim.ReviewDate.Time, time.Second*2, "incorrect reviewer date id")
+			ms.Equal("", tt.claim.StatusReason, "StatusReason should be empty after approval")
 		})
 	}
 }
