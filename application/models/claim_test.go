@@ -23,7 +23,7 @@ func (ms *ModelSuite) TestClaim_Validate() {
 			wantErr:  true,
 		},
 		{
-			name: "empty revision message",
+			name: "empty revision message - status = Revision",
 			claim: &Claim{
 				ReferenceNumber:     domain.RandomString(ClaimReferenceNumberLength, ""),
 				PolicyID:            domain.GetUUID(),
@@ -31,6 +31,19 @@ func (ms *ModelSuite) TestClaim_Validate() {
 				IncidentDate:        time.Now(),
 				IncidentDescription: "testing123",
 				Status:              api.ClaimStatusRevision,
+			},
+			errField: "Claim.StatusReason",
+			wantErr:  true,
+		},
+		{
+			name: "empty revision message - status = Denied",
+			claim: &Claim{
+				ReferenceNumber:     domain.RandomString(ClaimReferenceNumberLength, ""),
+				PolicyID:            domain.GetUUID(),
+				IncidentType:        api.ClaimIncidentTypeImpact,
+				IncidentDate:        time.Now(),
+				IncidentDescription: "testing123",
+				Status:              api.ClaimStatusDenied,
 			},
 			errField: "Claim.StatusReason",
 			wantErr:  true,
