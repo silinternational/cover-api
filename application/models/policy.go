@@ -1,6 +1,8 @@
 package models
 
 import (
+	"context"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -50,7 +52,21 @@ func (p *Policy) Create(tx *pop.Connection) error {
 }
 
 // Update writes the Policy data to an existing database record.
-func (p *Policy) Update(tx *pop.Connection) error {
+func (p *Policy) Update(ctx context.Context) error {
+	tx := Tx(ctx)
+	var oldPolicy Policy
+	if err := tx.Find(&oldPolicy, p.ID); err != nil {
+		return appErrorFromDB(err, api.ErrorUpdateFailure)
+	}
+
+	updates := p.Compare(oldPolicy)
+	for i := range updates {
+		history := p.NewHistory(ctx, api.HistoryActionUpdate, updates[i])
+		if err := history.Create(tx); err != nil {
+			return appErrorFromDB(err, api.ErrorCreateFailure)
+		}
+	}
+
 	return update(tx, p)
 }
 
@@ -236,4 +252,71 @@ func (p *Policy) AddClaim(tx *pop.Connection, input api.ClaimCreateInput) (Claim
 	}
 
 	return claim, nil
+}
+
+// Compare returns a list of fields that are different between two objects
+func (p *Policy) Compare(old Policy) []FieldUpdate {
+	var updates []FieldUpdate
+
+	if p.EntityCodeID != old.EntityCodeID {
+		updates = append(updates, FieldUpdate{
+			OldValue:  old.EntityCodeID.UUID.String(),
+			NewValue:  p.EntityCodeID.UUID.String(),
+			FieldName: "EntityCodeID",
+		})
+	}
+
+	if p.Type != old.Type {
+		updates = append(updates, FieldUpdate{
+			OldValue:  string(old.Type),
+			NewValue:  string(p.Type),
+			FieldName: "Type",
+		})
+	}
+
+	if p.CostCenter != old.CostCenter {
+		updates = append(updates, FieldUpdate{
+			OldValue:  old.CostCenter,
+			NewValue:  p.CostCenter,
+			FieldName: "CostCenter",
+		})
+	}
+
+	if p.Account != old.Account {
+		updates = append(updates, FieldUpdate{
+			OldValue:  old.Account,
+			NewValue:  p.Account,
+			FieldName: "Account",
+		})
+	}
+
+	if p.HouseholdID != old.HouseholdID {
+		updates = append(updates, FieldUpdate{
+			OldValue:  old.HouseholdID.String,
+			NewValue:  p.HouseholdID.String,
+			FieldName: "HouseholdID",
+		})
+	}
+
+	if p.Notes != old.Notes {
+		updates = append(updates, FieldUpdate{
+			OldValue:  old.Notes,
+			NewValue:  p.Notes,
+			FieldName: "Notes",
+		})
+	}
+
+	return updates
+}
+
+func (p *Policy) NewHistory(ctx context.Context, action string, fieldUpdate FieldUpdate) PolicyHistory {
+	ph := PolicyHistory{
+		Action:    action,
+		PolicyID:  p.ID,
+		UserID:    CurrentUser(ctx).ID,
+		FieldName: fieldUpdate.FieldName,
+		OldValue:  fmt.Sprintf("%s", fieldUpdate.OldValue),
+		NewValue:  fmt.Sprintf("%s", fieldUpdate.NewValue),
+	}
+	return ph.GenerateDescription(Tx(ctx))
 }

@@ -1,0 +1,1 @@
+drop_column("policy_history", "field_name")

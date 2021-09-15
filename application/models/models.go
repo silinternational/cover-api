@@ -11,7 +11,6 @@ import (
 	"reflect"
 
 	"github.com/go-playground/validator/v10"
-	"github.com/gobuffalo/buffalo"
 	"github.com/gobuffalo/events"
 	"github.com/gobuffalo/nulls"
 	"github.com/gobuffalo/pop/v5"
@@ -50,6 +49,12 @@ type Authable interface {
 
 type Createable interface {
 	Create(tx *pop.Connection) error
+}
+
+type FieldUpdate struct {
+	FieldName string
+	OldValue  string
+	NewValue  string
 }
 
 func init() {
@@ -95,9 +100,9 @@ func getRandomToken() (string, error) {
 }
 
 // CurrentUser retrieves the current user from the context.
-func CurrentUser(c buffalo.Context) User {
-	user, _ := c.Value(domain.ContextKeyCurrentUser).(User)
-	domain.NewExtra(c, "user_id", user.ID)
+func CurrentUser(ctx context.Context) User {
+	user, _ := ctx.Value(domain.ContextKeyCurrentUser).(User)
+	domain.NewExtra(ctx, "user_id", user.ID)
 	return user
 }
 
