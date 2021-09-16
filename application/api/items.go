@@ -90,8 +90,11 @@ type Item struct {
 	// annual premium (0.01 USD)
 	AnnualPremium int `json:"annual_premium"`
 
-	// Name of accountable person
-	AccountablePerson string `json:"accountable_person"`
+	// ID of a dependent designated as accountable person, must be null if policy_user_id is not null
+	PolicyDependentID nulls.UUID `json:"policy_dependent_id"`
+
+	// ID of a user designated as accountable person, must be null if policy_dependent_id is not null
+	PolicyUserID nulls.UUID `json:"policy_user_id"`
 }
 
 // ItemInput represents payload for adding an item

@@ -405,7 +405,8 @@ func (i *Item) ConvertToAPI(tx *pop.Connection) api.Item {
 		PurchaseDate:      i.PurchaseDate.Format(domain.DateFormat),
 		CoverageStatus:    i.CoverageStatus,
 		CoverageStartDate: i.CoverageStartDate.Format(domain.DateFormat),
-		AccountablePerson: i.GetAccountablePerson(tx),
+		PolicyUserID:      i.PolicyUserID,
+		PolicyDependentID: i.PolicyDependentID,
 		AnnualPremium:     i.GetAnnualPremium(),
 		CreatedAt:         i.CreatedAt,
 		UpdatedAt:         i.UpdatedAt,
@@ -419,24 +420,6 @@ func (i *Items) ConvertToAPI(tx *pop.Connection) api.Items {
 	}
 
 	return apiItems
-}
-
-func (i *Item) GetAccountablePerson(tx *pop.Connection) string {
-	if i.PolicyUserID.Valid {
-		var policyUser User
-		if err := policyUser.FindByID(tx, i.PolicyUserID.UUID); err != nil {
-			panic("error finding policy user " + i.PolicyUserID.UUID.String())
-		}
-		return policyUser.Name()
-	}
-	if i.PolicyDependentID.Valid {
-		var policyDependent PolicyDependent
-		if err := policyDependent.FindByID(tx, i.PolicyDependentID.UUID); err != nil {
-			panic("error finding policy dependent " + i.PolicyDependentID.UUID.String())
-		}
-		return policyDependent.Name
-	}
-	return ""
 }
 
 func (i *Item) GetAnnualPremium() int {
