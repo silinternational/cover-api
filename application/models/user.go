@@ -61,6 +61,8 @@ type User struct {
 	PhotoFile *File `belongs_to:"files"`
 }
 
+var userCache = map[uuid.UUID]User{}
+
 // Validate gets run every time you call a "pop.Validate*" (pop.ValidateAndSave, pop.ValidateAndCreate, pop.ValidateAndUpdate) method.
 //  It first adds a UUID to the user if its UUID is empty
 func (u *User) Validate(tx *pop.Connection) (*validate.Errors, error) {
@@ -87,15 +89,33 @@ func (u *User) GetID() uuid.UUID {
 }
 
 func (u *User) FindByID(tx *pop.Connection, id uuid.UUID) error {
-	return tx.Find(u, id)
+	user, ok := userCache[id]
+	if ok {
+		*u = user
+		return nil
+	}
+	err := tx.Find(u, id)
+	if err != nil {
+		return err
+	}
+	userCache[id] = *u
+	return nil
 }
 
 func (u *User) FindByEmail(tx *pop.Connection, email string) error {
-	return tx.Where("email = ?", email).First(u)
+	if err := tx.Where("email = ?", email).First(u); err != nil {
+		return err
+	}
+	userCache[u.ID] = *u
+	return nil
 }
 
 func (u *User) FindByStaffID(tx *pop.Connection, id string) error {
-	return tx.Where("staff_id = ?", id).First(u)
+	if err := tx.Where("staff_id = ?", id).First(u); err != nil {
+		return err
+	}
+	userCache[u.ID] = *u
+	return nil
 }
 
 func (u *User) IsActorAllowedTo(tx *pop.Connection, actor User, p Permission, sub SubResource, req *http.Request) bool {
@@ -155,6 +175,7 @@ func (u *User) FindOrCreateFromAuthUser(tx *pop.Connection, authUser *auth.User)
 	}
 	emitEvent(e)
 
+	userCache[u.ID] = *u
 	return nil
 }
 
