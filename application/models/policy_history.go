@@ -45,7 +45,7 @@ func (p *PolicyHistory) FindByID(tx *pop.Connection, id uuid.UUID) error {
 	return tx.Find(p, id)
 }
 
-func (p *PolicyHistory) GenerateDescription(tx *pop.Connection) {
+func (p *PolicyHistory) GenerateDescription(tx *pop.Connection) PolicyHistory {
 	var user User
 	if err := user.FindByID(tx, p.UserID); err != nil {
 		panic("failed to find user by ID " + err.Error())
@@ -55,9 +55,10 @@ func (p *PolicyHistory) GenerateDescription(tx *pop.Connection) {
 	case api.HistoryActionCreate:
 		p.Description = fmt.Sprintf("record created by %s", user.Name())
 	case api.HistoryActionUpdate:
-		p.Description = fmt.Sprintf("field %s changed from %s to %s by %s",
+		p.Description = fmt.Sprintf(`field %s changed from "%s" to "%s" by %s`,
 			p.FieldName, p.OldValue, p.NewValue, user.Name())
 	default:
 		p.Description = p.Action
 	}
+	return *p
 }
