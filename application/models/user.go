@@ -69,11 +69,17 @@ func (u *User) Validate(tx *pop.Connection) (*validate.Errors, error) {
 
 // Create stores the User data as a new record in the database.
 func (u *User) Create(tx *pop.Connection) error {
+	if u.AppRole == "" {
+		u.AppRole = AppRoleUser
+	}
 	return create(tx, u)
 }
 
 // Update writes the User data to an existing database record.
 func (u *User) Update(tx *pop.Connection) error {
+	if u.AppRole == "" {
+		u.AppRole = AppRoleUser
+	}
 	return update(tx, u)
 }
 

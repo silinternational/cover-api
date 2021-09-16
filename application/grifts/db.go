@@ -139,7 +139,7 @@ func createUserFixtures(tx *pop.Connection) ([]*models.User, error) {
 
 	for i, uu := range userUUIDs {
 		fixUsers[i].ID = uuid.FromStringOrNil(uu)
-		err := tx.Create(fixUsers[i])
+		err := fixUsers[i].Create(tx)
 		if err != nil {
 			err = fmt.Errorf("error creating user fixture ... %+v\n %v",
 				fixUsers[i], err.Error())
