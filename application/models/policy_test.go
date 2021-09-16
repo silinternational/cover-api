@@ -273,8 +273,8 @@ func (ms *ModelSuite) TestPolicy_NewHistory() {
 				UserID:    user.ID,
 				Action:    api.HistoryActionUpdate,
 				FieldName: "HouseholdID",
-				Description: fmt.Sprintf(`field HouseholdID changed from "%s" to "%s" by %s`,
-					policy.HouseholdID.String, newHouseholdID, user.Name()),
+				Description: fmt.Sprintf(`field HouseholdID changed by %s from "%s" to "%s"`,
+					user.Name(), policy.HouseholdID.String, newHouseholdID),
 				OldValue: policy.HouseholdID.String,
 				NewValue: newHouseholdID,
 			},
@@ -293,8 +293,8 @@ func (ms *ModelSuite) TestPolicy_NewHistory() {
 				UserID:    user.ID,
 				Action:    api.HistoryActionUpdate,
 				FieldName: "EntityCodeID",
-				Description: fmt.Sprintf(`field EntityCodeID changed from "%s" to "%s" by %s`,
-					policy.EntityCodeID.UUID.String(), newEntityCodeID, user.Name()),
+				Description: fmt.Sprintf(`field EntityCodeID changed by %s from "%s" to "%s"`,
+					user.Name(), policy.EntityCodeID.UUID.String(), newEntityCodeID),
 				OldValue: policy.EntityCodeID.UUID.String(),
 				NewValue: newEntityCodeID,
 			},
@@ -305,7 +305,7 @@ func (ms *ModelSuite) TestPolicy_NewHistory() {
 			got := tt.policy.NewHistory(CreateTestContext(tt.user), api.HistoryActionUpdate, tt.update)
 			ms.False(tt.want.NewValue == tt.want.OldValue, "test isn't correctly checking a field update")
 			ms.Equal(tt.want.PolicyID, got.PolicyID, "PolicyID is not correct")
-			ms.Equal(tt.want.UserID, got.UserID, "FieldName is not correct")
+			ms.Equal(tt.want.UserID, got.UserID, "UserID is not correct")
 			ms.Equal(tt.want.Action, got.Action, "Action is not correct")
 			ms.Equal(tt.want.FieldName, got.FieldName, "FieldName is not correct")
 			ms.Equal(tt.want.Description, got.Description, "Description is not correct")

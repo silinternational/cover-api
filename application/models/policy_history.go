@@ -55,8 +55,8 @@ func (p *PolicyHistory) GenerateDescription(tx *pop.Connection) PolicyHistory {
 	case api.HistoryActionCreate:
 		p.Description = fmt.Sprintf("record created by %s", user.Name())
 	case api.HistoryActionUpdate:
-		p.Description = fmt.Sprintf(`field %s changed from "%s" to "%s" by %s`,
-			p.FieldName, p.OldValue, p.NewValue, user.Name())
+		p.Description = fmt.Sprintf(`field %s changed by %s from "%s" to "%s"`,
+			p.FieldName, user.Name(), p.OldValue, p.NewValue)
 	default:
 		p.Description = p.Action
 	}

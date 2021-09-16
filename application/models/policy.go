@@ -56,7 +56,7 @@ func (p *Policy) Update(ctx context.Context) error {
 	tx := Tx(ctx)
 	var oldPolicy Policy
 	if err := tx.Find(&oldPolicy, p.ID); err != nil {
-		return appErrorFromDB(err, api.ErrorUpdateFailure)
+		return appErrorFromDB(err, api.ErrorQueryFailure)
 	}
 
 	updates := p.Compare(oldPolicy)
