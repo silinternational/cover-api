@@ -78,8 +78,6 @@ func itemPendingQueueMessage(tx *pop.Connection, item models.Item, member models
 	}
 
 	notn.CreateNotificationUsersForStewards(tx)
-
-	SendQueuedNotifications(tx)
 }
 
 // ItemSubmittedQueueMessage queues messages about a new item depending
@@ -96,8 +94,6 @@ func ItemSubmittedQueueMessage(tx *pop.Connection, item models.Item) {
 	} else if item.CoverageStatus == api.ItemCoverageStatusPending { // Was submitted but not auto approved
 		itemPendingQueueMessage(tx, item, item.Policy.Members[0])
 	}
-
-	SendQueuedNotifications(tx)
 }
 
 // ItemRevisionQueueMessage queues messages to an item's members to
@@ -128,8 +124,6 @@ func ItemRevisionQueueMessage(tx *pop.Connection, item models.Item) {
 	for _, m := range item.Policy.Members {
 		notn.CreateNotificationUser(tx, m)
 	}
-
-	SendQueuedNotifications(tx)
 }
 
 // ItemApprovedQueueMessage queues messages to an item's members to
@@ -137,8 +131,6 @@ func ItemRevisionQueueMessage(tx *pop.Connection, item models.Item) {
 func ItemApprovedQueueMessage(tx *pop.Connection, item models.Item) {
 	item.LoadPolicyMembers(models.DB, false)
 	itemApprovedQueueMsg(tx, item)
-
-	SendQueuedNotifications(tx)
 }
 
 // ItemDeniedQueueMessage queues messages to an item's members to
@@ -167,6 +159,4 @@ func ItemDeniedQueueMessage(tx *pop.Connection, item models.Item) {
 	for _, m := range item.Policy.Members {
 		notn.CreateNotificationUser(tx, m)
 	}
-
-	SendQueuedNotifications(tx)
 }

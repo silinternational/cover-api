@@ -33,8 +33,6 @@ func ClaimReview1QueueMessage(tx *pop.Connection, claim models.Claim) {
 	}
 
 	notn.CreateNotificationUsersForStewards(tx)
-
-	SendQueuedNotifications(tx)
 }
 
 // ClaimRevisionQueueMessage queues messages to the claim's members to
@@ -65,8 +63,6 @@ func ClaimRevisionQueueMessage(tx *pop.Connection, claim models.Claim) {
 	for _, m := range claim.Policy.Members {
 		notn.CreateNotificationUser(tx, m)
 	}
-
-	SendQueuedNotifications(tx)
 }
 
 // ClaimPreapprovedQueueMessage queues messages to the claim's members to
@@ -97,8 +93,6 @@ func ClaimPreapprovedQueueMessage(tx *pop.Connection, claim models.Claim) {
 	for _, m := range claim.Policy.Members {
 		notn.CreateNotificationUser(tx, m)
 	}
-
-	SendQueuedNotifications(tx)
 }
 
 // ClaimReceiptQueueMessage queues messages to the claim's members to
@@ -129,8 +123,6 @@ func ClaimReceiptQueueMessage(tx *pop.Connection, claim models.Claim) {
 	for _, m := range claim.Policy.Members {
 		notn.CreateNotificationUser(tx, m)
 	}
-
-	SendQueuedNotifications(tx)
 }
 
 // ClaimReview2QueueMessage queues messages to the stewards to
@@ -159,8 +151,6 @@ func ClaimReview2QueueMessage(tx *pop.Connection, claim models.Claim) {
 	}
 
 	notn.CreateNotificationUsersForStewards(tx)
-
-	SendQueuedNotifications(tx)
 }
 
 // ClaimReview3QueueMessage queues messages to the signators to
@@ -189,8 +179,6 @@ func ClaimReview3QueueMessage(tx *pop.Connection, claim models.Claim) {
 	}
 
 	notn.CreateNotificationUsersForSignators(tx)
-
-	SendQueuedNotifications(tx)
 }
 
 // ClaimApprovedQueueMessage queues messages to a claim's members to
@@ -220,8 +208,6 @@ func ClaimApprovedQueueMessage(tx *pop.Connection, claim models.Claim) {
 	for _, m := range claim.Policy.Members {
 		notn.CreateNotificationUser(tx, m)
 	}
-
-	SendQueuedNotifications(tx)
 }
 
 // ClaimDeniedQueueMessage queues messages to a claim's members to
@@ -252,6 +238,4 @@ func ClaimDeniedQueueMessage(tx *pop.Connection, claim models.Claim) {
 	for _, m := range claim.Policy.Members {
 		notn.CreateNotificationUser(tx, m)
 	}
-
-	SendQueuedNotifications(tx)
 }
