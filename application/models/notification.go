@@ -1,6 +1,7 @@
 package models
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/gobuffalo/nulls"
@@ -75,6 +76,58 @@ func (n *Notification) LoadClaim(tx *pop.Connection, reload bool) {
 	if n.ClaimID.Valid && (n.Claim.ID == uuid.Nil || reload) {
 		if err := tx.Load(n, "Claim"); err != nil {
 			panic("database error loading Notification.Claim, " + err.Error())
+		}
+	}
+}
+
+func (n *Notification) CreateNotificationUser(tx *pop.Connection, user User) {
+	notnUser := NotificationUser{
+		NotificationID: n.ID,
+		UserID:         user.ID,
+		EmailAddress:   user.EmailOfChoice(),
+		SendAfterUTC:   time.Now().UTC(),
+	}
+
+	if err := notnUser.Create(tx); err != nil {
+		panic(fmt.Sprintf("error creating new NotificationUser with UserID %s: %s",
+			user.ID, err.Error()))
+	}
+}
+
+func (n *Notification) CreateNotificationUsersForStewards(tx *pop.Connection) {
+	var stewards Users
+	stewards.FindStewards(tx)
+
+	for _, s := range stewards {
+		nu := NotificationUser{
+			NotificationID: n.ID,
+			UserID:         s.ID,
+			EmailAddress:   s.EmailOfChoice(),
+			SendAfterUTC:   time.Now().UTC(),
+		}
+
+		if err := nu.Create(tx); err != nil {
+			panic(fmt.Sprintf("error creating new NotificationUser for steward with UserID %s: %s",
+				s.ID, err.Error()))
+		}
+	}
+}
+
+func (n *Notification) CreateNotificationUsersForSignators(tx *pop.Connection) {
+	var signators Users
+	signators.FindSignators(tx)
+
+	for _, s := range signators {
+		nu := NotificationUser{
+			NotificationID: n.ID,
+			UserID:         s.ID,
+			EmailAddress:   s.EmailOfChoice(),
+			SendAfterUTC:   time.Now().UTC(),
+		}
+
+		if err := nu.Create(tx); err != nil {
+			panic(fmt.Sprintf("error creating new NotificationUser for steward with UserID %s: %s",
+				s.ID, err.Error()))
 		}
 	}
 }
