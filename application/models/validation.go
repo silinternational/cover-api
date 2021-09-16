@@ -203,6 +203,21 @@ func policyStructLevelValidation(sl validator.StructLevel) {
 	}
 }
 
+func itemStructLevelValidation(sl validator.StructLevel) {
+	item, ok := sl.Current().Interface().(Item)
+	if !ok {
+		panic("itemStructLevelValidation registered to a type other than Item")
+	}
+
+	if item.PolicyUserID.Valid && item.PolicyDependentID.Valid {
+		sl.ReportError(item.PolicyDependentID, "policy_dependent_id", "PolicyDependentID", "accountable_person_conflict", "")
+	}
+
+	if !item.PolicyUserID.Valid && !item.PolicyDependentID.Valid {
+		sl.ReportError(item.PolicyDependentID, "policy_dependent_id", "PolicyDependentID", "accountable_person_required", "")
+	}
+}
+
 func notificationStructLevelValidation(sl validator.StructLevel) {
 	notn, ok := sl.Current().Interface().(Notification)
 	if !ok {
@@ -215,7 +230,6 @@ func notificationStructLevelValidation(sl validator.StructLevel) {
 		if notn.Body == "" {
 			sl.ReportError(notn.Body, "body", "Body",
 				"body_required", "")
-
 		}
 		if notn.Subject == "" {
 			sl.ReportError(notn.Subject, "subject", "Subject",
