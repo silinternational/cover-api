@@ -51,7 +51,7 @@ func (m MessageData) addClaimData(claim models.Claim) {
 		m = map[string]interface{}{}
 	}
 
-	m["claimURL"] = fmt.Sprintf("%s/%s/%s", domain.Env.UIURL, domain.TypeClaim, claim.ID)
+	m["claimURL"] = fmt.Sprintf("%s/claims/%s", domain.Env.UIURL, claim.ID)
 	m["claimRefNum"] = claim.ReferenceNumber
 }
 
