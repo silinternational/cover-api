@@ -46,6 +46,15 @@ func newEmailMessageData() MessageData {
 	return m
 }
 
+func (m MessageData) addClaimData(claim models.Claim) {
+	if m == nil {
+		m = map[string]interface{}{}
+	}
+
+	m["claimURL"] = fmt.Sprintf("%s/%s/%s", domain.Env.UIURL, domain.TypeClaim, claim.ID)
+	m["claimRefNum"] = claim.ReferenceNumber
+}
+
 func (m MessageData) addItemData(item models.Item) {
 	if m == nil {
 		m = map[string]interface{}{}
@@ -53,7 +62,6 @@ func (m MessageData) addItemData(item models.Item) {
 
 	m["itemURL"] = fmt.Sprintf("%s/items/%s", domain.Env.UIURL, item.ID)
 	m["itemName"] = item.Name
-	return
 }
 
 func (m MessageData) renderHTML(template string) string {
