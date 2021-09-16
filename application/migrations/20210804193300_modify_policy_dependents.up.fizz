@@ -1,4 +1,0 @@
-add_column("policy_dependents", "relationship", "string", {})
-add_column("policy_dependents", "location", "string", {})
-
-rename_column("policy_dependents", "birth_year", "child_birth_year")

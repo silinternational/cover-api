@@ -339,6 +339,7 @@ func createItemFixtures(tx *pop.Connection, fixPolicies []*models.Policy, fixICa
 			CoverageStatus:    api.ItemCoverageStatusApproved,
 			CoverageStartDate: time.Now().UTC().Add(time.Hour * time.Duration((i+1)*-40)),
 			PurchaseDate:      time.Now().UTC().Add(time.Hour * time.Duration((i+1)*-48)),
+			RiskCategoryID:    models.RiskCategoryStationaryID(),
 		}
 
 		err := tx.Create(fixItems[i])

@@ -7,6 +7,7 @@ create_table("items") {
 	t.Column("description", "string", {"size": 2048})
 	t.Column("policy_id", "uuid", {})
 	t.Column("policy_dependent_id", "uuid", {"null": true})
+	t.Column("policy_user_id", "uuid", {"null": true})
 	t.Column("make", "string", {})
 	t.Column("model", "string", {})
 	t.Column("serial_number", "string", {})
@@ -14,10 +15,17 @@ create_table("items") {
 	t.Column("purchase_date", "timestamp", {})
 	t.Column("coverage_status", "string", {})
 	t.Column("coverage_start_date", "timestamp", {})
+	t.Column("legacy_id", "int", {"null": true})
+	t.Column("risk_category_id", "uuid", {})
+
 	t.Timestamps()
+
+	t.Index(["name", "policy_id"], {"unique": true})
+	t.Index("legacy_id", {"unique": true})
 
 	t.ForeignKey("category_id", {"item_categories": ["id"]}, {})
 	t.ForeignKey("policy_id", {"policies": ["id"]}, {"on_delete": "cascade"})
 	t.ForeignKey("policy_dependent_id", {"policy_dependents": ["id"]}, {"on_delete": "SET NULL"})
-	t.Index(["name", "policy_id"], {"unique": true})
+	t.ForeignKey("risk_category_id", {"risk_categories": ["id"]}, {"on_delete": "restrict"})
+	t.ForeignKey("policy_user_id", {"users": ["id"]}, {"on_delete": "set null"})
 }

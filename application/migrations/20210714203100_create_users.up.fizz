@@ -9,6 +9,7 @@ create_table("users") {
 	t.Column("location", "string", {"default": ""})
 	t.Column("staff_id", "string", {})
 	t.Column("photo_file_id", "uuid", {"null": true})
+	t.Column("app_role", "string", {})
 
 	t.Timestamps()
 

@@ -1,2 +1,0 @@
-
-drop_index("policies", "policies_household_id_idx")
