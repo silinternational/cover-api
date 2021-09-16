@@ -530,13 +530,16 @@ func uniqueClaimReferenceNumber(tx *pop.Connection) string {
 			domain.RandomString(ClaimReferenceNumberLength-3, "1234567890"))
 
 		count, err := tx.Where("reference_number = ?", ref).Count(Claim{})
+		if domain.IsOtherThanNoRows(err) {
+			panic("database error: " + err.Error())
+		}
 		if count == 0 && err == nil {
 			return ref
 		}
 
 		attempts++
 		if attempts > 100 {
-			panic(fmt.Errorf("failed to find unique claim reference number after 100 attempts"))
+			panic(fmt.Errorf("failed to find unique claim reference number after %d attempts", attempts-1))
 		}
 	}
 }
