@@ -55,7 +55,6 @@ const (
 	ClaimStatusApproved = ClaimStatus("Approved")
 	ClaimStatusPaid     = ClaimStatus("Paid")
 	ClaimStatusDenied   = ClaimStatus("Denied")
-	ClaimStatusInactive = ClaimStatus("Inactive")
 )
 
 // swagger:model

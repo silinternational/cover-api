@@ -39,7 +39,6 @@ var ValidClaimStatus = map[api.ClaimStatus]struct{}{
 	api.ClaimStatusApproved: {},
 	api.ClaimStatusPaid:     {},
 	api.ClaimStatusDenied:   {},
-	api.ClaimStatusInactive: {},
 }
 
 var ValidClaimIncidentTypePayoutOptions = map[api.ClaimIncidentType]map[api.PayoutOption]struct{}{
@@ -190,7 +189,6 @@ func claimStatusTransitions() map[api.ClaimStatus][]api.ClaimStatus {
 	return map[api.ClaimStatus][]api.ClaimStatus{
 		api.ClaimStatusDraft: {
 			api.ClaimStatusReview1,
-			api.ClaimStatusInactive,
 		},
 		api.ClaimStatusReview1: {
 			api.ClaimStatusRevision,
@@ -200,11 +198,9 @@ func claimStatusTransitions() map[api.ClaimStatus][]api.ClaimStatus {
 		},
 		api.ClaimStatusRevision: {
 			api.ClaimStatusReview1,
-			api.ClaimStatusInactive,
 		},
 		api.ClaimStatusReceipt: {
 			api.ClaimStatusReview2,
-			api.ClaimStatusInactive,
 		},
 		api.ClaimStatusReview2: {
 			api.ClaimStatusReceipt,
@@ -220,8 +216,7 @@ func claimStatusTransitions() map[api.ClaimStatus][]api.ClaimStatus {
 		api.ClaimStatusApproved: {
 			api.ClaimStatusPaid,
 		},
-		api.ClaimStatusDenied:   {},
-		api.ClaimStatusInactive: {},
+		api.ClaimStatusDenied: {},
 	}
 }
 
