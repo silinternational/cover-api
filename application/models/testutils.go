@@ -310,6 +310,7 @@ func CreatePolicyFixtures(tx *pop.Connection, config FixturesConfig) Fixtures {
 	for i := range policies {
 		policies[i].Type = api.PolicyTypeHousehold
 		policies[i].HouseholdID = nulls.NewString(randStr(10))
+		policies[i].Notes = randStr(20)
 		MustCreate(tx, &policies[i])
 
 		f := CreatePolicyUserFixtures(tx, policies[i], config.UsersPerPolicy)
