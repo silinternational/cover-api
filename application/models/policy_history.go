@@ -1,31 +1,27 @@
 package models
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/gobuffalo/nulls"
 	"github.com/gobuffalo/pop/v5"
 	"github.com/gobuffalo/validate/v3"
 	"github.com/gofrs/uuid"
-
-	"github.com/silinternational/cover-api/api"
 )
 
 type PolicyHistories []PolicyHistory
 
 type PolicyHistory struct {
-	ID          uuid.UUID  `db:"id"`
-	PolicyID    uuid.UUID  `db:"policy_id"`
-	UserID      uuid.UUID  `db:"user_id"`
-	Action      string     `db:"action"`
-	FieldName   string     `db:"field_name"`
-	ItemID      nulls.UUID `db:"item_id"`
-	Description string     `db:"description"`
-	OldValue    string     `db:"old_value"`
-	NewValue    string     `db:"new_value"`
-	CreatedAt   time.Time  `db:"created_at"`
-	UpdatedAt   time.Time  `db:"updated_at"`
+	ID        uuid.UUID  `db:"id"`
+	PolicyID  uuid.UUID  `db:"policy_id"`
+	UserID    uuid.UUID  `db:"user_id"`
+	Action    string     `db:"action"`
+	FieldName string     `db:"field_name"`
+	ItemID    nulls.UUID `db:"item_id"`
+	OldValue  string     `db:"old_value"`
+	NewValue  string     `db:"new_value"`
+	CreatedAt time.Time  `db:"created_at"`
+	UpdatedAt time.Time  `db:"updated_at"`
 }
 
 // Validate gets run every time you call a "pop.Validate*" (pop.ValidateAndSave, pop.ValidateAndCreate, pop.ValidateAndUpdate) method.
@@ -43,22 +39,4 @@ func (p *PolicyHistory) GetID() uuid.UUID {
 
 func (p *PolicyHistory) FindByID(tx *pop.Connection, id uuid.UUID) error {
 	return tx.Find(p, id)
-}
-
-func (p *PolicyHistory) GenerateDescription(tx *pop.Connection) PolicyHistory {
-	var user User
-	if err := user.FindByID(tx, p.UserID); err != nil {
-		panic("failed to find user by ID " + err.Error())
-	}
-
-	switch p.Action {
-	case api.HistoryActionCreate:
-		p.Description = fmt.Sprintf("record created by %s", user.Name())
-	case api.HistoryActionUpdate:
-		p.Description = fmt.Sprintf(`field %s changed by %s from "%s" to "%s"`,
-			p.FieldName, user.Name(), p.OldValue, p.NewValue)
-	default:
-		p.Description = p.Action
-	}
-	return *p
 }

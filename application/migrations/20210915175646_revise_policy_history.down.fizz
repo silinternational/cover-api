@@ -1,3 +1,4 @@
+add_column("policy_histories", "description", "string", {})
 
 <%# This will fail if any records have null in the item_id column. %>
 change_column("policy_histories", "item_id", "uuid", {})

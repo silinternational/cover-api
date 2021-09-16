@@ -310,7 +310,7 @@ func (p *Policy) Compare(old Policy) []FieldUpdate {
 }
 
 func (p *Policy) NewHistory(ctx context.Context, action string, fieldUpdate FieldUpdate) PolicyHistory {
-	ph := PolicyHistory{
+	return PolicyHistory{
 		Action:    action,
 		PolicyID:  p.ID,
 		UserID:    CurrentUser(ctx).ID,
@@ -318,5 +318,4 @@ func (p *Policy) NewHistory(ctx context.Context, action string, fieldUpdate Fiel
 		OldValue:  fmt.Sprintf("%s", fieldUpdate.OldValue),
 		NewValue:  fmt.Sprintf("%s", fieldUpdate.NewValue),
 	}
-	return ph.GenerateDescription(Tx(ctx))
 }
