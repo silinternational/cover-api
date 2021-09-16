@@ -1,1 +1,3 @@
-drop_column("policy_history", "field_name")
+
+drop_column("policy_histories", "field_name")
+rename_table("policy_histories", "policy_history")

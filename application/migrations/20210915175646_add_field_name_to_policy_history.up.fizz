@@ -1,1 +1,2 @@
-add_column("policy_history", "field_name", "string", {"default": ""})
+rename_table("policy_history", "policy_histories")
+add_column("policy_histories", "field_name", "string", {"default": ""})
