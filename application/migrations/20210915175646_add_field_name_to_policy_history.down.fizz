@@ -1,3 +1,6 @@
 
+<%# This will fail if any records have null in the item_id column. %>
+change_column("policy_histories", "item_id", "uuid", {})
+
 drop_column("policy_histories", "field_name")
 rename_table("policy_histories", "policy_history")
