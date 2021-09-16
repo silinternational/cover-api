@@ -8,7 +8,7 @@ import (
 	"github.com/silinternational/cover-api/models"
 )
 
-// swagger:operation PUT /claimitems/{id} ClaimItems ClaimItemsUpdate
+// swagger:operation PUT /claim-items/{id} ClaimItems ClaimItemsUpdate
 //
 // ClaimItemsUpdate
 //
