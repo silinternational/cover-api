@@ -54,7 +54,9 @@ func (ts *TestSuite) Test_claimReview1() {
 			testEmailer.DeleteSentMessages()
 			claimReview1(tt.event)
 
-			ts.Greater(testEmailer.GetNumberOfMessagesSent(), 0, "no email messages sent")
+			var nus models.NotificationUsers
+			ts.NoError(db.All(&nus), "error fetching NotificationUsers from db")
+			ts.Equal(1, len(nus), "incorrect number of NotificationUsers queued")
 		})
 	}
 }
@@ -87,7 +89,9 @@ func (ts *TestSuite) Test_claimRevision() {
 			testEmailer.DeleteSentMessages()
 			claimRevision(tt.event)
 
-			ts.Greater(testEmailer.GetNumberOfMessagesSent(), 0, "no email messages sent")
+			var nus models.NotificationUsers
+			ts.NoError(db.All(&nus), "error fetching NotificationUsers from db")
+			ts.Equal(2, len(nus), "incorrect number of NotificationUsers queued")
 		})
 	}
 }
@@ -120,7 +124,9 @@ func (ts *TestSuite) Test_claimPreapproved() {
 			testEmailer.DeleteSentMessages()
 			claimPreapproved(tt.event)
 
-			ts.Greater(testEmailer.GetNumberOfMessagesSent(), 0, "no email messages sent")
+			var nus models.NotificationUsers
+			ts.NoError(db.All(&nus), "error fetching NotificationUsers from db")
+			ts.Equal(2, len(nus), "incorrect number of NotificationUsers queued")
 		})
 	}
 }
@@ -153,7 +159,9 @@ func (ts *TestSuite) Test_claimReceipt() {
 			testEmailer.DeleteSentMessages()
 			claimReceipt(tt.event)
 
-			ts.Greater(testEmailer.GetNumberOfMessagesSent(), 0, "no email messages sent")
+			var nus models.NotificationUsers
+			ts.NoError(db.All(&nus), "error fetching NotificationUsers from db")
+			ts.Equal(2, len(nus), "incorrect number of NotificationUsers queued")
 		})
 	}
 }
@@ -186,7 +194,9 @@ func (ts *TestSuite) Test_claimReview2() {
 			testEmailer.DeleteSentMessages()
 			claimReview2(tt.event)
 
-			ts.Greater(testEmailer.GetNumberOfMessagesSent(), 0, "no email messages sent")
+			var nus models.NotificationUsers
+			ts.NoError(db.All(&nus), "error fetching NotificationUsers from db")
+			ts.Equal(1, len(nus), "incorrect number of NotificationUsers queued")
 		})
 	}
 }
@@ -219,7 +229,9 @@ func (ts *TestSuite) Test_claimReview3() {
 			testEmailer.DeleteSentMessages()
 			claimReview3(tt.event)
 
-			ts.Greater(testEmailer.GetNumberOfMessagesSent(), 0, "no email messages sent")
+			var nus models.NotificationUsers
+			ts.NoError(db.All(&nus), "error fetching NotificationUsers from db")
+			ts.Equal(1, len(nus), "incorrect number of NotificationUsers queued")
 		})
 	}
 }
@@ -252,7 +264,9 @@ func (ts *TestSuite) Test_claimApproved() {
 			testEmailer.DeleteSentMessages()
 			claimApproved(tt.event)
 
-			ts.Greater(testEmailer.GetNumberOfMessagesSent(), 0, "no email messages sent")
+			var nus models.NotificationUsers
+			ts.NoError(db.All(&nus), "error fetching NotificationUsers from db")
+			ts.Equal(2, len(nus), "incorrect number of NotificationUsers queued")
 		})
 	}
 }
@@ -285,7 +299,9 @@ func (ts *TestSuite) Test_claimDenied() {
 			testEmailer.DeleteSentMessages()
 			claimDenied(tt.event)
 
-			ts.Greater(testEmailer.GetNumberOfMessagesSent(), 0, "no email messages sent")
+			var nus models.NotificationUsers
+			ts.NoError(db.All(&nus), "error fetching NotificationUsers from db")
+			ts.Equal(2, len(nus), "incorrect number of NotificationUsers queued")
 		})
 	}
 }

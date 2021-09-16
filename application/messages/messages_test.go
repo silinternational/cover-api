@@ -45,7 +45,7 @@ type testData struct {
 // TODO when ready, delete the testData type and rename this as testData
 type testDataNew struct {
 	name                  string
-	wantToEmails          []string
+	wantToEmails          []interface{}
 	wantSubjectContains   string
 	wantInappTextContains string
 	wantBodyContains      []string
@@ -67,8 +67,9 @@ func validateEmails(ts *TestSuite, td testData, testEmailer notifications.DummyE
 
 func validateNotificationUsers(ts *TestSuite, tx *pop.Connection, td testDataNew) {
 	var notnUsers models.NotificationUsers
+
 	ts.NoError(tx.Where("email_address in (?)",
-		td.wantToEmails[0], td.wantToEmails[1]).All(&notnUsers))
+		td.wantToEmails...).All(&notnUsers))
 
 	ts.Equal(len(td.wantToEmails), len(notnUsers), "incorrect count of NotificationUsers")
 	for _, n := range notnUsers {

@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/gobuffalo/events"
+	"github.com/gobuffalo/pop/v5"
 
 	"github.com/silinternational/cover-api/api"
 	"github.com/silinternational/cover-api/messages"
@@ -20,7 +21,10 @@ func claimReview1(e events.Event) {
 		panic(fmt.Sprintf(wrongStatusMsg, "claimReview1", claim.Status))
 	}
 
-	messages.ClaimReview1Send(claim, getNotifiersFromEventPayload(e.Payload))
+	models.DB.Transaction(func(tx *pop.Connection) error {
+		messages.ClaimReview1QueueMessage(tx, claim)
+		return nil
+	})
 }
 
 func claimRevision(e events.Event) {
@@ -33,7 +37,10 @@ func claimRevision(e events.Event) {
 		panic(fmt.Sprintf(wrongStatusMsg, "claimRevision", claim.Status))
 	}
 
-	messages.ClaimRevisionSend(claim, getNotifiersFromEventPayload(e.Payload))
+	models.DB.Transaction(func(tx *pop.Connection) error {
+		messages.ClaimRevisionQueueMessage(tx, claim)
+		return nil
+	})
 }
 
 func claimPreapproved(e events.Event) {
@@ -46,7 +53,10 @@ func claimPreapproved(e events.Event) {
 		panic(fmt.Sprintf(wrongStatusMsg, "claimReceipt", claim.Status))
 	}
 
-	messages.ClaimPreapprovedSend(claim, getNotifiersFromEventPayload(e.Payload))
+	models.DB.Transaction(func(tx *pop.Connection) error {
+		messages.ClaimPreapprovedQueueMessage(tx, claim)
+		return nil
+	})
 }
 
 func claimReceipt(e events.Event) {
@@ -59,7 +69,10 @@ func claimReceipt(e events.Event) {
 		panic(fmt.Sprintf(wrongStatusMsg, "claimReceipt", claim.Status))
 	}
 
-	messages.ClaimReceiptSend(claim, getNotifiersFromEventPayload(e.Payload))
+	models.DB.Transaction(func(tx *pop.Connection) error {
+		messages.ClaimReceiptQueueMessage(tx, claim)
+		return nil
+	})
 }
 
 func claimReview2(e events.Event) {
@@ -72,7 +85,10 @@ func claimReview2(e events.Event) {
 		panic(fmt.Sprintf(wrongStatusMsg, "claimReview2", claim.Status))
 	}
 
-	messages.ClaimReview2Send(claim, getNotifiersFromEventPayload(e.Payload))
+	models.DB.Transaction(func(tx *pop.Connection) error {
+		messages.ClaimReview2QueueMessage(tx, claim)
+		return nil
+	})
 }
 
 func claimReview3(e events.Event) {
@@ -85,7 +101,10 @@ func claimReview3(e events.Event) {
 		panic(fmt.Sprintf(wrongStatusMsg, "claimReview3", claim.Status))
 	}
 
-	messages.ClaimReview3Send(claim, getNotifiersFromEventPayload(e.Payload))
+	models.DB.Transaction(func(tx *pop.Connection) error {
+		messages.ClaimReview3QueueMessage(tx, claim)
+		return nil
+	})
 }
 
 func claimApproved(e events.Event) {
@@ -94,7 +113,11 @@ func claimApproved(e events.Event) {
 		return
 	}
 
-	messages.ClaimApprovedSend(claim, getNotifiersFromEventPayload(e.Payload))
+	models.DB.Transaction(func(tx *pop.Connection) error {
+		messages.ClaimApprovedQueueMessage(tx, claim)
+		return nil
+	})
+
 	// TODO whatever else needs doing, e.g. trigger payments
 }
 
@@ -104,5 +127,9 @@ func claimDenied(e events.Event) {
 		return
 	}
 
-	messages.ClaimDeniedSend(claim, getNotifiersFromEventPayload(e.Payload))
+	models.DB.Transaction(func(tx *pop.Connection) error {
+		messages.ClaimDeniedQueueMessage(tx, claim)
+		return nil
+	})
+
 }

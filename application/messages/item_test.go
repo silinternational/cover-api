@@ -9,7 +9,7 @@ import (
 	"github.com/silinternational/cover-api/notifications"
 )
 
-func (ts *TestSuite) Test_ItemSubmittedSend() {
+func (ts *TestSuite) Test_ItemSubmittedQueueMessage() {
 	t := ts.T()
 	db := ts.DB
 
@@ -34,31 +34,47 @@ func (ts *TestSuite) Test_ItemSubmittedSend() {
 	testEmailer := notifications.DummyEmailService{}
 
 	tests := []struct {
-		data testData
+		data testDataNew
 		item models.Item
 	}{
 		{
-			data: testData{
-				name:         "just submitted, not approved",
-				wantToEmails: []string{steward0.EmailOfChoice(), steward1.EmailOfChoice()},
-				wantSubjectsContain: []string{
-					"just submitted a new policy item for approval",
-					"just submitted a new policy item for approval",
+			data: testDataNew{
+				name:                  "just submitted, not approved",
+				wantToEmails:          []interface{}{steward0.EmailOfChoice(), steward1.EmailOfChoice()},
+				wantSubjectContains:   "just submitted a new policy item for approval",
+				wantInappTextContains: "A new policy item is waiting for your approval",
+				wantBodyContains: []string{
+					domain.Env.UIURL,
+					submittedItem.Name,
+					"just submitted a policy item which needs your attention",
 				},
 			},
 			item: submittedItem,
 		},
 		{
-			data: testData{
-				name: "auto approved",
-				wantToEmails: []string{member0.EmailOfChoice(), member1.EmailOfChoice(),
-					steward0.EmailOfChoice(), steward1.EmailOfChoice(),
+			data: testDataNew{
+				name:                  "auto approved - members",
+				wantToEmails:          []interface{}{member0.EmailOfChoice(), member1.EmailOfChoice()},
+				wantSubjectContains:   "your new policy item has been approved",
+				wantInappTextContains: "your new policy item has been approved",
+				wantBodyContains: []string{
+					domain.Env.UIURL,
+					approvedItem.Name,
+					"Your newly submitted policy item has been approved.",
 				},
-				wantSubjectsContain: []string{
-					"your new policy item has been approved",
-					"your new policy item has been approved",
-					"a new policy item that has been auto approved",
-					"a new policy item that has been auto approved",
+			},
+			item: approvedItem,
+		},
+		{
+			data: testDataNew{
+				name:                  "auto approved - stewards",
+				wantToEmails:          []interface{}{steward0.EmailOfChoice(), steward1.EmailOfChoice()},
+				wantSubjectContains:   "a new policy item that has been auto approved",
+				wantInappTextContains: "Coverage on a new policy item was just auto approved",
+				wantBodyContains: []string{
+					domain.Env.UIURL,
+					approvedItem.Name,
+					"just submitted a policy item which has been auto approved.",
 				},
 			},
 			item: approvedItem,
@@ -68,8 +84,12 @@ func (ts *TestSuite) Test_ItemSubmittedSend() {
 	for _, tt := range tests {
 		t.Run(tt.data.name, func(t *testing.T) {
 			testEmailer.DeleteSentMessages()
-			ItemSubmittedSend(tt.item, []interface{}{&testEmailer})
-			validateEmails(ts, tt.data, testEmailer)
+			ItemSubmittedQueueMessage(db, tt.item)
+			validateNotificationUsers(ts, db, tt.data)
+
+			notfns := models.Notifications{}
+			ts.NoError(db.All(&notfns), "error fetching all NotificationUsers for destroy")
+			ts.NoError(db.Destroy(&notfns), "error destroying all NotificationUsers")
 		})
 	}
 }
@@ -95,7 +115,7 @@ func (ts *TestSuite) Test_ItemRevisionQueueMessage() {
 	tests := []testDataNew{
 		{
 			name:                  "revisions required",
-			wantToEmails:          []string{member0.EmailOfChoice(), member1.EmailOfChoice()},
+			wantToEmails:          []interface{}{member0.EmailOfChoice(), member1.EmailOfChoice()},
 			wantSubjectContains:   "changes have been requested on your new policy item",
 			wantInappTextContains: "changes have been requested on your new policy item",
 			wantBodyContains: []string{
@@ -118,7 +138,7 @@ func (ts *TestSuite) Test_ItemRevisionQueueMessage() {
 	}
 }
 
-func (ts *TestSuite) Test_ItemDeniedSend() {
+func (ts *TestSuite) Test_ItemDeniedQueueMessage() {
 	t := ts.T()
 	db := ts.DB
 
@@ -133,27 +153,27 @@ func (ts *TestSuite) Test_ItemDeniedSend() {
 	member0 := f.Policies[0].Members[0]
 	member1 := f.Policies[0].Members[1]
 
-	revisionItem := f.Items[0]
-	models.UpdateItemStatus(db, revisionItem, api.ItemCoverageStatusDenied)
+	deniedItem := f.Items[0]
+	models.UpdateItemStatus(db, deniedItem, api.ItemCoverageStatusDenied)
 
-	testEmailer := notifications.DummyEmailService{}
-
-	tests := []testData{
+	tests := []testDataNew{
 		{
-			name:         "coverage denied",
-			wantToEmails: []string{member0.EmailOfChoice(), member1.EmailOfChoice()},
-			wantSubjectsContain: []string{
-				"coverage on your new policy item has been denied",
-				"coverage on your new policy item has been denied",
+			name:                  "coverage denied",
+			wantToEmails:          []interface{}{member0.EmailOfChoice(), member1.EmailOfChoice()},
+			wantSubjectContains:   "coverage on your new policy item has been denied",
+			wantInappTextContains: "coverage on your new policy item has been denied",
+			wantBodyContains: []string{
+				domain.Env.UIURL,
+				deniedItem.Name,
+				"Coverage on your newly submitted policy item has been denied.",
 			},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			testEmailer.DeleteSentMessages()
-			ItemDeniedSend(revisionItem, []interface{}{&testEmailer})
-			validateEmails(ts, tt, testEmailer)
+			ItemDeniedQueueMessage(db, deniedItem)
+			validateNotificationUsers(ts, db, tt)
 		})
 	}
 }

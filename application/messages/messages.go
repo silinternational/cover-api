@@ -28,11 +28,11 @@ const (
 	MessageTemplateClaimApprovedMember    = "claim_approved_member"
 	MessageTemplateClaimDeniedMember      = "claim_denied_member"
 
-	MessageTemplateItemSubmittedSteward = "item_submitted_steward"
-	MessageTemplateItemApprovedMember   = "item_approved_member"
-	MessageTemplateItemAutoSteward      = "item_auto_approved_steward"
-	MessageTemplateItemRevisionMember   = "item_revision_member"
-	MessageTemplateItemDeniedMember     = "item_denied_member"
+	MessageTemplateItemPendingSteward = "item_pending_steward"
+	MessageTemplateItemApprovedMember = "item_approved_member"
+	MessageTemplateItemAutoSteward    = "item_auto_approved_steward"
+	MessageTemplateItemRevisionMember = "item_revision_member"
+	MessageTemplateItemDeniedMember   = "item_denied_member"
 )
 
 type MessageData render.Data
@@ -46,6 +46,15 @@ func newEmailMessageData() MessageData {
 	return m
 }
 
+func (m MessageData) addClaimData(claim models.Claim) {
+	if m == nil {
+		m = map[string]interface{}{}
+	}
+
+	m["claimURL"] = fmt.Sprintf("%s/%s/%s", domain.Env.UIURL, domain.TypeClaim, claim.ID)
+	m["claimRefNum"] = claim.ReferenceNumber
+}
+
 func (m MessageData) addItemData(item models.Item) {
 	if m == nil {
 		m = map[string]interface{}{}
@@ -53,7 +62,6 @@ func (m MessageData) addItemData(item models.Item) {
 
 	m["itemURL"] = fmt.Sprintf("%s/items/%s", domain.Env.UIURL, item.ID)
 	m["itemName"] = item.Name
-	return
 }
 
 func (m MessageData) renderHTML(template string) string {

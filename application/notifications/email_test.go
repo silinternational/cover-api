@@ -13,7 +13,7 @@ func (ts *TestSuite) TestSend() {
 		FromEmail: domain.EmailFromAddress(&nickname),
 		ToName:    "to name",
 		ToEmail:   "to@example.com",
-		Template:  "item_submitted_steward",
+		Template:  "item_pending_steward",
 		Data: map[string]interface{}{
 			"uiURL":        "example.com",
 			"appName":      "Our App",
