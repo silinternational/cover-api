@@ -212,10 +212,6 @@ func itemStructLevelValidation(sl validator.StructLevel) {
 	if item.PolicyUserID.Valid && item.PolicyDependentID.Valid {
 		sl.ReportError(item.PolicyDependentID, "policy_dependent_id", "PolicyDependentID", "accountable_person_conflict", "")
 	}
-
-	if !item.PolicyUserID.Valid && !item.PolicyDependentID.Valid {
-		sl.ReportError(item.PolicyDependentID, "policy_dependent_id", "PolicyDependentID", "accountable_person_required", "")
-	}
 }
 
 func notificationStructLevelValidation(sl validator.StructLevel) {
