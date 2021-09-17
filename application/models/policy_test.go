@@ -6,6 +6,7 @@ import (
 	"github.com/gobuffalo/nulls"
 
 	"github.com/silinternational/cover-api/api"
+	"github.com/silinternational/cover-api/domain"
 )
 
 func (ms *ModelSuite) TestPolicy_Validate() {
@@ -39,10 +40,95 @@ func (ms *ModelSuite) TestPolicy_Validate() {
 			errField: "Policy.HouseholdID",
 		},
 		{
-			name: "valid type",
+			name: "household type, should not have cost center",
+			Policy: Policy{
+				Type:        api.PolicyTypeHousehold,
+				HouseholdID: nulls.NewString("abc123"),
+				CostCenter:  "forbidden",
+			},
+			wantErr:  true,
+			errField: "Policy.CostCenter",
+		},
+		{
+			name: "household type, should not have account",
+			Policy: Policy{
+				Type:        api.PolicyTypeHousehold,
+				HouseholdID: nulls.NewString("abc123"),
+				Account:     "forbidden",
+			},
+			wantErr:  true,
+			errField: "Policy.Account",
+		},
+		{
+			name: "household type, should not have entity code id",
+			Policy: Policy{
+				Type:         api.PolicyTypeHousehold,
+				HouseholdID:  nulls.NewString("abc123"),
+				EntityCodeID: nulls.NewUUID(domain.GetUUID()),
+			},
+			wantErr:  true,
+			errField: "Policy.EntityCodeID",
+		},
+		{
+			name: "corporate type, should not have household id",
+			Policy: Policy{
+				Type:         api.PolicyTypeCorporate,
+				HouseholdID:  nulls.NewString("abc123"),
+				CostCenter:   "abc123",
+				Account:      "123456",
+				EntityCodeID: nulls.NewUUID(domain.GetUUID()),
+			},
+			wantErr:  true,
+			errField: "Policy.HouseholdID",
+		},
+		{
+			name: "corporate type, should have cost center",
+			Policy: Policy{
+				Type:         api.PolicyTypeCorporate,
+				Account:      "123456",
+				EntityCodeID: nulls.NewUUID(domain.GetUUID()),
+			},
+			wantErr:  true,
+			errField: "Policy.CostCenter",
+		},
+		{
+			name: "corporate type, should have account",
+			Policy: Policy{
+				Type:         api.PolicyTypeCorporate,
+				HouseholdID:  nulls.NewString("abc123"),
+				CostCenter:   "abc123",
+				EntityCodeID: nulls.NewUUID(domain.GetUUID()),
+			},
+			wantErr:  true,
+			errField: "Policy.Account",
+		},
+		{
+			name: "corporate type, should have entity code id",
+			Policy: Policy{
+				Type:        api.PolicyTypeCorporate,
+				HouseholdID: nulls.NewString("abc123"),
+				CostCenter:  "abc123",
+				Account:     "123456",
+			},
+			wantErr:  true,
+			errField: "Policy.HouseholdID",
+		},
+		{
+			name: "valid household type",
 			Policy: Policy{
 				Type:        api.PolicyTypeHousehold,
 				HouseholdID: nulls.NewString("123456"),
+			},
+			wantErr:  false,
+			errField: "",
+		},
+		{
+			name: "valid corporate type",
+			Policy: Policy{
+				Type:         api.PolicyTypeCorporate,
+				CostCenter:   "abc123",
+				Account:      "123456",
+				EntityCodeID: nulls.NewUUID(domain.GetUUID()),
 			},
 			wantErr:  false,
 			errField: "",

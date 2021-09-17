@@ -434,6 +434,10 @@ func DestroyAll() {
 	// delete all RiskCategories
 	var rCats RiskCategories
 	destroyTable(&rCats)
+
+	// delete all Notifications
+	var ns Notifications
+	destroyTable(&ns)
 }
 
 func destroyTable(i interface{}) {

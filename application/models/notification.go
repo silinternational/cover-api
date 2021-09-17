@@ -4,10 +4,13 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/gobuffalo/events"
 	"github.com/gobuffalo/nulls"
 	"github.com/gobuffalo/pop/v5"
 	"github.com/gobuffalo/validate/v3"
 	"github.com/gofrs/uuid"
+
+	"github.com/silinternational/cover-api/domain"
 )
 
 type Notifications []Notification
@@ -37,7 +40,15 @@ func (n *Notification) Validate(tx *pop.Connection) (*validate.Errors, error) {
 
 // Create stores the Notification data as a new record in the database.
 func (n *Notification) Create(tx *pop.Connection) error {
-	return create(tx, n)
+	if err := create(tx, n); err != nil {
+		return err
+	}
+
+	if err := events.Emit(events.Event{Kind: domain.EventApiNotificationCreated}); err != nil {
+		domain.ErrLogger.Printf("error emitting event %s ... %v", domain.EventApiNotificationCreated, err)
+	}
+
+	return nil
 }
 
 // Update writes the Notification data to an existing database record.

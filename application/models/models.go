@@ -87,6 +87,7 @@ func init() {
 	mValidate.RegisterStructValidation(claimItemStructLevelValidation, ClaimItem{})
 	mValidate.RegisterStructValidation(policyStructLevelValidation, Policy{})
 	mValidate.RegisterStructValidation(itemStructLevelValidation, Item{})
+	mValidate.RegisterStructValidation(notificationStructLevelValidation, Notification{})
 }
 
 func getRandomToken() (string, error) {

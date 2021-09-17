@@ -69,11 +69,17 @@ func (u *User) Validate(tx *pop.Connection) (*validate.Errors, error) {
 
 // Create stores the User data as a new record in the database.
 func (u *User) Create(tx *pop.Connection) error {
+	if u.AppRole == "" {
+		u.AppRole = AppRoleUser
+	}
 	return create(tx, u)
 }
 
 // Update writes the User data to an existing database record.
 func (u *User) Update(tx *pop.Connection) error {
+	if u.AppRole == "" {
+		u.AppRole = AppRoleUser
+	}
 	return update(tx, u)
 }
 
@@ -131,6 +137,10 @@ func (u *User) FindOrCreateFromAuthUser(tx *pop.Connection, authUser *auth.User)
 			}
 			isNewUser = true
 		}
+	}
+
+	if u.AppRole == "" {
+		u.AppRole = AppRoleUser
 	}
 
 	// update attributes from authUser
@@ -255,7 +265,6 @@ func (u *User) CreateInitialPolicy(tx *pop.Connection) error {
 
 	policy := Policy{
 		Type:        api.PolicyTypeHousehold,
-		CostCenter:  fmt.Sprintf("CC-%s-%s", u.FirstName, u.LastName),
 		HouseholdID: nulls.NewString(fmt.Sprintf("HHID-%s-%s", u.FirstName, u.LastName)),
 	}
 

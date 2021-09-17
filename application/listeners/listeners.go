@@ -7,28 +7,38 @@ import (
 
 	"github.com/gobuffalo/events"
 	"github.com/gobuffalo/nulls"
+	"github.com/gobuffalo/pop/v5"
 	"github.com/gofrs/uuid"
 
 	"github.com/silinternational/cover-api/domain"
+	"github.com/silinternational/cover-api/messages"
 	"github.com/silinternational/cover-api/models"
 )
 
 const EventPayloadNotifier = "notifier"
 
 var eventTypes = map[string]func(event events.Event){
-	domain.EventApiUserCreated:      createUserPolicy,
-	domain.EventApiItemSubmitted:    itemSubmitted,
-	domain.EventApiItemRevision:     itemRevision,
-	domain.EventApiItemApproved:     itemApproved,
-	domain.EventApiItemDenied:       itemDenied,
-	domain.EventApiClaimReview1:     claimReview1,
-	domain.EventApiClaimRevision:    claimRevision,
-	domain.EventApiClaimPreapproved: claimPreapproved,
-	domain.EventApiClaimReceipt:     claimReceipt,
-	domain.EventApiClaimReview2:     claimReview2,
-	domain.EventApiClaimReview3:     claimReview3,
-	domain.EventApiClaimApproved:    claimApproved,
-	domain.EventApiClaimDenied:      claimDenied,
+	domain.EventApiUserCreated:         createUserPolicy,
+	domain.EventApiItemSubmitted:       itemSubmitted,
+	domain.EventApiItemRevision:        itemRevision,
+	domain.EventApiItemApproved:        itemApproved,
+	domain.EventApiItemDenied:          itemDenied,
+	domain.EventApiClaimReview1:        claimReview1,
+	domain.EventApiClaimRevision:       claimRevision,
+	domain.EventApiClaimPreapproved:    claimPreapproved,
+	domain.EventApiClaimReceipt:        claimReceipt,
+	domain.EventApiClaimReview2:        claimReview2,
+	domain.EventApiClaimReview3:        claimReview3,
+	domain.EventApiClaimApproved:       claimApproved,
+	domain.EventApiClaimDenied:         claimDenied,
+	domain.EventApiNotificationCreated: notificationCreated,
+}
+
+func notificationCreated(e events.Event) {
+	models.DB.Transaction(func(tx *pop.Connection) error {
+		messages.SendQueuedNotifications(tx)
+		return nil
+	})
 }
 
 func listener(e events.Event) {
@@ -107,15 +117,4 @@ func findObject(payload events.Payload, object interface{}, listenerName string)
 // getDelayDuration is a helper function to calculate delay in milliseconds before processing event
 func getDelayDuration(multiplier int) time.Duration {
 	return time.Duration(domain.Env.ListenerDelayMilliseconds) * time.Millisecond * time.Duration(multiplier)
-}
-
-// This is meant to allow tests to use the dummy EmailService
-func getNotifiersFromEventPayload(p events.Payload) []interface{} {
-	var notifiers []interface{}
-	notifier, ok := p[EventPayloadNotifier]
-
-	if ok {
-		notifiers = []interface{}{notifier}
-	}
-	return notifiers
 }

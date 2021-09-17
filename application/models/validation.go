@@ -194,12 +194,32 @@ func policyStructLevelValidation(sl validator.StructLevel) {
 		panic("policyStructLevelValidation registered to a type other than Policy")
 	}
 
-	if policy.Type == api.PolicyTypeHousehold && !policy.HouseholdID.Valid {
-		sl.ReportError(policy.HouseholdID, "household_id", "HouseholdID", "household_id_required", "")
-	}
-
-	if policy.Type == api.PolicyTypeCorporate && !policy.EntityCodeID.Valid {
-		sl.ReportError(policy.EntityCodeID, "entity_code_id", "EntityCodeID", "entity_code_id_required", "")
+	if policy.Type == api.PolicyTypeHousehold {
+		if !policy.HouseholdID.Valid {
+			sl.ReportError(policy.HouseholdID, "household_id", "HouseholdID", "household_id_required", "")
+		}
+		if policy.EntityCodeID.Valid {
+			sl.ReportError(policy.EntityCodeID, "entity_code_id", "EntityCodeID", "entity_code_id_not_permitted", "")
+		}
+		if policy.CostCenter != "" {
+			sl.ReportError(policy.CostCenter, "cost_center", "CostCenter", "cost_center_not_permitted", "")
+		}
+		if policy.Account != "" {
+			sl.ReportError(policy.Account, "account", "Account", "account_not_permitted", "")
+		}
+	} else if policy.Type == api.PolicyTypeCorporate {
+		if !policy.EntityCodeID.Valid {
+			sl.ReportError(policy.EntityCodeID, "entity_code_id", "EntityCodeID", "entity_code_id_required", "")
+		}
+		if policy.CostCenter == "" {
+			sl.ReportError(policy.CostCenter, "cost_center", "CostCenter", "cost_center_required", "")
+		}
+		if policy.Account == "" {
+			sl.ReportError(policy.Account, "account", "Account", "account_not_required", "")
+		}
+		if policy.HouseholdID.Valid {
+			sl.ReportError(policy.HouseholdID, "household_id", "HouseholdID", "household_id_not_permitted", "")
+		}
 	}
 }
 
