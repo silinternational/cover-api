@@ -108,7 +108,7 @@ type Claim struct {
 	PaymentDate nulls.Time `json:"payment_date,omitempty"`
 
 	// total payout (0.01 USD)
-	TotalPayout int `json:"total_payout,omitempty"`
+	TotalPayout Currency `json:"total_payout,omitempty"`
 
 	// message from a reviewer detailing the revisions needed
 	StatusReason string `json:"status_reason"`

@@ -539,7 +539,7 @@ func importClaims(tx *pop.Connection, policyID uuid.UUID, claims []LegacyClaim) 
 			ReviewDate:          nulls.NewTime(parseStringTime(c.ReviewDate, claimDesc+"ReviewDate")),
 			ReviewerID:          getAdminUserUUID(strconv.Itoa(c.ReviewerId), claimDesc+"ReviewerID"),
 			PaymentDate:         nulls.NewTime(parseStringTime(c.PaymentDate, claimDesc+"PaymentDate")),
-			TotalPayout:         fixedPointStringToInt(c.TotalPayout, "Claim.TotalPayout"),
+			TotalPayout:         fixedPointStringToCurrency(c.TotalPayout, "Claim.TotalPayout"),
 			CreatedAt:           parseStringTime(c.CreatedAt, claimDesc+"CreatedAt"),
 		}
 		if err := newClaim.Create(tx); err != nil {
@@ -810,6 +810,10 @@ func stringToInt(s, msg string) int {
 		log.Fatalf("%s '%s' is not an int", msg, s)
 	}
 	return n
+}
+
+func fixedPointStringToCurrency(s, desc string) api.Currency {
+	return api.Currency(fixedPointStringToInt(s, desc))
 }
 
 func fixedPointStringToInt(s, desc string) int {
