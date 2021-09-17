@@ -48,6 +48,8 @@ const (
 	PartnersUsersFilename = "./partners-users.csv"
 )
 
+var trim = strings.TrimSpace
+
 // userEmailStaffIDMap is a map of email address to staff ID
 var userEmailStaffIDMap = map[string]string{}
 
@@ -193,13 +195,15 @@ func importAdminUsers(tx *pop.Connection, in []LegacyUser) {
 		userID := stringToInt(user.Id, "User ID")
 		userDesc := fmt.Sprintf("User[%d].", userID)
 
+		user.StaffId = trim(user.StaffId)
+
 		newUser := models.User{
-			Email:         user.Email,
-			EmailOverride: user.EmailOverride,
-			FirstName:     user.FirstName,
-			LastName:      user.LastName,
+			Email:         trim(user.Email),
+			EmailOverride: trim(user.EmailOverride),
+			FirstName:     trim(user.FirstName),
+			LastName:      trim(user.LastName),
 			LastLoginUTC:  parseStringTime(user.LastLoginUtc, userDesc+"LastLoginUTC"),
-			Location:      user.Location,
+			Location:      trim(user.Location),
 			StaffID:       user.StaffId,
 			AppRole:       models.AppRoleAdmin,
 			CreatedAt:     parseStringTime(user.CreatedAt, userDesc+"CreatedAt"),
@@ -219,19 +223,19 @@ func importAdminUsers(tx *pop.Connection, in []LegacyUser) {
 }
 
 func importItemCategories(tx *pop.Connection, in []LegacyItemCategory) {
-	for _, i := range in {
-		categoryID := stringToInt(i.Id, "ItemCategory ID")
+	for _, category := range in {
+		categoryID := stringToInt(category.Id, "ItemCategory ID")
 
 		desc := fmt.Sprintf("ItemCategory[%d].", categoryID)
-		riskCategoryUUID := getRiskCategoryUUID(i.RiskCategoryId)
+		riskCategoryUUID := getRiskCategoryUUID(category.RiskCategoryId)
 		newItemCategory := models.ItemCategory{
 			RiskCategoryID: riskCategoryUUID,
-			Name:           i.Name,
-			HelpText:       i.HelpText,
-			Status:         getItemCategoryStatus(i),
-			AutoApproveMax: fixedPointStringToInt(i.AutoApproveMax, "ItemCategory.AutoApproveMax"),
+			Name:           trim(category.Name),
+			HelpText:       trim(category.HelpText),
+			Status:         getItemCategoryStatus(category),
+			AutoApproveMax: fixedPointStringToInt(category.AutoApproveMax, "ItemCategory.AutoApproveMax"),
 			LegacyID:       nulls.NewInt(categoryID),
-			CreatedAt:      parseStringTime(i.CreatedAt, desc+"CreatedAt"),
+			CreatedAt:      parseStringTime(category.CreatedAt, desc+"CreatedAt"),
 		}
 
 		if err := newItemCategory.Create(tx); err != nil {
@@ -242,7 +246,7 @@ func importItemCategories(tx *pop.Connection, in []LegacyItemCategory) {
 		riskCategoryMap[categoryID] = riskCategoryUUID
 
 		if err := tx.RawQuery("update item_categories set updated_at = ? where id = ?",
-			parseStringTime(i.UpdatedAt, desc+"UpdatedAt"), newItemCategory.ID).Exec(); err != nil {
+			parseStringTime(category.UpdatedAt, desc+"UpdatedAt"), newItemCategory.ID).Exec(); err != nil {
 			log.Fatalf("failed to set updated_at on item_categories, %s", err)
 		}
 	}
@@ -287,6 +291,8 @@ func importPolicies(tx *pop.Connection, in []LegacyPolicy) {
 			continue
 		}
 		p := in[i]
+		p.HouseholdId = trim(p.HouseholdId)
+		p.Notes = trim(p.Notes)
 
 		var policyUUID uuid.UUID
 
@@ -307,7 +313,7 @@ func importPolicies(tx *pop.Connection, in []LegacyPolicy) {
 			newPolicy := models.Policy{
 				Type:         getPolicyType(p),
 				HouseholdID:  householdID,
-				CostCenter:   p.CostCenter,
+				CostCenter:   trim(p.CostCenter),
 				Account:      strconv.Itoa(p.Account),
 				EntityCodeID: getEntityCodeID(tx, p.EntityCode),
 				Notes:        p.Notes,
@@ -362,6 +368,7 @@ func getEntityCodeID(tx *pop.Connection, code nulls.String) nulls.UUID {
 }
 
 func importEntityCode(tx *pop.Connection, code string) uuid.UUID {
+	code = trim(code)
 	newEntityCode := models.EntityCode{
 		Code: code,
 		Name: code,
@@ -687,16 +694,16 @@ func importItems(tx *pop.Connection, policyID uuid.UUID, items []LegacyItem) {
 
 		newItem := models.Item{
 			// TODO: name/policy needs to be unique
-			Name:              item.Name + domain.GetUUID().String(),
+			Name:              trim(item.Name) + domain.GetUUID().String(),
 			CategoryID:        itemCategoryIDMap[item.CategoryId],
 			RiskCategoryID:    riskCategoryMap[item.CategoryId],
 			InStorage:         false,
-			Country:           item.Country,
-			Description:       item.Description,
+			Country:           trim(item.Country),
+			Description:       trim(item.Description),
 			PolicyID:          policyID,
-			Make:              item.Make,
-			Model:             item.Model,
-			SerialNumber:      item.SerialNumber,
+			Make:              trim(item.Make),
+			Model:             trim(item.Model),
+			SerialNumber:      trim(item.SerialNumber),
 			CoverageAmount:    fixedPointStringToInt(item.CoverageAmount, itemDesc+"CoverageAmount"),
 			PurchaseDate:      parseStringTime(item.PurchaseDate, itemDesc+"PurchaseDate"),
 			CoverageStatus:    getCoverageStatus(item),
