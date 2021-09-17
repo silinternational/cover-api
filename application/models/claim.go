@@ -338,7 +338,7 @@ func (c *Claim) RequestRevision(tx *pop.Connection, message string) error {
 // RequestReceipt changes the status of the claim to Receipt
 //   provided that the current status is Review1.
 // TODO consider how to communicate what kind of receipt is needed
-func (c *Claim) RequestReceipt(tx *pop.Connection) error {
+func (c *Claim) RequestReceipt(tx *pop.Connection, reason string) error {
 	oldStatus := c.Status
 	var eventType string
 
@@ -354,6 +354,7 @@ func (c *Claim) RequestReceipt(tx *pop.Connection) error {
 	}
 
 	c.Status = api.ClaimStatusReceipt
+	c.StatusReason = reason
 
 	if err := c.Update(tx, oldStatus); err != nil {
 		return err

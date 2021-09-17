@@ -305,7 +305,7 @@ func (ms *ModelSuite) TestClaim_Preapprove() {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := tt.claim.RequestReceipt(ms.DB)
+			got := tt.claim.RequestReceipt(ms.DB, "")
 
 			if tt.wantErrContains != "" {
 				ms.Error(got, " did not return expected error")

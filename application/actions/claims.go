@@ -251,7 +251,7 @@ func claimsPreapprove(c buffalo.Context) error {
 	tx := models.Tx(c)
 	claim := getReferencedClaimFromCtx(c)
 
-	if err := claim.RequestReceipt(tx); err != nil {
+	if err := claim.RequestReceipt(tx, ""); err != nil {
 		return reportError(c, err)
 	}
 
@@ -272,6 +272,12 @@ func claimsPreapprove(c buffalo.Context) error {
 //     in: path
 //     required: true
 //     description: claim ID
+//   - name: claim receipt reason input
+//     in: body
+//     description: claim receipt reason input object
+//     required: true
+//     schema:
+//       "$ref": "#/definitions/ClaimStatusInput"
 // responses:
 //   '200':
 //     description: Claim in focus
@@ -281,7 +287,12 @@ func claimsRequestReceipt(c buffalo.Context) error {
 	tx := models.Tx(c)
 	claim := getReferencedClaimFromCtx(c)
 
-	if err := claim.RequestReceipt(tx); err != nil {
+	var input api.ClaimStatusInput
+	if err := StrictBind(c, &input); err != nil {
+		return reportError(c, err)
+	}
+
+	if err := claim.RequestReceipt(tx, input.StatusReason); err != nil {
 		return reportError(c, err)
 	}
 
