@@ -195,7 +195,7 @@ func itemsRevision(c buffalo.Context) error {
 	tx := models.Tx(c)
 	item := getReferencedItemFromCtx(c)
 
-	var input api.ClaimStatusInput
+	var input api.ItemStatusInput
 	if err := StrictBind(c, &input); err != nil {
 		return reportError(c, err)
 	}
@@ -264,7 +264,7 @@ func itemsDeny(c buffalo.Context) error {
 	tx := models.Tx(c)
 	item := getReferencedItemFromCtx(c)
 
-	var input api.ClaimStatusInput
+	var input api.ItemStatusInput
 	if err := StrictBind(c, &input); err != nil {
 		return reportError(c, err)
 	}
