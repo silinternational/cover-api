@@ -153,5 +153,5 @@ func MergeExtras(extras []map[string]interface{}) map[string]interface{} {
 type Currency int
 
 func (c Currency) String() string {
-	return fmt.Sprintf("%d.%d", c/domain.CurrencyFactor, c%domain.CurrencyFactor)
+	return fmt.Sprintf("%0.2f", float32(c)/domain.CurrencyFactor)
 }
