@@ -153,7 +153,8 @@ func (ms *ModelSuite) TestClaim_SubmitForApproval() {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := tt.claim.SubmitForApproval(ms.DB)
+			ctx := CreateTestContext(fixtures.Users[0])
+			got := tt.claim.SubmitForApproval(ctx)
 
 			if tt.wantErrContains != "" {
 				ms.Error(got, " did not return expected error")
@@ -232,7 +233,8 @@ func (ms *ModelSuite) TestClaim_RequestRevision() {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			const message = "change all the things"
-			got := tt.claim.RequestRevision(ms.DB, message)
+			ctx := CreateTestContext(fixtures.Users[0])
+			got := tt.claim.RequestRevision(ctx, message)
 
 			if tt.wantErrContains != "" {
 				ms.Error(got, " did not return expected error")
@@ -305,7 +307,8 @@ func (ms *ModelSuite) TestClaim_Preapprove() {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := tt.claim.RequestReceipt(ms.DB)
+			ctx := CreateTestContext(fixtures.Users[0])
+			got := tt.claim.RequestReceipt(ctx)
 
 			if tt.wantErrContains != "" {
 				ms.Error(got, " did not return expected error")
@@ -398,7 +401,8 @@ func (ms *ModelSuite) TestClaim_Approve() {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := tt.claim.Approve(ms.DB, tt.actor)
+			ctx := CreateTestContext(tt.actor)
+			got := tt.claim.Approve(ctx)
 
 			if tt.wantErrContains != "" {
 				ms.Error(got, " did not return expected error")
@@ -495,7 +499,8 @@ func (ms *ModelSuite) TestClaim_Deny() {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			const message = "change all the things"
-			got := tt.claim.Deny(ms.DB, tt.actor, message)
+			ctx := CreateTestContext(tt.actor)
+			got := tt.claim.Deny(ctx, message)
 
 			if tt.wantErrContains != "" {
 				ms.Error(got, " did not return expected error")
