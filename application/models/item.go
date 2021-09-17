@@ -48,6 +48,7 @@ type Item struct {
 	PurchaseDate      time.Time              `db:"purchase_date"`
 	CoverageStatus    api.ItemCoverageStatus `db:"coverage_status" validate:"itemCoverageStatus"`
 	CoverageStartDate time.Time              `db:"coverage_start_date"`
+	StatusReason      string                 `db:"status_reason" validate:"required_if=CoverageStatus Revision,required_if=CoverageStatus Denied"`
 	LegacyID          nulls.Int              `db:"legacy_id"`
 	CreatedAt         time.Time              `db:"created_at"`
 	UpdatedAt         time.Time              `db:"updated_at"`
@@ -307,9 +308,10 @@ func (i *Item) canAutoApprove(tx *pop.Connection) bool {
 
 // Revision takes the item from Pending coverage status to Revision.
 // It assumes that the item's current status has already been validated.
-func (i *Item) Revision(tx *pop.Connection) error {
+func (i *Item) Revision(tx *pop.Connection, reason string) error {
 	oldStatus := i.CoverageStatus
 	i.CoverageStatus = api.ItemCoverageStatusRevision
+	i.StatusReason = reason
 	if err := i.Update(tx, oldStatus); err != nil {
 		return err
 	}
@@ -345,9 +347,10 @@ func (i *Item) Approve(tx *pop.Connection) error {
 
 // Deny takes the item from Pending coverage status to Denied.
 // It assumes that the item's current status has already been validated.
-func (i *Item) Deny(tx *pop.Connection) error {
+func (i *Item) Deny(tx *pop.Connection, reason string) error {
 	oldStatus := i.CoverageStatus
 	i.CoverageStatus = api.ItemCoverageStatusDenied
+	i.StatusReason = reason
 	if err := i.Update(tx, oldStatus); err != nil {
 		return err
 	}

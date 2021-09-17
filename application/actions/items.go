@@ -129,6 +129,7 @@ func itemsUpdate(c buffalo.Context) error {
 		return reportError(c, err)
 	}
 	newItem.ID = item.ID
+	newItem.StatusReason = item.StatusReason
 
 	if err := newItem.Update(tx, item.CoverageStatus); err != nil {
 		return reportError(c, err)
@@ -179,6 +180,11 @@ func itemsSubmit(c buffalo.Context) error {
 //     in: path
 //     required: true
 //     description: item ID
+//     in: body
+//     description: item denial input object
+//     required: true
+//     schema:
+//       "$ref": "#/definitions/ItemStatusInput"
 // responses:
 //   '200':
 //     description: Policy Item
@@ -188,7 +194,12 @@ func itemsRevision(c buffalo.Context) error {
 	tx := models.Tx(c)
 	item := getReferencedItemFromCtx(c)
 
-	if err := item.Revision(tx); err != nil {
+	var input api.ClaimStatusInput
+	if err := StrictBind(c, &input); err != nil {
+		return reportError(c, err)
+	}
+
+	if err := item.Revision(tx, input.StatusReason); err != nil {
 		return reportError(c, err)
 	}
 
@@ -237,6 +248,12 @@ func itemsApprove(c buffalo.Context) error {
 //     in: path
 //     required: true
 //     description: item ID
+//   - name: item denial input
+//     in: body
+//     description: item denial input object
+//     required: true
+//     schema:
+//       "$ref": "#/definitions/ItemStatusInput"
 // responses:
 //   '200':
 //     description: denied Item
@@ -246,7 +263,12 @@ func itemsDeny(c buffalo.Context) error {
 	tx := models.Tx(c)
 	item := getReferencedItemFromCtx(c)
 
-	if err := item.Deny(tx); err != nil {
+	var input api.ClaimStatusInput
+	if err := StrictBind(c, &input); err != nil {
+		return reportError(c, err)
+	}
+
+	if err := item.Deny(tx, input.StatusReason); err != nil {
 		return reportError(c, err)
 	}
 
