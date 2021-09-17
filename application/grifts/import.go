@@ -33,6 +33,7 @@ import (
 TODO:
 	1. Import other tables (e.g. Journal Entries)
 	2. Make name/policy unique
+	3. Strip extra whitespace (household ID, ?)
 */
 
 const (
@@ -314,6 +315,7 @@ func importPolicies(tx *pop.Connection, in []LegacyPolicy) {
 			nDuplicatePolicies++
 			householdsWithMultiplePolicies[p.HouseholdId] = struct{}{}
 			appendNotesToPolicy(tx, policyUUID, p.Notes)
+			// TODO: are there other fields that should be examined to ensure we do not lose data?
 		} else {
 			policyID := stringToInt(p.Id, "Policy ID")
 			householdID := nulls.String{}

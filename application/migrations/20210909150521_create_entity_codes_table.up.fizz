@@ -10,6 +10,3 @@ create_table("entity_codes") {
 drop_column("policies", "entity_code")
 add_column("policies", "entity_code_id", "uuid", {"null": true})
 add_foreign_key("policies", "entity_code_id", {"entity_codes": ["id"]}, {"on_delete": "restrict"})
-
-<%# this could be moved to the appropriate migration after it's deployed %>
-add_foreign_key("items", "risk_category_id", {"risk_categories": ["id"]}, {"on_delete": "restrict"})

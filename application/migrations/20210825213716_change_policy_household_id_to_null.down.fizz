@@ -1,1 +1,0 @@
-change_column("policies", "household_id", "string", {})
