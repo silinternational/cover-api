@@ -129,7 +129,7 @@ func itemsUpdate(c buffalo.Context) error {
 		return reportError(c, err)
 	}
 	newItem.ID = item.ID
-	newItem.StatusReason = item.StatusReason
+	newItem.StatusReason = item.StatusReason // don't let this change through an update
 
 	if err := newItem.Update(tx, item.CoverageStatus); err != nil {
 		return reportError(c, err)
@@ -180,8 +180,9 @@ func itemsSubmit(c buffalo.Context) error {
 //     in: path
 //     required: true
 //     description: item ID
+//   - name: item revision input
 //     in: body
-//     description: item denial input object
+//     description: item revision input object
 //     required: true
 //     schema:
 //       "$ref": "#/definitions/ItemStatusInput"
