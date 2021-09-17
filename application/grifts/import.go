@@ -80,6 +80,9 @@ var policyUserMap = map[string]struct{}{}
 // policyNotes is used for accumulating policy notes as policies are merged
 var policyNotes = map[uuid.UUID]string{}
 
+// activeEntities is used to track which entity codes are used on active policies
+var activeEntities = map[uuid.UUID]struct{}{}
+
 // time used in place of missing time values
 var emptyTime time.Time
 
@@ -134,6 +137,11 @@ var _ = grift.Namespace("db", func() {
 	})
 })
 
+func init() {
+	emptyTime, _ = time.Parse(TimeFormat, EmptyTime)
+	pop.Debug = false // Disable the Pop log messages
+}
+
 func importIdpUsers() {
 	nSilUsers := importIdpUsersFromFile("SIL")
 	fmt.Printf("SIL users: %d\n", nSilUsers)
@@ -183,11 +191,6 @@ func importIdpUsersFromFile(idpName string) int {
 		}
 	}
 	return n
-}
-
-func init() {
-	emptyTime, _ = time.Parse(TimeFormat, EmptyTime)
-	pop.Debug = false // Disable the Pop log messages
 }
 
 func importAdminUsers(tx *pop.Connection, in []LegacyUser) {
@@ -296,6 +299,8 @@ func importPolicies(tx *pop.Connection, in []LegacyPolicy) {
 
 		var policyUUID uuid.UUID
 
+		entityCodeID := getEntityCodeID(tx, p.EntityCode)
+
 		if id, ok := householdPolicyMap[p.HouseholdId]; ok && p.Type == "household" {
 			policyUUID = id
 			nDuplicatePolicies++
@@ -315,7 +320,7 @@ func importPolicies(tx *pop.Connection, in []LegacyPolicy) {
 				HouseholdID:  householdID,
 				CostCenter:   trim(p.CostCenter),
 				Account:      strconv.Itoa(p.Account),
-				EntityCodeID: getEntityCodeID(tx, p.EntityCode),
+				EntityCodeID: entityCodeID,
 				Notes:        p.Notes,
 				LegacyID:     nulls.NewInt(policyID),
 				CreatedAt:    parseStringTime(p.CreatedAt, desc+"CreatedAt"),
@@ -338,14 +343,19 @@ func importPolicies(tx *pop.Connection, in []LegacyPolicy) {
 			nPolicies++
 		}
 
-		importItems(tx, policyUUID, p.Items)
+		policyIsActive := importItems(tx, policyUUID, p.Items)
 		nItems += len(p.Items)
 
 		nClaimItems += importClaims(tx, policyUUID, p.Claims)
 		nClaims += len(p.Claims)
 
 		nPolicyUsers += importPolicyUsers(tx, p, policyUUID)
+
+		if policyIsActive && entityCodeID.Valid {
+			activeEntities[entityCodeID.UUID] = struct{}{}
+		}
 	}
+	setEntitiesActive(tx)
 
 	fmt.Println("imported: ")
 	fmt.Printf("  Policies: %d, Duplicate Household Policies: %d, Households with multiple Policies: %d\n",
@@ -354,8 +364,18 @@ func importPolicies(tx *pop.Connection, in []LegacyPolicy) {
 	fmt.Printf("  Items: %d\n", nItems)
 	fmt.Printf("  ClaimItems: %d\n", nClaimItems)
 	fmt.Printf("  PolicyUsers: %d w/staffID: %d\n", nPolicyUsers, nPolicyUsersWithStaffID)
-	fmt.Printf("  Entity Codes: %d\n", len(entityCodesMap))
+	fmt.Printf("  Entity Codes: %d total, %d active\n", len(entityCodesMap), len(activeEntities))
 	fmt.Println("")
+}
+
+func setEntitiesActive(tx *pop.Connection) {
+	e := models.EntityCode{Active: true}
+	for id := range activeEntities {
+		e.ID = id
+		if err := tx.UpdateColumns(&e, "active"); err != nil {
+			panic("error setting entity code active " + err.Error())
+		}
+	}
 }
 
 func getEntityCodeID(tx *pop.Connection, code nulls.String) nulls.UUID {
@@ -373,8 +393,9 @@ func getEntityCodeID(tx *pop.Connection, code nulls.String) nulls.UUID {
 func importEntityCode(tx *pop.Connection, code string) uuid.UUID {
 	code = trim(code)
 	newEntityCode := models.EntityCode{
-		Code: code,
-		Name: code,
+		Code:   code,
+		Name:   code,
+		Active: false,
 	}
 	if err := newEntityCode.Create(tx); err != nil {
 		log.Fatalf("failed to create entity code, %s\n%+v", err, newEntityCode)
@@ -690,7 +711,9 @@ func getClaimStatus(claim LegacyClaim) api.ClaimStatus {
 	return claimStatus
 }
 
-func importItems(tx *pop.Connection, policyID uuid.UUID, items []LegacyItem) {
+// importItems loads legacy items onto a policy. Returns true if at least one item is approved.
+func importItems(tx *pop.Connection, policyID uuid.UUID, items []LegacyItem) bool {
+	active := false
 	for _, item := range items {
 		itemID := stringToInt(item.Id, "Item ID")
 		itemDesc := fmt.Sprintf("Item[%d].", itemID)
@@ -723,7 +746,12 @@ func importItems(tx *pop.Connection, policyID uuid.UUID, items []LegacyItem) {
 			parseStringTime(item.CreatedAt, itemDesc+"CreatedAt"), newItem.ID).Exec(); err != nil {
 			log.Fatalf("failed to set updated_at on item, %s", err)
 		}
+
+		if newItem.CoverageStatus == api.ItemCoverageStatusApproved {
+			active = true
+		}
 	}
+	return active
 }
 
 func getCoverageStatus(item LegacyItem) api.ItemCoverageStatus {
