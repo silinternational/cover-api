@@ -26,8 +26,6 @@ type UserAccessToken struct {
 	LastUsedAt  nulls.Time `db:"last_used_at"`
 	CreatedAt   time.Time  `db:"created_at"`
 	UpdatedAt   time.Time  `db:"updated_at"`
-
-	User *User `belongs_to:"users"`
 }
 
 // String is not required by pop and may be deleted
@@ -92,7 +90,7 @@ func (u *UserAccessToken) DeleteIfExpired(tx *pop.Connection) (bool, error) {
 // FindByBearerToken uses a sha256.Sum256 of the bearerToken to find the corresponding UserAccessToken
 // returns an api.AppError
 func (u *UserAccessToken) FindByBearerToken(tx *pop.Connection, bearerToken string) error {
-	if err := tx.Eager().Where("access_token = ?", HashClientIdAccessToken(bearerToken)).First(u); err != nil {
+	if err := tx.Where("access_token = ?", HashClientIdAccessToken(bearerToken)).First(u); err != nil {
 		l := len(bearerToken)
 		if l > 5 {
 			l = 5
@@ -111,18 +109,22 @@ func (u *UserAccessToken) FindByBearerToken(tx *pop.Connection, bearerToken stri
 		return &appErr
 	}
 
-	return nil
+	u.LastUsedAt = nulls.NewTime(time.Now().UTC())
+	return u.Update(tx)
 }
 
 // GetUser returns the User associated with this access token
 func (u *UserAccessToken) GetUser(tx *pop.Connection) (User, error) {
-	if err := tx.Load(u, "User"); err != nil {
+	var user User
+	if err := user.FindByID(tx, u.UserID); err != nil {
 		return User{}, err
 	}
-	if u.User.Email == "" {
+
+	if user.Email == "" {
 		return User{}, errors.New("no user associated with access token")
 	}
-	return *u.User, nil
+
+	return user, nil
 }
 
 func createAccessTokenExpiry() time.Time {
