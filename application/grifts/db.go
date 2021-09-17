@@ -1,6 +1,7 @@
 package grifts
 
 import (
+	"errors"
 	"fmt"
 	"regexp"
 	"time"
@@ -48,12 +49,11 @@ var _ = grift.Namespace("db", func() {
 				return err
 			}
 
-			fixCats, err := createCategories(tx)
-			if err != nil {
+			if _, err := createCategories(tx); err != nil {
 				return err
 			}
 
-			_, err = createItemFixtures(tx, fixPolicies, fixCats)
+			_, err = createItemFixtures(tx, fixPolicies)
 			if err != nil {
 				return err
 			}
@@ -295,7 +295,7 @@ INSERT INTO "item_categories" ("id", "risk_category_id", "name", "help_text",
 	return categoryUUIDs, nil
 }
 
-func createItemFixtures(tx *pop.Connection, fixPolicies []*models.Policy, fixICats []uuid.UUID) ([]*models.Item, error) {
+func createItemFixtures(tx *pop.Connection, fixPolicies []*models.Policy) ([]*models.Item, error) {
 	itemUUIDs := []string{
 		"71117366-26b2-4256-b2ab-58c92c3d54c1",
 		"71127366-26b2-4256-b2ab-58c92c3d54c2",
@@ -320,14 +320,20 @@ func createItemFixtures(tx *pop.Connection, fixPolicies []*models.Policy, fixICa
 		return []*models.Item{}, err
 	}
 
+	itemCats := []models.ItemCategory{}
+	if err := tx.All(&itemCats); err != nil {
+		return []*models.Item{}, errors.New("error fetching item categories: " + err.Error())
+	}
+
 	fixItems := make([]*models.Item, len(itemUUIDs))
-	countICats := len(fixICats)
+	countICats := len(itemCats)
 
 	for i, uu := range itemUUIDs {
 		fixItems[i] = &models.Item{
 			ID:                uuid.FromStringOrNil(uu),
 			Name:              fmt.Sprintf("IName-%d", i),
-			CategoryID:        fixICats[i%countICats], // cycle through item categories
+			CategoryID:        itemCats[i%countICats].ID, // cycle through item categories
+			RiskCategoryID:    itemCats[i%countICats].RiskCategoryID,
 			InStorage:         false,
 			Country:           fmt.Sprintf("ICountry%d", i),
 			Description:       fmt.Sprintf("This is the description for item %d.", i),
