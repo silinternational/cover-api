@@ -228,8 +228,8 @@ func (as *ActionSuite) Test_ItemsSubmit() {
 
 	fixtures := models.CreateItemFixtures(as.DB, fixConfig)
 
-	approvedItem := models.UpdateItemStatus(as.DB, fixtures.Items[1], api.ItemCoverageStatusApproved)
-	revisionItem := models.UpdateItemStatus(as.DB, fixtures.Items[0], api.ItemCoverageStatusRevision)
+	approvedItem := models.UpdateItemStatus(as.DB, fixtures.Items[1], api.ItemCoverageStatusApproved, "")
+	revisionItem := models.UpdateItemStatus(as.DB, fixtures.Items[0], api.ItemCoverageStatusRevision, "fix it")
 
 	policy := fixtures.Policies[0]
 	policyCreator := policy.Members[0]
@@ -326,8 +326,8 @@ func (as *ActionSuite) Test_ItemsRevision() {
 
 	fixtures := models.CreateItemFixtures(as.DB, fixConfig)
 
-	approvedItem := models.UpdateItemStatus(as.DB, fixtures.Items[1], api.ItemCoverageStatusApproved)
-	pendingItem := models.UpdateItemStatus(as.DB, fixtures.Items[0], api.ItemCoverageStatusPending)
+	approvedItem := models.UpdateItemStatus(as.DB, fixtures.Items[1], api.ItemCoverageStatusApproved, "")
+	pendingItem := models.UpdateItemStatus(as.DB, fixtures.Items[0], api.ItemCoverageStatusPending, "")
 
 	policy := fixtures.Policies[0]
 	policyCreator := policy.Members[0]
@@ -342,6 +342,7 @@ func (as *ActionSuite) Test_ItemsRevision() {
 		name       string
 		actor      models.User
 		oldItem    models.Item
+		reason     string
 		wantStatus int
 		wantInBody []string
 	}{
@@ -370,9 +371,20 @@ func (as *ActionSuite) Test_ItemsRevision() {
 			wantInBody: []string{api.ErrorNotAuthorized.String()},
 		},
 		{
+			name:       "missing status reason",
+			actor:      adminUser,
+			oldItem:    pendingItem,
+			wantStatus: http.StatusBadRequest,
+			wantInBody: []string{
+				`"key":"` + string(api.ErrorValidation),
+				`"message":"Item.StatusReason`,
+			},
+		},
+		{
 			name:       "good item",
 			actor:      adminUser,
 			oldItem:    pendingItem,
+			reason:     "not up to snuff",
 			wantStatus: http.StatusOK,
 			wantInBody: []string{
 				`"name":"` + pendingItem.Name,
@@ -397,7 +409,7 @@ func (as *ActionSuite) Test_ItemsRevision() {
 			req := as.JSON("/%s/%s/%s", domain.TypeItem, tt.oldItem.ID.String(), api.ResourceRevision)
 			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
 			req.Headers["content-type"] = "application/json"
-			res := req.Post(nil)
+			res := req.Post(api.ItemStatusInput{StatusReason: tt.reason})
 
 			body := res.Body.String()
 			as.Equal(tt.wantStatus, res.Code, "incorrect status code returned, body: %s", body)
@@ -427,8 +439,8 @@ func (as *ActionSuite) Test_ItemsApprove() {
 
 	fixtures := models.CreateItemFixtures(as.DB, fixConfig)
 
-	approvedItem := models.UpdateItemStatus(as.DB, fixtures.Items[1], api.ItemCoverageStatusApproved)
-	pendingItem := models.UpdateItemStatus(as.DB, fixtures.Items[0], api.ItemCoverageStatusPending)
+	approvedItem := models.UpdateItemStatus(as.DB, fixtures.Items[1], api.ItemCoverageStatusApproved, "")
+	pendingItem := models.UpdateItemStatus(as.DB, fixtures.Items[0], api.ItemCoverageStatusPending, "")
 
 	policy := fixtures.Policies[0]
 	policyCreator := policy.Members[0]
@@ -516,8 +528,8 @@ func (as *ActionSuite) Test_ItemsDeny() {
 
 	fixtures := models.CreateItemFixtures(as.DB, fixConfig)
 
-	approvedItem := models.UpdateItemStatus(as.DB, fixtures.Items[1], api.ItemCoverageStatusApproved)
-	pendingItem := models.UpdateItemStatus(as.DB, fixtures.Items[0], api.ItemCoverageStatusPending)
+	approvedItem := models.UpdateItemStatus(as.DB, fixtures.Items[1], api.ItemCoverageStatusApproved, "")
+	pendingItem := models.UpdateItemStatus(as.DB, fixtures.Items[0], api.ItemCoverageStatusPending, "")
 
 	policy := fixtures.Policies[0]
 	policyCreator := policy.Members[0]
@@ -530,6 +542,7 @@ func (as *ActionSuite) Test_ItemsDeny() {
 		name       string
 		actor      models.User
 		oldItem    models.Item
+		reason     string
 		wantStatus int
 		wantInBody []string
 	}{
@@ -558,9 +571,20 @@ func (as *ActionSuite) Test_ItemsDeny() {
 			wantInBody: []string{api.ErrorNotAuthorized.String()},
 		},
 		{
+			name:       "missing reason",
+			actor:      adminUser,
+			oldItem:    pendingItem,
+			wantStatus: http.StatusBadRequest,
+			wantInBody: []string{
+				`"key":"` + string(api.ErrorValidation),
+				`"message":"Item.StatusReason`,
+			},
+		},
+		{
 			name:       "good item",
 			actor:      adminUser,
 			oldItem:    pendingItem,
+			reason:     "spacecraft are not covered",
 			wantStatus: http.StatusOK,
 			wantInBody: []string{
 				`"name":"` + pendingItem.Name,
@@ -575,7 +599,8 @@ func (as *ActionSuite) Test_ItemsDeny() {
 			req := as.JSON("/%s/%s/%s", domain.TypeItem, tt.oldItem.ID.String(), api.ResourceDeny)
 			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
 			req.Headers["content-type"] = "application/json"
-			res := req.Post(nil)
+
+			res := req.Post(api.ItemStatusInput{StatusReason: tt.reason})
 
 			body := res.Body.String()
 			as.Equal(tt.wantStatus, res.Code, "incorrect status code returned, body: %s", body)
@@ -591,6 +616,7 @@ func (as *ActionSuite) Test_ItemsDeny() {
 				"error finding submitted item.")
 
 			as.Equal(api.ItemCoverageStatusDenied, item.CoverageStatus, "incorrect coverage status after submission")
+			as.Equal(tt.reason, item.StatusReason, "incorrect coverage status after submission")
 		})
 	}
 }
@@ -605,8 +631,8 @@ func (as *ActionSuite) Test_ItemsUpdate() {
 
 	fixtures := models.CreateItemFixtures(as.DB, fixConfig)
 
-	revisionItem := models.UpdateItemStatus(as.DB, fixtures.Items[0], api.ItemCoverageStatusRevision)
-	approvedItem := models.UpdateItemStatus(as.DB, fixtures.Items[1], api.ItemCoverageStatusApproved)
+	revisionItem := models.UpdateItemStatus(as.DB, fixtures.Items[0], api.ItemCoverageStatusRevision, "too many tribbles")
+	approvedItem := models.UpdateItemStatus(as.DB, fixtures.Items[1], api.ItemCoverageStatusApproved, "")
 
 	policy := fixtures.Policies[0]
 	policyCreator := policy.Members[0]

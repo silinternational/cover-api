@@ -101,10 +101,9 @@ func ItemSubmittedQueueMessage(tx *pop.Connection, item models.Item) {
 func ItemRevisionQueueMessage(tx *pop.Connection, item models.Item) {
 	item.LoadPolicyMembers(models.DB, false)
 
-	// TODO figure out how to specify required revisions
-
 	data := newEmailMessageData()
 	data.addItemData(item)
+	data["itemStatusReason"] = item.StatusReason
 
 	notn := models.Notification{
 		ItemID:  nulls.NewUUID(item.ID),
@@ -138,9 +137,9 @@ func ItemApprovedQueueMessage(tx *pop.Connection, item models.Item) {
 func ItemDeniedQueueMessage(tx *pop.Connection, item models.Item) {
 	item.LoadPolicyMembers(models.DB, false)
 
-	// TODO figure out how to specify required revisions
 	data := newEmailMessageData()
 	data.addItemData(item)
+	data["itemStatusReason"] = item.StatusReason
 
 	notn := models.Notification{
 		ItemID:    nulls.NewUUID(item.ID),

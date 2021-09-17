@@ -147,3 +147,9 @@ type ItemInput struct {
 	// Accountable person ID. Can be either a policy dependent ID or a user ID
 	AccountablePersonID uuid.UUID `json:"accountable_person_id"`
 }
+
+// swagger:model
+type ItemStatusInput struct {
+	// message from a reviewer detailing the revisions needed or the reason for denial
+	StatusReason string `json:"status_reason"`
+}

@@ -28,8 +28,8 @@ func (ts *TestSuite) Test_ItemSubmittedQueueMessage() {
 	member0 := f.Policies[0].Members[0]
 	member1 := f.Policies[0].Members[1]
 
-	submittedItem := models.UpdateItemStatus(db, f.Items[0], api.ItemCoverageStatusPending)
-	approvedItem := models.UpdateItemStatus(db, f.Items[1], api.ItemCoverageStatusApproved)
+	submittedItem := models.UpdateItemStatus(db, f.Items[0], api.ItemCoverageStatusPending, "")
+	approvedItem := models.UpdateItemStatus(db, f.Items[1], api.ItemCoverageStatusApproved, "")
 
 	testEmailer := notifications.DummyEmailService{}
 
@@ -110,7 +110,7 @@ func (ts *TestSuite) Test_ItemRevisionQueueMessage() {
 	member1 := f.Policies[0].Members[1]
 
 	revisionItem := f.Items[0]
-	models.UpdateItemStatus(db, revisionItem, api.ItemCoverageStatusRevision)
+	models.UpdateItemStatus(db, revisionItem, api.ItemCoverageStatusRevision, "you can't be serious")
 
 	tests := []testDataNew{
 		{
@@ -154,7 +154,7 @@ func (ts *TestSuite) Test_ItemDeniedQueueMessage() {
 	member1 := f.Policies[0].Members[1]
 
 	deniedItem := f.Items[0]
-	models.UpdateItemStatus(db, deniedItem, api.ItemCoverageStatusDenied)
+	models.UpdateItemStatus(db, deniedItem, api.ItemCoverageStatusDenied, "this will never fly")
 
 	tests := []testDataNew{
 		{

@@ -28,10 +28,10 @@ func (ts *TestSuite) Test_itemSubmitted() {
 	models.CreateAdminUsers(db)
 
 	submittedItem := f.Items[0]
-	models.UpdateItemStatus(db, submittedItem, api.ItemCoverageStatusPending)
+	models.UpdateItemStatus(db, submittedItem, api.ItemCoverageStatusPending, "")
 
 	approvedItem := f.Items[1]
-	models.UpdateItemStatus(db, approvedItem, api.ItemCoverageStatusApproved)
+	models.UpdateItemStatus(db, approvedItem, api.ItemCoverageStatusApproved, "")
 
 	testEmailer := notifications.DummyEmailService{}
 
@@ -91,7 +91,7 @@ func (ts *TestSuite) Test_itemRevision() {
 	f := models.CreateItemFixtures(db, fixConfig)
 
 	revisionItem := f.Items[0]
-	models.UpdateItemStatus(db, revisionItem, api.ItemCoverageStatusRevision)
+	models.UpdateItemStatus(db, revisionItem, api.ItemCoverageStatusRevision, "try again, please")
 
 	testEmailer := notifications.DummyEmailService{}
 
@@ -133,7 +133,7 @@ func (ts *TestSuite) Test_itemDenied() {
 	f := models.CreateItemFixtures(db, fixConfig)
 
 	revisionItem := f.Items[0]
-	models.UpdateItemStatus(db, revisionItem, api.ItemCoverageStatusDenied)
+	models.UpdateItemStatus(db, revisionItem, api.ItemCoverageStatusDenied, "sorry Charlie")
 
 	testEmailer := notifications.DummyEmailService{}
 
