@@ -33,7 +33,6 @@ import (
 TODO:
 	1. Import other tables (e.g. Journal Entries)
 	2. Make name/policy unique
-	3. Strip extra whitespace (household ID, ?)
 */
 
 const (
