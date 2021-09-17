@@ -320,6 +320,9 @@ func importPolicies(tx *pop.Connection, in []LegacyPolicy) {
 				LegacyID:     nulls.NewInt(policyID),
 				CreatedAt:    parseStringTime(p.CreatedAt, desc+"CreatedAt"),
 			}
+			if newPolicy.Type == api.PolicyTypeHousehold {
+				newPolicy.Account = ""
+			}
 			if err := newPolicy.Create(tx); err != nil {
 				log.Fatalf("failed to create policy, %s\n%+v", err, newPolicy)
 			}
