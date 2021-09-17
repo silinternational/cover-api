@@ -257,3 +257,140 @@ func (ms *ModelSuite) TestPolicy_itemCoverageTotals() {
 	want := coverageForPolicy + coverageForDep
 	ms.Equal(want, gotTotal, "incorrect coverage grand total")
 }
+
+func (ms *ModelSuite) TestPolicy_Compare() {
+	e := EntityCode{
+		Code: randStr(3),
+		Name: "Acme, Inc.",
+	}
+	MustCreate(ms.DB, &e)
+
+	oldPolicy := Policy{
+		Type:         api.PolicyTypeCorporate,
+		HouseholdID:  nulls.NewString("abc123"),
+		CostCenter:   "xyz789",
+		Account:      "123457890",
+		EntityCodeID: nulls.NewUUID(e.ID),
+		Notes:        randStr(19),
+	}
+
+	f := CreatePolicyFixtures(ms.DB, FixturesConfig{NumberOfPolicies: 1})
+	newPolicy := f.Policies[0]
+
+	tests := []struct {
+		name string
+		new  Policy
+		old  Policy
+		want []FieldUpdate
+	}{
+		{
+			name: "1",
+			new:  f.Policies[0],
+			old:  oldPolicy,
+			want: []FieldUpdate{
+				{
+					FieldName: "Type",
+					OldValue:  string(oldPolicy.Type),
+					NewValue:  string(newPolicy.Type),
+				},
+				{
+					FieldName: "HouseholdID",
+					OldValue:  oldPolicy.HouseholdID.String,
+					NewValue:  newPolicy.HouseholdID.String,
+				},
+				{
+					FieldName: "CostCenter",
+					OldValue:  oldPolicy.CostCenter,
+					NewValue:  newPolicy.CostCenter,
+				},
+				{
+					FieldName: "Account",
+					OldValue:  oldPolicy.Account,
+					NewValue:  newPolicy.Account,
+				},
+				{
+					FieldName: "EntityCodeID",
+					OldValue:  oldPolicy.EntityCodeID.UUID.String(),
+					NewValue:  newPolicy.EntityCodeID.UUID.String(),
+				},
+				{
+					FieldName: "Notes",
+					OldValue:  oldPolicy.Notes,
+					NewValue:  newPolicy.Notes,
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		ms.T().Run(tt.name, func(t *testing.T) {
+			got := tt.new.Compare(tt.old)
+			ms.ElementsMatch(tt.want, got)
+		})
+	}
+}
+
+func (ms *ModelSuite) TestPolicy_NewHistory() {
+	f := CreatePolicyFixtures(ms.DB, FixturesConfig{NumberOfPolicies: 1})
+	policy := f.Policies[0]
+	user := f.Users[0]
+
+	const newHouseholdID = "NEW01234"
+	const newEntityCodeID = "3eb5d328-0831-4d3f-a260-db0531f29730"
+
+	tests := []struct {
+		name   string
+		policy Policy
+		user   User
+		update FieldUpdate
+		want   PolicyHistory
+	}{
+		{
+			name:   "HouseholdID",
+			policy: policy,
+			user:   user,
+			update: FieldUpdate{
+				FieldName: "HouseholdID",
+				OldValue:  policy.HouseholdID.String,
+				NewValue:  newHouseholdID,
+			},
+			want: PolicyHistory{
+				PolicyID:  policy.ID,
+				UserID:    user.ID,
+				Action:    api.HistoryActionUpdate,
+				FieldName: "HouseholdID",
+				OldValue:  policy.HouseholdID.String,
+				NewValue:  newHouseholdID,
+			},
+		},
+		{
+			name:   "EntityCodeID",
+			policy: policy,
+			user:   user,
+			update: FieldUpdate{
+				FieldName: "EntityCodeID",
+				OldValue:  policy.EntityCodeID.UUID.String(),
+				NewValue:  newEntityCodeID,
+			},
+			want: PolicyHistory{
+				PolicyID:  policy.ID,
+				UserID:    user.ID,
+				Action:    api.HistoryActionUpdate,
+				FieldName: "EntityCodeID",
+				OldValue:  policy.EntityCodeID.UUID.String(),
+				NewValue:  newEntityCodeID,
+			},
+		},
+	}
+	for _, tt := range tests {
+		ms.T().Run(tt.name, func(t *testing.T) {
+			got := tt.policy.NewHistory(CreateTestContext(tt.user), api.HistoryActionUpdate, tt.update)
+			ms.False(tt.want.NewValue == tt.want.OldValue, "test isn't correctly checking a field update")
+			ms.Equal(tt.want.PolicyID, got.PolicyID, "PolicyID is not correct")
+			ms.Equal(tt.want.UserID, got.UserID, "UserID is not correct")
+			ms.Equal(tt.want.Action, got.Action, "Action is not correct")
+			ms.Equal(tt.want.FieldName, got.FieldName, "FieldName is not correct")
+			ms.Equal(tt.want.OldValue, got.OldValue, "OldValue is not correct")
+			ms.Equal(tt.want.NewValue, got.NewValue, "NewValue is not correct")
+		})
+	}
+}
