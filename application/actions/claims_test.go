@@ -490,7 +490,7 @@ func (as *ActionSuite) Test_ClaimsSubmit() {
 	policyCreator := policy.Members[0]
 
 	draftClaim := policy.Claims[0]
-	approvedClaim := models.UpdateClaimStatus(as.DB, policy.Claims[1], api.ClaimStatusApproved)
+	approvedClaim := models.UpdateClaimStatus(as.DB, policy.Claims[1], api.ClaimStatusApproved, "")
 
 	otherUser := fixtures.Policies[1].Members[0]
 
@@ -568,7 +568,7 @@ func (as *ActionSuite) Test_ClaimsRequestRevision() {
 	appAdmin := models.CreateAdminUsers(as.DB)[models.AppRoleAdmin]
 
 	draftClaim := policy.Claims[0]
-	review1Claim := models.UpdateClaimStatus(as.DB, policy.Claims[1], api.ClaimStatusReview1)
+	review1Claim := models.UpdateClaimStatus(as.DB, policy.Claims[1], api.ClaimStatusReview1, "")
 
 	tests := []struct {
 		name       string
@@ -647,7 +647,7 @@ func (as *ActionSuite) Test_ClaimsPreapprove() {
 	appAdmin := models.CreateAdminUsers(as.DB)[models.AppRoleAdmin]
 
 	draftClaim := policy.Claims[0]
-	review1Claim := models.UpdateClaimStatus(as.DB, policy.Claims[1], api.ClaimStatusReview1)
+	review1Claim := models.UpdateClaimStatus(as.DB, policy.Claims[1], api.ClaimStatusReview1, "")
 
 	tests := []struct {
 		name       string
@@ -725,9 +725,9 @@ func (as *ActionSuite) Test_ClaimsApprove() {
 	appAdmin := models.CreateAdminUsers(as.DB)[models.AppRoleAdmin]
 
 	draftClaim := policy.Claims[0]
-	review1Claim := models.UpdateClaimStatus(as.DB, policy.Claims[1], api.ClaimStatusReview1)
-	review2Claim := models.UpdateClaimStatus(as.DB, policy.Claims[2], api.ClaimStatusReview2)
-	review3Claim := models.UpdateClaimStatus(as.DB, policy.Claims[3], api.ClaimStatusReview3)
+	review1Claim := models.UpdateClaimStatus(as.DB, policy.Claims[1], api.ClaimStatusReview1, "")
+	review2Claim := models.UpdateClaimStatus(as.DB, policy.Claims[2], api.ClaimStatusReview2, "")
+	review3Claim := models.UpdateClaimStatus(as.DB, policy.Claims[3], api.ClaimStatusReview3, "")
 
 	tests := []struct {
 		name            string
@@ -835,9 +835,9 @@ func (as *ActionSuite) Test_ClaimsDeny() {
 	appAdmin := models.CreateAdminUsers(as.DB)[models.AppRoleAdmin]
 
 	draftClaim := policy.Claims[0]
-	review1Claim := models.UpdateClaimStatus(as.DB, policy.Claims[1], api.ClaimStatusReview1)
-	review2Claim := models.UpdateClaimStatus(as.DB, policy.Claims[2], api.ClaimStatusReview2)
-	review3Claim := models.UpdateClaimStatus(as.DB, policy.Claims[3], api.ClaimStatusReview3)
+	review1Claim := models.UpdateClaimStatus(as.DB, policy.Claims[1], api.ClaimStatusReview1, "")
+	review2Claim := models.UpdateClaimStatus(as.DB, policy.Claims[2], api.ClaimStatusReview2, "")
+	review3Claim := models.UpdateClaimStatus(as.DB, policy.Claims[3], api.ClaimStatusReview3, "")
 
 	tests := []struct {
 		name            string

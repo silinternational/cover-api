@@ -108,9 +108,9 @@ func (ms *ModelSuite) TestClaim_SubmitForApproval() {
 	fixtures := CreateItemFixtures(ms.DB, fixConfig)
 	policy := fixtures.Policies[0]
 	draftClaim := policy.Claims[0]
-	revisionClaim := UpdateClaimStatus(ms.DB, policy.Claims[1], api.ClaimStatusRevision)
-	reviewClaim := UpdateClaimStatus(ms.DB, policy.Claims[2], api.ClaimStatusReview1)
-	emptyClaim := UpdateClaimStatus(ms.DB, policy.Claims[3], api.ClaimStatusDraft)
+	revisionClaim := UpdateClaimStatus(ms.DB, policy.Claims[1], api.ClaimStatusRevision, "")
+	reviewClaim := UpdateClaimStatus(ms.DB, policy.Claims[2], api.ClaimStatusReview1, "")
+	emptyClaim := UpdateClaimStatus(ms.DB, policy.Claims[3], api.ClaimStatusDraft, "")
 
 	tempClaim := emptyClaim
 	tempClaim.LoadClaimItems(ms.DB, false)
@@ -186,9 +186,9 @@ func (ms *ModelSuite) TestClaim_RequestRevision() {
 	fixtures := CreateItemFixtures(ms.DB, fixConfig)
 	policy := fixtures.Policies[0]
 	draftClaim := policy.Claims[0]
-	review1Claim := UpdateClaimStatus(ms.DB, policy.Claims[2], api.ClaimStatusReview1)
-	review3Claim := UpdateClaimStatus(ms.DB, policy.Claims[2], api.ClaimStatusReview3)
-	emptyClaim := UpdateClaimStatus(ms.DB, policy.Claims[3], api.ClaimStatusReview1)
+	review1Claim := UpdateClaimStatus(ms.DB, policy.Claims[2], api.ClaimStatusReview1, "")
+	review3Claim := UpdateClaimStatus(ms.DB, policy.Claims[2], api.ClaimStatusReview3, "")
+	emptyClaim := UpdateClaimStatus(ms.DB, policy.Claims[3], api.ClaimStatusReview1, "")
 
 	tempClaim := emptyClaim
 	tempClaim.LoadClaimItems(ms.DB, false)
@@ -266,8 +266,8 @@ func (ms *ModelSuite) TestClaim_Preapprove() {
 	fixtures := CreateItemFixtures(ms.DB, fixConfig)
 	policy := fixtures.Policies[0]
 	draftClaim := policy.Claims[0]
-	review1Claim := UpdateClaimStatus(ms.DB, policy.Claims[2], api.ClaimStatusReview1)
-	emptyClaim := UpdateClaimStatus(ms.DB, policy.Claims[3], api.ClaimStatusReview1)
+	review1Claim := UpdateClaimStatus(ms.DB, policy.Claims[2], api.ClaimStatusReview1, "")
+	emptyClaim := UpdateClaimStatus(ms.DB, policy.Claims[3], api.ClaimStatusReview1, "")
 
 	tempClaim := emptyClaim
 	tempClaim.LoadClaimItems(ms.DB, false)
@@ -341,10 +341,10 @@ func (ms *ModelSuite) TestClaim_Approve() {
 
 	policy := fixtures.Policies[0]
 	draftClaim := policy.Claims[0]
-	review1Claim := UpdateClaimStatus(ms.DB, policy.Claims[1], api.ClaimStatusReview1)
-	review2Claim := UpdateClaimStatus(ms.DB, policy.Claims[2], api.ClaimStatusReview2)
-	review3Claim := UpdateClaimStatus(ms.DB, policy.Claims[3], api.ClaimStatusReview3)
-	emptyClaim := UpdateClaimStatus(ms.DB, policy.Claims[4], api.ClaimStatusReview1)
+	review1Claim := UpdateClaimStatus(ms.DB, policy.Claims[1], api.ClaimStatusReview1, "")
+	review2Claim := UpdateClaimStatus(ms.DB, policy.Claims[2], api.ClaimStatusReview2, "")
+	review3Claim := UpdateClaimStatus(ms.DB, policy.Claims[3], api.ClaimStatusReview3, "")
+	emptyClaim := UpdateClaimStatus(ms.DB, policy.Claims[4], api.ClaimStatusReview1, "")
 
 	tempClaim := emptyClaim
 	tempClaim.LoadClaimItems(ms.DB, false)
@@ -437,10 +437,10 @@ func (ms *ModelSuite) TestClaim_Deny() {
 
 	policy := fixtures.Policies[0]
 	draftClaim := policy.Claims[0]
-	review1Claim := UpdateClaimStatus(ms.DB, policy.Claims[1], api.ClaimStatusReview1)
-	review2Claim := UpdateClaimStatus(ms.DB, policy.Claims[2], api.ClaimStatusReview2)
-	review3Claim := UpdateClaimStatus(ms.DB, policy.Claims[3], api.ClaimStatusReview3)
-	emptyClaim := UpdateClaimStatus(ms.DB, policy.Claims[4], api.ClaimStatusReview1)
+	review1Claim := UpdateClaimStatus(ms.DB, policy.Claims[1], api.ClaimStatusReview1, "")
+	review2Claim := UpdateClaimStatus(ms.DB, policy.Claims[2], api.ClaimStatusReview2, "")
+	review3Claim := UpdateClaimStatus(ms.DB, policy.Claims[3], api.ClaimStatusReview3, "")
+	emptyClaim := UpdateClaimStatus(ms.DB, policy.Claims[4], api.ClaimStatusReview1, "")
 
 	tempClaim := emptyClaim
 	tempClaim.LoadClaimItems(ms.DB, false)

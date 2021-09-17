@@ -121,6 +121,7 @@ func (ts *TestSuite) Test_ItemRevisionQueueMessage() {
 			wantBodyContains: []string{
 				domain.Env.UIURL,
 				revisionItem.Name,
+				revisionItem.StatusReason,
 				"revisions have been requested",
 			},
 		},
@@ -165,6 +166,7 @@ func (ts *TestSuite) Test_ItemDeniedQueueMessage() {
 			wantBodyContains: []string{
 				domain.Env.UIURL,
 				deniedItem.Name,
+				deniedItem.StatusReason,
 				"Coverage on your newly submitted policy item has been denied.",
 			},
 		},

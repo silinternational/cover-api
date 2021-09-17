@@ -32,7 +32,7 @@ func (ts *TestSuite) Test_claimReview1() {
 
 	f := getClaimFixtures(db)
 
-	review1Claim := models.UpdateClaimStatus(db, f.Claims[0], api.ClaimStatusReview1)
+	review1Claim := models.UpdateClaimStatus(db, f.Claims[0], api.ClaimStatusReview1, "")
 
 	testEmailer := notifications.DummyEmailService{}
 
@@ -67,7 +67,7 @@ func (ts *TestSuite) Test_claimRevision() {
 
 	f := getClaimFixtures(db)
 
-	revisionClaim := models.UpdateClaimStatus(db, f.Claims[0], api.ClaimStatusRevision)
+	revisionClaim := models.UpdateClaimStatus(db, f.Claims[0], api.ClaimStatusRevision, "third time's a charm")
 
 	testEmailer := notifications.DummyEmailService{}
 
@@ -102,7 +102,7 @@ func (ts *TestSuite) Test_claimPreapproved() {
 
 	f := getClaimFixtures(db)
 
-	receiptClaim := models.UpdateClaimStatus(db, f.Claims[0], api.ClaimStatusReceipt)
+	receiptClaim := models.UpdateClaimStatus(db, f.Claims[0], api.ClaimStatusReceipt, "")
 
 	testEmailer := notifications.DummyEmailService{}
 
@@ -137,7 +137,7 @@ func (ts *TestSuite) Test_claimReceipt() {
 
 	f := getClaimFixtures(db)
 
-	receiptClaim := models.UpdateClaimStatus(db, f.Claims[0], api.ClaimStatusReceipt)
+	receiptClaim := models.UpdateClaimStatus(db, f.Claims[0], api.ClaimStatusReceipt, "")
 
 	testEmailer := notifications.DummyEmailService{}
 
@@ -172,7 +172,7 @@ func (ts *TestSuite) Test_claimReview2() {
 
 	f := getClaimFixtures(db)
 
-	review2Claim := models.UpdateClaimStatus(db, f.Claims[0], api.ClaimStatusReview2)
+	review2Claim := models.UpdateClaimStatus(db, f.Claims[0], api.ClaimStatusReview2, "")
 
 	testEmailer := notifications.DummyEmailService{}
 
@@ -207,7 +207,7 @@ func (ts *TestSuite) Test_claimReview3() {
 
 	f := getClaimFixtures(db)
 
-	review3Claim := models.UpdateClaimStatus(db, f.Claims[0], api.ClaimStatusReview3)
+	review3Claim := models.UpdateClaimStatus(db, f.Claims[0], api.ClaimStatusReview3, "")
 
 	testEmailer := notifications.DummyEmailService{}
 
@@ -242,7 +242,7 @@ func (ts *TestSuite) Test_claimApproved() {
 
 	f := getClaimFixtures(db)
 
-	approvedClaim := models.UpdateClaimStatus(db, f.Claims[0], api.ClaimStatusApproved)
+	approvedClaim := models.UpdateClaimStatus(db, f.Claims[0], api.ClaimStatusApproved, "")
 
 	testEmailer := notifications.DummyEmailService{}
 
@@ -277,7 +277,7 @@ func (ts *TestSuite) Test_claimDenied() {
 
 	f := getClaimFixtures(db)
 
-	deniedClaim := models.UpdateClaimStatus(db, f.Claims[0], api.ClaimStatusDenied)
+	deniedClaim := models.UpdateClaimStatus(db, f.Claims[0], api.ClaimStatusDenied, "I gave at the office")
 
 	testEmailer := notifications.DummyEmailService{}
 

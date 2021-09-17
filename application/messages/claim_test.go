@@ -31,7 +31,7 @@ func (ts *TestSuite) Test_ClaimReview1QueueMessage() {
 
 	steward := models.CreateAdminUsers(db)[models.AppRoleSteward]
 
-	review1Claim := models.UpdateClaimStatus(db, f.Claims[0], api.ClaimStatusReview1)
+	review1Claim := models.UpdateClaimStatus(db, f.Claims[0], api.ClaimStatusReview1, "")
 
 	tests := []testData{
 		{
@@ -64,7 +64,7 @@ func (ts *TestSuite) Test_ClaimRevisionQueueMessage() {
 	member0 := f.Policies[0].Members[0]
 	member1 := f.Policies[0].Members[1]
 
-	revisionClaim := models.UpdateClaimStatus(db, f.Claims[0], api.ClaimStatusRevision)
+	revisionClaim := models.UpdateClaimStatus(db, f.Claims[0], api.ClaimStatusRevision, "too many typos")
 
 	tests := []testData{
 		{
@@ -75,6 +75,7 @@ func (ts *TestSuite) Test_ClaimRevisionQueueMessage() {
 			wantBodyContains: []string{
 				domain.Env.UIURL,
 				revisionClaim.ReferenceNumber,
+				revisionClaim.StatusReason,
 				"The claim you submitted has not yet been approved.",
 			},
 		},
@@ -96,7 +97,7 @@ func (ts *TestSuite) Test_ClaimPreapprovedQueueMessage() {
 	member0 := f.Policies[0].Members[0]
 	member1 := f.Policies[0].Members[1]
 
-	receiptClaim := models.UpdateClaimStatus(db, f.Claims[0], api.ClaimStatusReceipt)
+	receiptClaim := models.UpdateClaimStatus(db, f.Claims[0], api.ClaimStatusReceipt, "")
 
 	tests := []testData{
 		{
@@ -129,7 +130,7 @@ func (ts *TestSuite) Test_ClaimReceiptQueueMessage() {
 	member0 := f.Policies[0].Members[0]
 	member1 := f.Policies[0].Members[1]
 
-	receiptClaim := models.UpdateClaimStatus(db, f.Claims[0], api.ClaimStatusReceipt)
+	receiptClaim := models.UpdateClaimStatus(db, f.Claims[0], api.ClaimStatusReceipt, "")
 
 	tests := []testData{
 		{
@@ -161,7 +162,7 @@ func (ts *TestSuite) Test_ClaimReview2QueueMessage() {
 
 	steward := models.CreateAdminUsers(db)[models.AppRoleSteward]
 
-	review2Claim := models.UpdateClaimStatus(db, f.Claims[0], api.ClaimStatusReview2)
+	review2Claim := models.UpdateClaimStatus(db, f.Claims[0], api.ClaimStatusReview2, "")
 
 	tests := []testData{
 		{
@@ -193,7 +194,7 @@ func (ts *TestSuite) Test_ClaimReview3QueueMessage() {
 
 	signator := models.CreateAdminUsers(db)[models.AppRoleSignator]
 
-	review3Claim := models.UpdateClaimStatus(db, f.Claims[0], api.ClaimStatusReview3)
+	review3Claim := models.UpdateClaimStatus(db, f.Claims[0], api.ClaimStatusReview3, "")
 
 	tests := []testData{
 		{
@@ -226,7 +227,7 @@ func (ts *TestSuite) Test_ClaimApprovedQueueMessage() {
 	member0 := f.Policies[0].Members[0]
 	member1 := f.Policies[0].Members[1]
 
-	approvedClaim := models.UpdateClaimStatus(db, f.Claims[0], api.ClaimStatusApproved)
+	approvedClaim := models.UpdateClaimStatus(db, f.Claims[0], api.ClaimStatusApproved, "")
 
 	tests := []testData{
 		{
@@ -259,7 +260,7 @@ func (ts *TestSuite) Test_ClaimDeniedQueueMessage() {
 	member0 := f.Policies[0].Members[0]
 	member1 := f.Policies[0].Members[1]
 
-	deniedClaim := models.UpdateClaimStatus(db, f.Claims[0], api.ClaimStatusDenied)
+	deniedClaim := models.UpdateClaimStatus(db, f.Claims[0], api.ClaimStatusDenied, "Try again next year")
 
 	tests := []testData{
 		{
@@ -270,6 +271,7 @@ func (ts *TestSuite) Test_ClaimDeniedQueueMessage() {
 			wantBodyContains: []string{
 				domain.Env.UIURL,
 				deniedClaim.ReferenceNumber,
+				deniedClaim.StatusReason,
 				"The claim you submitted has been denied.",
 			},
 		},

@@ -159,8 +159,9 @@ func UpdateItemStatus(tx *pop.Connection, item Item, status api.ItemCoverageStat
 	return item
 }
 
-func UpdateClaimStatus(tx *pop.Connection, claim Claim, status api.ClaimStatus) Claim {
+func UpdateClaimStatus(tx *pop.Connection, claim Claim, status api.ClaimStatus, reason string) Claim {
 	claim.Status = status
+	claim.StatusReason = reason
 	if err := tx.Update(&claim); err != nil {
 		panic("error trying to update claim status for test: " + err.Error())
 	}
