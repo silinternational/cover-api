@@ -33,7 +33,7 @@ func (ts *TestSuite) Test_ClaimReview1QueueMessage() {
 
 	review1Claim := models.UpdateClaimStatus(db, f.Claims[0], api.ClaimStatusReview1)
 
-	tests := []testDataNew{
+	tests := []testData{
 		{
 			name:                  "submitted to review1",
 			wantToEmails:          []interface{}{steward.EmailOfChoice()},
@@ -66,7 +66,7 @@ func (ts *TestSuite) Test_ClaimRevisionQueueMessage() {
 
 	revisionClaim := models.UpdateClaimStatus(db, f.Claims[0], api.ClaimStatusRevision)
 
-	tests := []testDataNew{
+	tests := []testData{
 		{
 			name:                  "revisions requiredd",
 			wantToEmails:          []interface{}{member0.EmailOfChoice(), member1.EmailOfChoice()},
@@ -98,7 +98,7 @@ func (ts *TestSuite) Test_ClaimPreapprovedQueueMessage() {
 
 	receiptClaim := models.UpdateClaimStatus(db, f.Claims[0], api.ClaimStatusReceipt)
 
-	tests := []testDataNew{
+	tests := []testData{
 		{
 			name:                  "preapproved",
 			wantToEmails:          []interface{}{member0.EmailOfChoice(), member1.EmailOfChoice()},
@@ -131,7 +131,7 @@ func (ts *TestSuite) Test_ClaimReceiptQueueMessage() {
 
 	receiptClaim := models.UpdateClaimStatus(db, f.Claims[0], api.ClaimStatusReceipt)
 
-	tests := []testDataNew{
+	tests := []testData{
 		{
 			name:                  "receipts required again",
 			wantToEmails:          []interface{}{member0.EmailOfChoice(), member1.EmailOfChoice()},
@@ -163,7 +163,7 @@ func (ts *TestSuite) Test_ClaimReview2QueueMessage() {
 
 	review2Claim := models.UpdateClaimStatus(db, f.Claims[0], api.ClaimStatusReview2)
 
-	tests := []testDataNew{
+	tests := []testData{
 		{
 			name:                  "submitted to review2",
 			wantToEmails:          []interface{}{steward.EmailOfChoice()},
@@ -195,7 +195,7 @@ func (ts *TestSuite) Test_ClaimReview3QueueMessage() {
 
 	review3Claim := models.UpdateClaimStatus(db, f.Claims[0], api.ClaimStatusReview3)
 
-	tests := []testDataNew{
+	tests := []testData{
 		{
 			name:                  "submitted to review3",
 			wantToEmails:          []interface{}{signator.EmailOfChoice()},
@@ -228,7 +228,7 @@ func (ts *TestSuite) Test_ClaimApprovedQueueMessage() {
 
 	approvedClaim := models.UpdateClaimStatus(db, f.Claims[0], api.ClaimStatusApproved)
 
-	tests := []testDataNew{
+	tests := []testData{
 		{
 			name:                  "coverage approved",
 			wantToEmails:          []interface{}{member0.EmailOfChoice(), member1.EmailOfChoice()},
@@ -261,7 +261,7 @@ func (ts *TestSuite) Test_ClaimDeniedQueueMessage() {
 
 	deniedClaim := models.UpdateClaimStatus(db, f.Claims[0], api.ClaimStatusDenied)
 
-	tests := []testDataNew{
+	tests := []testData{
 		{
 			name:                  "coverage denied",
 			wantToEmails:          []interface{}{member0.EmailOfChoice(), member1.EmailOfChoice()},

@@ -34,11 +34,11 @@ func (ts *TestSuite) Test_ItemSubmittedQueueMessage() {
 	testEmailer := notifications.DummyEmailService{}
 
 	tests := []struct {
-		data testDataNew
+		data testData
 		item models.Item
 	}{
 		{
-			data: testDataNew{
+			data: testData{
 				name:                  "just submitted, not approved",
 				wantToEmails:          []interface{}{steward0.EmailOfChoice(), steward1.EmailOfChoice()},
 				wantSubjectContains:   "just submitted a new policy item for approval",
@@ -52,7 +52,7 @@ func (ts *TestSuite) Test_ItemSubmittedQueueMessage() {
 			item: submittedItem,
 		},
 		{
-			data: testDataNew{
+			data: testData{
 				name:                  "auto approved - members",
 				wantToEmails:          []interface{}{member0.EmailOfChoice(), member1.EmailOfChoice()},
 				wantSubjectContains:   "your new policy item has been approved",
@@ -66,7 +66,7 @@ func (ts *TestSuite) Test_ItemSubmittedQueueMessage() {
 			item: approvedItem,
 		},
 		{
-			data: testDataNew{
+			data: testData{
 				name:                  "auto approved - stewards",
 				wantToEmails:          []interface{}{steward0.EmailOfChoice(), steward1.EmailOfChoice()},
 				wantSubjectContains:   "a new policy item that has been auto approved",
@@ -112,7 +112,7 @@ func (ts *TestSuite) Test_ItemRevisionQueueMessage() {
 	revisionItem := f.Items[0]
 	models.UpdateItemStatus(db, revisionItem, api.ItemCoverageStatusRevision, "you can't be serious")
 
-	tests := []testDataNew{
+	tests := []testData{
 		{
 			name:                  "revisions required",
 			wantToEmails:          []interface{}{member0.EmailOfChoice(), member1.EmailOfChoice()},
@@ -156,7 +156,7 @@ func (ts *TestSuite) Test_ItemDeniedQueueMessage() {
 	deniedItem := f.Items[0]
 	models.UpdateItemStatus(db, deniedItem, api.ItemCoverageStatusDenied, "this will never fly")
 
-	tests := []testDataNew{
+	tests := []testData{
 		{
 			name:                  "coverage denied",
 			wantToEmails:          []interface{}{member0.EmailOfChoice(), member1.EmailOfChoice()},

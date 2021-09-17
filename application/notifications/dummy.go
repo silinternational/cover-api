@@ -18,7 +18,7 @@ type dummyMessage struct {
 }
 
 type DummyMessageInfo struct {
-	Subject, ToName, ToEmail string
+	Body, Subject, ToName, ToEmail string
 }
 
 func (t *DummyEmailService) Send(msg Message) error {
@@ -99,6 +99,7 @@ func (t *DummyEmailService) GetSentMessages() []DummyMessageInfo {
 	messages := make([]DummyMessageInfo, len(t.sentMessages))
 	for i, m := range t.sentMessages {
 		messages[i] = DummyMessageInfo{
+			Body:    m.body,
 			Subject: m.subject,
 			ToName:  m.toName,
 			ToEmail: m.toEmail,

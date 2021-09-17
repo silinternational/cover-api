@@ -1,6 +1,7 @@
 package messages
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -37,13 +38,6 @@ func Test_TestSuite(t *testing.T) {
 }
 
 type testData struct {
-	name                string
-	wantToEmails        []string
-	wantSubjectsContain []string
-}
-
-// TODO when ready, delete the testData type and rename this as testData
-type testDataNew struct {
 	name                  string
 	wantToEmails          []interface{}
 	wantSubjectContains   string
@@ -58,14 +52,19 @@ func validateEmails(ts *TestSuite, td testData, testEmailer notifications.DummyE
 	ts.Len(msgs, wantCount, "incorrect message count")
 
 	gotTos := testEmailer.GetAllToAddresses()
-	ts.Equal(td.wantToEmails, gotTos)
+	ts.Equal(len(td.wantToEmails), len(gotTos), "incorrect count of ToEmail addresses")
 
-	for i, w := range td.wantSubjectsContain {
-		ts.Contains(msgs[i].Subject, w, "incorrect email subject")
+	for i, m := range msgs {
+		ts.Contains(fmt.Sprintf("%s", td.wantToEmails[i]), m.ToEmail, "incorrect ToEmail address")
+		ts.Contains(m.Subject, td.wantSubjectContains, "incorrect email subject")
+
+		for _, b := range td.wantBodyContains {
+			ts.Contains(m.Body, b, "incorrect email body")
+		}
 	}
 }
 
-func validateNotificationUsers(ts *TestSuite, tx *pop.Connection, td testDataNew) {
+func validateNotificationUsers(ts *TestSuite, tx *pop.Connection, td testData) {
 	var notnUsers models.NotificationUsers
 
 	ts.NoError(tx.Where("email_address in (?)",
@@ -160,8 +159,9 @@ func (ts *TestSuite) Test_SendQueuedNotifications() {
 	tests := []testData{
 		{
 			name:                "send one email",
-			wantToEmails:        []string{user.EmailOfChoice()},
-			wantSubjectsContain: []string{"ToSend"},
+			wantToEmails:        []interface{}{user.EmailOfChoice()},
+			wantSubjectContains: "ToSend",
+			wantBodyContains:    []string{"Body of ToSend"},
 			// TODO test whether the username is in the greeting
 		},
 	}
