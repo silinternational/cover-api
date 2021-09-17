@@ -139,6 +139,10 @@ func (u *User) FindOrCreateFromAuthUser(tx *pop.Connection, authUser *auth.User)
 		}
 	}
 
+	if u.AppRole == "" {
+		u.AppRole = AppRoleUser
+	}
+
 	// update attributes from authUser
 	u.FirstName = authUser.FirstName
 	u.LastName = authUser.LastName

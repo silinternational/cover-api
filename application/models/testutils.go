@@ -435,8 +435,8 @@ func DestroyAll() {
 	destroyTable(&rCats)
 
 	// delete all Notifications
-	var notfns Notifications
-	destroyTable(&notfns)
+	var ns Notifications
+	destroyTable(&ns)
 }
 
 func destroyTable(i interface{}) {
