@@ -189,9 +189,6 @@ func init() {
 }
 
 func importAdminUsers(tx *pop.Connection, in []LegacyUser) {
-	fmt.Println("Admin Users")
-	fmt.Println("id,email,email_override,first_name,last_name,last_login_utc,location,staff_id,app_role")
-
 	for _, user := range in {
 		userID := stringToInt(user.Id, "User ID")
 		userDesc := fmt.Sprintf("User[%d].", userID)
@@ -218,20 +215,10 @@ func importAdminUsers(tx *pop.Connection, in []LegacyUser) {
 			parseStringTime(user.UpdatedAt, userDesc+"UpdatedAt"), newUser.ID).Exec(); err != nil {
 			log.Fatalf("failed to set updated_at on users, %s", err)
 		}
-
-		fmt.Printf(`"%s","%s","%s","%s","%s","%s","%s","%s","%s"`+"\n",
-			newUser.ID, newUser.Email, newUser.EmailOverride, newUser.FirstName, newUser.LastName,
-			newUser.LastLoginUTC, newUser.Location, newUser.StaffID, newUser.AppRole,
-		)
 	}
-
-	fmt.Println()
 }
 
 func importItemCategories(tx *pop.Connection, in []LegacyItemCategory) {
-	fmt.Println("Item categories")
-	fmt.Println("legacy_id,id,status,risk_category_id,name,auto_approve_max,help_text")
-
 	for _, i := range in {
 		categoryID := stringToInt(i.Id, "ItemCategory ID")
 
@@ -258,14 +245,7 @@ func importItemCategories(tx *pop.Connection, in []LegacyItemCategory) {
 			parseStringTime(i.UpdatedAt, desc+"UpdatedAt"), newItemCategory.ID).Exec(); err != nil {
 			log.Fatalf("failed to set updated_at on item_categories, %s", err)
 		}
-
-		fmt.Printf(`%d,"%s","%s",%s,"%s",%d,"%s"`+"\n",
-			newItemCategory.LegacyID.Int, newItemCategory.ID, newItemCategory.Status,
-			newItemCategory.RiskCategoryID, newItemCategory.Name, newItemCategory.AutoApproveMax,
-			newItemCategory.HelpText)
 	}
-
-	fmt.Println("")
 }
 
 func getRiskCategoryUUID(legacyID int) uuid.UUID {
