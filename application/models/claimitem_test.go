@@ -213,7 +213,6 @@ func (ms *ModelSuite) TestClaimItem_UpdateByUser() {
 
 	draftClaim := fixtures.Policies[0].Claims[0]
 	draftClaim.LoadClaimItems(db, false)
-	draftClaim.ReviewerID = nulls.NewUUID(fixtures.Users[0].ID) // just using anything for the test
 
 	review2Claim := UpdateClaimStatus(db, fixtures.Policies[0].Claims[1], api.ClaimStatusReview2, "")
 	review2Claim.LoadClaimItems(db, false)

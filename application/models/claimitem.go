@@ -3,7 +3,6 @@ package models
 import (
 	"context"
 	"errors"
-	"fmt"
 	"net/http"
 	"time"
 
@@ -97,8 +96,8 @@ func (c *ClaimItem) Update(tx *pop.Connection, oldStatus api.ClaimItemStatus, us
 	return update(tx, c)
 }
 
-// UpdateByUser ensures the Claim has an appropriate status for being modified by the user
-//  and then writes the Claim data to an existing database record.
+// UpdateByUser ensures the parent Claim has an appropriate status for being modified by the user
+//  and then writes the ClaimItem data to an existing database record.
 func (c *ClaimItem) UpdateByUser(ctx context.Context, oldStatus api.ClaimItemStatus, user User) error {
 	tx := Tx(ctx)
 	if user.IsAdmin() {
@@ -125,7 +124,6 @@ func (c *ClaimItem) UpdateByUser(ctx context.Context, oldStatus api.ClaimItemSta
 	if err := c.Claim.Update(ctx); err != nil {
 		return err
 	}
-	fmt.Printf("\nCCCCCCCCCCC  ")
 
 	return c.Update(tx, oldStatus, user)
 }
