@@ -110,7 +110,7 @@ func claimsUpdate(c buffalo.Context) error {
 	claim.IncidentDescription = input.IncidentDescription
 	claim.IncidentDate = input.IncidentDate
 
-	if err := claim.Update(c); err != nil {
+	if err := claim.UpdateByUser(c); err != nil {
 		return reportError(c, err)
 	}
 
