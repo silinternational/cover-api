@@ -36,13 +36,11 @@ func policiesList(c buffalo.Context) error {
 func policiesListAll(c buffalo.Context) error {
 	tx := models.Tx(c)
 	var policies models.Policies
-	if err := tx.All(&policies); err != nil {
+	if err := policies.All(tx); err != nil {
 		return reportError(c, err)
 	}
 
-	apiPolicies := policies.ConvertToAPI(tx)
-
-	return renderOk(c, apiPolicies)
+	return renderOk(c, policies.ConvertToAPI(tx))
 }
 
 func policiesListMine(c buffalo.Context) error {
