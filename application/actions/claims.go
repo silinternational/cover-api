@@ -248,7 +248,7 @@ func claimsPreapprove(c buffalo.Context) error {
 	tx := models.Tx(c)
 	claim := getReferencedClaimFromCtx(c)
 
-	if err := claim.RequestReceipt(tx, ""); err != nil {
+	if err := claim.RequestReceipt(c, ""); err != nil {
 		return reportError(c, err)
 	}
 
@@ -289,7 +289,7 @@ func claimsRequestReceipt(c buffalo.Context) error {
 		return reportError(c, err)
 	}
 
-	if err := claim.RequestReceipt(tx, input.StatusReason); err != nil {
+	if err := claim.RequestReceipt(c, input.StatusReason); err != nil {
 		return reportError(c, err)
 	}
 
