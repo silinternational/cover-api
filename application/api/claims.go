@@ -16,7 +16,7 @@ type ClaimIncidentType string
 
 // ClaimStatus
 //
-// may be one of: Draft, Review1, Review2, Review3, Revision, Receipt, Approved, Paid, Denied, Inactive
+// may be one of: Draft, Review1, Review2, Review3, Revision, Receipt, Approved, Paid, Denied
 //
 // swagger:model
 type ClaimStatus string
