@@ -37,7 +37,7 @@ func claimsList(c buffalo.Context) error {
 func claimsListAll(c buffalo.Context) error {
 	tx := models.Tx(c)
 	var claims models.Claims
-	if err := models.Tx(c).All(&claims); err != nil {
+	if err := claims.All(tx); err != nil {
 		return reportError(c, err)
 	}
 

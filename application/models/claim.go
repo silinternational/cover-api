@@ -554,6 +554,10 @@ func (c *Claims) ConvertToAPI(tx *pop.Connection) api.Claims {
 	return claims
 }
 
+func (c *Claims) All(tx *pop.Connection) error {
+	return appErrorFromDB(tx.All(c), api.ErrorQueryFailure)
+}
+
 func ConvertClaimCreateInput(input api.ClaimCreateInput) Claim {
 	return Claim{
 		IncidentDate:        input.IncidentDate,

@@ -219,6 +219,10 @@ func (p *Policies) ConvertToAPI(tx *pop.Connection) api.Policies {
 	return policies
 }
 
+func (p *Policies) All(tx *pop.Connection) error {
+	return appErrorFromDB(tx.All(p), api.ErrorQueryFailure)
+}
+
 func (p *Policy) AddDependent(tx *pop.Connection, input api.PolicyDependentInput) error {
 	if p == nil {
 		return errors.New("policy is nil in AddDependent")
