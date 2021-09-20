@@ -118,7 +118,7 @@ func (c *Claim) Update(ctx context.Context) error {
 	tx := Tx(ctx)
 
 	var oldClaim Claim
-	if err := tx.Find(&oldClaim, c.ID); err != nil {
+	if err := oldClaim.FindByID(tx, c.ID); err != nil {
 		return appErrorFromDB(err, api.ErrorQueryFailure)
 	}
 

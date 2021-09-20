@@ -69,7 +69,7 @@ func (u *UserAccessToken) DeleteByBearerToken(tx *pop.Connection, bearerToken st
 	if appErr := u.FindByBearerToken(tx, bearerToken); appErr != nil {
 		return appErr
 	}
-	if err := tx.Destroy(u); err != nil {
+	if err := u.Destroy(tx); err != nil {
 		panic("database error trying to destroy user access token: " + err.Error())
 	}
 
@@ -80,13 +80,17 @@ func (u *UserAccessToken) DeleteByBearerToken(tx *pop.Connection, bearerToken st
 // the token from the database if it is expired.
 func (u *UserAccessToken) DeleteIfExpired(tx *pop.Connection) (bool, error) {
 	if u.ExpiresAt.Before(time.Now()) {
-		err := tx.Destroy(u)
+		err := u.Destroy(tx)
 		if err != nil {
 			return true, fmt.Errorf("unable to delete expired userAccessToken, id: %v", u.ID)
 		}
 		return true, nil
 	}
 	return false, nil
+}
+
+func (u *UserAccessToken) Destroy(tx *pop.Connection) error {
+	return tx.Destroy(u)
 }
 
 // FindByBearerToken uses a sha256.Sum256 of the bearerToken to find the corresponding UserAccessToken

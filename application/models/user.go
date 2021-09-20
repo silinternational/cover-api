@@ -268,7 +268,7 @@ func (u *User) CreateInitialPolicy(tx *pop.Connection) error {
 		HouseholdID: nulls.NewString(fmt.Sprintf("HHID-%s-%s", u.FirstName, u.LastName)),
 	}
 
-	if err := tx.Create(&policy); err != nil {
+	if err := policy.Create(tx); err != nil {
 		return errors.New("unable to create initial policy in CreateInitialPolicy: " + err.Error())
 	}
 
@@ -277,7 +277,7 @@ func (u *User) CreateInitialPolicy(tx *pop.Connection) error {
 		UserID:   u.ID,
 	}
 
-	if err := tx.Create(&polUser); err != nil {
+	if err := polUser.Create(tx); err != nil {
 		return errors.New("unable to create policy-user in CreateInitialPolicy: " + err.Error())
 	}
 	return nil
