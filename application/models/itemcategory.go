@@ -94,3 +94,8 @@ func (i *ItemCategories) ConvertToAPI(tx *pop.Connection) api.ItemCategories {
 	}
 	return cats
 }
+
+func (i *ItemCategories) AllEnabled(tx *pop.Connection) error {
+	err := tx.Where("status = ?", api.ItemCategoryStatusEnabled).Order("name asc").All(i)
+	return appErrorFromDB(err, api.ErrorQueryFailure)
+}

@@ -48,7 +48,11 @@ type Authable interface {
 }
 
 type Createable interface {
-	Create(tx *pop.Connection) error
+	Create(*pop.Connection) error
+}
+
+type Updatable interface {
+	Update(*pop.Connection) error
 }
 
 type FieldUpdate struct {
@@ -224,7 +228,7 @@ func emitEvent(e events.Event) {
 	}
 }
 
-func addFile(tx *pop.Connection, m interface{}, fileID uuid.UUID) error {
+func addFile(tx *pop.Connection, m Updatable, fileID uuid.UUID) error {
 	var f File
 
 	if err := f.Find(tx, fileID); err != nil {
@@ -243,7 +247,7 @@ func addFile(tx *pop.Connection, m interface{}, fileID uuid.UUID) error {
 		return errors.New("error identifying ID field")
 	}
 
-	if err := tx.Update(m); err != nil {
+	if err := m.Update(tx); err != nil {
 		return fmt.Errorf("failed to update the file ID column, %s", err)
 	}
 

@@ -118,7 +118,7 @@ func (c *Claim) Update(ctx context.Context) error {
 	tx := Tx(ctx)
 
 	var oldClaim Claim
-	if err := tx.Find(&oldClaim, c.ID); err != nil {
+	if err := oldClaim.FindByID(tx, c.ID); err != nil {
 		return appErrorFromDB(err, api.ErrorQueryFailure)
 	}
 
@@ -552,6 +552,10 @@ func (c *Claims) ConvertToAPI(tx *pop.Connection) api.Claims {
 		claims[i] = cc.ConvertToAPI(tx)
 	}
 	return claims
+}
+
+func (c *Claims) All(tx *pop.Connection) error {
+	return appErrorFromDB(tx.All(c), api.ErrorQueryFailure)
 }
 
 func ConvertClaimCreateInput(input api.ClaimCreateInput) Claim {

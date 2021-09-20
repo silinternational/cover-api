@@ -55,7 +55,7 @@ func (p *Policy) Create(tx *pop.Connection) error {
 func (p *Policy) Update(ctx context.Context) error {
 	tx := Tx(ctx)
 	var oldPolicy Policy
-	if err := tx.Find(&oldPolicy, p.ID); err != nil {
+	if err := oldPolicy.FindByID(tx, p.ID); err != nil {
 		return appErrorFromDB(err, api.ErrorQueryFailure)
 	}
 
@@ -217,6 +217,10 @@ func (p *Policies) ConvertToAPI(tx *pop.Connection) api.Policies {
 	}
 
 	return policies
+}
+
+func (p *Policies) All(tx *pop.Connection) error {
+	return appErrorFromDB(tx.All(p), api.ErrorQueryFailure)
 }
 
 func (p *Policy) AddDependent(tx *pop.Connection, input api.PolicyDependentInput) error {

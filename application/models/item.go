@@ -152,9 +152,7 @@ func (i *Item) IsActorAllowedTo(tx *pop.Connection, actor User, perm Permission,
 		return true
 	}
 
-	i.LoadPolicy(tx, false)
-
-	i.Policy.LoadMembers(tx, false)
+	i.LoadPolicyMembers(tx, false)
 
 	for _, m := range i.Policy.Members {
 		if m.ID == actor.ID {
