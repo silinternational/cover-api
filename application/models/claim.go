@@ -162,6 +162,7 @@ func (c *Claim) UpdateByUser(ctx context.Context) error {
 	}
 
 	switch c.Status {
+	// OK to modify the Claim when it has one of these statuses but not any others
 	case api.ClaimStatusDraft, api.ClaimStatusRevision, api.ClaimStatusReview1:
 	default:
 		err := errors.New("user may not edit a claim that is too far along in the review process.")
@@ -169,6 +170,8 @@ func (c *Claim) UpdateByUser(ctx context.Context) error {
 		return appErr
 	}
 
+	// If the user edits something, it should take it off of the steward's list of things to review and
+	//  also force the user to resubmit it.
 	if c.Status == api.ClaimStatusReview1 {
 		c.Status = api.ClaimStatusDraft
 	}
