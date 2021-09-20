@@ -39,7 +39,7 @@ func (ec *EntityCodes) ConvertToAPI(tx *pop.Connection) []api.EntityCode {
 }
 
 func (ec *EntityCodes) AllActive(tx *pop.Connection) error {
-	return appErrorFromDB(tx.All(ec), api.ErrorQueryFailure)
+	return appErrorFromDB(tx.Where("active = true").All(ec), api.ErrorQueryFailure)
 }
 
 func (ec *EntityCode) ConvertToAPI(tx *pop.Connection) api.EntityCode {
