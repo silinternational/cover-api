@@ -89,10 +89,12 @@ func (c *ClaimItem) Update(tx *pop.Connection, oldStatus api.ClaimItemStatus, us
 	//	return appErr
 	//}
 
-	if c.Status == api.ClaimItemStatusDenied || c.Status == api.ClaimItemStatusRevision || c.Status == api.ClaimItemStatusApproved {
+	// Set the Reviewer fields when needed.
+	if user.IsAdmin() {
 		c.ReviewerID = nulls.NewUUID(user.ID)
 		c.ReviewDate = nulls.NewTime(time.Now().UTC())
 	}
+
 	return update(tx, c)
 }
 
