@@ -2,6 +2,7 @@ package listeners
 
 import (
 	"github.com/gobuffalo/events"
+	"github.com/gobuffalo/pop/v5"
 
 	"github.com/silinternational/cover-api/domain"
 	"github.com/silinternational/cover-api/messages"
@@ -26,5 +27,11 @@ func policyUserInviteCreated(e events.Event) {
 		return
 	}
 
-	messages.PolicyUserInviteSend(invite, getNotifiersFromEventPayload(e.Payload))
+	err := models.DB.Transaction(func(tx *pop.Connection) error {
+		messages.PolicyUserInviteQueueMessage(tx, invite)
+		return nil
+	})
+	if err != nil {
+		domain.ErrLogger.Printf("error queuing policy user invite: %s", err)
+	}
 }
