@@ -1,11 +1,13 @@
 package models
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
 	"time"
 
+	"github.com/gobuffalo/buffalo"
 	"github.com/gobuffalo/events"
 	"github.com/gobuffalo/nulls"
 	"github.com/gobuffalo/pop/v5"
@@ -20,13 +22,13 @@ const (
 	ClaimReferenceNumberLength = 7
 )
 
-var ValidClaimEventTypes = map[api.ClaimEventType]struct{}{
-	api.ClaimEventTypeTheft:           {},
-	api.ClaimEventTypeImpact:          {},
-	api.ClaimEventTypeElectricalSurge: {},
-	api.ClaimEventTypeWaterDamage:     {},
-	api.ClaimEventTypeEvacuation:      {},
-	api.ClaimEventTypeOther:           {},
+var ValidClaimIncidentTypes = map[api.ClaimIncidentType]struct{}{
+	api.ClaimIncidentTypeTheft:           {},
+	api.ClaimIncidentTypeImpact:          {},
+	api.ClaimIncidentTypeElectricalSurge: {},
+	api.ClaimIncidentTypeWaterDamage:     {},
+	api.ClaimIncidentTypeEvacuation:      {},
+	api.ClaimIncidentTypeOther:           {},
 }
 
 var ValidClaimStatus = map[api.ClaimStatus]struct{}{
@@ -39,26 +41,56 @@ var ValidClaimStatus = map[api.ClaimStatus]struct{}{
 	api.ClaimStatusApproved: {},
 	api.ClaimStatusPaid:     {},
 	api.ClaimStatusDenied:   {},
-	api.ClaimStatusInactive: {},
+}
+
+var ValidClaimIncidentTypePayoutOptions = map[api.ClaimIncidentType]map[api.PayoutOption]struct{}{
+	api.ClaimIncidentTypeEvacuation: {
+		api.PayoutOptionFixedFraction: {},
+	},
+	api.ClaimIncidentTypeTheft: {
+		api.PayoutOptionFMV:         {},
+		api.PayoutOptionReplacement: {},
+	},
+	api.ClaimIncidentTypeImpact: {
+		api.PayoutOptionFMV:         {},
+		api.PayoutOptionReplacement: {},
+		api.PayoutOptionRepair:      {},
+	},
+	api.ClaimIncidentTypeElectricalSurge: {
+		api.PayoutOptionFMV:         {},
+		api.PayoutOptionReplacement: {},
+		api.PayoutOptionRepair:      {},
+	},
+	api.ClaimIncidentTypeWaterDamage: {
+		api.PayoutOptionFMV:         {},
+		api.PayoutOptionReplacement: {},
+		api.PayoutOptionRepair:      {},
+	},
+	api.ClaimIncidentTypeOther: {
+		api.PayoutOptionFMV:         {},
+		api.PayoutOptionReplacement: {},
+		api.PayoutOptionRepair:      {},
+	},
 }
 
 type Claims []Claim
 
 type Claim struct {
-	ID               uuid.UUID          `db:"id"`
-	PolicyID         uuid.UUID          `db:"policy_id" validate:"required"`
-	ReferenceNumber  string             `db:"reference_number" validate:"required,len=7"`
-	EventDate        time.Time          `db:"event_date" validate:"required_unless=Status Draft"`
-	EventType        api.ClaimEventType `db:"event_type" validate:"claimEventType,required_unless=Status Draft"`
-	EventDescription string             `db:"event_description" validate:"required_unless=Status Draft"`
-	Status           api.ClaimStatus    `db:"status" validate:"claimStatus"`
-	ReviewDate       nulls.Time         `db:"review_date"`
-	ReviewerID       nulls.UUID         `db:"reviewer_id"`
-	PaymentDate      nulls.Time         `db:"payment_date"`
-	TotalPayout      int                `db:"total_payout"`
-	LegacyID         nulls.Int          `db:"legacy_id"`
-	CreatedAt        time.Time          `db:"created_at"`
-	UpdatedAt        time.Time          `db:"updated_at"`
+	ID                  uuid.UUID             `db:"id"`
+	PolicyID            uuid.UUID             `db:"policy_id" validate:"required"`
+	ReferenceNumber     string                `db:"reference_number" validate:"required,len=7"`
+	IncidentDate        time.Time             `db:"incident_date" validate:"required_unless=Status Draft"`
+	IncidentType        api.ClaimIncidentType `db:"incident_type" validate:"claimIncidentType,required_unless=Status Draft"`
+	IncidentDescription string                `db:"incident_description" validate:"required_unless=Status Draft"`
+	Status              api.ClaimStatus       `db:"status" validate:"claimStatus"`
+	ReviewDate          nulls.Time            `db:"review_date"`
+	ReviewerID          nulls.UUID            `db:"reviewer_id"`
+	PaymentDate         nulls.Time            `db:"payment_date"`
+	TotalPayout         api.Currency          `db:"total_payout"`
+	LegacyID            nulls.Int             `db:"legacy_id"`
+	StatusReason        string                `db:"status_reason" validate:"required_if=Status Revision,required_if=Status Denied"`
+	CreatedAt           time.Time             `db:"created_at"`
+	UpdatedAt           time.Time             `db:"updated_at"`
 
 	Policy     Policy     `belongs_to:"policies" validate:"-"`
 	ClaimItems ClaimItems `has_many:"claim_items" validate:"-"`
@@ -82,14 +114,21 @@ func (c *Claim) Create(tx *pop.Connection) error {
 }
 
 // Update writes the Claim data to an existing database record.
-func (c *Claim) Update(tx *pop.Connection, oldStatus api.ClaimStatus) error {
-	validTrans, err := isClaimTransitionValid(oldStatus, c.Status)
+func (c *Claim) Update(ctx context.Context) error {
+	tx := Tx(ctx)
+
+	var oldClaim Claim
+	if err := oldClaim.FindByID(tx, c.ID); err != nil {
+		return appErrorFromDB(err, api.ErrorQueryFailure)
+	}
+
+	validTrans, err := isClaimTransitionValid(oldClaim.Status, c.Status)
 	if err != nil {
 		panic(err)
 	}
 	if !validTrans {
 		err := fmt.Errorf("invalid claim status transition from %s to %s",
-			oldStatus, c.Status)
+			oldClaim.Status, c.Status)
 		appErr := api.NewAppError(err, api.ErrorValidation, api.CategoryUser)
 		return appErr
 	}
@@ -103,7 +142,41 @@ func (c *Claim) Update(tx *pop.Connection, oldStatus api.ClaimStatus) error {
 		}
 	}
 
+	updates := c.Compare(oldClaim)
+	for i := range updates {
+		history := c.NewHistory(ctx, api.HistoryActionUpdate, updates[i])
+		if err := history.Create(tx); err != nil {
+			return appErrorFromDB(err, api.ErrorCreateFailure)
+		}
+	}
+
 	return update(tx, c)
+}
+
+// UpdateByUser ensures the Claim has an appropriate status for being modified by the user
+//  and then writes the Claim data to an existing database record.
+func (c *Claim) UpdateByUser(ctx context.Context) error {
+	user := CurrentUser(ctx)
+	if user.IsAdmin() {
+		return c.Update(ctx)
+	}
+
+	switch c.Status {
+	// OK to modify the Claim when it has one of these statuses but not any others
+	case api.ClaimStatusDraft, api.ClaimStatusRevision, api.ClaimStatusReview1:
+	default:
+		err := errors.New("user may not edit a claim that is too far along in the review process.")
+		appErr := api.NewAppError(err, api.ErrorClaimStatus, api.CategoryUser)
+		return appErr
+	}
+
+	// If the user edits something, it should take it off of the steward's list of things to review and
+	//  also force the user to resubmit it.
+	if c.Status == api.ClaimStatusReview1 {
+		c.Status = api.ClaimStatusDraft
+	}
+
+	return c.Update(ctx)
 }
 
 func (c *Claim) GetID() uuid.UUID {
@@ -159,9 +232,9 @@ func claimStatusTransitions() map[api.ClaimStatus][]api.ClaimStatus {
 	return map[api.ClaimStatus][]api.ClaimStatus{
 		api.ClaimStatusDraft: {
 			api.ClaimStatusReview1,
-			api.ClaimStatusInactive,
 		},
 		api.ClaimStatusReview1: {
+			api.ClaimStatusDraft,
 			api.ClaimStatusRevision,
 			api.ClaimStatusReceipt,
 			api.ClaimStatusReview3,
@@ -169,11 +242,9 @@ func claimStatusTransitions() map[api.ClaimStatus][]api.ClaimStatus {
 		},
 		api.ClaimStatusRevision: {
 			api.ClaimStatusReview1,
-			api.ClaimStatusInactive,
 		},
 		api.ClaimStatusReceipt: {
 			api.ClaimStatusReview2,
-			api.ClaimStatusInactive,
 		},
 		api.ClaimStatusReview2: {
 			api.ClaimStatusReceipt,
@@ -189,8 +260,7 @@ func claimStatusTransitions() map[api.ClaimStatus][]api.ClaimStatus {
 		api.ClaimStatusApproved: {
 			api.ClaimStatusPaid,
 		},
-		api.ClaimStatusDenied:   {},
-		api.ClaimStatusInactive: {},
+		api.ClaimStatusDenied: {},
 	}
 }
 
@@ -248,7 +318,7 @@ func (c *Claim) AddItem(tx *pop.Connection, input api.ClaimItemCreateInput) (Cla
 // SubmitForApproval changes the status of the claim to either Review1 or Review2
 //   depending on its current status.
 // TODO ensure the associated claimItem is valid
-func (c *Claim) SubmitForApproval(tx *pop.Connection) error {
+func (c *Claim) SubmitForApproval(ctx context.Context) error {
 	oldStatus := c.Status
 	var eventType string
 
@@ -266,13 +336,13 @@ func (c *Claim) SubmitForApproval(tx *pop.Connection) error {
 		return appErr
 	}
 
-	if err := c.Update(tx, oldStatus); err != nil {
+	if err := c.Update(ctx); err != nil {
 		return err
 	}
 
 	e := events.Event{
 		Kind:    eventType,
-		Message: fmt.Sprintf("Claim Submitted: %s  ID: %s", c.EventDescription, c.ID.String()),
+		Message: fmt.Sprintf("Claim Submitted: %s  ID: %s", c.IncidentDescription, c.ID.String()),
 		Payload: events.Payload{domain.EventPayloadID: c.ID},
 	}
 	emitEvent(e)
@@ -282,26 +352,26 @@ func (c *Claim) SubmitForApproval(tx *pop.Connection) error {
 
 // RequestRevision changes the status of the claim to Revision
 //   provided that the current status is Review1 or Review3.
-// TODO record the particular revisions that are needed
-func (c *Claim) RequestRevision(tx *pop.Connection) error {
+func (c *Claim) RequestRevision(ctx context.Context, message string) error {
 	oldStatus := c.Status
 
 	switch oldStatus {
 	case api.ClaimStatusReview1, api.ClaimStatusReview3:
 		c.Status = api.ClaimStatusRevision
+		c.StatusReason = message
 	default:
 		err := fmt.Errorf("invalid claim status for request revision: %s", oldStatus)
 		appErr := api.NewAppError(err, api.ErrorClaimStatus, api.CategoryUser)
 		return appErr
 	}
 
-	if err := c.Update(tx, oldStatus); err != nil {
+	if err := c.Update(ctx); err != nil {
 		return err
 	}
 
 	e := events.Event{
 		Kind:    domain.EventApiClaimRevision,
-		Message: fmt.Sprintf("Claim Revision: %s  ID: %s", c.EventDescription, c.ID.String()),
+		Message: fmt.Sprintf("Claim Revision: %s  ID: %s", c.IncidentDescription, c.ID.String()),
 		Payload: events.Payload{domain.EventPayloadID: c.ID},
 	}
 	emitEvent(e)
@@ -312,7 +382,7 @@ func (c *Claim) RequestRevision(tx *pop.Connection) error {
 // RequestReceipt changes the status of the claim to Receipt
 //   provided that the current status is Review1.
 // TODO consider how to communicate what kind of receipt is needed
-func (c *Claim) RequestReceipt(tx *pop.Connection) error {
+func (c *Claim) RequestReceipt(ctx buffalo.Context, reason string) error {
 	oldStatus := c.Status
 	var eventType string
 
@@ -328,14 +398,15 @@ func (c *Claim) RequestReceipt(tx *pop.Connection) error {
 	}
 
 	c.Status = api.ClaimStatusReceipt
+	c.StatusReason = reason
 
-	if err := c.Update(tx, oldStatus); err != nil {
+	if err := c.Update(ctx); err != nil {
 		return err
 	}
 
 	e := events.Event{
 		Kind:    eventType,
-		Message: fmt.Sprintf("Claim Request Receipt: %s  ID: %s", c.EventDescription, c.ID.String()),
+		Message: fmt.Sprintf("Claim Request Receipt: %s  ID: %s", c.IncidentDescription, c.ID.String()),
 		Payload: events.Payload{domain.EventPayloadID: c.ID},
 	}
 	emitEvent(e)
@@ -347,7 +418,7 @@ func (c *Claim) RequestReceipt(tx *pop.Connection) error {
 //  from Review3 to Approved. It also adds the ReviewerID and ReviewDate.
 // TODO distinguish between admin types (steward vs. signator)
 // TODO do whatever post-processing is needed for payment
-func (c *Claim) Approve(tx *pop.Connection, actor User) error {
+func (c *Claim) Approve(ctx context.Context) error {
 	oldStatus := c.Status
 	var eventType string
 
@@ -364,16 +435,18 @@ func (c *Claim) Approve(tx *pop.Connection, actor User) error {
 		return appErr
 	}
 
+	actor := CurrentUser(ctx)
 	c.ReviewerID = nulls.NewUUID(actor.ID)
 	c.ReviewDate = nulls.NewTime(time.Now().UTC())
+	c.StatusReason = ""
 
-	if err := c.Update(tx, oldStatus); err != nil {
+	if err := c.Update(ctx); err != nil {
 		return err
 	}
 
 	e := events.Event{
 		Kind:    eventType,
-		Message: fmt.Sprintf("Claim Approved: %s  ID: %s", c.EventDescription, c.ID.String()),
+		Message: fmt.Sprintf("Claim Approved: %s  ID: %s", c.IncidentDescription, c.ID.String()),
 		Payload: events.Payload{domain.EventPayloadID: c.ID},
 	}
 	emitEvent(e)
@@ -382,7 +455,7 @@ func (c *Claim) Approve(tx *pop.Connection, actor User) error {
 }
 
 // Deny changes the status of the claim to Denied and adds the ReviewerID and ReviewDate.
-func (c *Claim) Deny(tx *pop.Connection, actor User) error {
+func (c *Claim) Deny(ctx context.Context, message string) error {
 	oldStatus := c.Status
 
 	if oldStatus != api.ClaimStatusReview1 && oldStatus != api.ClaimStatusReview2 &&
@@ -393,17 +466,19 @@ func (c *Claim) Deny(tx *pop.Connection, actor User) error {
 	}
 
 	c.Status = api.ClaimStatusDenied
+	c.StatusReason = message
 
+	actor := CurrentUser(ctx)
 	c.ReviewerID = nulls.NewUUID(actor.ID)
 	c.ReviewDate = nulls.NewTime(time.Now().UTC())
 
-	if err := c.Update(tx, oldStatus); err != nil {
+	if err := c.Update(ctx); err != nil {
 		return err
 	}
 
 	e := events.Event{
 		Kind:    domain.EventApiClaimDenied,
-		Message: fmt.Sprintf("Claim Denied: %s  ID: %s", c.EventDescription, c.ID.String()),
+		Message: fmt.Sprintf("Claim Denied: %s  ID: %s", c.IncidentDescription, c.ID.String()),
 		Payload: events.Payload{domain.EventPayloadID: c.ID},
 	}
 	emitEvent(e)
@@ -454,19 +529,20 @@ func (c *Claim) ConvertToAPI(tx *pop.Connection) api.Claim {
 	c.LoadClaimFiles(tx, true)
 
 	return api.Claim{
-		ID:               c.ID,
-		PolicyID:         c.PolicyID,
-		ReferenceNumber:  c.ReferenceNumber,
-		EventDate:        c.EventDate,
-		EventType:        c.EventType,
-		EventDescription: c.EventDescription,
-		Status:           c.Status,
-		ReviewDate:       c.ReviewDate,
-		ReviewerID:       c.ReviewerID,
-		PaymentDate:      c.PaymentDate,
-		TotalPayout:      c.TotalPayout,
-		Items:            c.ClaimItems.ConvertToAPI(tx),
-		Files:            c.ClaimFiles.ConvertToAPI(tx),
+		ID:                  c.ID,
+		PolicyID:            c.PolicyID,
+		ReferenceNumber:     c.ReferenceNumber,
+		IncidentDate:        c.IncidentDate,
+		IncidentType:        c.IncidentType,
+		IncidentDescription: c.IncidentDescription,
+		Status:              c.Status,
+		ReviewDate:          c.ReviewDate,
+		ReviewerID:          c.ReviewerID,
+		PaymentDate:         c.PaymentDate,
+		TotalPayout:         c.TotalPayout,
+		StatusReason:        c.StatusReason,
+		Items:               c.ClaimItems.ConvertToAPI(tx),
+		Files:               c.ClaimFiles.ConvertToAPI(tx),
 	}
 }
 
@@ -478,12 +554,16 @@ func (c *Claims) ConvertToAPI(tx *pop.Connection) api.Claims {
 	return claims
 }
 
+func (c *Claims) All(tx *pop.Connection) error {
+	return appErrorFromDB(tx.All(c), api.ErrorQueryFailure)
+}
+
 func ConvertClaimCreateInput(input api.ClaimCreateInput) Claim {
 	return Claim{
-		EventDate:        input.EventDate,
-		EventType:        input.EventType,
-		EventDescription: input.EventDescription,
-		Status:           api.ClaimStatusDraft,
+		IncidentDate:        input.IncidentDate,
+		IncidentType:        input.IncidentType,
+		IncidentDescription: input.IncidentDescription,
+		Status:              api.ClaimStatusDraft,
 	}
 }
 
@@ -496,13 +576,16 @@ func uniqueClaimReferenceNumber(tx *pop.Connection) string {
 			domain.RandomString(ClaimReferenceNumberLength-3, "1234567890"))
 
 		count, err := tx.Where("reference_number = ?", ref).Count(Claim{})
+		if domain.IsOtherThanNoRows(err) {
+			panic("database error: " + err.Error())
+		}
 		if count == 0 && err == nil {
 			return ref
 		}
 
 		attempts++
 		if attempts > 100 {
-			panic(fmt.Errorf("failed to find unique claim reference number after 100 attempts"))
+			panic(fmt.Errorf("failed to find unique claim reference number after %d attempts", attempts-1))
 		}
 	}
 }
@@ -511,4 +594,94 @@ func uniqueClaimReferenceNumber(tx *pop.Connection) string {
 func (c *Claim) AttachFile(tx *pop.Connection, input api.ClaimFileAttachInput) (ClaimFile, error) {
 	claimFile := NewClaimFile(c.ID, input.FileID, input.Purpose)
 	return *claimFile, claimFile.Create(tx)
+}
+
+// Compare returns a list of fields that are different between two objects
+func (c *Claim) Compare(old Claim) []FieldUpdate {
+	var updates []FieldUpdate
+
+	if c.IncidentDate != old.IncidentDate {
+		updates = append(updates, FieldUpdate{
+			OldValue:  old.IncidentDate.String(),
+			NewValue:  c.IncidentDate.String(),
+			FieldName: "IncidentDate",
+		})
+	}
+
+	if c.IncidentType != old.IncidentType {
+		updates = append(updates, FieldUpdate{
+			OldValue:  string(old.IncidentType),
+			NewValue:  string(c.IncidentType),
+			FieldName: "IncidentType",
+		})
+	}
+
+	if c.IncidentDescription != old.IncidentDescription {
+		updates = append(updates, FieldUpdate{
+			OldValue:  old.IncidentDescription,
+			NewValue:  c.IncidentDescription,
+			FieldName: "IncidentDescription",
+		})
+	}
+
+	if c.Status != old.Status {
+		updates = append(updates, FieldUpdate{
+			OldValue:  string(old.Status),
+			NewValue:  string(c.Status),
+			FieldName: "Status",
+		})
+	}
+
+	if c.ReviewDate != old.ReviewDate {
+		updates = append(updates, FieldUpdate{
+			OldValue:  old.ReviewDate.Time.String(),
+			NewValue:  c.ReviewDate.Time.String(),
+			FieldName: "ReviewDate",
+		})
+	}
+
+	if c.ReviewerID != old.ReviewerID {
+		updates = append(updates, FieldUpdate{
+			OldValue:  old.ReviewerID.UUID.String(),
+			NewValue:  c.ReviewerID.UUID.String(),
+			FieldName: "ReviewerID",
+		})
+	}
+
+	if c.PaymentDate != old.PaymentDate {
+		updates = append(updates, FieldUpdate{
+			OldValue:  old.PaymentDate.Time.String(),
+			NewValue:  c.PaymentDate.Time.String(),
+			FieldName: "PaymentDate",
+		})
+	}
+
+	if c.TotalPayout != old.TotalPayout {
+		updates = append(updates, FieldUpdate{
+			OldValue:  old.TotalPayout.String(),
+			NewValue:  c.TotalPayout.String(),
+			FieldName: "TotalPayout",
+		})
+	}
+
+	if c.StatusReason != old.StatusReason {
+		updates = append(updates, FieldUpdate{
+			OldValue:  old.StatusReason,
+			NewValue:  c.StatusReason,
+			FieldName: "StatusReason",
+		})
+	}
+
+	return updates
+}
+
+func (c *Claim) NewHistory(ctx context.Context, action string, fieldUpdate FieldUpdate) ClaimHistory {
+	return ClaimHistory{
+		Action:    action,
+		ClaimID:   c.ID,
+		UserID:    CurrentUser(ctx).ID,
+		FieldName: fieldUpdate.FieldName,
+		OldValue:  fmt.Sprintf("%s", fieldUpdate.OldValue),
+		NewValue:  fmt.Sprintf("%s", fieldUpdate.NewValue),
+	}
 }

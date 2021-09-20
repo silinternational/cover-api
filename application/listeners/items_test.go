@@ -28,16 +28,17 @@ func (ts *TestSuite) Test_itemSubmitted() {
 	models.CreateAdminUsers(db)
 
 	submittedItem := f.Items[0]
-	models.UpdateItemStatus(db, submittedItem, api.ItemCoverageStatusPending)
+	models.UpdateItemStatus(db, submittedItem, api.ItemCoverageStatusPending, "")
 
 	approvedItem := f.Items[1]
-	models.UpdateItemStatus(db, approvedItem, api.ItemCoverageStatusApproved)
+	models.UpdateItemStatus(db, approvedItem, api.ItemCoverageStatusApproved, "")
 
 	testEmailer := notifications.DummyEmailService{}
 
 	tests := []struct {
-		name  string
-		event events.Event
+		name      string
+		event     events.Event
+		wantCount int
 	}{
 		{
 			name: "just submitted, not approved",
@@ -45,6 +46,7 @@ func (ts *TestSuite) Test_itemSubmitted() {
 				Kind:    domain.EventApiItemSubmitted,
 				Payload: newTestPayload(submittedItem.ID, &testEmailer),
 			},
+			wantCount: 1,
 		},
 		{
 			name: "auto approved",
@@ -56,6 +58,7 @@ func (ts *TestSuite) Test_itemSubmitted() {
 					EventPayloadNotifier:                   &testEmailer,
 				},
 			},
+			wantCount: 3,
 		},
 	}
 
@@ -64,7 +67,13 @@ func (ts *TestSuite) Test_itemSubmitted() {
 			testEmailer.DeleteSentMessages()
 			itemSubmitted(tt.event)
 
-			ts.Greater(testEmailer.GetNumberOfMessagesSent(), 0, "no email messages sent")
+			var nus models.NotificationUsers
+			ts.NoError(db.All(&nus), "error fetching NotificationUsers from db")
+			ts.Equal(tt.wantCount, len(nus), "incorrect number of NotificationUsers queued")
+
+			notfns := models.Notifications{}
+			ts.NoError(db.All(&notfns), "error fetching all NotificationUsers for destroy")
+			ts.NoError(db.Destroy(&notfns), "error destroying all NotificationUsers")
 		})
 	}
 }
@@ -82,7 +91,7 @@ func (ts *TestSuite) Test_itemRevision() {
 	f := models.CreateItemFixtures(db, fixConfig)
 
 	revisionItem := f.Items[0]
-	models.UpdateItemStatus(db, revisionItem, api.ItemCoverageStatusRevision)
+	models.UpdateItemStatus(db, revisionItem, api.ItemCoverageStatusRevision, "try again, please")
 
 	testEmailer := notifications.DummyEmailService{}
 
@@ -104,7 +113,9 @@ func (ts *TestSuite) Test_itemRevision() {
 			testEmailer.DeleteSentMessages()
 			itemRevision(tt.event)
 
-			ts.Greater(testEmailer.GetNumberOfMessagesSent(), 0, "no email messages sent")
+			var nus models.NotificationUsers
+			ts.NoError(db.All(&nus), "error fetching NotificationUsers from db")
+			ts.Equal(2, len(nus), "incorrect number of NotificationUsers queued")
 		})
 	}
 }
@@ -122,7 +133,7 @@ func (ts *TestSuite) Test_itemDenied() {
 	f := models.CreateItemFixtures(db, fixConfig)
 
 	revisionItem := f.Items[0]
-	models.UpdateItemStatus(db, revisionItem, api.ItemCoverageStatusDenied)
+	models.UpdateItemStatus(db, revisionItem, api.ItemCoverageStatusDenied, "sorry Charlie")
 
 	testEmailer := notifications.DummyEmailService{}
 
@@ -144,7 +155,9 @@ func (ts *TestSuite) Test_itemDenied() {
 			testEmailer.DeleteSentMessages()
 			itemDenied(tt.event)
 
-			ts.Greater(testEmailer.GetNumberOfMessagesSent(), 0, "no email messages sent")
+			var nus models.NotificationUsers
+			ts.NoError(db.All(&nus), "error fetching NotificationUsers from db")
+			ts.Equal(2, len(nus), "incorrect number of NotificationUsers queued")
 		})
 	}
 }

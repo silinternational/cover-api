@@ -1,0 +1,12 @@
+create_table("entity_codes") {
+	t.Column("id", "uuid", {primary: true})
+	t.Column("code", "string", {})
+	t.Column("name", "string", {})
+	t.Timestamps()
+
+	t.Index("code", {"unique": true})
+}
+
+drop_column("policies", "entity_code")
+add_column("policies", "entity_code_id", "uuid", {"null": true})
+add_foreign_key("policies", "entity_code_id", {"entity_codes": ["id"]}, {"on_delete": "restrict"})

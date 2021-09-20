@@ -11,7 +11,6 @@ import (
 	"reflect"
 
 	"github.com/go-playground/validator/v10"
-	"github.com/gobuffalo/buffalo"
 	"github.com/gobuffalo/events"
 	"github.com/gobuffalo/nulls"
 	"github.com/gobuffalo/pop/v5"
@@ -49,7 +48,17 @@ type Authable interface {
 }
 
 type Createable interface {
-	Create(tx *pop.Connection) error
+	Create(*pop.Connection) error
+}
+
+type Updatable interface {
+	Update(*pop.Connection) error
+}
+
+type FieldUpdate struct {
+	FieldName string
+	OldValue  string
+	NewValue  string
 }
 
 func init() {
@@ -81,6 +90,8 @@ func init() {
 	mValidate.RegisterStructValidation(claimStructLevelValidation, Claim{})
 	mValidate.RegisterStructValidation(claimItemStructLevelValidation, ClaimItem{})
 	mValidate.RegisterStructValidation(policyStructLevelValidation, Policy{})
+	mValidate.RegisterStructValidation(itemStructLevelValidation, Item{})
+	mValidate.RegisterStructValidation(notificationStructLevelValidation, Notification{})
 }
 
 func getRandomToken() (string, error) {
@@ -95,9 +106,9 @@ func getRandomToken() (string, error) {
 }
 
 // CurrentUser retrieves the current user from the context.
-func CurrentUser(c buffalo.Context) User {
-	user, _ := c.Value(domain.ContextKeyCurrentUser).(User)
-	domain.NewExtra(c, "user_id", user.ID)
+func CurrentUser(ctx context.Context) User {
+	user, _ := ctx.Value(domain.ContextKeyCurrentUser).(User)
+	domain.NewExtra(ctx, "user_id", user.ID)
 	return user
 }
 
@@ -143,7 +154,17 @@ func create(tx *pop.Connection, m interface{}) error {
 }
 
 func appErrorFromDB(err error, defaultKey api.ErrorKey) error {
+	if err == nil {
+		return nil
+	}
+
 	appErr := api.NewAppError(err, defaultKey, api.CategoryInternal)
+
+	if !domain.IsOtherThanNoRows(err) {
+		appErr.Category = api.CategoryUser
+		appErr.Key = api.ErrorNoRows
+		return appErr
+	}
 
 	var pgError *pgconn.PgError
 	if errors.As(err, &pgError) {
@@ -207,7 +228,7 @@ func emitEvent(e events.Event) {
 	}
 }
 
-func addFile(tx *pop.Connection, m interface{}, fileID uuid.UUID) error {
+func addFile(tx *pop.Connection, m Updatable, fileID uuid.UUID) error {
 	var f File
 
 	if err := f.Find(tx, fileID); err != nil {
@@ -226,7 +247,7 @@ func addFile(tx *pop.Connection, m interface{}, fileID uuid.UUID) error {
 		return errors.New("error identifying ID field")
 	}
 
-	if err := tx.Update(m); err != nil {
+	if err := m.Update(tx); err != nil {
 		return fmt.Errorf("failed to update the file ID column, %s", err)
 	}
 

@@ -1,115 +1,161 @@
 package messages
 
 import (
-	"fmt"
+	"github.com/gobuffalo/nulls"
+	"github.com/gobuffalo/pop/v5"
 
 	"github.com/silinternational/cover-api/api"
-	"github.com/silinternational/cover-api/domain"
 	"github.com/silinternational/cover-api/models"
-	"github.com/silinternational/cover-api/notifications"
 )
 
-func addMessageItemData(msg *notifications.Message, item models.Item) {
-	msg.Data["itemURL"] = fmt.Sprintf("%s/items/%s", domain.Env.UIURL, item.ID)
-	msg.Data["itemName"] = item.Name
-	return
-}
+func itemApprovedQueueMsg(tx *pop.Connection, item models.Item) {
+	data := newEmailMessageData()
+	data.addItemData(item)
 
-func newItemMessageForMember(item models.Item, member models.User) notifications.Message {
-	msg := notifications.NewEmailMessage()
-	addMessageItemData(&msg, item)
-	msg.ToName = member.Name()
-	msg.ToEmail = member.EmailOfChoice()
-	msg.Data["memberName"] = member.Name()
+	notn := models.Notification{
+		ItemID:  nulls.NewUUID(item.ID),
+		Body:    data.renderHTML(MessageTemplateItemApprovedMember),
+		Subject: "your new policy item has been approved",
+		// TODO make this more helpful
+		InappText: "your new policy item has been approved",
 
-	return msg
-}
+		// TODO fix these and make them constants somewhere
+		Event:         "Item Approved Notification",
+		EventCategory: "Item",
+	}
+	if err := notn.Create(tx); err != nil {
+		panic("error creating new Notification: " + err.Error())
+	}
 
-func notifyItemApprovedMember(item models.Item, notifiers []interface{}) {
 	for _, m := range item.Policy.Members {
-		msg := newItemMessageForMember(item, m)
-		msg.Template = MessageTemplateItemApprovedMember
-		msg.Subject = "your new policy item has been approved"
-		if err := notifications.Send(msg, notifiers...); err != nil {
-			domain.ErrLogger.Printf("error sending item auto approved notification to member, %s", err)
-		}
+		notn.CreateNotificationUser(tx, m)
 	}
 }
 
-func notifyItemAutoApprovedSteward(item models.Item, memberName string, notifiers []interface{}) {
-	msg := notifications.NewEmailMessage()
-	addMessageItemData(&msg, item)
-	msg.Template = MessageTemplateItemAutoSteward
-	msg.Subject = memberName + " just submitted a new policy item that has been auto approved"
-	msg.Data["memberName"] = memberName
+func itemAutoApprovedQueueMessage(tx *pop.Connection, item models.Item, member models.User) {
+	data := newEmailMessageData()
+	data.addItemData(item)
+	memberName := member.Name()
+	data["memberName"] = memberName
 
-	msgs := msg.CopyToStewards()
+	notn := models.Notification{
+		ItemID:  nulls.NewUUID(item.ID),
+		Body:    data.renderHTML(MessageTemplateItemAutoSteward),
+		Subject: memberName + " just submitted a new policy item that has been auto approved",
 
-	for _, m := range msgs {
-		if err := notifications.Send(m, notifiers...); err != nil {
-			domain.ErrLogger.Printf("error sending item auto approved notification to steward, %s", err)
-		}
+		InappText: "Coverage on a new policy item was just auto approved",
+
+		// TODO make these constants somewhere
+		Event:         "Item Auto Approved Notification",
+		EventCategory: "Item",
 	}
+	if err := notn.Create(tx); err != nil {
+		panic("error creating new Item Auto Approved Notification: " + err.Error())
+	}
+
+	notn.CreateNotificationUsersForStewards(tx)
 }
 
-func notifyItemSubmitted(item models.Item, memberName string, notifiers []interface{}) {
-	msg := notifications.NewEmailMessage()
-	addMessageItemData(&msg, item)
-	msg.Template = MessageTemplateItemSubmittedSteward
-	msg.Subject = "Action Required. " + memberName + " just submitted a new policy item for approval"
-	msg.Data["memberName"] = memberName
+func itemPendingQueueMessage(tx *pop.Connection, item models.Item, member models.User) {
+	data := newEmailMessageData()
+	data.addItemData(item)
+	data["memberName"] = member.Name()
 
-	msgs := msg.CopyToStewards()
-	for _, m := range msgs {
-		if err := notifications.Send(m, notifiers...); err != nil {
-			domain.ErrLogger.Printf("error sending item submitted notification, %s", err)
-		}
+	notn := models.Notification{
+		ItemID: nulls.NewUUID(item.ID),
+		Body:   data.renderHTML(MessageTemplateItemPendingSteward),
+		Subject: "Action Required. " + member.Name() +
+			" just submitted a new policy item for approval",
+
+		InappText: "A new policy item is waiting for your approval",
+
+		// TODO make these constants somewhere
+		Event:         "Item Pending Notification",
+		EventCategory: "Item",
 	}
+	if err := notn.Create(tx); err != nil {
+		panic("error creating new Item Pending Notification: " + err.Error())
+	}
+
+	notn.CreateNotificationUsersForStewards(tx)
 }
-func ItemSubmittedSend(item models.Item, notifiers []interface{}) {
+
+// ItemSubmittedQueueMessage queues messages about a new item depending
+//   on its CoverageStatus
+// If the item is `Approved`, it queues messages to the item's members and
+//   to the stewards about the approval.
+// If the item is `Pending`, it queues messages to the stewards.
+func ItemSubmittedQueueMessage(tx *pop.Connection, item models.Item) {
 	item.LoadPolicyMembers(models.DB, false)
-	memberName := item.Policy.Members[0].Name()
 
 	if item.CoverageStatus == api.ItemCoverageStatusApproved {
-		notifyItemApprovedMember(item, notifiers)
-		notifyItemAutoApprovedSteward(item, memberName, notifiers)
+		itemApprovedQueueMsg(tx, item)
+		itemAutoApprovedQueueMessage(tx, item, item.Policy.Members[0])
 	} else if item.CoverageStatus == api.ItemCoverageStatusPending { // Was submitted but not auto approved
-		notifyItemSubmitted(item, memberName, notifiers)
+		itemPendingQueueMessage(tx, item, item.Policy.Members[0])
 	}
 }
 
-func ItemRevisionSend(item models.Item, notifiers []interface{}) {
+// ItemRevisionQueueMessage queues messages to an item's members to
+//  notify them that revisions are required
+func ItemRevisionQueueMessage(tx *pop.Connection, item models.Item) {
 	item.LoadPolicyMembers(models.DB, false)
 
-	// TODO figure out how to specify required revisions
+	data := newEmailMessageData()
+	data.addItemData(item)
+	data["itemStatusReason"] = item.StatusReason
+
+	notn := models.Notification{
+		ItemID:  nulls.NewUUID(item.ID),
+		Body:    data.renderHTML(MessageTemplateItemRevisionMember),
+		Subject: "changes have been requested on your new policy item",
+		// TODO make this more helpful
+		InappText: "changes have been requested on your new policy item",
+
+		// TODO make these constants somewhere
+		Event:         "Item Revision Required Notification",
+		EventCategory: "Item",
+	}
+	if err := notn.Create(tx); err != nil {
+		panic("error creating new Item Revision Notification: " + err.Error())
+	}
 
 	for _, m := range item.Policy.Members {
-		msg := newItemMessageForMember(item, m)
-		msg.Template = MessageTemplateItemRevisionMember
-		msg.Subject = "changes have been requested on your new policy item"
-		if err := notifications.Send(msg, notifiers...); err != nil {
-			domain.ErrLogger.Printf("error sending item revision notification to member, %s", err)
-		}
+		notn.CreateNotificationUser(tx, m)
 	}
 }
 
-func ItemApprovedSend(item models.Item, notifiers []interface{}) {
+// ItemApprovedQueueMessage queues messages to an item's members to
+//  notify them that coverage on their item was approved
+func ItemApprovedQueueMessage(tx *pop.Connection, item models.Item) {
 	item.LoadPolicyMembers(models.DB, false)
-	notifyItemApprovedMember(item, notifiers)
+	itemApprovedQueueMsg(tx, item)
 }
 
-func ItemDeniedSend(item models.Item, notifiers []interface{}) {
-
+// ItemDeniedQueueMessage queues messages to an item's members to
+//  notify them that coverage on their item was denied
+func ItemDeniedQueueMessage(tx *pop.Connection, item models.Item) {
 	item.LoadPolicyMembers(models.DB, false)
 
-	// TODO figure out how to give a reason for the denial
+	data := newEmailMessageData()
+	data.addItemData(item)
+	data["itemStatusReason"] = item.StatusReason
+
+	notn := models.Notification{
+		ItemID:    nulls.NewUUID(item.ID),
+		Body:      data.renderHTML(MessageTemplateItemDeniedMember),
+		Subject:   "coverage on your new policy item has been denied",
+		InappText: "coverage on your new policy item has been denied",
+
+		// TODO make these constants somewhere
+		Event:         "Item Denied Notification",
+		EventCategory: "Item",
+	}
+	if err := notn.Create(tx); err != nil {
+		panic("error creating new Item Denied Notification: " + err.Error())
+	}
 
 	for _, m := range item.Policy.Members {
-		msg := newItemMessageForMember(item, m)
-		msg.Template = MessageTemplateItemDeniedMember
-		msg.Subject = "coverage on your new policy item has been denied"
-		if err := notifications.Send(msg, notifiers...); err != nil {
-			domain.ErrLogger.Printf("error sending item denied notification to member, %s", err)
-		}
+		notn.CreateNotificationUser(tx, m)
 	}
 }

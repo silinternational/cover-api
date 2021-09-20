@@ -18,16 +18,23 @@ type dummyMessage struct {
 }
 
 type DummyMessageInfo struct {
-	Subject, ToName, ToEmail string
+	Body, Subject, ToName, ToEmail string
 }
 
 func (t *DummyEmailService) Send(msg Message) error {
-	eTemplate := msg.Template
-	bodyBuf := &bytes.Buffer{}
-	if err := eR.HTML(eTemplate).Render(bodyBuf, msg.Data); err != nil {
-		errMsg := "error rendering message body - " + err.Error()
-		domain.ErrLogger.Printf(errMsg)
-		return errors.New(errMsg)
+	body := msg.Body
+
+	if body == "" {
+		eTemplate := msg.Template
+		bodyBuf := &bytes.Buffer{}
+		if err := EmailRenderer.HTML(eTemplate).Render(bodyBuf, msg.Data); err != nil {
+			errMsg := "error rendering dummy email message body - " + err.Error()
+			domain.ErrLogger.Printf(errMsg)
+			return errors.New(errMsg)
+		}
+		body = bodyBuf.String()
+	} else if body == "ERROR" {
+		return errors.New("mock error for testing sending email message")
 	}
 
 	domain.Logger.Printf("dummy message subject: %s, recipient: %s",
@@ -36,7 +43,7 @@ func (t *DummyEmailService) Send(msg Message) error {
 	t.sentMessages = append(t.sentMessages,
 		dummyMessage{
 			subject:   msg.Subject,
-			body:      bodyBuf.String(),
+			body:      body,
 			fromName:  msg.FromName,
 			fromEmail: msg.FromEmail,
 			toName:    msg.ToName,
@@ -92,6 +99,7 @@ func (t *DummyEmailService) GetSentMessages() []DummyMessageInfo {
 	messages := make([]DummyMessageInfo, len(t.sentMessages))
 	for i, m := range t.sentMessages {
 		messages[i] = DummyMessageInfo{
+			Body:    m.body,
 			Subject: m.subject,
 			ToName:  m.toName,
 			ToEmail: m.toEmail,

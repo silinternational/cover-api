@@ -109,6 +109,8 @@ const (
 	EventApiClaimApproved    = "api:claim:approved"
 	EventApiClaimDenied      = "api:claim:denied"
 
+	EventApiNotificationCreated = "api:notification:created"
+
 	EventApiPolicyUserInviteCreated = "api:policy:invite:created"
 )
 

@@ -5,6 +5,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/gobuffalo/nulls"
+
 	"github.com/silinternational/cover-api/api"
 	"github.com/silinternational/cover-api/domain"
 )
@@ -23,14 +25,40 @@ func (ms *ModelSuite) TestClaim_Validate() {
 			wantErr:  true,
 		},
 		{
+			name: "empty revision message - status = Revision",
+			claim: &Claim{
+				ReferenceNumber:     domain.RandomString(ClaimReferenceNumberLength, ""),
+				PolicyID:            domain.GetUUID(),
+				IncidentType:        api.ClaimIncidentTypeImpact,
+				IncidentDate:        time.Now(),
+				IncidentDescription: "testing123",
+				Status:              api.ClaimStatusRevision,
+			},
+			errField: "Claim.StatusReason",
+			wantErr:  true,
+		},
+		{
+			name: "empty revision message - status = Denied",
+			claim: &Claim{
+				ReferenceNumber:     domain.RandomString(ClaimReferenceNumberLength, ""),
+				PolicyID:            domain.GetUUID(),
+				IncidentType:        api.ClaimIncidentTypeImpact,
+				IncidentDate:        time.Now(),
+				IncidentDescription: "testing123",
+				Status:              api.ClaimStatusDenied,
+			},
+			errField: "Claim.StatusReason",
+			wantErr:  true,
+		},
+		{
 			name: "valid status",
 			claim: &Claim{
-				ReferenceNumber:  domain.RandomString(ClaimReferenceNumberLength, ""),
-				PolicyID:         domain.GetUUID(),
-				EventType:        api.ClaimEventTypeImpact,
-				EventDate:        time.Now(),
-				EventDescription: "testing123",
-				Status:           api.ClaimStatusReview1,
+				ReferenceNumber:     domain.RandomString(ClaimReferenceNumberLength, ""),
+				PolicyID:            domain.GetUUID(),
+				IncidentType:        api.ClaimIncidentTypeImpact,
+				IncidentDate:        time.Now(),
+				IncidentDescription: "testing123",
+				Status:              api.ClaimStatusReview1,
 			},
 			errField: "",
 			wantErr:  false,
@@ -57,11 +85,11 @@ func (ms *ModelSuite) TestClaim_ReferenceNumber() {
 		NumberOfPolicies: 1,
 	})
 	claim := &Claim{
-		PolicyID:         fixtures.Policies[0].ID,
-		EventDate:        time.Now().UTC(),
-		EventType:        api.ClaimEventTypeImpact,
-		EventDescription: "fell",
-		Status:           api.ClaimStatusReview1,
+		PolicyID:            fixtures.Policies[0].ID,
+		IncidentDate:        time.Now().UTC(),
+		IncidentType:        api.ClaimIncidentTypeImpact,
+		IncidentDescription: "fell",
+		Status:              api.ClaimStatusReview1,
 	}
 	ms.NoError(claim.Create(ms.DB))
 	ms.Len(claim.ReferenceNumber, ClaimReferenceNumberLength)
@@ -82,9 +110,9 @@ func (ms *ModelSuite) TestClaim_SubmitForApproval() {
 	fixtures := CreateItemFixtures(ms.DB, fixConfig)
 	policy := fixtures.Policies[0]
 	draftClaim := policy.Claims[0]
-	revisionClaim := UpdateClaimStatus(ms.DB, policy.Claims[1], api.ClaimStatusRevision)
-	reviewClaim := UpdateClaimStatus(ms.DB, policy.Claims[2], api.ClaimStatusReview1)
-	emptyClaim := UpdateClaimStatus(ms.DB, policy.Claims[3], api.ClaimStatusDraft)
+	revisionClaim := UpdateClaimStatus(ms.DB, policy.Claims[1], api.ClaimStatusRevision, "")
+	reviewClaim := UpdateClaimStatus(ms.DB, policy.Claims[2], api.ClaimStatusReview1, "")
+	emptyClaim := UpdateClaimStatus(ms.DB, policy.Claims[3], api.ClaimStatusDraft, "")
 
 	tempClaim := emptyClaim
 	tempClaim.LoadClaimItems(ms.DB, false)
@@ -127,7 +155,8 @@ func (ms *ModelSuite) TestClaim_SubmitForApproval() {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := tt.claim.SubmitForApproval(ms.DB)
+			ctx := CreateTestContext(fixtures.Users[0])
+			got := tt.claim.SubmitForApproval(ctx)
 
 			if tt.wantErrContains != "" {
 				ms.Error(got, " did not return expected error")
@@ -160,9 +189,9 @@ func (ms *ModelSuite) TestClaim_RequestRevision() {
 	fixtures := CreateItemFixtures(ms.DB, fixConfig)
 	policy := fixtures.Policies[0]
 	draftClaim := policy.Claims[0]
-	review1Claim := UpdateClaimStatus(ms.DB, policy.Claims[2], api.ClaimStatusReview1)
-	review3Claim := UpdateClaimStatus(ms.DB, policy.Claims[2], api.ClaimStatusReview3)
-	emptyClaim := UpdateClaimStatus(ms.DB, policy.Claims[3], api.ClaimStatusReview1)
+	review1Claim := UpdateClaimStatus(ms.DB, policy.Claims[2], api.ClaimStatusReview1, "")
+	review3Claim := UpdateClaimStatus(ms.DB, policy.Claims[2], api.ClaimStatusReview3, "")
+	emptyClaim := UpdateClaimStatus(ms.DB, policy.Claims[3], api.ClaimStatusReview1, "")
 
 	tempClaim := emptyClaim
 	tempClaim.LoadClaimItems(ms.DB, false)
@@ -205,7 +234,9 @@ func (ms *ModelSuite) TestClaim_RequestRevision() {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := tt.claim.RequestRevision(ms.DB)
+			const message = "change all the things"
+			ctx := CreateTestContext(fixtures.Users[0])
+			got := tt.claim.RequestRevision(ctx, message)
 
 			if tt.wantErrContains != "" {
 				ms.Error(got, " did not return expected error")
@@ -219,6 +250,7 @@ func (ms *ModelSuite) TestClaim_RequestRevision() {
 			ms.NoError(got)
 
 			ms.Equal(tt.wantStatus, tt.claim.Status, "incorrect status")
+			ms.Equal(message, tt.claim.StatusReason, "incorrect status reason message")
 		})
 	}
 }
@@ -238,8 +270,8 @@ func (ms *ModelSuite) TestClaim_Preapprove() {
 	fixtures := CreateItemFixtures(ms.DB, fixConfig)
 	policy := fixtures.Policies[0]
 	draftClaim := policy.Claims[0]
-	review1Claim := UpdateClaimStatus(ms.DB, policy.Claims[2], api.ClaimStatusReview1)
-	emptyClaim := UpdateClaimStatus(ms.DB, policy.Claims[3], api.ClaimStatusReview1)
+	review1Claim := UpdateClaimStatus(ms.DB, policy.Claims[2], api.ClaimStatusReview1, "")
+	emptyClaim := UpdateClaimStatus(ms.DB, policy.Claims[3], api.ClaimStatusReview1, "")
 
 	tempClaim := emptyClaim
 	tempClaim.LoadClaimItems(ms.DB, false)
@@ -277,7 +309,8 @@ func (ms *ModelSuite) TestClaim_Preapprove() {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := tt.claim.RequestReceipt(ms.DB)
+			ctx := CreateTestContext(fixtures.Users[0])
+			got := tt.claim.RequestReceipt(ctx, "")
 
 			if tt.wantErrContains != "" {
 				ms.Error(got, " did not return expected error")
@@ -313,10 +346,10 @@ func (ms *ModelSuite) TestClaim_Approve() {
 
 	policy := fixtures.Policies[0]
 	draftClaim := policy.Claims[0]
-	review1Claim := UpdateClaimStatus(ms.DB, policy.Claims[1], api.ClaimStatusReview1)
-	review2Claim := UpdateClaimStatus(ms.DB, policy.Claims[2], api.ClaimStatusReview2)
-	review3Claim := UpdateClaimStatus(ms.DB, policy.Claims[3], api.ClaimStatusReview3)
-	emptyClaim := UpdateClaimStatus(ms.DB, policy.Claims[4], api.ClaimStatusReview1)
+	review1Claim := UpdateClaimStatus(ms.DB, policy.Claims[1], api.ClaimStatusReview1, "")
+	review2Claim := UpdateClaimStatus(ms.DB, policy.Claims[2], api.ClaimStatusReview2, "")
+	review3Claim := UpdateClaimStatus(ms.DB, policy.Claims[3], api.ClaimStatusReview3, "")
+	emptyClaim := UpdateClaimStatus(ms.DB, policy.Claims[4], api.ClaimStatusReview1, "")
 
 	tempClaim := emptyClaim
 	tempClaim.LoadClaimItems(ms.DB, false)
@@ -370,7 +403,8 @@ func (ms *ModelSuite) TestClaim_Approve() {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := tt.claim.Approve(ms.DB, tt.actor)
+			ctx := CreateTestContext(tt.actor)
+			got := tt.claim.Approve(ctx)
 
 			if tt.wantErrContains != "" {
 				ms.Error(got, " did not return expected error")
@@ -386,6 +420,7 @@ func (ms *ModelSuite) TestClaim_Approve() {
 			ms.Equal(tt.wantStatus, tt.claim.Status, "incorrect status")
 			ms.Equal(tt.actor.ID.String(), tt.claim.ReviewerID.UUID.String(), "incorrect reviewer id")
 			ms.WithinDuration(time.Now().UTC(), tt.claim.ReviewDate.Time, time.Second*2, "incorrect reviewer date id")
+			ms.Equal("", tt.claim.StatusReason, "StatusReason should be empty after approval")
 		})
 	}
 }
@@ -408,10 +443,10 @@ func (ms *ModelSuite) TestClaim_Deny() {
 
 	policy := fixtures.Policies[0]
 	draftClaim := policy.Claims[0]
-	review1Claim := UpdateClaimStatus(ms.DB, policy.Claims[1], api.ClaimStatusReview1)
-	review2Claim := UpdateClaimStatus(ms.DB, policy.Claims[2], api.ClaimStatusReview2)
-	review3Claim := UpdateClaimStatus(ms.DB, policy.Claims[3], api.ClaimStatusReview3)
-	emptyClaim := UpdateClaimStatus(ms.DB, policy.Claims[4], api.ClaimStatusReview1)
+	review1Claim := UpdateClaimStatus(ms.DB, policy.Claims[1], api.ClaimStatusReview1, "")
+	review2Claim := UpdateClaimStatus(ms.DB, policy.Claims[2], api.ClaimStatusReview2, "")
+	review3Claim := UpdateClaimStatus(ms.DB, policy.Claims[3], api.ClaimStatusReview3, "")
+	emptyClaim := UpdateClaimStatus(ms.DB, policy.Claims[4], api.ClaimStatusReview1, "")
 
 	tempClaim := emptyClaim
 	tempClaim.LoadClaimItems(ms.DB, false)
@@ -465,7 +500,9 @@ func (ms *ModelSuite) TestClaim_Deny() {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := tt.claim.Deny(ms.DB, tt.actor)
+			const message = "change all the things"
+			ctx := CreateTestContext(tt.actor)
+			got := tt.claim.Deny(ctx, message)
 
 			if tt.wantErrContains != "" {
 				ms.Error(got, " did not return expected error")
@@ -481,6 +518,187 @@ func (ms *ModelSuite) TestClaim_Deny() {
 			ms.Equal(tt.wantStatus, tt.claim.Status, "incorrect status")
 			ms.Equal(tt.actor.ID.String(), tt.claim.ReviewerID.UUID.String(), "incorrect reviewer id")
 			ms.WithinDuration(time.Now().UTC(), tt.claim.ReviewDate.Time, time.Second*2, "incorrect reviewer date id")
+			ms.Equal(message, tt.claim.StatusReason, "incorrect status reason message")
+		})
+	}
+}
+
+func (ms *ModelSuite) TestClaim_ConvertToAPI() {
+	policy := CreatePolicyFixtures(ms.DB, FixturesConfig{}).Policies[0]
+	claim := createClaimFixture(ms.DB, policy, FixturesConfig{
+		ClaimItemsPerClaim: 2,
+		ClaimFilesPerClaim: 3,
+	})
+	claim.StatusReason = "change request " + domain.RandomString(8, "0123456789")
+
+	got := claim.ConvertToAPI(ms.DB)
+
+	ms.Equal(claim.ID, got.ID, "ID is not correct")
+	ms.Equal(claim.PolicyID, got.PolicyID, "PolicyID is not correct")
+	ms.Equal(claim.ReferenceNumber, got.ReferenceNumber, "ReferenceNumber is not correct")
+	ms.Equal(claim.IncidentDate, got.IncidentDate, "IncidentDate is not correct")
+	ms.Equal(claim.IncidentType, got.IncidentType, "IncidentType is not correct")
+	ms.Equal(claim.IncidentDescription, got.IncidentDescription, "IncidentDescription is not correct")
+	ms.Equal(claim.Status, got.Status, "Status is not correct")
+	ms.Equal(claim.ReviewDate, got.ReviewDate, "ReviewDate is not correct")
+	ms.Equal(claim.ReviewerID, got.ReviewerID, "ReviewerID is not correct")
+	ms.Equal(claim.PaymentDate, got.PaymentDate, "PaymentDate is not correct")
+	ms.Equal(claim.TotalPayout, got.TotalPayout, "TotalPayout is not correct")
+	ms.Equal(claim.StatusReason, got.StatusReason, "StatusReason is not correct")
+
+	ms.Greater(len(claim.ClaimItems), 0, "test should be revised, fixture has no ClaimItems")
+	ms.Len(got.Items, len(claim.ClaimItems), "Items is not correct length")
+
+	ms.Greater(len(claim.ClaimFiles), 0, "test should be revised, fixture has no ClaimFiles")
+	ms.Len(got.Files, len(claim.ClaimFiles), "Files is not correct length")
+}
+
+func (ms *ModelSuite) TestClaim_Compare() {
+	e := EntityCode{
+		Code: randStr(3),
+		Name: "Acme, Inc.",
+	}
+	MustCreate(ms.DB, &e)
+
+	f := CreateItemFixtures(ms.DB, FixturesConfig{ClaimsPerPolicy: 1})
+	oldClaim := f.Claims[0]
+	newClaim := Claim{
+		ReviewDate:   nulls.NewTime(time.Now().UTC().Add(-1 * time.Hour)),
+		ReviewerID:   nulls.NewUUID(f.Users[0].ID),
+		PaymentDate:  nulls.NewTime(time.Now().UTC()),
+		TotalPayout:  10000,
+		StatusReason: "because",
+	}
+
+	tests := []struct {
+		name string
+		new  Claim
+		old  Claim
+		want []FieldUpdate
+	}{
+		{
+			name: "1",
+			new:  newClaim,
+			old:  oldClaim,
+			want: []FieldUpdate{
+				{
+					FieldName: "IncidentDate",
+					OldValue:  oldClaim.IncidentDate.String(),
+					NewValue:  newClaim.IncidentDate.String(),
+				},
+				{
+					FieldName: "IncidentType",
+					OldValue:  string(oldClaim.IncidentType),
+					NewValue:  string(newClaim.IncidentType),
+				},
+				{
+					FieldName: "IncidentDescription",
+					OldValue:  oldClaim.IncidentDescription,
+					NewValue:  newClaim.IncidentDescription,
+				},
+				{
+					FieldName: "Status",
+					OldValue:  string(oldClaim.Status),
+					NewValue:  string(newClaim.Status),
+				},
+				{
+					FieldName: "ReviewDate",
+					OldValue:  oldClaim.ReviewDate.Time.String(),
+					NewValue:  newClaim.ReviewDate.Time.String(),
+				},
+				{
+					FieldName: "ReviewerID",
+					OldValue:  oldClaim.ReviewerID.UUID.String(),
+					NewValue:  newClaim.ReviewerID.UUID.String(),
+				},
+				{
+					FieldName: "PaymentDate",
+					OldValue:  oldClaim.PaymentDate.Time.String(),
+					NewValue:  newClaim.PaymentDate.Time.String(),
+				},
+				{
+					FieldName: "TotalPayout",
+					OldValue:  oldClaim.TotalPayout.String(),
+					NewValue:  newClaim.TotalPayout.String(),
+				},
+				{
+					FieldName: "StatusReason",
+					OldValue:  oldClaim.StatusReason,
+					NewValue:  newClaim.StatusReason,
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		ms.T().Run(tt.name, func(t *testing.T) {
+			got := tt.new.Compare(tt.old)
+			ms.ElementsMatch(tt.want, got)
+		})
+	}
+}
+
+func (ms *ModelSuite) TestClaim_NewHistory() {
+	f := CreateItemFixtures(ms.DB, FixturesConfig{ClaimsPerPolicy: 1})
+	claim := f.Claims[0]
+	user := f.Users[0]
+
+	const newStatus = api.ClaimStatusApproved
+	newIncidentDate := time.Now().UTC()
+
+	tests := []struct {
+		name   string
+		claim  Claim
+		user   User
+		update FieldUpdate
+		want   ClaimHistory
+	}{
+		{
+			name:  "Status",
+			claim: claim,
+			user:  user,
+			update: FieldUpdate{
+				FieldName: "Status",
+				OldValue:  string(claim.Status),
+				NewValue:  string(newStatus),
+			},
+			want: ClaimHistory{
+				ClaimID:   claim.ID,
+				UserID:    user.ID,
+				Action:    api.HistoryActionUpdate,
+				FieldName: "Status",
+				OldValue:  string(claim.Status),
+				NewValue:  string(newStatus),
+			},
+		},
+		{
+			name:  "IncidentDate",
+			claim: claim,
+			user:  user,
+			update: FieldUpdate{
+				FieldName: "IncidentDate",
+				OldValue:  claim.IncidentDate.String(),
+				NewValue:  newIncidentDate.String(),
+			},
+			want: ClaimHistory{
+				ClaimID:   claim.ID,
+				UserID:    user.ID,
+				Action:    api.HistoryActionUpdate,
+				FieldName: "IncidentDate",
+				OldValue:  claim.IncidentDate.String(),
+				NewValue:  newIncidentDate.String(),
+			},
+		},
+	}
+	for _, tt := range tests {
+		ms.T().Run(tt.name, func(t *testing.T) {
+			got := tt.claim.NewHistory(CreateTestContext(tt.user), api.HistoryActionUpdate, tt.update)
+			ms.False(tt.want.NewValue == tt.want.OldValue, "test isn't correctly checking a field update")
+			ms.Equal(tt.want.ClaimID, got.ClaimID, "ClaimID is not correct")
+			ms.Equal(tt.want.UserID, got.UserID, "UserID is not correct")
+			ms.Equal(tt.want.Action, got.Action, "Action is not correct")
+			ms.Equal(tt.want.FieldName, got.FieldName, "FieldName is not correct")
+			ms.Equal(tt.want.OldValue, got.OldValue, "OldValue is not correct")
+			ms.Equal(tt.want.NewValue, got.NewValue, "NewValue is not correct")
 		})
 	}
 }

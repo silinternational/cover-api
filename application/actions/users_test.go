@@ -5,9 +5,9 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/silinternational/cover-api/domain"
-
 	"github.com/gofrs/uuid"
+
+	"github.com/silinternational/cover-api/domain"
 	"github.com/silinternational/cover-api/models"
 )
 
@@ -48,6 +48,7 @@ func (as *ActionSuite) Test_usersMe() {
 				`"email":"` + userNoPhoto.Email,
 				`"first_name":"` + userNoPhoto.FirstName,
 				`"last_name":"` + userNoPhoto.LastName,
+				`"app_role":"` + string(userNoPhoto.AppRole),
 				`"last_login_utc":"` + userNoPhoto.LastLoginUTC.Format(domain.DateFormat),
 			},
 		},

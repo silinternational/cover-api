@@ -1,6 +1,7 @@
 package api
 
 import (
+	"fmt"
 	"net/http"
 	"regexp"
 	"strings"
@@ -147,4 +148,10 @@ func MergeExtras(extras []map[string]interface{}) map[string]interface{} {
 	}
 
 	return allExtras
+}
+
+type Currency int
+
+func (c Currency) String() string {
+	return fmt.Sprintf("%0.2f", float32(c)/domain.CurrencyFactor)
 }

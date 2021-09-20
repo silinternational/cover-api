@@ -90,8 +90,11 @@ type Item struct {
 	// annual premium (0.01 USD)
 	AnnualPremium int `json:"annual_premium"`
 
-	// Name of accountable person
-	AccountablePerson string `json:"accountable_person"`
+	// ID of a dependent designated as accountable person, must be null if policy_user_id is not null
+	AccountableDependentID nulls.UUID `json:"policy_dependent_id"`
+
+	// ID of a user designated as accountable person, must be null if policy_dependent_id is not null
+	AccountableUserID nulls.UUID `json:"policy_user_id"`
 }
 
 // ItemInput represents payload for adding an item
@@ -143,4 +146,10 @@ type ItemInput struct {
 
 	// Accountable person ID. Can be either a policy dependent ID or a user ID
 	AccountablePersonID uuid.UUID `json:"accountable_person_id"`
+}
+
+// swagger:model
+type ItemStatusInput struct {
+	// message from a reviewer detailing the revisions needed or the reason for denial
+	StatusReason string `json:"status_reason"`
 }

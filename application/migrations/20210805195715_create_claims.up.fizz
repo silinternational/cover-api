@@ -9,9 +9,14 @@ create_table("claims") {
 	t.Column("reviewer_id", "uuid", {"null": true})
 	t.Column("payment_date", "timestamp", {"null": true})
 	t.Column("total_payout", "int", {})
+	t.Column("legacy_id", "int", {"null": true})
+	t.Column("reference_number", "string", {})
+
 	t.Timestamps()
 
 	t.Index("event_type", {})
+	t.Index("legacy_id", {"unique": true})
+	t.Index("reference_number", {"unique": true})
 
 	t.ForeignKey("policy_id", {"policies": ["id"]}, {})
 	t.ForeignKey("reviewer_id", {"users": ["id"]}, {})
@@ -32,9 +37,12 @@ create_table("claim_items") {
 	t.Column("fmv", "int", {})
 	t.Column("review_date", "timestamp", {"null": true})
 	t.Column("reviewer_id", "uuid", {"null": true})
+	t.Column("legacy_id", "int", {"null": true})
+
 	t.Timestamps()
 
 	t.Index(["claim_id","item_id"], {"unique": true})
+	t.Index("legacy_id", {"unique": true})
 
 	t.ForeignKey("claim_id", {"claims": ["id"]}, {})
 	t.ForeignKey("item_id", {"items": ["id"]}, {})

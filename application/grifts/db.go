@@ -1,11 +1,13 @@
 package grifts
 
 import (
+	"errors"
 	"fmt"
 	"regexp"
 	"time"
 
 	"github.com/gobuffalo/nulls"
+	"github.com/gobuffalo/pop/v5"
 
 	"github.com/silinternational/cover-api/api"
 
@@ -31,36 +33,42 @@ var _ = grift.Namespace("db", func() {
 			return nil
 		}
 
-		fixUsers, err := createUserFixtures()
-		if err != nil {
-			return err
-		}
+		return models.DB.Transaction(func(tx *pop.Connection) error {
+			entityCodes, err := createEntityCodes(tx)
+			if err != nil {
+				return err
+			}
 
-		fixPolicies, err := createPolicyFixtures(fixUsers)
-		if err != nil {
-			return err
-		}
+			fixUsers, err := createUserFixtures(tx)
+			if err != nil {
+				return err
+			}
 
-		fixCats, err := createCategories()
-		if err != nil {
-			return err
-		}
+			fixPolicies, err := createPolicyFixtures(tx, fixUsers, entityCodes)
+			if err != nil {
+				return err
+			}
 
-		_, err = createItemFixtures(fixPolicies, fixCats)
-		if err != nil {
-			return err
-		}
+			if _, err := createCategories(tx); err != nil {
+				return err
+			}
 
-		_, err = createClaimFixtures(fixPolicies)
-		if err != nil {
-			return err
-		}
+			_, err = createItemFixtures(tx, fixPolicies)
+			if err != nil {
+				return err
+			}
 
-		return nil
+			_, err = createClaimFixtures(tx, fixPolicies)
+			if err != nil {
+				return err
+			}
+
+			return nil
+		})
 	})
 })
 
-func createUserFixtures() ([]*models.User, error) {
+func createUserFixtures(tx *pop.Connection) ([]*models.User, error) {
 	userUUIDs := []string{
 		"11147366-26b2-4256-b2ab-58c92c3d54c1",
 		"11247366-26b2-4256-b2ab-58c92c3d54c2",
@@ -131,7 +139,7 @@ func createUserFixtures() ([]*models.User, error) {
 
 	for i, uu := range userUUIDs {
 		fixUsers[i].ID = uuid.FromStringOrNil(uu)
-		err := models.DB.Create(fixUsers[i])
+		err := fixUsers[i].Create(tx)
 		if err != nil {
 			err = fmt.Errorf("error creating user fixture ... %+v\n %v",
 				fixUsers[i], err.Error())
@@ -147,7 +155,7 @@ func createUserFixtures() ([]*models.User, error) {
 		fixUserTokens[i].TokenHash = models.HashClientIdAccessToken(fixUsers[i].Email)
 		fixUserTokens[i].ExpiresAt = oneYearFromNow
 
-		err := models.DB.Create(&fixUserTokens[i])
+		err := tx.Create(&fixUserTokens[i])
 		if err != nil {
 			err = fmt.Errorf("error creating user token fixture ... %+v\n %v", fixUsers[i], err.Error())
 			return fixUsers, err
@@ -157,7 +165,24 @@ func createUserFixtures() ([]*models.User, error) {
 	return fixUsers, nil
 }
 
-func createPolicyFixtures(fixUsers []*models.User) ([]*models.Policy, error) {
+func createEntityCodes(tx *pop.Connection) ([]models.EntityCode, error) {
+	ec1 := models.EntityCode{
+		ID:   uuid.FromStringOrNil("d10e4de5-9cb9-47e0-b382-386a9513820b"),
+		Code: "XYZ",
+		Name: "XYZ entity code",
+	}
+	if err := ec1.Create(tx); err != nil {
+		return []models.EntityCode{}, err
+	}
+	ec2 := models.EntityCode{
+		ID:   uuid.FromStringOrNil("b16e1cff-effb-4f14-a60d-8160fc155185"),
+		Code: "ABC",
+		Name: "ABC entity code",
+	}
+	return []models.EntityCode{ec1, ec2}, ec2.Create(tx)
+}
+
+func createPolicyFixtures(tx *pop.Connection, fixUsers []*models.User, entityCodes models.EntityCodes) ([]*models.Policy, error) {
 	policyUUIDs := []string{
 		"31147366-26b2-4256-b2ab-58c92c3d54cc",
 		"31247366-26b2-4256-b2ab-58c92c3d54cc",
@@ -184,8 +209,14 @@ func createPolicyFixtures(fixUsers []*models.User) ([]*models.Policy, error) {
 			Type:        api.PolicyTypeHousehold,
 			HouseholdID: nulls.NewString(fmt.Sprintf("HID-%s-%s", user.FirstName, user.LastName)),
 		}
+		if i < len(entityCodes) {
+			fixPolicies[i].EntityCodeID = nulls.NewUUID(entityCodes[i].ID)
+			fixPolicies[i].Account = domain.RandomString(6, "0123456789")
+			fixPolicies[i].CostCenter = domain.RandomString(8, "0123456789")
+			fixPolicies[i].Type = api.PolicyTypeCorporate
+		}
 
-		err := models.DB.Create(fixPolicies[i])
+		err := tx.Create(fixPolicies[i])
 		if err != nil {
 			err = fmt.Errorf("error creating policy fixture ... %+v\n %v",
 				fixPolicies[i], err.Error())
@@ -202,7 +233,7 @@ func createPolicyFixtures(fixUsers []*models.User) ([]*models.Policy, error) {
 			UserID:   u.ID,
 		}
 
-		err := models.DB.Create(fixPolicyUsers[i])
+		err := tx.Create(fixPolicyUsers[i])
 		if err != nil {
 			err = fmt.Errorf("error creating policy users fixture ... %+v\n %v",
 				fixPolicyUsers[i], err.Error())
@@ -213,7 +244,7 @@ func createPolicyFixtures(fixUsers []*models.User) ([]*models.Policy, error) {
 	return fixPolicies, nil
 }
 
-func createCategories() ([]uuid.UUID, error) {
+func createCategories(tx *pop.Connection) ([]uuid.UUID, error) {
 	const itemCategoriesSql = `
 INSERT INTO "item_categories" ("id", "risk_category_id", "name", "help_text",
 	"status", "auto_approve_max", "created_at", "updated_at", "legacy_id", "require_make_model") VALUES
@@ -240,7 +271,7 @@ INSERT INTO "item_categories" ("id", "risk_category_id", "name", "help_text",
 ('036e5315-18ca-4404-8435-72a695f2c9a7',	'3be38915-7092-44f2-90ef-26f48214b34f',	'Travel and recreation',	'Includes suitcases, travel bags, cycling, skating, sports. No motorized vehicles.',
     'Enabled',	300000,	'2021-08-27 19:46:28',	'2021-08-27 19:46:28',	9, true);
 `
-	if err := models.DB.RawQuery(itemCategoriesSql).Exec(); err != nil {
+	if err := tx.RawQuery(itemCategoriesSql).Exec(); err != nil {
 		panic("error loading item categories, " + err.Error())
 	}
 
@@ -264,7 +295,7 @@ INSERT INTO "item_categories" ("id", "risk_category_id", "name", "help_text",
 	return categoryUUIDs, nil
 }
 
-func createItemFixtures(fixPolicies []*models.Policy, fixICats []uuid.UUID) ([]*models.Item, error) {
+func createItemFixtures(tx *pop.Connection, fixPolicies []*models.Policy) ([]*models.Item, error) {
 	itemUUIDs := []string{
 		"71117366-26b2-4256-b2ab-58c92c3d54c1",
 		"71127366-26b2-4256-b2ab-58c92c3d54c2",
@@ -289,14 +320,20 @@ func createItemFixtures(fixPolicies []*models.Policy, fixICats []uuid.UUID) ([]*
 		return []*models.Item{}, err
 	}
 
+	itemCats := []models.ItemCategory{}
+	if err := tx.All(&itemCats); err != nil {
+		return []*models.Item{}, errors.New("error fetching item categories: " + err.Error())
+	}
+
 	fixItems := make([]*models.Item, len(itemUUIDs))
-	countICats := len(fixICats)
+	countICats := len(itemCats)
 
 	for i, uu := range itemUUIDs {
 		fixItems[i] = &models.Item{
 			ID:                uuid.FromStringOrNil(uu),
 			Name:              fmt.Sprintf("IName-%d", i),
-			CategoryID:        fixICats[i%countICats], // cycle through item categories
+			CategoryID:        itemCats[i%countICats].ID, // cycle through item categories
+			RiskCategoryID:    itemCats[i%countICats].RiskCategoryID,
 			InStorage:         false,
 			Country:           fmt.Sprintf("ICountry%d", i),
 			Description:       fmt.Sprintf("This is the description for item %d.", i),
@@ -310,7 +347,7 @@ func createItemFixtures(fixPolicies []*models.Policy, fixICats []uuid.UUID) ([]*
 			PurchaseDate:      time.Now().UTC().Add(time.Hour * time.Duration((i+1)*-48)),
 		}
 
-		err := models.DB.Create(fixItems[i])
+		err := tx.Create(fixItems[i])
 		if err != nil {
 			err = fmt.Errorf("error creating item fixture ... %+v\n %v",
 				fixItems[i], err.Error())
@@ -321,7 +358,7 @@ func createItemFixtures(fixPolicies []*models.Policy, fixICats []uuid.UUID) ([]*
 	return fixItems, nil
 }
 
-func createClaimFixtures(fixPolicies []*models.Policy) ([]models.Claim, error) {
+func createClaimFixtures(tx *pop.Connection, fixPolicies []*models.Policy) ([]models.Claim, error) {
 	claimUUIDs := []string{
 		"023b599d-dd17-4eb9-9895-da462f52526a",
 		"1eba86ef-e801-4a9c-a500-fe507040d004",
@@ -341,13 +378,13 @@ func createClaimFixtures(fixPolicies []*models.Policy) ([]models.Claim, error) {
 
 	for i, uu := range claimUUIDs {
 		fixClaims[i] = models.Claim{
-			ID:        uuid.FromStringOrNil(uu),
-			PolicyID:  fixPolicies[i].ID,
-			Status:    api.ClaimStatusDraft,
-			EventType: api.ClaimEventTypeOther,
+			ID:           uuid.FromStringOrNil(uu),
+			PolicyID:     fixPolicies[i].ID,
+			Status:       api.ClaimStatusDraft,
+			IncidentType: api.ClaimIncidentTypeOther,
 		}
 
-		err := fixClaims[i].Create(models.DB)
+		err := fixClaims[i].Create(tx)
 		if err != nil {
 			err = fmt.Errorf("error creating claim fixture ... %+v\n %v",
 				fixClaims[i], err.Error())

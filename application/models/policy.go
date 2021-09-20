@@ -1,6 +1,8 @@
 package models
 
 import (
+	"context"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -21,21 +23,22 @@ var ValidPolicyTypes = map[api.PolicyType]struct{}{
 }
 
 type Policy struct {
-	ID          uuid.UUID      `db:"id"`
-	Type        api.PolicyType `db:"type" validate:"policyType"`
-	HouseholdID nulls.String   `db:"household_id"`
-	CostCenter  string         `db:"cost_center" validate:"required_if=Type Corporate"`
-	Account     string         `db:"account" validate:"required_if=Type Corporate"`
-	EntityCode  string         `db:"entity_code" validate:"required_if=Type Corporate"`
-	Notes       string         `db:"notes"`
-	LegacyID    nulls.Int      `db:"legacy_id"`
-	CreatedAt   time.Time      `db:"created_at"`
-	UpdatedAt   time.Time      `db:"updated_at"`
+	ID           uuid.UUID      `db:"id"`
+	Type         api.PolicyType `db:"type" validate:"policyType"`
+	HouseholdID  nulls.String   `db:"household_id"` // validation is checked at the struct level
+	CostCenter   string         `db:"cost_center" validate:"required_if=Type Corporate"`
+	Account      string         `db:"account" validate:"required_if=Type Corporate"`
+	EntityCodeID nulls.UUID     `db:"entity_code_id"` // validation is checked at the struct level
+	Notes        string         `db:"notes"`
+	LegacyID     nulls.Int      `db:"legacy_id"`
+	CreatedAt    time.Time      `db:"created_at"`
+	UpdatedAt    time.Time      `db:"updated_at"`
 
 	Claims     Claims           `has_many:"claims" validate:"-"`
 	Dependents PolicyDependents `has_many:"policy_dependents" validate:"-"`
 	Items      Items            `has_many:"items" validate:"-"`
 	Members    Users            `many_to_many:"policy_users" validate:"-"`
+	EntityCode EntityCode       `belongs_to:"entity_codes" validate:"-"`
 }
 
 // Validate gets run every time you call a "pop.Validate*" (pop.ValidateAndSave, pop.ValidateAndCreate, pop.ValidateAndUpdate) method.
@@ -49,7 +52,21 @@ func (p *Policy) Create(tx *pop.Connection) error {
 }
 
 // Update writes the Policy data to an existing database record.
-func (p *Policy) Update(tx *pop.Connection) error {
+func (p *Policy) Update(ctx context.Context) error {
+	tx := Tx(ctx)
+	var oldPolicy Policy
+	if err := oldPolicy.FindByID(tx, p.ID); err != nil {
+		return appErrorFromDB(err, api.ErrorQueryFailure)
+	}
+
+	updates := p.Compare(oldPolicy)
+	for i := range updates {
+		history := p.NewHistory(ctx, api.HistoryActionUpdate, updates[i])
+		if err := history.Create(tx); err != nil {
+			return appErrorFromDB(err, api.ErrorCreateFailure)
+		}
+	}
+
 	return update(tx, p)
 }
 
@@ -159,10 +176,20 @@ func (p *Policy) LoadMembers(tx *pop.Connection, reload bool) {
 	}
 }
 
+// LoadEntityCode - a simple wrapper method for loading the entity code on the struct
+func (p *Policy) LoadEntityCode(tx *pop.Connection, reload bool) {
+	if p.EntityCode.ID == uuid.Nil || reload {
+		if err := tx.Load(p, "EntityCode"); err != nil {
+			panic("database error loading Policy.EntityCode, " + err.Error())
+		}
+	}
+}
+
 func (p *Policy) ConvertToAPI(tx *pop.Connection) api.Policy {
 	p.LoadClaims(tx, true)
 	p.LoadDependents(tx, true)
 	p.LoadMembers(tx, true)
+	p.LoadEntityCode(tx, true)
 
 	claims := p.Claims.ConvertToAPI(tx)
 	dependents := p.Dependents.ConvertToAPI()
@@ -174,7 +201,7 @@ func (p *Policy) ConvertToAPI(tx *pop.Connection) api.Policy {
 		HouseholdID: p.HouseholdID.String,
 		CostCenter:  p.CostCenter,
 		Account:     p.Account,
-		EntityCode:  p.EntityCode,
+		EntityCode:  p.EntityCode.ConvertToAPI(tx),
 		CreatedAt:   p.CreatedAt,
 		UpdatedAt:   p.UpdatedAt,
 		Claims:      claims,
@@ -190,6 +217,10 @@ func (p *Policies) ConvertToAPI(tx *pop.Connection) api.Policies {
 	}
 
 	return policies
+}
+
+func (p *Policies) All(tx *pop.Connection) error {
+	return appErrorFromDB(tx.All(p), api.ErrorQueryFailure)
 }
 
 func (p *Policy) AddDependent(tx *pop.Connection, input api.PolicyDependentInput) error {
@@ -225,4 +256,70 @@ func (p *Policy) AddClaim(tx *pop.Connection, input api.ClaimCreateInput) (Claim
 	}
 
 	return claim, nil
+}
+
+// Compare returns a list of fields that are different between two objects
+func (p *Policy) Compare(old Policy) []FieldUpdate {
+	var updates []FieldUpdate
+
+	if p.EntityCodeID != old.EntityCodeID {
+		updates = append(updates, FieldUpdate{
+			OldValue:  old.EntityCodeID.UUID.String(),
+			NewValue:  p.EntityCodeID.UUID.String(),
+			FieldName: "EntityCodeID",
+		})
+	}
+
+	if p.Type != old.Type {
+		updates = append(updates, FieldUpdate{
+			OldValue:  string(old.Type),
+			NewValue:  string(p.Type),
+			FieldName: "Type",
+		})
+	}
+
+	if p.CostCenter != old.CostCenter {
+		updates = append(updates, FieldUpdate{
+			OldValue:  old.CostCenter,
+			NewValue:  p.CostCenter,
+			FieldName: "CostCenter",
+		})
+	}
+
+	if p.Account != old.Account {
+		updates = append(updates, FieldUpdate{
+			OldValue:  old.Account,
+			NewValue:  p.Account,
+			FieldName: "Account",
+		})
+	}
+
+	if p.HouseholdID != old.HouseholdID {
+		updates = append(updates, FieldUpdate{
+			OldValue:  old.HouseholdID.String,
+			NewValue:  p.HouseholdID.String,
+			FieldName: "HouseholdID",
+		})
+	}
+
+	if p.Notes != old.Notes {
+		updates = append(updates, FieldUpdate{
+			OldValue:  old.Notes,
+			NewValue:  p.Notes,
+			FieldName: "Notes",
+		})
+	}
+
+	return updates
+}
+
+func (p *Policy) NewHistory(ctx context.Context, action string, fieldUpdate FieldUpdate) PolicyHistory {
+	return PolicyHistory{
+		Action:    action,
+		PolicyID:  p.ID,
+		UserID:    CurrentUser(ctx).ID,
+		FieldName: fieldUpdate.FieldName,
+		OldValue:  fmt.Sprintf("%s", fieldUpdate.OldValue),
+		NewValue:  fmt.Sprintf("%s", fieldUpdate.NewValue),
+	}
 }

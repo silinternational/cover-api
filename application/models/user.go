@@ -69,11 +69,17 @@ func (u *User) Validate(tx *pop.Connection) (*validate.Errors, error) {
 
 // Create stores the User data as a new record in the database.
 func (u *User) Create(tx *pop.Connection) error {
+	if u.AppRole == "" {
+		u.AppRole = AppRoleUser
+	}
 	return create(tx, u)
 }
 
 // Update writes the User data to an existing database record.
 func (u *User) Update(tx *pop.Connection) error {
+	if u.AppRole == "" {
+		u.AppRole = AppRoleUser
+	}
 	return update(tx, u)
 }
 
@@ -131,6 +137,10 @@ func (u *User) FindOrCreateFromAuthUser(tx *pop.Connection, authUser *auth.User)
 			}
 			isNewUser = true
 		}
+	}
+
+	if u.AppRole == "" {
+		u.AppRole = AppRoleUser
 	}
 
 	// update attributes from authUser
@@ -255,11 +265,10 @@ func (u *User) CreateInitialPolicy(tx *pop.Connection) error {
 
 	policy := Policy{
 		Type:        api.PolicyTypeHousehold,
-		CostCenter:  fmt.Sprintf("CC-%s-%s", u.FirstName, u.LastName),
 		HouseholdID: nulls.NewString(fmt.Sprintf("HHID-%s-%s", u.FirstName, u.LastName)),
 	}
 
-	if err := tx.Create(&policy); err != nil {
+	if err := policy.Create(tx); err != nil {
 		return errors.New("unable to create initial policy in CreateInitialPolicy: " + err.Error())
 	}
 
@@ -268,7 +277,7 @@ func (u *User) CreateInitialPolicy(tx *pop.Connection) error {
 		UserID:   u.ID,
 	}
 
-	if err := tx.Create(&polUser); err != nil {
+	if err := polUser.Create(tx); err != nil {
 		return errors.New("unable to create policy-user in CreateInitialPolicy: " + err.Error())
 	}
 	return nil
@@ -340,6 +349,7 @@ func (u *User) ConvertToAPI(tx *pop.Connection) api.User {
 		FirstName:     u.FirstName,
 		LastName:      u.LastName,
 		Name:          u.Name(),
+		AppRole:       string(u.AppRole),
 		LastLoginUTC:  u.LastLoginUTC,
 		Location:      u.Location,
 		PhotoFileID:   u.PhotoFileID,

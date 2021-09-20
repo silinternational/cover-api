@@ -48,6 +48,7 @@ type Item struct {
 	PurchaseDate      time.Time              `db:"purchase_date"`
 	CoverageStatus    api.ItemCoverageStatus `db:"coverage_status" validate:"itemCoverageStatus"`
 	CoverageStartDate time.Time              `db:"coverage_start_date"`
+	StatusReason      string                 `db:"status_reason" validate:"required_if=CoverageStatus Revision,required_if=CoverageStatus Denied"`
 	LegacyID          nulls.Int              `db:"legacy_id"`
 	CreatedAt         time.Time              `db:"created_at"`
 	UpdatedAt         time.Time              `db:"updated_at"`
@@ -151,9 +152,7 @@ func (i *Item) IsActorAllowedTo(tx *pop.Connection, actor User, perm Permission,
 		return true
 	}
 
-	i.LoadPolicy(tx, false)
-
-	i.Policy.LoadMembers(tx, false)
+	i.LoadPolicyMembers(tx, false)
 
 	for _, m := range i.Policy.Members {
 		if m.ID == actor.ID {
@@ -307,9 +306,10 @@ func (i *Item) canAutoApprove(tx *pop.Connection) bool {
 
 // Revision takes the item from Pending coverage status to Revision.
 // It assumes that the item's current status has already been validated.
-func (i *Item) Revision(tx *pop.Connection) error {
+func (i *Item) Revision(tx *pop.Connection, reason string) error {
 	oldStatus := i.CoverageStatus
 	i.CoverageStatus = api.ItemCoverageStatusRevision
+	i.StatusReason = reason
 	if err := i.Update(tx, oldStatus); err != nil {
 		return err
 	}
@@ -345,10 +345,10 @@ func (i *Item) Approve(tx *pop.Connection) error {
 
 // Deny takes the item from Pending coverage status to Denied.
 // It assumes that the item's current status has already been validated.
-// TODO create a listener for the emitted event
-func (i *Item) Deny(tx *pop.Connection) error {
+func (i *Item) Deny(tx *pop.Connection, reason string) error {
 	oldStatus := i.CoverageStatus
 	i.CoverageStatus = api.ItemCoverageStatusDenied
+	i.StatusReason = reason
 	if err := i.Update(tx, oldStatus); err != nil {
 		return err
 	}
@@ -391,25 +391,26 @@ func (i *Item) Load(tx *pop.Connection) {
 func (i *Item) ConvertToAPI(tx *pop.Connection) api.Item {
 	i.Load(tx)
 	return api.Item{
-		ID:                i.ID,
-		Name:              i.Name,
-		Category:          i.Category.ConvertToAPI(tx),
-		RiskCategory:      i.RiskCategory.ConvertToAPI(),
-		InStorage:         i.InStorage,
-		Country:           i.Country,
-		Description:       i.Description,
-		PolicyID:          i.PolicyID,
-		Make:              i.Make,
-		Model:             i.Model,
-		SerialNumber:      i.SerialNumber,
-		CoverageAmount:    i.CoverageAmount,
-		PurchaseDate:      i.PurchaseDate.Format(domain.DateFormat),
-		CoverageStatus:    i.CoverageStatus,
-		CoverageStartDate: i.CoverageStartDate.Format(domain.DateFormat),
-		AccountablePerson: i.GetAccountablePerson(tx),
-		AnnualPremium:     i.GetAnnualPremium(),
-		CreatedAt:         i.CreatedAt,
-		UpdatedAt:         i.UpdatedAt,
+		ID:                     i.ID,
+		Name:                   i.Name,
+		Category:               i.Category.ConvertToAPI(tx),
+		RiskCategory:           i.RiskCategory.ConvertToAPI(),
+		InStorage:              i.InStorage,
+		Country:                i.Country,
+		Description:            i.Description,
+		PolicyID:               i.PolicyID,
+		Make:                   i.Make,
+		Model:                  i.Model,
+		SerialNumber:           i.SerialNumber,
+		CoverageAmount:         i.CoverageAmount,
+		PurchaseDate:           i.PurchaseDate.Format(domain.DateFormat),
+		CoverageStatus:         i.CoverageStatus,
+		CoverageStartDate:      i.CoverageStartDate.Format(domain.DateFormat),
+		AccountableUserID:      i.PolicyUserID,
+		AccountableDependentID: i.PolicyDependentID,
+		AnnualPremium:          i.GetAnnualPremium(),
+		CreatedAt:              i.CreatedAt,
+		UpdatedAt:              i.UpdatedAt,
 	}
 }
 
@@ -420,24 +421,6 @@ func (i *Items) ConvertToAPI(tx *pop.Connection) api.Items {
 	}
 
 	return apiItems
-}
-
-func (i *Item) GetAccountablePerson(tx *pop.Connection) string {
-	if i.PolicyUserID.Valid {
-		var policyUser User
-		if err := policyUser.FindByID(tx, i.PolicyUserID.UUID); err != nil {
-			panic("error finding policy user " + i.PolicyUserID.UUID.String())
-		}
-		return policyUser.Name()
-	}
-	if i.PolicyDependentID.Valid {
-		var policyDependent PolicyDependent
-		if err := policyDependent.FindByID(tx, i.PolicyDependentID.UUID); err != nil {
-			panic("error finding policy dependent " + i.PolicyDependentID.UUID.String())
-		}
-		return policyDependent.Name
-	}
-	return ""
 }
 
 func (i *Item) GetAnnualPremium() int {

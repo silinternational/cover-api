@@ -32,7 +32,7 @@ func (ts *TestSuite) Test_claimReview1() {
 
 	f := getClaimFixtures(db)
 
-	review1Claim := models.UpdateClaimStatus(db, f.Claims[0], api.ClaimStatusReview1)
+	review1Claim := models.UpdateClaimStatus(db, f.Claims[0], api.ClaimStatusReview1, "")
 
 	testEmailer := notifications.DummyEmailService{}
 
@@ -54,7 +54,9 @@ func (ts *TestSuite) Test_claimReview1() {
 			testEmailer.DeleteSentMessages()
 			claimReview1(tt.event)
 
-			ts.Greater(testEmailer.GetNumberOfMessagesSent(), 0, "no email messages sent")
+			var nus models.NotificationUsers
+			ts.NoError(db.All(&nus), "error fetching NotificationUsers from db")
+			ts.Equal(1, len(nus), "incorrect number of NotificationUsers queued")
 		})
 	}
 }
@@ -65,7 +67,7 @@ func (ts *TestSuite) Test_claimRevision() {
 
 	f := getClaimFixtures(db)
 
-	revisionClaim := models.UpdateClaimStatus(db, f.Claims[0], api.ClaimStatusRevision)
+	revisionClaim := models.UpdateClaimStatus(db, f.Claims[0], api.ClaimStatusRevision, "third time's a charm")
 
 	testEmailer := notifications.DummyEmailService{}
 
@@ -87,7 +89,9 @@ func (ts *TestSuite) Test_claimRevision() {
 			testEmailer.DeleteSentMessages()
 			claimRevision(tt.event)
 
-			ts.Greater(testEmailer.GetNumberOfMessagesSent(), 0, "no email messages sent")
+			var nus models.NotificationUsers
+			ts.NoError(db.All(&nus), "error fetching NotificationUsers from db")
+			ts.Equal(2, len(nus), "incorrect number of NotificationUsers queued")
 		})
 	}
 }
@@ -98,7 +102,7 @@ func (ts *TestSuite) Test_claimPreapproved() {
 
 	f := getClaimFixtures(db)
 
-	receiptClaim := models.UpdateClaimStatus(db, f.Claims[0], api.ClaimStatusReceipt)
+	receiptClaim := models.UpdateClaimStatus(db, f.Claims[0], api.ClaimStatusReceipt, "")
 
 	testEmailer := notifications.DummyEmailService{}
 
@@ -120,7 +124,9 @@ func (ts *TestSuite) Test_claimPreapproved() {
 			testEmailer.DeleteSentMessages()
 			claimPreapproved(tt.event)
 
-			ts.Greater(testEmailer.GetNumberOfMessagesSent(), 0, "no email messages sent")
+			var nus models.NotificationUsers
+			ts.NoError(db.All(&nus), "error fetching NotificationUsers from db")
+			ts.Equal(2, len(nus), "incorrect number of NotificationUsers queued")
 		})
 	}
 }
@@ -131,7 +137,7 @@ func (ts *TestSuite) Test_claimReceipt() {
 
 	f := getClaimFixtures(db)
 
-	receiptClaim := models.UpdateClaimStatus(db, f.Claims[0], api.ClaimStatusReceipt)
+	receiptClaim := models.UpdateClaimStatus(db, f.Claims[0], api.ClaimStatusReceipt, "")
 
 	testEmailer := notifications.DummyEmailService{}
 
@@ -153,7 +159,9 @@ func (ts *TestSuite) Test_claimReceipt() {
 			testEmailer.DeleteSentMessages()
 			claimReceipt(tt.event)
 
-			ts.Greater(testEmailer.GetNumberOfMessagesSent(), 0, "no email messages sent")
+			var nus models.NotificationUsers
+			ts.NoError(db.All(&nus), "error fetching NotificationUsers from db")
+			ts.Equal(2, len(nus), "incorrect number of NotificationUsers queued")
 		})
 	}
 }
@@ -164,7 +172,7 @@ func (ts *TestSuite) Test_claimReview2() {
 
 	f := getClaimFixtures(db)
 
-	review2Claim := models.UpdateClaimStatus(db, f.Claims[0], api.ClaimStatusReview2)
+	review2Claim := models.UpdateClaimStatus(db, f.Claims[0], api.ClaimStatusReview2, "")
 
 	testEmailer := notifications.DummyEmailService{}
 
@@ -186,7 +194,9 @@ func (ts *TestSuite) Test_claimReview2() {
 			testEmailer.DeleteSentMessages()
 			claimReview2(tt.event)
 
-			ts.Greater(testEmailer.GetNumberOfMessagesSent(), 0, "no email messages sent")
+			var nus models.NotificationUsers
+			ts.NoError(db.All(&nus), "error fetching NotificationUsers from db")
+			ts.Equal(1, len(nus), "incorrect number of NotificationUsers queued")
 		})
 	}
 }
@@ -197,7 +207,7 @@ func (ts *TestSuite) Test_claimReview3() {
 
 	f := getClaimFixtures(db)
 
-	review3Claim := models.UpdateClaimStatus(db, f.Claims[0], api.ClaimStatusReview3)
+	review3Claim := models.UpdateClaimStatus(db, f.Claims[0], api.ClaimStatusReview3, "")
 
 	testEmailer := notifications.DummyEmailService{}
 
@@ -219,7 +229,9 @@ func (ts *TestSuite) Test_claimReview3() {
 			testEmailer.DeleteSentMessages()
 			claimReview3(tt.event)
 
-			ts.Greater(testEmailer.GetNumberOfMessagesSent(), 0, "no email messages sent")
+			var nus models.NotificationUsers
+			ts.NoError(db.All(&nus), "error fetching NotificationUsers from db")
+			ts.Equal(1, len(nus), "incorrect number of NotificationUsers queued")
 		})
 	}
 }
@@ -230,7 +242,7 @@ func (ts *TestSuite) Test_claimApproved() {
 
 	f := getClaimFixtures(db)
 
-	approvedClaim := models.UpdateClaimStatus(db, f.Claims[0], api.ClaimStatusApproved)
+	approvedClaim := models.UpdateClaimStatus(db, f.Claims[0], api.ClaimStatusApproved, "")
 
 	testEmailer := notifications.DummyEmailService{}
 
@@ -252,7 +264,9 @@ func (ts *TestSuite) Test_claimApproved() {
 			testEmailer.DeleteSentMessages()
 			claimApproved(tt.event)
 
-			ts.Greater(testEmailer.GetNumberOfMessagesSent(), 0, "no email messages sent")
+			var nus models.NotificationUsers
+			ts.NoError(db.All(&nus), "error fetching NotificationUsers from db")
+			ts.Equal(2, len(nus), "incorrect number of NotificationUsers queued")
 		})
 	}
 }
@@ -263,7 +277,7 @@ func (ts *TestSuite) Test_claimDenied() {
 
 	f := getClaimFixtures(db)
 
-	deniedClaim := models.UpdateClaimStatus(db, f.Claims[0], api.ClaimStatusDenied)
+	deniedClaim := models.UpdateClaimStatus(db, f.Claims[0], api.ClaimStatusDenied, "I gave at the office")
 
 	testEmailer := notifications.DummyEmailService{}
 
@@ -285,7 +299,9 @@ func (ts *TestSuite) Test_claimDenied() {
 			testEmailer.DeleteSentMessages()
 			claimDenied(tt.event)
 
-			ts.Greater(testEmailer.GetNumberOfMessagesSent(), 0, "no email messages sent")
+			var nus models.NotificationUsers
+			ts.NoError(db.All(&nus), "error fetching NotificationUsers from db")
+			ts.Equal(2, len(nus), "incorrect number of NotificationUsers queued")
 		})
 	}
 }

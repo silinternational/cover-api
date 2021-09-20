@@ -1,2 +1,0 @@
-
-add_index("policies", "household_id", {"unique": true})

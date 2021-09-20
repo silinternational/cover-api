@@ -1,14 +1,18 @@
 create_table("policies") {
 	t.Column("id", "uuid", {primary: true})
 	t.Column("type", "string", {})
-	t.Column("household_id", "string", {})
+	t.Column("household_id", "string", {"null": true})
 	t.Column("cost_center", "string", {})
 	t.Column("account", "string", {})
 	t.Column("entity_code", "string", {})
+	t.Column("legacy_id", "int", {"null": true})
+	t.Column("notes", "string", {"size": 2048})
+
 	t.Timestamps()
 
 	t.Index("type", {})
 	t.Index("household_id", {"unique": true})
+	t.Index("legacy_id", {"unique": true})
 }
 
 create_table("policy_users") {
@@ -27,7 +31,9 @@ create_table("policy_dependents") {
 	t.Column("id", "uuid", {primary: true})
 	t.Column("policy_id", "uuid", {})
 	t.Column("name", "string", {})
-	t.Column("birth_year", "int", {})
+	t.Column("child_birth_year", "int", {})
+	t.Column("relationship", "string", {})
+	t.Column("location", "string", {})
 	t.Timestamps()
 
 	t.Index(["policy_id","name"], {"unique": true})

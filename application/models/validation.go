@@ -16,7 +16,7 @@ var mValidate *validator.Validate
 
 var fieldValidators = map[string]func(validator.FieldLevel) bool{
 	"appRole":                       validateAppRole,
-	"claimEventType":                validateClaimEventType,
+	"claimIncidentType":             validateClaimIncidentType,
 	"claimStatus":                   validateClaimStatus,
 	"claimItemStatus":               validateClaimItemStatus,
 	"claimFilePurpose":              validateClaimFilePurpose,
@@ -49,9 +49,9 @@ func flattenPopErrors(popErrs *validate.Errors) string {
 	return msg
 }
 
-func validateClaimEventType(field validator.FieldLevel) bool {
-	if value, ok := field.Field().Interface().(api.ClaimEventType); ok {
-		_, valid := ValidClaimEventTypes[value]
+func validateClaimIncidentType(field validator.FieldLevel) bool {
+	if value, ok := field.Field().Interface().(api.ClaimIncidentType); ok {
+		_, valid := ValidClaimIncidentTypes[value]
 		return valid
 	}
 	return false
@@ -160,7 +160,23 @@ func claimItemStructLevelValidation(sl validator.StructLevel) {
 	}
 
 	if claimItem.Status == api.ClaimItemStatusPending || claimItem.Status == api.ClaimItemStatusDraft {
+		incidentTypePayoutOptions, ok := ValidClaimIncidentTypePayoutOptions[claimItem.Claim.IncidentType]
+		if !ok {
+			sl.ReportError(claimItem.Claim.IncidentType, "IncidentType", "IncidentType", "invalid Incident type", "")
+			return
+		}
+
+		if _, ok := incidentTypePayoutOptions[claimItem.PayoutOption]; !ok {
+			var options []string
+			for k := range incidentTypePayoutOptions {
+				options = append(options, string(k))
+			}
+			sl.ReportError(claimItem.PayoutOption, "payout_option", "PayoutOption",
+				fmt.Sprintf("payout option must be one of: %s", strings.Join(options, ", ")), "")
+		}
+
 		return
+
 	}
 
 	if !claimItem.ReviewerID.Valid {
@@ -178,7 +194,62 @@ func policyStructLevelValidation(sl validator.StructLevel) {
 		panic("policyStructLevelValidation registered to a type other than Policy")
 	}
 
-	if policy.Type == api.PolicyTypeHousehold && !policy.HouseholdID.Valid {
-		sl.ReportError(policy.HouseholdID, "household_id", "HouseholdID", "household_id_required", "")
+	if policy.Type == api.PolicyTypeHousehold {
+		if !policy.HouseholdID.Valid {
+			sl.ReportError(policy.HouseholdID, "household_id", "HouseholdID", "household_id_required", "")
+		}
+		if policy.EntityCodeID.Valid {
+			sl.ReportError(policy.EntityCodeID, "entity_code_id", "EntityCodeID", "entity_code_id_not_permitted", "")
+		}
+		if policy.CostCenter != "" {
+			sl.ReportError(policy.CostCenter, "cost_center", "CostCenter", "cost_center_not_permitted", "")
+		}
+		if policy.Account != "" {
+			sl.ReportError(policy.Account, "account", "Account", "account_not_permitted", "")
+		}
+	} else if policy.Type == api.PolicyTypeCorporate {
+		if !policy.EntityCodeID.Valid {
+			sl.ReportError(policy.EntityCodeID, "entity_code_id", "EntityCodeID", "entity_code_id_required", "")
+		}
+		if policy.CostCenter == "" {
+			sl.ReportError(policy.CostCenter, "cost_center", "CostCenter", "cost_center_required", "")
+		}
+		if policy.Account == "" {
+			sl.ReportError(policy.Account, "account", "Account", "account_not_required", "")
+		}
+		if policy.HouseholdID.Valid {
+			sl.ReportError(policy.HouseholdID, "household_id", "HouseholdID", "household_id_not_permitted", "")
+		}
+	}
+}
+
+func itemStructLevelValidation(sl validator.StructLevel) {
+	item, ok := sl.Current().Interface().(Item)
+	if !ok {
+		panic("itemStructLevelValidation registered to a type other than Item")
+	}
+
+	if item.PolicyUserID.Valid && item.PolicyDependentID.Valid {
+		sl.ReportError(item.PolicyDependentID, "policy_dependent_id", "PolicyDependentID", "accountable_person_conflict", "")
+	}
+}
+
+func notificationStructLevelValidation(sl validator.StructLevel) {
+	notn, ok := sl.Current().Interface().(Notification)
+	if !ok {
+		panic("notificationStructLevelValidation registered to a type other than Notification")
+	}
+
+	// Body and Subject are both required if InappText is blank or if either
+	// of them is present
+	if notn.InappText == "" || notn.Body != "" || notn.Subject != "" {
+		if notn.Body == "" {
+			sl.ReportError(notn.Body, "body", "Body",
+				"body_required", "")
+		}
+		if notn.Subject == "" {
+			sl.ReportError(notn.Subject, "subject", "Subject",
+				"subject_required", "")
+		}
 	}
 }

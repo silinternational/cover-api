@@ -5,7 +5,11 @@ create_table("item_categories") {
 	t.Column("help_text", "string", {})
 	t.Column("status", "string", {})
 	t.Column("auto_approve_max", "integer", {})
+	t.Column("legacy_id", "int", {"null": true})
+
 	t.Timestamps()
+
+	t.Index("legacy_id", {"unique": true})
 
 	t.ForeignKey("risk_category_id", {"risk_categories": ["id"]}, {"on_delete": "cascade"})
 }

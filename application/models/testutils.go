@@ -152,16 +152,18 @@ func createItemFixture(tx *pop.Connection, policyID uuid.UUID, categoryID uuid.U
 	return item
 }
 
-func UpdateItemStatus(tx *pop.Connection, item Item, status api.ItemCoverageStatus) Item {
+func UpdateItemStatus(tx *pop.Connection, item Item, status api.ItemCoverageStatus, reason string) Item {
 	item.CoverageStatus = status
+	item.StatusReason = reason
 	if err := tx.Update(&item); err != nil {
 		panic("error trying to update item status for test: " + err.Error())
 	}
 	return item
 }
 
-func UpdateClaimStatus(tx *pop.Connection, claim Claim, status api.ClaimStatus) Claim {
+func UpdateClaimStatus(tx *pop.Connection, claim Claim, status api.ClaimStatus, reason string) Claim {
 	claim.Status = status
+	claim.StatusReason = reason
 	if err := tx.Update(&claim); err != nil {
 		panic("error trying to update claim status for test: " + err.Error())
 	}
@@ -172,10 +174,10 @@ func UpdateClaimStatus(tx *pop.Connection, claim Claim, status api.ClaimStatus) 
 // Uses FixturesConfig fields: ClaimItemsPerClaim, ClaimFilesPerClaim
 func createClaimFixture(tx *pop.Connection, policy Policy, config FixturesConfig) Claim {
 	claim := Claim{
-		PolicyID:         policy.ID,
-		EventDate:        time.Date(2020, 5, 1, 12, 0, 0, 0, time.UTC),
-		EventType:        api.ClaimEventTypeImpact,
-		EventDescription: randStr(25),
+		PolicyID:            policy.ID,
+		IncidentDate:        time.Date(2020, 5, 1, 12, 0, 0, 0, time.UTC),
+		IncidentType:        api.ClaimIncidentTypeImpact,
+		IncidentDescription: randStr(25),
 		// Status is set to Draft by default
 	}
 	MustCreate(tx, &claim)
@@ -297,6 +299,9 @@ func CreateUserFixtures(tx *pop.Connection, n int) Fixtures {
 // CreatePolicyFixtures generates any number of policy records and associated policy users
 // Uses FixturesConfig fields: NumberOfPolicies, DependentsPerPolicy, UsersPerPolicy
 func CreatePolicyFixtures(tx *pop.Connection, config FixturesConfig) Fixtures {
+	if config.NumberOfPolicies < 1 {
+		config.NumberOfPolicies = 1
+	}
 	if config.UsersPerPolicy < 1 {
 		config.UsersPerPolicy = 1
 	}
@@ -308,10 +313,8 @@ func CreatePolicyFixtures(tx *pop.Connection, config FixturesConfig) Fixtures {
 	policies := make(Policies, config.NumberOfPolicies)
 	for i := range policies {
 		policies[i].Type = api.PolicyTypeHousehold
-		policies[i].Account = randStr(10)
-		policies[i].EntityCode = randStr(10)
-		policies[i].CostCenter = randStr(10)
 		policies[i].HouseholdID = nulls.NewString(randStr(10))
+		policies[i].Notes = randStr(20)
 		MustCreate(tx, &policies[i])
 
 		f := CreatePolicyUserFixtures(tx, policies[i], config.UsersPerPolicy)
@@ -435,6 +438,10 @@ func DestroyAll() {
 	// delete all RiskCategories
 	var rCats RiskCategories
 	destroyTable(&rCats)
+
+	// delete all Notifications
+	var ns Notifications
+	destroyTable(&ns)
 }
 
 func destroyTable(i interface{}) {

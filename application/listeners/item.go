@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/gobuffalo/events"
+	"github.com/gobuffalo/pop/v5"
 
 	"github.com/silinternational/cover-api/api"
 	"github.com/silinternational/cover-api/domain"
@@ -27,7 +28,10 @@ func itemSubmitted(e events.Event) {
 		domain.ErrLogger.Printf(wrongStatusMsg, "itemSubmitted", item.CoverageStatus)
 	}
 
-	messages.ItemSubmittedSend(item, getNotifiersFromEventPayload(e.Payload))
+	models.DB.Transaction(func(tx *pop.Connection) error {
+		messages.ItemSubmittedQueueMessage(tx, item)
+		return nil
+	})
 }
 
 func itemRevision(e events.Event) {
@@ -40,7 +44,10 @@ func itemRevision(e events.Event) {
 		panic(fmt.Sprintf(wrongStatusMsg, "itemRevision", item.CoverageStatus))
 	}
 
-	messages.ItemRevisionSend(item, getNotifiersFromEventPayload(e.Payload))
+	models.DB.Transaction(func(tx *pop.Connection) error {
+		messages.ItemRevisionQueueMessage(tx, item)
+		return nil
+	})
 }
 
 func itemApproved(e events.Event) {
@@ -54,7 +61,11 @@ func itemApproved(e events.Event) {
 		return
 	}
 
-	messages.ItemApprovedSend(item, getNotifiersFromEventPayload(e.Payload))
+	models.DB.Transaction(func(tx *pop.Connection) error {
+		messages.ItemApprovedQueueMessage(tx, item)
+		return nil
+	})
+
 	// TODO do whatever else needs doing
 }
 
@@ -69,5 +80,8 @@ func itemDenied(e events.Event) {
 		return
 	}
 
-	messages.ItemDeniedSend(item, getNotifiersFromEventPayload(e.Payload))
+	models.DB.Transaction(func(tx *pop.Connection) error {
+		messages.ItemDeniedQueueMessage(tx, item)
+		return nil
+	})
 }

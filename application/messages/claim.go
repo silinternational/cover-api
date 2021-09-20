@@ -1,153 +1,238 @@
 package messages
 
 import (
-	"fmt"
+	"github.com/gobuffalo/nulls"
+	"github.com/gobuffalo/pop/v5"
 
-	"github.com/silinternational/cover-api/domain"
 	"github.com/silinternational/cover-api/models"
-	"github.com/silinternational/cover-api/notifications"
 )
 
-func addMessageClaimData(msg *notifications.Message, claim models.Claim) {
-	msg.Data["claimURL"] = fmt.Sprintf("%s/%s/%s", domain.Env.UIURL, domain.TypeClaim, claim.ID)
-	msg.Data["claimRefNum"] = claim.ReferenceNumber
-	return
-}
-
-func newClaimMessageForMember(claim models.Claim, member models.User) notifications.Message {
-	msg := notifications.NewEmailMessage()
-	addMessageClaimData(&msg, claim)
-	msg.ToName = member.Name()
-	msg.ToEmail = member.EmailOfChoice()
-	msg.Data["memberName"] = member.Name()
-
-	return msg
-}
-
-func ClaimReview1Send(claim models.Claim, notifiers []interface{}) {
+// ClaimReview1QueueMessage queues messages to the stewards to
+//  notify them that a claim has been submitted for preapproval
+func ClaimReview1QueueMessage(tx *pop.Connection, claim models.Claim) {
 	claim.LoadPolicyMembers(models.DB, false)
 	memberName := claim.Policy.Members[0].Name()
 
-	msg := notifications.NewEmailMessage()
-	addMessageClaimData(&msg, claim)
-	msg.Template = MessageTemplateClaimReview1Steward
-	msg.Data["memberName"] = memberName
-	msg.Subject = "Action Required. " + memberName + " just (re)submitted a claim for approval"
+	data := newEmailMessageData()
+	data.addClaimData(claim)
+	data["memberName"] = memberName
 
-	msgs := msg.CopyToStewards()
-	for _, m := range msgs {
-		if err := notifications.Send(m, notifiers...); err != nil {
-			domain.ErrLogger.Printf("error sending claim review1 notification, %s", err)
-		}
+	notn := models.Notification{
+		ClaimID: nulls.NewUUID(claim.ID),
+		Body:    data.renderHTML(MessageTemplateClaimReview1Steward),
+		Subject: "Action Required. " + memberName + " just (re)submitted a claim for approval",
+
+		InappText: "A new claim is waiting for your approval",
+
+		// TODO make these constants somewhere
+		Event:         "Claim Review1 Notification",
+		EventCategory: "Claim",
 	}
+	if err := notn.Create(tx); err != nil {
+		panic("error creating new Claim Review1 Notification: " + err.Error())
+	}
+
+	notn.CreateNotificationUsersForStewards(tx)
 }
 
-func ClaimRevisionSend(claim models.Claim, notifiers []interface{}) {
+// ClaimRevisionQueueMessage queues messages to the claim's members to
+//  notify them that revisions are required on their claim
+func ClaimRevisionQueueMessage(tx *pop.Connection, claim models.Claim) {
 	claim.LoadPolicyMembers(models.DB, false)
 
-	// TODO figure out how to specify required revisions
+	data := newEmailMessageData()
+	data.addClaimData(claim)
+	data["claimStatusReason"] = claim.StatusReason
+
+	notn := models.Notification{
+		ClaimID: nulls.NewUUID(claim.ID),
+		Body:    data.renderHTML(MessageTemplateClaimRevisionMember),
+		Subject: "changes have been requested on your claim",
+		// TODO make this more helpful
+		InappText: "changes have been requested on your new claim",
+
+		// TODO make these constants somewhere
+		Event:         "Claim Revision Required Notification",
+		EventCategory: "Claim",
+	}
+	if err := notn.Create(tx); err != nil {
+		panic("error creating new Claim Revision Notification: " + err.Error())
+	}
 
 	for _, m := range claim.Policy.Members {
-		msg := newClaimMessageForMember(claim, m)
-		msg.Template = MessageTemplateClaimRevisionMember
-		msg.Subject = "changes have been requested on your claim"
-		if err := notifications.Send(msg, notifiers...); err != nil {
-			domain.ErrLogger.Printf("error sending claim revision notification to member, %s", err)
-		}
+		notn.CreateNotificationUser(tx, m)
 	}
 }
 
-func ClaimPreapprovedSend(claim models.Claim, notifiers []interface{}) {
+// ClaimPreapprovedQueueMessage queues messages to the claim's members to
+//  notify them that their claim has been preapproved and requires receipts
+func ClaimPreapprovedQueueMessage(tx *pop.Connection, claim models.Claim) {
 	claim.LoadPolicyMembers(models.DB, false)
 
 	// TODO Figure out how to tell the members what receipts are needed
 
+	data := newEmailMessageData()
+	data.addClaimData(claim)
+
+	notn := models.Notification{
+		ClaimID: nulls.NewUUID(claim.ID),
+		Body:    data.renderHTML(MessageTemplateClaimPreapprovedMember),
+		Subject: "receipt(s) needed on your new claim",
+
+		InappText: "receipts are needed on your new claim",
+
+		// TODO make these constants somewhere
+		Event:         "Claim Preapproved Notification",
+		EventCategory: "Claim",
+	}
+	if err := notn.Create(tx); err != nil {
+		panic("error creating new Claim Preapproved Notification: " + err.Error())
+	}
+
 	for _, m := range claim.Policy.Members {
-		msg := newClaimMessageForMember(claim, m)
-		msg.Template = MessageTemplateClaimPreapprovedMember
-		msg.Subject = "receipts are needed on your new claim"
-		if err := notifications.Send(msg, notifiers...); err != nil {
-			domain.ErrLogger.Printf("error sending claim preapproved notification to member, %s", err)
-		}
+		notn.CreateNotificationUser(tx, m)
 	}
 }
 
-func ClaimReceiptSend(claim models.Claim, notifiers []interface{}) {
+// ClaimReceiptQueueMessage queues messages to the claim's members to
+//  notify them that their claim requires receipts (again)
+func ClaimReceiptQueueMessage(tx *pop.Connection, claim models.Claim) {
 	claim.LoadPolicyMembers(models.DB, false)
 
 	// TODO Figure out how to tell the members what receipts are needed
 
+	data := newEmailMessageData()
+	data.addClaimData(claim)
+
+	notn := models.Notification{
+		ClaimID: nulls.NewUUID(claim.ID),
+		Body:    data.renderHTML(MessageTemplateClaimReceiptMember),
+		Subject: "new receipt(s) needed on your claim",
+
+		InappText: "new/different receipts are needed on your claim",
+
+		// TODO make these constants somewhere
+		Event:         "Claim Receipt Notification",
+		EventCategory: "Claim",
+	}
+	if err := notn.Create(tx); err != nil {
+		panic("error creating new Claim Receipt Notification: " + err.Error())
+	}
+
 	for _, m := range claim.Policy.Members {
-		msg := newClaimMessageForMember(claim, m)
-		msg.Template = MessageTemplateClaimReceiptMember
-		msg.Subject = "new receipts are needed on your claim"
-		if err := notifications.Send(msg, notifiers...); err != nil {
-			domain.ErrLogger.Printf("error sending claim receipt notification to member, %s", err)
-		}
+		notn.CreateNotificationUser(tx, m)
 	}
 }
 
-func ClaimReview2Send(claim models.Claim, notifiers []interface{}) {
+// ClaimReview2QueueMessage queues messages to the stewards to
+//  notify them that a claim has been submitted to Review2 status
+func ClaimReview2QueueMessage(tx *pop.Connection, claim models.Claim) {
 	claim.LoadPolicyMembers(models.DB, false)
 	memberName := claim.Policy.Members[0].Name()
 
-	msg := notifications.NewEmailMessage()
-	addMessageClaimData(&msg, claim)
-	msg.Template = MessageTemplateClaimReview2Steward
-	msg.Data["memberName"] = memberName
-	msg.Subject = "Action Required. " + memberName + " just resubmitted a claim for approval"
+	data := newEmailMessageData()
+	data.addClaimData(claim)
+	data["memberName"] = memberName
 
-	msgs := msg.CopyToStewards()
-	for _, m := range msgs {
-		if err := notifications.Send(m, notifiers...); err != nil {
-			domain.ErrLogger.Printf("error sending claim review2 notification, %s", err)
-		}
+	notn := models.Notification{
+		ClaimID: nulls.NewUUID(claim.ID),
+		Body:    data.renderHTML(MessageTemplateClaimReview2Steward),
+		Subject: "Action Required. " + memberName + " just resubmitted a claim for approval",
+
+		InappText: "A claim is waiting for your approval",
+
+		// TODO make these constants somewhere
+		Event:         "Claim Review2 Notification",
+		EventCategory: "Claim",
 	}
+	if err := notn.Create(tx); err != nil {
+		panic("error creating new Claim Review2 Notification: " + err.Error())
+	}
+
+	notn.CreateNotificationUsersForStewards(tx)
 }
 
-func ClaimReview3Send(claim models.Claim, notifiers []interface{}) {
+// ClaimReview3QueueMessage queues messages to the signators to
+//  notify them that a claim has been submitted to Review3 status
+func ClaimReview3QueueMessage(tx *pop.Connection, claim models.Claim) {
 	claim.LoadPolicyMembers(models.DB, false)
 	memberName := claim.Policy.Members[0].Name()
 
-	msg := notifications.NewEmailMessage()
-	addMessageClaimData(&msg, claim)
-	msg.Template = MessageTemplateClaimReview3Signator
-	msg.Data["memberName"] = memberName
-	msg.Subject = "Action Required. " + memberName + " has a claim waiting for your approval"
+	data := newEmailMessageData()
+	data.addClaimData(claim)
+	data["memberName"] = memberName
 
-	msgs := msg.CopyToSignators()
-	for _, m := range msgs {
-		if err := notifications.Send(m, notifiers...); err != nil {
-			domain.ErrLogger.Printf("error sending claim review3 notification, %s", err)
-		}
+	notn := models.Notification{
+		ClaimID: nulls.NewUUID(claim.ID),
+		Body:    data.renderHTML(MessageTemplateClaimReview3Signator),
+		Subject: "Action Required. " + memberName + " has a claim waiting for your approval",
+
+		InappText: "A claim is waiting for your approval",
+
+		// TODO make these constants somewhere
+		Event:         "Claim Review3 Notification",
+		EventCategory: "Claim",
 	}
+	if err := notn.Create(tx); err != nil {
+		panic("error creating new Claim Review3 Notification: " + err.Error())
+	}
+
+	notn.CreateNotificationUsersForSignators(tx)
 }
 
-func ClaimApprovedSend(claim models.Claim, notifiers []interface{}) {
+// ClaimApprovedQueueMessage queues messages to a claim's members to
+//  notify them that it has been approved
+func ClaimApprovedQueueMessage(tx *pop.Connection, claim models.Claim) {
 	claim.LoadPolicyMembers(models.DB, false)
 
+	data := newEmailMessageData()
+	data.addClaimData(claim)
+
+	notn := models.Notification{
+		ClaimID:   nulls.NewUUID(claim.ID),
+		Body:      data.renderHTML(MessageTemplateClaimApprovedMember),
+		Subject:   "your claim has been approved",
+		InappText: "your claim has been approved",
+
+		// TODO make these constants somewhere
+		Event:         "Claim Approved Notification",
+		EventCategory: "Claim",
+	}
+	if err := notn.Create(tx); err != nil {
+		panic("error creating new Claim Approved Notification: " + err.Error())
+	}
+
 	for _, m := range claim.Policy.Members {
-		msg := newClaimMessageForMember(claim, m)
-		msg.Template = MessageTemplateClaimApprovedMember
-		msg.Subject = "your claim has been approved"
-		if err := notifications.Send(msg, notifiers...); err != nil {
-			domain.ErrLogger.Printf("error sending claim approved notification to member, %s", err)
-		}
+		notn.CreateNotificationUser(tx, m)
 	}
 }
 
-func ClaimDeniedSend(claim models.Claim, notifiers []interface{}) {
+// ClaimDeniedQueueMessage queues messages to a claim's members to
+//  notify them that it has been denied
+func ClaimDeniedQueueMessage(tx *pop.Connection, claim models.Claim) {
 	claim.LoadPolicyMembers(models.DB, false)
 
 	// TODO check if it was denied by the signator and if so, email the steward
-	// TODO figure out how to notify the members of the reason for the denial
+
+	data := newEmailMessageData()
+	data.addClaimData(claim)
+	data["claimStatusReason"] = claim.StatusReason
+
+	notn := models.Notification{
+		ClaimID:   nulls.NewUUID(claim.ID),
+		Body:      data.renderHTML(MessageTemplateClaimDeniedMember),
+		Subject:   "your claim has been denied",
+		InappText: "your claim has been denied",
+
+		// TODO make these constants somewhere
+		Event:         "Claim Denied Notification",
+		EventCategory: "Claim",
+	}
+	if err := notn.Create(tx); err != nil {
+		panic("error creating new Claim Denied Notification: " + err.Error())
+	}
 
 	for _, m := range claim.Policy.Members {
-		msg := newClaimMessageForMember(claim, m)
-		msg.Template = MessageTemplateClaimDeniedMember
-		msg.Subject = "your claim has been denied"
-		if err := notifications.Send(msg, notifiers...); err != nil {
-			domain.ErrLogger.Printf("error sending claim approved notification to member, %s", err)
-		}
+		notn.CreateNotificationUser(tx, m)
 	}
 }

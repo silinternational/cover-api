@@ -1,0 +1,4 @@
+rename_table("policy_history", "policy_histories")
+add_column("policy_histories", "field_name", "string", {"default": ""})
+change_column("policy_histories", "item_id", "uuid", {"null": true})
+drop_column("policy_histories", "description")

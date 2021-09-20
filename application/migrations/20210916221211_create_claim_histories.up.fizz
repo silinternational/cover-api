@@ -1,0 +1,15 @@
+create_table("claim_histories") {
+	t.Column("id", "uuid", {primary: true})
+	t.Column("claim_id", "uuid", {})
+	t.Column("user_id", "uuid", {})
+	t.Column("action", "string", {})
+	t.Column("claim_item_id", "uuid", {null: true})
+	t.Column("old_value", "string", {})
+	t.Column("new_value", "string", {})
+	t.Column("field_name", "string", {})
+	t.Timestamps()
+
+	t.ForeignKey("claim_id", {"claims": ["id"]}, {"on_delete": "cascade"})
+	t.ForeignKey("user_id", {"users": ["id"]}, {"on_delete": "cascade"})
+	t.ForeignKey("claim_item_id", {"claim_items": ["id"]}, {"on_delete": "cascade"})
+}

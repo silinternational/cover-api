@@ -1,0 +1,4 @@
+drop_column("policies", "entity_code_id")
+add_column("policies", "entity_code", "string", {"default": ""})
+
+drop_table("entity_codes")

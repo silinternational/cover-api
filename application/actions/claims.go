@@ -37,7 +37,7 @@ func claimsList(c buffalo.Context) error {
 func claimsListAll(c buffalo.Context) error {
 	tx := models.Tx(c)
 	var claims models.Claims
-	if err := models.Tx(c).All(&claims); err != nil {
+	if err := claims.All(tx); err != nil {
 		return reportError(c, err)
 	}
 
@@ -106,14 +106,11 @@ func claimsUpdate(c buffalo.Context) error {
 		return reportError(c, err)
 	}
 
-	// for future proofing
-	oldStatus := claim.Status
+	claim.IncidentType = input.IncidentType
+	claim.IncidentDescription = input.IncidentDescription
+	claim.IncidentDate = input.IncidentDate
 
-	claim.EventType = input.EventType
-	claim.EventDescription = input.EventDescription
-	claim.EventDate = input.EventDate
-
-	if err := claim.Update(tx, oldStatus); err != nil {
+	if err := claim.UpdateByUser(c); err != nil {
 		return reportError(c, err)
 	}
 
@@ -182,7 +179,7 @@ func claimsSubmit(c buffalo.Context) error {
 	tx := models.Tx(c)
 	claim := getReferencedClaimFromCtx(c)
 
-	if err := claim.SubmitForApproval(tx); err != nil {
+	if err := claim.SubmitForApproval(c); err != nil {
 		return reportError(c, err)
 	}
 
@@ -202,6 +199,12 @@ func claimsSubmit(c buffalo.Context) error {
 //     in: path
 //     required: true
 //     description: claim ID
+//   - name: claim revision input
+//     in: body
+//     description: claim request revision input object
+//     required: true
+//     schema:
+//       "$ref": "#/definitions/ClaimStatusInput"
 // responses:
 //   '200':
 //     description: Claim in focus
@@ -211,7 +214,12 @@ func claimsRequestRevision(c buffalo.Context) error {
 	tx := models.Tx(c)
 	claim := getReferencedClaimFromCtx(c)
 
-	if err := claim.RequestRevision(tx); err != nil {
+	var input api.ClaimStatusInput
+	if err := StrictBind(c, &input); err != nil {
+		return reportError(c, err)
+	}
+
+	if err := claim.RequestRevision(c, input.StatusReason); err != nil {
 		return reportError(c, err)
 	}
 
@@ -240,7 +248,7 @@ func claimsPreapprove(c buffalo.Context) error {
 	tx := models.Tx(c)
 	claim := getReferencedClaimFromCtx(c)
 
-	if err := claim.RequestReceipt(tx); err != nil {
+	if err := claim.RequestReceipt(c, ""); err != nil {
 		return reportError(c, err)
 	}
 
@@ -261,6 +269,12 @@ func claimsPreapprove(c buffalo.Context) error {
 //     in: path
 //     required: true
 //     description: claim ID
+//   - name: claim receipt reason input
+//     in: body
+//     description: claim receipt reason input object
+//     required: true
+//     schema:
+//       "$ref": "#/definitions/ClaimStatusInput"
 // responses:
 //   '200':
 //     description: Claim in focus
@@ -270,7 +284,12 @@ func claimsRequestReceipt(c buffalo.Context) error {
 	tx := models.Tx(c)
 	claim := getReferencedClaimFromCtx(c)
 
-	if err := claim.RequestReceipt(tx); err != nil {
+	var input api.ClaimStatusInput
+	if err := StrictBind(c, &input); err != nil {
+		return reportError(c, err)
+	}
+
+	if err := claim.RequestReceipt(c, input.StatusReason); err != nil {
 		return reportError(c, err)
 	}
 
@@ -297,11 +316,10 @@ func claimsRequestReceipt(c buffalo.Context) error {
 //       "$ref": "#/definitions/Claim"
 func claimsApprove(c buffalo.Context) error {
 	tx := models.Tx(c)
-	user := models.CurrentUser(c)
 
 	claim := getReferencedClaimFromCtx(c)
 
-	if err := claim.Approve(tx, user); err != nil {
+	if err := claim.Approve(c); err != nil {
 		return reportError(c, err)
 	}
 
@@ -328,11 +346,15 @@ func claimsApprove(c buffalo.Context) error {
 //       "$ref": "#/definitions/Claim"
 func claimsDeny(c buffalo.Context) error {
 	tx := models.Tx(c)
-	user := models.CurrentUser(c)
 
 	claim := getReferencedClaimFromCtx(c)
 
-	if err := claim.Deny(tx, user); err != nil {
+	var input api.ClaimStatusInput
+	if err := StrictBind(c, &input); err != nil {
+		return reportError(c, err)
+	}
+
+	if err := claim.Deny(c, input.StatusReason); err != nil {
 		return reportError(c, err)
 	}
 

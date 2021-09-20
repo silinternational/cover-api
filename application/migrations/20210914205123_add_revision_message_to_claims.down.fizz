@@ -1,0 +1,1 @@
+drop_column("claims", "status_reason")

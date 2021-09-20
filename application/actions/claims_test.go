@@ -163,20 +163,28 @@ func (as *ActionSuite) Test_ClaimsView() {
 }
 
 func (as *ActionSuite) Test_ClaimsUpdate() {
+	db := as.DB
 	fixConfig := models.FixturesConfig{
 		NumberOfPolicies:    3,
 		UsersPerPolicy:      1,
 		ClaimsPerPolicy:     4,
+		ClaimItemsPerClaim:  1,
 		DependentsPerPolicy: 0,
 		ItemsPerPolicy:      2,
 	}
 
 	fixtures := models.CreateItemFixtures(as.DB, fixConfig)
+	policy := fixtures.Policies[2]
 
 	// alias a couple users
 	appAdmin := fixtures.Policies[0].Members[0]
 	firstUser := fixtures.Policies[1].Members[0]
-	secondUser := fixtures.Policies[2].Members[0]
+	secondUser := policy.Members[0]
+
+	// alias some claims
+	draftClaim := policy.Claims[0]
+	review1Claim := models.UpdateClaimStatus(db, policy.Claims[1], api.ClaimStatusReview1, "")
+	review3Claim := models.UpdateClaimStatus(db, policy.Claims[2], api.ClaimStatusReview3, "")
 
 	// make an admin
 	appAdmin.AppRole = models.AppRoleAdmin
@@ -184,9 +192,9 @@ func (as *ActionSuite) Test_ClaimsUpdate() {
 	as.NoError(err, "failed to make an app admin")
 
 	input := api.ClaimUpdateInput{
-		EventDate:        time.Now().UTC(),
-		EventType:        api.ClaimEventTypeTheft,
-		EventDescription: "a description",
+		IncidentDate:        time.Now().UTC(),
+		IncidentType:        api.ClaimIncidentTypeTheft,
+		IncidentDescription: "a description",
 	}
 
 	tests := []struct {
@@ -201,26 +209,43 @@ func (as *ActionSuite) Test_ClaimsUpdate() {
 		{
 			name:          "unauthorized user",
 			actor:         firstUser,
-			claim:         fixtures.Policies[2].Claims[0],
+			claim:         draftClaim,
 			input:         input,
 			wantStatus:    http.StatusNotFound,
-			notWantInBody: fixtures.Policies[2].ID.String(),
+			notWantInBody: policy.ID.String(),
 		},
 		{
-			name:       "authorized user",
+			name:          "authorized user but bad status",
+			actor:         secondUser,
+			claim:         review3Claim,
+			input:         input,
+			wantStatus:    http.StatusBadRequest,
+			wantInBody:    string(api.ErrorClaimStatus),
+			notWantInBody: policy.ID.String(),
+		},
+		{
+			name:       "authorized user draft",
 			actor:      secondUser,
-			claim:      fixtures.Policies[2].Claims[0],
+			claim:      draftClaim,
 			input:      input,
 			wantStatus: http.StatusOK,
-			wantInBody: fixtures.Policies[2].Claims[0].ID.String(),
+			wantInBody: draftClaim.ID.String(),
+		},
+		{
+			name:       "authorized user review1 to draft",
+			actor:      secondUser,
+			claim:      review1Claim,
+			input:      input,
+			wantStatus: http.StatusOK,
+			wantInBody: `"status":"` + string(api.ClaimStatusDraft),
 		},
 		{
 			name:       "admin user",
 			actor:      appAdmin,
-			claim:      fixtures.Policies[2].Claims[0],
+			claim:      review3Claim,
 			input:      input,
 			wantStatus: http.StatusOK,
-			wantInBody: fixtures.Policies[2].Claims[0].ID.String(),
+			wantInBody: `"status":"` + string(api.ClaimStatusReview3),
 		},
 	}
 
@@ -255,9 +280,9 @@ func (as *ActionSuite) Test_ClaimsUpdate() {
 }
 
 func (as *ActionSuite) verifyClaimUpdate(input api.ClaimUpdateInput, claim models.Claim) {
-	as.Equal(input.EventType, claim.EventType, "EventType not correct")
-	as.Equal(input.EventDescription, claim.EventDescription, "EventDescription not correct")
-	as.WithinDuration(input.EventDate, claim.EventDate, time.Millisecond, "EventDate not correct")
+	as.Equal(input.IncidentType, claim.IncidentType, "IncidentType not correct")
+	as.Equal(input.IncidentDescription, claim.IncidentDescription, "IncidentDescription not correct")
+	as.WithinDuration(input.IncidentDate, claim.IncidentDate, time.Millisecond, "IncidentDate not correct")
 }
 
 func (as *ActionSuite) Test_ClaimsCreate() {
@@ -284,9 +309,9 @@ func (as *ActionSuite) Test_ClaimsCreate() {
 	as.NoError(err, "failed to make an app admin")
 
 	input := api.ClaimCreateInput{
-		EventDate:        time.Now(),
-		EventType:        api.ClaimEventTypeTheft,
-		EventDescription: "a description",
+		IncidentDate:        time.Now(),
+		IncidentType:        api.ClaimIncidentTypeTheft,
+		IncidentDescription: "a description",
 	}
 
 	tests := []struct {
@@ -314,8 +339,8 @@ func (as *ActionSuite) Test_ClaimsCreate() {
 			wantStatus: http.StatusOK,
 			wantInBody: []string{
 				`"policy_id":"` + policyByUser.ID.String(),
-				`"event_type":"` + string(input.EventType),
-				`"event_description":"` + input.EventDescription,
+				`"incident_type":"` + string(input.IncidentType),
+				`"incident_description":"` + input.IncidentDescription,
 				`"status":"` + string(api.ClaimStatusDraft),
 				`"claim_items":[]`,
 			},
@@ -336,8 +361,8 @@ func (as *ActionSuite) Test_ClaimsCreate() {
 			wantStatus: http.StatusOK,
 			wantInBody: []string{
 				`"policy_id":"` + policyByAdmin.ID.String(),
-				`"event_type":"` + string(input.EventType),
-				`"event_description":"` + input.EventDescription,
+				`"incident_type":"` + string(input.IncidentType),
+				`"incident_description":"` + input.IncidentDescription,
 				`"status":"` + string(api.ClaimStatusDraft),
 				`"claim_items":[]`,
 			},
@@ -366,7 +391,7 @@ func (as *ActionSuite) Test_ClaimsCreate() {
 			var respObj api.Claim
 			as.NoError(json.Unmarshal([]byte(body), &respObj))
 
-			as.Equal(tt.input.EventDescription, respObj.EventDescription,
+			as.Equal(tt.input.IncidentDescription, respObj.IncidentDescription,
 				"response object is not correct, %+v", respObj)
 		})
 	}
@@ -490,7 +515,7 @@ func (as *ActionSuite) Test_ClaimsSubmit() {
 	policyCreator := policy.Members[0]
 
 	draftClaim := policy.Claims[0]
-	approvedClaim := models.UpdateClaimStatus(as.DB, policy.Claims[1], api.ClaimStatusApproved)
+	approvedClaim := models.UpdateClaimStatus(as.DB, policy.Claims[1], api.ClaimStatusApproved, "")
 
 	otherUser := fixtures.Policies[1].Members[0]
 
@@ -520,7 +545,7 @@ func (as *ActionSuite) Test_ClaimsSubmit() {
 			oldClaim:   draftClaim,
 			wantStatus: http.StatusOK,
 			wantInBody: []string{
-				`"event_description":"` + draftClaim.EventDescription,
+				`"incident_description":"` + draftClaim.IncidentDescription,
 				`"status":"` + string(api.ClaimStatusReview1),
 			},
 		},
@@ -568,7 +593,7 @@ func (as *ActionSuite) Test_ClaimsRequestRevision() {
 	appAdmin := models.CreateAdminUsers(as.DB)[models.AppRoleAdmin]
 
 	draftClaim := policy.Claims[0]
-	review1Claim := models.UpdateClaimStatus(as.DB, policy.Claims[1], api.ClaimStatusReview1)
+	review1Claim := models.UpdateClaimStatus(as.DB, policy.Claims[1], api.ClaimStatusReview1, "")
 
 	tests := []struct {
 		name       string
@@ -596,7 +621,7 @@ func (as *ActionSuite) Test_ClaimsRequestRevision() {
 			oldClaim:   review1Claim,
 			wantStatus: http.StatusOK,
 			wantInBody: []string{
-				`"event_description":"` + review1Claim.EventDescription,
+				`"incident_description":"` + review1Claim.IncidentDescription,
 				`"status":"` + string(api.ClaimStatusRevision),
 			},
 		},
@@ -608,7 +633,8 @@ func (as *ActionSuite) Test_ClaimsRequestRevision() {
 				domain.TypeClaim, tt.oldClaim.ID.String(), api.ResourceRevision)
 			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
 			req.Headers["content-type"] = "application/json"
-			res := req.Post(nil)
+			const message = "change all of it"
+			res := req.Post(api.ClaimStatusInput{StatusReason: message})
 
 			body := res.Body.String()
 			as.Equal(tt.wantStatus, res.Code, "incorrect status code returned, body: %s", body)
@@ -624,6 +650,7 @@ func (as *ActionSuite) Test_ClaimsRequestRevision() {
 				"error finding submitted item.")
 
 			as.Equal(api.ClaimStatusRevision, claim.Status, "incorrect status after submission")
+			as.Equal(message, claim.StatusReason, "incorrect revision message")
 		})
 	}
 }
@@ -645,7 +672,7 @@ func (as *ActionSuite) Test_ClaimsPreapprove() {
 	appAdmin := models.CreateAdminUsers(as.DB)[models.AppRoleAdmin]
 
 	draftClaim := policy.Claims[0]
-	review1Claim := models.UpdateClaimStatus(as.DB, policy.Claims[1], api.ClaimStatusReview1)
+	review1Claim := models.UpdateClaimStatus(as.DB, policy.Claims[1], api.ClaimStatusReview1, "")
 
 	tests := []struct {
 		name       string
@@ -673,7 +700,7 @@ func (as *ActionSuite) Test_ClaimsPreapprove() {
 			oldClaim:   review1Claim,
 			wantStatus: http.StatusOK,
 			wantInBody: []string{
-				`"event_description":"` + review1Claim.EventDescription,
+				`"incident_description":"` + review1Claim.IncidentDescription,
 				`"status":"` + string(api.ClaimStatusReceipt),
 			},
 		},
@@ -705,6 +732,88 @@ func (as *ActionSuite) Test_ClaimsPreapprove() {
 	}
 }
 
+func (as *ActionSuite) Test_ClaimsReceipt() {
+	fixConfig := models.FixturesConfig{
+		NumberOfPolicies:    2,
+		ItemsPerPolicy:      2,
+		UsersPerPolicy:      1,
+		DependentsPerPolicy: 0,
+		ClaimsPerPolicy:     3,
+		ClaimItemsPerClaim:  1,
+	}
+
+	fixtures := models.CreateItemFixtures(as.DB, fixConfig)
+	policy := fixtures.Policies[0]
+	policyCreator := policy.Members[0]
+
+	appAdmin := models.CreateAdminUsers(as.DB)[models.AppRoleAdmin]
+
+	draftClaim := policy.Claims[0]
+	review3Claim := models.UpdateClaimStatus(as.DB, policy.Claims[1], api.ClaimStatusReview3,
+		"the final receipt, not just the quote")
+
+	tests := []struct {
+		name       string
+		actor      models.User
+		oldClaim   models.Claim
+		reason     string
+		wantStatus int
+		wantInBody []string
+	}{
+		{
+			name:       "bad start status",
+			actor:      appAdmin,
+			oldClaim:   draftClaim,
+			wantStatus: http.StatusBadRequest,
+			wantInBody: []string{api.ErrorClaimStatus.String()},
+		},
+		{
+			name:       "non-admin user",
+			actor:      policyCreator,
+			oldClaim:   review3Claim,
+			wantStatus: http.StatusNotFound,
+		},
+		{
+			name:       "good claim",
+			actor:      appAdmin,
+			oldClaim:   review3Claim,
+			reason:     review3Claim.StatusReason,
+			wantStatus: http.StatusOK,
+			wantInBody: []string{
+				`"incident_description":"` + review3Claim.IncidentDescription,
+				`"status_reason":"`, review3Claim.StatusReason,
+				`"status":"` + string(api.ClaimStatusReceipt),
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		as.T().Run(tt.name, func(t *testing.T) {
+			req := as.JSON("/%s/%s/%s",
+				domain.TypeClaim, tt.oldClaim.ID.String(), api.ResourceReceipt)
+			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
+			req.Headers["content-type"] = "application/json"
+			res := req.Post(api.ClaimStatusInput{StatusReason: tt.reason})
+
+			body := res.Body.String()
+			as.Equal(tt.wantStatus, res.Code, "incorrect status code returned, body: %s", body)
+
+			as.verifyResponseData(tt.wantInBody, body, "")
+
+			if res.Code != http.StatusOK {
+				return
+			}
+
+			var claim models.Claim
+			as.NoError(as.DB.Find(&claim, tt.oldClaim.ID),
+				"error finding submitted item.")
+
+			as.Equal(api.ClaimStatusReceipt, claim.Status, "incorrect status after submission")
+			as.Equal(tt.reason, claim.StatusReason, "incorrect StatusReason after submission")
+		})
+	}
+}
+
 func (as *ActionSuite) Test_ClaimsApprove() {
 	fixConfig := models.FixturesConfig{
 		NumberOfPolicies:    2,
@@ -723,9 +832,9 @@ func (as *ActionSuite) Test_ClaimsApprove() {
 	appAdmin := models.CreateAdminUsers(as.DB)[models.AppRoleAdmin]
 
 	draftClaim := policy.Claims[0]
-	review1Claim := models.UpdateClaimStatus(as.DB, policy.Claims[1], api.ClaimStatusReview1)
-	review2Claim := models.UpdateClaimStatus(as.DB, policy.Claims[2], api.ClaimStatusReview2)
-	review3Claim := models.UpdateClaimStatus(as.DB, policy.Claims[3], api.ClaimStatusReview3)
+	review1Claim := models.UpdateClaimStatus(as.DB, policy.Claims[1], api.ClaimStatusReview1, "")
+	review2Claim := models.UpdateClaimStatus(as.DB, policy.Claims[2], api.ClaimStatusReview2, "")
+	review3Claim := models.UpdateClaimStatus(as.DB, policy.Claims[3], api.ClaimStatusReview3, "")
 
 	tests := []struct {
 		name            string
@@ -755,7 +864,7 @@ func (as *ActionSuite) Test_ClaimsApprove() {
 			wantStatus:      http.StatusOK,
 			wantClaimStatus: api.ClaimStatusReview3,
 			wantInBody: []string{
-				`"event_description":"` + review1Claim.EventDescription,
+				`"incident_description":"` + review1Claim.IncidentDescription,
 				`"status":"` + string(api.ClaimStatusReview3),
 				`"review_date":"` + time.Now().UTC().Format(domain.DateFormat),
 				`"reviewer_id":"` + appAdmin.ID.String(),
@@ -768,7 +877,7 @@ func (as *ActionSuite) Test_ClaimsApprove() {
 			wantStatus:      http.StatusOK,
 			wantClaimStatus: api.ClaimStatusReview3,
 			wantInBody: []string{
-				`"event_description":"` + review2Claim.EventDescription,
+				`"incident_description":"` + review2Claim.IncidentDescription,
 				`"status":"` + string(api.ClaimStatusReview3),
 				`"review_date":"` + time.Now().UTC().Format(domain.DateFormat),
 				`"reviewer_id":"` + appAdmin.ID.String(),
@@ -781,7 +890,7 @@ func (as *ActionSuite) Test_ClaimsApprove() {
 			wantStatus:      http.StatusOK,
 			wantClaimStatus: api.ClaimStatusApproved,
 			wantInBody: []string{
-				`"event_description":"` + review3Claim.EventDescription,
+				`"incident_description":"` + review3Claim.IncidentDescription,
 				`"status":"` + string(api.ClaimStatusApproved),
 				`"review_date":"` + time.Now().UTC().Format(domain.DateFormat),
 				`"reviewer_id":"` + appAdmin.ID.String(),
@@ -833,9 +942,9 @@ func (as *ActionSuite) Test_ClaimsDeny() {
 	appAdmin := models.CreateAdminUsers(as.DB)[models.AppRoleAdmin]
 
 	draftClaim := policy.Claims[0]
-	review1Claim := models.UpdateClaimStatus(as.DB, policy.Claims[1], api.ClaimStatusReview1)
-	review2Claim := models.UpdateClaimStatus(as.DB, policy.Claims[2], api.ClaimStatusReview2)
-	review3Claim := models.UpdateClaimStatus(as.DB, policy.Claims[3], api.ClaimStatusReview3)
+	review1Claim := models.UpdateClaimStatus(as.DB, policy.Claims[1], api.ClaimStatusReview1, "")
+	review2Claim := models.UpdateClaimStatus(as.DB, policy.Claims[2], api.ClaimStatusReview2, "")
+	review3Claim := models.UpdateClaimStatus(as.DB, policy.Claims[3], api.ClaimStatusReview3, "")
 
 	tests := []struct {
 		name            string
@@ -864,7 +973,7 @@ func (as *ActionSuite) Test_ClaimsDeny() {
 			oldClaim:   review1Claim,
 			wantStatus: http.StatusOK,
 			wantInBody: []string{
-				`"event_description":"` + review1Claim.EventDescription,
+				`"incident_description":"` + review1Claim.IncidentDescription,
 				`"status":"` + string(api.ClaimStatusDenied),
 				`"review_date":"` + time.Now().UTC().Format(domain.DateFormat),
 				`"reviewer_id":"` + appAdmin.ID.String(),
@@ -876,7 +985,7 @@ func (as *ActionSuite) Test_ClaimsDeny() {
 			oldClaim:   review2Claim,
 			wantStatus: http.StatusOK,
 			wantInBody: []string{
-				`"event_description":"` + review2Claim.EventDescription,
+				`"incident_description":"` + review2Claim.IncidentDescription,
 				`"status":"` + string(api.ClaimStatusDenied),
 				`"review_date":"` + time.Now().UTC().Format(domain.DateFormat),
 				`"reviewer_id":"` + appAdmin.ID.String(),
@@ -888,7 +997,7 @@ func (as *ActionSuite) Test_ClaimsDeny() {
 			oldClaim:   review3Claim,
 			wantStatus: http.StatusOK,
 			wantInBody: []string{
-				`"event_description":"` + review3Claim.EventDescription,
+				`"incident_description":"` + review3Claim.IncidentDescription,
 				`"status":"` + string(api.ClaimStatusDenied),
 				`"review_date":"` + time.Now().UTC().Format(domain.DateFormat),
 				`"reviewer_id":"` + appAdmin.ID.String(),
@@ -902,7 +1011,8 @@ func (as *ActionSuite) Test_ClaimsDeny() {
 				domain.TypeClaim, tt.oldClaim.ID.String(), api.ResourceDeny)
 			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
 			req.Headers["content-type"] = "application/json"
-			res := req.Post(nil)
+			const message = "change all of it"
+			res := req.Post(api.ClaimStatusInput{StatusReason: message})
 
 			body := res.Body.String()
 			as.Equal(tt.wantStatus, res.Code, "incorrect status code returned, body: %s", body)
@@ -918,6 +1028,7 @@ func (as *ActionSuite) Test_ClaimsDeny() {
 				"error finding submitted item.")
 
 			as.Equal(api.ClaimStatusDenied, claim.Status, "incorrect status after submission")
+			as.Equal(message, claim.StatusReason, "incorrect status reason")
 		})
 	}
 }
