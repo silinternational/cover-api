@@ -52,7 +52,7 @@ func validateEmails(ts *TestSuite, td testData, testEmailer notifications.DummyE
 	ts.Len(msgs, wantCount, "incorrect message count")
 
 	gotTos := testEmailer.GetAllToAddresses()
-	ts.Equal(len(td.wantToEmails), len(gotTos), "incorrect count of ToEmail addresses")
+	ts.Len(gotTos, len(td.wantToEmails), "incorrect count of ToEmail addresses")
 
 	for i, m := range msgs {
 		ts.Contains(fmt.Sprintf("%s", td.wantToEmails[i]), m.ToEmail, "incorrect ToEmail address")
