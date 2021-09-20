@@ -12,9 +12,10 @@ import (
 type EntityCodes []EntityCode
 
 type EntityCode struct {
-	ID   uuid.UUID `db:"id"`
-	Code string    `db:"code"`
-	Name string    `db:"name"`
+	ID     uuid.UUID `db:"id"`
+	Code   string    `db:"code"`
+	Name   string    `db:"name"`
+	Active bool      `db:"active"`
 
 	CreatedAt time.Time `db:"created_at"`
 	UpdatedAt time.Time `db:"updated_at"`
