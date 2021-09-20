@@ -52,3 +52,53 @@ func (ts *TestSuite) Test_keyToReadableString() {
 		})
 	}
 }
+
+func (ts *TestSuite) TestCurrency_String() {
+	tests := []struct {
+		name string
+		c    Currency
+		want string
+	}{
+		{
+			name: "0",
+			c:    0,
+			want: "0.00",
+		},
+		{
+			name: "1",
+			c:    1,
+			want: "0.01",
+		},
+		{
+			name: "10",
+			c:    10,
+			want: "0.10",
+		},
+		{
+			name: "100",
+			c:    100,
+			want: "1.00",
+		},
+		{
+			name: "-1",
+			c:    -1,
+			want: "-0.01",
+		},
+		{
+			name: "-10",
+			c:    -10,
+			want: "-0.10",
+		},
+		{
+			name: "-100",
+			c:    -100,
+			want: "-1.00",
+		},
+	}
+	for _, tt := range tests {
+		ts.T().Run(tt.name, func(t *testing.T) {
+			s := tt.c.String()
+			ts.Equal(tt.want, s)
+		})
+	}
+}

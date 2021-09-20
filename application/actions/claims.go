@@ -106,14 +106,11 @@ func claimsUpdate(c buffalo.Context) error {
 		return reportError(c, err)
 	}
 
-	// for future proofing
-	oldStatus := claim.Status
-
 	claim.IncidentType = input.IncidentType
 	claim.IncidentDescription = input.IncidentDescription
 	claim.IncidentDate = input.IncidentDate
 
-	if err := claim.Update(tx, oldStatus); err != nil {
+	if err := claim.Update(c); err != nil {
 		return reportError(c, err)
 	}
 
@@ -182,7 +179,7 @@ func claimsSubmit(c buffalo.Context) error {
 	tx := models.Tx(c)
 	claim := getReferencedClaimFromCtx(c)
 
-	if err := claim.SubmitForApproval(tx); err != nil {
+	if err := claim.SubmitForApproval(c); err != nil {
 		return reportError(c, err)
 	}
 
@@ -222,7 +219,7 @@ func claimsRequestRevision(c buffalo.Context) error {
 		return reportError(c, err)
 	}
 
-	if err := claim.RequestRevision(tx, input.StatusReason); err != nil {
+	if err := claim.RequestRevision(c, input.StatusReason); err != nil {
 		return reportError(c, err)
 	}
 
@@ -319,11 +316,10 @@ func claimsRequestReceipt(c buffalo.Context) error {
 //       "$ref": "#/definitions/Claim"
 func claimsApprove(c buffalo.Context) error {
 	tx := models.Tx(c)
-	user := models.CurrentUser(c)
 
 	claim := getReferencedClaimFromCtx(c)
 
-	if err := claim.Approve(tx, user); err != nil {
+	if err := claim.Approve(c); err != nil {
 		return reportError(c, err)
 	}
 
@@ -350,7 +346,6 @@ func claimsApprove(c buffalo.Context) error {
 //       "$ref": "#/definitions/Claim"
 func claimsDeny(c buffalo.Context) error {
 	tx := models.Tx(c)
-	user := models.CurrentUser(c)
 
 	claim := getReferencedClaimFromCtx(c)
 
@@ -359,7 +354,7 @@ func claimsDeny(c buffalo.Context) error {
 		return reportError(c, err)
 	}
 
-	if err := claim.Deny(tx, user, input.StatusReason); err != nil {
+	if err := claim.Deny(c, input.StatusReason); err != nil {
 		return reportError(c, err)
 	}
 
