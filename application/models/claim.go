@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/gobuffalo/buffalo"
 	"github.com/gobuffalo/events"
 	"github.com/gobuffalo/nulls"
 	"github.com/gobuffalo/pop/v5"
@@ -354,7 +355,7 @@ func (c *Claim) RequestRevision(ctx context.Context, message string) error {
 // RequestReceipt changes the status of the claim to Receipt
 //   provided that the current status is Review1.
 // TODO consider how to communicate what kind of receipt is needed
-func (c *Claim) RequestReceipt(ctx context.Context) error {
+func (c *Claim) RequestReceipt(ctx buffalo.Context, reason string) error {
 	oldStatus := c.Status
 	var eventType string
 
@@ -370,6 +371,7 @@ func (c *Claim) RequestReceipt(ctx context.Context) error {
 	}
 
 	c.Status = api.ClaimStatusReceipt
+	c.StatusReason = reason
 
 	if err := c.Update(ctx); err != nil {
 		return err

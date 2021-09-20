@@ -40,10 +40,9 @@ func ClaimReview1QueueMessage(tx *pop.Connection, claim models.Claim) {
 func ClaimRevisionQueueMessage(tx *pop.Connection, claim models.Claim) {
 	claim.LoadPolicyMembers(models.DB, false)
 
-	// TODO figure out how to specify required revisions
-
 	data := newEmailMessageData()
 	data.addClaimData(claim)
+	data["claimStatusReason"] = claim.StatusReason
 
 	notn := models.Notification{
 		ClaimID: nulls.NewUUID(claim.ID),
@@ -186,8 +185,6 @@ func ClaimReview3QueueMessage(tx *pop.Connection, claim models.Claim) {
 func ClaimApprovedQueueMessage(tx *pop.Connection, claim models.Claim) {
 	claim.LoadPolicyMembers(models.DB, false)
 
-	// TODO figure out how to specify required revisions
-
 	data := newEmailMessageData()
 	data.addClaimData(claim)
 
@@ -216,10 +213,10 @@ func ClaimDeniedQueueMessage(tx *pop.Connection, claim models.Claim) {
 	claim.LoadPolicyMembers(models.DB, false)
 
 	// TODO check if it was denied by the signator and if so, email the steward
-	// TODO figure out how to notify the members of the reason for the denial
 
 	data := newEmailMessageData()
 	data.addClaimData(claim)
+	data["claimStatusReason"] = claim.StatusReason
 
 	notn := models.Notification{
 		ClaimID:   nulls.NewUUID(claim.ID),
