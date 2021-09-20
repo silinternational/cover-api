@@ -159,7 +159,8 @@ func claimItemStructLevelValidation(sl validator.StructLevel) {
 		panic("claimItemStructLevelValidation registered to a type other than ClaimItem")
 	}
 
-	if claimItem.Status == api.ClaimItemStatusPending || claimItem.Status == api.ClaimItemStatusDraft {
+	switch claimItem.Status {
+	case api.ClaimItemStatusDraft, api.ClaimItemStatusRevision, api.ClaimItemStatusReview1:
 		incidentTypePayoutOptions, ok := ValidClaimIncidentTypePayoutOptions[claimItem.Claim.IncidentType]
 		if !ok {
 			sl.ReportError(claimItem.Claim.IncidentType, "IncidentType", "IncidentType", "invalid Incident type", "")
