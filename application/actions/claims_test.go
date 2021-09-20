@@ -163,20 +163,28 @@ func (as *ActionSuite) Test_ClaimsView() {
 }
 
 func (as *ActionSuite) Test_ClaimsUpdate() {
+	db := as.DB
 	fixConfig := models.FixturesConfig{
 		NumberOfPolicies:    3,
 		UsersPerPolicy:      1,
 		ClaimsPerPolicy:     4,
+		ClaimItemsPerClaim:  1,
 		DependentsPerPolicy: 0,
 		ItemsPerPolicy:      2,
 	}
 
 	fixtures := models.CreateItemFixtures(as.DB, fixConfig)
+	policy := fixtures.Policies[2]
 
 	// alias a couple users
 	appAdmin := fixtures.Policies[0].Members[0]
 	firstUser := fixtures.Policies[1].Members[0]
-	secondUser := fixtures.Policies[2].Members[0]
+	secondUser := policy.Members[0]
+
+	// alias some claims
+	draftClaim := policy.Claims[0]
+	review1Claim := models.UpdateClaimStatus(db, policy.Claims[1], api.ClaimStatusReview1, "")
+	review3Claim := models.UpdateClaimStatus(db, policy.Claims[2], api.ClaimStatusReview3, "")
 
 	// make an admin
 	appAdmin.AppRole = models.AppRoleAdmin
@@ -201,26 +209,43 @@ func (as *ActionSuite) Test_ClaimsUpdate() {
 		{
 			name:          "unauthorized user",
 			actor:         firstUser,
-			claim:         fixtures.Policies[2].Claims[0],
+			claim:         draftClaim,
 			input:         input,
 			wantStatus:    http.StatusNotFound,
-			notWantInBody: fixtures.Policies[2].ID.String(),
+			notWantInBody: policy.ID.String(),
 		},
 		{
-			name:       "authorized user",
+			name:          "authorized user but bad status",
+			actor:         secondUser,
+			claim:         review3Claim,
+			input:         input,
+			wantStatus:    http.StatusBadRequest,
+			wantInBody:    string(api.ErrorClaimStatus),
+			notWantInBody: policy.ID.String(),
+		},
+		{
+			name:       "authorized user draft",
 			actor:      secondUser,
-			claim:      fixtures.Policies[2].Claims[0],
+			claim:      draftClaim,
 			input:      input,
 			wantStatus: http.StatusOK,
-			wantInBody: fixtures.Policies[2].Claims[0].ID.String(),
+			wantInBody: draftClaim.ID.String(),
+		},
+		{
+			name:       "authorized user review1 to draft",
+			actor:      secondUser,
+			claim:      review1Claim,
+			input:      input,
+			wantStatus: http.StatusOK,
+			wantInBody: `"status":"` + string(api.ClaimStatusDraft),
 		},
 		{
 			name:       "admin user",
 			actor:      appAdmin,
-			claim:      fixtures.Policies[2].Claims[0],
+			claim:      review3Claim,
 			input:      input,
 			wantStatus: http.StatusOK,
-			wantInBody: fixtures.Policies[2].Claims[0].ID.String(),
+			wantInBody: `"status":"` + string(api.ClaimStatusReview3),
 		},
 	}
 

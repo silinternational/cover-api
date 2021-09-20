@@ -153,6 +153,32 @@ func (c *Claim) Update(ctx context.Context) error {
 	return update(tx, c)
 }
 
+// UpdateByUser ensures the Claim has an appropriate status for being modified by the user
+//  and then writes the Claim data to an existing database record.
+func (c *Claim) UpdateByUser(ctx context.Context) error {
+	user := CurrentUser(ctx)
+	if user.IsAdmin() {
+		return c.Update(ctx)
+	}
+
+	switch c.Status {
+	// OK to modify the Claim when it has one of these statuses but not any others
+	case api.ClaimStatusDraft, api.ClaimStatusRevision, api.ClaimStatusReview1:
+	default:
+		err := errors.New("user may not edit a claim that is too far along in the review process.")
+		appErr := api.NewAppError(err, api.ErrorClaimStatus, api.CategoryUser)
+		return appErr
+	}
+
+	// If the user edits something, it should take it off of the steward's list of things to review and
+	//  also force the user to resubmit it.
+	if c.Status == api.ClaimStatusReview1 {
+		c.Status = api.ClaimStatusDraft
+	}
+
+	return c.Update(ctx)
+}
+
 func (c *Claim) GetID() uuid.UUID {
 	return c.ID
 }
@@ -208,6 +234,7 @@ func claimStatusTransitions() map[api.ClaimStatus][]api.ClaimStatus {
 			api.ClaimStatusReview1,
 		},
 		api.ClaimStatusReview1: {
+			api.ClaimStatusDraft,
 			api.ClaimStatusRevision,
 			api.ClaimStatusReceipt,
 			api.ClaimStatusReview3,
