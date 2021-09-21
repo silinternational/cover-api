@@ -171,10 +171,8 @@ func policiesInviteMember(c buffalo.Context) error {
 	}
 
 	// make sure user is not already a member of this policy
-	for _, m := range policy.Members {
-		if m.Email == invite.Email {
-			return c.Render(http.StatusNoContent, nil)
-		}
+	if policy.MemberHasEmail(tx, invite.Email) {
+		return c.Render(http.StatusNoContent, nil)
 	}
 
 	// check if user already exists

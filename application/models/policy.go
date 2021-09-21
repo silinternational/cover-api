@@ -97,6 +97,16 @@ func (p *Policy) isMember(tx *pop.Connection, id uuid.UUID) bool {
 	return false
 }
 
+func (p *Policy) MemberHasEmail(tx *pop.Connection, emailAddress string) bool {
+	p.LoadMembers(tx, false)
+	for _, m := range p.Members {
+		if m.Email == emailAddress {
+			return true
+		}
+	}
+	return false
+}
+
 func (p *Policy) isDependent(tx *pop.Connection, id uuid.UUID) bool {
 	p.LoadDependents(tx, false)
 	for _, d := range p.Dependents {
