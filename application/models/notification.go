@@ -91,7 +91,7 @@ func (n *Notification) LoadClaim(tx *pop.Connection, reload bool) {
 	}
 }
 
-func (n *Notification) CreateNotificationUser(tx *pop.Connection, userID nulls.UUID, toName, emailAddress string) {
+func (n *Notification) CreateNotificationUser(tx *pop.Connection, userID nulls.UUID, emailAddress, toName string) {
 	notnUser := NotificationUser{
 		NotificationID: n.ID,
 		UserID:         userID,

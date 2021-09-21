@@ -21,6 +21,7 @@ type PolicyUserInvite struct {
 	Email          string     `db:"email" validate:"required,email"`
 	EmailSentAt    nulls.Time `db:"email_sent_at"`
 	EmailSendCount int        `db:"email_send_count"`
+	InviteeName    string     `db:"invitee_name"`
 	InviterName    string     `db:"inviter_name"`
 	InviterEmail   string     `db:"inviter_email"`
 	InviterMessage string     `db:"inviter_message"`
