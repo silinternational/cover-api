@@ -324,6 +324,19 @@ func (i *Item) Revision(tx *pop.Connection, reason string) error {
 	return nil
 }
 
+// AutoApprove fires an event and marks the item as `Approved`
+// It assumes that the item's current status has already been validated.
+func (i *Item) AutoApprove(tx *pop.Connection) error {
+	e := events.Event{
+		Kind:    domain.EventApiItemAutoApproved,
+		Message: fmt.Sprintf("Item AutoApproved: %s  ID: %s", i.Name, i.ID.String()),
+		Payload: events.Payload{domain.EventPayloadID: i.ID},
+	}
+	emitEvent(e)
+
+	return i.Approve(tx)
+}
+
 // Approve takes the item from Pending coverage status to Approved.
 // It assumes that the item's current status has already been validated.
 func (i *Item) Approve(tx *pop.Connection) error {
@@ -503,15 +516,4 @@ func (i *Item) setAccountablePerson(tx *pop.Connection, id uuid.UUID) error {
 	}
 
 	return api.NewAppError(errors.New("accountable person ID not found"), api.ErrorNoRows, api.CategoryUser)
-}
-
-func (i *Item) AutoApprove(tx *pop.Connection) error {
-	e := events.Event{
-		Kind:    domain.EventApiItemAutoApproved,
-		Message: fmt.Sprintf("Item AutoApproved: %s  ID: %s", i.Name, i.ID.String()),
-		Payload: events.Payload{domain.EventPayloadID: i.ID},
-	}
-	emitEvent(e)
-
-	return i.Approve(tx)
 }
