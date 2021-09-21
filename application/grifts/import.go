@@ -31,8 +31,7 @@ import (
 	list is a complex structure contained related data. The remainder are simple objects.
 
 TODO:
-	1. Import other tables (e.g. Journal Entries)
-	2. Make name/policy unique
+	1. Make name/policy unique
 */
 
 const (
@@ -78,6 +77,9 @@ var policyUserMap = map[string]struct{}{}
 
 // policyNotes is used for accumulating policy notes as policies are merged
 var policyNotes = map[uuid.UUID]string{}
+
+// policyIDMap is a map of legacy ID to new ID
+var policyIDMap = map[int]uuid.UUID{}
 
 // activeEntities is used to track which entity codes are used on active policies
 var activeEntities = map[uuid.UUID]struct{}{}
@@ -126,6 +128,7 @@ var _ = grift.Namespace("db", func() {
 			importAdminUsers(tx, obj.Users)
 			importItemCategories(tx, obj.ItemCategories)
 			importPolicies(tx, obj.Policies)
+			importJournalEntries(tx, obj.JournalEntries)
 
 			return errors.New("blocking transaction commit until everything is ready")
 		}); err != nil {
@@ -283,16 +286,16 @@ func getItemCategoryStatus(itemCategory LegacyItemCategory) api.ItemCategoryStat
 	return status
 }
 
-func importPolicies(tx *pop.Connection, in []LegacyPolicy) {
+func importPolicies(tx *pop.Connection, policies []LegacyPolicy) {
 	var nPolicies, nClaims, nItems, nClaimItems, nPolicyUsers, nDuplicatePolicies int
 	householdsWithMultiplePolicies := map[string]struct{}{}
 
-	for i := range in {
-		if err := normalizePolicy(&in[i]); err != nil {
+	for i := range policies {
+		if err := normalizePolicy(&policies[i]); err != nil {
 			log.Println(err)
 			continue
 		}
-		p := in[i]
+		p := policies[i]
 		p.HouseholdId = trim(p.HouseholdId)
 		p.Notes = trim(p.Notes)
 
@@ -339,6 +342,8 @@ func importPolicies(tx *pop.Connection, in []LegacyPolicy) {
 			}
 			policyNotes[id] = p.Notes
 
+			policyIDMap[policyID] = policyUUID
+
 			nPolicies++
 		}
 
@@ -364,7 +369,6 @@ func importPolicies(tx *pop.Connection, in []LegacyPolicy) {
 	fmt.Printf("  ClaimItems: %d\n", nClaimItems)
 	fmt.Printf("  PolicyUsers: %d w/staffID: %d\n", nPolicyUsers, nPolicyUsersWithStaffID)
 	fmt.Printf("  Entity Codes: %d total, %d active\n", len(entityCodesMap), len(activeEntities))
-	fmt.Println("")
 }
 
 func setEntitiesActive(tx *pop.Connection) {
@@ -768,6 +772,74 @@ func getCoverageStatus(item LegacyItem) api.ItemCoverageStatus {
 	}
 
 	return coverageStatus
+}
+
+func importJournalEntries(tx *pop.Connection, entries []JournalEntry) {
+	// fmt.Printf(`"%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s"`+"\n",
+	//	"PolicyID", "PolicyType", "FirstName", "LastName", "JERecType", "AccCostCtr1", "AccCostCtr2", "CustJE",
+	//	"DateEntd", "DateSubm", "Entity", "AccNum", "RMJE, ", "JERecNum")
+
+	nImported := 0
+	badPolicyIDs := map[int]struct{}{}
+	for _, e := range entries {
+		//	fmt.Printf(`%d,%d,"%s","%s",%d,"%s","%s",%f,"%s","%s","%s",%d,%f,"%s"`+"\n",
+		//		e.PolicyID, e.PolicyType, e.FirstName, e.LastName, e.JERecType, e.AccCostCtr1, e.AccCostCtr2, e.CustJE,
+		//		e.DateEntd, e.DateSubm, e.Entity, e.AccNum, e.RMJE, e.JERecNum)
+		//}
+
+		var entityID nulls.UUID
+		if u, ok := entityCodesMap[e.Entity]; ok {
+			entityID = nulls.NewUUID(u)
+		}
+		policyUUID, err := getPolicyUUID(e.PolicyID)
+		if err != nil {
+			badPolicyIDs[e.PolicyID] = struct{}{}
+			// fmt.Printf("ledger has bad policy ID, %s\n", err)
+			continue
+		}
+		l := models.LedgerEntry{
+			PolicyID:           policyUUID,
+			EntityID:           entityID,
+			Amount:             int(e.CustJE * domain.CurrencyFactor),
+			DateSubmitted:      formatDate(e.DateSubm),
+			DateEntered:        formatDate(e.DateEntd),
+			LegacyID:           nulls.NewInt(stringToInt(e.JERecNum, "JeRecNum")),
+			RecordType:         nulls.NewInt(e.JERecType),
+			PolicyType:         nulls.NewInt(e.PolicyType),
+			AccountNumber:      strconv.Itoa(e.AccNum),
+			AccountCostCenter1: e.AccCostCtr1,
+			AccountCostCenter2: e.AccCostCtr2,
+			EntityCode:         e.Entity,
+			FirstName:          e.FirstName,
+			LastName:           e.LastName,
+		}
+		if err := l.Create(tx); err != nil {
+			log.Fatalf("failed to create ledger entry, %s\n%+v", err, l)
+		}
+		nImported++
+	}
+
+	s := make([]string, len(badPolicyIDs))
+	i := 0
+	for id := range badPolicyIDs {
+		s[i] = fmt.Sprintf("%v", id)
+		i++
+	}
+	fmt.Printf("  LedgerEntries: %d (policy IDs not found: %s)\n", nImported, strings.Join(s, ","))
+}
+
+func getPolicyUUID(id int) (uuid.UUID, error) {
+	if u, ok := policyIDMap[id]; ok {
+		return u, nil
+	}
+	return uuid.UUID{}, fmt.Errorf("bad policy ID %d", id)
+}
+
+func formatDate(d string) string {
+	if d == "" {
+		return EmptyTime
+	}
+	return d
 }
 
 func parseStringTime(t, desc string) time.Time {
