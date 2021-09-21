@@ -1,24 +1,34 @@
 package messages
 
 import (
-	"github.com/silinternational/cover-api/domain"
+	"github.com/gobuffalo/nulls"
+	"github.com/gobuffalo/pop/v5"
+
 	"github.com/silinternational/cover-api/models"
-	"github.com/silinternational/cover-api/notifications"
 )
 
-func PolicyUserInviteSend(invite models.PolicyUserInvite, notifiers []interface{}) {
-	invite.LoadPolicy(models.DB, false)
+// PolicyUserInviteQueueMessage queues messages to an invited policy user
+func PolicyUserInviteQueueMessage(tx *pop.Connection, invite models.PolicyUserInvite) {
 
-	msg := notifications.NewEmailMessage()
-	msg.ToEmail = invite.Email
-	msg.Template = MessageTemplatePolicyUserInvite
-	msg.Data["acceptURL"] = invite.GetAcceptURL()
-	msg.Data["inviterName"] = invite.InviterName
-	msg.Data["inviterEmail"] = invite.InviterEmail
-	msg.Data["policyName"] = invite.Policy.CostCenter // TODO update with policy name once added to model for corporate policies
-	msg.Subject = "Action Required. " + invite.InviterName + " invited you to manage a policy on Cover"
+	data := newEmailMessageData()
+	data["policyName"] = invite.Policy.CostCenter // TODO update with policy name once added to model for corporate policies
+	data["acceptURL"] = invite.GetAcceptURL()
+	data["inviterEmail"] = invite.InviterEmail
+	data["inviterName"] = invite.InviterName
 
-	if err := notifications.Send(msg, notifiers...); err != nil {
-		domain.ErrLogger.Printf("error sending claim review1 notification, %s", err)
+	notn := models.Notification{
+		PolicyID: nulls.NewUUID(invite.PolicyID),
+		Body:     data.renderHTML(MessageTemplatePolicyUserInvite),
+		Subject:  "Action Required. " + invite.InviterName + " invited you to manage a policy on Cover",
+
+		// TODO make these constants somewhere
+		Event:         "Policy User Invite Notification",
+		EventCategory: "PolicyUserInvite",
 	}
+	if err := notn.Create(tx); err != nil {
+		panic("error creating new Policy User Invite Notification: " + err.Error())
+	}
+
+	notn.CreateNotificationUser(tx, nulls.UUID{}, invite.Email, invite.InviteeName)
+
 }
