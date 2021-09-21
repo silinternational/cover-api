@@ -7,19 +7,19 @@ create_table("ledger_entries") {
 	t.Column("date_submitted", "date", {"null": true})
 	t.Column("date_entered", "date", {"null": true})
 
-	t.Column("je_rec_num", "int", {"null": true})
-	t.Column("je_rec_type", "int", {"null": true})
+	t.Column("legacy_id", "int", {"null": true})
+	t.Column("record_type", "int", {"null": true})
 	t.Column("policy_type", "int", {"null": true})
-	t.Column("acc_num", "string", {})
-	t.Column("acc_cost_ctr1", "string", {})
-	t.Column("acc_cost_ctr2", "string", {})
-	t.Column("entity", "string", {})
+	t.Column("account_number", "string", {})
+	t.Column("account_cost_center1", "string", {})
+	t.Column("account_cost_center2", "string", {})
+	t.Column("entity_code", "string", {})
 	t.Column("first_name", "string", {})
 	t.Column("last_name", "string", {})
 
 	t.Timestamps()
 
-	t.Index("je_rec_num", {"unique": true})
+	t.Index("legacy_id", {"unique": true})
 
 	t.ForeignKey("policy_id", {"policies": ["id"]}, {"on_delete": "restrict"})
 	t.ForeignKey("item_id", {"items": ["id"]}, {"on_delete": "restrict"})

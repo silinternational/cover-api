@@ -18,19 +18,19 @@ type LedgerEntry struct {
 	EntityID      nulls.UUID `db:"entity_id"`
 	Amount        int        `db:"amount"`
 	DateSubmitted string     `db:"date_submitted"`
+	DateEntered   string     `db:"date_entered"`
 
 	// The following fields are primarily for legacy data and may not be needed long-term
 	// However, some may be useful as a permanent record in case policies change...TBD.
-	DateEntered string    `db:"date_entered"`
-	JeRecNum    nulls.Int `db:"je_rec_num"`
-	JeRecType   nulls.Int `db:"je_rec_type"`
-	PolicyType  nulls.Int `db:"policy_type"`
-	AccNum      string    `db:"acc_num"`
-	AccCostCtr1 string    `db:"acc_cost_ctr1"`
-	AccCostCtr2 string    `db:"acc_cost_ctr2"`
-	Entity      string    `db:"entity"`
-	FirstName   string    `db:"first_name"`
-	LastName    string    `db:"last_name"`
+	LegacyID           nulls.Int `db:"legacy_id"`
+	RecordType         nulls.Int `db:"record_type"`
+	PolicyType         nulls.Int `db:"policy_type"`
+	AccountNumber      string    `db:"account_number"`
+	AccountCostCenter1 string    `db:"account_cost_center1"`
+	AccountCostCenter2 string    `db:"account_cost_center2"`
+	EntityCode         string    `db:"entity_code"`
+	FirstName          string    `db:"first_name"`
+	LastName           string    `db:"last_name"`
 
 	CreatedAt time.Time `db:"created_at"`
 	UpdatedAt time.Time `db:"updated_at"`

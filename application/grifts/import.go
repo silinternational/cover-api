@@ -798,20 +798,20 @@ func importJournalEntries(tx *pop.Connection, entries []JournalEntry) {
 			continue
 		}
 		l := models.LedgerEntry{
-			PolicyID:      policyUUID,
-			EntityID:      entityID,
-			Amount:        int(e.CustJE * domain.CurrencyFactor),
-			DateSubmitted: formatDate(e.DateSubm),
-			DateEntered:   formatDate(e.DateEntd),
-			JeRecNum:      nulls.NewInt(stringToInt(e.JERecNum, "JeRecNum")),
-			JeRecType:     nulls.NewInt(e.JERecType),
-			PolicyType:    nulls.NewInt(e.PolicyType),
-			AccNum:        strconv.Itoa(e.AccNum),
-			AccCostCtr1:   e.AccCostCtr1,
-			AccCostCtr2:   e.AccCostCtr2,
-			Entity:        e.Entity,
-			FirstName:     e.FirstName,
-			LastName:      e.LastName,
+			PolicyID:           policyUUID,
+			EntityID:           entityID,
+			Amount:             int(e.CustJE * domain.CurrencyFactor),
+			DateSubmitted:      formatDate(e.DateSubm),
+			DateEntered:        formatDate(e.DateEntd),
+			LegacyID:           nulls.NewInt(stringToInt(e.JERecNum, "JeRecNum")),
+			RecordType:         nulls.NewInt(e.JERecType),
+			PolicyType:         nulls.NewInt(e.PolicyType),
+			AccountNumber:      strconv.Itoa(e.AccNum),
+			AccountCostCenter1: e.AccCostCtr1,
+			AccountCostCenter2: e.AccCostCtr2,
+			EntityCode:         e.Entity,
+			FirstName:          e.FirstName,
+			LastName:           e.LastName,
 		}
 		if err := l.Create(tx); err != nil {
 			log.Fatalf("failed to create ledger entry, %s\n%+v", err, l)
