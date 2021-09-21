@@ -31,8 +31,7 @@ import (
 	list is a complex structure contained related data. The remainder are simple objects.
 
 TODO:
-	1. Import other tables (e.g. Journal Entries)
-	2. Make name/policy unique
+	1. Make name/policy unique
 */
 
 const (
