@@ -3,6 +3,7 @@ package models
 import (
 	"errors"
 	"fmt"
+	"math"
 	"net/http"
 	"time"
 
@@ -424,11 +425,19 @@ func (i *Items) ConvertToAPI(tx *pop.Connection) api.Items {
 }
 
 func (i *Item) GetAnnualPremium() int {
-	return int(float64(i.CoverageAmount) * domain.Env.PremiumPercent)
+	p := int(math.Round(float64(i.CoverageAmount) * domain.Env.PremiumPercent))
+	if p < domain.Env.PremiumMinimum {
+		return domain.Env.PremiumMinimum
+	}
+	return p
 }
 
-func (i *Item) GetProratedPremium() int {
-	return domain.CalculatePartialYearValue(i.GetAnnualPremium(), time.Now().UTC())
+func (i *Item) GetProratedPremium(t time.Time) int {
+	p := domain.CalculatePartialYearValue(i.GetAnnualPremium(), t)
+	if p < domain.Env.PremiumMinimum {
+		return domain.Env.PremiumMinimum
+	}
+	return p
 }
 
 // NewItemFromApiInput creates a new `Item` from a `ItemInput`.
@@ -516,7 +525,7 @@ func (i *Item) CreateLedgerEntry(tx *pop.Connection) error {
 		PolicyID:           i.PolicyID,
 		ItemID:             nulls.NewUUID(i.ID),
 		EntityID:           i.Policy.EntityCodeID,
-		Amount:             i.GetProratedPremium(),
+		Amount:             i.GetProratedPremium(time.Now().UTC()),
 		DateSubmitted:      time.Now().UTC().Format(domain.DateFormat),
 		AccountNumber:      i.Policy.Account,
 		AccountCostCenter1: i.Policy.CostCenter,

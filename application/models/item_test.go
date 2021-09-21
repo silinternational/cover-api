@@ -533,3 +533,71 @@ func (ms *ModelSuite) TestItem_setAccountablePerson() {
 		})
 	}
 }
+
+func (ms *ModelSuite) TestItem_GetAnnualPremium() {
+	tests := []struct {
+		name     string
+		coverage int
+		want     int
+	}{
+		{
+			name:     "above the minimum",
+			coverage: 200000,
+			want:     4000,
+		},
+		{
+			name:     "round up",
+			coverage: 199999,
+			want:     4000,
+		},
+		{
+			name:     "under the minimum",
+			coverage: 100000,
+			want:     2500,
+		},
+	}
+	for _, tt := range tests {
+		ms.T().Run(tt.name, func(t *testing.T) {
+			item := Item{CoverageAmount: tt.coverage}
+			got := item.GetAnnualPremium()
+			ms.Equal(tt.want, got)
+		})
+	}
+}
+
+func (ms *ModelSuite) TestItem_GetProratedPremium() {
+	now := time.Date(1999, 3, 15, 0, 0, 0, 0, time.UTC)
+
+	tests := []struct {
+		name     string
+		coverage int
+		now      time.Time
+		want     int
+	}{
+		{
+			name:     "above the minimum",
+			coverage: 200000,
+			now:      now,
+			want:     3200,
+		},
+		{
+			name:     "round up",
+			coverage: 199999,
+			now:      now,
+			want:     3200,
+		},
+		{
+			name:     "under the minimum",
+			coverage: 100000,
+			now:      now,
+			want:     2500,
+		},
+	}
+	for _, tt := range tests {
+		ms.T().Run(tt.name, func(t *testing.T) {
+			item := Item{CoverageAmount: tt.coverage}
+			got := item.GetProratedPremium(tt.now)
+			ms.Equal(tt.want, got)
+		})
+	}
+}

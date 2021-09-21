@@ -164,9 +164,10 @@ var Env struct {
 
 	MaxFileDelete int `default:"10" split_words:"true"`
 
-	// Ensure these reflect cents and not just dollars
-	PolicyMaxCoverage       int `default:"50000" split_words:"true"` // will be multiplied by CurrencyFactor in readEnv()
+	// The following will be multiplied by CurrencyFactor in readEnv()
+	PolicyMaxCoverage       int `default:"50000" split_words:"true"` //
 	DependantAutoApproveMax int `default:"4000" split_words:"true"`  // will be multiplied by CurrencyFactor in readEnv()
+	PremiumMinimum          int `default:"25"`
 
 	PremiumPercent float64 `default:"0.02"`
 }
@@ -191,6 +192,7 @@ func readEnv() {
 
 	Env.PolicyMaxCoverage *= CurrencyFactor
 	Env.DependantAutoApproveMax *= CurrencyFactor
+	Env.PremiumMinimum *= CurrencyFactor
 
 	// Doing this separately to avoid needing two environment variables for the same thing
 	Env.GoEnv = envy.Get("GO_ENV", "development")
