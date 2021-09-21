@@ -325,7 +325,8 @@ func (as *ActionSuite) Test_PoliciesInviteMember() {
 		name               string
 		policyID           uuid.UUID
 		actor              models.User
-		inviteEmail        string
+		inviteeEmail       string
+		inviteeName        string
 		wantStatus         int
 		wantEventTriggered bool
 	}{
@@ -333,7 +334,7 @@ func (as *ActionSuite) Test_PoliciesInviteMember() {
 			name:               "existing policy member, no event",
 			policyID:           fixtures.Policies[0].ID,
 			actor:              policy0member0,
-			inviteEmail:        policy0member0.Email,
+			inviteeEmail:       policy0member0.Email,
 			wantStatus:         http.StatusNoContent,
 			wantEventTriggered: false,
 		},
@@ -341,7 +342,7 @@ func (as *ActionSuite) Test_PoliciesInviteMember() {
 			name:               "existing user, not policy member, no event",
 			policyID:           fixtures.Policies[0].ID,
 			actor:              policy0member0,
-			inviteEmail:        policy1member0.Email,
+			inviteeEmail:       policy1member0.Email,
 			wantStatus:         http.StatusNoContent,
 			wantEventTriggered: false,
 		},
@@ -349,7 +350,8 @@ func (as *ActionSuite) Test_PoliciesInviteMember() {
 			name:               "new user",
 			policyID:           fixtures.Policies[0].ID,
 			actor:              policy1member0,
-			inviteEmail:        "new-user-testing@invites-r-us.com",
+			inviteeEmail:       "new-user-testing@invites-r-us.com",
+			inviteeName:        "New User",
 			wantStatus:         http.StatusNoContent,
 			wantEventTriggered: true,
 		},
@@ -363,7 +365,8 @@ func (as *ActionSuite) Test_PoliciesInviteMember() {
 			defer deleteFn1()
 
 			input := api.PolicyUserInviteCreate{
-				Email: tt.inviteEmail,
+				Email: tt.inviteeEmail,
+				Name:  tt.inviteeName,
 			}
 
 			req := as.JSON("/policies/" + tt.policyID.String() + "/members")

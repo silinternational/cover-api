@@ -199,6 +199,7 @@ func policiesInviteMember(c buffalo.Context) error {
 	puInvite := models.PolicyUserInvite{
 		PolicyID:       policy.ID,
 		Email:          invite.Email,
+		InviteeName:    invite.Name,
 		InviterName:    cUser.Name(),
 		InviterEmail:   cUser.Email,
 		InviterMessage: invite.InviterMessage,
