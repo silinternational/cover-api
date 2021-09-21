@@ -56,13 +56,10 @@ func (ts *TestSuite) Test_PolicyUserInviteSend() {
 
 			policyUserInviteCreated(e)
 
-			// todo: fix this
-			//msgs := testEmailer.GetSentMessages()
-			//ts.Len(msgs, tt.wantEmailsSent, "incorrect message count")
-			//
-			//for i, w := range tt.wantSubjectsContain {
-			//	ts.Contains(msgs[i].Subject, w, "incorrect email subject")
-			//}
+			var nus models.NotificationUsers
+			ts.NoError(db.All(&nus), "error fetching NotificationUsers from db")
+			ts.Len(nus, 1, "incorrect number of NotificationUsers queued")
+
 		})
 	}
 }
