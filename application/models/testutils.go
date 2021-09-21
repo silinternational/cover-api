@@ -406,6 +406,7 @@ func CreatePolicyUserInviteFixtures(tx *pop.Connection, n int) Fixtures {
 	for i := range invites {
 		member := policies[i].Members[0]
 		invites[i].PolicyID = policies[i].ID
+		invites[i].InviteeName = fmt.Sprintf("Invitee Name%d", i)
 		invites[i].InviterName = member.Name()
 		invites[i].InviterEmail = member.EmailOfChoice()
 		invites[i].InviterMessage = fmt.Sprintf("message_%d", i)
