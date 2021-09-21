@@ -302,15 +302,15 @@ func importPolicies(tx *pop.Connection, policies []LegacyPolicy) {
 		var policyUUID uuid.UUID
 
 		entityCodeID := getEntityCodeID(tx, p.EntityCode)
+		policyID := stringToInt(p.Id, "Policy ID")
 
 		if id, ok := householdPolicyMap[p.HouseholdId]; ok && p.Type == "household" {
 			policyUUID = id
+			policyIDMap[policyID] = policyUUID
 			nDuplicatePolicies++
 			householdsWithMultiplePolicies[p.HouseholdId] = struct{}{}
-			appendNotesToPolicy(tx, policyUUID, p.Notes)
-			// TODO: are there other fields that should be examined to ensure we do not lose data?
+			appendNotesToPolicy(tx, policyUUID, p.Notes, policyID)
 		} else {
-			policyID := stringToInt(p.Id, "Policy ID")
 			householdID := nulls.String{}
 			if p.HouseholdId != "" {
 				householdID = nulls.NewString(p.HouseholdId)
@@ -406,10 +406,8 @@ func importEntityCode(tx *pop.Connection, code string) uuid.UUID {
 	return newEntityCode.ID
 }
 
-func appendNotesToPolicy(tx *pop.Connection, policyUUID uuid.UUID, newNotes string) {
-	if newNotes == "" {
-		return
-	}
+func appendNotesToPolicy(tx *pop.Connection, policyUUID uuid.UUID, newNotes string, legacyID int) {
+	newNotes = fmt.Sprintf("%s (ID=%d)", newNotes, legacyID)
 
 	if policyNotes[policyUUID] != "" {
 		policyNotes[policyUUID] += " ---- " + newNotes
