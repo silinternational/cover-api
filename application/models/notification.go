@@ -95,8 +95,8 @@ func (n *Notification) CreateNotificationUser(tx *pop.Connection, userID nulls.U
 	notnUser := NotificationUser{
 		NotificationID: n.ID,
 		UserID:         userID,
-		ToName:         toName,
 		EmailAddress:   emailAddress,
+		ToName:         toName,
 		SendAfterUTC:   time.Now().UTC(),
 	}
 
