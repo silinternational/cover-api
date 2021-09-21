@@ -192,7 +192,7 @@ func createClaimFixture(tx *pop.Connection, policy Policy, config FixturesConfig
 			ID:              uuid.UUID{},
 			ClaimID:         claim.ID,
 			ItemID:          item.ID,
-			Status:          api.ClaimItemStatusPending,
+			Status:          api.ClaimItemStatus(claim.Status),
 			IsRepairable:    false,
 			RepairEstimate:  0,
 			RepairActual:    0,

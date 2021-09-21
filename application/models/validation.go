@@ -159,7 +159,8 @@ func claimItemStructLevelValidation(sl validator.StructLevel) {
 		panic("claimItemStructLevelValidation registered to a type other than ClaimItem")
 	}
 
-	if claimItem.Status == api.ClaimItemStatusPending || claimItem.Status == api.ClaimItemStatusDraft {
+	switch claimItem.Status {
+	case api.ClaimItemStatusDraft, api.ClaimItemStatusRevision, api.ClaimItemStatusReview1:
 		incidentTypePayoutOptions, ok := ValidClaimIncidentTypePayoutOptions[claimItem.Claim.IncidentType]
 		if !ok {
 			sl.ReportError(claimItem.Claim.IncidentType, "IncidentType", "IncidentType", "invalid Incident type", "")
@@ -179,12 +180,16 @@ func claimItemStructLevelValidation(sl validator.StructLevel) {
 
 	}
 
-	if !claimItem.ReviewerID.Valid {
-		sl.ReportError(claimItem.Status, "reviewer_id", "ReviewerID", "reviewer_required", "")
-	}
+	switch claimItem.Status {
+	case api.ClaimItemStatusDenied, api.ClaimItemStatusRevision, api.ClaimItemStatusReceipt,
+		api.ClaimItemStatusReview3, api.ClaimItemStatusApproved:
+		if !claimItem.ReviewerID.Valid {
+			sl.ReportError(claimItem.Status, "reviewer_id", "ReviewerID", "reviewer_required", "")
+		}
 
-	if !claimItem.ReviewDate.Valid {
-		sl.ReportError(claimItem.Status, "review_date", "ReviewDate", "review_date_required", "")
+		if !claimItem.ReviewDate.Valid {
+			sl.ReportError(claimItem.Status, "review_date", "ReviewDate", "review_date_required", "")
+		}
 	}
 }
 

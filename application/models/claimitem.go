@@ -1,7 +1,8 @@
 package models
 
 import (
-	"fmt"
+	"context"
+	"errors"
 	"net/http"
 	"time"
 
@@ -16,8 +17,11 @@ import (
 
 var ValidClaimItemStatus = map[api.ClaimItemStatus]struct{}{
 	api.ClaimItemStatusDraft:    {},
-	api.ClaimItemStatusPending:  {},
+	api.ClaimItemStatusReview1:  {},
+	api.ClaimItemStatusReceipt:  {},
 	api.ClaimItemStatusRevision: {},
+	api.ClaimItemStatusReview2:  {},
+	api.ClaimItemStatusReview3:  {},
 	api.ClaimItemStatusApproved: {},
 	api.ClaimItemStatusDenied:   {},
 }
@@ -64,23 +68,78 @@ func (c *ClaimItem) Validate(tx *pop.Connection) (*validate.Errors, error) {
 
 // Create validates and stores the data as a new record in the database, assigning a new ID if needed.
 func (c *ClaimItem) Create(tx *pop.Connection) error {
+	// Get the parent Claim's status
+	c.LoadClaim(tx, false)
+	c.Status = api.ClaimItemStatus(c.Claim.Status)
+
 	return create(tx, c)
 }
 
 // Update changes the status if it is a valid transition.
 func (c *ClaimItem) Update(tx *pop.Connection, oldStatus api.ClaimItemStatus, user User) error {
-	if !isClaimItemTransitionValid(oldStatus, c.Status) {
-		err := fmt.Errorf("invalid claim item status transition from %s to %s", oldStatus, c.Status)
-		appErr := api.NewAppError(err, api.ErrorValidation, api.CategoryUser)
-		return appErr
-	}
 
-	if c.Status == api.ClaimItemStatusDenied || c.Status == api.ClaimItemStatusRevision || c.Status == api.ClaimItemStatusApproved {
+	// Get the parent Claim's status
+	c.LoadClaim(tx, false)
+	c.Status = api.ClaimItemStatus(c.Claim.Status)
+
+	// Maybe One day we will want to worry about the status on the ClaimItem itself
+	//if !isClaimItemTransitionValid(oldStatus, c.Status) {
+	//	err := fmt.Errorf("invalid claim item status transition from %s to %s", oldStatus, c.Status)
+	//	appErr := api.NewAppError(err, api.ErrorValidation, api.CategoryUser)
+	//	return appErr
+	//}
+
+	// Set the Reviewer fields when needed.
+	if user.IsAdmin() {
 		c.ReviewerID = nulls.NewUUID(user.ID)
 		c.ReviewDate = nulls.NewTime(time.Now().UTC())
 	}
+
 	return update(tx, c)
 }
+
+// UpdateByUser ensures the parent Claim has an appropriate status for being modified by the user
+//  and then writes the ClaimItem data to an existing database record.
+func (c *ClaimItem) UpdateByUser(ctx context.Context, oldStatus api.ClaimItemStatus, user User) error {
+	tx := Tx(ctx)
+	if user.IsAdmin() {
+		return c.Update(tx, oldStatus, user)
+	}
+
+	c.LoadClaim(tx, false)
+
+	switch c.Claim.Status {
+	// OK to modify this when the parent Claim has one of these statuses but not any others
+	case api.ClaimStatusDraft, api.ClaimStatusRevision, api.ClaimStatusReview1:
+	default:
+		err := errors.New("user may not edit a claim item that is too far along in the review process.")
+		appErr := api.NewAppError(err, api.ErrorClaimStatus, api.CategoryUser)
+		return appErr
+	}
+
+	// If the user edits something, it should take the claim off of the steward's list of things to review and
+	//  also force the user to resubmit it.
+	if c.Claim.Status == api.ClaimStatusReview1 {
+		c.Claim.Status = api.ClaimStatusDraft
+	}
+
+	if err := c.Claim.Update(ctx); err != nil {
+		return err
+	}
+
+	return c.Update(tx, oldStatus, user)
+}
+
+// Maybe one day we will want to do something like this on a ClaimItem
+//func isClaimItemTransitionValid(status1, status2 api.ClaimItemStatus) bool {
+//	if status1 == status2 {
+//		return true
+//	}
+//	cStatus1 := api.ClaimStatus(status1)
+//	cStatus2 := api.ClaimStatus(status2)
+//	valid, _ := isClaimTransitionValid(cStatus1, cStatus2)
+//	return valid
+//}
 
 func (c *ClaimItem) GetID() uuid.UUID {
 	return c.ID
@@ -108,39 +167,6 @@ func (c *ClaimItem) IsActorAllowedTo(tx *pop.Connection, actor User, perm Permis
 
 	for _, m := range policy.Members {
 		if m.ID == actor.ID {
-			return true
-		}
-	}
-
-	return false
-}
-
-func claimItemStatusTransitions() map[api.ClaimItemStatus][]api.ClaimItemStatus {
-	return map[api.ClaimItemStatus][]api.ClaimItemStatus{
-		api.ClaimItemStatusPending: {
-			api.ClaimItemStatusRevision,
-			api.ClaimItemStatusApproved,
-			api.ClaimItemStatusDenied,
-		},
-		api.ClaimItemStatusRevision: {
-			api.ClaimItemStatusPending,
-		},
-		api.ClaimItemStatusApproved: {},
-		api.ClaimItemStatusDenied:   {},
-	}
-}
-
-func isClaimItemTransitionValid(status1, status2 api.ClaimItemStatus) bool {
-	if status1 == status2 {
-		return true
-	}
-	targets, ok := claimItemStatusTransitions()[status1]
-	if !ok {
-		panic("unexpected initial claim item status - " + string(status1))
-	}
-
-	for _, target := range targets {
-		if status2 == target {
 			return true
 		}
 	}

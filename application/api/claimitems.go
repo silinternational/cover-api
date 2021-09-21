@@ -14,11 +14,15 @@ import (
 type ClaimItemStatus string
 
 const (
-	ClaimItemStatusDraft    = ClaimItemStatus("Draft")
-	ClaimItemStatusPending  = ClaimItemStatus("Pending")
-	ClaimItemStatusRevision = ClaimItemStatus("Revision")
-	ClaimItemStatusApproved = ClaimItemStatus("Approved")
-	ClaimItemStatusDenied   = ClaimItemStatus("Denied")
+	ClaimItemStatusDraft    = ClaimItemStatus(ClaimStatusDraft)
+	ClaimItemStatusReview1  = ClaimItemStatus(ClaimStatusReview1)
+	ClaimItemStatusReview2  = ClaimItemStatus(ClaimStatusReview2)
+	ClaimItemStatusReview3  = ClaimItemStatus(ClaimStatusReview3)
+	ClaimItemStatusRevision = ClaimItemStatus(ClaimStatusRevision)
+	ClaimItemStatusReceipt  = ClaimItemStatus(ClaimStatusReceipt)
+	ClaimItemStatusApproved = ClaimItemStatus(ClaimStatusApproved)
+	ClaimItemStatusPaid     = ClaimItemStatus(ClaimStatusPaid)
+	ClaimItemStatusDenied   = ClaimItemStatus(ClaimStatusDenied)
 )
 
 // PayoutOption
@@ -134,9 +138,24 @@ type ClaimItemCreateInput struct {
 
 // swagger:model
 type ClaimItemUpdateInput struct {
+	// is item repairable?
+	IsRepairable bool `json:"is_repairable"`
+
+	// repair estimate (0.01 USD)
+	RepairEstimate int `json:"repair_estimate"`
+
 	// actual repair cost (0.01 USD)
 	RepairActual int `json:"repair_actual"`
 
+	// replacement estimate (0.01 USD)
+	ReplaceEstimate int `json:"replace_estimate"`
+
 	// actual replacement cost (0.01 USD)
 	ReplaceActual int `json:"replace_actual"`
+
+	// payout option
+	PayoutOption PayoutOption `json:"payout_option"`
+
+	// fair market value (0.01 USD)
+	FMV int `json:"fmv"`
 }
