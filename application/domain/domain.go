@@ -167,6 +167,8 @@ var Env struct {
 	// Ensure these reflect cents and not just dollars
 	PolicyMaxCoverage       int `default:"50000" split_words:"true"` // will be multiplied by CurrencyFactor in readEnv()
 	DependantAutoApproveMax int `default:"4000" split_words:"true"`  // will be multiplied by CurrencyFactor in readEnv()
+
+	PremiumPercent float64 `default:"0.02"`
 }
 
 func init() {
@@ -187,8 +189,8 @@ func readEnv() {
 		log.Fatal(errors.New("error loading env vars: " + err.Error()))
 	}
 
-	Env.PolicyMaxCoverage *= 100
-	Env.DependantAutoApproveMax *= 100
+	Env.PolicyMaxCoverage *= CurrencyFactor
+	Env.DependantAutoApproveMax *= CurrencyFactor
 
 	// Doing this separately to avoid needing two environment variables for the same thing
 	Env.GoEnv = envy.Get("GO_ENV", "development")

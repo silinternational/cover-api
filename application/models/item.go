@@ -340,7 +340,7 @@ func (i *Item) Approve(tx *pop.Connection) error {
 	}
 	emitEvent(e)
 
-	return nil
+	return i.CreateLedgerEntry(tx)
 }
 
 // Deny takes the item from Pending coverage status to Denied.
@@ -424,7 +424,11 @@ func (i *Items) ConvertToAPI(tx *pop.Connection) api.Items {
 }
 
 func (i *Item) GetAnnualPremium() int {
-	return (i.CoverageAmount + 25) / 50 // 2% rounded to the nearest cent
+	return int(float64(i.CoverageAmount) * domain.Env.PremiumPercent)
+}
+
+func (i *Item) GetProratedPremium() int {
+	return domain.CalculatePartialYearValue(i.GetAnnualPremium(), time.Now().UTC())
 }
 
 // NewItemFromApiInput creates a new `Item` from a `ItemInput`.
@@ -503,4 +507,20 @@ func (i *Item) setAccountablePerson(tx *pop.Connection, id uuid.UUID) error {
 	}
 
 	return api.NewAppError(errors.New("accountable person ID not found"), api.ErrorNoRows, api.CategoryUser)
+}
+
+func (i *Item) CreateLedgerEntry(tx *pop.Connection) error {
+	i.LoadPolicy(tx, false)
+	i.Policy.LoadEntityCode(tx, false)
+	le := LedgerEntry{
+		PolicyID:           i.PolicyID,
+		ItemID:             nulls.NewUUID(i.ID),
+		EntityID:           i.Policy.EntityCodeID,
+		Amount:             i.GetProratedPremium(),
+		DateSubmitted:      time.Now().UTC().Format(domain.DateFormat),
+		AccountNumber:      i.Policy.Account,
+		AccountCostCenter1: i.Policy.CostCenter,
+		EntityCode:         i.Policy.EntityCode.Code,
+	}
+	return le.Create(tx)
 }
