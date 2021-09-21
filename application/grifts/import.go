@@ -780,6 +780,7 @@ func importJournalEntries(tx *pop.Connection, entries []JournalEntry) {
 	//	"DateEntd", "DateSubm", "Entity", "AccNum", "RMJE, ", "JERecNum")
 
 	nImported := 0
+	badPolicyIDs := map[int]struct{}{}
 	for _, e := range entries {
 		//	fmt.Printf(`%d,%d,"%s","%s",%d,"%s","%s",%f,"%s","%s","%s",%d,%f,"%s"`+"\n",
 		//		e.PolicyID, e.PolicyType, e.FirstName, e.LastName, e.JERecType, e.AccCostCtr1, e.AccCostCtr2, e.CustJE,
@@ -792,6 +793,7 @@ func importJournalEntries(tx *pop.Connection, entries []JournalEntry) {
 		}
 		policyUUID, err := getPolicyUUID(e.PolicyID)
 		if err != nil {
+			badPolicyIDs[e.PolicyID] = struct{}{}
 			// fmt.Printf("ledger has bad policy ID, %s\n", err)
 			continue
 		}
@@ -817,7 +819,13 @@ func importJournalEntries(tx *pop.Connection, entries []JournalEntry) {
 		nImported++
 	}
 
-	fmt.Printf("  LedgerEntries: %d\n", nImported)
+	s := make([]string, len(badPolicyIDs))
+	i := 0
+	for id := range badPolicyIDs {
+		s[i] = fmt.Sprintf("%v", id)
+		i++
+	}
+	fmt.Printf("  LedgerEntries: %d (policy IDs not found: %s)\n", nImported, strings.Join(s, ","))
 }
 
 func getPolicyUUID(id int) (uuid.UUID, error) {
