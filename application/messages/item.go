@@ -4,7 +4,6 @@ import (
 	"github.com/gobuffalo/nulls"
 	"github.com/gobuffalo/pop/v5"
 
-	"github.com/silinternational/cover-api/api"
 	"github.com/silinternational/cover-api/models"
 )
 
@@ -80,20 +79,11 @@ func itemPendingQueueMessage(tx *pop.Connection, item models.Item, member models
 	notn.CreateNotificationUsersForStewards(tx)
 }
 
-// ItemSubmittedQueueMessage queues messages about a new item depending
-//   on its CoverageStatus
-// If the item is `Approved`, it queues messages to the item's members and
-//   to the stewards about the approval.
-// If the item is `Pending`, it queues messages to the stewards.
+// ItemSubmittedQueueMessage queues messages to the stewards to
+//  notify them that an item has been submitted
 func ItemSubmittedQueueMessage(tx *pop.Connection, item models.Item) {
 	item.LoadPolicyMembers(models.DB, false)
-
-	if item.CoverageStatus == api.ItemCoverageStatusApproved {
-		itemApprovedQueueMsg(tx, item)
-		itemAutoApprovedQueueMessage(tx, item, item.Policy.Members[0])
-	} else if item.CoverageStatus == api.ItemCoverageStatusPending { // Was submitted but not auto approved
-		itemPendingQueueMessage(tx, item, item.Policy.Members[0])
-	}
+	itemPendingQueueMessage(tx, item, item.Policy.Members[0])
 }
 
 // ItemRevisionQueueMessage queues messages to an item's members to
@@ -123,6 +113,13 @@ func ItemRevisionQueueMessage(tx *pop.Connection, item models.Item) {
 	for _, m := range item.Policy.Members {
 		notn.CreateNotificationUser(tx, m)
 	}
+}
+
+// ItemAutoApprovedQueueMessage queues messages to the stewards to
+//  notify them that coverage on an item was auto-approved
+func ItemAutoApprovedQueueMessage(tx *pop.Connection, item models.Item) {
+	item.LoadPolicyMembers(models.DB, false)
+	itemAutoApprovedQueueMessage(tx, item, item.Policy.Members[0])
 }
 
 // ItemApprovedQueueMessage queues messages to an item's members to

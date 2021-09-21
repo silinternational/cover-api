@@ -249,7 +249,7 @@ func (i *Item) SubmitForApproval(tx *pop.Connection) error {
 	i.Load(tx)
 
 	if i.canAutoApprove(tx) {
-		i.CoverageStatus = api.ItemCoverageStatusApproved
+		return i.AutoApprove(tx)
 	}
 
 	if err := i.Update(tx, oldStatus); err != nil {
@@ -503,4 +503,15 @@ func (i *Item) setAccountablePerson(tx *pop.Connection, id uuid.UUID) error {
 	}
 
 	return api.NewAppError(errors.New("accountable person ID not found"), api.ErrorNoRows, api.CategoryUser)
+}
+
+func (i *Item) AutoApprove(tx *pop.Connection) error {
+	e := events.Event{
+		Kind:    domain.EventApiItemAutoApproved,
+		Message: fmt.Sprintf("Item AutoApproved: %s  ID: %s", i.Name, i.ID.String()),
+		Payload: events.Payload{domain.EventPayloadID: i.ID},
+	}
+	emitEvent(e)
+
+	return i.Approve(tx)
 }
