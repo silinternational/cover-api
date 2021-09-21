@@ -130,6 +130,17 @@ func (c *ClaimItem) UpdateByUser(ctx context.Context, oldStatus api.ClaimItemSta
 	return c.Update(tx, oldStatus, user)
 }
 
+// Maybe one day we will want to do something like this on a ClaimItem
+//func isClaimItemTransitionValid(status1, status2 api.ClaimItemStatus) bool {
+//	if status1 == status2 {
+//		return true
+//	}
+//	cStatus1 := api.ClaimStatus(status1)
+//	cStatus2 := api.ClaimStatus(status2)
+//	valid, _ := isClaimTransitionValid(cStatus1, cStatus2)
+//	return valid
+//}
+
 func (c *ClaimItem) GetID() uuid.UUID {
 	return c.ID
 }
@@ -161,16 +172,6 @@ func (c *ClaimItem) IsActorAllowedTo(tx *pop.Connection, actor User, perm Permis
 	}
 
 	return false
-}
-
-func isClaimItemTransitionValid(status1, status2 api.ClaimItemStatus) bool {
-	if status1 == status2 {
-		return true
-	}
-	cStatus1 := api.ClaimStatus(status1)
-	cStatus2 := api.ClaimStatus(status2)
-	valid, _ := isClaimTransitionValid(cStatus1, cStatus2)
-	return valid
 }
 
 func (c *ClaimItem) LoadClaim(tx *pop.Connection, reload bool) {
