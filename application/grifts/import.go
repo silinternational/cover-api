@@ -781,10 +781,6 @@ func importJournalEntries(tx *pop.Connection, entries []JournalEntry) {
 
 	nImported := 0
 	for _, e := range entries {
-		if e.PolicyID == 0 {
-			continue
-		}
-
 		//	fmt.Printf(`%d,%d,"%s","%s",%d,"%s","%s",%f,"%s","%s","%s",%d,%f,"%s"`+"\n",
 		//		e.PolicyID, e.PolicyType, e.FirstName, e.LastName, e.JERecType, e.AccCostCtr1, e.AccCostCtr2, e.CustJE,
 		//		e.DateEntd, e.DateSubm, e.Entity, e.AccNum, e.RMJE, e.JERecNum)
