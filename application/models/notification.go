@@ -91,18 +91,23 @@ func (n *Notification) LoadClaim(tx *pop.Connection, reload bool) {
 	}
 }
 
-func (n *Notification) CreateNotificationUser(tx *pop.Connection, user User) {
+func (n *Notification) CreateNotificationUser(tx *pop.Connection, userID nulls.UUID, toName, emailAddress string) {
 	notnUser := NotificationUser{
 		NotificationID: n.ID,
-		UserID:         user.ID,
-		EmailAddress:   user.EmailOfChoice(),
+		UserID:         userID,
+		ToName:         toName,
+		EmailAddress:   emailAddress,
 		SendAfterUTC:   time.Now().UTC(),
 	}
 
 	if err := notnUser.Create(tx); err != nil {
 		panic(fmt.Sprintf("error creating new NotificationUser with UserID %s: %s",
-			user.ID, err.Error()))
+			userID.UUID, err.Error()))
 	}
+}
+
+func (n *Notification) CreateNotificationUserForUser(tx *pop.Connection, user User) {
+	n.CreateNotificationUser(tx, nulls.NewUUID(user.ID), user.EmailOfChoice(), "")
 }
 
 func (n *Notification) CreateNotificationUsersForStewards(tx *pop.Connection) {
@@ -110,17 +115,7 @@ func (n *Notification) CreateNotificationUsersForStewards(tx *pop.Connection) {
 	stewards.FindStewards(tx)
 
 	for _, s := range stewards {
-		nu := NotificationUser{
-			NotificationID: n.ID,
-			UserID:         s.ID,
-			EmailAddress:   s.EmailOfChoice(),
-			SendAfterUTC:   time.Now().UTC(),
-		}
-
-		if err := nu.Create(tx); err != nil {
-			panic(fmt.Sprintf("error creating new NotificationUser for steward with UserID %s: %s",
-				s.ID, err.Error()))
-		}
+		n.CreateNotificationUser(tx, nulls.NewUUID(s.ID), s.EmailOfChoice(), "")
 	}
 }
 
@@ -129,16 +124,6 @@ func (n *Notification) CreateNotificationUsersForSignators(tx *pop.Connection) {
 	signators.FindSignators(tx)
 
 	for _, s := range signators {
-		nu := NotificationUser{
-			NotificationID: n.ID,
-			UserID:         s.ID,
-			EmailAddress:   s.EmailOfChoice(),
-			SendAfterUTC:   time.Now().UTC(),
-		}
-
-		if err := nu.Create(tx); err != nil {
-			panic(fmt.Sprintf("error creating new NotificationUser for steward with UserID %s: %s",
-				s.ID, err.Error()))
-		}
+		n.CreateNotificationUser(tx, nulls.NewUUID(s.ID), s.EmailOfChoice(), "")
 	}
 }

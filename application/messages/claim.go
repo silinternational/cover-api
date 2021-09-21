@@ -60,7 +60,7 @@ func ClaimRevisionQueueMessage(tx *pop.Connection, claim models.Claim) {
 	}
 
 	for _, m := range claim.Policy.Members {
-		notn.CreateNotificationUser(tx, m)
+		notn.CreateNotificationUserForUser(tx, m)
 	}
 }
 
@@ -90,7 +90,7 @@ func ClaimPreapprovedQueueMessage(tx *pop.Connection, claim models.Claim) {
 	}
 
 	for _, m := range claim.Policy.Members {
-		notn.CreateNotificationUser(tx, m)
+		notn.CreateNotificationUserForUser(tx, m)
 	}
 }
 
@@ -120,7 +120,7 @@ func ClaimReceiptQueueMessage(tx *pop.Connection, claim models.Claim) {
 	}
 
 	for _, m := range claim.Policy.Members {
-		notn.CreateNotificationUser(tx, m)
+		notn.CreateNotificationUserForUser(tx, m)
 	}
 }
 
@@ -203,7 +203,7 @@ func ClaimApprovedQueueMessage(tx *pop.Connection, claim models.Claim) {
 	}
 
 	for _, m := range claim.Policy.Members {
-		notn.CreateNotificationUser(tx, m)
+		notn.CreateNotificationUserForUser(tx, m)
 	}
 }
 
@@ -233,6 +233,6 @@ func ClaimDeniedQueueMessage(tx *pop.Connection, claim models.Claim) {
 	}
 
 	for _, m := range claim.Policy.Members {
-		notn.CreateNotificationUser(tx, m)
+		notn.CreateNotificationUserForUser(tx, m)
 	}
 }
