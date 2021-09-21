@@ -43,6 +43,7 @@ type Fixtures struct {
 	Policies
 	PolicyDependents
 	PolicyUsers
+	PolicyUserInvites
 	UserAccessTokens
 	Users
 }
@@ -392,6 +393,32 @@ func CreateRiskCategories(tx *pop.Connection) {
 	MustCreate(tx, &riskCategoryStationary)
 }
 
+// CreatePolicyUserInviteFixtures generates any number of policies with one
+//  primary member and one policy user invite records
+func CreatePolicyUserInviteFixtures(tx *pop.Connection, n int) Fixtures {
+	config := FixturesConfig{
+		NumberOfPolicies: n,
+	}
+	fixtures := CreatePolicyFixtures(tx, config)
+	policies := fixtures.Policies
+
+	invites := make(PolicyUserInvites, n)
+	for i := range invites {
+		member := policies[i].Members[0]
+		invites[i].PolicyID = policies[i].ID
+		invites[i].InviterName = member.Name()
+		invites[i].InviterEmail = member.EmailOfChoice()
+		invites[i].InviterMessage = fmt.Sprintf("message_%d", i)
+		invites[i].Email = fmt.Sprintf("invitee_%d@example.org", i)
+		MustCreate(tx, &invites[i])
+	}
+
+	return Fixtures{
+		Policies:          fixtures.Policies,
+		PolicyUserInvites: invites,
+	}
+}
+
 // MustCreate saves a record to the database with validation. Panics if any error occurs.
 func MustCreate(tx *pop.Connection, f Createable) {
 	// Use `create` instead of `tx.Create` to check validation rules
@@ -442,6 +469,10 @@ func DestroyAll() {
 	// delete all Notifications
 	var ns Notifications
 	destroyTable(&ns)
+
+	// delete all Invites
+	var invites PolicyUserInvites
+	destroyTable(&invites)
 }
 
 func destroyTable(i interface{}) {
