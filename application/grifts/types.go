@@ -1,6 +1,8 @@
 package grifts
 
-import "github.com/gobuffalo/nulls"
+import (
+	"github.com/gobuffalo/nulls"
+)
 
 type LegacyData struct {
 	Users          []LegacyUser         `json:"users"`
@@ -144,19 +146,19 @@ type Maintenance struct {
 }
 
 type JournalEntry struct {
-	FirstName   nulls.String `json:"First_Name"`
-	JERecNum    string       `json:"JE_Rec_Num"`
-	DateSubm    string       `json:"Date_Subm"`
-	JERecType   int          `json:"JE_Rec_Type"`
-	DateEntd    string       `json:"Date_Entd"`
-	AccCostCtr2 string       `json:"Acc_CostCtr2"`
-	LastName    string       `json:"Last_Name"`
-	AccNum      int          `json:"Acc_Num"`
-	Field1      nulls.String `json:"Field1"`
-	AccCostCtr1 string       `json:"Acc_CostCtr1"`
-	PolicyID    int          `json:"Policy_ID"`
-	Entity      string       `json:"Entity"`
-	PolicyType  int          `json:"Policy_Type"`
-	CustJE      float64      `json:"Cust_JE"`
-	RMJE        float64      `json:"RM_JE"`
+	JERecNum    string  `json:"JE_Rec_Num"`
+	DateSubm    string  `json:"Date_Subm"`
+	JERecType   int     `json:"JE_Rec_Type"`
+	DateEntd    string  `json:"Date_Entd"`
+	AccCostCtr2 string  `json:"Acc_CostCtr2"`
+	FirstName   string  `json:"First_Name"`
+	LastName    string  `json:"Last_Name"`
+	AccNum      int     `json:"Acc_Num"`
+	Field1      string  `json:"Field1"`
+	AccCostCtr1 string  `json:"Acc_CostCtr1"`
+	PolicyID    int     `json:"Policy_ID"`
+	Entity      string  `json:"Entity"`
+	PolicyType  int     `json:"Policy_Type"`
+	CustJE      float64 `json:"Cust_JE"`
+	RMJE        float64 `json:"RM_JE"`
 }
