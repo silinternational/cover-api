@@ -5,12 +5,16 @@ import (
 	"fmt"
 	"net/http"
 	"testing"
+	"time"
+
+	"github.com/gobuffalo/nulls"
 
 	"github.com/silinternational/cover-api/api"
 	"github.com/silinternational/cover-api/models"
 )
 
 func (as *ActionSuite) Test_ClaimItemsUpdate() {
+	db := as.DB
 	fixConfig := models.FixturesConfig{
 		NumberOfPolicies:    2,
 		UsersPerPolicy:      1,
@@ -21,60 +25,94 @@ func (as *ActionSuite) Test_ClaimItemsUpdate() {
 	}
 
 	fixtures := models.CreateItemFixtures(as.DB, fixConfig)
+	policy := fixtures.Policies[0]
 
 	// alias a couple users
-	authorizedUser := fixtures.Policies[0].Members[0]
+	authorizedUser := policy.Members[0]
 	unauthorizedUser := fixtures.Policies[1].Members[0]
 
 	// make an admin
 	appAdmin := models.CreateAdminUsers(as.DB)[models.AppRoleAdmin]
 
-	claim := fixtures.Claims[0]
-	claim.LoadClaimItems(as.DB, false)
-	claimItem := claim.ClaimItems[0]
+	draftClaim := policy.Claims[0]
+	draftClaim.LoadClaimItems(as.DB, false)
+	draftClaimItem := draftClaim.ClaimItems[0]
+
+	review1Claim := models.UpdateClaimStatus(db, policy.Claims[1], api.ClaimStatusReview1, "")
+	review1Claim.LoadClaimItems(as.DB, false)
+	review1ClaimItem := review1Claim.ClaimItems[0]
+
+	review3Claim := models.UpdateClaimStatus(db, policy.Claims[2], api.ClaimStatusReview3, "")
+	review3Claim.LoadClaimItems(as.DB, false)
+	review3ClaimItem := review3Claim.ClaimItems[0]
+	review3ClaimItem.ReviewerID = nulls.NewUUID(appAdmin.ID)
+	review3ClaimItem.ReviewDate = nulls.NewTime(time.Now().UTC())
+	review3ClaimItem.Update(db, api.ClaimItemStatusReview3, appAdmin)
 
 	input := api.ClaimItemUpdateInput{
-		RepairActual:  100,
-		ReplaceActual: 200,
+		IsRepairable:    true,
+		RepairEstimate:  110,
+		RepairActual:    100,
+		ReplaceEstimate: 220,
+		ReplaceActual:   200,
+		PayoutOption:    api.PayoutOptionRepair,
+		FMV:             199,
 	}
 
 	tests := []struct {
-		name       string
-		actor      models.User
-		claimItem  models.ClaimItem
-		input      interface{}
-		wantStatus int
-		wantInBody string
+		name        string
+		actor       models.User
+		claimItem   models.ClaimItem
+		input       interface{}
+		addReviewer bool
+		wantStatus  int
+		wantInBody  string
 	}{
 		{
 			name:       "bad input",
 			actor:      authorizedUser,
-			claimItem:  claimItem,
+			claimItem:  draftClaimItem,
 			input:      api.Claim{},
 			wantStatus: http.StatusBadRequest,
 		},
 		{
 			name:       "unauthorized user",
 			actor:      unauthorizedUser,
-			claimItem:  claimItem,
+			claimItem:  draftClaimItem,
 			input:      input,
 			wantStatus: http.StatusNotFound,
 		},
 		{
-			name:       "authorized user",
+			name:       "authorized user but bad claim status",
 			actor:      authorizedUser,
-			claimItem:  claimItem,
+			claimItem:  review3ClaimItem,
+			input:      input,
+			wantStatus: http.StatusBadRequest,
+			wantInBody: string(api.ErrorClaimStatus),
+		},
+		{
+			name:       "authorized user draft",
+			actor:      authorizedUser,
+			claimItem:  draftClaimItem,
 			input:      input,
 			wantStatus: http.StatusOK,
-			wantInBody: claim.ID.String(),
+			wantInBody: draftClaim.ID.String(),
+		},
+		{
+			name:       "authorized user review1 to draft",
+			actor:      authorizedUser,
+			claimItem:  review1ClaimItem,
+			input:      input,
+			wantStatus: http.StatusOK,
+			wantInBody: review1Claim.ID.String(),
 		},
 		{
 			name:       "admin user",
 			actor:      appAdmin,
-			claimItem:  claimItem,
+			claimItem:  review3ClaimItem,
 			input:      input,
 			wantStatus: http.StatusOK,
-			wantInBody: claim.ID.String(),
+			wantInBody: review3Claim.ID.String(),
 		},
 	}
 

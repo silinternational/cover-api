@@ -40,10 +40,15 @@ func claimItemsUpdate(c buffalo.Context) error {
 		return reportError(c, err)
 	}
 
+	claimItem.IsRepairable = input.IsRepairable
+	claimItem.RepairEstimate = input.RepairEstimate
 	claimItem.RepairActual = input.RepairActual
+	claimItem.ReplaceEstimate = input.ReplaceEstimate
 	claimItem.ReplaceActual = input.ReplaceActual
+	claimItem.PayoutOption = input.PayoutOption
+	claimItem.FMV = input.FMV
 
-	if err := claimItem.Update(tx, claimItem.Status, models.CurrentUser(c)); err != nil {
+	if err := claimItem.UpdateByUser(c, claimItem.Status, models.CurrentUser(c)); err != nil {
 		return reportError(c, err)
 	}
 

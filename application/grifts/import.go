@@ -635,7 +635,7 @@ func getClaimItemStatus(status string) api.ClaimItemStatus {
 
 	switch status {
 	case "pending":
-		s = api.ClaimItemStatusPending
+		s = api.ClaimItemStatusReview1
 	case "revision":
 		s = api.ClaimItemStatusRevision
 	case "approved":

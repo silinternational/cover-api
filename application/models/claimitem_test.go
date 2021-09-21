@@ -30,7 +30,7 @@ func (ms *ModelSuite) TestClaimItem_Validate() {
 				Claim: Claim{
 					IncidentType: api.ClaimIncidentTypeImpact,
 				},
-				Status:       api.ClaimItemStatusPending,
+				Status:       api.ClaimItemStatusReview1,
 				PayoutOption: api.PayoutOptionRepair,
 			},
 			errField: "",
@@ -39,7 +39,7 @@ func (ms *ModelSuite) TestClaimItem_Validate() {
 		{
 			name: "valid status, missing claim incident type",
 			claimItem: &ClaimItem{
-				Status:       api.ClaimItemStatusPending,
+				Status:       api.ClaimItemStatusReview1,
 				PayoutOption: api.PayoutOptionRepair,
 			},
 			errField: "ClaimItem.IncidentType",
@@ -195,7 +195,7 @@ func (ms *ModelSuite) TestClaimItem_Validate() {
 	}
 }
 
-func (ms *ModelSuite) TestClaimItem_Update() {
+func (ms *ModelSuite) TestClaimItem_UpdateByUser() {
 	fixConfig := FixturesConfig{
 		NumberOfPolicies:    2,
 		UsersPerPolicy:      1,
@@ -208,48 +208,83 @@ func (ms *ModelSuite) TestClaimItem_Update() {
 	db := ms.DB
 	fixtures := CreateItemFixtures(db, fixConfig)
 
-	user := CreateAdminUsers(db)[AppRoleAdmin]
+	user := fixtures.Policies[0].Members[0]
+	adminUser := CreateAdminUsers(db)[AppRoleAdmin]
 
-	claim := fixtures.Claims[0]
-	claim.LoadClaimItems(db, false)
+	draftClaim := fixtures.Policies[0].Claims[0]
+	draftClaim.LoadClaimItems(db, false)
+
+	review2Claim := UpdateClaimStatus(db, fixtures.Policies[0].Claims[1], api.ClaimStatusReview2, "")
+	review2Claim.LoadClaimItems(db, false)
 
 	tests := []struct {
-		name      string
-		newStatus api.ClaimItemStatus
-		wantErr   bool
-		appError  api.AppError
+		name        string
+		claimItem   ClaimItem
+		input       api.ClaimItemUpdateInput
+		addReviewer bool
+		user        User
+		appError    *api.AppError
+		wantStatus  api.ClaimItemStatus
 	}{
 		{
-			name:      "invalid transition",
-			newStatus: api.ClaimItemStatusDraft,
-			appError:  api.AppError{Key: api.ErrorValidation, Category: api.CategoryUser},
-			wantErr:   true,
+			name:      "not allowed on review2 ClaimItem",
+			claimItem: review2Claim.ClaimItems[0],
+			input: api.ClaimItemUpdateInput{
+				ReplaceEstimate: 999,
+				ReplaceActual:   999,
+			},
+			user:     user,
+			appError: &api.AppError{Key: api.ErrorClaimStatus, Category: api.CategoryUser},
 		},
 		{
-			name:      "ok",
-			newStatus: api.ClaimItemStatusDenied,
-			wantErr:   false,
+			name:      "ok on review2 ClaimItem for admin",
+			claimItem: review2Claim.ClaimItems[0],
+			input: api.ClaimItemUpdateInput{
+				ReplaceEstimate: 999,
+				ReplaceActual:   999,
+			},
+			user:        adminUser,
+			addReviewer: true,
+			wantStatus:  api.ClaimItemStatusReview2,
+		},
+		{
+			name:      "ok on draft",
+			claimItem: draftClaim.ClaimItems[0],
+			input: api.ClaimItemUpdateInput{
+				ReplaceEstimate: 1333,
+				ReplaceActual:   1330,
+			},
+			user:       user,
+			wantStatus: api.ClaimItemStatusDraft,
 		},
 	}
 	for _, tt := range tests {
 		ms.T().Run(tt.name, func(t *testing.T) {
-			claimItem := claim.ClaimItems[0]
+			ctx := CreateTestContext(fixtures.Users[0])
+			claimItem := tt.claimItem
 			oldStatus := claimItem.Status
-			claimItem.Status = tt.newStatus
+			claimItem.ReplaceEstimate = tt.input.ReplaceEstimate
+			claimItem.ReplaceActual = tt.input.ReplaceActual
 
-			err := claimItem.Update(db, oldStatus, user)
+			if tt.addReviewer {
+				claimItem.ReviewerID = nulls.NewUUID(tt.user.ID)
+				claimItem.ReviewDate = nulls.NewTime(time.Now().UTC())
+			}
+
+			err := claimItem.UpdateByUser(ctx, oldStatus, tt.user)
 
 			var fromDB ClaimItem
 			ms.NoError(fromDB.FindByID(db, claimItem.ID))
 
-			if tt.wantErr {
-				ms.Error(err)
-				ms.EqualAppError(tt.appError, err)
+			if tt.appError != nil {
+				ms.EqualAppError(*tt.appError, err)
 				return
 			}
 			ms.NoError(err)
 
-			ms.Equal(tt.newStatus, fromDB.Status, "incorrect status")
+			ms.Equal(tt.input.ReplaceEstimate, fromDB.ReplaceEstimate, "incorrect status")
+			ms.Equal(tt.input.ReplaceActual, fromDB.ReplaceActual, "incorrect status")
+			ms.Equal(tt.wantStatus, fromDB.Status, "incorrect status")
 		})
 	}
 }
