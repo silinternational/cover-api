@@ -322,7 +322,7 @@ func importPolicies(tx *pop.Connection, policies []LegacyPolicy) {
 				householdID = nulls.NewString(p.HouseholdId)
 			}
 
-			desc := fmt.Sprintf("Policy[%d].", policyID)
+			desc := fmt.Sprintf("Policy[%d] ", policyID)
 			newPolicy := models.Policy{
 				Type:         getPolicyType(p),
 				HouseholdID:  householdID,
@@ -353,7 +353,7 @@ func importPolicies(tx *pop.Connection, policies []LegacyPolicy) {
 			nPolicies++
 		}
 
-		policyIsActive := importItems(tx, policyUUID, p.Items)
+		policyIsActive := importItems(tx, policyUUID, policyID, p.Items)
 		nItems += len(p.Items)
 
 		nClaimItems += importClaims(tx, policyUUID, p.Claims)
@@ -453,7 +453,7 @@ func normalizePolicy(p *LegacyPolicy) error {
 		p.EntityCode = nulls.String{}
 
 		if p.HouseholdId == "" {
-			return fmt.Errorf("Policy[%s].HouseholdId is empty, dropping policy", p.Id)
+			return fmt.Errorf("Policy[%s] HouseholdId is empty, dropping policy", p.Id)
 		}
 	}
 
@@ -461,10 +461,10 @@ func normalizePolicy(p *LegacyPolicy) error {
 		p.HouseholdId = ""
 
 		if !p.EntityCode.Valid || p.EntityCode.String == "" {
-			return fmt.Errorf("Policy[%s].EntityCode is empty, dropping policy", p.Id)
+			return fmt.Errorf("Policy[%s] EntityCode is empty, dropping policy", p.Id)
 		}
 		if p.CostCenter == "" {
-			return fmt.Errorf("Policy[%s].CostCenter is empty, dropping policy", p.Id)
+			return fmt.Errorf("Policy[%s] CostCenter is empty, dropping policy", p.Id)
 		}
 	}
 
@@ -481,7 +481,7 @@ func importPolicyUsers(tx *pop.Connection, p LegacyPolicy, policyID uuid.UUID) i
 
 	if p.Email == "" {
 		if !SilenceBadEmailWarning {
-			log.Printf("Policy[%s].Email is empty\n", p.Id)
+			log.Printf("Policy[%s] Email is empty\n", p.Id)
 		}
 		return result
 	}
@@ -595,7 +595,7 @@ func importClaims(tx *pop.Connection, policyID uuid.UUID, claims []LegacyClaim) 
 func importClaimItems(tx *pop.Connection, claim models.Claim, items []LegacyClaimItem) {
 	for _, c := range items {
 		claimItemID := stringToInt(c.Id, "ClaimItem ID")
-		itemDesc := fmt.Sprintf("ClaimItem[%d].", claimItemID)
+		itemDesc := fmt.Sprintf("Claim[%d] ClaimItem[%d] ", claim.LegacyID.Int, claimItemID)
 
 		itemUUID, ok := itemIDMap[c.ItemId]
 		if !ok {
@@ -735,11 +735,11 @@ func getClaimStatus(claim LegacyClaim) api.ClaimStatus {
 }
 
 // importItems loads legacy items onto a policy. Returns true if at least one item is approved.
-func importItems(tx *pop.Connection, policyID uuid.UUID, items []LegacyItem) bool {
+func importItems(tx *pop.Connection, policyUUID uuid.UUID, policyID int, items []LegacyItem) bool {
 	active := false
 	for _, item := range items {
 		itemID := stringToInt(item.Id, "Item ID")
-		itemDesc := fmt.Sprintf("Item[%d].", itemID)
+		itemDesc := fmt.Sprintf("Policy[%d] Item[%d] ", policyID, itemID)
 
 		newItem := models.Item{
 			// TODO: name/policy needs to be unique
@@ -749,7 +749,7 @@ func importItems(tx *pop.Connection, policyID uuid.UUID, items []LegacyItem) boo
 			InStorage:         false,
 			Country:           trim(item.Country),
 			Description:       trim(item.Description),
-			PolicyID:          policyID,
+			PolicyID:          policyUUID,
 			Make:              trim(item.Make),
 			Model:             trim(item.Model),
 			SerialNumber:      trim(item.SerialNumber),
