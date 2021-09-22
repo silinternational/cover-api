@@ -1,0 +1,1 @@
+drop_table("policy_user_invites")

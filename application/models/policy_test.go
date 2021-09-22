@@ -329,6 +329,40 @@ func (ms *ModelSuite) TestPolicy_Compare() {
 	}
 }
 
+func (ms *ModelSuite) TestPolicy_MemberHasEmail() {
+	db := ms.DB
+
+	f := CreatePolicyFixtures(ms.DB, FixturesConfig{NumberOfPolicies: 1})
+	policy := f.Policies[0]
+	member := policy.Members[0]
+
+	tests := []struct {
+		name   string
+		policy Policy
+		email  string
+		want   bool
+	}{
+		{
+			name:   "no match",
+			policy: policy,
+			email:  "unique1@example.org",
+			want:   false,
+		},
+		{
+			name:   "has match",
+			policy: policy,
+			email:  member.Email,
+			want:   true,
+		},
+	}
+	for _, tt := range tests {
+		ms.T().Run(tt.name, func(t *testing.T) {
+			got := tt.policy.MemberHasEmail(db, tt.email)
+			ms.Equal(tt.want, got, "incorrect return value")
+		})
+	}
+}
+
 func (ms *ModelSuite) TestPolicy_NewHistory() {
 	f := CreatePolicyFixtures(ms.DB, FixturesConfig{NumberOfPolicies: 1})
 	policy := f.Policies[0]

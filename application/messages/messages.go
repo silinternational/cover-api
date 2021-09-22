@@ -33,6 +33,8 @@ const (
 	MessageTemplateItemAutoSteward    = "item_auto_approved_steward"
 	MessageTemplateItemRevisionMember = "item_revision_member"
 	MessageTemplateItemDeniedMember   = "item_denied_member"
+
+	MessageTemplatePolicyUserInvite = "policy_user_invite"
 )
 
 type MessageData render.Data
@@ -81,12 +83,18 @@ func SendQueuedNotifications(tx *pop.Connection) {
 
 	for _, n := range notnUsers {
 		n.Load(tx)
+		userName := n.ToName
+		if n.UserID.Valid {
+			userName = n.User.Name()
+		}
+
 		msg := notifications.NewEmailMessage()
-		msg.ToName = n.User.Name()
+
+		msg.ToName = userName
 		msg.ToEmail = n.EmailAddress
 		msg.Subject = n.Notification.Subject
 		msg.Body = strings.Replace(n.Notification.Body,
-			Greetings_Placeholder, fmt.Sprintf("Greetings %s,", n.User.Name()), 1)
+			Greetings_Placeholder, fmt.Sprintf("Greetings %s,", userName), 1)
 
 		if err := notifications.Send(msg); err != nil {
 			domain.ErrLogger.Printf("error sending queued notification email, %s", err)

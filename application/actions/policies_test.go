@@ -7,8 +7,10 @@ import (
 	"testing"
 
 	"github.com/gobuffalo/nulls"
+	"github.com/gofrs/uuid"
 
 	"github.com/silinternational/cover-api/api"
+	"github.com/silinternational/cover-api/domain"
 	"github.com/silinternational/cover-api/models"
 )
 
@@ -305,6 +307,75 @@ func (as *ActionSuite) Test_PoliciesListMembers() {
 			err := json.Unmarshal([]byte(body), &members)
 			as.NoError(err)
 			as.Equal(tt.wantCount, len(members))
+		})
+	}
+}
+
+func (as *ActionSuite) Test_PoliciesInviteMember() {
+	fixConfig := models.FixturesConfig{
+		NumberOfPolicies: 2,
+		UsersPerPolicy:   1,
+	}
+
+	fixtures := models.CreatePolicyFixtures(as.DB, fixConfig)
+	policy0member0 := fixtures.Policies[0].Members[0]
+	policy1member0 := fixtures.Policies[1].Members[0]
+
+	tests := []struct {
+		name               string
+		policyID           uuid.UUID
+		actor              models.User
+		inviteeEmail       string
+		inviteeName        string
+		wantStatus         int
+		wantEventTriggered bool
+	}{
+		{
+			name:               "existing policy member, no event",
+			policyID:           fixtures.Policies[0].ID,
+			actor:              policy0member0,
+			inviteeEmail:       policy0member0.Email,
+			wantStatus:         http.StatusNoContent,
+			wantEventTriggered: false,
+		},
+		{
+			name:               "existing user, not policy member, no event",
+			policyID:           fixtures.Policies[0].ID,
+			actor:              policy0member0,
+			inviteeEmail:       policy1member0.Email,
+			wantStatus:         http.StatusNoContent,
+			wantEventTriggered: false,
+		},
+		{
+			name:               "new user",
+			policyID:           fixtures.Policies[0].ID,
+			actor:              policy1member0,
+			inviteeEmail:       "new-user-testing@invites-r-us.com",
+			inviteeName:        "New User",
+			wantStatus:         http.StatusNoContent,
+			wantEventTriggered: true,
+		},
+	}
+
+	for _, tt := range tests {
+		as.T().Run(tt.name, func(t *testing.T) {
+			createInviteEventDetected := false
+			deleteFn1, err := models.RegisterEventDetector(domain.EventApiPolicyUserInviteCreated, &createInviteEventDetected)
+			as.NoError(err)
+			defer deleteFn1()
+
+			input := api.PolicyUserInviteCreate{
+				Email: tt.inviteeEmail,
+				Name:  tt.inviteeName,
+			}
+
+			req := as.JSON("/policies/" + tt.policyID.String() + "/members")
+			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
+			req.Headers["content-type"] = "application/json"
+			res := req.Post(input)
+
+			as.Equal(tt.wantStatus, res.Code, "http status code not as expected")
+			as.Equal(tt.wantEventTriggered, createInviteEventDetected, "event detection not as expected")
 		})
 	}
 }

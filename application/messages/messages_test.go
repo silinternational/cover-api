@@ -146,7 +146,7 @@ func (ts *TestSuite) Test_SendQueuedNotifications() {
 
 		notnUserFs[i] = models.NotificationUser{
 			NotificationID: notn.ID,
-			UserID:         user.ID,
+			UserID:         nulls.NewUUID(user.ID),
 			EmailAddress:   user.EmailOfChoice(),
 			SendAfterUTC:   n.sendAfter,
 			SentAtUTC:      n.sentAt,

@@ -111,6 +111,8 @@ const (
 	EventApiClaimDenied      = "api:claim:denied"
 
 	EventApiNotificationCreated = "api:notification:created"
+
+	EventApiPolicyUserInviteCreated = "api:policy:invite:created"
 )
 
 // redirect url for after logout

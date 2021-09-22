@@ -18,7 +18,8 @@ type NotificationUsers []NotificationUser
 type NotificationUser struct {
 	ID               uuid.UUID  `db:"id"`
 	NotificationID   uuid.UUID  `db:"notification_id"`
-	UserID           uuid.UUID  `db:"user_id"`
+	UserID           nulls.UUID `db:"user_id"`
+	ToName           string     `db:"to_name"` // Only needed when there is no UserID
 	EmailAddress     string     `db:"email_address"`
 	ViewedAtUTC      nulls.Time `db:"viewed_at_utc"`
 	SendAttemptCount int        `db:"send_attempt_count"`
@@ -79,7 +80,7 @@ func (n *NotificationUsers) GetEmailsToSend(tx *pop.Connection) error {
 
 	if err := tx.RawQuery(q).All(n); err != nil {
 		if domain.IsOtherThanNoRows(err) {
-			return errors.New("error getting queued notifications to send out: " + err.Error())
+			return errors.New("error getting queued notification_users to send out: " + err.Error())
 		}
 	}
 

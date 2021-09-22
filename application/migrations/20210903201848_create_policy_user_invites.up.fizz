@@ -1,0 +1,15 @@
+create_table("policy_user_invites") {
+	t.Column("id", "uuid", {primary: true})
+	t.Column("policy_id", "uuid", {})
+	t.Column("email", "string", {})
+	t.Column("email_sent_at", "timestamp", {"null": true})
+	t.Column("email_send_count", "int", {})
+	t.Column("invitee_name", "string", {})
+	t.Column("inviter_name", "string", {})
+	t.Column("inviter_email", "string", {})
+	t.Column("inviter_message", "string", {})
+
+	t.Timestamps()
+
+	t.ForeignKey("policy_id", {"policies": ["id"]}, {"on_delete": "cascade"})
+}
