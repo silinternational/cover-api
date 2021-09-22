@@ -89,11 +89,7 @@ func (i *PolicyUserInvite) Save(tx *pop.Connection) error {
 
 func (i *PolicyUserInvite) Destroy(tx *pop.Connection) error {
 	if err := tx.Destroy(i); err != nil {
-		return api.NewAppError(
-			errors.New("error destroying invite: "+err.Error()),
-			api.ErrorQueryFailure,
-			api.CategoryDatabase,
-		)
+		return appErrorFromDB(errors.New("error destroying invite: "+err.Error()), api.ErrorQueryFailure)
 	}
 	return nil
 }
@@ -107,7 +103,7 @@ func (i *PolicyUserInvite) FindByEmailAndPolicyID(tx *pop.Connection, email stri
 }
 
 func (i *PolicyUserInvite) GetAcceptURL() string {
-	return fmt.Sprintf("%s/auth/login?invite=%s", domain.Env.UIURL, i.ID)
+	return fmt.Sprintf("%s/invite/%s", domain.Env.UIURL, i.ID)
 }
 
 // LoadPolicy - a simple wrapper method for loading the policy
@@ -128,12 +124,7 @@ func (i *PolicyUserInvite) Accept(tx *pop.Connection, code string, user User) er
 	}
 
 	if err := i.FindByID(tx, codeUUID); err != nil {
-		err = fmt.Errorf("failed to load policy invite: %s", err)
-		appErr := api.NewAppError(err, api.ErrorResourceNotFound, api.CategoryNotFound)
-		if domain.IsOtherThanNoRows(err) {
-			appErr.Category = api.CategoryInternal
-		}
-		return appErr
+		return appErrorFromDB(errors.New("failed to load policy invite: "+err.Error()), api.ErrorQueryFailure)
 	}
 
 	i.LoadPolicy(tx, true)
@@ -159,12 +150,8 @@ func (i *PolicyUserInvite) DestroyIfExpired(tx *pop.Connection) error {
 		return nil
 	}
 
-	if err := tx.Destroy(i); err != nil {
-		return api.NewAppError(
-			errors.New("error destroying expired invite: "+err.Error()),
-			api.ErrorQueryFailure,
-			api.CategoryDatabase,
-		)
+	if err := i.Destroy(tx); err != nil {
+		return err
 	}
 
 	return api.NewAppError(
