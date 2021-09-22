@@ -63,6 +63,7 @@ const (
 	ContextKeyCurrentUser = "current_user"
 	ContextKeyExtras      = "extras"
 	ContextKeyRollbar     = "rollbar"
+	ContextKeyTx          = "tx"
 
 	DefaultUIPath = "/home"
 
@@ -165,7 +166,8 @@ var Env struct {
 	EmailFromAddress   string `required:"true" split_words:"true"`
 	EmailService       string `default:"ses" split_words:"true"`
 
-	MaxFileDelete int `default:"10" split_words:"true"`
+	InviteLifetimeDays int `default:"14" split_words:"true"`
+	MaxFileDelete      int `default:"10" split_words:"true"`
 
 	// Ensure these reflect cents and not just dollars
 	PolicyMaxCoverage       int `default:"50000" split_words:"true"` // will be multiplied by CurrencyFactor in readEnv()

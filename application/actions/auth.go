@@ -9,6 +9,8 @@ import (
 
 	"github.com/gobuffalo/buffalo"
 	"github.com/gobuffalo/buffalo/render"
+	"github.com/gobuffalo/pop/v5"
+	"github.com/gofrs/uuid"
 
 	"github.com/silinternational/cover-api/api"
 	"github.com/silinternational/cover-api/auth"
@@ -24,6 +26,10 @@ const (
 	// http param and session key for Client ID
 	ClientIDParam      = "client-id"
 	ClientIDSessionKey = "ClientID"
+
+	// http param for an auth invite code
+	InviteCodeParam      = "invite"
+	InviteCodeSessionKey = "invite_code"
 
 	// logout http param for what is normally the bearer token
 	LogoutToken = "token"
@@ -82,9 +88,17 @@ func authRequest(c buffalo.Context) error {
 
 	getOrSetReturnTo(c)
 
+	inviteCode := c.Param(InviteCodeParam)
+	if inviteCode != "" {
+		if appErr := validateInviteOnLogin(inviteCode, c); appErr != nil {
+			return reportErrorAndClearSession(c, appErr)
+		}
+	}
+
 	sp, err := saml.New(samlConfig)
 	if err != nil {
 		return reportErrorAndClearSession(c, &api.AppError{
+			Err:        err,
 			HttpStatus: http.StatusInternalServerError,
 			Key:        api.ErrorLoadingAuthProvider,
 			Message:    "unable to load saml auth provider.",
@@ -94,6 +108,7 @@ func authRequest(c buffalo.Context) error {
 	redirectURL, err := sp.AuthRequest(c)
 	if err != nil {
 		return reportErrorAndClearSession(c, &api.AppError{
+			Err:        err,
 			HttpStatus: http.StatusInternalServerError,
 			Key:        api.ErrorGettingAuthURL,
 			Message:    "unable to determine what the saml authentication url should be",
@@ -124,6 +139,40 @@ func getOrSetReturnTo(c buffalo.Context) string {
 	c.Session().Set(ReturnToSessionKey, returnTo)
 
 	return returnTo
+}
+
+// check for valid matching invite and save the code to the Session
+func validateInviteOnLogin(inviteCode string, c buffalo.Context) *api.AppError {
+	appErr := api.AppError{Key: api.ErrorProcessingAuthInviteCode}
+
+	tx, ok := c.Value(domain.ContextKeyTx).(*pop.Connection)
+	if !ok {
+		appErr.HttpStatus = http.StatusInternalServerError
+		appErr.DebugMsg = "bad context database connection"
+		return &appErr
+	}
+
+	codeUUID, err := uuid.FromString(inviteCode)
+	if err != nil {
+		appErr.HttpStatus = http.StatusBadRequest
+		appErr.DebugMsg = fmt.Sprintf("invalid invite code: %s, %v", inviteCode, err)
+		return &appErr
+	}
+
+	invite := models.PolicyUserInvite{}
+	if err := invite.FindByID(tx, codeUUID); err != nil {
+		appErr.HttpStatus = http.StatusNotFound
+		appErr.DebugMsg = "error finding policy_user_invite code: " + err.Error()
+		return &appErr
+	}
+
+	if err := invite.DestroyIfExpired(tx); err != nil {
+		return &appErr
+	}
+
+	c.Session().Set(InviteCodeSessionKey, inviteCode)
+
+	return nil
 }
 
 func authCallback(c buffalo.Context) error {
@@ -179,6 +228,14 @@ func authCallback(c buffalo.Context) error {
 			Key:        api.ErrorWithAuthUser,
 			Message:    err.Error(),
 		})
+	}
+
+	inviteCode, ok := c.Session().Get(InviteCodeSessionKey).(string)
+	if ok {
+		invite := models.PolicyUserInvite{}
+		if err := invite.Accept(tx, inviteCode, user); err != nil {
+			reportErrorAndClearSession(c, err)
+		}
 	}
 
 	isNew := false
