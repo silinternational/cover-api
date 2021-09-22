@@ -169,10 +169,11 @@ var Env struct {
 
 	// The following will be multiplied by CurrencyFactor in readEnv()
 	PolicyMaxCoverage       int `default:"50000" split_words:"true"` //
-	DependantAutoApproveMax int `default:"4000" split_words:"true"`  // will be multiplied by CurrencyFactor in readEnv()
+	DependentAutoApproveMax int `default:"4000" split_words:"true"`  // will be multiplied by CurrencyFactor in readEnv()
 	PremiumMinimum          int `default:"25"`
 
-	PremiumPercent float64 `default:"0.02"`
+	// PremiumFactor is multiplied by CoverageAmount to calculate the annual premium of an item
+	PremiumFactor float64 `default:"0.02"`
 }
 
 func init() {
@@ -194,7 +195,7 @@ func readEnv() {
 	}
 
 	Env.PolicyMaxCoverage *= CurrencyFactor
-	Env.DependantAutoApproveMax *= CurrencyFactor
+	Env.DependentAutoApproveMax *= CurrencyFactor
 	Env.PremiumMinimum *= CurrencyFactor
 
 	// Doing this separately to avoid needing two environment variables for the same thing

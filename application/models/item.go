@@ -438,7 +438,7 @@ func (i *Items) ConvertToAPI(tx *pop.Connection) api.Items {
 }
 
 func (i *Item) GetAnnualPremium() int {
-	p := int(math.Round(float64(i.CoverageAmount) * domain.Env.PremiumPercent))
+	p := int(math.Round(float64(i.CoverageAmount) * domain.Env.PremiumFactor))
 	if p < domain.Env.PremiumMinimum {
 		return domain.Env.PremiumMinimum
 	}
