@@ -151,7 +151,7 @@ func (i *PolicyUserInvite) DestroyIfExpired(tx *pop.Connection) error {
 	}
 
 	if err := i.Destroy(tx); err != nil {
-		return err
+		return fmt.Errorf("error destroying expired invite %w", err)
 	}
 
 	return api.NewAppError(
