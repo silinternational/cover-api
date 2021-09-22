@@ -89,7 +89,7 @@ func (i *PolicyUserInvite) Save(tx *pop.Connection) error {
 
 func (i *PolicyUserInvite) Destroy(tx *pop.Connection) error {
 	if err := tx.Destroy(i); err != nil {
-		return appErrorFromDB(errors.New("error destroying invite: "+err.Error()), api.ErrorQueryFailure)
+		return appErrorFromDB(fmt.Errorf("error destroying invite: %w", err), api.ErrorQueryFailure)
 	}
 	return nil
 }
@@ -124,7 +124,7 @@ func (i *PolicyUserInvite) Accept(tx *pop.Connection, code string, user User) er
 	}
 
 	if err := i.FindByID(tx, codeUUID); err != nil {
-		return appErrorFromDB(errors.New("failed to load policy invite: "+err.Error()), api.ErrorQueryFailure)
+		return appErrorFromDB(fmt.Errorf("failed to load policy invite: %w", err), api.ErrorQueryFailure)
 	}
 
 	i.LoadPolicy(tx, true)
