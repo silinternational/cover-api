@@ -182,6 +182,7 @@ func App() *buffalo.App {
 		policiesGroup.POST(idRegex+itemsPath, itemsCreate)
 		policiesGroup.POST(idRegex+claimsPath, claimsCreate)
 		policiesGroup.GET(idRegex+"/members", policiesListMembers)
+		policiesGroup.POST(idRegex+"/members", policiesInviteMember)
 	}
 
 	listeners.RegisterListener()

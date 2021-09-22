@@ -27,7 +27,7 @@ func itemApprovedQueueMsg(tx *pop.Connection, item models.Item) {
 	}
 
 	for _, m := range item.Policy.Members {
-		notn.CreateNotificationUser(tx, m)
+		notn.CreateNotificationUserForUser(tx, m)
 	}
 }
 
@@ -111,7 +111,7 @@ func ItemRevisionQueueMessage(tx *pop.Connection, item models.Item) {
 	}
 
 	for _, m := range item.Policy.Members {
-		notn.CreateNotificationUser(tx, m)
+		notn.CreateNotificationUserForUser(tx, m)
 	}
 }
 
@@ -153,6 +153,6 @@ func ItemDeniedQueueMessage(tx *pop.Connection, item models.Item) {
 	}
 
 	for _, m := range item.Policy.Members {
-		notn.CreateNotificationUser(tx, m)
+		notn.CreateNotificationUserForUser(tx, m)
 	}
 }

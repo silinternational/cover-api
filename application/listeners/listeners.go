@@ -18,21 +18,22 @@ import (
 const EventPayloadNotifier = "notifier"
 
 var eventTypes = map[string]func(event events.Event){
-	domain.EventApiUserCreated:         createUserPolicy,
-	domain.EventApiItemSubmitted:       itemSubmitted,
-	domain.EventApiItemRevision:        itemRevision,
-	domain.EventApiItemApproved:        itemApproved,
-	domain.EventApiItemAutoApproved:    itemAutoApproved,
-	domain.EventApiItemDenied:          itemDenied,
-	domain.EventApiClaimReview1:        claimReview1,
-	domain.EventApiClaimRevision:       claimRevision,
-	domain.EventApiClaimPreapproved:    claimPreapproved,
-	domain.EventApiClaimReceipt:        claimReceipt,
-	domain.EventApiClaimReview2:        claimReview2,
-	domain.EventApiClaimReview3:        claimReview3,
-	domain.EventApiClaimApproved:       claimApproved,
-	domain.EventApiClaimDenied:         claimDenied,
-	domain.EventApiNotificationCreated: notificationCreated,
+	domain.EventApiItemAutoApproved:        itemAutoApproved,
+	domain.EventApiUserCreated:             createUserPolicy,
+	domain.EventApiItemSubmitted:           itemSubmitted,
+	domain.EventApiItemRevision:            itemRevision,
+	domain.EventApiItemApproved:            itemApproved,
+	domain.EventApiItemDenied:              itemDenied,
+	domain.EventApiClaimReview1:            claimReview1,
+	domain.EventApiClaimRevision:           claimRevision,
+	domain.EventApiClaimPreapproved:        claimPreapproved,
+	domain.EventApiClaimReceipt:            claimReceipt,
+	domain.EventApiClaimReview2:            claimReview2,
+	domain.EventApiClaimReview3:            claimReview3,
+	domain.EventApiClaimApproved:           claimApproved,
+	domain.EventApiClaimDenied:             claimDenied,
+	domain.EventApiNotificationCreated:     notificationCreated,
+	domain.EventApiPolicyUserInviteCreated: policyUserInviteCreated,
 }
 
 func notificationCreated(e events.Event) {
