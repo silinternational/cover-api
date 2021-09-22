@@ -168,8 +168,8 @@ var Env struct {
 	MaxFileDelete int `default:"10" split_words:"true"`
 
 	// The following will be multiplied by CurrencyFactor in readEnv()
-	PolicyMaxCoverage       int `default:"50000" split_words:"true"` //
-	DependentAutoApproveMax int `default:"4000" split_words:"true"`  // will be multiplied by CurrencyFactor in readEnv()
+	PolicyMaxCoverage       int `default:"50000" split_words:"true"`
+	DependentAutoApproveMax int `default:"4000" split_words:"true"`
 	PremiumMinimum          int `default:"25"`
 
 	// PremiumFactor is multiplied by CoverageAmount to calculate the annual premium of an item
