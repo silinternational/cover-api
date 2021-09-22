@@ -18,6 +18,7 @@ import (
 const EventPayloadNotifier = "notifier"
 
 var eventTypes = map[string]func(event events.Event){
+	domain.EventApiItemAutoApproved:    itemAutoApproved,
 	domain.EventApiUserCreated:             createUserPolicy,
 	domain.EventApiItemSubmitted:           itemSubmitted,
 	domain.EventApiItemRevision:            itemRevision,
