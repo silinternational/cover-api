@@ -14,22 +14,17 @@ func (ts *TestSuite) Test_ItemSubmittedQueueMessage() {
 	db := ts.DB
 
 	fixConfig := models.FixturesConfig{
-		NumberOfPolicies:    1,
-		UsersPerPolicy:      2,
-		ClaimsPerPolicy:     1,
-		DependentsPerPolicy: 0,
-		ItemsPerPolicy:      2,
+		NumberOfPolicies: 1,
+		UsersPerPolicy:   2,
+		ItemsPerPolicy:   2,
 	}
 
 	f := models.CreateItemFixtures(db, fixConfig)
 
 	steward0 := models.CreateAdminUsers(db)[models.AppRoleSteward]
 	steward1 := models.CreateAdminUsers(db)[models.AppRoleSteward]
-	member0 := f.Policies[0].Members[0]
-	member1 := f.Policies[0].Members[1]
 
 	submittedItem := models.UpdateItemStatus(db, f.Items[0], api.ItemCoverageStatusPending, "")
-	approvedItem := models.UpdateItemStatus(db, f.Items[1], api.ItemCoverageStatusApproved, "")
 
 	testEmailer := notifications.DummyEmailService{}
 
@@ -51,20 +46,44 @@ func (ts *TestSuite) Test_ItemSubmittedQueueMessage() {
 			},
 			item: submittedItem,
 		},
-		{
-			data: testData{
-				name:                  "auto approved - members",
-				wantToEmails:          []interface{}{member0.EmailOfChoice(), member1.EmailOfChoice()},
-				wantSubjectContains:   "your new policy item has been approved",
-				wantInappTextContains: "your new policy item has been approved",
-				wantBodyContains: []string{
-					domain.Env.UIURL,
-					approvedItem.Name,
-					"Your newly submitted policy item has been approved.",
-				},
-			},
-			item: approvedItem,
-		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.data.name, func(t *testing.T) {
+			testEmailer.DeleteSentMessages()
+			ItemSubmittedQueueMessage(db, tt.item)
+			validateNotificationUsers(ts, db, tt.data)
+
+			notfns := models.Notifications{}
+			ts.NoError(db.All(&notfns), "error fetching all NotificationUsers for destroy")
+			ts.NoError(db.Destroy(&notfns), "error destroying all NotificationUsers")
+		})
+	}
+}
+
+func (ts *TestSuite) Test_ItemAutoApprovedQueueMessage() {
+	t := ts.T()
+	db := ts.DB
+
+	fixConfig := models.FixturesConfig{
+		NumberOfPolicies: 1,
+		UsersPerPolicy:   2,
+		ItemsPerPolicy:   2,
+	}
+
+	f := models.CreateItemFixtures(db, fixConfig)
+
+	steward0 := models.CreateAdminUsers(db)[models.AppRoleSteward]
+	steward1 := models.CreateAdminUsers(db)[models.AppRoleSteward]
+
+	approvedItem := models.UpdateItemStatus(db, f.Items[1], api.ItemCoverageStatusApproved, "")
+
+	testEmailer := notifications.DummyEmailService{}
+
+	tests := []struct {
+		data testData
+		item models.Item
+	}{
 		{
 			data: testData{
 				name:                  "auto approved - stewards",
@@ -84,7 +103,7 @@ func (ts *TestSuite) Test_ItemSubmittedQueueMessage() {
 	for _, tt := range tests {
 		t.Run(tt.data.name, func(t *testing.T) {
 			testEmailer.DeleteSentMessages()
-			ItemSubmittedQueueMessage(db, tt.item)
+			ItemAutoApprovedQueueMessage(db, tt.item)
 			validateNotificationUsers(ts, db, tt.data)
 
 			notfns := models.Notifications{}

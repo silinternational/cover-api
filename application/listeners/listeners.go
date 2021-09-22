@@ -22,6 +22,7 @@ var eventTypes = map[string]func(event events.Event){
 	domain.EventApiItemSubmitted:       itemSubmitted,
 	domain.EventApiItemRevision:        itemRevision,
 	domain.EventApiItemApproved:        itemApproved,
+	domain.EventApiItemAutoApproved:    itemAutoApproved,
 	domain.EventApiItemDenied:          itemDenied,
 	domain.EventApiClaimReview1:        claimReview1,
 	domain.EventApiClaimRevision:       claimRevision,

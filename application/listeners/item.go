@@ -20,11 +20,7 @@ func itemSubmitted(e events.Event) {
 		return
 	}
 
-	if item.CoverageStatus == api.ItemCoverageStatusApproved {
-		// TODO any business rules to deal with here
-	} else if item.CoverageStatus == api.ItemCoverageStatusPending { // Was submitted but not auto approved
-		// TODO any business rules to deal with here
-	} else {
+	if item.CoverageStatus != api.ItemCoverageStatusPending {
 		domain.ErrLogger.Printf(wrongStatusMsg, "itemSubmitted", item.CoverageStatus)
 	}
 
@@ -48,6 +44,25 @@ func itemRevision(e events.Event) {
 		messages.ItemRevisionQueueMessage(tx, item)
 		return nil
 	})
+}
+
+func itemAutoApproved(e events.Event) {
+	var item models.Item
+	if err := findObject(e.Payload, &item, e.Kind); err != nil {
+		return
+	}
+
+	if item.CoverageStatus != api.ItemCoverageStatusApproved {
+		domain.ErrLogger.Printf(wrongStatusMsg, "itemApproved", item.CoverageStatus)
+		return
+	}
+
+	models.DB.Transaction(func(tx *pop.Connection) error {
+		messages.ItemAutoApprovedQueueMessage(tx, item)
+		return nil
+	})
+
+	// TODO do whatever else needs doing
 }
 
 func itemApproved(e events.Event) {
