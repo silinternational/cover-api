@@ -371,11 +371,11 @@ func (ms *ModelSuite) TestItem_SubmitForApproval() {
 	itemManualApprove.CoverageAmount = itemManualApprove.Category.AutoApproveMax + 1
 	ms.NoError(ms.DB.Update(&itemManualApprove), "error updating item fixture for test")
 
-	itemManualApproveDependent.CoverageAmount = domain.Env.DependantAutoApproveMax - itemDependent.CoverageAmount + 1
+	itemManualApproveDependent.CoverageAmount = domain.Env.DependentAutoApproveMax - itemDependent.CoverageAmount + 1
 	itemManualApproveDependent.PolicyDependentID = nulls.NewUUID(dependent.ID)
 	ms.NoError(ms.DB.Update(&itemManualApproveDependent), "error updating item fixture for test")
 
-	itemAutoApproveDependent.CoverageAmount = domain.Env.DependantAutoApproveMax - itemDependent.CoverageAmount - 1
+	itemAutoApproveDependent.CoverageAmount = domain.Env.DependentAutoApproveMax - itemDependent.CoverageAmount - 1
 	itemAutoApproveDependent.PolicyDependentID = nulls.NewUUID(dependent.ID)
 	ms.NoError(ms.DB.Update(&itemAutoApproveDependent), "error updating item fixture for test")
 

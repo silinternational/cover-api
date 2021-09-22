@@ -302,7 +302,7 @@ func (i *Item) canAutoApprove(tx *pop.Connection) bool {
 
 	// Dependents have different rules based on the total amounts of all their items
 	depTotal := totals[i.PolicyDependentID.UUID]
-	return depTotal+i.CoverageAmount <= domain.Env.DependantAutoApproveMax
+	return depTotal+i.CoverageAmount <= domain.Env.DependentAutoApproveMax
 }
 
 // Revision takes the item from Pending coverage status to Revision.
