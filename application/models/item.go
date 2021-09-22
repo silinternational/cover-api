@@ -249,7 +249,7 @@ func (i *Item) SubmitForApproval(tx *pop.Connection) error {
 	i.Load(tx)
 
 	if i.canAutoApprove(tx) {
-		i.CoverageStatus = api.ItemCoverageStatusApproved
+		return i.AutoApprove(tx)
 	}
 
 	if err := i.Update(tx, oldStatus); err != nil {
@@ -322,6 +322,19 @@ func (i *Item) Revision(tx *pop.Connection, reason string) error {
 	emitEvent(e)
 
 	return nil
+}
+
+// AutoApprove fires an event and marks the item as `Approved`
+// It assumes that the item's current status has already been validated.
+func (i *Item) AutoApprove(tx *pop.Connection) error {
+	e := events.Event{
+		Kind:    domain.EventApiItemAutoApproved,
+		Message: fmt.Sprintf("Item AutoApproved: %s  ID: %s", i.Name, i.ID.String()),
+		Payload: events.Payload{domain.EventPayloadID: i.ID},
+	}
+	emitEvent(e)
+
+	return i.Approve(tx)
 }
 
 // Approve takes the item from Pending coverage status to Approved.
