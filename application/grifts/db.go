@@ -205,15 +205,16 @@ func createPolicyFixtures(tx *pop.Connection, fixUsers []*models.User, entityCod
 	for i, uu := range policyUUIDs {
 		user := fixUsers[i]
 		fixPolicies[i] = &models.Policy{
-			ID:          uuid.FromStringOrNil(uu),
-			Type:        api.PolicyTypeHousehold,
-			HouseholdID: nulls.NewString(fmt.Sprintf("HID-%s-%s", user.FirstName, user.LastName)),
+			ID:   uuid.FromStringOrNil(uu),
+			Type: api.PolicyTypeHousehold,
 		}
 		if i < len(entityCodes) {
 			fixPolicies[i].EntityCodeID = nulls.NewUUID(entityCodes[i].ID)
 			fixPolicies[i].Account = domain.RandomString(6, "0123456789")
 			fixPolicies[i].CostCenter = domain.RandomString(8, "0123456789")
 			fixPolicies[i].Type = api.PolicyTypeCorporate
+		} else {
+			fixPolicies[i].HouseholdID = nulls.NewString(fmt.Sprintf("HID-%s-%s", user.FirstName, user.LastName))
 		}
 
 		err := tx.Create(fixPolicies[i])
