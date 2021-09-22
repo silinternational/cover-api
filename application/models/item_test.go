@@ -601,3 +601,21 @@ func (ms *ModelSuite) TestItem_GetProratedPremium() {
 		})
 	}
 }
+
+func (ms *ModelSuite) TestItem_CreateLedgerEntry() {
+	f := CreateItemFixtures(ms.DB, FixturesConfig{})
+	item := f.Items[0]
+	err := item.CreateLedgerEntry(ms.DB)
+	ms.NoError(err)
+
+	var le LedgerEntry
+	ms.NoError(ms.DB.Where("item_id = ?", item.ID).First(&le))
+	ms.Equal(item.PolicyID, le.PolicyID, "PolicyID is incorrect")
+	ms.Equal(item.ID, le.ItemID.UUID, "ItemID is incorrect")
+	ms.Equal(item.Policy.EntityCodeID, le.EntityCodeID, "EntityCodeID is incorrect")
+	ms.Equal(2500, le.Amount, "Amount is incorrect")
+	ms.Equal(time.Now().UTC().Truncate(time.Hour*24), le.DateSubmitted, "DateSubmitted is incorrect")
+	ms.Equal(item.Policy.Account, le.AccountNumber, "AccountNumber is incorrect")
+	ms.Equal(item.Policy.CostCenter, le.AccountCostCenter1, "AccountCostCenter1 is incorrect")
+	ms.Equal(item.Policy.EntityCode.Code, le.EntityCode, "EntityCode is incorrect")
+}

@@ -537,9 +537,9 @@ func (i *Item) CreateLedgerEntry(tx *pop.Connection) error {
 	le := LedgerEntry{
 		PolicyID:           i.PolicyID,
 		ItemID:             nulls.NewUUID(i.ID),
-		EntityID:           i.Policy.EntityCodeID,
+		EntityCodeID:       i.Policy.EntityCodeID,
 		Amount:             i.GetProratedPremium(time.Now().UTC()),
-		DateSubmitted:      time.Now().UTC().Format(domain.DateFormat),
+		DateSubmitted:      time.Now().UTC(),
 		AccountNumber:      i.Policy.Account,
 		AccountCostCenter1: i.Policy.CostCenter,
 		EntityCode:         i.Policy.EntityCode.Code,

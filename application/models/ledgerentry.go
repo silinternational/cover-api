@@ -15,10 +15,10 @@ type LedgerEntry struct {
 
 	PolicyID      uuid.UUID  `db:"policy_id"`
 	ItemID        nulls.UUID `db:"item_id"`
-	EntityID      nulls.UUID `db:"entity_id"`
+	EntityCodeID  nulls.UUID `db:"entity_code_id"`
 	Amount        int        `db:"amount"`
-	DateSubmitted string     `db:"date_submitted"`
-	DateEntered   string     `db:"date_entered"`
+	DateSubmitted time.Time  `db:"date_submitted"`
+	DateEntered   nulls.Time `db:"date_entered"`
 
 	// The following fields are primarily for legacy data and may not be needed long-term
 	// However, some may be useful as a permanent record in case policies change...TBD.
