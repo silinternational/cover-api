@@ -2,6 +2,7 @@ package models
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"time"
 
@@ -11,6 +12,7 @@ import (
 	"github.com/gobuffalo/validate/v3"
 	"github.com/gofrs/uuid"
 
+	"github.com/silinternational/cover-api/api"
 	"github.com/silinternational/cover-api/domain"
 )
 
@@ -85,6 +87,13 @@ func (i *PolicyUserInvite) Save(tx *pop.Connection) error {
 	return save(tx, i)
 }
 
+func (i *PolicyUserInvite) Destroy(tx *pop.Connection) error {
+	if err := tx.Destroy(i); err != nil {
+		return appErrorFromDB(fmt.Errorf("error destroying invite: %w", err), api.ErrorQueryFailure)
+	}
+	return nil
+}
+
 func (i *PolicyUserInvite) FindByID(tx *pop.Connection, id uuid.UUID) error {
 	return tx.Find(i, id)
 }
@@ -104,4 +113,50 @@ func (i *PolicyUserInvite) LoadPolicy(tx *pop.Connection, reload bool) {
 			panic("error loading item policy: " + err.Error())
 		}
 	}
+}
+
+func (i *PolicyUserInvite) Accept(tx *pop.Connection, code string, user User) error {
+	codeUUID, err := uuid.FromString(code)
+	if err != nil {
+		err = errors.New("error converting invite code from string to uuid: " + err.Error())
+		return api.NewAppError(err, api.ErrorPolicyUserInviteCode, api.CategoryUser)
+
+	}
+
+	if err := i.FindByID(tx, codeUUID); err != nil {
+		return appErrorFromDB(fmt.Errorf("failed to load policy invite: %w", err), api.ErrorQueryFailure)
+	}
+
+	i.LoadPolicy(tx, true)
+
+	policyUser := PolicyUser{
+		PolicyID: i.PolicyID,
+		UserID:   user.ID,
+	}
+
+	if err := policyUser.Create(tx); err != nil {
+		return err
+	}
+
+	return i.Destroy(tx)
+}
+
+// DestroyIfExpired returns nil if the invite is not too old or already accepted.
+// Otherwise, it attempts to destroy it and returns an error.
+func (i *PolicyUserInvite) DestroyIfExpired(tx *pop.Connection) error {
+	now := time.Now().UTC()
+	cutoff := now.Add(time.Duration(-domain.Env.InviteLifetimeDays) * domain.DurationDay)
+	if i.CreatedAt.After(cutoff) {
+		return nil
+	}
+
+	if err := i.Destroy(tx); err != nil {
+		return fmt.Errorf("error destroying expired invite %w", err)
+	}
+
+	return api.NewAppError(
+		errors.New("attempt to use expired invite, ID: "+i.ID.String()),
+		api.ErrorInviteExpired,
+		api.CategoryForbidden,
+	)
 }
