@@ -195,12 +195,17 @@ func importIdpUsersFromFile(idpName string) int {
 	return n
 }
 
-func importAdminUsers(tx *pop.Connection, in []LegacyUser) {
-	for _, user := range in {
+func importAdminUsers(tx *pop.Connection, users []LegacyUser) {
+	for _, user := range users {
 		userID := stringToInt(user.Id, "User ID")
 		userDesc := fmt.Sprintf("User[%d].", userID)
 
 		user.StaffId = trim(user.StaffId)
+
+		appRole := models.AppRoleSteward
+		if user.Id == "1" {
+			appRole = models.AppRoleSignator
+		}
 
 		newUser := models.User{
 			Email:         trim(user.Email),
@@ -210,7 +215,7 @@ func importAdminUsers(tx *pop.Connection, in []LegacyUser) {
 			LastLoginUTC:  parseStringTime(user.LastLoginUtc, userDesc+"LastLoginUTC"),
 			Location:      trim(user.Location),
 			StaffID:       user.StaffId,
-			AppRole:       models.AppRoleAdmin,
+			AppRole:       appRole,
 			CreatedAt:     parseStringTime(user.CreatedAt, userDesc+"CreatedAt"),
 		}
 
