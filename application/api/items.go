@@ -90,12 +90,12 @@ type Item struct {
 	// annual premium (0.01 USD)
 	AnnualPremium int `json:"annual_premium"`
 
-	// ID of a dependent designated as accountable person, must be null if policy_user_id is not null
+	// ID of a dependent designated as accountable person, must be null if accountable_user_id is not null
 	//
 	// swagger:strfmt uuid4
 	AccountableDependentID nulls.UUID `json:"accountable_dependent_id"`
 
-	// ID of a user designated as accountable person, must be null if policy_dependent_id is not null
+	// ID of a user designated as accountable person, must be null if accountable_dependent_id is not null
 	//
 	// swagger:strfmt uuid4
 	AccountableUserID nulls.UUID `json:"accountable_user_id"`
