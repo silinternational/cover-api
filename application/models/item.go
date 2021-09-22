@@ -3,6 +3,7 @@ package models
 import (
 	"errors"
 	"fmt"
+	"math"
 	"net/http"
 	"time"
 
@@ -301,7 +302,7 @@ func (i *Item) canAutoApprove(tx *pop.Connection) bool {
 
 	// Dependents have different rules based on the total amounts of all their items
 	depTotal := totals[i.PolicyDependentID.UUID]
-	return depTotal+i.CoverageAmount <= domain.Env.DependantAutoApproveMax
+	return depTotal+i.CoverageAmount <= domain.Env.DependentAutoApproveMax
 }
 
 // Revision takes the item from Pending coverage status to Revision.
@@ -353,7 +354,7 @@ func (i *Item) Approve(tx *pop.Connection) error {
 	}
 	emitEvent(e)
 
-	return nil
+	return i.CreateLedgerEntry(tx)
 }
 
 // Deny takes the item from Pending coverage status to Denied.
@@ -437,7 +438,19 @@ func (i *Items) ConvertToAPI(tx *pop.Connection) api.Items {
 }
 
 func (i *Item) GetAnnualPremium() int {
-	return (i.CoverageAmount + 25) / 50 // 2% rounded to the nearest cent
+	p := int(math.Round(float64(i.CoverageAmount) * domain.Env.PremiumFactor))
+	if p < domain.Env.PremiumMinimum {
+		return domain.Env.PremiumMinimum
+	}
+	return p
+}
+
+func (i *Item) GetProratedPremium(t time.Time) int {
+	p := domain.CalculatePartialYearValue(i.GetAnnualPremium(), t)
+	if p < domain.Env.PremiumMinimum {
+		return domain.Env.PremiumMinimum
+	}
+	return p
 }
 
 // NewItemFromApiInput creates a new `Item` from a `ItemInput`.
@@ -516,4 +529,20 @@ func (i *Item) setAccountablePerson(tx *pop.Connection, id uuid.UUID) error {
 	}
 
 	return api.NewAppError(errors.New("accountable person ID not found"), api.ErrorNoRows, api.CategoryUser)
+}
+
+func (i *Item) CreateLedgerEntry(tx *pop.Connection) error {
+	i.LoadPolicy(tx, false)
+	i.Policy.LoadEntityCode(tx, false)
+	le := LedgerEntry{
+		PolicyID:           i.PolicyID,
+		ItemID:             nulls.NewUUID(i.ID),
+		EntityCodeID:       i.Policy.EntityCodeID,
+		Amount:             i.GetProratedPremium(time.Now().UTC()),
+		DateSubmitted:      time.Now().UTC(),
+		AccountNumber:      i.Policy.Account,
+		AccountCostCenter1: i.Policy.CostCenter,
+		EntityCode:         i.Policy.EntityCode.Code,
+	}
+	return le.Create(tx)
 }

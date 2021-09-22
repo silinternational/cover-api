@@ -169,9 +169,13 @@ var Env struct {
 	InviteLifetimeDays int `default:"14" split_words:"true"`
 	MaxFileDelete      int `default:"10" split_words:"true"`
 
-	// Ensure these reflect cents and not just dollars
-	PolicyMaxCoverage       int `default:"50000" split_words:"true"` // will be multiplied by CurrencyFactor in readEnv()
-	DependantAutoApproveMax int `default:"4000" split_words:"true"`  // will be multiplied by CurrencyFactor in readEnv()
+	// The following will be multiplied by CurrencyFactor in readEnv()
+	PolicyMaxCoverage       int `default:"50000" split_words:"true"`
+	DependentAutoApproveMax int `default:"4000" split_words:"true"`
+	PremiumMinimum          int `default:"25"`
+
+	// PremiumFactor is multiplied by CoverageAmount to calculate the annual premium of an item
+	PremiumFactor float64 `default:"0.02"`
 }
 
 func init() {
@@ -192,8 +196,9 @@ func readEnv() {
 		log.Fatal(errors.New("error loading env vars: " + err.Error()))
 	}
 
-	Env.PolicyMaxCoverage *= 100
-	Env.DependantAutoApproveMax *= 100
+	Env.PolicyMaxCoverage *= CurrencyFactor
+	Env.DependentAutoApproveMax *= CurrencyFactor
+	Env.PremiumMinimum *= CurrencyFactor
 
 	// Doing this separately to avoid needing two environment variables for the same thing
 	Env.GoEnv = envy.Get("GO_ENV", "development")

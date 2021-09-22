@@ -1,0 +1,2 @@
+rename_column("ledger_entries", "entity_id", "entity_code_id")
+change_column("ledger_entries", "date_submitted", "date", {})

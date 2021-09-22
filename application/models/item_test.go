@@ -371,11 +371,11 @@ func (ms *ModelSuite) TestItem_SubmitForApproval() {
 	itemManualApprove.CoverageAmount = itemManualApprove.Category.AutoApproveMax + 1
 	ms.NoError(ms.DB.Update(&itemManualApprove), "error updating item fixture for test")
 
-	itemManualApproveDependent.CoverageAmount = domain.Env.DependantAutoApproveMax - itemDependent.CoverageAmount + 1
+	itemManualApproveDependent.CoverageAmount = domain.Env.DependentAutoApproveMax - itemDependent.CoverageAmount + 1
 	itemManualApproveDependent.PolicyDependentID = nulls.NewUUID(dependent.ID)
 	ms.NoError(ms.DB.Update(&itemManualApproveDependent), "error updating item fixture for test")
 
-	itemAutoApproveDependent.CoverageAmount = domain.Env.DependantAutoApproveMax - itemDependent.CoverageAmount - 1
+	itemAutoApproveDependent.CoverageAmount = domain.Env.DependentAutoApproveMax - itemDependent.CoverageAmount - 1
 	itemAutoApproveDependent.PolicyDependentID = nulls.NewUUID(dependent.ID)
 	ms.NoError(ms.DB.Update(&itemAutoApproveDependent), "error updating item fixture for test")
 
@@ -532,4 +532,90 @@ func (ms *ModelSuite) TestItem_setAccountablePerson() {
 			}
 		})
 	}
+}
+
+func (ms *ModelSuite) TestItem_GetAnnualPremium() {
+	tests := []struct {
+		name     string
+		coverage int
+		want     int
+	}{
+		{
+			name:     "above the minimum",
+			coverage: 200000,
+			want:     4000,
+		},
+		{
+			name:     "round up",
+			coverage: 199999,
+			want:     4000,
+		},
+		{
+			name:     "under the minimum",
+			coverage: 100000,
+			want:     2500,
+		},
+	}
+	for _, tt := range tests {
+		ms.T().Run(tt.name, func(t *testing.T) {
+			item := Item{CoverageAmount: tt.coverage}
+			got := item.GetAnnualPremium()
+			ms.Equal(tt.want, got)
+		})
+	}
+}
+
+func (ms *ModelSuite) TestItem_GetProratedPremium() {
+	now := time.Date(1999, 3, 15, 0, 0, 0, 0, time.UTC)
+
+	tests := []struct {
+		name     string
+		coverage int
+		now      time.Time
+		want     int
+	}{
+		{
+			name:     "above the minimum",
+			coverage: 200000,
+			now:      now,
+			want:     3200,
+		},
+		{
+			name:     "round up",
+			coverage: 199999,
+			now:      now,
+			want:     3200,
+		},
+		{
+			name:     "under the minimum",
+			coverage: 100000,
+			now:      now,
+			want:     2500,
+		},
+	}
+	for _, tt := range tests {
+		ms.T().Run(tt.name, func(t *testing.T) {
+			item := Item{CoverageAmount: tt.coverage}
+			got := item.GetProratedPremium(tt.now)
+			ms.Equal(tt.want, got)
+		})
+	}
+}
+
+func (ms *ModelSuite) TestItem_CreateLedgerEntry() {
+	f := CreateItemFixtures(ms.DB, FixturesConfig{})
+	item := f.Items[0]
+	err := item.CreateLedgerEntry(ms.DB)
+	ms.NoError(err)
+
+	var le LedgerEntry
+	ms.NoError(ms.DB.Where("item_id = ?", item.ID).First(&le))
+	ms.Equal(item.PolicyID, le.PolicyID, "PolicyID is incorrect")
+	ms.Equal(item.ID, le.ItemID.UUID, "ItemID is incorrect")
+	ms.Equal(item.Policy.EntityCodeID, le.EntityCodeID, "EntityCodeID is incorrect")
+	ms.Equal(2500, le.Amount, "Amount is incorrect")
+	ms.Equal(time.Now().UTC().Truncate(time.Hour*24), le.DateSubmitted, "DateSubmitted is incorrect")
+	ms.Equal(item.Policy.Account, le.AccountNumber, "AccountNumber is incorrect")
+	ms.Equal(item.Policy.CostCenter, le.AccountCostCenter1, "AccountCostCenter1 is incorrect")
+	ms.Equal(item.Policy.EntityCode.Code, le.EntityCode, "EntityCode is incorrect")
 }

@@ -797,11 +797,11 @@ func importJournalEntries(tx *pop.Connection, entries []JournalEntry) {
 		}
 		l := models.LedgerEntry{
 			PolicyID:           policyUUID,
-			EntityID:           entityID,
+			EntityCodeID:       entityID,
 			Amount:             int(e.CustJE * domain.CurrencyFactor),
-			DateSubmitted:      formatDate(e.DateSubm),
-			DateEntered:        formatDate(e.DateEntd),
-			LegacyID:           nulls.NewInt(stringToInt(e.JERecNum, "JeRecNum")),
+			DateSubmitted:      parseStringTime(e.DateSubm, "LedgerEntry.DateSubmitted"),
+			DateEntered:        parseStringTimeToNullTime(e.DateEntd, "LedgerEntry.DateEntered"),
+			LegacyID:           nulls.NewInt(stringToInt(e.JERecNum, "LedgerEntry.LegacyID")),
 			RecordType:         nulls.NewInt(e.JERecType),
 			PolicyType:         nulls.NewInt(e.PolicyType),
 			AccountNumber:      strconv.Itoa(e.AccNum),
