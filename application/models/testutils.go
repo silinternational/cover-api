@@ -443,6 +443,10 @@ func DestroyAll() {
 	var files Files
 	destroyTable(&files)
 
+	// delete all Ledger Entries
+	var ledgerEntries LedgerEntries
+	destroyTable(&ledgerEntries)
+
 	// delete all ClaimItems
 	var claimItems ClaimItems
 	destroyTable(&claimItems)

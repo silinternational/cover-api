@@ -27,7 +27,7 @@ const (
 
 // PayoutOption
 //
-// may be one of: Repair, Replacement, FMV
+// may be one of: Repair, Replacement, FMV, FixedFraction
 //
 // swagger:model
 type PayoutOption string
