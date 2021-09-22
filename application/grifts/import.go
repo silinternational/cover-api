@@ -29,9 +29,6 @@ import (
 
 	The input file is expected to have a number of top-level objects, as defined in `LegacyData`. The `Policies`
 	list is a complex structure contained related data. The remainder are simple objects.
-
-TODO:
-	1. Make name/policy unique
 */
 
 const (
@@ -130,7 +127,7 @@ var _ = grift.Namespace("db", func() {
 			importPolicies(tx, obj.Policies)
 			importJournalEntries(tx, obj.JournalEntries)
 
-			return errors.New("blocking transaction commit until everything is ready")
+			return nil // errors.New("blocking transaction commit until everything is ready")
 		}); err != nil {
 			log.Fatalf("failed to import, %s", err)
 		}
@@ -742,8 +739,7 @@ func importItems(tx *pop.Connection, policyUUID uuid.UUID, policyID int, items [
 		itemDesc := fmt.Sprintf("Policy[%d] Item[%d] ", policyID, itemID)
 
 		newItem := models.Item{
-			// TODO: name/policy needs to be unique
-			Name:              trim(item.Name) + domain.GetUUID().String(),
+			Name:              trim(item.Name),
 			CategoryID:        itemCategoryIDMap[item.CategoryId],
 			RiskCategoryID:    riskCategoryMap[item.CategoryId],
 			InStorage:         false,
