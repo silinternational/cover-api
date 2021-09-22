@@ -2,6 +2,7 @@ package models
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"time"
 
@@ -11,6 +12,7 @@ import (
 	"github.com/gobuffalo/validate/v3"
 	"github.com/gofrs/uuid"
 
+	"github.com/silinternational/cover-api/api"
 	"github.com/silinternational/cover-api/domain"
 )
 
@@ -85,6 +87,17 @@ func (i *PolicyUserInvite) Save(tx *pop.Connection) error {
 	return save(tx, i)
 }
 
+func (i *PolicyUserInvite) Destroy(tx *pop.Connection) error {
+	if err := tx.Destroy(i); err != nil {
+		return api.NewAppError(
+			errors.New("error destroying invite: "+err.Error()),
+			api.ErrorQueryFailure,
+			api.CategoryDatabase,
+		)
+	}
+	return nil
+}
+
 func (i *PolicyUserInvite) FindByID(tx *pop.Connection, id uuid.UUID) error {
 	return tx.Find(i, id)
 }
@@ -94,7 +107,7 @@ func (i *PolicyUserInvite) FindByEmailAndPolicyID(tx *pop.Connection, email stri
 }
 
 func (i *PolicyUserInvite) GetAcceptURL() string {
-	return fmt.Sprintf("%s/invite/%s", domain.Env.UIURL, i.ID)
+	return fmt.Sprintf("%s/auth/login?invite=%s", domain.Env.UIURL, i.ID)
 }
 
 // LoadPolicy - a simple wrapper method for loading the policy
@@ -104,4 +117,59 @@ func (i *PolicyUserInvite) LoadPolicy(tx *pop.Connection, reload bool) {
 			panic("error loading item policy: " + err.Error())
 		}
 	}
+}
+
+func (i *PolicyUserInvite) Accept(tx *pop.Connection, code string, user User) error {
+	codeUUID, err := uuid.FromString(code)
+	if err != nil {
+		err = errors.New("error converting invite code from string to uuid: " + err.Error())
+		return api.NewAppError(err, api.ErrorPolicyUserInviteCode, api.CategoryUser)
+
+	}
+
+	if err := i.FindByID(tx, codeUUID); err != nil {
+		err = fmt.Errorf("failed to load policy invite: %s", err)
+		appErr := api.NewAppError(err, api.ErrorResourceNotFound, api.CategoryNotFound)
+		if domain.IsOtherThanNoRows(err) {
+			appErr.Category = api.CategoryInternal
+		}
+		return appErr
+	}
+
+	i.LoadPolicy(tx, true)
+
+	policyUser := PolicyUser{
+		PolicyID: i.PolicyID,
+		UserID:   user.ID,
+	}
+
+	if err := policyUser.Create(tx); err != nil {
+		return err
+	}
+
+	return i.Destroy(tx)
+}
+
+// DestroyIfExpired returns nil if the invite is not too old or already accepted.
+// Otherwise, it attempts to destroy it and returns an error.
+func (i *PolicyUserInvite) DestroyIfExpired(tx *pop.Connection) error {
+	now := time.Now().UTC()
+	cutoff := now.Add(time.Duration(-domain.Env.InviteLifetimeDays) * domain.DurationDay)
+	if i.CreatedAt.After(cutoff) {
+		return nil
+	}
+
+	if err := tx.Destroy(i); err != nil {
+		return api.NewAppError(
+			errors.New("error destroying expired invite: "+err.Error()),
+			api.ErrorQueryFailure,
+			api.CategoryDatabase,
+		)
+	}
+
+	return api.NewAppError(
+		errors.New("attempt to use expired invite, ID: "+i.ID.String()),
+		api.ErrorInviteExpired,
+		api.CategoryForbidden,
+	)
 }

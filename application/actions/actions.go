@@ -9,6 +9,7 @@ import (
 
 	"github.com/gobuffalo/buffalo"
 	"github.com/gobuffalo/buffalo/render"
+	"github.com/gofrs/uuid"
 
 	"github.com/silinternational/cover-api/api"
 	"github.com/silinternational/cover-api/domain"
@@ -122,4 +123,15 @@ func GetFunctionName(skip int) string {
 
 func renderOk(c buffalo.Context, v interface{}) error {
 	return c.Render(http.StatusOK, r.JSON(v))
+}
+
+func getUUIDFromParam(c buffalo.Context, param string) (uuid.UUID, error) {
+	s := c.Param(param)
+	id := uuid.FromStringOrNil(s)
+	if id == uuid.Nil {
+		newExtra(c, param, s)
+		err := fmt.Errorf("invalid %s provided: '%s'", param, s)
+		return uuid.UUID{}, api.NewAppError(err, api.ErrorMustBeAValidUUID, api.CategoryUser)
+	}
+	return id, nil
 }
