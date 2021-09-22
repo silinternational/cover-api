@@ -292,7 +292,8 @@ func getItemCategoryStatus(itemCategory LegacyItemCategory) api.ItemCategoryStat
 }
 
 func importPolicies(tx *pop.Connection, policies []LegacyPolicy) {
-	var nPolicies, nClaims, nItems, nClaimItems, nPolicyUsers, nDuplicatePolicies int
+	var nPolicies, nClaims, nItems, nClaimItems, nDuplicatePolicies int
+	var nUsers importPolicyUsersResult
 	householdsWithMultiplePolicies := map[string]struct{}{}
 
 	for i := range policies {
@@ -358,7 +359,9 @@ func importPolicies(tx *pop.Connection, policies []LegacyPolicy) {
 		nClaimItems += importClaims(tx, policyUUID, p.Claims)
 		nClaims += len(p.Claims)
 
-		nPolicyUsers += importPolicyUsers(tx, p, policyUUID)
+		r := importPolicyUsers(tx, p, policyUUID)
+		nUsers.policyUsersCreated += r.policyUsersCreated
+		nUsers.usersCreated += r.usersCreated
 
 		if policyIsActive && entityCodeID.Valid {
 			activeEntities[entityCodeID.UUID] = struct{}{}
@@ -372,7 +375,8 @@ func importPolicies(tx *pop.Connection, policies []LegacyPolicy) {
 	fmt.Printf("  Claims: %d\n", nClaims)
 	fmt.Printf("  Items: %d\n", nItems)
 	fmt.Printf("  ClaimItems: %d\n", nClaimItems)
-	fmt.Printf("  PolicyUsers: %d w/staffID: %d\n", nPolicyUsers, nPolicyUsersWithStaffID)
+	fmt.Printf("  PolicyUsers: %d w/staffID: %d\n", nUsers.policyUsersCreated, nPolicyUsersWithStaffID)
+	fmt.Printf("  Users: %d\n", nUsers.usersCreated)
 	fmt.Printf("  Entity Codes: %d total, %d active\n", len(entityCodesMap), len(activeEntities))
 }
 
@@ -467,15 +471,21 @@ func normalizePolicy(p *LegacyPolicy) error {
 	return nil
 }
 
-func importPolicyUsers(tx *pop.Connection, p LegacyPolicy, policyID uuid.UUID) int {
+type importPolicyUsersResult struct {
+	policyUsersCreated int
+	usersCreated       int
+}
+
+func importPolicyUsers(tx *pop.Connection, p LegacyPolicy, policyID uuid.UUID) importPolicyUsersResult {
+	var result importPolicyUsersResult
+
 	if p.Email == "" {
 		if !SilenceBadEmailWarning {
 			log.Printf("Policy[%s].Email is empty\n", p.Id)
 		}
-		return 0
+		return result
 	}
 
-	n := 0
 	s := strings.Split(strings.ReplaceAll(p.Email, " ", ","), ",")
 	for _, email := range s {
 		validEmail, ok := validMailAddress(email)
@@ -485,22 +495,26 @@ func importPolicyUsers(tx *pop.Connection, p LegacyPolicy, policyID uuid.UUID) i
 			}
 			continue
 		}
-		createPolicyUser(tx, validEmail, policyID)
-		n++
+		r := createPolicyUser(tx, validEmail, policyID)
+		result.policyUsersCreated += r.policyUsersCreated
+		result.usersCreated += r.usersCreated
 	}
-	return n
+	return result
 }
 
-func createPolicyUser(tx *pop.Connection, email string, policyID uuid.UUID) {
+func createPolicyUser(tx *pop.Connection, email string, policyID uuid.UUID) importPolicyUsersResult {
+	result := importPolicyUsersResult{}
+
 	email = strings.ToLower(email)
 	userID, ok := userEmailMap[email]
 	if !ok {
 		user := createUserFromEmailAddress(tx, email)
 		userID = user.ID
+		result.usersCreated = 1
 	}
 
 	if _, ok = policyUserMap[policyID.String()+userID.String()]; ok {
-		return
+		return result
 	}
 
 	policyUser := models.PolicyUser{
@@ -510,8 +524,11 @@ func createPolicyUser(tx *pop.Connection, email string, policyID uuid.UUID) {
 	if err := policyUser.Create(tx); err != nil {
 		log.Fatalf("failed to create new PolicyUser, %s", err)
 	}
+	result.policyUsersCreated = 1
 
 	policyUserMap[policyID.String()+userID.String()] = struct{}{}
+
+	return result
 }
 
 func createUserFromEmailAddress(tx *pop.Connection, email string) models.User {
