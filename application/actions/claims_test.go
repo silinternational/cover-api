@@ -454,7 +454,7 @@ func (as *ActionSuite) Test_ClaimsItemsCreate() {
 			actor:      sameUser,
 			claim:      claim,
 			input:      inputItemIDMismatch,
-			wantStatus: http.StatusBadRequest,
+			wantStatus: http.StatusNotFound,
 			wantInBody: []string{string(api.ErrorClaimItemCreateInvalidInput), "claim and item do not have same policy id"},
 		},
 		{

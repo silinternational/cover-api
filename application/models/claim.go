@@ -301,7 +301,7 @@ func (c *Claim) AddItem(tx *pop.Connection, input api.ClaimItemCreateInput) (Cla
 	if c.PolicyID != item.PolicyID {
 		err := fmt.Errorf("claim and item do not have same policy id: %s vs. %s",
 			c.PolicyID.String(), item.PolicyID.String())
-		appErr := api.NewAppError(err, api.ErrorClaimItemCreateInvalidInput, api.CategoryUser)
+		appErr := api.NewAppError(err, api.ErrorClaimItemCreateInvalidInput, api.CategoryNotFound)
 		return ClaimItem{}, appErr
 	}
 
