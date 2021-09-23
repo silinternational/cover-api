@@ -8,7 +8,7 @@ import (
 
 // ClaimItemStatus
 //
-// may be one of: Pending, Approved, Denied
+// may be one of: Draft, Review1, Review2, Review3, Revision, Receipt, Approved, Paid, Denied
 //
 // swagger:model
 type ClaimItemStatus string
