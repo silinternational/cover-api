@@ -29,9 +29,6 @@ import (
 
 	The input file is expected to have a number of top-level objects, as defined in `LegacyData`. The `Policies`
 	list is a complex structure contained related data. The remainder are simple objects.
-
-TODO:
-	1. Make name/policy unique
 */
 
 const (
@@ -130,7 +127,7 @@ var _ = grift.Namespace("db", func() {
 			importPolicies(tx, obj.Policies)
 			importJournalEntries(tx, obj.JournalEntries)
 
-			return errors.New("blocking transaction commit until everything is ready")
+			return nil // errors.New("blocking transaction commit until everything is ready")
 		}); err != nil {
 			log.Fatalf("failed to import, %s", err)
 		}
@@ -195,12 +192,17 @@ func importIdpUsersFromFile(idpName string) int {
 	return n
 }
 
-func importAdminUsers(tx *pop.Connection, in []LegacyUser) {
-	for _, user := range in {
+func importAdminUsers(tx *pop.Connection, users []LegacyUser) {
+	for _, user := range users {
 		userID := stringToInt(user.Id, "User ID")
 		userDesc := fmt.Sprintf("User[%d].", userID)
 
 		user.StaffId = trim(user.StaffId)
+
+		appRole := models.AppRoleSteward
+		if user.Id == "1" {
+			appRole = models.AppRoleSignator
+		}
 
 		newUser := models.User{
 			Email:         trim(user.Email),
@@ -210,7 +212,7 @@ func importAdminUsers(tx *pop.Connection, in []LegacyUser) {
 			LastLoginUTC:  parseStringTime(user.LastLoginUtc, userDesc+"LastLoginUTC"),
 			Location:      trim(user.Location),
 			StaffID:       user.StaffId,
-			AppRole:       models.AppRoleAdmin,
+			AppRole:       appRole,
 			CreatedAt:     parseStringTime(user.CreatedAt, userDesc+"CreatedAt"),
 		}
 
@@ -287,7 +289,8 @@ func getItemCategoryStatus(itemCategory LegacyItemCategory) api.ItemCategoryStat
 }
 
 func importPolicies(tx *pop.Connection, policies []LegacyPolicy) {
-	var nPolicies, nClaims, nItems, nClaimItems, nPolicyUsers, nDuplicatePolicies int
+	var nPolicies, nClaims, nItems, nClaimItems, nDuplicatePolicies int
+	var nUsers importPolicyUsersResult
 	householdsWithMultiplePolicies := map[string]struct{}{}
 
 	for i := range policies {
@@ -316,7 +319,7 @@ func importPolicies(tx *pop.Connection, policies []LegacyPolicy) {
 				householdID = nulls.NewString(p.HouseholdId)
 			}
 
-			desc := fmt.Sprintf("Policy[%d].", policyID)
+			desc := fmt.Sprintf("Policy[%d] ", policyID)
 			newPolicy := models.Policy{
 				Type:         getPolicyType(p),
 				HouseholdID:  householdID,
@@ -347,13 +350,15 @@ func importPolicies(tx *pop.Connection, policies []LegacyPolicy) {
 			nPolicies++
 		}
 
-		policyIsActive := importItems(tx, policyUUID, p.Items)
+		policyIsActive := importItems(tx, policyUUID, policyID, p.Items)
 		nItems += len(p.Items)
 
 		nClaimItems += importClaims(tx, policyUUID, p.Claims)
 		nClaims += len(p.Claims)
 
-		nPolicyUsers += importPolicyUsers(tx, p, policyUUID)
+		r := importPolicyUsers(tx, p, policyUUID)
+		nUsers.policyUsersCreated += r.policyUsersCreated
+		nUsers.usersCreated += r.usersCreated
 
 		if policyIsActive && entityCodeID.Valid {
 			activeEntities[entityCodeID.UUID] = struct{}{}
@@ -367,7 +372,8 @@ func importPolicies(tx *pop.Connection, policies []LegacyPolicy) {
 	fmt.Printf("  Claims: %d\n", nClaims)
 	fmt.Printf("  Items: %d\n", nItems)
 	fmt.Printf("  ClaimItems: %d\n", nClaimItems)
-	fmt.Printf("  PolicyUsers: %d w/staffID: %d\n", nPolicyUsers, nPolicyUsersWithStaffID)
+	fmt.Printf("  PolicyUsers: %d w/staffID: %d\n", nUsers.policyUsersCreated, nPolicyUsersWithStaffID)
+	fmt.Printf("  Users: %d\n", nUsers.usersCreated)
 	fmt.Printf("  Entity Codes: %d total, %d active\n", len(entityCodesMap), len(activeEntities))
 }
 
@@ -444,7 +450,7 @@ func normalizePolicy(p *LegacyPolicy) error {
 		p.EntityCode = nulls.String{}
 
 		if p.HouseholdId == "" {
-			return fmt.Errorf("Policy[%s].HouseholdId is empty, dropping policy", p.Id)
+			return fmt.Errorf("Policy[%s] HouseholdId is empty, dropping policy", p.Id)
 		}
 	}
 
@@ -452,25 +458,31 @@ func normalizePolicy(p *LegacyPolicy) error {
 		p.HouseholdId = ""
 
 		if !p.EntityCode.Valid || p.EntityCode.String == "" {
-			return fmt.Errorf("Policy[%s].EntityCode is empty, dropping policy", p.Id)
+			return fmt.Errorf("Policy[%s] EntityCode is empty, dropping policy", p.Id)
 		}
 		if p.CostCenter == "" {
-			return fmt.Errorf("Policy[%s].CostCenter is empty, dropping policy", p.Id)
+			return fmt.Errorf("Policy[%s] CostCenter is empty, dropping policy", p.Id)
 		}
 	}
 
 	return nil
 }
 
-func importPolicyUsers(tx *pop.Connection, p LegacyPolicy, policyID uuid.UUID) int {
+type importPolicyUsersResult struct {
+	policyUsersCreated int
+	usersCreated       int
+}
+
+func importPolicyUsers(tx *pop.Connection, p LegacyPolicy, policyID uuid.UUID) importPolicyUsersResult {
+	var result importPolicyUsersResult
+
 	if p.Email == "" {
 		if !SilenceBadEmailWarning {
-			log.Printf("Policy[%s].Email is empty\n", p.Id)
+			log.Printf("Policy[%s] Email is empty\n", p.Id)
 		}
-		return 0
+		return result
 	}
 
-	n := 0
 	s := strings.Split(strings.ReplaceAll(p.Email, " ", ","), ",")
 	for _, email := range s {
 		validEmail, ok := validMailAddress(email)
@@ -480,22 +492,26 @@ func importPolicyUsers(tx *pop.Connection, p LegacyPolicy, policyID uuid.UUID) i
 			}
 			continue
 		}
-		createPolicyUser(tx, validEmail, policyID)
-		n++
+		r := createPolicyUser(tx, validEmail, policyID)
+		result.policyUsersCreated += r.policyUsersCreated
+		result.usersCreated += r.usersCreated
 	}
-	return n
+	return result
 }
 
-func createPolicyUser(tx *pop.Connection, email string, policyID uuid.UUID) {
+func createPolicyUser(tx *pop.Connection, email string, policyID uuid.UUID) importPolicyUsersResult {
+	result := importPolicyUsersResult{}
+
 	email = strings.ToLower(email)
 	userID, ok := userEmailMap[email]
 	if !ok {
 		user := createUserFromEmailAddress(tx, email)
 		userID = user.ID
+		result.usersCreated = 1
 	}
 
 	if _, ok = policyUserMap[policyID.String()+userID.String()]; ok {
-		return
+		return result
 	}
 
 	policyUser := models.PolicyUser{
@@ -505,8 +521,11 @@ func createPolicyUser(tx *pop.Connection, email string, policyID uuid.UUID) {
 	if err := policyUser.Create(tx); err != nil {
 		log.Fatalf("failed to create new PolicyUser, %s", err)
 	}
+	result.policyUsersCreated = 1
 
 	policyUserMap[policyID.String()+userID.String()] = struct{}{}
+
+	return result
 }
 
 func createUserFromEmailAddress(tx *pop.Connection, email string) models.User {
@@ -573,7 +592,7 @@ func importClaims(tx *pop.Connection, policyID uuid.UUID, claims []LegacyClaim) 
 func importClaimItems(tx *pop.Connection, claim models.Claim, items []LegacyClaimItem) {
 	for _, c := range items {
 		claimItemID := stringToInt(c.Id, "ClaimItem ID")
-		itemDesc := fmt.Sprintf("ClaimItem[%d].", claimItemID)
+		itemDesc := fmt.Sprintf("Claim[%d] ClaimItem[%d] ", claim.LegacyID.Int, claimItemID)
 
 		itemUUID, ok := itemIDMap[c.ItemId]
 		if !ok {
@@ -713,21 +732,20 @@ func getClaimStatus(claim LegacyClaim) api.ClaimStatus {
 }
 
 // importItems loads legacy items onto a policy. Returns true if at least one item is approved.
-func importItems(tx *pop.Connection, policyID uuid.UUID, items []LegacyItem) bool {
+func importItems(tx *pop.Connection, policyUUID uuid.UUID, policyID int, items []LegacyItem) bool {
 	active := false
 	for _, item := range items {
 		itemID := stringToInt(item.Id, "Item ID")
-		itemDesc := fmt.Sprintf("Item[%d].", itemID)
+		itemDesc := fmt.Sprintf("Policy[%d] Item[%d] ", policyID, itemID)
 
 		newItem := models.Item{
-			// TODO: name/policy needs to be unique
-			Name:              trim(item.Name) + domain.GetUUID().String(),
+			Name:              trim(item.Name),
 			CategoryID:        itemCategoryIDMap[item.CategoryId],
 			RiskCategoryID:    riskCategoryMap[item.CategoryId],
 			InStorage:         false,
 			Country:           trim(item.Country),
 			Description:       trim(item.Description),
-			PolicyID:          policyID,
+			PolicyID:          policyUUID,
 			Make:              trim(item.Make),
 			Model:             trim(item.Model),
 			SerialNumber:      trim(item.SerialNumber),
