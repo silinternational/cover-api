@@ -339,6 +339,12 @@ func claimsApprove(c buffalo.Context) error {
 //     in: path
 //     required: true
 //     description: claim ID
+//   - name: claim deny input
+//     in: body
+//     description: claim deny input object
+//     required: true
+//     schema:
+//       "$ref": "#/definitions/ClaimStatusInput"
 // responses:
 //   '200':
 //     description: Claim in focus
