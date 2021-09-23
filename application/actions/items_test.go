@@ -32,6 +32,8 @@ func (as *ActionSuite) Test_ItemsList() {
 
 	normalUser := fixtures.Policies[1].Members[0]
 
+	item2.Load(as.DB)
+
 	tests := []struct {
 		name          string
 		actor         models.User
@@ -69,15 +71,18 @@ func (as *ActionSuite) Test_ItemsList() {
 				fmt.Sprintf(`"in_storage":%t`, item2.InStorage),
 				`"country":"` + item2.Country,
 				`"description":"` + item2.Description,
+				`"policy_id":"` + item2.PolicyID.String(),
 				`"make":"` + item2.Make,
 				`"model":"` + item2.Model,
 				`"serial_number":"` + item2.SerialNumber,
 				fmt.Sprintf(`"coverage_amount":%v`, item2.CoverageAmount),
 				`"coverage_status":"` + string(item2.CoverageStatus),
 				`"coverage_start_date":"` + item2.CoverageStartDate.Format("2006-01-02"),
-				`"category":{"id":"`,
 				`"name":"` + item2.Name,
-				// TODO add some checks for the Item Category
+				`"category":{"id":"` + item2.CategoryID.String(),
+				`"name":"` + item2.Category.Name,
+				`"risk_category":{"id":"` + item2.Category.RiskCategoryID.String(),
+				`"name":"` + item2.Category.RiskCategory.Name,
 				`{"id":"` + item3.ID.String(),
 			},
 			notWantInBody: fixtures.Policies[0].ID.String(),

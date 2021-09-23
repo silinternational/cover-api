@@ -301,7 +301,7 @@ func (c *Claim) AddItem(tx *pop.Connection, input api.ClaimItemCreateInput) (Cla
 	if c.PolicyID != item.PolicyID {
 		err := fmt.Errorf("claim and item do not have same policy id: %s vs. %s",
 			c.PolicyID.String(), item.PolicyID.String())
-		appErr := api.NewAppError(err, api.ErrorClaimItemCreateInvalidInput, api.CategoryUser)
+		appErr := api.NewAppError(err, api.ErrorClaimItemCreateInvalidInput, api.CategoryNotFound)
 		return ClaimItem{}, appErr
 	}
 
@@ -327,13 +327,15 @@ func (c *Claim) SubmitForApproval(ctx context.Context) error {
 		c.Status = api.ClaimStatusReview1
 		eventType = domain.EventApiClaimReview1
 	case api.ClaimStatusReceipt:
-		// TODO ensure there is a file attached for a receipt
+		if !c.HasReceiptFile(Tx(ctx)) {
+			err := errors.New("submitting this claim at this stage is not allowed until a receipt is attached")
+			return api.NewAppError(err, api.ErrorClaimStatus, api.CategoryUser)
+		}
 		c.Status = api.ClaimStatusReview2
 		eventType = domain.EventApiClaimReview2
 	default:
 		err := fmt.Errorf("invalid claim status for submit: %s", oldStatus)
-		appErr := api.NewAppError(err, api.ErrorClaimStatus, api.CategoryUser)
-		return appErr
+		return api.NewAppError(err, api.ErrorClaimStatus, api.CategoryUser)
 	}
 
 	if err := c.Update(ctx); err != nil {
@@ -522,6 +524,15 @@ func (c *Claim) LoadClaimFiles(tx *pop.Connection, reload bool) {
 			panic("database error loading Claim.ClaimFiles, " + err.Error())
 		}
 	}
+}
+
+func (c *Claim) HasReceiptFile(tx *pop.Connection) bool {
+	var claimFiles ClaimFiles
+	count, err := tx.Where("claim_id = ? AND purpose = ?", c.ID, api.ClaimFilePurposeReceipt).Count(&claimFiles)
+	if err != nil {
+		panic("error trying to count Claim's receipt files")
+	}
+	return count > 0
 }
 
 func (c *Claim) ConvertToAPI(tx *pop.Connection) api.Claim {

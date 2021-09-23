@@ -397,7 +397,6 @@ func (as *ActionSuite) Test_ClaimsCreate() {
 	}
 }
 
-// TODO make this test more robust
 func (as *ActionSuite) Test_ClaimsItemsCreate() {
 	fixConfig := models.FixturesConfig{
 		NumberOfPolicies:    3,
@@ -411,6 +410,7 @@ func (as *ActionSuite) Test_ClaimsItemsCreate() {
 
 	claim := fixtures.Policies[1].Claims[0]
 	item := fixtures.Policies[1].Items[0]
+	otherPolicyItem := fixtures.Policies[0].Items[0]
 
 	otherUser := fixtures.Policies[0].Members[0]
 	sameUser := fixtures.Policies[1].Members[0]
@@ -426,6 +426,12 @@ func (as *ActionSuite) Test_ClaimsItemsCreate() {
 		FMV:             250,
 	}
 
+	inputItemIDNotFound := input
+	inputItemIDNotFound.ItemID = domain.GetUUID()
+
+	inputItemIDMismatch := input
+	inputItemIDMismatch.ItemID = otherPolicyItem.ID
+
 	tests := []struct {
 		name          string
 		actor         models.User
@@ -436,13 +442,20 @@ func (as *ActionSuite) Test_ClaimsItemsCreate() {
 		notWantInBody string
 	}{
 		{
-			name:          "incomplete input",
-			actor:         sameUser,
-			claim:         claim,
-			input:         api.ClaimItemCreateInput{},
-			wantStatus:    http.StatusNotFound,
-			wantInBody:    []string{api.ErrorResourceNotFound.String()},
-			notWantInBody: claim.ID.String(),
+			name:       "item id not in database",
+			actor:      sameUser,
+			claim:      claim,
+			input:      inputItemIDNotFound,
+			wantStatus: http.StatusNotFound,
+			wantInBody: []string{string(api.ErrorResourceNotFound), "failed to load item"},
+		},
+		{
+			name:       "item id from wrong policy",
+			actor:      sameUser,
+			claim:      claim,
+			input:      inputItemIDMismatch,
+			wantStatus: http.StatusNotFound,
+			wantInBody: []string{string(api.ErrorClaimItemCreateInvalidInput), "claim and item do not have same policy id"},
 		},
 		{
 			name:       "valid input",

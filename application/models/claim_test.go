@@ -523,6 +523,55 @@ func (ms *ModelSuite) TestClaim_Deny() {
 	}
 }
 
+func (ms *ModelSuite) TestClaim_HasReceiptFile() {
+	db := ms.DB
+	config := FixturesConfig{
+		NumberOfPolicies: 3,
+		ItemsPerPolicy:   1,
+		ClaimsPerPolicy:  1,
+	}
+	fixtures := CreateItemFixtures(db, config)
+
+	files := CreateFileFixtures(db, 2, CreateAdminUsers(db)[AppRoleAdmin].ID).Files
+
+	policies := fixtures.Policies
+
+	claimNoFile := UpdateClaimStatus(db, policies[0].Claims[0], api.ClaimStatusReceipt, "")
+	claimNoReceiptFile := UpdateClaimStatus(db, policies[1].Claims[0], api.ClaimStatusReceipt, "")
+	claimWithReceipt := UpdateClaimStatus(db, policies[2].Claims[0], api.ClaimStatusReceipt, "")
+
+	ms.NoError(NewClaimFile(claimNoReceiptFile.ID, files[0].ID, api.ClaimFilePurposeRepairEstimate).Create(db))
+	ms.NoError(NewClaimFile(claimWithReceipt.ID, files[1].ID, api.ClaimFilePurposeReceipt).Create(db))
+
+	tests := []struct {
+		name  string
+		claim Claim
+		want  bool
+	}{
+		{
+			name:  "has no file at all",
+			claim: claimNoFile,
+			want:  false,
+		},
+		{
+			name:  "has only a non-receipt file",
+			claim: claimNoReceiptFile,
+			want:  false,
+		},
+		{
+			name:  "has a receipt file",
+			claim: claimWithReceipt,
+			want:  true,
+		},
+	}
+	for _, tt := range tests {
+		ms.T().Run(tt.name, func(t *testing.T) {
+			got := tt.claim.HasReceiptFile(db)
+			ms.Equal(tt.want, got, "incorrect value for whether claim has a receipt file")
+		})
+	}
+}
+
 func (ms *ModelSuite) TestClaim_ConvertToAPI() {
 	policy := CreatePolicyFixtures(ms.DB, FixturesConfig{}).Policies[0]
 	claim := createClaimFixture(ms.DB, policy, FixturesConfig{
