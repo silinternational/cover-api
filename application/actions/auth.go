@@ -90,7 +90,7 @@ func authRequest(c buffalo.Context) error {
 
 	inviteCode := c.Param(InviteCodeParam)
 	if inviteCode != "" {
-		if appErr := validateInviteOnLogin(inviteCode, c); appErr != nil {
+		if appErr := validateInviteOnLogin(c, inviteCode); appErr != nil {
 			return reportErrorAndClearSession(c, appErr)
 		}
 	}
@@ -142,7 +142,7 @@ func getOrSetReturnTo(c buffalo.Context) string {
 }
 
 // check for valid matching invite and save the code to the Session
-func validateInviteOnLogin(inviteCode string, c buffalo.Context) *api.AppError {
+func validateInviteOnLogin(c buffalo.Context, inviteCode string) *api.AppError {
 	appErr := api.AppError{Key: api.ErrorProcessingAuthInviteCode}
 
 	tx, ok := c.Value(domain.ContextKeyTx).(*pop.Connection)
@@ -217,9 +217,6 @@ func authCallback(c buffalo.Context) error {
 	// if we have an authuser, find or create user in local db and finish login
 	var user models.User
 
-	// login was success, clear session so new login can be initiated if needed
-	c.Session().Clear()
-
 	authUser := authResp.AuthUser
 	tx := models.Tx(c)
 	if err := user.FindOrCreateFromAuthUser(tx, authUser); err != nil {
@@ -237,6 +234,9 @@ func authCallback(c buffalo.Context) error {
 			reportErrorAndClearSession(c, err)
 		}
 	}
+
+	// login was success, clear session so new login can be initiated if needed
+	c.Session().Clear()
 
 	isNew := false
 	if time.Since(user.CreatedAt) < time.Duration(time.Second*30) {
