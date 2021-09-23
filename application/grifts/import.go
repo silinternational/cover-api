@@ -327,6 +327,7 @@ func importPolicies(tx *pop.Connection, policies []LegacyPolicy) {
 				Account:      strconv.Itoa(p.Account),
 				EntityCodeID: entityCodeID,
 				Notes:        p.Notes,
+				Email:        p.Email,
 				LegacyID:     nulls.NewInt(policyID),
 				CreatedAt:    parseStringTime(p.CreatedAt, desc+"CreatedAt"),
 			}
@@ -535,9 +536,10 @@ func createUserFromEmailAddress(tx *pop.Connection, email string) models.User {
 	}
 
 	user := models.User{
-		Email:   email,
-		StaffID: staffID,
-		AppRole: models.AppRoleUser,
+		Email:        email,
+		StaffID:      staffID,
+		AppRole:      models.AppRoleUser,
+		LastLoginUTC: emptyTime,
 	}
 	if err := user.Create(tx); err != nil {
 		log.Fatalf("failed to create new User for policy, %s", err)
@@ -615,6 +617,7 @@ func importClaimItems(tx *pop.Connection, claim models.Claim, items []LegacyClai
 			ReviewerID:      getAdminUserUUID(strconv.Itoa(c.ReviewerId), itemDesc+"ReviewerID"),
 			LegacyID:        nulls.NewInt(claimItemID),
 			CreatedAt:       parseStringTime(c.CreatedAt, itemDesc+"CreatedAt"),
+			Location:        trim(c.Location),
 		}
 
 		if err := newClaimItem.Create(tx); err != nil {
@@ -661,6 +664,8 @@ func getClaimItemStatus(status string) api.ClaimItemStatus {
 		s = api.ClaimItemStatusRevision
 	case "approved":
 		s = api.ClaimItemStatusApproved
+	case "paid":
+		s = api.ClaimItemStatusPaid
 	case "denied":
 		s = api.ClaimItemStatusDenied
 	default:
@@ -720,6 +725,8 @@ func getClaimStatus(claim LegacyClaim) api.ClaimStatus {
 	var claimStatus api.ClaimStatus
 
 	switch claim.Status {
+	case "paid":
+		claimStatus = api.ClaimStatusPaid
 	case "approved":
 		claimStatus = api.ClaimStatusApproved
 
@@ -742,7 +749,7 @@ func importItems(tx *pop.Connection, policyUUID uuid.UUID, policyID int, items [
 			Name:              trim(item.Name),
 			CategoryID:        itemCategoryIDMap[item.CategoryId],
 			RiskCategoryID:    riskCategoryMap[item.CategoryId],
-			InStorage:         false,
+			InStorage:         item.InStorage == 1,
 			Country:           trim(item.Country),
 			Description:       trim(item.Description),
 			PolicyID:          policyUUID,
@@ -859,7 +866,7 @@ func formatDate(d string) string {
 }
 
 func parseStringTime(t, desc string) time.Time {
-	if t == "" {
+	if t == "" || strings.Contains(t, "1970-01-01") {
 		if !SilenceEmptyTimeWarnings {
 			log.Printf("%s is empty, using %s", desc, EmptyTime)
 		}
@@ -892,7 +899,7 @@ func parseNullStringTimeToTime(t nulls.String, desc string) time.Time {
 }
 
 func parseStringTimeToNullTime(t, desc string) nulls.Time {
-	if t == "" {
+	if t == "" || strings.Contains(t, "1970-01-01") {
 		if !SilenceEmptyTimeWarnings {
 			log.Printf("time is empty, using null time, in %s", desc)
 		}

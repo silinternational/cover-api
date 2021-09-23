@@ -1,0 +1,2 @@
+add_column("policies", "email", "string", {})
+add_column("claim_items", "location", "string", {})

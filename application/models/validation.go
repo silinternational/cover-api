@@ -140,16 +140,16 @@ func claimStructLevelValidation(sl validator.StructLevel) {
 		panic("claimStructLevelValidation registered to a type other than Claim")
 	}
 
-	if claim.Status != api.ClaimStatusApproved && claim.Status != api.ClaimStatusDenied {
-		return
-	}
+	switch claim.Status {
+	case api.ClaimStatusDenied, api.ClaimStatusRevision, api.ClaimStatusReceipt,
+		api.ClaimStatusApproved, api.ClaimStatusPaid, api.ClaimStatusReview3:
+		if !claim.ReviewerID.Valid {
+			sl.ReportError(claim.Status, "reviewer_id", "ReviewerID", "reviewer_required", "")
+		}
 
-	if !claim.ReviewerID.Valid {
-		sl.ReportError(claim.Status, "reviewer_id", "ReviewerID", "reviewer_required", "")
-	}
-
-	if !claim.ReviewDate.Valid {
-		sl.ReportError(claim.Status, "review_date", "ReviewDate", "review_date_required", "")
+		if !claim.ReviewDate.Valid {
+			sl.ReportError(claim.Status, "review_date", "ReviewDate", "review_date_required", "")
+		}
 	}
 }
 
@@ -177,12 +177,11 @@ func claimItemStructLevelValidation(sl validator.StructLevel) {
 		}
 
 		return
-
 	}
 
 	switch claimItem.Status {
 	case api.ClaimItemStatusDenied, api.ClaimItemStatusRevision, api.ClaimItemStatusReceipt,
-		api.ClaimItemStatusReview3, api.ClaimItemStatusApproved:
+		api.ClaimItemStatusReview3, api.ClaimItemStatusApproved, api.ClaimItemStatusPaid:
 		if !claimItem.ReviewerID.Valid {
 			sl.ReportError(claimItem.Status, "reviewer_id", "ReviewerID", "reviewer_required", "")
 		}
