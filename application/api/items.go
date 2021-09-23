@@ -9,7 +9,7 @@ import (
 
 // ItemCoverageStatus
 //
-// may be one of: Draft, Pending, Approved, Denied
+// may be one of: Draft, Pending, Revision, Approved, Denied, Inactive
 //
 // swagger:model
 type ItemCoverageStatus string
