@@ -197,7 +197,7 @@ func authCallback(c buffalo.Context) error {
 
 	authResp := sp.AuthCallback(c)
 	if authResp.Error != nil {
-		reportErrorAndClearSession(c, &api.AppError{
+		return reportErrorAndClearSession(c, &api.AppError{
 			HttpStatus: http.StatusInternalServerError,
 			Key:        api.ErrorAuthProvidersCallback,
 			Message:    authResp.Error.Error(),
@@ -207,7 +207,7 @@ func authCallback(c buffalo.Context) error {
 	returnTo := getOrSetReturnTo(c)
 
 	if authResp.AuthUser == nil {
-		reportErrorAndClearSession(c, &api.AppError{
+		return reportErrorAndClearSession(c, &api.AppError{
 			HttpStatus: http.StatusFound,
 			Key:        api.ErrorAuthProvidersCallback,
 			Message:    "nil authResp.AuthUser",
@@ -220,7 +220,7 @@ func authCallback(c buffalo.Context) error {
 	authUser := authResp.AuthUser
 	tx := models.Tx(c)
 	if err := user.FindOrCreateFromAuthUser(tx, authUser); err != nil {
-		reportErrorAndClearSession(c, &api.AppError{
+		return reportErrorAndClearSession(c, &api.AppError{
 			HttpStatus: http.StatusInternalServerError,
 			Key:        api.ErrorWithAuthUser,
 			Message:    err.Error(),
@@ -231,7 +231,7 @@ func authCallback(c buffalo.Context) error {
 	if ok {
 		invite := models.PolicyUserInvite{}
 		if err := invite.Accept(tx, inviteCode, user); err != nil {
-			reportErrorAndClearSession(c, err)
+			return reportErrorAndClearSession(c, err)
 		}
 	}
 
@@ -246,7 +246,7 @@ func authCallback(c buffalo.Context) error {
 
 	uat, err := user.CreateAccessToken(tx, clientID)
 	if err != nil {
-		reportErrorAndClearSession(c, &api.AppError{
+		return reportErrorAndClearSession(c, &api.AppError{
 			HttpStatus: http.StatusInternalServerError,
 			Key:        api.ErrorCreatingAccessToken,
 			Message:    err.Error(),
