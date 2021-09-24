@@ -826,7 +826,6 @@ func importJournalEntries(tx *pop.Connection, entries []JournalEntry) {
 		policyUUID, err := getPolicyUUID(e.PolicyID)
 		if err != nil {
 			badPolicyIDs[e.PolicyID] = struct{}{}
-			// fmt.Printf("ledger has bad policy ID, %s\n", err)
 			continue
 		}
 		l := models.LedgerEntry{
@@ -912,7 +911,7 @@ func parseStringTimeToNullTime(t, desc string) nulls.Time {
 		if !SilenceEmptyTimeWarnings {
 			log.Printf("time is empty, using null time, in %s", desc)
 		}
-		return nulls.NewTime(emptyTime)
+		return nulls.Time{}
 	}
 
 	var tt time.Time

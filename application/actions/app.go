@@ -51,6 +51,7 @@ import (
 const idRegex = `/{id:[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-4[a-fA-F0-9]{3}-[8|9|aA|bB][a-fA-F0-9]{3}-[a-fA-F0-9]{12}}`
 
 const (
+	batchesPath    = "/batches"
 	claimsPath     = "/" + domain.TypeClaim
 	claimItemsPath = "/" + domain.TypeClaimItem
 	filesPath      = "/" + domain.TypeFile
@@ -138,6 +139,17 @@ func App() *buffalo.App {
 		auth.POST("/login", authRequest)
 		auth.POST("/callback", authCallback)
 		auth.GET("/logout", authDestroy)
+
+		// accounting batches
+		batchesGroup := app.Group(batchesPath)
+		batchesGroup.Middleware.Skip(AuthZ, batchesGetLatest)
+
+		// DO NOT COMMIT THIS
+		if domain.Env.GoEnv == "development" {
+			batchesGroup.Middleware.Skip(AuthN, batchesGetLatest)
+		}
+
+		batchesGroup.GET("/latest", batchesGetLatest)
 
 		// claims
 		claimsGroup := app.Group(claimsPath)
