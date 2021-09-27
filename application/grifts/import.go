@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"math"
 	"net/mail"
 	"os"
 	"strconv"
@@ -831,18 +832,18 @@ func importJournalEntries(tx *pop.Connection, entries []JournalEntry) {
 		l := models.LedgerEntry{
 			PolicyID:           policyUUID,
 			EntityCodeID:       entityID,
-			Amount:             int(e.CustJE * domain.CurrencyFactor),
+			Amount:             int(math.Round(e.CustJE * domain.CurrencyFactor)),
 			DateSubmitted:      parseStringTime(e.DateSubm, "LedgerEntry.DateSubmitted"),
 			DateEntered:        parseStringTimeToNullTime(e.DateEntd, "LedgerEntry.DateEntered"),
 			LegacyID:           nulls.NewInt(stringToInt(e.JERecNum, "LedgerEntry.LegacyID")),
 			RecordType:         nulls.NewInt(e.JERecType),
 			PolicyType:         nulls.NewInt(e.PolicyType),
 			AccountNumber:      strconv.Itoa(e.AccNum),
-			AccountCostCenter1: e.AccCostCtr1,
-			AccountCostCenter2: e.AccCostCtr2,
-			EntityCode:         e.Entity,
-			FirstName:          e.FirstName,
-			LastName:           e.LastName,
+			AccountCostCenter1: trim(e.AccCostCtr1),
+			AccountCostCenter2: trim(e.AccCostCtr2),
+			EntityCode:         trim(e.Entity),
+			FirstName:          trim(e.FirstName),
+			LastName:           trim(e.LastName),
 		}
 		if err := l.Create(tx); err != nil {
 			log.Fatalf("failed to create ledger entry, %s\n%+v", err, l)

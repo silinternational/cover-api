@@ -140,9 +140,7 @@ func claimStructLevelValidation(sl validator.StructLevel) {
 		panic("claimStructLevelValidation registered to a type other than Claim")
 	}
 
-	switch claim.Status {
-	case api.ClaimStatusDenied, api.ClaimStatusRevision, api.ClaimStatusReceipt,
-		api.ClaimStatusApproved, api.ClaimStatusPaid, api.ClaimStatusReview3:
+	if claim.Status.IsReview() {
 		if !claim.ReviewerID.Valid {
 			sl.ReportError(claim.Status, "reviewer_id", "ReviewerID", "reviewer_required", "")
 		}
