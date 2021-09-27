@@ -4,10 +4,8 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"strings"
 	"time"
 
-	"github.com/gobuffalo/buffalo"
 	"github.com/gobuffalo/nulls"
 	"github.com/gobuffalo/pop/v5"
 	"github.com/gofrs/uuid"
@@ -48,56 +46,35 @@ func (le *LedgerEntry) Create(tx *pop.Connection) error {
 	return create(tx, le)
 }
 
-func LatestBatch(c buffalo.Context) ([]byte, error) {
-	tx := Tx(c)
-
-	var le LedgerEntries
-	if err := le.FindLatestBatch(tx); err != nil {
-		return nil, err
-	}
-
-	return le.ToCsv()
-}
-
-func BeginningOfLastMonth(date time.Time) time.Time {
-	return date.AddDate(0, -1, -date.Day()+1)
-}
-
-func EndOfLastMonth(date time.Time) time.Time {
-	return date.AddDate(0, 0, -date.Day())
-}
-
-func (le *LedgerEntries) FindLatestBatch(tx *pop.Connection) error {
-	now := time.Date(2021, 07, 01, 0, 0, 0, 0, time.UTC)
-	// now := time.Now().UTC()
-	today := now.Truncate(time.Hour * 24)
-	firstDay := BeginningOfLastMonth(today)
-	lastDay := EndOfLastMonth(today)
+func (le *LedgerEntries) FindBatch(tx *pop.Connection, firstDay time.Time) error {
+	lastDay := domain.EndOfMonth(firstDay)
 
 	err := tx.Where("date_submitted BETWEEN ? and ?", firstDay, lastDay).
+		// TODO: re-enable this part of the query to prevent duplicate entries
 		// Where("date_entered IS NULL").
 		All(le)
 
 	return appErrorFromDB(err, api.ErrorQueryFailure)
 }
 
-func (le *LedgerEntries) ToCsv() ([]byte, error) {
-	const header1 = `"RECTYPE","BATCHID","BTCHENTRY","ORIGCOMP","SRCELEDGER","SRCETYPE","FSCSYR","FSCSPERD","SWEDIT","JRNLDESC","REVPERD","ERRBATCH","ERRENTRY","DETAILCNT","PROCESSCMD"` + "\n"
-	const header2 = `"RECTYPE","BATCHNBR","JOURNALID","TRANSNBR","DESCOMP","ROUTE","ACCTID","COMPANYID","TRANSAMT","SCURNDEC","TRANSDESC","TRANSREF","TRANSDATE","SRCELDGR","SRCETYPE"` + "\n"
-
-	rows := [][]byte{[]byte(header1), []byte(header2)}
-
+func (le *LedgerEntries) ToCsv(batchDate time.Time) ([]byte, error) {
 	if len(*le) == 0 {
 		return nil, errors.New("no ledger entries, cannot convert to CSV")
 	}
 
-	rows = append(rows, (*le)[0].csvSummaryRow())
+	const header1 = `"RECTYPE","BATCHID","BTCHENTRY","ORIGCOMP","SRCELEDGER","SRCETYPE","FSCSYR","FSCSPERD","SWEDIT","JRNLDESC","REVPERD","ERRBATCH","ERRENTRY","DETAILCNT","PROCESSCMD"` + "\n"
+	const header2 = `"RECTYPE","BATCHNBR","JOURNALID","TRANSNBR","DESCOMP","ROUTE","ACCTID","COMPANYID","TRANSAMT","SCURNDEC","TRANSDESC","TRANSREF","TRANSDATE","SRCELDGR","SRCETYPE",` +
+		`"record_type","entity_code","policy_type","cost_center_1","cost_center_2"` + // TODO: remove these columns
+		"\n"
+
+	rows := [][]byte{[]byte(header2)}
+
+	// TODO: put this back
+	// rows := [][]byte{[]byte(header1), []byte(header2)}
+	// rows = append(rows, (*le)[0].csvSummaryRow())
 
 	for i, l := range *le {
-		newRow := l.sageTransactionRow(i)
-		if strings.Contains(string(newRow), "not impl") {
-			continue
-		}
+		newRow := l.sageTransactionRow(i, batchDate)
 		rows = append(rows, newRow)
 	}
 
@@ -117,7 +94,7 @@ func (le *LedgerEntries) ToCsv() ([]byte, error) {
 func (le *LedgerEntry) csvSummaryRow() []byte {
 	date := le.DateSubmitted
 	year := date.Year()
-	period := getPeriod(int(date.Month()))
+	period := getFiscalPeriod(int(date.Month()))
 	journalDescription := date.Format("January 2006 MAP JE")
 
 	s := fmt.Sprintf(`"1","000000","00001","","GL","JE","%d","%02d",0,"%s","00",0,0,0,2`+"\n",
@@ -125,44 +102,70 @@ func (le *LedgerEntry) csvSummaryRow() []byte {
 	return []byte(s)
 }
 
-func (le *LedgerEntry) sageTransactionRow(n int) []byte {
+func (le *LedgerEntry) sageTransactionRow(n int, batchDate time.Time) []byte {
 	amount := api.Currency(le.Amount)
 
 	s := fmt.Sprintf(
-		`"2","000000","00001","%010d","",0,"%s","",%s,"2","%s","%s",%d,"GL","JE"`+"\n",
+		`"2","000000","00001","%010d","",0,"%s","",%s,"2","%s","%s",%s,"GL","JE",%d,"%s",%d,"%s","%s"`+"\n",
 		20*(n+1),
-		le.sageAccount(),
-		-amount,
+		"19349MMAP12", // TODO: move this to an environment variable
+		(-amount).String(),
 		le.sageTransactionDescription(),
-		"MC 242769",
-		20210615,
+		le.sageTransactionReference(),
+		batchDate.Format("0601")+"01", // can be any date in the batch month
+
+		// TODO: remove the following columns:
+		le.RecordType.Int,
+		le.EntityCode,
+		le.PolicyType.Int,
+		le.AccountCostCenter1,
+		le.AccountCostCenter2,
 	)
 
 	return []byte(s)
 }
 
+// TODO: make a better description format unless it has to be the same as before (which I doubt)
 func (le *LedgerEntry) sageTransactionDescription() string {
-	switch le.RecordType.Int { // TODO: change RecordType column to string
-	case 3: // ?
-		return "3"
-	case 4: // Claim
-		// TODO: figure out why names are blank in legacy data AND ensure they are not blank in new data
-		dateString := le.DateSubmitted.Format("Jan 02, 2006")
-		return fmt.Sprintf("%s,%s CCR Claim %s", le.LastName, le.FirstName, dateString)
+	ccrOrPP := "CCR"
+	if le.PolicyType.Valid && le.PolicyType.Int == 2 {
+		ccrOrPP = "PP"
 	}
-	return "(RecordType not impl)"
-}
 
-func (le *LedgerEntry) sageAccount() string {
+	recordType := "????"
+	// TODO: change RecordType column in the database to string with restricted options
 	switch le.RecordType.Int {
-	case 3: // ?
-		return "3"
-	case 4: // Claim
-		return "19340MMAP12"
+	case 1:
+		recordType = "New coverage"
+	case 2:
+		recordType = "Coverage change"
+	case 4:
+		recordType = "Claim"
 	}
-	return "(AccountID not impl)"
+
+	dateString := le.DateSubmitted.Format("Jan 02, 2006")
+
+	description := ""
+	// TODO: change this to api.PolicyTypeHousehold (requires a database update)
+	if le.EntityCode == "MMB/STM" {
+		// TODO: figure out why names are blank in legacy data AND ensure they are not blank in new data
+		description = fmt.Sprintf("%s,%s %s %s %s", le.LastName, le.FirstName, ccrOrPP, recordType, dateString)
+	} else {
+		description = fmt.Sprintf("%s %s (%s) %s", ccrOrPP, recordType, le.AccountCostCenter2, dateString)
+	}
+
+	return fmt.Sprintf("%.60s", description) // truncate to Sage limit of 60 characters
 }
 
-func getPeriod(month int) int {
+// Merge AccountCostCenter1 and AccountCostCenter2 into one column
+func (le *LedgerEntry) sageTransactionReference() string {
+	// TODO: change this to api.PolicyTypeHousehold (requires a database update)
+	if le.EntityCode == "MMB/STM" {
+		return fmt.Sprintf("MC %s", le.AccountCostCenter1)
+	}
+	return le.AccountCostCenter2
+}
+
+func getFiscalPeriod(month int) int {
 	return (month-domain.Env.FiscalStartMonth+12)%12 + 1
 }

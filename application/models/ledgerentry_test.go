@@ -2,7 +2,7 @@ package models
 
 import "testing"
 
-func (ms *ModelSuite) Test_getPeriod() {
+func (ms *ModelSuite) Test_getFiscalPeriod() {
 	tests := []struct {
 		name  string
 		month int
@@ -21,7 +21,7 @@ func (ms *ModelSuite) Test_getPeriod() {
 	}
 	for _, tt := range tests {
 		ms.T().Run(tt.name, func(t *testing.T) {
-			ms.Equal(tt.want, getPeriod(tt.month))
+			ms.Equal(tt.want, getFiscalPeriod(tt.month))
 		})
 	}
 }

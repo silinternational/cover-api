@@ -2,9 +2,11 @@ package actions
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/gobuffalo/buffalo"
 
+	"github.com/silinternational/cover-api/domain"
 	"github.com/silinternational/cover-api/models"
 )
 
@@ -26,8 +28,12 @@ import (
 func batchesGetLatest(c buffalo.Context) error {
 	tx := models.Tx(c)
 
+	now := time.Date(2021, 07, 01, 0, 0, 0, 0, time.UTC)
+	// now := time.Now().UTC()
+	today := now.Truncate(time.Hour * 24)
+	firstDay := domain.BeginningOfLastMonth(today)
 	var le models.LedgerEntries
-	if err := le.FindLatestBatch(tx); err != nil {
+	if err := le.FindBatch(tx, firstDay); err != nil {
 		return err
 	}
 
@@ -35,7 +41,7 @@ func batchesGetLatest(c buffalo.Context) error {
 		return c.Render(http.StatusNoContent, nil)
 	}
 
-	csvData, err := le.ToCsv()
+	csvData, err := le.ToCsv(firstDay)
 	if err != nil {
 		return reportError(c, err)
 	}

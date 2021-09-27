@@ -401,3 +401,11 @@ func CalculatePartialYearValue(value int, startDate time.Time) int {
 
 	return value * daysSince / 365
 }
+
+func BeginningOfLastMonth(date time.Time) time.Time {
+	return date.AddDate(0, -1, -date.Day()+1)
+}
+
+func EndOfMonth(date time.Time) time.Time {
+	return date.AddDate(0, 1, -date.Day())
+}
