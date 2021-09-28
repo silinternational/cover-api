@@ -14,6 +14,8 @@ import (
 	"github.com/silinternational/cover-api/domain"
 )
 
+const sageTransactionTemplate = `"2","000000","00001","%010d","",0,"%s","",%s,"2","%s","%s",%s,"GL","JE",%d,"%s",%d,"%s","%s"` + "\n"
+
 type LedgerEntries []LedgerEntry
 
 type LedgerEntry struct {
@@ -57,28 +59,38 @@ func (le *LedgerEntries) FindBatch(tx *pop.Connection, firstDay time.Time) error
 	return appErrorFromDB(err, api.ErrorQueryFailure)
 }
 
+type TransactionBlocks map[string]LedgerEntries // keyed by account
+
 func (le *LedgerEntries) ToCsv(batchDate time.Time) ([]byte, error) {
 	if len(*le) == 0 {
 		return nil, errors.New("no ledger entries, cannot convert to CSV")
 	}
 
 	const header1 = `"RECTYPE","BATCHID","BTCHENTRY","ORIGCOMP","SRCELEDGER","SRCETYPE","FSCSYR","FSCSPERD","SWEDIT","JRNLDESC","REVPERD","ERRBATCH","ERRENTRY","DETAILCNT","PROCESSCMD"` + "\n"
-	const header2 = `"RECTYPE","BATCHNBR","JOURNALID","TRANSNBR","DESCOMP","ROUTE","ACCTID","COMPANYID","TRANSAMT","SCURNDEC","TRANSDESC","TRANSREF","TRANSDATE","SRCELDGR","SRCETYPE",` +
-		`"record_type","entity_code","policy_type","cost_center_1","cost_center_2"` + // TODO: remove these columns
-		"\n"
+	const header2 = `"RECTYPE","BATCHNBR","JOURNALID","TRANSNBR","DESCOMP","ROUTE","ACCTID","COMPANYID","TRANSAMT","SCURNDEC","TRANSDESC","TRANSREF","TRANSDATE","SRCELDGR","SRCETYPE",` + "\n"
 
-	rows := [][]byte{[]byte(header2)}
+	rows := [][]byte{[]byte(header1), []byte(header2)}
+	rows = append(rows, (*le)[0].csvSummaryRow())
 
-	// TODO: put this back
-	// rows := [][]byte{[]byte(header1), []byte(header2)}
-	// rows = append(rows, (*le)[0].csvSummaryRow())
+	blocks := le.MakeBlocks()
 
-	for i, l := range *le {
-		newRow := l.sageTransactionRow(i, batchDate)
-		rows = append(rows, newRow)
+	n := 0
+	for account, ledgerEntries := range blocks {
+		fmt.Printf("account %s records %d\n", account, len(ledgerEntries))
+		if len(ledgerEntries) == 0 {
+			continue
+		}
+		var balance api.Currency
+		for _, l := range ledgerEntries {
+			newRow := l.sageTransactionRow(n, batchDate)
+			n++
+			balance += api.Currency(l.Amount)
+			rows = append(rows, newRow)
+		}
+		balanceRow := ledgerEntries[0].sageBalanceRow(n, batchDate, balance, account)
+		n++
+		rows = append(rows, balanceRow)
 	}
-
-	// TODO: add balance rows
 
 	var buf bytes.Buffer
 	for _, row := range rows {
@@ -89,6 +101,32 @@ func (le *LedgerEntries) ToCsv(batchDate time.Time) ([]byte, error) {
 	}
 
 	return buf.Bytes(), nil
+}
+
+func (le *LedgerEntries) MakeBlocks() TransactionBlocks {
+	blocks := TransactionBlocks{}
+	accountMap := map[string]string{
+		"MMB/STM": "40200",
+		"SIL":     "43250",
+		"WBT":     "44250",
+	}
+	for _, e := range *le {
+		var account string
+		if e.RecordType.Valid && e.RecordType.Int == 4 {
+			account = "63550" // Claims
+		} else {
+			account = accountMap[e.EntityCode]
+		}
+
+		if e.PolicyType.Valid && e.PolicyType.Int == 2 {
+			account += "MPRO12"
+		} else {
+			account += "MCMC12"
+		}
+
+		blocks[account] = append(blocks[account], e)
+	}
+	return blocks
 }
 
 func (le *LedgerEntry) csvSummaryRow() []byte {
@@ -102,24 +140,41 @@ func (le *LedgerEntry) csvSummaryRow() []byte {
 	return []byte(s)
 }
 
-func (le *LedgerEntry) sageTransactionRow(n int, batchDate time.Time) []byte {
+func (le *LedgerEntry) sageTransactionRow(rowNumber int, batchDate time.Time) []byte {
 	amount := api.Currency(le.Amount)
 
 	s := fmt.Sprintf(
-		`"2","000000","00001","%010d","",0,"%s","",%s,"2","%s","%s",%s,"GL","JE",%d,"%s",%d,"%s","%s"`+"\n",
-		20*(n+1),
+		sageTransactionTemplate,
+		20*(rowNumber+1),
 		"19349MMAP12", // TODO: move this to an environment variable
 		(-amount).String(),
 		le.sageTransactionDescription(),
 		le.sageTransactionReference(),
-		batchDate.Format("0601")+"01", // can be any date in the batch month
+		batchDate.Format("200601")+"01", // can be any date in the batch month
+	)
 
-		// TODO: remove the following columns:
-		le.RecordType.Int,
-		le.EntityCode,
-		le.PolicyType.Int,
-		le.AccountCostCenter1,
-		le.AccountCostCenter2,
+	return []byte(s)
+}
+
+func (le *LedgerEntry) sageBalanceRow(rowNumber int, batchDate time.Time, amount api.Currency, account string) []byte {
+	ccrOrPP := "CCR"
+	if le.PolicyType.Valid && le.PolicyType.Int == 2 {
+		ccrOrPP = "PP"
+	}
+
+	premiumsOrClaims := "Premiums"
+	if le.RecordType.Int == 4 {
+		premiumsOrClaims = "Claims"
+	}
+
+	s := fmt.Sprintf(
+		sageTransactionTemplate,
+		20*(rowNumber+1),
+		account, // TODO: generate this from `le`
+		amount.String(),
+		fmt.Sprintf("Total %s %s %s", le.EntityCode, ccrOrPP, premiumsOrClaims),
+		"",
+		batchDate.Format("200601")+"01", // can be any date in the batch month
 	)
 
 	return []byte(s)
