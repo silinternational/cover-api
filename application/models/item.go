@@ -537,12 +537,11 @@ func (i *Item) CreateLedgerEntry(tx *pop.Connection) error {
 	le := LedgerEntry{
 		PolicyID:           i.PolicyID,
 		ItemID:             nulls.NewUUID(i.ID),
-		EntityCodeID:       i.Policy.EntityCodeID,
+		EntityCode:         i.Policy.EntityCode.Code,
 		Amount:             i.GetProratedPremium(time.Now().UTC()),
 		DateSubmitted:      time.Now().UTC(),
 		AccountNumber:      i.Policy.Account,
 		AccountCostCenter1: i.Policy.CostCenter,
-		EntityCode:         i.Policy.EntityCode.Code,
 	}
 	return le.Create(tx)
 }

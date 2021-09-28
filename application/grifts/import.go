@@ -820,10 +820,6 @@ func importJournalEntries(tx *pop.Connection, entries []JournalEntry) {
 		//		e.DateEntd, e.DateSubm, e.Entity, e.AccNum, e.RMJE, e.JERecNum)
 		//}
 
-		var entityID nulls.UUID
-		if u, ok := entityCodesMap[e.Entity]; ok {
-			entityID = nulls.NewUUID(u)
-		}
 		policyUUID, err := getPolicyUUID(e.PolicyID)
 		if err != nil {
 			badPolicyIDs[e.PolicyID] = struct{}{}
@@ -831,13 +827,12 @@ func importJournalEntries(tx *pop.Connection, entries []JournalEntry) {
 		}
 		l := models.LedgerEntry{
 			PolicyID:           policyUUID,
-			EntityCodeID:       entityID,
 			Amount:             int(math.Round(e.CustJE * domain.CurrencyFactor)),
 			DateSubmitted:      parseStringTime(e.DateSubm, "LedgerEntry.DateSubmitted"),
 			DateEntered:        parseStringTimeToNullTime(e.DateEntd, "LedgerEntry.DateEntered"),
-			LegacyID:           nulls.NewInt(stringToInt(e.JERecNum, "LedgerEntry.LegacyID")),
-			RecordType:         nulls.NewInt(e.JERecType),
-			PolicyType:         nulls.NewInt(e.PolicyType),
+			LegacyID:           stringToInt(e.JERecNum, "LedgerEntry.LegacyID"),
+			RecordType:         getLedgerRecordType(e.JERecType),
+			RiskCategoryName:   policyTypeToRiskCategoryName(e.PolicyType),
 			AccountNumber:      strconv.Itoa(e.AccNum),
 			AccountCostCenter1: trim(e.AccCostCtr1),
 			AccountCostCenter2: trim(e.AccCostCtr2),
@@ -858,6 +853,27 @@ func importJournalEntries(tx *pop.Connection, entries []JournalEntry) {
 		i++
 	}
 	fmt.Printf("  LedgerEntries: %d (policy IDs not found: %s)\n", nImported, strings.Join(s, ","))
+}
+
+func getLedgerRecordType(i int) models.LedgerEntryRecordType {
+	types := map[int]models.LedgerEntryRecordType{
+		1:  models.LedgerEntryRecordTypeNewCoverage,
+		2:  models.LedgerEntryRecordTypeCoverageChange,
+		3:  models.LedgerEntryRecordTypePolicyAdjustment,
+		4:  models.LedgerEntryRecordTypeClaim,
+		5:  models.LedgerEntryRecordTypeLegacy5,
+		6:  models.LedgerEntryRecordTypeClaimAdjustment,
+		20: models.LedgerEntryRecordTypeLegacy20,
+	}
+	return types[i]
+}
+
+func policyTypeToRiskCategoryName(i int) string {
+	names := map[int]string{
+		1: "Mobile",
+		2: "Stationary",
+	}
+	return names[i]
 }
 
 func getPolicyUUID(id int) (uuid.UUID, error) {

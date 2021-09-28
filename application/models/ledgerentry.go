@@ -14,29 +14,50 @@ import (
 	"github.com/silinternational/cover-api/fin"
 )
 
+type LedgerEntryRecordType string
+
+const (
+	LedgerEntryRecordTypeNewCoverage      = LedgerEntryRecordType("NewCoverage")
+	LedgerEntryRecordTypeCoverageChange   = LedgerEntryRecordType("CoverageChange")
+	LedgerEntryRecordTypePolicyAdjustment = LedgerEntryRecordType("PolicyAdjustment")
+	LedgerEntryRecordTypeClaim            = LedgerEntryRecordType("Claim")
+	LedgerEntryRecordTypeLegacy5          = LedgerEntryRecordType("5")
+	LedgerEntryRecordTypeClaimAdjustment  = LedgerEntryRecordType("ClaimAdjustment")
+	LedgerEntryRecordTypeLegacy20         = LedgerEntryRecordType("20")
+)
+
+var ValidLedgerEntryRecordTypes = map[LedgerEntryRecordType]struct{}{
+	LedgerEntryRecordTypeNewCoverage:      {},
+	LedgerEntryRecordTypeCoverageChange:   {},
+	LedgerEntryRecordTypePolicyAdjustment: {},
+	LedgerEntryRecordTypeClaim:            {},
+	LedgerEntryRecordTypeLegacy5:          {},
+	LedgerEntryRecordTypeClaimAdjustment:  {},
+	LedgerEntryRecordTypeLegacy20:         {},
+}
+
 type LedgerEntries []LedgerEntry
 
 type LedgerEntry struct {
 	ID uuid.UUID `db:"id"`
 
-	PolicyID      uuid.UUID  `db:"policy_id"`
-	ItemID        nulls.UUID `db:"item_id"`
-	EntityCodeID  nulls.UUID `db:"entity_code_id"`
-	Amount        int        `db:"amount"`
-	DateSubmitted time.Time  `db:"date_submitted"`
-	DateEntered   nulls.Time `db:"date_entered"`
+	PolicyID         uuid.UUID             `db:"policy_id"`
+	ItemID           nulls.UUID            `db:"item_id"`
+	EntityCode       string                `db:"entity_code"`
+	RiskCategoryName string                `db:"risk_category_name"`
+	RecordType       LedgerEntryRecordType `db:"record_type" validate:"ledgerEntryRecordType"`
+	Amount           int                   `db:"amount"`
+	DateSubmitted    time.Time             `db:"date_submitted"`
+	DateEntered      nulls.Time            `db:"date_entered"`
 
 	// The following fields are primarily for legacy data and may not be needed long-term
 	// However, some may be useful as a permanent record in case policies change...TBD.
-	LegacyID           nulls.Int `db:"legacy_id"`
-	RecordType         nulls.Int `db:"record_type"`
-	PolicyType         nulls.Int `db:"policy_type"`
-	AccountNumber      string    `db:"account_number"`
-	AccountCostCenter1 string    `db:"account_cost_center1"`
-	AccountCostCenter2 string    `db:"account_cost_center2"`
-	EntityCode         string    `db:"entity_code"`
-	FirstName          string    `db:"first_name"`
-	LastName           string    `db:"last_name"`
+	LegacyID           int    `db:"legacy_id"`
+	AccountNumber      string `db:"account_number"`
+	AccountCostCenter1 string `db:"account_cost_center1"`
+	AccountCostCenter2 string `db:"account_cost_center2"`
+	FirstName          string `db:"first_name"`
+	LastName           string `db:"last_name"`
 
 	CreatedAt time.Time `db:"created_at"`
 	UpdatedAt time.Time `db:"updated_at"`
@@ -50,7 +71,7 @@ func (le *LedgerEntries) FindBatch(tx *pop.Connection, firstDay time.Time) error
 	lastDay := domain.EndOfMonth(firstDay)
 
 	err := tx.Where("date_submitted BETWEEN ? and ?", firstDay, lastDay).
-		Where("date_entered IS NULL").
+		// Where("date_entered IS NULL").
 		All(le)
 
 	return appErrorFromDB(err, api.ErrorQueryFailure)
@@ -79,13 +100,13 @@ func (le *LedgerEntries) ToCsv(batchDate time.Time) ([]byte, error) {
 		for _, l := range ledgerEntries {
 			sage.AppendToBatch(fin.Transaction{
 				Account:     "19349MMAP12",
-				Amount:      -l.Amount,
+				Amount:      l.Amount,
 				Description: l.transactionDescription(),
 				Reference:   l.transactionReference(),
 				Date:        batchDate, // can be any date in the batch month
 			})
 
-			balance += l.Amount
+			balance -= l.Amount
 		}
 		sage.AppendToBatch(fin.Transaction{
 			Account:     account,
@@ -108,13 +129,13 @@ func (le *LedgerEntries) MakeBlocks() TransactionBlocks {
 	}
 	for _, e := range *le {
 		var account string
-		if e.RecordType.Valid && e.RecordType.Int == 4 {
+		if e.RecordType == LedgerEntryRecordTypeClaim || e.RecordType == LedgerEntryRecordTypeClaimAdjustment {
 			account = "63550" // Claims
 		} else {
 			account = accountMap[e.EntityCode]
 		}
 
-		if e.PolicyType.Valid && e.PolicyType.Int == 2 {
+		if e.RiskCategoryName == "Stationary" {
 			account += "MPRO12"
 		} else {
 			account += "MCMC12"
@@ -127,28 +148,17 @@ func (le *LedgerEntries) MakeBlocks() TransactionBlocks {
 
 // TODO: make a better description format unless it has to be the same as before (which I doubt)
 func (le *LedgerEntry) transactionDescription() string {
-	ccrOrPP := le.policyTypeName()
-
-	recordType := "????"
-	// TODO: change RecordType column in the database to string with restricted options
-	switch le.RecordType.Int {
-	case 1:
-		recordType = "New coverage"
-	case 2:
-		recordType = "Coverage change"
-	case 4:
-		recordType = "Claim"
-	}
-
 	dateString := le.DateSubmitted.Format("Jan 02, 2006")
 
 	description := ""
 	// TODO: change this to api.PolicyTypeHousehold (requires a database update)
 	if le.EntityCode == "MMB/STM" {
 		// TODO: figure out why names are blank in legacy data AND ensure they are not blank in new data
-		description = fmt.Sprintf("%s,%s %s %s %s", le.LastName, le.FirstName, ccrOrPP, recordType, dateString)
+		description = fmt.Sprintf("%s,%s %s %s %s",
+			le.LastName, le.FirstName, le.RiskCategoryName, le.RecordType, dateString)
 	} else {
-		description = fmt.Sprintf("%s %s (%s) %s", ccrOrPP, recordType, le.AccountCostCenter2, dateString)
+		description = fmt.Sprintf("%s %s (%s) %s",
+			le.RiskCategoryName, le.RecordType, le.AccountCostCenter2, dateString)
 	}
 
 	return fmt.Sprintf("%.60s", description) // truncate to Sage limit of 60 characters
@@ -165,18 +175,10 @@ func (le *LedgerEntry) transactionReference() string {
 
 func (le *LedgerEntry) balanceDescription() string {
 	premiumsOrClaims := "Premiums"
-	if le.RecordType.Int == 4 {
+	if le.RecordType == LedgerEntryRecordTypeClaim || le.RecordType == LedgerEntryRecordTypeClaimAdjustment {
 		premiumsOrClaims = "Claims"
 	}
-	return fmt.Sprintf("Total %s %s %s", le.EntityCode, le.policyTypeName(), premiumsOrClaims)
-}
-
-func (le *LedgerEntry) policyTypeName() string {
-	ccrOrPP := "CCR"
-	if le.PolicyType.Valid && le.PolicyType.Int == 2 {
-		ccrOrPP = "PP"
-	}
-	return ccrOrPP
+	return fmt.Sprintf("Total %s %s %s", le.EntityCode, le.RiskCategoryName, premiumsOrClaims)
 }
 
 func getFiscalPeriod(month int) int {

@@ -28,7 +28,7 @@ import (
 func batchesGetLatest(c buffalo.Context) error {
 	tx := models.Tx(c)
 
-	now := time.Date(2021, 07, 01, 0, 0, 0, 0, time.UTC)
+	now := time.Date(2021, 7, 01, 0, 0, 0, 0, time.UTC)
 	// now := time.Now().UTC()
 	today := now.Truncate(time.Hour * 24)
 	firstDay := domain.BeginningOfLastMonth(today)
