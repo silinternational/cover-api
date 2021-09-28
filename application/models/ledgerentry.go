@@ -1,7 +1,6 @@
 package models
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
 	"time"
@@ -12,9 +11,8 @@ import (
 
 	"github.com/silinternational/cover-api/api"
 	"github.com/silinternational/cover-api/domain"
+	"github.com/silinternational/cover-api/fin"
 )
-
-const sageTransactionTemplate = `"2","000000","00001","%010d","",0,"%s","",%s,"2","%s","%s",%s,"GL","JE",%d,"%s",%d,"%s","%s"` + "\n"
 
 type LedgerEntries []LedgerEntry
 
@@ -52,8 +50,7 @@ func (le *LedgerEntries) FindBatch(tx *pop.Connection, firstDay time.Time) error
 	lastDay := domain.EndOfMonth(firstDay)
 
 	err := tx.Where("date_submitted BETWEEN ? and ?", firstDay, lastDay).
-		// TODO: re-enable this part of the query to prevent duplicate entries
-		// Where("date_entered IS NULL").
+		Where("date_entered IS NULL").
 		All(le)
 
 	return appErrorFromDB(err, api.ErrorQueryFailure)
@@ -66,41 +63,40 @@ func (le *LedgerEntries) ToCsv(batchDate time.Time) ([]byte, error) {
 		return nil, errors.New("no ledger entries, cannot convert to CSV")
 	}
 
-	const header1 = `"RECTYPE","BATCHID","BTCHENTRY","ORIGCOMP","SRCELEDGER","SRCETYPE","FSCSYR","FSCSPERD","SWEDIT","JRNLDESC","REVPERD","ERRBATCH","ERRENTRY","DETAILCNT","PROCESSCMD"` + "\n"
-	const header2 = `"RECTYPE","BATCHNBR","JOURNALID","TRANSNBR","DESCOMP","ROUTE","ACCTID","COMPANYID","TRANSAMT","SCURNDEC","TRANSDESC","TRANSREF","TRANSDATE","SRCELDGR","SRCETYPE",` + "\n"
-
-	rows := [][]byte{[]byte(header1), []byte(header2)}
-	rows = append(rows, (*le)[0].csvSummaryRow())
+	date := (*le)[0].DateSubmitted
+	sage := fin.Sage{
+		Year:               date.Year(),
+		Period:             getFiscalPeriod(int(date.Month())),
+		JournalDescription: date.Format("January 2006 MAP JE"),
+	}
 
 	blocks := le.MakeBlocks()
-
-	n := 0
 	for account, ledgerEntries := range blocks {
-		fmt.Printf("account %s records %d\n", account, len(ledgerEntries))
 		if len(ledgerEntries) == 0 {
 			continue
 		}
-		var balance api.Currency
+		var balance int
 		for _, l := range ledgerEntries {
-			newRow := l.sageTransactionRow(n, batchDate)
-			n++
-			balance += api.Currency(l.Amount)
-			rows = append(rows, newRow)
+			sage.AppendToBatch(fin.Transaction{
+				Account:     "19349MMAP12",
+				Amount:      -l.Amount,
+				Description: l.transactionDescription(),
+				Reference:   l.transactionReference(),
+				Date:        batchDate, // can be any date in the batch month
+			})
+
+			balance += l.Amount
 		}
-		balanceRow := ledgerEntries[0].sageBalanceRow(n, batchDate, balance, account)
-		n++
-		rows = append(rows, balanceRow)
+		sage.AppendToBatch(fin.Transaction{
+			Account:     account,
+			Amount:      balance,
+			Description: ledgerEntries[0].balanceDescription(),
+			Reference:   "",
+			Date:        batchDate,
+		})
 	}
 
-	var buf bytes.Buffer
-	for _, row := range rows {
-		_, err := buf.Write(row)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	return buf.Bytes(), nil
+	return sage.BatchToCSV()
 }
 
 func (le *LedgerEntries) MakeBlocks() TransactionBlocks {
@@ -129,63 +125,9 @@ func (le *LedgerEntries) MakeBlocks() TransactionBlocks {
 	return blocks
 }
 
-func (le *LedgerEntry) csvSummaryRow() []byte {
-	date := le.DateSubmitted
-	year := date.Year()
-	period := getFiscalPeriod(int(date.Month()))
-	journalDescription := date.Format("January 2006 MAP JE")
-
-	s := fmt.Sprintf(`"1","000000","00001","","GL","JE","%d","%02d",0,"%s","00",0,0,0,2`+"\n",
-		year, period, journalDescription)
-	return []byte(s)
-}
-
-func (le *LedgerEntry) sageTransactionRow(rowNumber int, batchDate time.Time) []byte {
-	amount := api.Currency(le.Amount)
-
-	s := fmt.Sprintf(
-		sageTransactionTemplate,
-		20*(rowNumber+1),
-		"19349MMAP12", // TODO: move this to an environment variable
-		(-amount).String(),
-		le.sageTransactionDescription(),
-		le.sageTransactionReference(),
-		batchDate.Format("200601")+"01", // can be any date in the batch month
-	)
-
-	return []byte(s)
-}
-
-func (le *LedgerEntry) sageBalanceRow(rowNumber int, batchDate time.Time, amount api.Currency, account string) []byte {
-	ccrOrPP := "CCR"
-	if le.PolicyType.Valid && le.PolicyType.Int == 2 {
-		ccrOrPP = "PP"
-	}
-
-	premiumsOrClaims := "Premiums"
-	if le.RecordType.Int == 4 {
-		premiumsOrClaims = "Claims"
-	}
-
-	s := fmt.Sprintf(
-		sageTransactionTemplate,
-		20*(rowNumber+1),
-		account, // TODO: generate this from `le`
-		amount.String(),
-		fmt.Sprintf("Total %s %s %s", le.EntityCode, ccrOrPP, premiumsOrClaims),
-		"",
-		batchDate.Format("200601")+"01", // can be any date in the batch month
-	)
-
-	return []byte(s)
-}
-
 // TODO: make a better description format unless it has to be the same as before (which I doubt)
-func (le *LedgerEntry) sageTransactionDescription() string {
-	ccrOrPP := "CCR"
-	if le.PolicyType.Valid && le.PolicyType.Int == 2 {
-		ccrOrPP = "PP"
-	}
+func (le *LedgerEntry) transactionDescription() string {
+	ccrOrPP := le.policyTypeName()
 
 	recordType := "????"
 	// TODO: change RecordType column in the database to string with restricted options
@@ -213,12 +155,28 @@ func (le *LedgerEntry) sageTransactionDescription() string {
 }
 
 // Merge AccountCostCenter1 and AccountCostCenter2 into one column
-func (le *LedgerEntry) sageTransactionReference() string {
+func (le *LedgerEntry) transactionReference() string {
 	// TODO: change this to api.PolicyTypeHousehold (requires a database update)
 	if le.EntityCode == "MMB/STM" {
 		return fmt.Sprintf("MC %s", le.AccountCostCenter1)
 	}
 	return le.AccountCostCenter2
+}
+
+func (le *LedgerEntry) balanceDescription() string {
+	premiumsOrClaims := "Premiums"
+	if le.RecordType.Int == 4 {
+		premiumsOrClaims = "Claims"
+	}
+	return fmt.Sprintf("Total %s %s %s", le.EntityCode, le.policyTypeName(), premiumsOrClaims)
+}
+
+func (le *LedgerEntry) policyTypeName() string {
+	ccrOrPP := "CCR"
+	if le.PolicyType.Valid && le.PolicyType.Int == 2 {
+		ccrOrPP = "PP"
+	}
+	return ccrOrPP
 }
 
 func getFiscalPeriod(month int) int {
