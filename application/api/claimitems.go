@@ -13,6 +13,15 @@ import (
 // swagger:model
 type ClaimItemStatus string
 
+func (s ClaimItemStatus) IsReview() bool {
+	switch s {
+	case ClaimItemStatusDenied, ClaimItemStatusRevision, ClaimItemStatusReceipt,
+		ClaimItemStatusApproved, ClaimItemStatusPaid, ClaimItemStatusReview3:
+		return true
+	}
+	return false
+}
+
 const (
 	ClaimItemStatusDraft    = ClaimItemStatus(ClaimStatusDraft)
 	ClaimItemStatusReview1  = ClaimItemStatus(ClaimStatusReview1)

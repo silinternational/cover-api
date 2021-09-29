@@ -177,9 +177,7 @@ func claimItemStructLevelValidation(sl validator.StructLevel) {
 		return
 	}
 
-	switch claimItem.Status {
-	case api.ClaimItemStatusDenied, api.ClaimItemStatusRevision, api.ClaimItemStatusReceipt,
-		api.ClaimItemStatusReview3, api.ClaimItemStatusApproved, api.ClaimItemStatusPaid:
+	if claimItem.Status.IsReview() {
 		if !claimItem.ReviewerID.Valid {
 			sl.ReportError(claimItem.Status, "reviewer_id", "ReviewerID", "reviewer_required", "")
 		}
