@@ -35,6 +35,7 @@ import (
 const (
 	TimeFormat               = "2006-01-02 15:04:05"
 	EmptyTime                = "1970-01-01 00:00:00"
+	date19700101             = "1970-01-01"
 	SilenceEmptyTimeWarnings = true
 	SilenceBadEmailWarning   = true
 )
@@ -876,7 +877,7 @@ func formatDate(d string) string {
 }
 
 func parseStringTime(t, desc string) time.Time {
-	if t == "" || strings.Contains(t, "1970-01-01") {
+	if t == "" || strings.Contains(t, date19700101) {
 		if !SilenceEmptyTimeWarnings {
 			log.Printf("%s is empty, using %s", desc, EmptyTime)
 		}
@@ -909,7 +910,7 @@ func parseNullStringTimeToTime(t nulls.String, desc string) time.Time {
 }
 
 func parseStringTimeToNullTime(t, desc string) nulls.Time {
-	if t == "" || strings.Contains(t, "1970-01-01") {
+	if t == "" || strings.Contains(t, date19700101) {
 		if !SilenceEmptyTimeWarnings {
 			log.Printf("time is empty, using null time, in %s", desc)
 		}
