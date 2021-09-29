@@ -46,32 +46,6 @@ func (ms *ModelSuite) TestClaimItem_Validate() {
 			wantErr:  true,
 		},
 		{
-			name: "approved, but no reviewer",
-			claimItem: &ClaimItem{
-				Claim: Claim{
-					IncidentType: api.ClaimIncidentTypeImpact,
-				},
-				Status:       api.ClaimItemStatusApproved,
-				PayoutOption: api.PayoutOptionRepair,
-				ReviewDate:   nulls.NewTime(time.Now()),
-			},
-			errField: "ClaimItem.ReviewerID",
-			wantErr:  true,
-		},
-		{
-			name: "denied, but no review date",
-			claimItem: &ClaimItem{
-				Claim: Claim{
-					IncidentType: api.ClaimIncidentTypeImpact,
-				},
-				Status:       api.ClaimItemStatusDenied,
-				PayoutOption: api.PayoutOptionRepair,
-				ReviewerID:   nulls.NewUUID(user.ID),
-			},
-			errField: "ClaimItem.ReviewDate",
-			wantErr:  true,
-		},
-		{
 			name: "invalid payout option",
 			claimItem: &ClaimItem{
 				Claim: Claim{
