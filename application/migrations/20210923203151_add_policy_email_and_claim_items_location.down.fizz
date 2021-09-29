@@ -1,0 +1,2 @@
+drop_column("policies", "email")
+drop_column("claim_items", "location")

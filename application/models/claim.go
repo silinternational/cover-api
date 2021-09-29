@@ -158,6 +158,9 @@ func (c *Claim) Update(ctx context.Context) error {
 func (c *Claim) UpdateByUser(ctx context.Context) error {
 	user := CurrentUser(ctx)
 	if user.IsAdmin() {
+		if c.Status.WasReviewed() {
+			c.setReviewer(ctx)
+		}
 		return c.Update(ctx)
 	}
 
@@ -361,6 +364,7 @@ func (c *Claim) RequestRevision(ctx context.Context, message string) error {
 	case api.ClaimStatusReview1, api.ClaimStatusReview3:
 		c.Status = api.ClaimStatusRevision
 		c.StatusReason = message
+		c.setReviewer(ctx)
 	default:
 		err := fmt.Errorf("invalid claim status for request revision: %s", oldStatus)
 		appErr := api.NewAppError(err, api.ErrorClaimStatus, api.CategoryUser)
@@ -401,6 +405,7 @@ func (c *Claim) RequestReceipt(ctx buffalo.Context, reason string) error {
 
 	c.Status = api.ClaimStatusReceipt
 	c.StatusReason = reason
+	c.setReviewer(ctx)
 
 	if err := c.Update(ctx); err != nil {
 		return err
@@ -437,10 +442,7 @@ func (c *Claim) Approve(ctx context.Context) error {
 		return appErr
 	}
 
-	actor := CurrentUser(ctx)
-	c.ReviewerID = nulls.NewUUID(actor.ID)
-	c.ReviewDate = nulls.NewTime(time.Now().UTC())
-	c.StatusReason = ""
+	c.setReviewer(ctx)
 
 	if err := c.Update(ctx); err != nil {
 		return err
@@ -469,10 +471,7 @@ func (c *Claim) Deny(ctx context.Context, message string) error {
 
 	c.Status = api.ClaimStatusDenied
 	c.StatusReason = message
-
-	actor := CurrentUser(ctx)
-	c.ReviewerID = nulls.NewUUID(actor.ID)
-	c.ReviewDate = nulls.NewTime(time.Now().UTC())
+	c.setReviewer(ctx)
 
 	if err := c.Update(ctx); err != nil {
 		return err
@@ -695,4 +694,11 @@ func (c *Claim) NewHistory(ctx context.Context, action string, fieldUpdate Field
 		OldValue:  fmt.Sprintf("%s", fieldUpdate.OldValue),
 		NewValue:  fmt.Sprintf("%s", fieldUpdate.NewValue),
 	}
+}
+
+func (c *Claim) setReviewer(ctx context.Context) {
+	// TODO: decide if we need more review fields for different review steps
+	actor := CurrentUser(ctx)
+	c.ReviewerID = nulls.NewUUID(actor.ID)
+	c.ReviewDate = nulls.NewTime(time.Now().UTC())
 }
