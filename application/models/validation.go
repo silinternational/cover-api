@@ -134,6 +134,23 @@ func validateItemCoverageStatus(field validator.FieldLevel) bool {
 	return false
 }
 
+func claimStructLevelValidation(sl validator.StructLevel) {
+	claim, ok := sl.Current().Interface().(Claim)
+	if !ok {
+		panic("claimStructLevelValidation registered to a type other than Claim")
+	}
+
+	if claim.Status.WasReviewed() {
+		if !claim.ReviewerID.Valid {
+			sl.ReportError(claim.Status, "reviewer_id", "ReviewerID", "reviewer_required", "")
+		}
+
+		if !claim.ReviewDate.Valid {
+			sl.ReportError(claim.Status, "review_date", "ReviewDate", "review_date_required", "")
+		}
+	}
+}
+
 func claimItemStructLevelValidation(sl validator.StructLevel) {
 	claimItem, ok := sl.Current().Interface().(ClaimItem)
 	if !ok {
@@ -158,6 +175,16 @@ func claimItemStructLevelValidation(sl validator.StructLevel) {
 		}
 
 		return
+	}
+
+	if claimItem.Status.WasReviewed() {
+		if !claimItem.ReviewerID.Valid {
+			sl.ReportError(claimItem.Status, "reviewer_id", "ReviewerID", "reviewer_required", "")
+		}
+
+		if !claimItem.ReviewDate.Valid {
+			sl.ReportError(claimItem.Status, "review_date", "ReviewDate", "review_date_required", "")
+		}
 	}
 }
 
