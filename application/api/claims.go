@@ -21,15 +21,6 @@ type ClaimIncidentType string
 // swagger:model
 type ClaimStatus string
 
-func (s ClaimStatus) WasReviewed() bool {
-	switch s {
-	case ClaimStatusDenied, ClaimStatusRevision, ClaimStatusReceipt,
-		ClaimStatusApproved, ClaimStatusPaid, ClaimStatusReview3:
-		return true
-	}
-	return false
-}
-
 const (
 	ClaimIncidentTypeTheft           = ClaimIncidentType("Theft")
 	ClaimIncidentTypeImpact          = ClaimIncidentType("Impact")

@@ -87,7 +87,6 @@ func init() {
 	}
 
 	// register struct-level validators
-	mValidate.RegisterStructValidation(claimStructLevelValidation, Claim{})
 	mValidate.RegisterStructValidation(claimItemStructLevelValidation, ClaimItem{})
 	mValidate.RegisterStructValidation(policyStructLevelValidation, Policy{})
 	mValidate.RegisterStructValidation(itemStructLevelValidation, Item{})
