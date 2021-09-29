@@ -158,7 +158,7 @@ func (c *Claim) Update(ctx context.Context) error {
 func (c *Claim) UpdateByUser(ctx context.Context) error {
 	user := CurrentUser(ctx)
 	if user.IsAdmin() {
-		if c.Status.IsReview() {
+		if c.Status.WasReviewed() {
 			c.setReviewer(ctx)
 		}
 		return c.Update(ctx)

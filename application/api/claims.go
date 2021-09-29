@@ -21,7 +21,7 @@ type ClaimIncidentType string
 // swagger:model
 type ClaimStatus string
 
-func (s ClaimStatus) IsReview() bool {
+func (s ClaimStatus) WasReviewed() bool {
 	switch s {
 	case ClaimStatusDenied, ClaimStatusRevision, ClaimStatusReceipt,
 		ClaimStatusApproved, ClaimStatusPaid, ClaimStatusReview3:

@@ -140,7 +140,7 @@ func claimStructLevelValidation(sl validator.StructLevel) {
 		panic("claimStructLevelValidation registered to a type other than Claim")
 	}
 
-	if claim.Status.IsReview() {
+	if claim.Status.WasReviewed() {
 		if !claim.ReviewerID.Valid {
 			sl.ReportError(claim.Status, "reviewer_id", "ReviewerID", "reviewer_required", "")
 		}
@@ -177,7 +177,7 @@ func claimItemStructLevelValidation(sl validator.StructLevel) {
 		return
 	}
 
-	if claimItem.Status.IsReview() {
+	if claimItem.Status.WasReviewed() {
 		if !claimItem.ReviewerID.Valid {
 			sl.ReportError(claimItem.Status, "reviewer_id", "ReviewerID", "reviewer_required", "")
 		}
