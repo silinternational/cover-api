@@ -31,6 +31,7 @@ type Policy struct {
 	EntityCodeID nulls.UUID     `db:"entity_code_id"` // validation is checked at the struct level
 	Notes        string         `db:"notes"`
 	LegacyID     nulls.Int      `db:"legacy_id"`
+	Email        string         `db:"email"`
 	CreatedAt    time.Time      `db:"created_at"`
 	UpdatedAt    time.Time      `db:"updated_at"`
 

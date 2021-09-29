@@ -23,6 +23,7 @@ var ValidClaimItemStatus = map[api.ClaimItemStatus]struct{}{
 	api.ClaimItemStatusReview2:  {},
 	api.ClaimItemStatusReview3:  {},
 	api.ClaimItemStatusApproved: {},
+	api.ClaimItemStatusPaid:     {},
 	api.ClaimItemStatusDenied:   {},
 }
 
@@ -50,6 +51,7 @@ type ClaimItem struct {
 	FMV             int                 `db:"fmv"`
 	ReviewDate      nulls.Time          `db:"review_date"`
 	ReviewerID      nulls.UUID          `db:"reviewer_id"`
+	Location        string              `db:"location"`
 	LegacyID        nulls.Int           `db:"legacy_id"`
 	CreatedAt       time.Time           `db:"created_at"`
 	UpdatedAt       time.Time           `db:"updated_at"`
@@ -77,7 +79,6 @@ func (c *ClaimItem) Create(tx *pop.Connection) error {
 
 // Update changes the status if it is a valid transition.
 func (c *ClaimItem) Update(tx *pop.Connection, oldStatus api.ClaimItemStatus, user User) error {
-
 	// Get the parent Claim's status
 	c.LoadClaim(tx, false)
 	c.Status = api.ClaimItemStatus(c.Claim.Status)

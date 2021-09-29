@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"math"
 	"net/mail"
 	"os"
 	"strconv"
@@ -34,8 +35,10 @@ import (
 const (
 	TimeFormat               = "2006-01-02 15:04:05"
 	EmptyTime                = "1970-01-01 00:00:00"
+	date19700101             = "1970-01-01"
 	SilenceEmptyTimeWarnings = true
 	SilenceBadEmailWarning   = true
+	defaultID                = "9999999999"
 )
 
 const (
@@ -327,6 +330,7 @@ func importPolicies(tx *pop.Connection, policies []LegacyPolicy) {
 				Account:      strconv.Itoa(p.Account),
 				EntityCodeID: entityCodeID,
 				Notes:        p.Notes,
+				Email:        p.Email,
 				LegacyID:     nulls.NewInt(policyID),
 				CreatedAt:    parseStringTime(p.CreatedAt, desc+"CreatedAt"),
 			}
@@ -450,7 +454,8 @@ func normalizePolicy(p *LegacyPolicy) error {
 		p.EntityCode = nulls.String{}
 
 		if p.HouseholdId == "" {
-			return fmt.Errorf("Policy[%s] HouseholdId is empty, dropping policy", p.Id)
+			p.HouseholdId = defaultID
+			log.Printf("Policy[%s] HouseholdId is empty, using %s", p.Id, defaultID)
 		}
 	}
 
@@ -458,10 +463,12 @@ func normalizePolicy(p *LegacyPolicy) error {
 		p.HouseholdId = ""
 
 		if !p.EntityCode.Valid || p.EntityCode.String == "" {
-			return fmt.Errorf("Policy[%s] EntityCode is empty, dropping policy", p.Id)
+			p.EntityCode = nulls.NewString(defaultID)
+			log.Printf("Policy[%s] EntityCode is empty, using %s", p.Id, defaultID)
 		}
 		if p.CostCenter == "" {
-			return fmt.Errorf("Policy[%s] CostCenter is empty, dropping policy", p.Id)
+			p.CostCenter = defaultID
+			log.Printf("Policy[%s] CostCenter is empty, using %s", p.Id, defaultID)
 		}
 	}
 
@@ -535,9 +542,10 @@ func createUserFromEmailAddress(tx *pop.Connection, email string) models.User {
 	}
 
 	user := models.User{
-		Email:   email,
-		StaffID: staffID,
-		AppRole: models.AppRoleUser,
+		Email:        email,
+		StaffID:      staffID,
+		AppRole:      models.AppRoleUser,
+		LastLoginUTC: emptyTime,
 	}
 	if err := user.Create(tx); err != nil {
 		log.Fatalf("failed to create new User for policy, %s", err)
@@ -615,6 +623,7 @@ func importClaimItems(tx *pop.Connection, claim models.Claim, items []LegacyClai
 			ReviewerID:      getAdminUserUUID(strconv.Itoa(c.ReviewerId), itemDesc+"ReviewerID"),
 			LegacyID:        nulls.NewInt(claimItemID),
 			CreatedAt:       parseStringTime(c.CreatedAt, itemDesc+"CreatedAt"),
+			Location:        trim(c.Location),
 		}
 
 		if err := newClaimItem.Create(tx); err != nil {
@@ -661,6 +670,8 @@ func getClaimItemStatus(status string) api.ClaimItemStatus {
 		s = api.ClaimItemStatusRevision
 	case "approved":
 		s = api.ClaimItemStatusApproved
+	case "paid":
+		s = api.ClaimItemStatusPaid
 	case "denied":
 		s = api.ClaimItemStatusDenied
 	default:
@@ -720,6 +731,8 @@ func getClaimStatus(claim LegacyClaim) api.ClaimStatus {
 	var claimStatus api.ClaimStatus
 
 	switch claim.Status {
+	case "paid":
+		claimStatus = api.ClaimStatusPaid
 	case "approved":
 		claimStatus = api.ClaimStatusApproved
 
@@ -742,7 +755,7 @@ func importItems(tx *pop.Connection, policyUUID uuid.UUID, policyID int, items [
 			Name:              trim(item.Name),
 			CategoryID:        itemCategoryIDMap[item.CategoryId],
 			RiskCategoryID:    riskCategoryMap[item.CategoryId],
-			InStorage:         false,
+			InStorage:         item.InStorage == 1,
 			Country:           trim(item.Country),
 			Description:       trim(item.Description),
 			PolicyID:          policyUUID,
@@ -816,18 +829,18 @@ func importJournalEntries(tx *pop.Connection, entries []JournalEntry) {
 		l := models.LedgerEntry{
 			PolicyID:           policyUUID,
 			EntityCodeID:       entityID,
-			Amount:             int(e.CustJE * domain.CurrencyFactor),
+			Amount:             int(math.Round(e.CustJE * domain.CurrencyFactor)),
 			DateSubmitted:      parseStringTime(e.DateSubm, "LedgerEntry.DateSubmitted"),
 			DateEntered:        parseStringTimeToNullTime(e.DateEntd, "LedgerEntry.DateEntered"),
 			LegacyID:           nulls.NewInt(stringToInt(e.JERecNum, "LedgerEntry.LegacyID")),
 			RecordType:         nulls.NewInt(e.JERecType),
 			PolicyType:         nulls.NewInt(e.PolicyType),
 			AccountNumber:      strconv.Itoa(e.AccNum),
-			AccountCostCenter1: e.AccCostCtr1,
-			AccountCostCenter2: e.AccCostCtr2,
-			EntityCode:         e.Entity,
-			FirstName:          e.FirstName,
-			LastName:           e.LastName,
+			AccountCostCenter1: trim(e.AccCostCtr1),
+			AccountCostCenter2: trim(e.AccCostCtr2),
+			EntityCode:         trim(e.Entity),
+			FirstName:          trim(e.FirstName),
+			LastName:           trim(e.LastName),
 		}
 		if err := l.Create(tx); err != nil {
 			log.Fatalf("failed to create ledger entry, %s\n%+v", err, l)
@@ -859,7 +872,7 @@ func formatDate(d string) string {
 }
 
 func parseStringTime(t, desc string) time.Time {
-	if t == "" {
+	if t == "" || strings.Contains(t, date19700101) {
 		if !SilenceEmptyTimeWarnings {
 			log.Printf("%s is empty, using %s", desc, EmptyTime)
 		}
@@ -892,7 +905,7 @@ func parseNullStringTimeToTime(t nulls.String, desc string) time.Time {
 }
 
 func parseStringTimeToNullTime(t, desc string) nulls.Time {
-	if t == "" {
+	if t == "" || strings.Contains(t, date19700101) {
 		if !SilenceEmptyTimeWarnings {
 			log.Printf("time is empty, using null time, in %s", desc)
 		}
