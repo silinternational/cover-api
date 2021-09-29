@@ -452,6 +452,93 @@ func (ms *ModelSuite) TestItem_SubmitForApproval() {
 	}
 }
 
+func (ms *ModelSuite) TestItem_SafeDeleteOrInactivate() {
+	t := ms.T()
+
+	fixConfig := FixturesConfig{
+		NumberOfPolicies:   2,
+		ItemsPerPolicy:     5,
+		ClaimsPerPolicy:    1,
+		ClaimItemsPerClaim: 1,
+	}
+
+	fixtures := CreateItemFixtures(ms.DB, fixConfig)
+	policy := fixtures.Policies[0]
+	policy.LoadItems(ms.DB, false)
+	user := policy.Members[0]
+
+	now := time.Now().UTC()
+	oldTime := now.Add(time.Hour * time.Duration(domain.ItemDeleteCutOffHours+1) * -1)
+
+	items := policy.Items
+	oldItem := items[0]
+	oldItem.CreatedAt = oldTime
+	UpdateItemStatus(ms.DB, oldItem, api.ItemCoverageStatusDraft, "")
+
+	newItem := items[1] // no associations
+	UpdateItemStatus(ms.DB, newItem, api.ItemCoverageStatusApproved, "")
+
+	// item with a LedgerEntry
+	newItemHasLE := items[2]
+	ms.NoError(newItemHasLE.CreateLedgerEntry(ms.DB), "error creating ledger entry fixture")
+
+	// item with a ClaimItem
+	claimItem := fixtures.Claims[0].ClaimItems[0]
+	claimItem.LoadItem(ms.DB, false)
+
+	newItemHasClaim := claimItem.Item
+
+	tests := []struct {
+		name        string
+		item        Item
+		actor       User
+		wantDeleted bool
+	}{
+		{
+			name:        "old item inactivate",
+			item:        oldItem,
+			actor:       user,
+			wantDeleted: false,
+		},
+		{
+			name:        "unassociated new item gets deleted",
+			item:        newItem,
+			actor:       user,
+			wantDeleted: true,
+		},
+		{
+			name:        "new item has ledger entry",
+			item:        newItemHasLE,
+			actor:       user,
+			wantDeleted: false,
+		},
+		{
+			name:        "new item has claim item",
+			item:        newItemHasClaim,
+			actor:       user,
+			wantDeleted: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := tt.item.SafeDeleteOrInactivate(ms.DB, user)
+			ms.NoError(got)
+
+			dbItem := Item{}
+			err := ms.DB.Find(&dbItem, tt.item.ID)
+
+			if tt.wantDeleted {
+				ms.Error(err, `expected a No Rows error`)
+				ms.False(domain.IsOtherThanNoRows(err), `expected a No Rows error`)
+				return
+			}
+
+			ms.Equal(api.ItemCoverageStatusInactive, dbItem.CoverageStatus, "incorrect status")
+		})
+	}
+}
+
 func (ms *ModelSuite) TestItem_LoadPolicyMembers() {
 	fixConfig := FixturesConfig{
 		NumberOfPolicies: 2,

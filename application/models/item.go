@@ -95,25 +95,26 @@ func (i *Item) FindByID(tx *pop.Connection, id uuid.UUID) error {
 }
 
 // SafeDeleteOrInactivate deletes the item if it is newish (less than 72 hours old)
-//  and if there are no ClaimItems associated with it.
+//  and if there are no ClaimItems or LedgerEntries associated with it.
 //  Otherwise, it changes its status to Inactive.
 func (i *Item) SafeDeleteOrInactivate(tx *pop.Connection, actor User) error {
-	// TODO Add a check related to whether the item already got included in the billing process.
-
 	if !i.isNewEnough() {
 		return i.Inactivate(tx)
 	}
 
-	clItems := ClaimItems{}
-	clICount, err := tx.Where("item_id = ?", i.ID).Count(&clItems)
-	if err != nil {
-		return api.NewAppError(
-			err, api.ErrorQueryFailure, api.CategoryDatabase,
-		)
-	}
-
-	if clICount > 0 {
-		return i.Inactivate(tx)
+	// Just inactivate (don't delete) if there are associated claim items or
+	//  if there are associated ledger entries
+	relations := []interface{}{&ClaimItems{}, &LedgerEntries{}}
+	for j, _ := range relations {
+		mCount, err := tx.Where("item_id = ?", i.ID).Count(relations[j])
+		if err != nil {
+			return api.NewAppError(
+				err, api.ErrorQueryFailure, api.CategoryDatabase,
+			)
+		}
+		if mCount > 0 {
+			return i.Inactivate(tx)
+		}
 	}
 
 	return tx.Destroy(i)
