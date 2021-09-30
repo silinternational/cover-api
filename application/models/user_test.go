@@ -84,12 +84,12 @@ func (ms *ModelSuite) TestUser_CreateInitialPolicy() {
 			wantErr: true,
 		},
 		{
-			name:    "good",
+			name:    "policy to be created",
 			user:    userNoPolicy,
 			wantErr: false,
 		},
 		{
-			name:    "good",
+			name:    "no new policy to create",
 			user:    userWithPolicy,
 			wantErr: false,
 		},
