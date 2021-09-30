@@ -735,3 +735,18 @@ func (ms *ModelSuite) TestItem_CreateLedgerEntry() {
 	ms.Equal(f.Users[0].FirstName, le.FirstName, "FirstName is incorrect")
 	ms.Equal(f.Users[0].LastName, le.LastName, "LastName is incorrect")
 }
+
+func (ms *ModelSuite) TestItem_GetAccountablePersonName() {
+	f := CreateItemFixtures(ms.DB, FixturesConfig{ItemsPerPolicy: 2, DependentsPerPolicy: 1})
+	item0 := f.Items[0]
+	ms.NoError(item0.setAccountablePerson(ms.DB, f.Users[0].ID))
+	first, last := item0.GetAccountablePersonName(ms.DB)
+	ms.Equal(f.Users[0].FirstName, first, "first name is not correct")
+	ms.Equal(f.Users[0].LastName, last, "last name is not correct")
+
+	item1 := f.Items[1]
+	ms.NoError(item1.setAccountablePerson(ms.DB, f.PolicyDependents[0].ID))
+	first, last = item1.GetAccountablePersonName(ms.DB)
+	ms.Contains(f.PolicyDependents[0].Name, first, "first name is not correct")
+	ms.Contains(f.PolicyDependents[0].Name, last, "last name is not correct")
+}
