@@ -71,6 +71,7 @@ func (le *LedgerEntries) FindBatch(tx *pop.Connection, firstDay time.Time) error
 	lastDay := domain.EndOfMonth(firstDay)
 
 	err := tx.Where("date_submitted BETWEEN ? and ?", firstDay, lastDay).
+		// TODO: Temporarily hardcoded to a month with closed transactions. Add this WHERE clause before going "live".
 		// Where("date_entered IS NULL").
 		All(le)
 
