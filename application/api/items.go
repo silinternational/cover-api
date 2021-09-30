@@ -23,6 +23,15 @@ const (
 	ItemCoverageStatusInactive = ItemCoverageStatus("Inactive")
 )
 
+func ActiveStatuses() []ItemCoverageStatus {
+	return []ItemCoverageStatus{
+		ItemCoverageStatusDraft,
+		ItemCoverageStatusPending,
+		ItemCoverageStatusRevision,
+		ItemCoverageStatusApproved,
+	}
+}
+
 // swagger:model
 type Items []Item
 

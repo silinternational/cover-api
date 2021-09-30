@@ -178,6 +178,18 @@ func (p *Policy) LoadItems(tx *pop.Connection, reload bool) {
 	}
 }
 
+// LoadActiveItems - loads up the policy with its active items
+func (p *Policy) LoadActiveItems(tx *pop.Connection) {
+
+	var items Items
+	if err := tx.Where("policy_id = ?", p.ID).
+		Where("coverage_status in ?", api.ActiveStatuses()).All(&items); err != nil {
+		panic("database error loading active items on Policy " + err.Error())
+	}
+
+	p.Items = items
+}
+
 // LoadMembers - a simple wrapper method for loading members on the struct
 func (p *Policy) LoadMembers(tx *pop.Connection, reload bool) {
 	if len(p.Members) == 0 || reload {
