@@ -263,6 +263,18 @@ func (u *User) CreateInitialPolicy(tx *pop.Connection) error {
 		tx = DB
 	}
 
+	// Don't create one if there is already a PolicyUser for this user
+	var pUsers []PolicyUser
+	count, err := tx.Where("user_id = ?", u.ID).Count(&pUsers)
+	if err != nil {
+		msg := fmt.Sprintf("error finding policy users for user %s: %s", u.ID, err.Error())
+		panic(msg)
+	}
+
+	if count > 0 {
+		return nil
+	}
+
 	policy := Policy{
 		Type:        api.PolicyTypeHousehold,
 		HouseholdID: nulls.NewString(fmt.Sprintf("HHID-%s-%s", u.FirstName, u.LastName)),
