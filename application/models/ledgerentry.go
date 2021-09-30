@@ -79,11 +79,7 @@ func (le *LedgerEntries) FindBatch(tx *pop.Connection, firstDay time.Time) error
 type TransactionBlocks map[string]LedgerEntries // keyed by account
 
 func (le *LedgerEntries) ToCsv(batchDate time.Time) []byte {
-	sage := fin.Sage{
-		Year:               batchDate.Year(),
-		Period:             getFiscalPeriod(int(batchDate.Month())),
-		JournalDescription: fmt.Sprintf("%s %s JE", batchDate.Format("January 2006"), domain.Env.AppName),
-	}
+	sage := fin.NewBatch("sage", batchDate)
 
 	blocks := le.MakeBlocks()
 	for account, ledgerEntries := range blocks {
@@ -155,8 +151,4 @@ func (le *LedgerEntry) balanceDescription() string {
 		premiumsOrClaims = "Claims"
 	}
 	return fmt.Sprintf("Total %s %s %s", le.EntityCode, le.RiskCategoryName, premiumsOrClaims)
-}
-
-func getFiscalPeriod(month int) int {
-	return (month-domain.Env.FiscalStartMonth+12)%12 + 1
 }
