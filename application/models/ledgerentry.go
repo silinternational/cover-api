@@ -46,6 +46,8 @@ type LedgerEntry struct {
 	RiskCategoryName string                `db:"risk_category_name"`
 	RecordType       LedgerEntryRecordType `db:"record_type" validate:"ledgerEntryRecordType"`
 	IncomeAccount    string                `db:"income_account"`
+	FirstName        string                `db:"first_name"`
+	LastName         string                `db:"last_name"`
 	Amount           int                   `db:"amount"`
 	DateSubmitted    time.Time             `db:"date_submitted"`
 	DateEntered      nulls.Time            `db:"date_entered"`
@@ -54,10 +56,8 @@ type LedgerEntry struct {
 	// However, some may be useful as a permanent record in case policies change...TBD.
 	LegacyID           nulls.Int `db:"legacy_id"`
 	AccountNumber      string    `db:"account_number"`
-	AccountCostCenter1 string    `db:"account_cost_center1"`
-	AccountCostCenter2 string    `db:"account_cost_center2"`
-	FirstName          string    `db:"first_name"`
-	LastName           string    `db:"last_name"`
+	AccountCostCenter1 string    `db:"account_cost_center1"` // TODO: rename to HouseholdID
+	AccountCostCenter2 string    `db:"account_cost_center2"` // TODO: rename to CostCenter
 
 	CreatedAt time.Time `db:"created_at"`
 	UpdatedAt time.Time `db:"updated_at"`
@@ -67,7 +67,7 @@ func (le *LedgerEntry) Create(tx *pop.Connection) error {
 	return create(tx, le)
 }
 
-func (le *LedgerEntries) FindBatch(tx *pop.Connection, firstDay time.Time) error {
+func (le *LedgerEntries) AllForMonth(tx *pop.Connection, firstDay time.Time) error {
 	lastDay := domain.EndOfMonth(firstDay)
 
 	err := tx.Where("date_submitted BETWEEN ? and ?", firstDay, lastDay).

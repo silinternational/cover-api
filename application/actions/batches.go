@@ -31,7 +31,7 @@ func batchesGetLatest(c buffalo.Context) error {
 	now := time.Now().UTC()
 	firstDay := domain.BeginningOfLastMonth(now)
 	var le models.LedgerEntries
-	if err := le.FindBatch(tx, firstDay); err != nil {
+	if err := le.AllForMonth(tx, firstDay); err != nil {
 		return err
 	}
 
