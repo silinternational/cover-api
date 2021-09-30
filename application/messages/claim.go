@@ -1,6 +1,8 @@
 package messages
 
 import (
+	"fmt"
+
 	"github.com/gobuffalo/nulls"
 	"github.com/gobuffalo/pop/v5"
 
@@ -100,6 +102,12 @@ func ClaimPreapprovedQueueMessage(tx *pop.Connection, claim models.Claim) {
 func ClaimReceiptQueueMessage(tx *pop.Connection, claim models.Claim) {
 	claim.LoadPolicyMembers(tx, false)
 	claim.LoadClaimItems(tx, false)
+
+	if len(claim.ClaimItems) == 0 {
+		msg := fmt.Sprintf("claim %s has no claim_item", claim.ID)
+		panic(msg)
+	}
+
 	clItem := claim.ClaimItems[0]
 
 	data := newEmailMessageData()
@@ -109,9 +117,9 @@ func ClaimReceiptQueueMessage(tx *pop.Connection, claim models.Claim) {
 
 	switch clItem.PayoutOption {
 	case api.PayoutOptionRepair:
-		data["receiptMessage"] = "Please provide the receipt(s) for repair costs."
+		data["receiptMessage"] = "Please provide a receipt for repair costs."
 	case api.PayoutOptionReplacement:
-		data["receiptMessage"] = "Please provide the receipt(s) for replacement costs."
+		data["receiptMessage"] = "Please provide a receipt for replacement costs."
 	}
 
 	notn := models.Notification{

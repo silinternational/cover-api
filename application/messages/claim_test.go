@@ -142,7 +142,7 @@ func (ts *TestSuite) Test_ClaimReceiptQueueMessage() {
 				domain.Env.UIURL,
 				receiptClaim.ReferenceNumber,
 				"The claim you submitted still needs a receipt.",
-				"Please provide the receipt(s) for repair costs.",
+				"Please provide a receipt for repair costs.",
 			},
 		},
 	}
