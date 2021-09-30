@@ -177,7 +177,8 @@ var Env struct {
 	// PremiumFactor is multiplied by CoverageAmount to calculate the annual premium of an item
 	PremiumFactor float64 `default:"0.02"`
 
-	FiscalStartMonth int `default:"9"`
+	FiscalStartMonth int    `default:"1"`
+	ExpenseAccount   string `default:""`
 }
 
 func init() {
