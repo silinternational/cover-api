@@ -1,7 +1,6 @@
 package models
 
 import (
-	"errors"
 	"fmt"
 	"time"
 
@@ -79,16 +78,11 @@ func (le *LedgerEntries) FindBatch(tx *pop.Connection, firstDay time.Time) error
 
 type TransactionBlocks map[string]LedgerEntries // keyed by account
 
-func (le *LedgerEntries) ToCsv(batchDate time.Time) ([]byte, error) {
-	if len(*le) == 0 {
-		return nil, errors.New("no ledger entries, cannot convert to CSV")
-	}
-
-	date := (*le)[0].DateSubmitted
+func (le *LedgerEntries) ToCsv(batchDate time.Time) []byte {
 	sage := fin.Sage{
-		Year:               date.Year(),
-		Period:             getFiscalPeriod(int(date.Month())),
-		JournalDescription: fmt.Sprintf("%s %s JE", date.Format("January 2006"), domain.Env.AppName),
+		Year:               batchDate.Year(),
+		Period:             getFiscalPeriod(int(batchDate.Month())),
+		JournalDescription: fmt.Sprintf("%s %s JE", batchDate.Format("January 2006"), domain.Env.AppName),
 	}
 
 	blocks := le.MakeBlocks()

@@ -39,15 +39,12 @@ func batchesGetLatest(c buffalo.Context) error {
 		return c.Render(http.StatusNoContent, nil)
 	}
 
-	csvData, err := le.ToCsv(firstDay)
-	if err != nil {
-		return reportError(c, err)
-	}
+	csvData := le.ToCsv(firstDay)
 
 	response := c.Response()
 	response.Header().Set("Content-Type", "text/csv")
 	response.Header().Set("Content-Disposition", `attachment; filename="batch.csv"`)
-	_, err = response.Write(csvData)
+	_, err := response.Write(csvData)
 
 	return err
 }

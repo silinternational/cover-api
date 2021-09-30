@@ -2,7 +2,6 @@ package fin
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 
 	"github.com/silinternational/cover-api/api"
@@ -29,11 +28,7 @@ func (s *Sage) AppendToBatch(t Transaction) {
 	s.Transactions = append(s.Transactions, t)
 }
 
-func (s *Sage) BatchToCSV() ([]byte, error) {
-	if len(s.Transactions) == 0 {
-		return nil, errors.New("no transactions available to export CSV data")
-	}
-
+func (s *Sage) BatchToCSV() []byte {
 	var buf bytes.Buffer
 	buf.Write([]byte(header1))
 	buf.Write([]byte(header2))
@@ -42,7 +37,7 @@ func (s *Sage) BatchToCSV() ([]byte, error) {
 		buf.Write(s.transactionRow(i))
 	}
 
-	return buf.Bytes(), nil
+	return buf.Bytes()
 }
 
 func (s *Sage) summaryRow() []byte {
