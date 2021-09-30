@@ -456,67 +456,93 @@ func (ms *ModelSuite) TestItem_SafeDeleteOrInactivate() {
 	t := ms.T()
 
 	fixConfig := FixturesConfig{
-		NumberOfPolicies:   2,
-		ItemsPerPolicy:     5,
-		ClaimsPerPolicy:    1,
-		ClaimItemsPerClaim: 1,
+		NumberOfPolicies: 1,
+		ItemsPerPolicy:   9,
 	}
 
 	fixtures := CreateItemFixtures(ms.DB, fixConfig)
 	policy := fixtures.Policies[0]
 	policy.LoadItems(ms.DB, false)
 	user := policy.Members[0]
+	items := policy.Items
 
 	now := time.Now().UTC()
 	oldTime := now.Add(time.Hour * time.Duration(domain.ItemDeleteCutOffHours+1) * -1)
 
-	items := policy.Items
-	oldItem := items[0]
-	oldItem.CreatedAt = oldTime
-	UpdateItemStatus(ms.DB, oldItem, api.ItemCoverageStatusDraft, "")
+	items[0].CreatedAt = oldTime
+	oldDraftItem := UpdateItemStatus(ms.DB, items[0], api.ItemCoverageStatusDraft, "")
 
-	newItem := items[1] // no associations
-	UpdateItemStatus(ms.DB, newItem, api.ItemCoverageStatusApproved, "")
+	items[1].CreatedAt = oldTime
+	oldPendingItem := UpdateItemStatus(ms.DB, items[1], api.ItemCoverageStatusDraft, "")
 
-	// item with a LedgerEntry
-	newItemHasLE := items[2]
-	ms.NoError(newItemHasLE.CreateLedgerEntry(ms.DB), "error creating ledger entry fixture")
+	items[2].CreatedAt = oldTime
+	oldRevisionItem := UpdateItemStatus(ms.DB, items[2], api.ItemCoverageStatusDraft, "")
 
-	// item with a ClaimItem
-	claimItem := fixtures.Claims[0].ClaimItems[0]
-	claimItem.LoadItem(ms.DB, false)
+	newDraftItem := UpdateItemStatus(ms.DB, items[3], api.ItemCoverageStatusDraft, "")
 
-	newItemHasClaim := claimItem.Item
+	newApprovedItem := items[4]
+
+	newPendingItem := UpdateItemStatus(ms.DB, items[4], api.ItemCoverageStatusPending, "")
+
+	newRevisionItem := UpdateItemStatus(ms.DB, items[5], api.ItemCoverageStatusRevision, "Just do it")
+	newInactiveItem := UpdateItemStatus(ms.DB, items[6], api.ItemCoverageStatusInactive, "")
+	newDeniedItem := UpdateItemStatus(ms.DB, items[7], api.ItemCoverageStatusDenied, "")
 
 	tests := []struct {
 		name        string
 		item        Item
-		actor       User
 		wantDeleted bool
+		wantStatus  api.ItemCoverageStatus
 	}{
 		{
-			name:        "old item inactivate",
-			item:        oldItem,
-			actor:       user,
+			name:        "old draft item inactivate",
+			item:        oldDraftItem,
 			wantDeleted: false,
+			wantStatus:  api.ItemCoverageStatusInactive,
 		},
 		{
-			name:        "unassociated new item gets deleted",
-			item:        newItem,
-			actor:       user,
+			name:        "old pending item inactivate",
+			item:        oldPendingItem,
+			wantDeleted: false,
+			wantStatus:  api.ItemCoverageStatusInactive,
+		},
+		{
+			name:        "old revision item inactivate",
+			item:        oldRevisionItem,
+			wantDeleted: false,
+			wantStatus:  api.ItemCoverageStatusInactive,
+		},
+		{
+			name:        "new draft item",
+			item:        newDraftItem,
 			wantDeleted: true,
 		},
 		{
-			name:        "new item has ledger entry",
-			item:        newItemHasLE,
-			actor:       user,
-			wantDeleted: false,
+			name:        "new approved item",
+			item:        newApprovedItem,
+			wantDeleted: true,
 		},
 		{
-			name:        "new item has claim item",
-			item:        newItemHasClaim,
-			actor:       user,
+			name:        "new pending item",
+			item:        newPendingItem,
+			wantDeleted: true,
+		},
+		{
+			name:        "new revision item",
+			item:        newRevisionItem,
+			wantDeleted: true,
+		},
+		{
+			name:        "new inactive item",
+			item:        newInactiveItem,
 			wantDeleted: false,
+			wantStatus:  api.ItemCoverageStatusInactive,
+		},
+		{
+			name:        "new denied item",
+			item:        newDeniedItem,
+			wantDeleted: false,
+			wantStatus:  api.ItemCoverageStatusDenied,
 		},
 	}
 
@@ -534,7 +560,7 @@ func (ms *ModelSuite) TestItem_SafeDeleteOrInactivate() {
 				return
 			}
 
-			ms.Equal(api.ItemCoverageStatusInactive, dbItem.CoverageStatus, "incorrect status")
+			ms.Equal(tt.wantStatus, dbItem.CoverageStatus, "incorrect status")
 		})
 	}
 }

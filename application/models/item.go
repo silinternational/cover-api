@@ -95,29 +95,24 @@ func (i *Item) FindByID(tx *pop.Connection, id uuid.UUID) error {
 }
 
 // SafeDeleteOrInactivate deletes the item if it is newish (less than 72 hours old)
-//  and if there are no ClaimItems or LedgerEntries associated with it.
+//  and if it has a Draft, Revision or Pending status.
+//  If the item's status is Denied or Inactive, it does nothing.
 //  Otherwise, it changes its status to Inactive.
 func (i *Item) SafeDeleteOrInactivate(tx *pop.Connection, actor User) error {
-	if !i.isNewEnough() {
+	switch i.CoverageStatus {
+	case api.ItemCoverageStatusInactive, api.ItemCoverageStatusDenied:
+		return nil
+	case api.ItemCoverageStatusApproved:
 		return i.Inactivate(tx)
-	}
-
-	// Just inactivate (don't delete) if there are associated claim items or
-	//  if there are associated ledger entries
-	relations := []interface{}{&ClaimItems{}, &LedgerEntries{}}
-	for j, _ := range relations {
-		mCount, err := tx.Where("item_id = ?", i.ID).Count(relations[j])
-		if err != nil {
-			return api.NewAppError(
-				err, api.ErrorQueryFailure, api.CategoryDatabase,
-			)
+	case api.ItemCoverageStatusDraft, api.ItemCoverageStatusRevision, api.ItemCoverageStatusPending:
+		if i.isNewEnough() {
+			return tx.Destroy(i)
 		}
-		if mCount > 0 {
-			return i.Inactivate(tx)
-		}
+		return i.Inactivate(tx)
+	default:
+		panic(`invalid item status in SafeDeleteOrInactivate`)
 	}
-
-	return tx.Destroy(i)
+	return nil
 }
 
 // isNewEnough checks whether the item was created in the last X hours
