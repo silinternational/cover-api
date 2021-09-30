@@ -158,7 +158,7 @@ func (c *Claim) Update(ctx context.Context) error {
 func (c *Claim) UpdateByUser(ctx context.Context) error {
 	user := CurrentUser(ctx)
 	if user.IsAdmin() {
-		if c.Status.IsReview() {
+		if c.Status.WasReviewed() {
 			c.setReviewer(ctx)
 		}
 		return c.Update(ctx)
@@ -340,7 +340,6 @@ func (c *Claim) SubmitForApproval(ctx context.Context) error {
 		err := fmt.Errorf("invalid claim status for submit: %s", oldStatus)
 		return api.NewAppError(err, api.ErrorClaimStatus, api.CategoryUser)
 	}
-	c.setReviewer(ctx)
 
 	if err := c.Update(ctx); err != nil {
 		return err

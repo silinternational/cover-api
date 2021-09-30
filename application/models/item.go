@@ -96,28 +96,24 @@ func (i *Item) FindByID(tx *pop.Connection, id uuid.UUID) error {
 }
 
 // SafeDeleteOrInactivate deletes the item if it is newish (less than 72 hours old)
-//  and if there are no ClaimItems associated with it.
+//  and if it has a Draft, Revision or Pending status.
+//  If the item's status is Denied or Inactive, it does nothing.
 //  Otherwise, it changes its status to Inactive.
 func (i *Item) SafeDeleteOrInactivate(tx *pop.Connection, actor User) error {
-	// TODO Add a check related to whether the item already got included in the billing process.
-
-	if !i.isNewEnough() {
+	switch i.CoverageStatus {
+	case api.ItemCoverageStatusInactive, api.ItemCoverageStatusDenied:
+		return nil
+	case api.ItemCoverageStatusApproved:
 		return i.Inactivate(tx)
-	}
-
-	clItems := ClaimItems{}
-	clICount, err := tx.Where("item_id = ?", i.ID).Count(&clItems)
-	if err != nil {
-		return api.NewAppError(
-			err, api.ErrorQueryFailure, api.CategoryDatabase,
-		)
-	}
-
-	if clICount > 0 {
+	case api.ItemCoverageStatusDraft, api.ItemCoverageStatusRevision, api.ItemCoverageStatusPending:
+		if i.isNewEnough() {
+			return tx.Destroy(i)
+		}
 		return i.Inactivate(tx)
+	default:
+		panic(`invalid item status in SafeDeleteOrInactivate`)
 	}
-
-	return tx.Destroy(i)
+	return nil
 }
 
 // isNewEnough checks whether the item was created in the last X hours

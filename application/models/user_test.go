@@ -58,8 +58,20 @@ func (ms *ModelSuite) TestUser_Validate() {
 func (ms *ModelSuite) TestUser_CreateInitialPolicy() {
 	t := ms.T()
 
-	f := CreateUserFixtures(ms.DB, 2)
-	user := f.Users[0]
+	pf := CreatePolicyFixtures(ms.DB, FixturesConfig{NumberOfPolicies: 1})
+	policy := pf.Policies[0]
+
+	uf := CreateUserFixtures(ms.DB, 2)
+	userNoPolicy := uf.Users[0]
+
+	userWithPolicy := uf.Users[1]
+
+	pUser := PolicyUser{
+		PolicyID: policy.ID,
+		UserID:   userWithPolicy.ID,
+	}
+
+	ms.NoError(pUser.Create(ms.DB))
 
 	tests := []struct {
 		name    string
@@ -72,8 +84,13 @@ func (ms *ModelSuite) TestUser_CreateInitialPolicy() {
 			wantErr: true,
 		},
 		{
-			name:    "good",
-			user:    user,
+			name:    "policy to be created",
+			user:    userNoPolicy,
+			wantErr: false,
+		},
+		{
+			name:    "no new policy to create",
+			user:    userWithPolicy,
 			wantErr: false,
 		},
 	}
@@ -87,9 +104,10 @@ func (ms *ModelSuite) TestUser_CreateInitialPolicy() {
 
 			ms.NoError(err)
 
-			policyUser := PolicyUser{}
-			err = ms.DB.Where("user_id = ?", tt.user.ID).First(&policyUser)
-			ms.NoError(err, "error trying to find resulting policyUser")
+			policyUsers := PolicyUsers{}
+			err = ms.DB.Where("user_id = ?", tt.user.ID).All(&policyUsers)
+			ms.NoError(err, "error trying to find resulting policyUsers")
+			ms.Len(policyUsers, 1, "incorrect number of policyUsers")
 		})
 	}
 }

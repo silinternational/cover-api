@@ -452,6 +452,119 @@ func (ms *ModelSuite) TestItem_SubmitForApproval() {
 	}
 }
 
+func (ms *ModelSuite) TestItem_SafeDeleteOrInactivate() {
+	t := ms.T()
+
+	fixConfig := FixturesConfig{
+		NumberOfPolicies: 1,
+		ItemsPerPolicy:   9,
+	}
+
+	fixtures := CreateItemFixtures(ms.DB, fixConfig)
+	policy := fixtures.Policies[0]
+	policy.LoadItems(ms.DB, false)
+	user := policy.Members[0]
+	items := policy.Items
+
+	now := time.Now().UTC()
+	oldTime := now.Add(time.Hour * time.Duration(domain.ItemDeleteCutOffHours+1) * -1)
+
+	items[0].CreatedAt = oldTime
+	oldDraftItem := UpdateItemStatus(ms.DB, items[0], api.ItemCoverageStatusDraft, "")
+
+	items[1].CreatedAt = oldTime
+	oldPendingItem := UpdateItemStatus(ms.DB, items[1], api.ItemCoverageStatusDraft, "")
+
+	items[2].CreatedAt = oldTime
+	oldRevisionItem := UpdateItemStatus(ms.DB, items[2], api.ItemCoverageStatusDraft, "")
+
+	newDraftItem := UpdateItemStatus(ms.DB, items[3], api.ItemCoverageStatusDraft, "")
+
+	newApprovedItem := items[4]
+
+	newPendingItem := UpdateItemStatus(ms.DB, items[4], api.ItemCoverageStatusPending, "")
+
+	newRevisionItem := UpdateItemStatus(ms.DB, items[5], api.ItemCoverageStatusRevision, "Just do it")
+	newInactiveItem := UpdateItemStatus(ms.DB, items[6], api.ItemCoverageStatusInactive, "")
+	newDeniedItem := UpdateItemStatus(ms.DB, items[7], api.ItemCoverageStatusDenied, "")
+
+	tests := []struct {
+		name        string
+		item        Item
+		wantDeleted bool
+		wantStatus  api.ItemCoverageStatus
+	}{
+		{
+			name:        "old draft item inactivate",
+			item:        oldDraftItem,
+			wantDeleted: false,
+			wantStatus:  api.ItemCoverageStatusInactive,
+		},
+		{
+			name:        "old pending item inactivate",
+			item:        oldPendingItem,
+			wantDeleted: false,
+			wantStatus:  api.ItemCoverageStatusInactive,
+		},
+		{
+			name:        "old revision item inactivate",
+			item:        oldRevisionItem,
+			wantDeleted: false,
+			wantStatus:  api.ItemCoverageStatusInactive,
+		},
+		{
+			name:        "new draft item",
+			item:        newDraftItem,
+			wantDeleted: true,
+		},
+		{
+			name:        "new approved item",
+			item:        newApprovedItem,
+			wantDeleted: true,
+		},
+		{
+			name:        "new pending item",
+			item:        newPendingItem,
+			wantDeleted: true,
+		},
+		{
+			name:        "new revision item",
+			item:        newRevisionItem,
+			wantDeleted: true,
+		},
+		{
+			name:        "new inactive item",
+			item:        newInactiveItem,
+			wantDeleted: false,
+			wantStatus:  api.ItemCoverageStatusInactive,
+		},
+		{
+			name:        "new denied item",
+			item:        newDeniedItem,
+			wantDeleted: false,
+			wantStatus:  api.ItemCoverageStatusDenied,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := tt.item.SafeDeleteOrInactivate(ms.DB, user)
+			ms.NoError(got)
+
+			dbItem := Item{}
+			err := ms.DB.Find(&dbItem, tt.item.ID)
+
+			if tt.wantDeleted {
+				ms.Error(err, `expected a No Rows error`)
+				ms.False(domain.IsOtherThanNoRows(err), `expected a No Rows error`)
+				return
+			}
+			ms.NoError(err, "error finding the item in the database")
+			ms.Equal(tt.wantStatus, dbItem.CoverageStatus, "incorrect status")
+		})
+	}
+}
+
 func (ms *ModelSuite) TestItem_LoadPolicyMembers() {
 	fixConfig := FixturesConfig{
 		NumberOfPolicies: 2,
