@@ -82,14 +82,14 @@ func itemPendingQueueMessage(tx *pop.Connection, item models.Item, member models
 // ItemSubmittedQueueMessage queues messages to the stewards to
 //  notify them that an item has been submitted
 func ItemSubmittedQueueMessage(tx *pop.Connection, item models.Item) {
-	item.LoadPolicyMembers(models.DB, false)
+	item.LoadPolicyMembers(tx, false)
 	itemPendingQueueMessage(tx, item, item.Policy.Members[0])
 }
 
 // ItemRevisionQueueMessage queues messages to an item's members to
 //  notify them that revisions are required
 func ItemRevisionQueueMessage(tx *pop.Connection, item models.Item) {
-	item.LoadPolicyMembers(models.DB, false)
+	item.LoadPolicyMembers(tx, false)
 
 	data := newEmailMessageData()
 	data.addItemData(item)
@@ -118,21 +118,21 @@ func ItemRevisionQueueMessage(tx *pop.Connection, item models.Item) {
 // ItemAutoApprovedQueueMessage queues messages to the stewards to
 //  notify them that coverage on an item was auto-approved
 func ItemAutoApprovedQueueMessage(tx *pop.Connection, item models.Item) {
-	item.LoadPolicyMembers(models.DB, false)
+	item.LoadPolicyMembers(tx, false)
 	itemAutoApprovedQueueMessage(tx, item, item.Policy.Members[0])
 }
 
 // ItemApprovedQueueMessage queues messages to an item's members to
 //  notify them that coverage on their item was approved
 func ItemApprovedQueueMessage(tx *pop.Connection, item models.Item) {
-	item.LoadPolicyMembers(models.DB, false)
+	item.LoadPolicyMembers(tx, false)
 	itemApprovedQueueMsg(tx, item)
 }
 
 // ItemDeniedQueueMessage queues messages to an item's members to
 //  notify them that coverage on their item was denied
 func ItemDeniedQueueMessage(tx *pop.Connection, item models.Item) {
-	item.LoadPolicyMembers(models.DB, false)
+	item.LoadPolicyMembers(tx, false)
 
 	data := newEmailMessageData()
 	data.addItemData(item)
