@@ -559,7 +559,7 @@ func (ms *ModelSuite) TestItem_SafeDeleteOrInactivate() {
 				ms.False(domain.IsOtherThanNoRows(err), `expected a No Rows error`)
 				return
 			}
-
+			ms.NoError(err, "error finding the item in the database")
 			ms.Equal(tt.wantStatus, dbItem.CoverageStatus, "incorrect status")
 		})
 	}
