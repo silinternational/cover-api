@@ -143,12 +143,6 @@ func App() *buffalo.App {
 		// accounting batches
 		batchesGroup := app.Group(batchesPath)
 		batchesGroup.Middleware.Skip(AuthZ, batchesGetLatest)
-
-		// DO NOT COMMIT THIS
-		if domain.Env.GoEnv == "development" {
-			batchesGroup.Middleware.Skip(AuthN, batchesGetLatest)
-		}
-
 		batchesGroup.GET("/latest", batchesGetLatest)
 
 		// claims

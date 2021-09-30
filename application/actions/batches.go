@@ -28,11 +28,8 @@ import (
 func batchesGetLatest(c buffalo.Context) error {
 	tx := models.Tx(c)
 
-	// TODO: Use a month that has plenty of transactions. Change this to time.Now().UTC() before going "live".
-	now := time.Date(2021, 7, 01, 0, 0, 0, 0, time.UTC)
-	// now := time.Now().UTC()
-	today := now.Truncate(time.Hour * 24)
-	firstDay := domain.BeginningOfLastMonth(today)
+	now := time.Now().UTC()
+	firstDay := domain.BeginningOfLastMonth(now)
 	var le models.LedgerEntries
 	if err := le.FindBatch(tx, firstDay); err != nil {
 		return err
