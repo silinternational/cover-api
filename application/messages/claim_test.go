@@ -141,7 +141,8 @@ func (ts *TestSuite) Test_ClaimReceiptQueueMessage() {
 			wantBodyContains: []string{
 				domain.Env.UIURL,
 				receiptClaim.ReferenceNumber,
-				"The claim you submitted still has some receipts that are needed.",
+				"The claim you submitted still needs a receipt.",
+				"Please provide a receipt for repair costs.",
 			},
 		},
 	}
