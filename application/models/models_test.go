@@ -76,3 +76,29 @@ func (ms *ModelSuite) EqualAppError(expected api.AppError, actual error) {
 	ms.Equal(appErr.Key, expected.Key, "error key does not match")
 	ms.Equal(appErr.Category, expected.Category, "error category does not match")
 }
+
+func (ms *ModelSuite) Test_getFiscalPeriod() {
+	domain.Env.FiscalStartMonth = 9
+
+	tests := []struct {
+		name  string
+		month int
+		want  int
+	}{
+		{
+			name:  "September",
+			month: 9,
+			want:  1,
+		},
+		{
+			name:  "August",
+			month: 8,
+			want:  12,
+		},
+	}
+	for _, tt := range tests {
+		ms.T().Run(tt.name, func(t *testing.T) {
+			ms.Equal(tt.want, getFiscalPeriod(tt.month))
+		})
+	}
+}

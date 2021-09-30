@@ -13,7 +13,10 @@ const (
 	header2 = `"RECTYPE","BATCHNBR","JOURNALID","TRANSNBR","DESCOMP","ROUTE","ACCTID","COMPANYID","TRANSAMT","SCURNDEC","TRANSDESC","TRANSREF","TRANSDATE","SRCELDGR","SRCETYPE",` + "\n"
 )
 
-const sageTransactionTemplate = `"2","000000","00001","%010d","",0,"%s","",%s,"2","%s","%s",%s,"GL","JE"` + "\n"
+const (
+	transactionRowTemplate = `"2","000000","00001","%010d","",0,"%s","",%s,"2","%s","%s",%s,"GL","JE"` + "\n"
+	summaryRowTemplate     = `"1","000000","00001","","GL","JE","%d","%02d",0,"%s","00",0,0,0,2` + "\n"
+)
 
 type Sage struct {
 	Period             int
@@ -43,15 +46,14 @@ func (s *Sage) BatchToCSV() ([]byte, error) {
 }
 
 func (s *Sage) summaryRow() []byte {
-	str := fmt.Sprintf(`"1","000000","00001","","GL","JE","%d","%02d",0,"%s","00",0,0,0,2`+"\n",
-		s.Year, s.Period, s.JournalDescription)
+	str := fmt.Sprintf(summaryRowTemplate, s.Year, s.Period, s.JournalDescription)
 	return []byte(str)
 }
 
 func (s *Sage) transactionRow(rowNumber int) []byte {
 	t := s.Transactions[rowNumber]
 	str := fmt.Sprintf(
-		sageTransactionTemplate,
+		transactionRowTemplate,
 		20*(rowNumber+1),
 		t.Account,
 		api.Currency(-t.Amount).String(),

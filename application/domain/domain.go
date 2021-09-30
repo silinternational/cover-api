@@ -172,13 +172,13 @@ var Env struct {
 	// The following will be multiplied by CurrencyFactor in readEnv()
 	PolicyMaxCoverage       int `default:"50000" split_words:"true"`
 	DependentAutoApproveMax int `default:"4000" split_words:"true"`
-	PremiumMinimum          int `default:"25"`
+	PremiumMinimum          int `default:"25" split_words:"true"`
 
 	// PremiumFactor is multiplied by CoverageAmount to calculate the annual premium of an item
 	PremiumFactor float64 `default:"0.02"`
 
-	FiscalStartMonth int    `default:"1"`
-	ExpenseAccount   string `default:""`
+	FiscalStartMonth int    `default:"1" split_words:"true"`
+	ExpenseAccount   string `default:"" split_words:"true"`
 }
 
 func init() {

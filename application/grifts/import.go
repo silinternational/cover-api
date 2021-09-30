@@ -503,20 +503,20 @@ func importPolicyUsers(tx *pop.Connection, p LegacyPolicy, policyID uuid.UUID) i
 			}
 			continue
 		}
-		r := createPolicyUser(tx, validEmail, policyID)
+		r := createPolicyUser(tx, validEmail, p.FirstName, p.LastName, policyID)
 		result.policyUsersCreated += r.policyUsersCreated
 		result.usersCreated += r.usersCreated
 	}
 	return result
 }
 
-func createPolicyUser(tx *pop.Connection, email string, policyID uuid.UUID) importPolicyUsersResult {
+func createPolicyUser(tx *pop.Connection, email, firstName, lastName string, policyID uuid.UUID) importPolicyUsersResult {
 	result := importPolicyUsersResult{}
 
 	email = strings.ToLower(email)
 	userID, ok := userEmailMap[email]
 	if !ok {
-		user := createUserFromEmailAddress(tx, email)
+		user := createUserFromEmailAddress(tx, email, firstName, lastName)
 		userID = user.ID
 		result.usersCreated = 1
 	}
@@ -539,7 +539,7 @@ func createPolicyUser(tx *pop.Connection, email string, policyID uuid.UUID) impo
 	return result
 }
 
-func createUserFromEmailAddress(tx *pop.Connection, email string) models.User {
+func createUserFromEmailAddress(tx *pop.Connection, email, firstName, lastName string) models.User {
 	staffID, ok := userEmailStaffIDMap[email]
 	if ok {
 		nPolicyUsersWithStaffID++
@@ -547,6 +547,8 @@ func createUserFromEmailAddress(tx *pop.Connection, email string) models.User {
 
 	user := models.User{
 		Email:        email,
+		FirstName:    trim(firstName),
+		LastName:     trim(lastName),
 		StaffID:      staffID,
 		AppRole:      models.AppRoleUser,
 		LastLoginUTC: emptyTime,
@@ -830,8 +832,9 @@ func importJournalEntries(tx *pop.Connection, entries []JournalEntry) {
 			Amount:             int(math.Round(e.CustJE * domain.CurrencyFactor)),
 			DateSubmitted:      parseStringTime(e.DateSubm, "LedgerEntry.DateSubmitted"),
 			DateEntered:        parseStringTimeToNullTime(e.DateEntd, "LedgerEntry.DateEntered"),
-			LegacyID:           stringToInt(e.JERecNum, "LedgerEntry.LegacyID"),
+			LegacyID:           nulls.NewInt(stringToInt(e.JERecNum, "LedgerEntry.LegacyID")),
 			RecordType:         getLedgerRecordType(e.JERecType),
+			IncomeAccount:      getIncomeAccount(e),
 			RiskCategoryName:   policyTypeToRiskCategoryName(e.PolicyType),
 			AccountNumber:      strconv.Itoa(e.AccNum),
 			AccountCostCenter1: trim(e.AccCostCtr1),
@@ -853,6 +856,27 @@ func importJournalEntries(tx *pop.Connection, entries []JournalEntry) {
 		i++
 	}
 	fmt.Printf("  LedgerEntries: %d (policy IDs not found: %s)\n", nImported, strings.Join(s, ","))
+}
+
+func getIncomeAccount(e JournalEntry) string {
+	accountMap := map[string]string{
+		"MMB/STM": "40200",
+		"SIL":     "43250",
+		"WBT":     "44250",
+	}
+	incomeAccount := ""
+	if e.JERecType == 4 || e.JERecType == 6 {
+		incomeAccount = "63550" // Claims
+	} else {
+		incomeAccount = accountMap[e.Entity]
+	}
+
+	if e.PolicyType == 2 {
+		incomeAccount += "MPRO12"
+	} else {
+		incomeAccount += "MCMC12"
+	}
+	return incomeAccount
 }
 
 func getLedgerRecordType(i int) models.LedgerEntryRecordType {

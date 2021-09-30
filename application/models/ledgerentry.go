@@ -46,18 +46,19 @@ type LedgerEntry struct {
 	EntityCode       string                `db:"entity_code"`
 	RiskCategoryName string                `db:"risk_category_name"`
 	RecordType       LedgerEntryRecordType `db:"record_type" validate:"ledgerEntryRecordType"`
+	IncomeAccount    string                `db:"income_account"`
 	Amount           int                   `db:"amount"`
 	DateSubmitted    time.Time             `db:"date_submitted"`
 	DateEntered      nulls.Time            `db:"date_entered"`
 
 	// The following fields are primarily for legacy data and may not be needed long-term
 	// However, some may be useful as a permanent record in case policies change...TBD.
-	LegacyID           int    `db:"legacy_id"`
-	AccountNumber      string `db:"account_number"`
-	AccountCostCenter1 string `db:"account_cost_center1"`
-	AccountCostCenter2 string `db:"account_cost_center2"`
-	FirstName          string `db:"first_name"`
-	LastName           string `db:"last_name"`
+	LegacyID           nulls.Int `db:"legacy_id"`
+	AccountNumber      string    `db:"account_number"`
+	AccountCostCenter1 string    `db:"account_cost_center1"`
+	AccountCostCenter2 string    `db:"account_cost_center2"`
+	FirstName          string    `db:"first_name"`
+	LastName           string    `db:"last_name"`
 
 	CreatedAt time.Time `db:"created_at"`
 	UpdatedAt time.Time `db:"updated_at"`
@@ -89,7 +90,7 @@ func (le *LedgerEntries) ToCsv(batchDate time.Time) ([]byte, error) {
 	sage := fin.Sage{
 		Year:               date.Year(),
 		Period:             getFiscalPeriod(int(date.Month())),
-		JournalDescription: date.Format("January 2006 MAP JE"),
+		JournalDescription: fmt.Sprintf("%s %s JE", date.Format("January 2006"), domain.Env.AppName),
 	}
 
 	blocks := le.MakeBlocks()
@@ -100,11 +101,11 @@ func (le *LedgerEntries) ToCsv(batchDate time.Time) ([]byte, error) {
 		var balance int
 		for _, l := range ledgerEntries {
 			sage.AppendToBatch(fin.Transaction{
-				Account:     "19349MMAP12",
+				Account:     domain.Env.ExpenseAccount,
 				Amount:      l.Amount,
 				Description: l.transactionDescription(),
 				Reference:   l.transactionReference(),
-				Date:        batchDate, // can be any date in the batch month
+				Date:        l.DateSubmitted,
 			})
 
 			balance -= l.Amount
@@ -123,25 +124,8 @@ func (le *LedgerEntries) ToCsv(batchDate time.Time) ([]byte, error) {
 
 func (le *LedgerEntries) MakeBlocks() TransactionBlocks {
 	blocks := TransactionBlocks{}
-	accountMap := map[string]string{
-		"MMB/STM": "40200",
-		"SIL":     "43250",
-		"WBT":     "44250",
-	}
 	for _, e := range *le {
-		var account string
-		if e.RecordType == LedgerEntryRecordTypeClaim || e.RecordType == LedgerEntryRecordTypeClaimAdjustment {
-			account = "63550" // Claims
-		} else {
-			account = accountMap[e.EntityCode]
-		}
-
-		if e.RiskCategoryName == "Stationary" {
-			account += "MPRO12"
-		} else {
-			account += "MCMC12"
-		}
-
+		account := e.IncomeAccount
 		blocks[account] = append(blocks[account], e)
 	}
 	return blocks
@@ -154,7 +138,6 @@ func (le *LedgerEntry) transactionDescription() string {
 	description := ""
 	// TODO: change this to api.PolicyTypeHousehold (requires a database update)
 	if le.EntityCode == "MMB/STM" {
-		// TODO: figure out why names are blank in legacy data AND ensure they are not blank in new data
 		description = fmt.Sprintf("%s,%s %s %s %s",
 			le.LastName, le.FirstName, le.RiskCategoryName, le.RecordType, dateString)
 	} else {

@@ -379,16 +379,18 @@ func CreateRiskCategories(tx *pop.Connection) {
 	}
 
 	riskCategoryMobile := RiskCategory{
-		ID:        RiskCategoryMobileID(),
-		Name:      "mobile",
-		PolicyMax: 25000,
+		ID:         RiskCategoryMobileID(),
+		Name:       "mobile",
+		PolicyMax:  25000,
+		CostCenter: "MOBILE",
 	}
 	MustCreate(tx, &riskCategoryMobile)
 
 	riskCategoryStationary := RiskCategory{
-		ID:        RiskCategoryStationaryID(),
-		Name:      "stationary",
-		PolicyMax: 25000,
+		ID:         RiskCategoryStationaryID(),
+		Name:       "stationary",
+		PolicyMax:  25000,
+		CostCenter: "STATIONARY",
 	}
 	MustCreate(tx, &riskCategoryStationary)
 }
