@@ -13,26 +13,26 @@ import (
 	"github.com/silinternational/cover-api/fin"
 )
 
-type LedgerEntryRecordType string
+type LedgerEntryType string
 
 const (
-	LedgerEntryRecordTypeNewCoverage      = LedgerEntryRecordType("NewCoverage")
-	LedgerEntryRecordTypeCoverageChange   = LedgerEntryRecordType("CoverageChange")
-	LedgerEntryRecordTypePolicyAdjustment = LedgerEntryRecordType("PolicyAdjustment")
-	LedgerEntryRecordTypeClaim            = LedgerEntryRecordType("Claim")
-	LedgerEntryRecordTypeLegacy5          = LedgerEntryRecordType("5")
-	LedgerEntryRecordTypeClaimAdjustment  = LedgerEntryRecordType("ClaimAdjustment")
-	LedgerEntryRecordTypeLegacy20         = LedgerEntryRecordType("20")
+	LedgerEntryTypeNewCoverage      = LedgerEntryType("NewCoverage")
+	LedgerEntryTypeCoverageChange   = LedgerEntryType("CoverageChange")
+	LedgerEntryTypePolicyAdjustment = LedgerEntryType("PolicyAdjustment")
+	LedgerEntryTypeClaim            = LedgerEntryType("Claim")
+	LedgerEntryTypeLegacy5          = LedgerEntryType("5")
+	LedgerEntryTypeClaimAdjustment  = LedgerEntryType("ClaimAdjustment")
+	LedgerEntryTypeLegacy20         = LedgerEntryType("20")
 )
 
-var ValidLedgerEntryRecordTypes = map[LedgerEntryRecordType]struct{}{
-	LedgerEntryRecordTypeNewCoverage:      {},
-	LedgerEntryRecordTypeCoverageChange:   {},
-	LedgerEntryRecordTypePolicyAdjustment: {},
-	LedgerEntryRecordTypeClaim:            {},
-	LedgerEntryRecordTypeLegacy5:          {},
-	LedgerEntryRecordTypeClaimAdjustment:  {},
-	LedgerEntryRecordTypeLegacy20:         {},
+var ValidLedgerEntryTypes = map[LedgerEntryType]struct{}{
+	LedgerEntryTypeNewCoverage:      {},
+	LedgerEntryTypeCoverageChange:   {},
+	LedgerEntryTypePolicyAdjustment: {},
+	LedgerEntryTypeClaim:            {},
+	LedgerEntryTypeLegacy5:          {},
+	LedgerEntryTypeClaimAdjustment:  {},
+	LedgerEntryTypeLegacy20:         {},
 }
 
 type LedgerEntries []LedgerEntry
@@ -40,17 +40,17 @@ type LedgerEntries []LedgerEntry
 type LedgerEntry struct {
 	ID uuid.UUID `db:"id"`
 
-	PolicyID         uuid.UUID             `db:"policy_id"`
-	ItemID           nulls.UUID            `db:"item_id"`
-	EntityCode       string                `db:"entity_code"`
-	RiskCategoryName string                `db:"risk_category_name"`
-	RecordType       LedgerEntryRecordType `db:"record_type" validate:"ledgerEntryRecordType"`
-	IncomeAccount    string                `db:"income_account"`
-	FirstName        string                `db:"first_name"`
-	LastName         string                `db:"last_name"`
-	Amount           int                   `db:"amount"`
-	DateSubmitted    time.Time             `db:"date_submitted"`
-	DateEntered      nulls.Time            `db:"date_entered"`
+	PolicyID         uuid.UUID       `db:"policy_id"`
+	ItemID           nulls.UUID      `db:"item_id"`
+	EntityCode       string          `db:"entity_code"`
+	RiskCategoryName string          `db:"risk_category_name"`
+	Type             LedgerEntryType `db:"type" validate:"ledgerEntryType"`
+	IncomeAccount    string          `db:"income_account"`
+	FirstName        string          `db:"first_name"`
+	LastName         string          `db:"last_name"`
+	Amount           int             `db:"amount"`
+	DateSubmitted    time.Time       `db:"date_submitted"`
+	DateEntered      nulls.Time      `db:"date_entered"`
 
 	// The following fields are primarily for legacy data and may not be needed long-term
 	// However, some may be useful as a permanent record in case policies change...TBD.
@@ -127,10 +127,10 @@ func (le *LedgerEntry) transactionDescription() string {
 	// TODO: change this to api.PolicyTypeHousehold (requires a database update)
 	if le.EntityCode == "MMB/STM" {
 		description = fmt.Sprintf("%s,%s %s %s %s",
-			le.LastName, le.FirstName, le.RiskCategoryName, le.RecordType, dateString)
+			le.LastName, le.FirstName, le.RiskCategoryName, le.Type, dateString)
 	} else {
 		description = fmt.Sprintf("%s %s (%s) %s",
-			le.RiskCategoryName, le.RecordType, le.AccountCostCenter2, dateString)
+			le.RiskCategoryName, le.Type, le.AccountCostCenter2, dateString)
 	}
 
 	return fmt.Sprintf("%.60s", description) // truncate to Sage limit of 60 characters
@@ -147,7 +147,7 @@ func (le *LedgerEntry) transactionReference() string {
 
 func (le *LedgerEntry) balanceDescription() string {
 	premiumsOrClaims := "Premiums"
-	if le.RecordType == LedgerEntryRecordTypeClaim || le.RecordType == LedgerEntryRecordTypeClaimAdjustment {
+	if le.Type == LedgerEntryTypeClaim || le.Type == LedgerEntryTypeClaimAdjustment {
 		premiumsOrClaims = "Claims"
 	}
 	return fmt.Sprintf("Total %s %s %s", le.EntityCode, le.RiskCategoryName, premiumsOrClaims)

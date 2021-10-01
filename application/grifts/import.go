@@ -829,7 +829,7 @@ func importJournalEntries(tx *pop.Connection, entries []JournalEntry) {
 			DateSubmitted:      parseStringTime(e.DateSubm, "LedgerEntry.DateSubmitted"),
 			DateEntered:        parseStringTimeToNullTime(e.DateEntd, "LedgerEntry.DateEntered"),
 			LegacyID:           nulls.NewInt(stringToInt(e.JERecNum, "LedgerEntry.LegacyID")),
-			RecordType:         getLedgerRecordType(e.JERecType),
+			Type:               getLedgerRecordType(e.JERecType),
 			IncomeAccount:      getIncomeAccount(e),
 			RiskCategoryName:   policyTypeToRiskCategoryName(e.PolicyType),
 			AccountNumber:      strconv.Itoa(e.AccNum),
@@ -875,15 +875,15 @@ func getIncomeAccount(e JournalEntry) string {
 	return incomeAccount
 }
 
-func getLedgerRecordType(i int) models.LedgerEntryRecordType {
-	types := map[int]models.LedgerEntryRecordType{
-		1:  models.LedgerEntryRecordTypeNewCoverage,
-		2:  models.LedgerEntryRecordTypeCoverageChange,
-		3:  models.LedgerEntryRecordTypePolicyAdjustment,
-		4:  models.LedgerEntryRecordTypeClaim,
-		5:  models.LedgerEntryRecordTypeLegacy5,
-		6:  models.LedgerEntryRecordTypeClaimAdjustment,
-		20: models.LedgerEntryRecordTypeLegacy20,
+func getLedgerRecordType(i int) models.LedgerEntryType {
+	types := map[int]models.LedgerEntryType{
+		1:  models.LedgerEntryTypeNewCoverage,
+		2:  models.LedgerEntryTypeCoverageChange,
+		3:  models.LedgerEntryTypePolicyAdjustment,
+		4:  models.LedgerEntryTypeClaim,
+		5:  models.LedgerEntryTypeLegacy5,
+		6:  models.LedgerEntryTypeClaimAdjustment,
+		20: models.LedgerEntryTypeLegacy20,
 	}
 	return types[i]
 }

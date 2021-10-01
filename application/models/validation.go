@@ -136,8 +136,8 @@ func validateItemCoverageStatus(field validator.FieldLevel) bool {
 }
 
 func validateLedgerEntryRecordType(field validator.FieldLevel) bool {
-	if value, ok := field.Field().Interface().(LedgerEntryRecordType); ok {
-		_, valid := ValidLedgerEntryRecordTypes[value]
+	if value, ok := field.Field().Interface().(LedgerEntryType); ok {
+		_, valid := ValidLedgerEntryTypes[value]
 		return valid
 	}
 	return false
