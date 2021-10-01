@@ -131,3 +131,24 @@ func (ms *ModelSuite) TestLedgerEntries_ToCsv() {
 		})
 	}
 }
+
+func (ms *ModelSuite) TestLedgerEntries_MakeBlocks() {
+	policy1 := domain.GetUUID()
+	policy2 := domain.GetUUID()
+	policy3 := domain.GetUUID()
+
+	entries := LedgerEntries{
+		{PolicyID: policy1, IncomeAccount: "1"},
+		{PolicyID: policy2, IncomeAccount: "2"},
+		{PolicyID: policy3, IncomeAccount: "2"},
+	}
+	blocks := entries.MakeBlocks()
+	ms.Equal(2, len(blocks))
+
+	ms.Equal(1, len(blocks["1"]))
+	ms.Equal(policy1, blocks["1"][0].PolicyID)
+
+	ms.Equal(2, len(blocks["2"]))
+	ms.Equal(policy2, blocks["2"][0].PolicyID)
+	ms.Equal(policy3, blocks["2"][1].PolicyID)
+}
