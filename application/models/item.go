@@ -600,5 +600,5 @@ func (i *Item) GetAccountablePersonName(tx *pop.Connection) (firstName, lastName
 			lastName = names[1]
 		}
 	}
-	return
+	return firstName, lastName
 }
