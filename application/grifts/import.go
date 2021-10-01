@@ -829,7 +829,7 @@ func importJournalEntries(tx *pop.Connection, entries []JournalEntry) {
 			DateSubmitted:      parseStringTime(e.DateSubm, "LedgerEntry.DateSubmitted"),
 			DateEntered:        parseStringTimeToNullTime(e.DateEntd, "LedgerEntry.DateEntered"),
 			LegacyID:           nulls.NewInt(stringToInt(e.JERecNum, "LedgerEntry.LegacyID")),
-			Type:               getLedgerRecordType(e.JERecType),
+			Type:               getLedgerEntryType(e.JERecType),
 			IncomeAccount:      getIncomeAccount(e),
 			RiskCategoryName:   policyTypeToRiskCategoryName(e.PolicyType),
 			AccountNumber:      strconv.Itoa(e.AccNum),
@@ -875,7 +875,7 @@ func getIncomeAccount(e JournalEntry) string {
 	return incomeAccount
 }
 
-func getLedgerRecordType(i int) models.LedgerEntryType {
+func getLedgerEntryType(i int) models.LedgerEntryType {
 	types := map[int]models.LedgerEntryType{
 		1:  models.LedgerEntryTypeNewCoverage,
 		2:  models.LedgerEntryTypeCoverageChange,
