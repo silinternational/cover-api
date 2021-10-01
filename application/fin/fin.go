@@ -7,6 +7,8 @@ import (
 	"github.com/silinternational/cover-api/domain"
 )
 
+const ProviderTypeSage = "sage"
+
 type Transaction struct {
 	Account     string
 	Amount      int
@@ -24,7 +26,7 @@ func NewBatch(providerType string, date time.Time) Provider {
 	batchDesc := fmt.Sprintf("%s %s JE", date.Format("January 2006"), domain.Env.AppName)
 
 	switch providerType {
-	case "sage":
+	case ProviderTypeSage:
 		return &Sage{
 			Period:             getFiscalPeriod(int(date.Month())),
 			Year:               date.Year(),

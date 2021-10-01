@@ -79,7 +79,7 @@ func (le *LedgerEntries) AllForMonth(tx *pop.Connection, firstDay time.Time) err
 type TransactionBlocks map[string]LedgerEntries // keyed by account
 
 func (le *LedgerEntries) ToCsv(batchDate time.Time) []byte {
-	sage := fin.NewBatch("sage", batchDate)
+	sage := fin.NewBatch(fin.ProviderTypeSage, batchDate)
 
 	blocks := le.MakeBlocks()
 	for account, ledgerEntries := range blocks {
