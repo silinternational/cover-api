@@ -142,7 +142,7 @@ func App() *buffalo.App {
 
 		// accounting batches
 		batchesGroup := app.Group(batchesPath)
-		batchesGroup.Middleware.Skip(AuthZ, batchesGetLatest)
+		batchesGroup.Middleware.Skip(AuthZ, batchesGetLatest) // TODO: implement AuthZ for this
 		batchesGroup.GET("/latest", batchesGetLatest)
 
 		// claims

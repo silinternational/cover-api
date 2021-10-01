@@ -43,6 +43,7 @@ func batchesGetLatest(c buffalo.Context) error {
 
 	response := c.Response()
 	response.Header().Set("Content-Type", "text/csv")
+	// TODO: use a more specific filename
 	response.Header().Set("Content-Disposition", `attachment; filename="batch.csv"`)
 	_, err := response.Write(csvData)
 
