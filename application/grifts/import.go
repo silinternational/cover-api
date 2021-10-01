@@ -499,20 +499,20 @@ func importPolicyUsers(tx *pop.Connection, p LegacyPolicy, policyID uuid.UUID) i
 			}
 			continue
 		}
-		r := createPolicyUser(tx, validEmail, policyID)
+		r := createPolicyUser(tx, validEmail, p.FirstName, p.LastName, policyID)
 		result.policyUsersCreated += r.policyUsersCreated
 		result.usersCreated += r.usersCreated
 	}
 	return result
 }
 
-func createPolicyUser(tx *pop.Connection, email string, policyID uuid.UUID) importPolicyUsersResult {
+func createPolicyUser(tx *pop.Connection, email, firstName, lastName string, policyID uuid.UUID) importPolicyUsersResult {
 	result := importPolicyUsersResult{}
 
 	email = strings.ToLower(email)
 	userID, ok := userEmailMap[email]
 	if !ok {
-		user := createUserFromEmailAddress(tx, email)
+		user := createUserFromEmailAddress(tx, email, firstName, lastName)
 		userID = user.ID
 		result.usersCreated = 1
 	}
@@ -535,7 +535,7 @@ func createPolicyUser(tx *pop.Connection, email string, policyID uuid.UUID) impo
 	return result
 }
 
-func createUserFromEmailAddress(tx *pop.Connection, email string) models.User {
+func createUserFromEmailAddress(tx *pop.Connection, email, firstName, lastName string) models.User {
 	staffID, ok := userEmailStaffIDMap[email]
 	if ok {
 		nPolicyUsersWithStaffID++
@@ -543,6 +543,8 @@ func createUserFromEmailAddress(tx *pop.Connection, email string) models.User {
 
 	user := models.User{
 		Email:        email,
+		FirstName:    trim(firstName),
+		LastName:     trim(lastName),
 		StaffID:      staffID,
 		AppRole:      models.AppRoleUser,
 		LastLoginUTC: emptyTime,
@@ -816,25 +818,20 @@ func importJournalEntries(tx *pop.Connection, entries []JournalEntry) {
 		//		e.DateEntd, e.DateSubm, e.Entity, e.AccNum, e.RMJE, e.JERecNum)
 		//}
 
-		var entityID nulls.UUID
-		if u, ok := entityCodesMap[e.Entity]; ok {
-			entityID = nulls.NewUUID(u)
-		}
 		policyUUID, err := getPolicyUUID(e.PolicyID)
 		if err != nil {
 			badPolicyIDs[e.PolicyID] = struct{}{}
-			// fmt.Printf("ledger has bad policy ID, %s\n", err)
 			continue
 		}
 		l := models.LedgerEntry{
 			PolicyID:           policyUUID,
-			EntityCodeID:       entityID,
 			Amount:             int(math.Round(e.CustJE * domain.CurrencyFactor)),
 			DateSubmitted:      parseStringTime(e.DateSubm, "LedgerEntry.DateSubmitted"),
 			DateEntered:        parseStringTimeToNullTime(e.DateEntd, "LedgerEntry.DateEntered"),
 			LegacyID:           nulls.NewInt(stringToInt(e.JERecNum, "LedgerEntry.LegacyID")),
-			RecordType:         nulls.NewInt(e.JERecType),
-			PolicyType:         nulls.NewInt(e.PolicyType),
+			Type:               getLedgerEntryType(e.JERecType),
+			IncomeAccount:      getIncomeAccount(e),
+			RiskCategoryName:   policyTypeToRiskCategoryName(e.PolicyType),
 			AccountNumber:      strconv.Itoa(e.AccNum),
 			AccountCostCenter1: trim(e.AccCostCtr1),
 			AccountCostCenter2: trim(e.AccCostCtr2),
@@ -855,6 +852,48 @@ func importJournalEntries(tx *pop.Connection, entries []JournalEntry) {
 		i++
 	}
 	fmt.Printf("  LedgerEntries: %d (policy IDs not found: %s)\n", nImported, strings.Join(s, ","))
+}
+
+func getIncomeAccount(e JournalEntry) string {
+	accountMap := map[string]string{
+		"MMB/STM": "40200",
+		"SIL":     "43250",
+		"WBT":     "44250",
+	}
+	incomeAccount := ""
+	if e.JERecType == 4 || e.JERecType == 6 {
+		incomeAccount = "63550" // Claims
+	} else {
+		incomeAccount = accountMap[e.Entity]
+	}
+
+	if e.PolicyType == 2 {
+		incomeAccount += "MPRO12"
+	} else {
+		incomeAccount += "MCMC12"
+	}
+	return incomeAccount
+}
+
+func getLedgerEntryType(i int) models.LedgerEntryType {
+	types := map[int]models.LedgerEntryType{
+		1:  models.LedgerEntryTypeNewCoverage,
+		2:  models.LedgerEntryTypeCoverageChange,
+		3:  models.LedgerEntryTypePolicyAdjustment,
+		4:  models.LedgerEntryTypeClaim,
+		5:  models.LedgerEntryTypeLegacy5,
+		6:  models.LedgerEntryTypeClaimAdjustment,
+		20: models.LedgerEntryTypeLegacy20,
+	}
+	return types[i]
+}
+
+func policyTypeToRiskCategoryName(i int) string {
+	names := map[int]string{
+		1: "Mobile",
+		2: "Stationary",
+	}
+	return names[i]
 }
 
 func getPolicyUUID(id int) (uuid.UUID, error) {
@@ -909,7 +948,7 @@ func parseStringTimeToNullTime(t, desc string) nulls.Time {
 		if !SilenceEmptyTimeWarnings {
 			log.Printf("time is empty, using null time, in %s", desc)
 		}
-		return nulls.NewTime(emptyTime)
+		return nulls.Time{}
 	}
 
 	var tt time.Time

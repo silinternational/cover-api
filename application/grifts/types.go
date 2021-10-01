@@ -41,6 +41,8 @@ type LegacyPolicy struct {
 	EntityCode  nulls.String  `json:"entity_code"`
 	Type        string        `json:"type"`
 	Email       string        `json:"email"`
+	LastName    string        `json:"last_name"`
+	FirstName   string        `json:"first_name"`
 	UpdatedAt   nulls.String  `json:"updated_at"`
 	CreatedAt   string        `json:"created_at"`
 }
