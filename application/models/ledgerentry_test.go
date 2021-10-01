@@ -1,10 +1,14 @@
 package models
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
 	"github.com/gobuffalo/nulls"
+
+	"github.com/silinternational/cover-api/api"
+	"github.com/silinternational/cover-api/domain"
 )
 
 func (ms *ModelSuite) TestLedgerEntries_AllForMonth() {
@@ -58,6 +62,72 @@ func (ms *ModelSuite) TestLedgerEntries_AllForMonth() {
 			err := entries.AllForMonth(ms.DB, tt.batchDate)
 			ms.NoError(err)
 			ms.Equal(tt.expectedNumberOfEntries, len(entries), "incorrect number of LedgerEntries")
+		})
+	}
+}
+
+func (ms *ModelSuite) TestLedgerEntries_ToCsv() {
+	date := time.Date(2021, 3, 1, 0, 0, 0, 0, time.UTC)
+
+	entry := LedgerEntry{
+		PolicyID:           domain.GetUUID(),
+		EntityCode:         "EntityCode",
+		RiskCategoryName:   "Mobile",
+		Type:               LedgerEntryTypeClaim,
+		IncomeAccount:      "IncomeAccount",
+		FirstName:          "FirstName",
+		LastName:           "LastName",
+		Amount:             100,
+		DateSubmitted:      date,
+		AccountNumber:      "AccountNumber",
+		AccountCostCenter1: "AccountCostCenter1",
+		AccountCostCenter2: "AccountCostCenter2",
+	}
+
+	domain.Env.ExpenseAccount = "XYZ123"
+
+	summaryLine := date.Format("January 2006 Cover JE")
+
+	tests := []struct {
+		name      string
+		entries   LedgerEntries
+		batchDate time.Time
+		want      []string
+	}{
+		{
+			name:      "no data",
+			entries:   LedgerEntries{},
+			batchDate: date,
+			want:      []string{summaryLine},
+		},
+		{
+			name:      "1 entry",
+			entries:   LedgerEntries{entry},
+			batchDate: date,
+			want: []string{
+				summaryLine,
+				fmt.Sprintf(`"2","000000","00001","0000000020","",0,"%s","",%s,"2","%s","%s",%s,"GL","JE"`,
+					domain.Env.ExpenseAccount,
+					api.Currency(-entry.Amount).String(),
+					entry.transactionDescription(),
+					entry.transactionReference(),
+					date.Format("20060102"),
+				),
+				fmt.Sprintf(`"2","000000","00001","0000000040","",0,"%s","",%s,"2","%s","",%s,"GL","JE"`,
+					entry.IncomeAccount,
+					api.Currency(entry.Amount).String(),
+					entry.balanceDescription(),
+					date.Format("20060102"),
+				),
+			},
+		},
+	}
+	for _, tt := range tests {
+		ms.T().Run(tt.name, func(t *testing.T) {
+			got := tt.entries.ToCsv(tt.batchDate)
+			for _, w := range tt.want {
+				ms.Contains(string(got), w)
+			}
 		})
 	}
 }
