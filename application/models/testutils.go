@@ -359,7 +359,7 @@ func CreatePolicyDependentFixtures(tx *pop.Connection, policy Policy, n int) Fix
 	policyDependents := make(PolicyDependents, n)
 	for i := range policyDependents {
 		policyDependents[i].PolicyID = policy.ID
-		policyDependents[i].Name = randStr(10)
+		policyDependents[i].Name = randStr(10) + " " + randStr(10)
 		policyDependents[i].Relationship = api.PolicyDependentRelationshipChild
 		policyDependents[i].Location = randStr(10)
 		policyDependents[i].ChildBirthYear = time.Now().Year() - 18
