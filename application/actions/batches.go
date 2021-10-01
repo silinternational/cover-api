@@ -1,6 +1,7 @@
 package actions
 
 import (
+	"fmt"
 	"net/http"
 	"time"
 
@@ -43,8 +44,8 @@ func batchesGetLatest(c buffalo.Context) error {
 
 	response := c.Response()
 	response.Header().Set("Content-Type", "text/csv")
-	// TODO: use a more specific filename
-	response.Header().Set("Content-Disposition", `attachment; filename="batch.csv"`)
+	fileHeader := fmt.Sprintf(`attachment; filename="%s.csv"`, firstDay.Format("2006-01"))
+	response.Header().Set("Content-Disposition", fileHeader)
 	_, err := response.Write(csvData)
 
 	return err
