@@ -1,4 +1,4 @@
-drop_column("risk_categories")
+drop_column("risk_categories", "cost_center")
 
 add_column("ledger_entries", "entity_code_id", "uuid", {"null": true})
 
