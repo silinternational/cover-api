@@ -133,6 +133,14 @@ func (c *Claim) Update(ctx context.Context) error {
 		return appErr
 	}
 
+	if c.Status != api.ClaimStatusDraft {
+		c.LoadClaimItems(tx, false)
+		if len(c.ClaimItems) == 0 {
+			err := errors.New("claim must have a claimItem if no longer in draft")
+			appErr := api.NewAppError(err, api.ErrorClaimMissingClaimItem, api.CategoryUser)
+			return appErr
+		}
+	}
 	updates := c.Compare(oldClaim)
 	for i := range updates {
 		history := c.NewHistory(ctx, api.HistoryActionUpdate, updates[i])

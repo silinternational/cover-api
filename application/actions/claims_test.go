@@ -530,6 +530,12 @@ func (as *ActionSuite) Test_ClaimsSubmit() {
 	draftClaim := policy.Claims[0]
 	approvedClaim := models.UpdateClaimStatus(as.DB, policy.Claims[1], api.ClaimStatusApproved, "")
 
+	goodParams := models.UpdateClaimItemsParams{
+		PayoutOption: api.PayoutOptionFMV,
+		FMV:          2000,
+	}
+	models.UpdateClaimItems(as.DB, draftClaim, goodParams)
+
 	otherUser := fixtures.Policies[1].Members[0]
 
 	tests := []struct {

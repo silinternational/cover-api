@@ -61,7 +61,6 @@ const (
 	ErrorClaimFromContext      = ErrorKey("ErrorClaimFromContext")
 	ErrorClaimStatus           = ErrorKey("ErrorClaimStatus")
 	ErrorClaimMissingClaimItem = ErrorKey("ErrorClaimMissingClaimItem")
-	ErrorClaimMissingDetails   = ErrorKey("ErrorClaimMissingDetails")
 
 	// Item
 	ErrorItemFromContext              = ErrorKey("ErrorItemFromContext")
