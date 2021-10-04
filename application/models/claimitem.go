@@ -260,7 +260,9 @@ func (c *ClaimItem) ValidateForSubmit(tx *pop.Connection) api.ErrorKey {
 			}
 		}
 	case api.ClaimIncidentTypeEvacuation:
-		// no information required in this case
+		if c.PayoutOption != api.PayoutOptionFixedFraction {
+			return api.ErrorClaimItemInvalidPayoutOption
+		}
 	}
 	return ""
 }

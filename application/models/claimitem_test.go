@@ -327,6 +327,10 @@ func (ms *ModelSuite) TestClaimItem_ValidateForSubmit() {
 	invalidPayoutOption.Claim.IncidentType = api.ClaimIncidentTypeImpact
 	invalidPayoutOption.PayoutOption = api.PayoutOptionRepair
 
+	invalidPayoutOptionEvacuation := good
+	invalidPayoutOptionEvacuation.Claim.IncidentType = api.ClaimIncidentTypeEvacuation
+	invalidPayoutOptionEvacuation.PayoutOption = api.PayoutOptionRepair
+
 	missingReplaceEstimateImpact := good
 	missingReplaceEstimateImpact.Claim.IncidentType = api.ClaimIncidentTypeImpact
 	missingReplaceEstimateImpact.PayoutOption = api.PayoutOptionReplacement
@@ -365,6 +369,11 @@ func (ms *ModelSuite) TestClaimItem_ValidateForSubmit() {
 		{
 			name:      "invalid payout option",
 			claimItem: invalidPayoutOption,
+			want:      api.ErrorClaimItemInvalidPayoutOption,
+		},
+		{
+			name:      "invalid payout option, evacuation",
+			claimItem: invalidPayoutOptionEvacuation,
 			want:      api.ErrorClaimItemInvalidPayoutOption,
 		},
 		{
