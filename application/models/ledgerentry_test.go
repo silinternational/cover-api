@@ -35,32 +35,27 @@ func (ms *ModelSuite) TestLedgerEntries_AllForMonth() {
 		name                    string
 		batchDate               time.Time
 		expectedNumberOfEntries int
-		wantErr                 bool
 	}{
 		{
 			name:                    "no un-entered entries for March",
 			batchDate:               march,
 			expectedNumberOfEntries: 0,
-			wantErr:                 false,
 		},
 		{
 			name:                    "one entry for April",
 			batchDate:               april,
 			expectedNumberOfEntries: 1,
-			wantErr:                 false,
 		},
 		{
 			name:                    "no entry for May",
 			batchDate:               may,
 			expectedNumberOfEntries: 0,
-			wantErr:                 false,
 		},
 	}
 	for _, tt := range tests {
 		ms.T().Run(tt.name, func(t *testing.T) {
 			entries := LedgerEntries{}
 			err := entries.AllForMonth(ms.DB, tt.batchDate)
-			ms.NoError(err)
 			ms.Equal(tt.expectedNumberOfEntries, len(entries), "incorrect number of LedgerEntries")
 		})
 	}
