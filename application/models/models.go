@@ -9,7 +9,6 @@ import (
 	"log"
 	"net/http"
 	"reflect"
-	"sort"
 	"time"
 
 	"github.com/go-playground/validator/v10"
@@ -51,20 +50,6 @@ const (
 type idTime struct {
 	ID        uuid.UUID
 	UpdatedAt time.Time
-}
-
-func sortIDTimes(uniqueIDTimes map[uuid.UUID]time.Time) []idTime {
-	allIDTimes := []idTime{}
-
-	for id, tm := range uniqueIDTimes {
-		allIDTimes = append(allIDTimes, idTime{ID: id, UpdatedAt: tm})
-	}
-
-	// sort with most recent first
-	sort.Slice(allIDTimes,
-		func(i, j int) bool { return allIDTimes[i].UpdatedAt.Before(allIDTimes[j].UpdatedAt) })
-
-	return allIDTimes
 }
 
 type Authable interface {

@@ -18,7 +18,6 @@ import (
 //	 CoverageStatus/Update [could be included, if date is recent]
 //	 CoverageStatus/Update [could be included, if date is recent]
 func CreatePolicyHistoryFixtures_RecentItemStatusChanges(tx *pop.Connection) Fixtures {
-
 	config := FixturesConfig{
 		NumberOfPolicies: 1,
 		ItemsPerPolicy:   3,
@@ -67,7 +66,7 @@ func CreatePolicyHistoryFixtures_RecentItemStatusChanges(tx *pop.Connection) Fix
 	hydratePHsForItem(4, mixedNewItem.ID)
 	hydratePHsForItem(8, noneNewItem.ID)
 
-	for i, _ := range pHistories {
+	for i := range pHistories {
 		pHistories[i].PolicyID = policy.ID
 		pHistories[i].UserID = user.ID
 		MustCreate(tx, &pHistories[i])
@@ -101,45 +100,15 @@ func (ms *ModelSuite) TestPolicyHistories_RecentItemStatusChanges() {
 	var gotPHs PolicyHistories
 
 	ms.NoError(gotPHs.RecentItemStatusChanges(ms.DB), "error calling function")
-	got := make([][2]string, len(gotPHs))
+	got := make([]string, len(gotPHs))
 	for i, g := range gotPHs {
-		got[i] = [2]string{g.ID.String(), g.ItemID.UUID.String()}
+		got[i] = g.ItemID.UUID.String()
 	}
 
-	want := [][2]string{
-		{phFixes[2].ID.String(), phFixes[2].ItemID.UUID.String()},
-		{phFixes[3].ID.String(), phFixes[3].ItemID.UUID.String()},
-		{phFixes[7].ID.String(), phFixes[7].ItemID.UUID.String()},
+	want := []string{
+		phFixes[3].ItemID.UUID.String(),
+		phFixes[7].ItemID.UUID.String(),
 	}
 
 	ms.ElementsMatch(want, got, "incorrect results")
-}
-
-func (ms *ModelSuite) TestPolicyHistories_getUniqueIDTimes() {
-	itemID0 := domain.GetUUID()
-	itemID1 := domain.GetUUID()
-	itemID2 := domain.GetUUID()
-
-	time0 := time.Date(2000, 1, 1, 1, 0, 0, 0, time.UTC)
-	time1 := time.Date(2001, 1, 1, 1, 0, 0, 0, time.UTC)
-	time2 := time.Date(2002, 1, 1, 1, 0, 0, 0, time.UTC)
-	time3 := time.Date(2003, 1, 1, 1, 0, 0, 0, time.UTC)
-
-	pHistories := PolicyHistories{
-		{ItemID: nulls.NewUUID(itemID0), CreatedAt: time1},
-		{ItemID: nulls.NewUUID(itemID2), CreatedAt: time0},
-		{ItemID: nulls.NewUUID(itemID1), CreatedAt: time2},
-		{ItemID: nulls.NewUUID(itemID0), CreatedAt: time3},
-		{ItemID: nulls.NewUUID(itemID2), CreatedAt: time0},
-	}
-
-	got := pHistories.getUniqueIDTimes()
-
-	want := map[uuid.UUID]time.Time{
-		itemID0: time3,
-		itemID1: time2,
-		itemID2: time0,
-	}
-
-	ms.Equal("", assertMapsUUIDTimeEqual(want, got), "incorrect resulting map")
 }
