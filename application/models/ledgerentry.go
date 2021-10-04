@@ -67,6 +67,8 @@ func (le *LedgerEntry) Create(tx *pop.Connection) error {
 	return create(tx, le)
 }
 
+// AllForMonth returns all the non-entered entries (date_entered is null) for the month.
+// The provided date must be the first day of the month.
 func (le *LedgerEntries) AllForMonth(tx *pop.Connection, firstDay time.Time) error {
 	lastDay := domain.EndOfMonth(firstDay)
 
