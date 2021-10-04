@@ -7,6 +7,9 @@ import (
 	"github.com/gobuffalo/pop/v5"
 	"github.com/gobuffalo/validate/v3"
 	"github.com/gofrs/uuid"
+
+	"github.com/silinternational/cover-api/api"
+	"github.com/silinternational/cover-api/domain"
 )
 
 type PolicyHistories []PolicyHistory
@@ -39,4 +42,16 @@ func (p *PolicyHistory) GetID() uuid.UUID {
 
 func (p *PolicyHistory) FindByID(tx *pop.Connection, id uuid.UUID) error {
 	return tx.Find(p, id)
+}
+
+func (p *PolicyHistories) RecentItemStatusChanges(tx *pop.Connection) error {
+	now := time.Now().UTC()
+	cutoffDate := now.Add(-1 * domain.DurationWeek)
+	err := tx.Where("created_at > ?", cutoffDate).
+		Where("field_name = ? AND action = ?", "CoverageStatus", api.HistoryActionUpdate).All(p)
+
+	if err != nil {
+		return appErrorFromDB(err, api.ErrorQueryFailure)
+	}
+	return nil
 }

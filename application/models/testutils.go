@@ -42,6 +42,7 @@ type Fixtures struct {
 	ItemCategories
 	Policies
 	PolicyDependents
+	PolicyHistories
 	PolicyUsers
 	PolicyUserInvites
 	UserAccessTokens
