@@ -37,11 +37,13 @@ type FixturesConfig struct {
 // Fixtures hold slices of model objects created for test fixtures
 type Fixtures struct {
 	Claims
+	ClaimHistories
 	Files
 	Items
 	ItemCategories
 	Policies
 	PolicyDependents
+	PolicyHistories
 	PolicyUsers
 	PolicyUserInvites
 	UserAccessTokens

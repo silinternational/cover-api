@@ -39,6 +39,11 @@ const (
 	PermissionUpdate
 	PermissionDelete
 	PermissionDenied
+
+	FieldClaimStatus        = "Status"
+	FieldItemCoverageStatus = "CoverageStatus"
+
+	QueryRecentStatusChanges = "created_at > ? AND field_name = ? AND action = ?"
 )
 
 type Authable interface {
