@@ -53,8 +53,28 @@ func (p *PolicyHistories) RecentItemStatusChanges(tx *pop.Connection) error {
 	cutoffDate := now.Add(-1 * domain.DurationWeek)
 	err := tx.Where(QueryRecentStatusChanges, cutoffDate, FieldItemCoverageStatus, api.HistoryActionUpdate).All(p)
 
-	if err != nil {
+	if domain.IsOtherThanNoRows(err) {
 		return appErrorFromDB(err, api.ErrorQueryFailure)
 	}
 	return nil
+}
+
+func (p *PolicyHistories) getUniqueIDTimes() map[string]time.Time {
+	uniqueIDTimes := map[string]time.Time{}
+
+	for _, h := range *p {
+		if !h.ItemID.Valid {
+			continue
+		}
+		id := h.ItemID.UUID.String()
+		previousTime, ok := uniqueIDTimes[id]
+		if !ok {
+			uniqueIDTimes[id] = h.CreatedAt
+			continue
+		}
+		if h.CreatedAt.After(previousTime) {
+			uniqueIDTimes[id] = h.CreatedAt
+		}
+	}
+	return uniqueIDTimes
 }

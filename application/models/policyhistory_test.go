@@ -114,3 +114,32 @@ func (ms *ModelSuite) TestPolicyHistories_RecentItemStatusChanges() {
 
 	ms.ElementsMatch(want, got, "incorrect results")
 }
+
+func (ms *ModelSuite) TestPolicyHistories_getUniqueIDTimes() {
+	itemID0 := domain.GetUUID()
+	itemID1 := domain.GetUUID()
+	itemID2 := domain.GetUUID()
+
+	time0 := time.Date(2000, 1, 1, 1, 0, 0, 0, time.UTC)
+	time1 := time.Date(2001, 1, 1, 1, 0, 0, 0, time.UTC)
+	time2 := time.Date(2002, 1, 1, 1, 0, 0, 0, time.UTC)
+	time3 := time.Date(2003, 1, 1, 1, 0, 0, 0, time.UTC)
+
+	pHistories := PolicyHistories{
+		{ItemID: nulls.NewUUID(itemID0), CreatedAt: time1},
+		{ItemID: nulls.NewUUID(itemID2), CreatedAt: time0},
+		{ItemID: nulls.NewUUID(itemID1), CreatedAt: time2},
+		{ItemID: nulls.NewUUID(itemID0), CreatedAt: time3},
+		{ItemID: nulls.NewUUID(itemID2), CreatedAt: time0},
+	}
+
+	got := pHistories.getUniqueIDTimes()
+
+	want := map[string]time.Time{
+		itemID0.String(): time3,
+		itemID1.String(): time2,
+		itemID2.String(): time0,
+	}
+
+	ms.Equal("", assertMapsStringTimeEqual(want, got), "incorrect resulting map")
+}

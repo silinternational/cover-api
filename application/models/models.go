@@ -9,6 +9,8 @@ import (
 	"log"
 	"net/http"
 	"reflect"
+	"sort"
+	"time"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gobuffalo/events"
@@ -45,6 +47,25 @@ const (
 
 	QueryRecentStatusChanges = "created_at > ? AND field_name = ? AND action = ?"
 )
+
+type idTime struct {
+	ID        string
+	UpdatedAt time.Time
+}
+
+func sortIDTimes(uniqueIDTimes map[string]time.Time) []idTime {
+	allIDTimes := []idTime{}
+
+	for id, tm := range uniqueIDTimes {
+		allIDTimes = append(allIDTimes, idTime{ID: id, UpdatedAt: tm})
+	}
+
+	// sort with most recent first
+	sort.Slice(allIDTimes,
+		func(i, j int) bool { return allIDTimes[i].UpdatedAt.Before(allIDTimes[j].UpdatedAt) })
+
+	return allIDTimes
+}
 
 type Authable interface {
 	GetID() uuid.UUID
