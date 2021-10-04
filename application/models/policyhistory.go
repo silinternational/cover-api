@@ -44,10 +44,11 @@ func (p *PolicyHistory) FindByID(tx *pop.Connection, id uuid.UUID) error {
 	return tx.Find(p, id)
 }
 
-// RecentItemStatusChanges hydrates the PolicyHistories with those that
+// RecentItemStatusChanges finds the PolicyHistories that
 //  have been created in the last week and that also have
 //  a field_name of CoverageStatus and
 //  an action of Update
+// NOTE: only `ItemID` and `CreatedAt` are hydrated by this function
 func (p *PolicyHistories) RecentItemStatusChanges(tx *pop.Connection) error {
 	now := time.Now().UTC()
 	cutoffDate := now.Add(-1 * domain.DurationWeek)
