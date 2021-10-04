@@ -56,6 +56,7 @@ func (ms *ModelSuite) TestLedgerEntries_AllForMonth() {
 		ms.T().Run(tt.name, func(t *testing.T) {
 			entries := LedgerEntries{}
 			err := entries.AllForMonth(ms.DB, tt.batchDate)
+			ms.NoError(err)
 			ms.Equal(tt.expectedNumberOfEntries, len(entries), "incorrect number of LedgerEntries")
 		})
 	}
