@@ -11,8 +11,12 @@ import (
 	"github.com/silinternational/cover-api/domain"
 )
 
-// CreatePolicyHistoryFixtures generates a Policy with two Items and a number
-//   of PolicyHistory entries
+// CreatePolicyHistoryFixtures generates a Policy with three Items each with
+//   four PolicyHistory entries as follows
+//	 CoverageStatus/Create  [not included because not update]
+//	 Name/Update [not included because not on CoverageStatus field]
+//	 CoverageStatus/Update [could be included, if date is recent]
+//	 CoverageStatus/Update [could be included, if date is recent]
 func CreatePolicyHistoryFixtures_RecentItemStatusChanges(tx *pop.Connection) Fixtures {
 
 	config := FixturesConfig{
@@ -31,7 +35,7 @@ func CreatePolicyHistoryFixtures_RecentItemStatusChanges(tx *pop.Connection) Fix
 
 	pHistories := make(PolicyHistories, len(items)*4)
 
-	// Hydrate a set of policyHistoriesas follows
+	// Hydrate a set of policyHistories as follows
 	//  index n:   CoverageStatus/Create
 	//  index n+1: Name/Update
 	//  index n+2: CoverageStatus/Update
@@ -90,7 +94,7 @@ func CreatePolicyHistoryFixtures_RecentItemStatusChanges(tx *pop.Connection) Fix
 	return fixtures
 }
 
-func (ms *ModelSuite) TestPolicyHistory_RecentItemStatusChanges() {
+func (ms *ModelSuite) TestPolicyHistories_RecentItemStatusChanges() {
 	fixtures := CreatePolicyHistoryFixtures_RecentItemStatusChanges(ms.DB)
 	phFixes := fixtures.PolicyHistories
 
