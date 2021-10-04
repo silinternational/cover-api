@@ -125,6 +125,7 @@ var _ = grift.Namespace("db", func() {
 		fmt.Println("")
 
 		if err := models.DB.Transaction(func(tx *pop.Connection) error {
+			assignRiskCategoryCostCenters(tx)
 			importAdminUsers(tx, obj.Users)
 			importItemCategories(tx, obj.ItemCategories)
 			importPolicies(tx, obj.Policies)
@@ -193,6 +194,24 @@ func importIdpUsersFromFile(idpName string) int {
 		}
 	}
 	return n
+}
+
+func assignRiskCategoryCostCenters(tx *pop.Connection) {
+	mobile := models.RiskCategory{
+		ID:         models.RiskCategoryMobileID(),
+		CostCenter: "MCMC12",
+	}
+	if err := tx.UpdateColumns(&mobile, "cost_center"); err != nil {
+		log.Fatalf("failed to set cost_center on risk category, %s", err)
+	}
+
+	stationary := models.RiskCategory{
+		ID:         models.RiskCategoryStationaryID(),
+		CostCenter: "MPRO12",
+	}
+	if err := tx.UpdateColumns(&stationary, "cost_center"); err != nil {
+		log.Fatalf("failed to set cost_center on risk category, %s", err)
+	}
 }
 
 func importAdminUsers(tx *pop.Connection, users []LegacyUser) {
@@ -868,9 +887,9 @@ func getIncomeAccount(e JournalEntry) string {
 	}
 
 	if e.PolicyType == 2 {
-		incomeAccount += "MPRO12"
+		incomeAccount += "MPRO12" // Stationary
 	} else {
-		incomeAccount += "MCMC12"
+		incomeAccount += "MCMC12" // Mobile
 	}
 	return incomeAccount
 }
