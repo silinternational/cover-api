@@ -44,7 +44,7 @@ func CreatePolicyHistoryFixtures_RecentItemStatusChanges(tx *pop.Connection) Fix
 		pHistories[startIndex] = PolicyHistory{
 			ItemID:    nulls.NewUUID(itemID),
 			Action:    api.HistoryActionCreate,
-			FieldName: "CoverageStatus",
+			FieldName: FieldItemCoverageStatus,
 		}
 		pHistories[startIndex+1] = PolicyHistory{
 			ItemID:    nulls.NewUUID(itemID),
@@ -54,12 +54,12 @@ func CreatePolicyHistoryFixtures_RecentItemStatusChanges(tx *pop.Connection) Fix
 		pHistories[startIndex+2] = PolicyHistory{
 			ItemID:    nulls.NewUUID(itemID),
 			Action:    api.HistoryActionUpdate,
-			FieldName: "CoverageStatus",
+			FieldName: FieldItemCoverageStatus,
 		}
 		pHistories[startIndex+3] = PolicyHistory{
 			ItemID:    nulls.NewUUID(itemID),
 			Action:    api.HistoryActionUpdate,
-			FieldName: "CoverageStatus",
+			FieldName: FieldItemCoverageStatus,
 		}
 	}
 

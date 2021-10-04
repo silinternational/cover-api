@@ -51,8 +51,7 @@ func (ch *ClaimHistory) FindByID(tx *pop.Connection, id uuid.UUID) error {
 func (ch *ClaimHistories) RecentClaimStatusChanges(tx *pop.Connection) error {
 	now := time.Now().UTC()
 	cutoffDate := now.Add(-1 * domain.DurationWeek)
-	err := tx.Where("created_at > ?", cutoffDate).
-		Where("field_name = ? AND action = ?", "Status", api.HistoryActionUpdate).All(ch)
+	err := tx.Where(QueryRecentStatusChanges, cutoffDate, FieldClaimStatus, api.HistoryActionUpdate).All(ch)
 
 	if err != nil {
 		return appErrorFromDB(err, api.ErrorQueryFailure)

@@ -51,8 +51,7 @@ func (p *PolicyHistory) FindByID(tx *pop.Connection, id uuid.UUID) error {
 func (p *PolicyHistories) RecentItemStatusChanges(tx *pop.Connection) error {
 	now := time.Now().UTC()
 	cutoffDate := now.Add(-1 * domain.DurationWeek)
-	err := tx.Where("created_at > ?", cutoffDate).
-		Where("field_name = ? AND action = ?", "CoverageStatus", api.HistoryActionUpdate).All(p)
+	err := tx.Where(QueryRecentStatusChanges, cutoffDate, FieldItemCoverageStatus, api.HistoryActionUpdate).All(p)
 
 	if err != nil {
 		return appErrorFromDB(err, api.ErrorQueryFailure)

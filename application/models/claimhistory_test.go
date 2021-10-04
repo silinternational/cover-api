@@ -45,7 +45,7 @@ func CreateClaimHistoryFixtures_RecentClaimStatusChanges(tx *pop.Connection) Fix
 		cHistories[startIndex] = ClaimHistory{
 			ClaimID:   claimID,
 			Action:    api.HistoryActionCreate,
-			FieldName: "Status",
+			FieldName: FieldClaimStatus,
 		}
 		cHistories[startIndex+1] = ClaimHistory{
 			ClaimID:   claimID,
@@ -55,12 +55,12 @@ func CreateClaimHistoryFixtures_RecentClaimStatusChanges(tx *pop.Connection) Fix
 		cHistories[startIndex+2] = ClaimHistory{
 			ClaimID:   claimID,
 			Action:    api.HistoryActionUpdate,
-			FieldName: "Status",
+			FieldName: FieldClaimStatus,
 		}
 		cHistories[startIndex+3] = ClaimHistory{
 			ClaimID:   claimID,
 			Action:    api.HistoryActionUpdate,
-			FieldName: "Status",
+			FieldName: FieldClaimStatus,
 		}
 	}
 
