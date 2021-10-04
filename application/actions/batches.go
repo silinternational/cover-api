@@ -7,6 +7,7 @@ import (
 
 	"github.com/gobuffalo/buffalo"
 
+	"github.com/silinternational/cover-api/api"
 	"github.com/silinternational/cover-api/domain"
 	"github.com/silinternational/cover-api/models"
 )
@@ -27,6 +28,12 @@ import (
 //           type: string
 //           format: text
 func batchesGetLatest(c buffalo.Context) error {
+	actor := models.CurrentUser(c)
+	if !actor.IsAdmin() {
+		err := fmt.Errorf("actor not allowed to perform that action on this resource")
+		return reportError(c, api.NewAppError(err, api.ErrorNotAuthorized, api.CategoryForbidden))
+	}
+
 	tx := models.Tx(c)
 
 	now := time.Now().UTC()

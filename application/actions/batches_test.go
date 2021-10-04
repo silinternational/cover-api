@@ -1,1 +1,86 @@
 package actions
+
+import (
+	"fmt"
+	"net/http"
+	"strings"
+	"testing"
+	"time"
+
+	"github.com/gobuffalo/nulls"
+
+	"github.com/silinternational/cover-api/api"
+	"github.com/silinternational/cover-api/domain"
+	"github.com/silinternational/cover-api/models"
+)
+
+func (as *ActionSuite) Test_BatchesLatest() {
+	f := models.CreateItemFixtures(as.DB, models.FixturesConfig{ItemsPerPolicy: 2})
+	normalUser := f.Users[0]
+	stewardUser := models.CreateAdminUsers(as.DB)[models.AppRoleSteward]
+
+	now := time.Now().UTC()
+	lastMonth := domain.BeginningOfLastMonth(now)
+
+	datesSubmitted := []time.Time{lastMonth, lastMonth}
+	datesEntered := []nulls.Time{nulls.NewTime(now), {}}
+
+	for i := range f.Items {
+		as.NoError(f.Items[i].Approve(as.DB))
+
+		entry := models.LedgerEntry{}
+		as.NoError(as.DB.Where("item_id = ?", f.Items[i].ID).First(&entry))
+		entry.DateSubmitted = datesSubmitted[i]
+		entry.DateEntered = datesEntered[i]
+		as.NoError(as.DB.Update(&entry))
+	}
+
+	tests := []struct {
+		name       string
+		actor      models.User
+		wantRows   int // rows in CSV, including header rows
+		wantStatus int
+		wantInBody []string
+	}{
+		{
+			name:       "unauthenticated",
+			actor:      models.User{},
+			wantStatus: http.StatusUnauthorized,
+			wantInBody: []string{api.ErrorNotAuthorized.String()},
+		},
+		{
+			name:       "insufficient privileges",
+			actor:      normalUser,
+			wantStatus: http.StatusNotFound,
+			wantInBody: []string{`"key":"` + api.ErrorNotAuthorized.String()},
+		},
+		{
+			name:       "normal user good results",
+			actor:      stewardUser,
+			wantStatus: http.StatusOK,
+			wantRows:   5, // 2 header rows, 1 summary row, 1 transaction row, 1 balance row
+		},
+	}
+
+	for _, tt := range tests {
+		as.T().Run(tt.name, func(t *testing.T) {
+			req := as.JSON(batchesPath + "/latest")
+			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
+			res := req.Get()
+
+			body := res.Body.String()
+			as.Equal(tt.wantStatus, res.Code, "incorrect status code returned, body: %s", body)
+
+			for _, s := range tt.wantInBody {
+				as.Contains(body, s)
+			}
+
+			if res.Code != http.StatusOK {
+				return
+			}
+
+			rows := len(strings.Split(res.Body.String(), "\n")) - 1 // don't count empty row at end
+			as.Equal(tt.wantRows, rows, "incorrect count of CSV rows")
+		})
+	}
+}
