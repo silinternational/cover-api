@@ -15,9 +15,9 @@ import (
 type ClaimIncidentType string
 
 // IsRepairable answers the question "Are items with this incident type potentially repairable?"
-func (c *ClaimIncidentType) IsRepairable() bool {
+func (c ClaimIncidentType) IsRepairable() bool {
 	for _, cit := range AllClaimIncidentTypes {
-		if cit.Name == *c {
+		if cit.Name == c {
 			return cit.IsRepairable
 		}
 	}
