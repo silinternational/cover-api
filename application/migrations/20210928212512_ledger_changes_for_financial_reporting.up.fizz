@@ -1,0 +1,11 @@
+add_column("risk_categories", "cost_center", "string", {"default": ""})
+
+drop_column("ledger_entries", "entity_code_id")
+
+drop_column("ledger_entries", "policy_type")
+add_column("ledger_entries", "risk_category_name", "string", {"default": ""})
+
+change_column("ledger_entries", "record_type", "string", {"default": ""})
+rename_column("ledger_entries", "record_type", "type")
+
+add_column("ledger_entries", "income_account", "string", {"default": ""})

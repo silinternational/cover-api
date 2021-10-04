@@ -20,11 +20,12 @@ type RiskCategories []RiskCategory
 
 // RiskCategory model
 type RiskCategory struct {
-	ID        uuid.UUID `db:"id"`
-	Name      string    `db:"name" validate:"required"`
-	PolicyMax int       `db:"policy_max" validate:"required"`
-	CreatedAt time.Time `db:"created_at"`
-	UpdatedAt time.Time `db:"updated_at"`
+	ID         uuid.UUID `db:"id"`
+	Name       string    `db:"name" validate:"required"`
+	PolicyMax  int       `db:"policy_max" validate:"required"`
+	CostCenter string    `db:"cost_center" validate:"required"`
+	CreatedAt  time.Time `db:"created_at"`
+	UpdatedAt  time.Time `db:"updated_at"`
 }
 
 func (r *RiskCategory) Create(tx *pop.Connection) error {

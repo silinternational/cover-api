@@ -172,10 +172,13 @@ var Env struct {
 	// The following will be multiplied by CurrencyFactor in readEnv()
 	PolicyMaxCoverage       int `default:"50000" split_words:"true"`
 	DependentAutoApproveMax int `default:"4000" split_words:"true"`
-	PremiumMinimum          int `default:"25"`
+	PremiumMinimum          int `default:"25" split_words:"true"`
 
 	// PremiumFactor is multiplied by CoverageAmount to calculate the annual premium of an item
-	PremiumFactor float64 `default:"0.02"`
+	PremiumFactor float64 `default:"0.02" split_words:"true"`
+
+	FiscalStartMonth int    `default:"1" split_words:"true"`
+	ExpenseAccount   string `default:"" split_words:"true"`
 }
 
 func init() {
@@ -398,4 +401,12 @@ func CalculatePartialYearValue(value int, startDate time.Time) int {
 	daysSince := hoursSince / 24
 
 	return value * daysSince / 365
+}
+
+func BeginningOfLastMonth(date time.Time) time.Time {
+	return date.AddDate(0, -1, -date.Day()+1)
+}
+
+func EndOfMonth(date time.Time) time.Time {
+	return date.AddDate(0, 1, -date.Day())
 }
