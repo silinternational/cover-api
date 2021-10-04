@@ -32,7 +32,7 @@ func CreatePolicyHistoryFixtures_RecentItemStatusChanges(tx *pop.Connection) Fix
 	mixedNewItem := items[1]
 	noneNewItem := items[2]
 
-	pHistories := make(PolicyHistories, len(items)*4)
+	pHistories := make(PolicyHistories, len(items)*4+1)
 
 	// Hydrate a set of policyHistories as follows
 	//  index n:   CoverageStatus/Create
@@ -65,6 +65,12 @@ func CreatePolicyHistoryFixtures_RecentItemStatusChanges(tx *pop.Connection) Fix
 	hydratePHsForItem(0, allNewItem.ID)
 	hydratePHsForItem(4, mixedNewItem.ID)
 	hydratePHsForItem(8, noneNewItem.ID)
+
+	// Make sure a null item_id doesn't slip through
+	pHistories[12] = PolicyHistory{
+		Action:    api.HistoryActionUpdate,
+		FieldName: FieldItemCoverageStatus,
+	}
 
 	for i := range pHistories {
 		pHistories[i].PolicyID = policy.ID
