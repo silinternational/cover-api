@@ -220,6 +220,61 @@ func (c *ClaimItem) ConvertToAPI(tx *pop.Connection) api.ClaimItem {
 	}
 }
 
+func (c *ClaimItem) ValidateForSubmit(tx *pop.Connection) api.ErrorKey {
+	c.LoadClaim(tx, false)
+
+	if c.PayoutOption == "" {
+		return api.ErrorClaimItemMissingPayoutOption
+	}
+
+	switch c.Claim.IncidentType {
+	case api.ClaimIncidentTypeTheft:
+		if c.replaceEstimateMissing() {
+			return api.ErrorClaimItemMissingReplaceEstimate
+		}
+		if c.fmvMissing() {
+			return api.ErrorClaimItemMissingFMV
+		}
+	case api.ClaimIncidentTypeImpact, api.ClaimIncidentTypeElectricalSurge,
+		api.ClaimIncidentTypeWaterDamage, api.ClaimIncidentTypeOther:
+		if c.IsRepairable {
+			if c.RepairEstimate == 0 {
+				return api.ErrorClaimItemMissingRepairEstimate
+			}
+			if c.FMV == 0 {
+				return api.ErrorClaimItemMissingFMV
+			}
+		} else {
+			if c.PayoutOption == api.PayoutOptionRepair {
+				return api.ErrorClaimItemInvalidPayoutOption
+			}
+			if c.replaceEstimateMissing() {
+				return api.ErrorClaimItemMissingReplaceEstimate
+			}
+			if c.fmvMissing() {
+				return api.ErrorClaimItemMissingFMV
+			}
+		}
+	case api.ClaimIncidentTypeEvacuation:
+		// no information required in this case
+	}
+	return ""
+}
+
+func (c *ClaimItem) replaceEstimateMissing() bool {
+	if c.PayoutOption == api.PayoutOptionReplacement && c.ReplaceEstimate == 0 {
+		return true
+	}
+	return false
+}
+
+func (c *ClaimItem) fmvMissing() bool {
+	if c.PayoutOption == api.PayoutOptionFMV && c.FMV == 0 {
+		return true
+	}
+	return false
+}
+
 func (c *ClaimItems) ConvertToAPI(tx *pop.Connection) api.ClaimItems {
 	claimItems := make(api.ClaimItems, len(*c))
 	for i, cc := range *c {

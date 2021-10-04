@@ -61,6 +61,7 @@ const (
 	ErrorClaimFromContext      = ErrorKey("ErrorClaimFromContext")
 	ErrorClaimStatus           = ErrorKey("ErrorClaimStatus")
 	ErrorClaimMissingClaimItem = ErrorKey("ErrorClaimMissingClaimItem")
+	ErrorClaimMissingDetails   = ErrorKey("ErrorClaimMissingDetails")
 
 	// Item
 	ErrorItemFromContext              = ErrorKey("ErrorItemFromContext")
@@ -79,6 +80,11 @@ const (
 	// PolicyDependent
 	ErrorPolicyDependentCreate = ErrorKey("ErrorPolicyDependentCreate")
 
-	// Claim
-	ErrorClaimItemCreateInvalidInput = ErrorKey("ErrorClaimItemCreateInvalidInput")
+	// ClaimItem
+	ErrorClaimItemCreateInvalidInput     = ErrorKey("ErrorClaimItemCreateInvalidInput")
+	ErrorClaimItemMissingPayoutOption    = ErrorKey("ClaimItemMissingPayoutOption")
+	ErrorClaimItemMissingReplaceEstimate = ErrorKey("ClaimItemMissingReplaceEstimate")
+	ErrorClaimItemMissingRepairEstimate  = ErrorKey("ClaimItemMissingRepairEstimate")
+	ErrorClaimItemMissingFMV             = ErrorKey("ClaimItemMissingFMV")
+	ErrorClaimItemInvalidPayoutOption    = ErrorKey("ClaimItemInvalidPayoutOption")
 )

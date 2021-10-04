@@ -14,6 +14,16 @@ import (
 // swagger:model
 type ClaimIncidentType string
 
+// IsRepairable answers the question "Are items with this incident type potentially repairable?"
+func (c *ClaimIncidentType) IsRepairable() bool {
+	for _, cit := range AllClaimIncidentTypes {
+		if cit.Name == *c {
+			return cit.IsRepairable
+		}
+	}
+	return false
+}
+
 // ClaimStatus
 //
 // may be one of: Draft, Review1, Review2, Review3, Revision, Receipt, Approved, Paid, Denied
