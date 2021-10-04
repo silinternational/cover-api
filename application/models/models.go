@@ -49,11 +49,11 @@ const (
 )
 
 type idTime struct {
-	ID        string
+	ID        uuid.UUID
 	UpdatedAt time.Time
 }
 
-func sortIDTimes(uniqueIDTimes map[string]time.Time) []idTime {
+func sortIDTimes(uniqueIDTimes map[uuid.UUID]time.Time) []idTime {
 	allIDTimes := []idTime{}
 
 	for id, tm := range uniqueIDTimes {

@@ -59,14 +59,14 @@ func (p *PolicyHistories) RecentItemStatusChanges(tx *pop.Connection) error {
 	return nil
 }
 
-func (p *PolicyHistories) getUniqueIDTimes() map[string]time.Time {
-	uniqueIDTimes := map[string]time.Time{}
+func (p *PolicyHistories) getUniqueIDTimes() map[uuid.UUID]time.Time {
+	uniqueIDTimes := map[uuid.UUID]time.Time{}
 
 	for _, h := range *p {
 		if !h.ItemID.Valid {
 			continue
 		}
-		id := h.ItemID.UUID.String()
+		id := h.ItemID.UUID
 		previousTime, ok := uniqueIDTimes[id]
 		if !ok {
 			uniqueIDTimes[id] = h.CreatedAt

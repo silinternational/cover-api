@@ -504,7 +504,7 @@ func RegisterEventDetector(kind string, detected *bool) (events.DeleteFn, error)
 	})
 }
 
-func assertMapsStringTimeEqual(want, got map[string]time.Time) string {
+func assertMapsUUIDTimeEqual(want, got map[uuid.UUID]time.Time) string {
 	if len(want) != len(got) {
 		return fmt.Sprintf("map has incorrect length. Expected: %d. Got: %d", len(want), len(got))
 	}
@@ -512,7 +512,7 @@ func assertMapsStringTimeEqual(want, got map[string]time.Time) string {
 	for k, v := range want {
 		gotTime, ok := got[k]
 		if !ok {
-			return "map is missing key: " + k
+			return "map is missing key: " + k.String()
 		}
 		if gotTime != v {
 			return fmt.Sprintf("incorrect entry for key: %s. Expected: %v. Got: %v", k, v, gotTime)

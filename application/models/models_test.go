@@ -7,6 +7,7 @@ import (
 
 	"github.com/gobuffalo/buffalo"
 	"github.com/gobuffalo/pop/v5"
+	"github.com/gofrs/uuid"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
@@ -89,19 +90,19 @@ func (ms *ModelSuite) Test_sortIDTimes() {
 	time2 := time.Date(2002, 1, 1, 1, 0, 0, 0, time.UTC)
 	time3 := time.Date(2003, 1, 1, 1, 0, 0, 0, time.UTC)
 
-	idTimes := map[string]time.Time{
-		itemID2.String(): time2,
-		itemID3.String(): time3,
-		itemID0.String(): time0,
-		itemID1.String(): time1,
+	idTimes := map[uuid.UUID]time.Time{
+		itemID2: time2,
+		itemID3: time3,
+		itemID0: time0,
+		itemID1: time1,
 	}
 	got := sortIDTimes(idTimes)
 
 	want := []idTime{
-		{ID: itemID3.String(), UpdatedAt: time3},
-		{ID: itemID2.String(), UpdatedAt: time2},
-		{ID: itemID1.String(), UpdatedAt: time1},
-		{ID: itemID0.String(), UpdatedAt: time0},
+		{ID: itemID3, UpdatedAt: time3},
+		{ID: itemID2, UpdatedAt: time2},
+		{ID: itemID1, UpdatedAt: time1},
+		{ID: itemID0, UpdatedAt: time0},
 	}
 
 	ms.ElementsMatch(want, got, "incorrect results")

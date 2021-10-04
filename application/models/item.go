@@ -621,11 +621,7 @@ func ItemsWithRecentStatusChanges(tx *pop.Connection) (api.RecentItems, error) {
 	items := make(api.RecentItems, len(idTimes))
 	for i, next := range idTimes {
 		var item Item
-		nextID, err := uuid.FromString(next.ID)
-		if err != nil {
-			panic("error converting string ID to uuid: " + err.Error())
-		}
-		if err := item.FindByID(tx, nextID); err != nil {
+		if err := item.FindByID(tx, next.ID); err != nil {
 			panic("error finding item by ID: " + err.Error())
 		}
 

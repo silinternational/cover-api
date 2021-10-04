@@ -135,11 +135,11 @@ func (ms *ModelSuite) TestPolicyHistories_getUniqueIDTimes() {
 
 	got := pHistories.getUniqueIDTimes()
 
-	want := map[string]time.Time{
-		itemID0.String(): time3,
-		itemID1.String(): time2,
-		itemID2.String(): time0,
+	want := map[uuid.UUID]time.Time{
+		itemID0: time3,
+		itemID1: time2,
+		itemID2: time0,
 	}
 
-	ms.Equal("", assertMapsStringTimeEqual(want, got), "incorrect resulting map")
+	ms.Equal("", assertMapsUUIDTimeEqual(want, got), "incorrect resulting map")
 }
