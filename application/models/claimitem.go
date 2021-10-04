@@ -227,6 +227,10 @@ func (c *ClaimItem) ValidateForSubmit(tx *pop.Connection) api.ErrorKey {
 		return api.ErrorClaimItemMissingPayoutOption
 	}
 
+	if c.IsRepairable && !c.Claim.IncidentType.IsRepairable() {
+		return api.ErrorClaimItemNotRepairable
+	}
+
 	switch c.Claim.IncidentType {
 	case api.ClaimIncidentTypeTheft:
 		if c.replaceEstimateMissing() {

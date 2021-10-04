@@ -291,7 +291,7 @@ func (ms *ModelSuite) TestClaimItem_UpdateByUser() {
 
 func (ms *ModelSuite) TestClaimItem_ValidateForSubmit() {
 	good := ClaimItem{
-		IsRepairable:    true,
+		IsRepairable:    false,
 		RepairEstimate:  100,
 		ReplaceEstimate: 1000,
 		PayoutOption:    api.PayoutOptionRepair,
@@ -302,6 +302,9 @@ func (ms *ModelSuite) TestClaimItem_ValidateForSubmit() {
 	missingPayoutOption := good
 	missingPayoutOption.PayoutOption = ""
 
+	notRepairable := good
+	notRepairable.IsRepairable = true
+
 	missingReplaceEstimate := good
 	missingReplaceEstimate.PayoutOption = api.PayoutOptionReplacement
 	missingReplaceEstimate.ReplaceEstimate = 0
@@ -311,27 +314,26 @@ func (ms *ModelSuite) TestClaimItem_ValidateForSubmit() {
 	missingFMV.FMV = 0
 
 	missingRepairEstimate := good
+	missingRepairEstimate.IsRepairable = true
 	missingRepairEstimate.Claim.IncidentType = api.ClaimIncidentTypeImpact
 	missingRepairEstimate.RepairEstimate = 0
 
 	missingImpactFMV := good
+	missingImpactFMV.IsRepairable = true
 	missingImpactFMV.Claim.IncidentType = api.ClaimIncidentTypeImpact
 	missingImpactFMV.FMV = 0
 
 	invalidPayoutOption := good
 	invalidPayoutOption.Claim.IncidentType = api.ClaimIncidentTypeImpact
-	invalidPayoutOption.IsRepairable = false
 	invalidPayoutOption.PayoutOption = api.PayoutOptionRepair
 
 	missingReplaceEstimateImpact := good
 	missingReplaceEstimateImpact.Claim.IncidentType = api.ClaimIncidentTypeImpact
-	missingReplaceEstimateImpact.IsRepairable = false
 	missingReplaceEstimateImpact.PayoutOption = api.PayoutOptionReplacement
 	missingReplaceEstimateImpact.ReplaceEstimate = 0
 
 	missingFMVImpact := good
 	missingFMVImpact.Claim.IncidentType = api.ClaimIncidentTypeImpact
-	missingFMVImpact.IsRepairable = false
 	missingFMVImpact.PayoutOption = api.PayoutOptionFMV
 	missingFMVImpact.FMV = 0
 
@@ -344,6 +346,11 @@ func (ms *ModelSuite) TestClaimItem_ValidateForSubmit() {
 			name:      "missing payout option",
 			claimItem: missingPayoutOption,
 			want:      api.ErrorClaimItemMissingPayoutOption,
+		},
+		{
+			name:      "item is not repairable",
+			claimItem: notRepairable,
+			want:      api.ErrorClaimItemNotRepairable,
 		},
 		{
 			name:      "missing replace estimate",
@@ -379,6 +386,11 @@ func (ms *ModelSuite) TestClaimItem_ValidateForSubmit() {
 			name:      "missing FMV (impact)",
 			claimItem: missingFMVImpact,
 			want:      api.ErrorClaimItemMissingFMV,
+		},
+		{
+			name:      "good",
+			claimItem: good,
+			want:      "",
 		},
 	}
 	for _, tt := range tests {
