@@ -3,11 +3,9 @@ package models
 import (
 	"errors"
 	"testing"
-	"time"
 
 	"github.com/gobuffalo/buffalo"
 	"github.com/gobuffalo/pop/v5"
-	"github.com/gofrs/uuid"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
@@ -77,33 +75,4 @@ func (ms *ModelSuite) EqualAppError(expected api.AppError, actual error) {
 	ms.True(errors.As(actual, &appErr), "error does not contain an api.AppError")
 	ms.Equal(appErr.Key, expected.Key, "error key does not match")
 	ms.Equal(appErr.Category, expected.Category, "error category does not match")
-}
-
-func (ms *ModelSuite) Test_sortIDTimes() {
-	itemID0 := domain.GetUUID()
-	itemID1 := domain.GetUUID()
-	itemID2 := domain.GetUUID()
-	itemID3 := domain.GetUUID()
-
-	time0 := time.Date(2000, 1, 1, 1, 0, 0, 0, time.UTC)
-	time1 := time.Date(2001, 1, 1, 1, 0, 0, 0, time.UTC)
-	time2 := time.Date(2002, 1, 1, 1, 0, 0, 0, time.UTC)
-	time3 := time.Date(2003, 1, 1, 1, 0, 0, 0, time.UTC)
-
-	idTimes := map[uuid.UUID]time.Time{
-		itemID2: time2,
-		itemID3: time3,
-		itemID0: time0,
-		itemID1: time1,
-	}
-	got := sortIDTimes(idTimes)
-
-	want := []idTime{
-		{ID: itemID3, UpdatedAt: time3},
-		{ID: itemID2, UpdatedAt: time2},
-		{ID: itemID1, UpdatedAt: time1},
-		{ID: itemID0, UpdatedAt: time0},
-	}
-
-	ms.ElementsMatch(want, got, "incorrect results")
 }

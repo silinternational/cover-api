@@ -613,20 +613,16 @@ func ItemsWithRecentStatusChanges(tx *pop.Connection) (api.RecentItems, error) {
 		return api.RecentItems{}, err
 	}
 
-	uniqueIDTimes := pHistories.getUniqueIDTimes()
-
-	idTimes := sortIDTimes(uniqueIDTimes)
-
 	// Fetch the actual items from the database and convert them to api types
-	items := make(api.RecentItems, len(idTimes))
-	for i, next := range idTimes {
+	items := make(api.RecentItems, len(pHistories))
+	for i, next := range pHistories {
 		var item Item
-		if err := item.FindByID(tx, next.ID); err != nil {
+		if err := item.FindByID(tx, next.ItemID.UUID); err != nil {
 			panic("error finding item by ID: " + err.Error())
 		}
 
 		apiItem := item.ConvertToAPI(tx)
-		items[i] = api.RecentItem{Item: apiItem, StatusUpdatedAt: next.UpdatedAt}
+		items[i] = api.RecentItem{Item: apiItem, StatusUpdatedAt: next.CreatedAt}
 	}
 
 	return items, nil

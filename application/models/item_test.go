@@ -758,7 +758,7 @@ func (ms *ModelSuite) Test_ItemsWithRecentStatusChanges() {
 	gotRaw, gotErr := ItemsWithRecentStatusChanges(ms.DB)
 	ms.NoError(gotErr)
 
-	const tmFmt = "Jan _2 15:04:05.0000"
+	const tmFmt = "Jan _2 15:04:05.00"
 
 	got := make([][2]string, len(gotRaw))
 	for i, g := range gotRaw {

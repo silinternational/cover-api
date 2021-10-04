@@ -51,30 +51,16 @@ func (p *PolicyHistory) FindByID(tx *pop.Connection, id uuid.UUID) error {
 func (p *PolicyHistories) RecentItemStatusChanges(tx *pop.Connection) error {
 	now := time.Now().UTC()
 	cutoffDate := now.Add(-1 * domain.DurationWeek)
-	err := tx.Where(QueryRecentStatusChanges, cutoffDate, FieldItemCoverageStatus, api.HistoryActionUpdate).All(p)
+	err := tx.RawQuery(`
+SELECT item_id,max(created_at) AS created_at
+FROM policy_histories
+WHERE created_at > ? AND field_name = ? AND action = ?
+GROUP BY item_id
+ORDER BY created_at
+`, cutoffDate, FieldItemCoverageStatus, api.HistoryActionUpdate).All(p)
 
 	if domain.IsOtherThanNoRows(err) {
 		return appErrorFromDB(err, api.ErrorQueryFailure)
 	}
 	return nil
-}
-
-func (p *PolicyHistories) getUniqueIDTimes() map[uuid.UUID]time.Time {
-	uniqueIDTimes := map[uuid.UUID]time.Time{}
-
-	for _, h := range *p {
-		if !h.ItemID.Valid {
-			continue
-		}
-		id := h.ItemID.UUID
-		previousTime, ok := uniqueIDTimes[id]
-		if !ok {
-			uniqueIDTimes[id] = h.CreatedAt
-			continue
-		}
-		if h.CreatedAt.After(previousTime) {
-			uniqueIDTimes[id] = h.CreatedAt
-		}
-	}
-	return uniqueIDTimes
 }
