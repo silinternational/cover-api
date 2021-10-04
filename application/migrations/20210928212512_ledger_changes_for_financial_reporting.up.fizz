@@ -5,6 +5,7 @@ drop_column("ledger_entries", "entity_code_id")
 drop_column("ledger_entries", "policy_type")
 add_column("ledger_entries", "risk_category_name", "string", {"default": ""})
 
+sql(`UPDATE ledger_entries SET record_type = '' WHERE record_type IS NULL`)
 change_column("ledger_entries", "record_type", "string", {"default": ""})
 rename_column("ledger_entries", "record_type", "type")
 
