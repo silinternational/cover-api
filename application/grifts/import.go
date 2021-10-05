@@ -343,15 +343,16 @@ func importPolicies(tx *pop.Connection, policies []LegacyPolicy) {
 
 			desc := fmt.Sprintf("Policy[%d] ", policyID)
 			newPolicy := models.Policy{
-				Type:         getPolicyType(p),
-				HouseholdID:  householdID,
-				CostCenter:   trim(p.CostCenter),
-				Account:      strconv.Itoa(p.Account),
-				EntityCodeID: entityCodeID,
-				Notes:        p.Notes,
-				Email:        p.Email,
-				LegacyID:     nulls.NewInt(policyID),
-				CreatedAt:    parseStringTime(p.CreatedAt, desc+"CreatedAt"),
+				Type:          getPolicyType(p),
+				HouseholdID:   householdID,
+				CostCenter:    trim(p.CostCenter),
+				AccountDetail: trim(p.AccountDetail),
+				Account:       strconv.Itoa(p.Account),
+				EntityCodeID:  entityCodeID,
+				Notes:         p.Notes,
+				Email:         p.Email,
+				LegacyID:      nulls.NewInt(policyID),
+				CreatedAt:     parseStringTime(p.CreatedAt, desc+"CreatedAt"),
 			}
 			if newPolicy.Type == api.PolicyTypeHousehold {
 				newPolicy.Account = ""
@@ -837,26 +838,32 @@ func importJournalEntries(tx *pop.Connection, entries []JournalEntry) {
 		//		e.DateEntd, e.DateSubm, e.Entity, e.AccNum, e.RMJE, e.JERecNum)
 		//}
 
+		policyType := api.PolicyTypeCorporate
+		if e.Entity == "MMB/STM" {
+			policyType = api.PolicyTypeHousehold
+		}
+
 		policyUUID, err := getPolicyUUID(e.PolicyID)
 		if err != nil {
 			badPolicyIDs[e.PolicyID] = struct{}{}
 			continue
 		}
 		l := models.LedgerEntry{
-			PolicyID:           policyUUID,
-			Amount:             int(math.Round(e.CustJE * domain.CurrencyFactor)),
-			DateSubmitted:      parseStringTime(e.DateSubm, "LedgerEntry.DateSubmitted"),
-			DateEntered:        parseStringTimeToNullTime(e.DateEntd, "LedgerEntry.DateEntered"),
-			LegacyID:           nulls.NewInt(stringToInt(e.JERecNum, "LedgerEntry.LegacyID")),
-			Type:               getLedgerEntryType(e.JERecType),
-			IncomeAccount:      getIncomeAccount(e),
-			RiskCategoryName:   policyTypeToRiskCategoryName(e.PolicyType),
-			AccountNumber:      strconv.Itoa(e.AccNum),
-			AccountCostCenter1: trim(e.AccCostCtr1),
-			AccountCostCenter2: trim(e.AccCostCtr2),
-			EntityCode:         trim(e.Entity),
-			FirstName:          trim(e.FirstName),
-			LastName:           trim(e.LastName),
+			PolicyID:         policyUUID,
+			Amount:           int(math.Round(e.CustJE * domain.CurrencyFactor)),
+			DateSubmitted:    parseStringTime(e.DateSubm, "LedgerEntry.DateSubmitted"),
+			DateEntered:      parseStringTimeToNullTime(e.DateEntd, "LedgerEntry.DateEntered"),
+			LegacyID:         nulls.NewInt(stringToInt(e.JERecNum, "LedgerEntry.LegacyID")),
+			Type:             getLedgerEntryType(e.JERecType),
+			RiskCategoryName: policyTypeToRiskCategoryName(e.PolicyType),
+			RiskCategoryCC:   policyTypeToRiskCategoryCC(e.PolicyType),
+			PolicyType:       policyType,
+			AccountNumber:    strconv.Itoa(e.AccNum),
+			HouseholdID:      trim(e.AccCostCtr1),
+			CostCenter:       trim(e.AccCostCtr2),
+			EntityCode:       trim(e.Entity),
+			FirstName:        trim(e.FirstName),
+			LastName:         trim(e.LastName),
 		}
 		if err := l.Create(tx); err != nil {
 			log.Fatalf("failed to create ledger entry, %s\n%+v", err, l)
@@ -871,27 +878,6 @@ func importJournalEntries(tx *pop.Connection, entries []JournalEntry) {
 		i++
 	}
 	fmt.Printf("  LedgerEntries: %d (policy IDs not found: %s)\n", nImported, strings.Join(s, ","))
-}
-
-func getIncomeAccount(e JournalEntry) string {
-	accountMap := map[string]string{
-		"MMB/STM": "40200",
-		"SIL":     "43250",
-		"WBT":     "44250",
-	}
-	incomeAccount := ""
-	if e.JERecType == 4 || e.JERecType == 6 {
-		incomeAccount = "63550" // Claims
-	} else {
-		incomeAccount = accountMap[e.Entity]
-	}
-
-	if e.PolicyType == 2 {
-		incomeAccount += "MPRO12" // Stationary
-	} else {
-		incomeAccount += "MCMC12" // Mobile
-	}
-	return incomeAccount
 }
 
 func getLedgerEntryType(i int) models.LedgerEntryType {
@@ -913,6 +899,14 @@ func policyTypeToRiskCategoryName(i int) string {
 		2: "Stationary",
 	}
 	return names[i]
+}
+
+func policyTypeToRiskCategoryCC(i int) string {
+	costCenter := map[int]string{
+		1: "MCMC12",
+		2: "MPRO12",
+	}
+	return costCenter[i]
 }
 
 func getPolicyUUID(id int) (uuid.UUID, error) {

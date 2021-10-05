@@ -44,23 +44,22 @@ type LedgerEntry struct {
 	ItemID           nulls.UUID      `db:"item_id"`
 	EntityCode       string          `db:"entity_code"`
 	RiskCategoryName string          `db:"risk_category_name"`
+	RiskCategoryCC   string          `db:"risk_category_cc"`
 	Type             LedgerEntryType `db:"type" validate:"ledgerEntryType"`
-	IncomeAccount    string          `db:"income_account"`
+	PolicyType       api.PolicyType  `db:"policy_type" validate:"policyType"`
+	HouseholdID      string          `db:"household_id"`
+	CostCenter       string          `db:"cost_center"`
+	AccountNumber    string          `db:"account_number"`
 	FirstName        string          `db:"first_name"`
 	LastName         string          `db:"last_name"`
 	Amount           int             `db:"amount"`
 	DateSubmitted    time.Time       `db:"date_submitted"`
 	DateEntered      nulls.Time      `db:"date_entered"`
+	LegacyID         nulls.Int       `db:"legacy_id"`
 
-	// The following fields are primarily for legacy data and may not be needed long-term
-	// However, some may be useful as a permanent record in case policies change...TBD.
-	LegacyID           nulls.Int `db:"legacy_id"`
-	AccountNumber      string    `db:"account_number"`
-	AccountCostCenter1 string    `db:"account_cost_center1"` // TODO: rename to HouseholdID
-	AccountCostCenter2 string    `db:"account_cost_center2"` // TODO: rename to CostCenter
-
-	CreatedAt time.Time `db:"created_at"`
-	UpdatedAt time.Time `db:"updated_at"`
+	IncomeAccount string
+	CreatedAt     time.Time `db:"created_at"`
+	UpdatedAt     time.Time `db:"updated_at"`
 }
 
 func (le *LedgerEntry) Create(tx *pop.Connection) error {
@@ -115,10 +114,27 @@ func (le *LedgerEntries) ToCsv(batchDate time.Time) []byte {
 func (le *LedgerEntries) MakeBlocks() TransactionBlocks {
 	blocks := TransactionBlocks{}
 	for _, e := range *le {
-		account := e.IncomeAccount
+		account := e.getIncomeAccount()
 		blocks[account] = append(blocks[account], e)
 	}
 	return blocks
+}
+
+// getIncomeAccount maps the ledger data to an income account for billing
+func (le *LedgerEntry) getIncomeAccount() string {
+	// TODO: move hard-coded account numbers to the database or to environment variables
+	account := ""
+	switch le.EntityCode {
+	case "":
+		account = "40200"
+	case "SIL":
+		account = "43250"
+	default:
+		account = "44250"
+	}
+	incomeAccount := account + le.RiskCategoryCC
+
+	return incomeAccount
 }
 
 // TODO: make a better description format unless it has to be the same as before (which I doubt)
@@ -132,19 +148,19 @@ func (le *LedgerEntry) transactionDescription() string {
 			le.LastName, le.FirstName, le.RiskCategoryName, le.Type, dateString)
 	} else {
 		description = fmt.Sprintf("%s %s (%s) %s",
-			le.RiskCategoryName, le.Type, le.AccountCostCenter2, dateString)
+			le.RiskCategoryName, le.Type, le.CostCenter, dateString)
 	}
 
 	return fmt.Sprintf("%.60s", description) // truncate to Sage limit of 60 characters
 }
 
-// Merge AccountCostCenter1 and AccountCostCenter2 into one column
+// Merge HouseholdID and CostCenter into one column
 func (le *LedgerEntry) transactionReference() string {
 	// TODO: change this to api.PolicyTypeHousehold (requires a database update)
 	if le.EntityCode == "MMB/STM" {
-		return fmt.Sprintf("MC %s", le.AccountCostCenter1)
+		return fmt.Sprintf("MC %s", le.HouseholdID)
 	}
-	return le.AccountCostCenter2
+	return le.CostCenter
 }
 
 func (le *LedgerEntry) balanceDescription() string {

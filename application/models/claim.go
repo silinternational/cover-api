@@ -468,7 +468,7 @@ func (c *Claim) Approve(ctx context.Context) error {
 	}
 	emitEvent(e)
 
-	return nil
+	return c.CreateLedgerEntry(Tx(ctx))
 }
 
 // Deny changes the status of the claim to Denied and adds the ReviewerID and ReviewDate.
@@ -739,4 +739,34 @@ func ClaimsWithRecentStatusChanges(tx *pop.Connection) (api.RecentClaims, error)
 	}
 
 	return claims, nil
+}
+
+func (c *Claim) CreateLedgerEntry(tx *pop.Connection) error {
+	c.LoadPolicy(tx, false)
+	c.Policy.LoadEntityCode(tx, false)
+	c.Policy.LoadItems(tx, false)
+
+	for _, item := range c.Policy.Items {
+		firstName, lastName := item.GetAccountablePersonName(tx)
+		item.LoadRiskCategory(tx, false)
+		le := LedgerEntry{
+			// TODO: check each line below for correctness
+			Type:             LedgerEntryTypeClaim,
+			RiskCategoryName: item.RiskCategory.Name,
+			// ClaimID:            c.ID,
+			PolicyID:      c.PolicyID,
+			ItemID:        nulls.NewUUID(item.ID),
+			EntityCode:    c.Policy.EntityCode.Code,
+			Amount:        0,
+			DateSubmitted: time.Now().UTC(),
+			AccountNumber: c.Policy.Account,
+			HouseholdID:   c.Policy.CostCenter,
+			FirstName:     firstName,
+			LastName:      lastName,
+		}
+		if err := le.Create(tx); err != nil {
+			return err
+		}
+	}
+	return nil
 }

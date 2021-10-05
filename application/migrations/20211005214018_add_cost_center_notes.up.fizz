@@ -1,0 +1,7 @@
+add_column("policies", "account_detail", "string", {"default": ""})
+
+add_column("ledger_entries", "risk_category_cc", "string", {"default": ""})
+add_column("ledger_entries", "policy_type", "string", {"default": ""})
+rename_column("ledger_entries", "account_cost_center1", "household_id")
+rename_column("ledger_entries", "account_cost_center2", "cost_center")
+drop_column("ledger_entries", "income_account")

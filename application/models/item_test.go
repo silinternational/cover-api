@@ -729,9 +729,8 @@ func (ms *ModelSuite) TestItem_CreateLedgerEntry() {
 	ms.Equal(2500, le.Amount, "Amount is incorrect")
 	ms.Equal(time.Now().UTC().Truncate(time.Hour*24), le.DateSubmitted, "DateSubmitted is incorrect")
 	ms.Equal(item.Policy.Account, le.AccountNumber, "AccountNumber is incorrect")
-	ms.Equal(item.Policy.CostCenter, le.AccountCostCenter1, "AccountCostCenter1 is incorrect")
+	ms.Equal(item.Policy.CostCenter, le.HouseholdID, "HouseholdID is incorrect")
 	ms.Equal(item.Policy.EntityCode.Code, le.EntityCode, "EntityCode is incorrect")
-	ms.Equal("40200STATIONARY", le.IncomeAccount, "IncomeAccount is incorrect")
 	ms.Equal(f.Users[0].FirstName, le.FirstName, "FirstName is incorrect")
 	ms.Equal(f.Users[0].LastName, le.LastName, "LastName is incorrect")
 }
