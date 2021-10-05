@@ -57,7 +57,7 @@ SELECT item_id,max(created_at) AS created_at
 FROM policy_histories
 WHERE created_at > ? AND field_name = ? AND action = ? AND item_id IS NOT NULL
 GROUP BY item_id
-ORDER BY created_at
+ORDER BY created_at DESC
 `, cutoffDate, FieldItemCoverageStatus, api.HistoryActionUpdate).All(p)
 
 	if domain.IsOtherThanNoRows(err) {

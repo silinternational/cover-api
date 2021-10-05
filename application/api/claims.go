@@ -140,6 +140,18 @@ type Claim struct {
 }
 
 // swagger:model
+type RecentClaims []RecentClaim
+
+// swagger:model
+type RecentClaim struct {
+	// The time the claim had its status changed
+	// swagger:strfmt date-time
+	StatusUpdatedAt time.Time
+
+	Claim Claim
+}
+
+// swagger:model
 type ClaimCreateInput struct {
 	// incident date
 	IncidentDate time.Time `json:"incident_date"`

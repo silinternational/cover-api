@@ -715,3 +715,28 @@ func (c *Claim) setReviewer(ctx context.Context) {
 	c.ReviewerID = nulls.NewUUID(actor.ID)
 	c.ReviewDate = nulls.NewTime(time.Now().UTC())
 }
+
+// ClaimsWithRecentStatusChanges returns the RecentClaims associated with
+//  claims that have had their Status changed recently.
+//  The slice is sorted by updated time with most recent first.
+func ClaimsWithRecentStatusChanges(tx *pop.Connection) (api.RecentClaims, error) {
+	var cHistories ClaimHistories
+
+	if err := cHistories.RecentClaimStatusChanges(tx); err != nil {
+		return api.RecentClaims{}, err
+	}
+
+	// Fetch the actual claims from the database and convert them to api types
+	claims := make(api.RecentClaims, len(cHistories))
+	for i, next := range cHistories {
+		var claim Claim
+		if err := claim.FindByID(tx, next.ClaimID); err != nil {
+			panic("error finding claim by ID: " + err.Error())
+		}
+
+		apiClaim := claim.ConvertToAPI(tx)
+		claims[i] = api.RecentClaim{Claim: apiClaim, StatusUpdatedAt: next.CreatedAt}
+	}
+
+	return claims, nil
+}

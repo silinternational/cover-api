@@ -44,16 +44,23 @@ func (ch *ClaimHistory) FindByID(tx *pop.Connection, id uuid.UUID) error {
 	return tx.Find(ch, id)
 }
 
-// RecentClaimStatusChanges hydrates the ClaimHistories with those that
+// RecentClaimStatusChanges finds the ClaimHistories that
 //  have been created in the last week and that also have
 //  a field_name of Status and
 //  an action of Update
+// NOTE: only `ClaimID` and `CreatedAt` are hydrated by this function
 func (ch *ClaimHistories) RecentClaimStatusChanges(tx *pop.Connection) error {
 	now := time.Now().UTC()
 	cutoffDate := now.Add(-1 * domain.DurationWeek)
-	err := tx.Where(QueryRecentStatusChanges, cutoffDate, FieldClaimStatus, api.HistoryActionUpdate).All(ch)
+	err := tx.RawQuery(`
+SELECT claim_id,max(created_at) AS created_at
+FROM claim_histories
+WHERE created_at > ? AND field_name = ? AND action = ?
+GROUP BY claim_id
+ORDER BY created_at DESC
+`, cutoffDate, FieldClaimStatus, api.HistoryActionUpdate).All(ch)
 
-	if err != nil {
+	if domain.IsOtherThanNoRows(err) {
 		return appErrorFromDB(err, api.ErrorQueryFailure)
 	}
 	return nil

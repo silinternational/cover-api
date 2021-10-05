@@ -773,3 +773,27 @@ func (ms *ModelSuite) TestClaim_NewHistory() {
 		})
 	}
 }
+
+func (ms *ModelSuite) Test_ClaimsWithRecentStatusChanges() {
+	fixtures := CreateClaimHistoryFixtures_RecentClaimStatusChanges(ms.DB)
+	chFixes := fixtures.ClaimHistories
+
+	gotRaw, gotErr := ClaimsWithRecentStatusChanges(ms.DB)
+	ms.NoError(gotErr)
+
+	const tmFmt = "Jan _2 15:04:05.00"
+
+	got := make([][2]string, len(gotRaw))
+	for i, g := range gotRaw {
+		got[i] = [2]string{g.Claim.ID.String(), g.StatusUpdatedAt.Format(tmFmt)}
+	}
+
+	// Seems like sorting doesn't work quite right at the level of microseconds.
+	// Leaving it as is for now.
+	want := [][2]string{
+		{chFixes[3].ClaimID.String(), chFixes[3].UpdatedAt.Format(tmFmt)},
+		{chFixes[7].ClaimID.String(), chFixes[7].UpdatedAt.Format(tmFmt)},
+	}
+
+	ms.ElementsMatch(want, got, "incorrect results")
+}
