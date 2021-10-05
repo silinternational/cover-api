@@ -750,3 +750,27 @@ func (ms *ModelSuite) TestItem_GetAccountablePersonName() {
 	ms.Contains(f.PolicyDependents[0].Name, first, "first name is not correct")
 	ms.Contains(f.PolicyDependents[0].Name, last, "last name is not correct")
 }
+
+func (ms *ModelSuite) Test_ItemsWithRecentStatusChanges() {
+	fixtures := CreatePolicyHistoryFixtures_RecentItemStatusChanges(ms.DB)
+	phFixes := fixtures.PolicyHistories
+
+	gotRaw, gotErr := ItemsWithRecentStatusChanges(ms.DB)
+	ms.NoError(gotErr)
+
+	const tmFmt = "Jan _2 15:04:05.00"
+
+	got := make([][2]string, len(gotRaw))
+	for i, g := range gotRaw {
+		got[i] = [2]string{g.Item.ID.String(), g.StatusUpdatedAt.Format(tmFmt)}
+	}
+
+	// Seems like sorting doesn't work quite right at the level of microseconds.
+	// Leaving it as is for now.
+	want := [][2]string{
+		{phFixes[3].ItemID.UUID.String(), phFixes[3].UpdatedAt.Format(tmFmt)},
+		{phFixes[7].ItemID.UUID.String(), phFixes[7].UpdatedAt.Format(tmFmt)},
+	}
+
+	ms.ElementsMatch(want, got, "incorrect results")
+}

@@ -18,7 +18,6 @@ import (
 //	 CoverageStatus/Update [could be included, if date is recent]
 //	 CoverageStatus/Update [could be included, if date is recent]
 func CreatePolicyHistoryFixtures_RecentItemStatusChanges(tx *pop.Connection) Fixtures {
-
 	config := FixturesConfig{
 		NumberOfPolicies: 1,
 		ItemsPerPolicy:   3,
@@ -33,7 +32,7 @@ func CreatePolicyHistoryFixtures_RecentItemStatusChanges(tx *pop.Connection) Fix
 	mixedNewItem := items[1]
 	noneNewItem := items[2]
 
-	pHistories := make(PolicyHistories, len(items)*4)
+	pHistories := make(PolicyHistories, len(items)*4+1)
 
 	// Hydrate a set of policyHistories as follows
 	//  index n:   CoverageStatus/Create
@@ -67,7 +66,13 @@ func CreatePolicyHistoryFixtures_RecentItemStatusChanges(tx *pop.Connection) Fix
 	hydratePHsForItem(4, mixedNewItem.ID)
 	hydratePHsForItem(8, noneNewItem.ID)
 
-	for i, _ := range pHistories {
+	// Make sure a null item_id doesn't slip through
+	pHistories[12] = PolicyHistory{
+		Action:    api.HistoryActionUpdate,
+		FieldName: FieldItemCoverageStatus,
+	}
+
+	for i := range pHistories {
 		pHistories[i].PolicyID = policy.ID
 		pHistories[i].UserID = user.ID
 		MustCreate(tx, &pHistories[i])
@@ -101,15 +106,14 @@ func (ms *ModelSuite) TestPolicyHistories_RecentItemStatusChanges() {
 	var gotPHs PolicyHistories
 
 	ms.NoError(gotPHs.RecentItemStatusChanges(ms.DB), "error calling function")
-	got := make([][2]string, len(gotPHs))
+	got := make([]string, len(gotPHs))
 	for i, g := range gotPHs {
-		got[i] = [2]string{g.ID.String(), g.ItemID.UUID.String()}
+		got[i] = g.ItemID.UUID.String()
 	}
 
-	want := [][2]string{
-		{phFixes[2].ID.String(), phFixes[2].ItemID.UUID.String()},
-		{phFixes[3].ID.String(), phFixes[3].ItemID.UUID.String()},
-		{phFixes[7].ID.String(), phFixes[7].ItemID.UUID.String()},
+	want := []string{
+		phFixes[3].ItemID.UUID.String(),
+		phFixes[7].ItemID.UUID.String(),
 	}
 
 	ms.ElementsMatch(want, got, "incorrect results")
