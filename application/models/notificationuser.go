@@ -22,7 +22,7 @@ type NotificationUser struct {
 	ToName           string     `db:"to_name"` // Only needed when there is no UserID
 	EmailAddress     string     `db:"email_address"`
 	ViewedAtUTC      nulls.Time `db:"viewed_at_utc"`
-	SendAttemptCount int        `db:"send_attempt_count"`
+	SendAttemptCount int        `db:"send_attempt_count" validate:"min=0"`
 	SendAfterUTC     time.Time  `db:"send_after_utc"`
 	LastAttemptUTC   nulls.Time `db:"last_attempt_utc"`
 	SentAtUTC        nulls.Time `db:"sent_at_utc"`

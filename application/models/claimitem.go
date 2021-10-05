@@ -42,13 +42,13 @@ type ClaimItem struct {
 	ItemID          uuid.UUID           `db:"item_id"`
 	Status          api.ClaimItemStatus `db:"status" validate:"required,claimItemStatus"`
 	IsRepairable    bool                `db:"is_repairable"`
-	RepairEstimate  int                 `db:"repair_estimate"`
-	RepairActual    int                 `db:"repair_actual"`
-	ReplaceEstimate int                 `db:"replace_estimate"`
-	ReplaceActual   int                 `db:"replace_actual"`
+	RepairEstimate  int                 `db:"repair_estimate" validate:"min=0"`
+	RepairActual    int                 `db:"repair_actual" validate:"min=0"`
+	ReplaceEstimate int                 `db:"replace_estimate" validate:"min=0"`
+	ReplaceActual   int                 `db:"replace_actual" validate:"min=0"`
 	PayoutOption    api.PayoutOption    `db:"payout_option" validate:"payoutOption"`
-	PayoutAmount    int                 `db:"payout_amount"`
-	FMV             int                 `db:"fmv"`
+	PayoutAmount    int                 `db:"payout_amount" validate:"min=0"`
+	FMV             int                 `db:"fmv" validate:"min=0"`
 	ReviewDate      nulls.Time          `db:"review_date"`
 	ReviewerID      nulls.UUID          `db:"reviewer_id"`
 	Location        string              `db:"location"`

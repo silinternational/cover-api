@@ -22,7 +22,7 @@ type PolicyUserInvite struct {
 	PolicyID       uuid.UUID  `db:"policy_id" validate:"required"`
 	Email          string     `db:"email" validate:"required,email"`
 	EmailSentAt    nulls.Time `db:"email_sent_at"`
-	EmailSendCount int        `db:"email_send_count"`
+	EmailSendCount int        `db:"email_send_count" validate:"min=0"`
 	InviteeName    string     `db:"invitee_name"`
 	InviterName    string     `db:"inviter_name"`
 	InviterEmail   string     `db:"inviter_email"`
