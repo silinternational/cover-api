@@ -63,6 +63,9 @@ type ClaimItem struct {
 	// swagger:strfmt uuid4
 	ItemID uuid.UUID `json:"item_id"`
 
+	// item
+	Item Item `json:"item"`
+
 	// claim ID
 	//
 	// swagger:strfmt uuid4
