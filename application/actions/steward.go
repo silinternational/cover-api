@@ -9,11 +9,11 @@ import (
 	"github.com/silinternational/cover-api/models"
 )
 
-// swagger:operation GET /admin/recent Admin ListRecentObjects
+// swagger:operation GET /steward/recent Steward ListRecentObjects
 //
 // ListRecentObjects
 //
-// gets Items and Claims that have recently had their coverage_status/status change
+// gets Items and Claims that have recently had their coverage_status/status changed
 //
 // ---
 // responses:
@@ -23,7 +23,7 @@ import (
 //       type: array
 //       items:
 //         "$ref": "#/definitions/RecentObjects"
-func adminListRecentObjects(c buffalo.Context) error {
+func stewardListRecentObjects(c buffalo.Context) error {
 	actor := models.CurrentUser(c)
 	if !actor.IsAdmin() {
 		err := fmt.Errorf("actor not allowed to perform that action on this resource")

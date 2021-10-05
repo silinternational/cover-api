@@ -51,7 +51,7 @@ import (
 const idRegex = `/{id:[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-4[a-fA-F0-9]{3}-[8|9|aA|bB][a-fA-F0-9]{3}-[a-fA-F0-9]{12}}`
 
 const (
-	adminPath      = "/admin"
+	stewardPath    = "/steward"
 	batchesPath    = "/batches"
 	claimsPath     = "/" + domain.TypeClaim
 	claimItemsPath = "/" + domain.TypeClaimItem
@@ -146,9 +146,9 @@ func App() *buffalo.App {
 		batchesGroup.Middleware.Skip(AuthZ, batchesGetLatest) // AuthZ is implemented in the handler
 		batchesGroup.GET("/latest", batchesGetLatest)
 
-		adminGroup := app.Group(adminPath)
-		adminGroup.Middleware.Skip(AuthZ, adminListRecentObjects) // AuthZ is implemented in the handler
-		adminGroup.GET("/"+api.ResourceRecent, adminListRecentObjects)
+		stewardGroup := app.Group(stewardPath)
+		stewardGroup.Middleware.Skip(AuthZ, stewardListRecentObjects) // AuthZ is implemented in the handler
+		stewardGroup.GET("/"+api.ResourceRecent, stewardListRecentObjects)
 
 		// claims
 		claimsGroup := app.Group(claimsPath)

@@ -10,7 +10,7 @@ import (
 	"github.com/silinternational/cover-api/models"
 )
 
-func (as *ActionSuite) Test_AdminRecent() {
+func (as *ActionSuite) Test_StewardListRecent() {
 	fixtures := models.CreatePolicyHistoryFixtures_RecentItemStatusChanges(as.DB)
 	phFixes := fixtures.PolicyHistories
 
@@ -20,7 +20,7 @@ func (as *ActionSuite) Test_AdminRecent() {
 	const tmFmt = "Jan _2 15:04:05.00"
 
 	// alias a couple users
-	appAdmin := models.CreateAdminUsers(as.DB)[models.AppRoleSteward]
+	steward := models.CreateAdminUsers(as.DB)[models.AppRoleSteward]
 	normalUser := fixtures.Policies[0].Members[0]
 
 	tests := []struct {
@@ -46,8 +46,8 @@ func (as *ActionSuite) Test_AdminRecent() {
 			notWantInBody: "Items",
 		},
 		{
-			name:       "admin",
-			actor:      appAdmin,
+			name:       "steward",
+			actor:      steward,
 			wantCount:  len(fixtures.Policies),
 			wantStatus: http.StatusOK,
 			wantInBody: []string{
@@ -64,7 +64,7 @@ func (as *ActionSuite) Test_AdminRecent() {
 
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
-			req := as.JSON(adminPath + "/" + api.ResourceRecent)
+			req := as.JSON(stewardPath + "/" + api.ResourceRecent)
 			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
 			req.Headers["content-type"] = "application/json"
 			res := req.Get()
@@ -81,7 +81,6 @@ func (as *ActionSuite) Test_AdminRecent() {
 			}
 
 			as.verifyResponseData(tt.wantInBody, body, "Recent Object fields")
-
 		})
 	}
 }
