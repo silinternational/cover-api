@@ -604,7 +604,7 @@ func (i *Item) GetAccountablePersonName(tx *pop.Connection) (firstName, lastName
 }
 
 // ItemsWithRecentStatusChanges returns the RecentItems associated with
-//  items that have had an updated CoverageStatus in the last week.
+//  items that have had their CoverageStatus changed recently.
 //  The slice is sorted by updated time with most recent first.
 func ItemsWithRecentStatusChanges(tx *pop.Connection) (api.RecentItems, error) {
 	var pHistories PolicyHistories
