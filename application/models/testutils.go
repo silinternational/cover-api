@@ -528,3 +528,191 @@ func RegisterEventDetector(kind string, detected *bool) (events.DeleteFn, error)
 		}
 	})
 }
+
+// CreatePolicyHistoryFixtures generates a Policy with three Items each with
+//   four PolicyHistory entries as follows
+//	 CoverageStatus/Create  [not included because not update]
+//	 Name/Update [not included because not on CoverageStatus field]
+//	 CoverageStatus/Update [could be included, if date is recent]
+//	 CoverageStatus/Update [could be included, if date is recent]
+func CreatePolicyHistoryFixtures_RecentItemStatusChanges(tx *pop.Connection) Fixtures {
+	config := FixturesConfig{
+		NumberOfPolicies: 1,
+		ItemsPerPolicy:   3,
+	}
+
+	fixtures := CreateItemFixtures(tx, config)
+	policy := fixtures.Policies[0]
+	user := policy.Members[0]
+	items := fixtures.Items
+
+	allNewItem := items[0]
+	mixedNewItem := items[1]
+	noneNewItem := items[2]
+
+	pHistories := make(PolicyHistories, len(items)*4+1)
+
+	// Hydrate a set of policyHistories as follows
+	//  index n:   CoverageStatus/Create
+	//  index n+1: Name/Update
+	//  index n+2: CoverageStatus/Update
+	//  index n+3: CoverageStatus/Update
+	hydratePHsForItem := func(startIndex int, itemID uuid.UUID) {
+		pHistories[startIndex] = PolicyHistory{
+			ItemID:    nulls.NewUUID(itemID),
+			Action:    api.HistoryActionCreate,
+			FieldName: FieldItemCoverageStatus,
+		}
+		pHistories[startIndex+1] = PolicyHistory{
+			ItemID:    nulls.NewUUID(itemID),
+			Action:    api.HistoryActionUpdate,
+			FieldName: "Name",
+		}
+		pHistories[startIndex+2] = PolicyHistory{
+			ItemID:    nulls.NewUUID(itemID),
+			Action:    api.HistoryActionUpdate,
+			FieldName: FieldItemCoverageStatus,
+		}
+		pHistories[startIndex+3] = PolicyHistory{
+			ItemID:    nulls.NewUUID(itemID),
+			Action:    api.HistoryActionUpdate,
+			FieldName: FieldItemCoverageStatus,
+		}
+	}
+
+	hydratePHsForItem(0, allNewItem.ID)
+	hydratePHsForItem(4, mixedNewItem.ID)
+	hydratePHsForItem(8, noneNewItem.ID)
+
+	// Make sure a null item_id doesn't slip through
+	pHistories[12] = PolicyHistory{
+		Action:    api.HistoryActionUpdate,
+		FieldName: FieldItemCoverageStatus,
+	}
+
+	for i := range pHistories {
+		pHistories[i].PolicyID = policy.ID
+		pHistories[i].UserID = user.ID
+		MustCreate(tx, &pHistories[i])
+	}
+
+	changePHTime := func(index int, chTime time.Time) {
+		q := "UPDATE policy_histories SET created_at = ?, updated_at = ? WHERE id = ?"
+		if err := tx.RawQuery(q, chTime, chTime, pHistories[index].ID).Exec(); err != nil {
+			panic("error updating updated_at fields: " + err.Error())
+		}
+
+		pHistories[index].CreatedAt = chTime
+		pHistories[index].UpdatedAt = chTime
+	}
+
+	// Give the histories distinguishable times
+	now := time.Now().UTC()
+	recentTime1 := now.Add(-2 * time.Minute)
+	recentTime2 := now.Add(-1 * time.Minute)
+	oldTime := now.Add(-2 * domain.DurationWeek)
+
+	for _, i := range []int{0, 1, 2} {
+		changePHTime(i, recentTime1)
+	}
+	changePHTime(3, recentTime2)
+
+	for _, i := range []int{4, 5, 6, 8, 9, 10, 11} {
+		changePHTime(i, oldTime)
+	}
+
+	fixtures.PolicyHistories = pHistories
+	return fixtures
+}
+
+// CreateClaimHistoryFixtures generates a Policy with three Claims each
+//   with four ClaimHistory entries as follows
+//	 Status/Create  [not included as "recent" because not update]
+//	 ReferenceNumber/Update [not included as "recent" because not on Status field]
+//	 Status/Update [could be included, if date is recent]
+//	 Status/Update [could be included, if date is recent]
+func CreateClaimHistoryFixtures_RecentClaimStatusChanges(tx *pop.Connection) Fixtures {
+
+	config := FixturesConfig{
+		NumberOfPolicies:   1,
+		ItemsPerPolicy:     3,
+		ClaimsPerPolicy:    3,
+		ClaimItemsPerClaim: 1,
+	}
+
+	fixtures := CreateItemFixtures(tx, config)
+	policy := fixtures.Policies[0]
+	user := policy.Members[0]
+	claims := fixtures.Claims
+
+	allNewClaim := claims[0]
+	mixedNewClaim := claims[1]
+	noneNewClaim := claims[2]
+
+	cHistories := make(ClaimHistories, len(claims)*4)
+
+	// Hydrate a set of claimHistories as follows
+	//  index n:   Status/Create
+	//  index n+1: ReferenceNumber/Update
+	//  index n+2: Status/Update
+	//  index n+3: Status/Update
+	hydrateCHsForClaim := func(startIndex int, claimID uuid.UUID) {
+		cHistories[startIndex] = ClaimHistory{
+			ClaimID:   claimID,
+			Action:    api.HistoryActionCreate,
+			FieldName: FieldClaimStatus,
+		}
+		cHistories[startIndex+1] = ClaimHistory{
+			ClaimID:   claimID,
+			Action:    api.HistoryActionUpdate,
+			FieldName: "ReferenceNumber",
+		}
+		cHistories[startIndex+2] = ClaimHistory{
+			ClaimID:   claimID,
+			Action:    api.HistoryActionUpdate,
+			FieldName: FieldClaimStatus,
+		}
+		cHistories[startIndex+3] = ClaimHistory{
+			ClaimID:   claimID,
+			Action:    api.HistoryActionUpdate,
+			FieldName: FieldClaimStatus,
+		}
+	}
+
+	hydrateCHsForClaim(0, allNewClaim.ID)
+	hydrateCHsForClaim(4, mixedNewClaim.ID)
+	hydrateCHsForClaim(8, noneNewClaim.ID)
+
+	for i, _ := range cHistories {
+		cHistories[i].UserID = user.ID
+		MustCreate(tx, &cHistories[i])
+	}
+
+	changeCHTime := func(index int, chTime time.Time) {
+		q := "UPDATE claim_histories SET created_at = ?, updated_at = ? WHERE id = ?"
+		if err := tx.RawQuery(q, chTime, chTime, cHistories[index].ID).Exec(); err != nil {
+			panic("error updating updated_at fields: " + err.Error())
+		}
+
+		cHistories[index].CreatedAt = chTime
+		cHistories[index].UpdatedAt = chTime
+	}
+
+	// Give the histories distinguishable times
+	now := time.Now().UTC()
+	recentTime1 := now.Add(-2 * time.Minute)
+	recentTime2 := now.Add(-1 * time.Minute)
+	oldTime := now.Add(-2 * domain.DurationWeek)
+
+	for _, i := range []int{0, 1, 2} {
+		changeCHTime(i, recentTime1)
+	}
+	changeCHTime(3, recentTime2)
+
+	for _, i := range []int{4, 5, 6, 8, 9, 10, 11} {
+		changeCHTime(i, oldTime)
+	}
+
+	fixtures.ClaimHistories = cHistories
+	return fixtures
+}

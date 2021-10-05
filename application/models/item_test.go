@@ -765,8 +765,6 @@ func (ms *ModelSuite) Test_ItemsWithRecentStatusChanges() {
 		got[i] = [2]string{g.Item.ID.String(), g.StatusUpdatedAt.Format(tmFmt)}
 	}
 
-	// Seems like sorting doesn't work quite right at the level of microseconds.
-	// Leaving it as is for now.
 	want := [][2]string{
 		{phFixes[3].ItemID.UUID.String(), phFixes[3].UpdatedAt.Format(tmFmt)},
 		{phFixes[7].ItemID.UUID.String(), phFixes[7].UpdatedAt.Format(tmFmt)},
