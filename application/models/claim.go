@@ -141,7 +141,6 @@ func (c *Claim) Update(ctx context.Context) error {
 			return appErr
 		}
 	}
-
 	updates := c.Compare(oldClaim)
 	for i := range updates {
 		history := c.NewHistory(ctx, api.HistoryActionUpdate, updates[i])
@@ -320,8 +319,9 @@ func (c *Claim) AddItem(tx *pop.Connection, input api.ClaimItemCreateInput) (Cla
 
 // SubmitForApproval changes the status of the claim to either Review1 or Review2
 //   depending on its current status.
-// TODO ensure the associated claimItem is valid
 func (c *Claim) SubmitForApproval(ctx context.Context) error {
+	tx := Tx(ctx)
+
 	oldStatus := c.Status
 	var eventType string
 
@@ -330,7 +330,7 @@ func (c *Claim) SubmitForApproval(ctx context.Context) error {
 		c.Status = api.ClaimStatusReview1
 		eventType = domain.EventApiClaimReview1
 	case api.ClaimStatusReceipt:
-		if !c.HasReceiptFile(Tx(ctx)) {
+		if !c.HasReceiptFile(tx) {
 			err := errors.New("submitting this claim at this stage is not allowed until a receipt is attached")
 			return api.NewAppError(err, api.ErrorClaimStatus, api.CategoryUser)
 		}
@@ -339,6 +339,19 @@ func (c *Claim) SubmitForApproval(ctx context.Context) error {
 	default:
 		err := fmt.Errorf("invalid claim status for submit: %s", oldStatus)
 		return api.NewAppError(err, api.ErrorClaimStatus, api.CategoryUser)
+	}
+
+	c.LoadClaimItems(tx, false)
+	if len(c.ClaimItems) == 0 {
+		err := errors.New("claim must have a claimItem if no longer in draft")
+		appErr := api.NewAppError(err, api.ErrorClaimMissingClaimItem, api.CategoryUser)
+		return appErr
+	}
+	for _, ci := range c.ClaimItems {
+		if errorKey := ci.ValidateForSubmit(tx); errorKey != "" {
+			err := fmt.Errorf("claim item %s is not valid for claim submission", ci.ID)
+			return api.NewAppError(err, errorKey, api.CategoryUser)
+		}
 	}
 
 	if err := c.Update(ctx); err != nil {

@@ -32,7 +32,7 @@ type ItemCategory struct {
 	Name             string                 `db:"name" validate:"required"`
 	HelpText         string                 `db:"help_text"`
 	Status           api.ItemCategoryStatus `db:"status" validate:"itemCategoryStatus"`
-	AutoApproveMax   int                    `db:"auto_approve_max"`
+	AutoApproveMax   int                    `db:"auto_approve_max" validate:"min=0"`
 	RequireMakeModel bool                   `db:"require_make_model"`
 	LegacyID         nulls.Int              `db:"legacy_id"`
 	CreatedAt        time.Time              `db:"created_at"`

@@ -173,6 +173,31 @@ func UpdateClaimStatus(tx *pop.Connection, claim Claim, status api.ClaimStatus, 
 	return claim
 }
 
+type UpdateClaimItemsParams struct {
+	PayoutOption    api.PayoutOption
+	FMV             int
+	IsRepairable    bool
+	RepairEstimate  int
+	ReplaceEstimate int
+}
+
+// UpdateClaimItems sets the claim items to a state ready for submission.
+// TODO: add parameters to provide flexibility in which fields are updated
+func UpdateClaimItems(tx *pop.Connection, claim Claim, params UpdateClaimItemsParams) Claim {
+	claim.LoadClaimItems(tx, false)
+	for i := range claim.ClaimItems {
+		claim.ClaimItems[i].PayoutOption = params.PayoutOption
+		claim.ClaimItems[i].IsRepairable = params.IsRepairable
+		claim.ClaimItems[i].RepairEstimate = params.RepairEstimate
+		claim.ClaimItems[i].ReplaceEstimate = params.ReplaceEstimate
+		claim.ClaimItems[i].FMV = params.FMV
+		if err := tx.Update(&claim.ClaimItems[0]); err != nil {
+			panic("error trying to update claim items: " + err.Error())
+		}
+	}
+	return claim
+}
+
 // createClaimFixture generates a Claim, a number of ClaimItems, and a number of ClaimFiles
 // Uses FixturesConfig fields: ClaimItemsPerClaim, ClaimFilesPerClaim
 func createClaimFixture(tx *pop.Connection, policy Policy, config FixturesConfig) Claim {

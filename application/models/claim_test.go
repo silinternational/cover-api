@@ -103,7 +103,7 @@ func (ms *ModelSuite) TestClaim_SubmitForApproval() {
 		UsersPerPolicy:      2,
 		DependentsPerPolicy: 2,
 		ItemsPerPolicy:      4,
-		ClaimsPerPolicy:     4,
+		ClaimsPerPolicy:     5,
 		ClaimItemsPerClaim:  1,
 	}
 
@@ -113,6 +113,21 @@ func (ms *ModelSuite) TestClaim_SubmitForApproval() {
 	revisionClaim := UpdateClaimStatus(ms.DB, policy.Claims[1], api.ClaimStatusRevision, "")
 	reviewClaim := UpdateClaimStatus(ms.DB, policy.Claims[2], api.ClaimStatusReview1, "")
 	emptyClaim := UpdateClaimStatus(ms.DB, policy.Claims[3], api.ClaimStatusDraft, "")
+	itemNotReadyClaim := policy.Claims[4]
+
+	goodParams := UpdateClaimItemsParams{
+		PayoutOption:   api.PayoutOptionRepair,
+		IsRepairable:   true,
+		RepairEstimate: 1000,
+		FMV:            2000,
+	}
+	UpdateClaimItems(ms.DB, draftClaim, goodParams)
+	UpdateClaimItems(ms.DB, revisionClaim, goodParams)
+	UpdateClaimItems(ms.DB, reviewClaim, goodParams)
+
+	badParams := goodParams
+	badParams.RepairEstimate = 0
+	UpdateClaimItems(ms.DB, itemNotReadyClaim, badParams)
 
 	tempClaim := emptyClaim
 	tempClaim.LoadClaimItems(ms.DB, false)
@@ -140,6 +155,13 @@ func (ms *ModelSuite) TestClaim_SubmitForApproval() {
 			wantErrKey:      api.ErrorClaimMissingClaimItem,
 			wantErrCat:      api.CategoryUser,
 			wantErrContains: "claim must have a claimItem if no longer in draft",
+		},
+		{
+			name:            "from draft to review1, item not ready",
+			claim:           itemNotReadyClaim,
+			wantErrKey:      api.ErrorClaimItemMissingRepairEstimate,
+			wantErrCat:      api.CategoryUser,
+			wantErrContains: "not valid for claim submission",
 		},
 		{
 			name:       "from draft to review1",

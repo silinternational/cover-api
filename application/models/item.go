@@ -46,7 +46,7 @@ type Item struct {
 	Make              string                 `db:"make"`
 	Model             string                 `db:"model"`
 	SerialNumber      string                 `db:"serial_number"`
-	CoverageAmount    int                    `db:"coverage_amount"`
+	CoverageAmount    int                    `db:"coverage_amount" validate:"min=0"`
 	PurchaseDate      time.Time              `db:"purchase_date"`
 	CoverageStatus    api.ItemCoverageStatus `db:"coverage_status" validate:"itemCoverageStatus"`
 	CoverageStartDate time.Time              `db:"coverage_start_date"`
