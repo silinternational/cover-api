@@ -18,6 +18,7 @@ const (
 	ResourceReceipt    = "receipt"
 	ResourceApprove    = "approve"
 	ResourceDeny       = "deny"
+	ResourceRecent     = "recent"
 )
 
 type ErrorKey string
@@ -154,4 +155,10 @@ type Currency int
 
 func (c Currency) String() string {
 	return fmt.Sprintf("%0.2f", float32(c)/domain.CurrencyFactor)
+}
+
+// swagger:model
+type RecentObjects struct {
+	Items  RecentItems
+	Claims RecentClaims
 }
