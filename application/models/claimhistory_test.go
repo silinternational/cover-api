@@ -101,15 +101,14 @@ func (ms *ModelSuite) TestClaimHistories_RecentClaimStatusChanges() {
 	var gotCHs ClaimHistories
 
 	ms.NoError(gotCHs.RecentClaimStatusChanges(ms.DB), "error calling function")
-	got := make([][2]string, len(gotCHs))
+	got := make([]string, len(gotCHs))
 	for i, g := range gotCHs {
-		got[i] = [2]string{g.ID.String(), g.ClaimID.String()}
+		got[i] = g.ClaimID.String()
 	}
 
-	want := [][2]string{
-		{chFixes[2].ID.String(), chFixes[2].ClaimID.String()},
-		{chFixes[3].ID.String(), chFixes[3].ClaimID.String()},
-		{chFixes[7].ID.String(), chFixes[7].ClaimID.String()},
+	want := []string{
+		chFixes[3].ClaimID.String(),
+		chFixes[7].ClaimID.String(),
 	}
 
 	ms.ElementsMatch(want, got, "incorrect results")

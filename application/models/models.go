@@ -9,7 +9,6 @@ import (
 	"log"
 	"net/http"
 	"reflect"
-	"time"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gobuffalo/events"
@@ -46,11 +45,6 @@ const (
 
 	QueryRecentStatusChanges = "created_at > ? AND field_name = ? AND action = ?"
 )
-
-type idTime struct {
-	ID        uuid.UUID
-	UpdatedAt time.Time
-}
 
 type Authable interface {
 	GetID() uuid.UUID

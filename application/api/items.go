@@ -101,11 +101,16 @@ type Item struct {
 	AccountableUserID nulls.UUID `json:"accountable_user_id"`
 }
 
+// swagger:model
 type RecentItems []RecentItem
 
+// swagger:model
 type RecentItem struct {
+	// The time the item had its coverage_status changed
+	// swagger:strfmt date-time
 	StatusUpdatedAt time.Time
-	Item            Item
+
+	Item Item
 }
 
 // ItemInput represents payload for adding an item
