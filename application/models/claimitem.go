@@ -200,9 +200,12 @@ func (c *ClaimItem) LoadReviewer(tx *pop.Connection, reload bool) {
 }
 
 func (c *ClaimItem) ConvertToAPI(tx *pop.Connection) api.ClaimItem {
+	c.LoadItem(tx, false)
+
 	return api.ClaimItem{
 		ID:              c.ID,
 		ItemID:          c.ItemID,
+		Item:            c.Item.ConvertToAPI(tx),
 		ClaimID:         c.ClaimID,
 		Status:          c.Status,
 		IsRepairable:    c.IsRepairable,
