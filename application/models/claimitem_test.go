@@ -302,8 +302,8 @@ func (ms *ModelSuite) TestClaimItem_ValidateForSubmit() {
 	missingPayoutOption := good
 	missingPayoutOption.PayoutOption = ""
 
-	notRepairable := good
-	notRepairable.IsRepairable = true
+	theftIsNotRepairable := good
+	theftIsNotRepairable.IsRepairable = true
 
 	missingReplaceEstimate := good
 	missingReplaceEstimate.PayoutOption = api.PayoutOptionReplacement
@@ -324,6 +324,7 @@ func (ms *ModelSuite) TestClaimItem_ValidateForSubmit() {
 	missingImpactFMV.FMV = 0
 
 	invalidPayoutOption := good
+	invalidPayoutOption.IsRepairable = false
 	invalidPayoutOption.Claim.IncidentType = api.ClaimIncidentTypeImpact
 	invalidPayoutOption.PayoutOption = api.PayoutOptionRepair
 
@@ -353,7 +354,7 @@ func (ms *ModelSuite) TestClaimItem_ValidateForSubmit() {
 		},
 		{
 			name:      "item is not repairable",
-			claimItem: notRepairable,
+			claimItem: theftIsNotRepairable,
 			want:      api.ErrorClaimItemNotRepairable,
 		},
 		{
