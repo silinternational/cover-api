@@ -602,3 +602,28 @@ func (i *Item) GetAccountablePersonName(tx *pop.Connection) (firstName, lastName
 	}
 	return firstName, lastName
 }
+
+// ItemsWithRecentStatusChanges returns the RecentItems associated with
+//  items that have had their CoverageStatus changed recently.
+//  The slice is sorted by updated time with most recent first.
+func ItemsWithRecentStatusChanges(tx *pop.Connection) (api.RecentItems, error) {
+	var pHistories PolicyHistories
+
+	if err := pHistories.RecentItemStatusChanges(tx); err != nil {
+		return api.RecentItems{}, err
+	}
+
+	// Fetch the actual items from the database and convert them to api types
+	items := make(api.RecentItems, len(pHistories))
+	for i, next := range pHistories {
+		var item Item
+		if err := item.FindByID(tx, next.ItemID.UUID); err != nil {
+			panic("error finding item by ID: " + err.Error())
+		}
+
+		apiItem := item.ConvertToAPI(tx)
+		items[i] = api.RecentItem{Item: apiItem, StatusUpdatedAt: next.CreatedAt}
+	}
+
+	return items, nil
+}
