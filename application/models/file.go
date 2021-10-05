@@ -41,7 +41,7 @@ type File struct {
 	URL           string    `db:"url" validate:"required"`
 	URLExpiration time.Time `db:"url_expiration"`
 	Name          string    `db:"name" validate:"required"`
-	Size          int       `db:"size" validate:"required"`
+	Size          int       `db:"size" validate:"required,min=0"`
 	ContentType   string    `db:"content_type" validate:"required"`
 	Linked        bool      `db:"linked"`
 	CreatedByID   uuid.UUID `db:"created_by_id" validate:"required"`

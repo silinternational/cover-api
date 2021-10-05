@@ -79,6 +79,12 @@ const (
 	// PolicyDependent
 	ErrorPolicyDependentCreate = ErrorKey("ErrorPolicyDependentCreate")
 
-	// Claim
-	ErrorClaimItemCreateInvalidInput = ErrorKey("ErrorClaimItemCreateInvalidInput")
+	// ClaimItem
+	ErrorClaimItemCreateInvalidInput     = ErrorKey("ErrorClaimItemCreateInvalidInput")
+	ErrorClaimItemNotRepairable          = ErrorKey("ClaimItemNotRepairable")
+	ErrorClaimItemMissingPayoutOption    = ErrorKey("ClaimItemMissingPayoutOption")
+	ErrorClaimItemMissingReplaceEstimate = ErrorKey("ClaimItemMissingReplaceEstimate")
+	ErrorClaimItemMissingRepairEstimate  = ErrorKey("ClaimItemMissingRepairEstimate")
+	ErrorClaimItemMissingFMV             = ErrorKey("ClaimItemMissingFMV")
+	ErrorClaimItemInvalidPayoutOption    = ErrorKey("ClaimItemInvalidPayoutOption")
 )

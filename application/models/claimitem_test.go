@@ -288,3 +288,126 @@ func (ms *ModelSuite) TestClaimItem_UpdateByUser() {
 		})
 	}
 }
+
+func (ms *ModelSuite) TestClaimItem_ValidateForSubmit() {
+	good := ClaimItem{
+		IsRepairable:    false,
+		RepairEstimate:  100,
+		ReplaceEstimate: 1000,
+		PayoutOption:    api.PayoutOptionRepair,
+		FMV:             1000,
+		Claim:           Claim{IncidentType: api.ClaimIncidentTypeTheft},
+	}
+
+	missingPayoutOption := good
+	missingPayoutOption.PayoutOption = ""
+
+	theftIsNotRepairable := good
+	theftIsNotRepairable.IsRepairable = true
+
+	missingReplaceEstimate := good
+	missingReplaceEstimate.PayoutOption = api.PayoutOptionReplacement
+	missingReplaceEstimate.ReplaceEstimate = 0
+
+	missingFMV := good
+	missingFMV.PayoutOption = api.PayoutOptionFMV
+	missingFMV.FMV = 0
+
+	missingRepairEstimate := good
+	missingRepairEstimate.IsRepairable = true
+	missingRepairEstimate.Claim.IncidentType = api.ClaimIncidentTypeImpact
+	missingRepairEstimate.RepairEstimate = 0
+
+	missingImpactFMV := good
+	missingImpactFMV.IsRepairable = true
+	missingImpactFMV.Claim.IncidentType = api.ClaimIncidentTypeImpact
+	missingImpactFMV.FMV = 0
+
+	invalidPayoutOption := good
+	invalidPayoutOption.IsRepairable = false
+	invalidPayoutOption.Claim.IncidentType = api.ClaimIncidentTypeImpact
+	invalidPayoutOption.PayoutOption = api.PayoutOptionRepair
+
+	invalidPayoutOptionEvacuation := good
+	invalidPayoutOptionEvacuation.Claim.IncidentType = api.ClaimIncidentTypeEvacuation
+	invalidPayoutOptionEvacuation.PayoutOption = api.PayoutOptionRepair
+
+	missingReplaceEstimateImpact := good
+	missingReplaceEstimateImpact.Claim.IncidentType = api.ClaimIncidentTypeImpact
+	missingReplaceEstimateImpact.PayoutOption = api.PayoutOptionReplacement
+	missingReplaceEstimateImpact.ReplaceEstimate = 0
+
+	missingFMVImpact := good
+	missingFMVImpact.Claim.IncidentType = api.ClaimIncidentTypeImpact
+	missingFMVImpact.PayoutOption = api.PayoutOptionFMV
+	missingFMVImpact.FMV = 0
+
+	tests := []struct {
+		name      string
+		claimItem ClaimItem
+		want      api.ErrorKey
+	}{
+		{
+			name:      "missing payout option",
+			claimItem: missingPayoutOption,
+			want:      api.ErrorClaimItemMissingPayoutOption,
+		},
+		{
+			name:      "item is not repairable",
+			claimItem: theftIsNotRepairable,
+			want:      api.ErrorClaimItemNotRepairable,
+		},
+		{
+			name:      "missing replace estimate",
+			claimItem: missingReplaceEstimate,
+			want:      api.ErrorClaimItemMissingReplaceEstimate,
+		},
+		{
+			name:      "missing FMV",
+			claimItem: missingFMV,
+			want:      api.ErrorClaimItemMissingFMV,
+		},
+		{
+			name:      "invalid payout option",
+			claimItem: invalidPayoutOption,
+			want:      api.ErrorClaimItemInvalidPayoutOption,
+		},
+		{
+			name:      "invalid payout option, evacuation",
+			claimItem: invalidPayoutOptionEvacuation,
+			want:      api.ErrorClaimItemInvalidPayoutOption,
+		},
+		{
+			name:      "missing repair estimate",
+			claimItem: missingRepairEstimate,
+			want:      api.ErrorClaimItemMissingRepairEstimate,
+		},
+		{
+			name:      "missing impact FMV",
+			claimItem: missingImpactFMV,
+			want:      api.ErrorClaimItemMissingFMV,
+		},
+		{
+			name:      "missing replace estimate (impact)",
+			claimItem: missingReplaceEstimateImpact,
+			want:      api.ErrorClaimItemMissingReplaceEstimate,
+		},
+		{
+			name:      "missing FMV (impact)",
+			claimItem: missingFMVImpact,
+			want:      api.ErrorClaimItemMissingFMV,
+		},
+		{
+			name:      "good",
+			claimItem: good,
+			want:      "",
+		},
+	}
+	for _, tt := range tests {
+		ms.T().Run(tt.name, func(t *testing.T) {
+			if got := tt.claimItem.ValidateForSubmit(ms.DB); got != tt.want {
+				t.Errorf("ValidateForSubmit() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

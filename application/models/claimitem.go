@@ -42,13 +42,13 @@ type ClaimItem struct {
 	ItemID          uuid.UUID           `db:"item_id"`
 	Status          api.ClaimItemStatus `db:"status" validate:"required,claimItemStatus"`
 	IsRepairable    bool                `db:"is_repairable"`
-	RepairEstimate  int                 `db:"repair_estimate"`
-	RepairActual    int                 `db:"repair_actual"`
-	ReplaceEstimate int                 `db:"replace_estimate"`
-	ReplaceActual   int                 `db:"replace_actual"`
+	RepairEstimate  int                 `db:"repair_estimate" validate:"min=0"`
+	RepairActual    int                 `db:"repair_actual" validate:"min=0"`
+	ReplaceEstimate int                 `db:"replace_estimate" validate:"min=0"`
+	ReplaceActual   int                 `db:"replace_actual" validate:"min=0"`
 	PayoutOption    api.PayoutOption    `db:"payout_option" validate:"payoutOption"`
-	PayoutAmount    int                 `db:"payout_amount"`
-	FMV             int                 `db:"fmv"`
+	PayoutAmount    int                 `db:"payout_amount" validate:"min=0"`
+	FMV             int                 `db:"fmv" validate:"min=0"`
 	ReviewDate      nulls.Time          `db:"review_date"`
 	ReviewerID      nulls.UUID          `db:"reviewer_id"`
 	Location        string              `db:"location"`
@@ -218,6 +218,67 @@ func (c *ClaimItem) ConvertToAPI(tx *pop.Connection) api.ClaimItem {
 		CreatedAt:       c.CreatedAt,
 		UpdatedAt:       c.UpdatedAt,
 	}
+}
+
+func (c *ClaimItem) ValidateForSubmit(tx *pop.Connection) api.ErrorKey {
+	c.LoadClaim(tx, false)
+
+	if c.PayoutOption == "" {
+		return api.ErrorClaimItemMissingPayoutOption
+	}
+
+	if c.IsRepairable && !c.Claim.IncidentType.IsRepairable() {
+		return api.ErrorClaimItemNotRepairable
+	}
+
+	switch c.Claim.IncidentType {
+	case api.ClaimIncidentTypeTheft:
+		if c.replaceEstimateMissing() {
+			return api.ErrorClaimItemMissingReplaceEstimate
+		}
+		if c.fmvMissing() {
+			return api.ErrorClaimItemMissingFMV
+		}
+	case api.ClaimIncidentTypeImpact, api.ClaimIncidentTypeElectricalSurge,
+		api.ClaimIncidentTypeWaterDamage, api.ClaimIncidentTypeOther:
+		if c.IsRepairable {
+			if c.RepairEstimate == 0 {
+				return api.ErrorClaimItemMissingRepairEstimate
+			}
+			if c.FMV == 0 {
+				return api.ErrorClaimItemMissingFMV
+			}
+		} else {
+			if c.PayoutOption == api.PayoutOptionRepair {
+				return api.ErrorClaimItemInvalidPayoutOption
+			}
+			if c.replaceEstimateMissing() {
+				return api.ErrorClaimItemMissingReplaceEstimate
+			}
+			if c.fmvMissing() {
+				return api.ErrorClaimItemMissingFMV
+			}
+		}
+	case api.ClaimIncidentTypeEvacuation:
+		if c.PayoutOption != api.PayoutOptionFixedFraction {
+			return api.ErrorClaimItemInvalidPayoutOption
+		}
+	}
+	return ""
+}
+
+func (c *ClaimItem) replaceEstimateMissing() bool {
+	if c.PayoutOption == api.PayoutOptionReplacement && c.ReplaceEstimate == 0 {
+		return true
+	}
+	return false
+}
+
+func (c *ClaimItem) fmvMissing() bool {
+	if c.PayoutOption == api.PayoutOptionFMV && c.FMV == 0 {
+		return true
+	}
+	return false
 }
 
 func (c *ClaimItems) ConvertToAPI(tx *pop.Connection) api.ClaimItems {
