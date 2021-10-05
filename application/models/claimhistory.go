@@ -57,7 +57,7 @@ SELECT claim_id,max(created_at) AS created_at
 FROM claim_histories
 WHERE created_at > ? AND field_name = ? AND action = ?
 GROUP BY claim_id
-ORDER BY created_at
+ORDER BY created_at DESC
 `, cutoffDate, FieldClaimStatus, api.HistoryActionUpdate).All(ch)
 
 	if domain.IsOtherThanNoRows(err) {

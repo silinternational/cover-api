@@ -73,21 +73,29 @@ func CreateClaimHistoryFixtures_RecentClaimStatusChanges(tx *pop.Connection) Fix
 		MustCreate(tx, &cHistories[i])
 	}
 
-	now := time.Now().UTC()
-	oldTime := now.Add(-2 * domain.DurationWeek)
-
-	makeCHOld := func(index int) {
+	changeCHTime := func(index int, chTime time.Time) {
 		q := "UPDATE claim_histories SET created_at = ?, updated_at = ? WHERE id = ?"
-		if err := tx.RawQuery(q, oldTime, oldTime, cHistories[index].ID).Exec(); err != nil {
+		if err := tx.RawQuery(q, chTime, chTime, cHistories[index].ID).Exec(); err != nil {
 			panic("error updating updated_at fields: " + err.Error())
 		}
 
-		cHistories[index].CreatedAt = oldTime
-		cHistories[index].UpdatedAt = oldTime
+		cHistories[index].CreatedAt = chTime
+		cHistories[index].UpdatedAt = chTime
 	}
 
+	// Give the histories distinguishable times
+	now := time.Now().UTC()
+	recentTime1 := now.Add(-2 * time.Minute)
+	recentTime2 := now.Add(-1 * time.Minute)
+	oldTime := now.Add(-2 * domain.DurationWeek)
+
+	for _, i := range []int{0, 1, 2} {
+		changeCHTime(i, recentTime1)
+	}
+	changeCHTime(3, recentTime2)
+
 	for _, i := range []int{4, 5, 6, 8, 9, 10, 11} {
-		makeCHOld(i)
+		changeCHTime(i, oldTime)
 	}
 
 	fixtures.ClaimHistories = cHistories
@@ -107,9 +115,9 @@ func (ms *ModelSuite) TestClaimHistories_RecentClaimStatusChanges() {
 	}
 
 	want := []string{
-		chFixes[3].ClaimID.String(),
 		chFixes[7].ClaimID.String(),
+		chFixes[3].ClaimID.String(),
 	}
 
-	ms.ElementsMatch(want, got, "incorrect results")
+	ms.Equal(want, got, "incorrect results")
 }

@@ -78,21 +78,29 @@ func CreatePolicyHistoryFixtures_RecentItemStatusChanges(tx *pop.Connection) Fix
 		MustCreate(tx, &pHistories[i])
 	}
 
-	now := time.Now().UTC()
-	oldTime := now.Add(-2 * domain.DurationWeek)
-
-	makePHOld := func(index int) {
+	changePHTime := func(index int, chTime time.Time) {
 		q := "UPDATE policy_histories SET created_at = ?, updated_at = ? WHERE id = ?"
-		if err := tx.RawQuery(q, oldTime, oldTime, pHistories[index].ID).Exec(); err != nil {
+		if err := tx.RawQuery(q, chTime, chTime, pHistories[index].ID).Exec(); err != nil {
 			panic("error updating updated_at fields: " + err.Error())
 		}
 
-		pHistories[index].CreatedAt = oldTime
-		pHistories[index].UpdatedAt = oldTime
+		pHistories[index].CreatedAt = chTime
+		pHistories[index].UpdatedAt = chTime
 	}
 
+	// Give the histories distinguishable times
+	now := time.Now().UTC()
+	recentTime1 := now.Add(-2 * time.Minute)
+	recentTime2 := now.Add(-1 * time.Minute)
+	oldTime := now.Add(-2 * domain.DurationWeek)
+
+	for _, i := range []int{0, 1, 2} {
+		changePHTime(i, recentTime1)
+	}
+	changePHTime(3, recentTime2)
+
 	for _, i := range []int{4, 5, 6, 8, 9, 10, 11} {
-		makePHOld(i)
+		changePHTime(i, oldTime)
 	}
 
 	fixtures.PolicyHistories = pHistories
@@ -112,9 +120,9 @@ func (ms *ModelSuite) TestPolicyHistories_RecentItemStatusChanges() {
 	}
 
 	want := []string{
-		phFixes[3].ItemID.UUID.String(),
 		phFixes[7].ItemID.UUID.String(),
+		phFixes[3].ItemID.UUID.String(),
 	}
 
-	ms.ElementsMatch(want, got, "incorrect results")
+	ms.Equal(want, got, "incorrect results")
 }
