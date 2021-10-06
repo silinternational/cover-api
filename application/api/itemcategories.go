@@ -48,4 +48,6 @@ type ItemCategory struct {
 	//
 	// swagger:strfmt date-time
 	UpdatedAt time.Time `json:"updated_at"`
+
+	RequireMakeModel bool `json:"require_make_model"`
 }
