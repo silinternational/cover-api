@@ -5,3 +5,5 @@ drop_column("ledger_entries", "policy_type")
 rename_column("ledger_entries", "household_id", "account_cost_center1")
 rename_column("ledger_entries", "cost_center", "account_cost_center2")
 add_column("ledger_entries", "income_account", "string", {"default": ""})
+
+drop_column("ledger_entries", "claim_id")

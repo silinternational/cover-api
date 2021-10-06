@@ -519,6 +519,7 @@ func parseItemDates(input api.ItemInput, modelItem *Item) error {
 	return nil
 }
 
+// setAccountablePerson sets the appropriate field to the given ID, but does not update the database
 func (i *Item) setAccountablePerson(tx *pop.Connection, id uuid.UUID) error {
 	i.LoadPolicy(tx, false)
 
@@ -543,26 +544,13 @@ func (i *Item) CreateLedgerEntry(tx *pop.Connection) error {
 	i.Policy.LoadEntityCode(tx, false)
 
 	firstName, lastName := i.GetAccountablePersonName(tx)
-	costCenter := ""
-	if i.Policy.Type == api.PolicyTypeCorporate {
-		costCenter = i.Policy.CostCenter + " / " + i.Policy.AccountDetail
-	}
-	le := LedgerEntry{
-		Type:             LedgerEntryTypeNewCoverage,
-		RiskCategoryName: i.RiskCategory.Name,
-		RiskCategoryCC:   i.RiskCategory.CostCenter,
-		PolicyID:         i.PolicyID,
-		PolicyType:       i.Policy.Type,
-		ItemID:           nulls.NewUUID(i.ID),
-		EntityCode:       i.Policy.EntityCode.Code,
-		Amount:           i.GetProratedPremium(time.Now().UTC()),
-		DateSubmitted:    time.Now().UTC(),
-		AccountNumber:    i.Policy.Account,
-		CostCenter:       costCenter,
-		HouseholdID:      i.Policy.HouseholdID.String,
-		FirstName:        firstName,
-		LastName:         lastName,
-	}
+
+	le := NewLedgerEntry(i.Policy, i, nil)
+	le.Type = LedgerEntryTypeNewCoverage
+	le.Amount = i.GetProratedPremium(time.Now().UTC())
+	le.FirstName = firstName
+	le.LastName = lastName
+
 	return le.Create(tx)
 }
 

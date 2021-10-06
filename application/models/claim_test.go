@@ -795,3 +795,31 @@ func (ms *ModelSuite) Test_ClaimsWithRecentStatusChanges() {
 
 	ms.ElementsMatch(want, got, "incorrect results")
 }
+
+func (ms *ModelSuite) TestClaim_CreateLedgerEntry() {
+	f := CreateItemFixtures(ms.DB, FixturesConfig{ClaimsPerPolicy: 1})
+	item := f.Items[0]
+	ms.NoError(item.setAccountablePerson(ms.DB, f.Users[0].ID))
+	ms.NoError(item.Update(ms.DB, item.CoverageStatus))
+
+	claim := f.Claims[0]
+
+	ms.Error(claim.CreateLedgerEntry(ms.DB), "expected an error, claim isn't approved yet")
+
+	claim.Status = api.ClaimStatusApproved
+	claim.TotalPayout = 12345
+	ms.NoError(ms.DB.Update(&claim), "unable to update claim test fixture")
+
+	ms.NoError(claim.CreateLedgerEntry(ms.DB), "claim is approved now, it shouldn't be a problem")
+
+	var le LedgerEntry
+	ms.NoError(ms.DB.Where("claim_id = ?", claim.ID).First(&le))
+
+	ms.Equal(LedgerEntryTypeClaim, le.Type, "Type is incorrect")
+	ms.Equal(item.PolicyID, le.PolicyID, "PolicyID is incorrect")
+	ms.Equal(item.ID, le.ItemID.UUID, "ItemID is incorrect")
+	ms.Equal(claim.ID, le.ClaimID.UUID, "ClaimID is incorrect")
+	ms.Equal(-12345, le.Amount, "Amount is incorrect")
+	ms.Equal(f.Users[0].FirstName, le.FirstName, "FirstName is incorrect")
+	ms.Equal(f.Users[0].LastName, le.LastName, "LastName is incorrect")
+}

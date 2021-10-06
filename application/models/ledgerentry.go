@@ -42,6 +42,7 @@ type LedgerEntry struct {
 
 	PolicyID         uuid.UUID       `db:"policy_id"`
 	ItemID           nulls.UUID      `db:"item_id"`
+	ClaimID          nulls.UUID      `db:"claim_id"`
 	EntityCode       string          `db:"entity_code"`
 	RiskCategoryName string          `db:"risk_category_name"`
 	RiskCategoryCC   string          `db:"risk_category_cc"`
@@ -168,4 +169,31 @@ func (le *LedgerEntry) balanceDescription() string {
 		premiumsOrClaims = "Claims"
 	}
 	return fmt.Sprintf("Total %s %s %s", le.EntityCode, le.RiskCategoryName, premiumsOrClaims)
+}
+
+// NewLedgerEntry creates a basic LedgerEntry with common fields completed.
+// Requires pre-hydration of policy.EntityCode. If item is not nil, item.RiskCategory must be hydrated.
+func NewLedgerEntry(policy Policy, item *Item, claim *Claim) LedgerEntry {
+	costCenter := ""
+	if policy.Type == api.PolicyTypeCorporate {
+		costCenter = policy.CostCenter + " / " + policy.AccountDetail
+	}
+	le := LedgerEntry{
+		PolicyID:      policy.ID,
+		PolicyType:    policy.Type,
+		EntityCode:    policy.EntityCode.Code,
+		DateSubmitted: time.Now().UTC(),
+		AccountNumber: policy.Account,
+		CostCenter:    costCenter,
+		HouseholdID:   policy.HouseholdID.String,
+	}
+	if item != nil {
+		le.ItemID = nulls.NewUUID(item.ID)
+		le.RiskCategoryName = item.RiskCategory.Name
+		le.RiskCategoryCC = item.RiskCategory.CostCenter
+	}
+	if claim != nil {
+		le.ClaimID = nulls.NewUUID(claim.ID)
+	}
+	return le
 }

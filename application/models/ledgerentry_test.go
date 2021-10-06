@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/gobuffalo/nulls"
+	"github.com/gofrs/uuid"
 
 	"github.com/silinternational/cover-api/api"
 	"github.com/silinternational/cover-api/domain"
@@ -146,4 +147,70 @@ func (ms *ModelSuite) TestLedgerEntries_MakeBlocks() {
 	ms.Equal(2, len(blocks["4020067890"]))
 	ms.Equal(policy2, blocks["4020067890"][0].PolicyID)
 	ms.Equal(policy3, blocks["4020067890"][1].PolicyID)
+}
+
+func (ms *ModelSuite) Test_NewLedgerEntry() {
+	f := CreateItemFixtures(ms.DB, FixturesConfig{NumberOfPolicies: 2, ClaimsPerPolicy: 1})
+	householdPolicy := f.Policies[0]
+	householdPolicyItem := householdPolicy.Items[0]
+	ms.NoError(householdPolicyItem.setAccountablePerson(ms.DB, f.Users[0].ID))
+	householdPolicyClaim := f.Policies[0].Claims[0]
+	ms.False(uuid.Nil == householdPolicyClaim.ID, "householdPolicyClaim is not hydrated")
+
+	corporatePolicy := ConvertPolicyType(ms.DB, f.Policies[1])
+	corporatePolicyItem := corporatePolicy.Items[0]
+	ms.NoError(corporatePolicyItem.setAccountablePerson(ms.DB, f.Users[1].ID))
+
+	tests := []struct {
+		name   string
+		policy Policy
+		item   *Item
+		claim  *Claim
+	}{
+		{
+			name:   "household policy item with claim",
+			policy: householdPolicy,
+			item:   &householdPolicyItem,
+			claim:  &householdPolicyClaim,
+		},
+		{
+			name:   "corporate policy item no claim",
+			policy: corporatePolicy,
+			item:   &corporatePolicyItem,
+		},
+		{
+			name:   "policy only",
+			policy: corporatePolicy,
+		},
+	}
+	for _, tt := range tests {
+		ms.T().Run(tt.name, func(t *testing.T) {
+			le := NewLedgerEntry(tt.policy, tt.item, tt.claim)
+
+			ms.Equal(tt.policy.ID, le.PolicyID, "PolicyID is incorrect")
+			ms.WithinDuration(time.Now().UTC(), le.DateSubmitted, time.Minute, "DateSubmitted is incorrect")
+			ms.Equal(tt.policy.Type, le.PolicyType, "PolicyType is incorrect")
+			if tt.policy.Type == api.PolicyTypeCorporate {
+				ms.Equal(tt.policy.Account, le.AccountNumber, "AccountNumber is incorrect")
+				ms.Equal(tt.policy.CostCenter+" / "+tt.policy.AccountDetail, le.CostCenter, "CostCenter is incorrect")
+				ms.Equal(tt.policy.EntityCode.Code, le.EntityCode, "EntityCode is incorrect")
+			} else {
+				ms.Equal(tt.policy.HouseholdID.String, le.HouseholdID, "HouseholdID is incorrect")
+			}
+
+			if tt.item == nil {
+				ms.False(le.ItemID.Valid, "ItemID is not nil")
+			} else {
+				ms.Equal(tt.item.RiskCategory.Name, le.RiskCategoryName, "RiskCategoryName is incorrect")
+				ms.Equal(tt.item.RiskCategory.CostCenter, le.RiskCategoryCC, "RiskCategoryCC is incorrect")
+				ms.Equal(tt.item.ID, le.ItemID.UUID, "ItemID is incorrect")
+			}
+
+			if tt.claim == nil {
+				ms.False(le.ClaimID.Valid, "ClaimID is not nil")
+			} else {
+				ms.Equal(tt.claim.ID, le.ClaimID.UUID, "ClaimID is incorrect")
+			}
+		})
+	}
 }

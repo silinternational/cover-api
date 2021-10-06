@@ -742,6 +742,10 @@ func ClaimsWithRecentStatusChanges(tx *pop.Connection) (api.RecentClaims, error)
 }
 
 func (c *Claim) CreateLedgerEntry(tx *pop.Connection) error {
+	if c.Status != api.ClaimStatusApproved {
+		return errors.New("cannot pay out a claim that is not approved")
+	}
+
 	c.LoadPolicy(tx, false)
 	c.Policy.LoadEntityCode(tx, false)
 	c.Policy.LoadItems(tx, false)
@@ -749,21 +753,13 @@ func (c *Claim) CreateLedgerEntry(tx *pop.Connection) error {
 	for _, item := range c.Policy.Items {
 		firstName, lastName := item.GetAccountablePersonName(tx)
 		item.LoadRiskCategory(tx, false)
-		le := LedgerEntry{
-			// TODO: check each line below for correctness
-			Type:             LedgerEntryTypeClaim,
-			RiskCategoryName: item.RiskCategory.Name,
-			// ClaimID:            c.ID,
-			PolicyID:      c.PolicyID,
-			ItemID:        nulls.NewUUID(item.ID),
-			EntityCode:    c.Policy.EntityCode.Code,
-			Amount:        0,
-			DateSubmitted: time.Now().UTC(),
-			AccountNumber: c.Policy.Account,
-			HouseholdID:   c.Policy.CostCenter,
-			FirstName:     firstName,
-			LastName:      lastName,
-		}
+
+		le := NewLedgerEntry(c.Policy, &item, c)
+		le.Type = LedgerEntryTypeClaim
+		le.Amount = int(-c.TotalPayout)
+		le.FirstName = firstName
+		le.LastName = lastName
+
 		if err := le.Create(tx); err != nil {
 			return err
 		}
