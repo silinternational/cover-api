@@ -103,6 +103,10 @@ func (p *Policy) IsActorAllowedTo(tx *pop.Connection, actor User, perm Permissio
 		return true
 	}
 
+	if perm == PermissionCreate && sub == "" {
+		return true
+	}
+
 	return p.isMember(tx, actor.ID)
 }
 

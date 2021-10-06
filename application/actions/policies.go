@@ -86,7 +86,17 @@ func policiesCreateCorporate(c buffalo.Context) error {
 	tx := models.Tx(c)
 	user := models.CurrentUser(c)
 
-	var policy models.Policy
+	var entityCode models.EntityCode
+	if err := entityCode.FindByCode(tx, input.EntityCode); err != nil {
+		return reportError(c, err)
+	}
+
+	policy := models.Policy{
+		CostCenter:   input.CostCenter,
+		Account:      input.Account,
+		EntityCodeID: nulls.NewUUID(entityCode.ID),
+	}
+
 	if err := policy.CreateCorporateType(tx, user); err != nil {
 		return reportError(c, err)
 	}

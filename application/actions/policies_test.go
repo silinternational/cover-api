@@ -98,6 +98,81 @@ func (as *ActionSuite) Test_PoliciesList() {
 	}
 }
 
+func (as *ActionSuite) Test_PoliciesCreateCorporate() {
+	fixConfig := models.FixturesConfig{NumberOfEntityCodes: 1}
+
+	fixtures := models.CreatePolicyFixtures(as.DB, fixConfig)
+
+	entCode := fixtures.EntityCodes[0]
+	user := fixtures.Policies[0].Members[0]
+
+	goodPolicy := api.PolicyCreate{
+		CostCenter: "abc123",
+		Account:    "def456",
+		EntityCode: entCode.Code,
+	}
+
+	policyMissingCC := goodPolicy
+	policyMissingCC.CostCenter = ""
+
+	tests := []struct {
+		name          string
+		actor         models.User
+		input         api.PolicyCreate
+		wantStatus    int
+		wantInBody    string
+		notWantInBody string
+	}{
+		{
+			name:          "not authenticated",
+			actor:         models.User{},
+			input:         goodPolicy,
+			wantStatus:    http.StatusUnauthorized,
+			wantInBody:    api.ErrorNotAuthorized.String(),
+			notWantInBody: goodPolicy.CostCenter,
+		},
+		{
+			name:          "missing Cost Center",
+			actor:         user,
+			input:         policyMissingCC,
+			wantStatus:    http.StatusBadRequest,
+			notWantInBody: policyMissingCC.Account,
+		},
+		{
+			name:       "good input",
+			actor:      user,
+			input:      goodPolicy,
+			wantStatus: http.StatusOK,
+			wantInBody: goodPolicy.CostCenter,
+		},
+	}
+
+	for _, tt := range tests {
+		as.T().Run(tt.name, func(t *testing.T) {
+			req := as.JSON("/policies")
+			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
+			req.Headers["content-type"] = "application/json"
+			res := req.Post(tt.input)
+
+			body := res.Body.String()
+			as.Equal(tt.wantStatus, res.Code, "incorrect status code returned, body: %s", body)
+			if tt.wantInBody != "" {
+				as.Contains(body, tt.wantInBody)
+			}
+			if tt.notWantInBody != "" {
+				as.NotContains(body, tt.notWantInBody)
+			}
+
+			if res.Code != http.StatusOK {
+				return
+			}
+			var policy api.Policy
+			as.NoError(json.Unmarshal([]byte(body), &policy))
+			as.Equal(tt.input.CostCenter, policy.CostCenter)
+		})
+	}
+}
+
 func (as *ActionSuite) Test_PoliciesUpdate() {
 	fixConfig := models.FixturesConfig{
 		NumberOfPolicies:    3,
@@ -113,13 +188,8 @@ func (as *ActionSuite) Test_PoliciesUpdate() {
 	}
 
 	// alias a couple users
-	appAdmin := fixtures.Policies[0].Members[0]
+	appAdmin := models.CreateAdminUsers(as.DB)[models.AppRoleSteward]
 	normalUser := fixtures.Policies[1].Members[0]
-
-	// change user 0 to an admin
-	appAdmin.AppRole = models.AppRoleAdmin
-	err := appAdmin.Update(as.DB)
-	as.NoError(err, "failed to make first policy user an app admin")
 
 	tests := []struct {
 		name          string
