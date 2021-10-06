@@ -140,10 +140,10 @@ func (ms *ModelSuite) TestLedgerEntries_MakeBlocks() {
 	blocks := entries.MakeBlocks()
 	ms.Equal(2, len(blocks))
 
-	ms.Equal(1, len(blocks["1"]))
-	ms.Equal(policy1, blocks["1"][0].PolicyID)
+	ms.Equal(1, len(blocks["4425012345"]))
+	ms.Equal(policy1, blocks["4425012345"][0].PolicyID)
 
-	ms.Equal(2, len(blocks["2"]))
-	ms.Equal(policy2, blocks["2"][0].PolicyID)
-	ms.Equal(policy3, blocks["2"][1].PolicyID)
+	ms.Equal(2, len(blocks["4020067890"]))
+	ms.Equal(policy2, blocks["4020067890"][0].PolicyID)
+	ms.Equal(policy3, blocks["4020067890"][1].PolicyID)
 }

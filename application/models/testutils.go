@@ -632,7 +632,6 @@ func CreatePolicyHistoryFixtures_RecentItemStatusChanges(tx *pop.Connection) Fix
 //	 Status/Update [could be included, if date is recent]
 //	 Status/Update [could be included, if date is recent]
 func CreateClaimHistoryFixtures_RecentClaimStatusChanges(tx *pop.Connection) Fixtures {
-
 	config := FixturesConfig{
 		NumberOfPolicies:   1,
 		ItemsPerPolicy:     3,
@@ -683,7 +682,7 @@ func CreateClaimHistoryFixtures_RecentClaimStatusChanges(tx *pop.Connection) Fix
 	hydrateCHsForClaim(4, mixedNewClaim.ID)
 	hydrateCHsForClaim(8, noneNewClaim.ID)
 
-	for i, _ := range cHistories {
+	for i := range cHistories {
 		cHistories[i].UserID = user.ID
 		MustCreate(tx, &cHistories[i])
 	}
@@ -715,4 +714,34 @@ func CreateClaimHistoryFixtures_RecentClaimStatusChanges(tx *pop.Connection) Fix
 
 	fixtures.ClaimHistories = cHistories
 	return fixtures
+}
+
+func CreateEntityFixture(tx *pop.Connection) EntityCode {
+	code := randStr(8)
+	e := EntityCode{
+		Code:   code,
+		Name:   code + " Name",
+		Active: true,
+	}
+	if err := e.Create(tx); err != nil {
+		panic("error creating Entity fixture, " + err.Error())
+	}
+	return e
+}
+
+// ConvertPolicyType converts a household policy to a Corporate policy. Creates a new Entity
+// for the policy.
+func ConvertPolicyType(tx *pop.Connection, policy Policy) Policy {
+	policy.Type = api.PolicyTypeCorporate
+	policy.CostCenter = "CC1234"
+	policy.Account = "111222"
+	policy.AccountDetail = "Acct Detail"
+	entity := CreateEntityFixture(tx)
+	policy.EntityCodeID = nulls.NewUUID(entity.ID)
+
+	if err := tx.Update(&policy); err != nil {
+		panic("error converting policy to Corporate, " + err.Error())
+	}
+
+	return policy
 }

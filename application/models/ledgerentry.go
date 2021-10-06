@@ -57,9 +57,8 @@ type LedgerEntry struct {
 	DateEntered      nulls.Time      `db:"date_entered"`
 	LegacyID         nulls.Int       `db:"legacy_id"`
 
-	IncomeAccount string
-	CreatedAt     time.Time `db:"created_at"`
-	UpdatedAt     time.Time `db:"updated_at"`
+	CreatedAt time.Time `db:"created_at"`
+	UpdatedAt time.Time `db:"updated_at"`
 }
 
 func (le *LedgerEntry) Create(tx *pop.Connection) error {

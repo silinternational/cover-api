@@ -716,23 +716,52 @@ func (ms *ModelSuite) TestItem_GetProratedPremium() {
 }
 
 func (ms *ModelSuite) TestItem_CreateLedgerEntry() {
-	f := CreateItemFixtures(ms.DB, FixturesConfig{})
-	item := f.Items[0]
-	ms.NoError(item.setAccountablePerson(ms.DB, f.Users[0].ID))
+	f := CreateItemFixtures(ms.DB, FixturesConfig{NumberOfPolicies: 2})
+	householdPolicy := f.Policies[0]
+	householdPolicyItem := householdPolicy.Items[0]
+	ms.NoError(householdPolicyItem.setAccountablePerson(ms.DB, f.Users[0].ID))
 
-	ms.NoError(item.CreateLedgerEntry(ms.DB))
+	corporatePolicy := ConvertPolicyType(ms.DB, f.Policies[1])
+	corporatePolicyItem := corporatePolicy.Items[0]
+	ms.NoError(corporatePolicyItem.setAccountablePerson(ms.DB, f.Users[1].ID))
 
-	var le LedgerEntry
-	ms.NoError(ms.DB.Where("item_id = ?", item.ID).First(&le))
-	ms.Equal(item.PolicyID, le.PolicyID, "PolicyID is incorrect")
-	ms.Equal(item.ID, le.ItemID.UUID, "ItemID is incorrect")
-	ms.Equal(2500, le.Amount, "Amount is incorrect")
-	ms.Equal(time.Now().UTC().Truncate(time.Hour*24), le.DateSubmitted, "DateSubmitted is incorrect")
-	ms.Equal(item.Policy.Account, le.AccountNumber, "AccountNumber is incorrect")
-	ms.Equal(item.Policy.CostCenter, le.HouseholdID, "HouseholdID is incorrect")
-	ms.Equal(item.Policy.EntityCode.Code, le.EntityCode, "EntityCode is incorrect")
-	ms.Equal(f.Users[0].FirstName, le.FirstName, "FirstName is incorrect")
-	ms.Equal(f.Users[0].LastName, le.LastName, "LastName is incorrect")
+	tests := []struct {
+		name string
+		item Item
+	}{
+		{
+			name: "household policy item",
+			item: householdPolicyItem,
+		},
+		{
+			name: "corporate policy item",
+			item: corporatePolicyItem,
+		},
+	}
+	for _, tt := range tests {
+		ms.T().Run(tt.name, func(t *testing.T) {
+			ms.NoError(tt.item.CreateLedgerEntry(ms.DB))
+
+			var le LedgerEntry
+			ms.NoError(ms.DB.Where("item_id = ?", tt.item.ID).First(&le))
+			ms.Equal(tt.item.PolicyID, le.PolicyID, "PolicyID is incorrect")
+			ms.Equal(tt.item.ID, le.ItemID.UUID, "ItemID is incorrect")
+			ms.Equal(2500, le.Amount, "Amount is incorrect")
+			ms.Equal(time.Now().UTC().Truncate(time.Hour*24), le.DateSubmitted, "DateSubmitted is incorrect")
+			ms.Equal(tt.item.Policy.Type, le.PolicyType, "PolicyType is incorrect")
+			if tt.item.Policy.Type == api.PolicyTypeCorporate {
+				ms.Equal(tt.item.Policy.Account, le.AccountNumber, "AccountNumber is incorrect")
+				ms.Equal(tt.item.Policy.CostCenter+" / "+tt.item.Policy.AccountDetail, le.CostCenter, "CostCenter is incorrect")
+				ms.Equal(tt.item.Policy.EntityCode.Code, le.EntityCode, "EntityCode is incorrect")
+			} else {
+				ms.Equal(tt.item.Policy.HouseholdID.String, le.HouseholdID, "HouseholdID is incorrect")
+			}
+			ms.Equal(f.Users[0].FirstName, le.FirstName, "FirstName is incorrect")
+			ms.Equal(f.Users[0].LastName, le.LastName, "LastName is incorrect")
+			ms.Equal(tt.item.RiskCategory.Name, le.RiskCategoryName, "RiskCategoryName is incorrect")
+			ms.Equal(tt.item.RiskCategory.CostCenter, le.RiskCategoryCC, "RiskCategoryCC is incorrect")
+		})
+	}
 }
 
 func (ms *ModelSuite) TestItem_GetAccountablePersonName() {

@@ -543,9 +543,14 @@ func (i *Item) CreateLedgerEntry(tx *pop.Connection) error {
 	i.Policy.LoadEntityCode(tx, false)
 
 	firstName, lastName := i.GetAccountablePersonName(tx)
+	costCenter := ""
+	if i.Policy.Type == api.PolicyTypeCorporate {
+		costCenter = i.Policy.CostCenter + " / " + i.Policy.AccountDetail
+	}
 	le := LedgerEntry{
 		Type:             LedgerEntryTypeNewCoverage,
 		RiskCategoryName: i.RiskCategory.Name,
+		RiskCategoryCC:   i.RiskCategory.CostCenter,
 		PolicyID:         i.PolicyID,
 		PolicyType:       i.Policy.Type,
 		ItemID:           nulls.NewUUID(i.ID),
@@ -553,7 +558,7 @@ func (i *Item) CreateLedgerEntry(tx *pop.Connection) error {
 		Amount:           i.GetProratedPremium(time.Now().UTC()),
 		DateSubmitted:    time.Now().UTC(),
 		AccountNumber:    i.Policy.Account,
-		CostCenter:       i.Policy.CostCenter + " / " + i.Policy.AccountDetail,
+		CostCenter:       costCenter,
 		HouseholdID:      i.Policy.HouseholdID.String,
 		FirstName:        firstName,
 		LastName:         lastName,
