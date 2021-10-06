@@ -57,6 +57,43 @@ func policiesListMine(c buffalo.Context) error {
 	return renderOk(c, apiPolicies)
 }
 
+// swagger:operation POST /policies/ Policies PoliciesCreateCorporate
+//
+// PoliciesCreateCorporate
+//
+// create a new Policy with type Corporate
+//
+// ---
+// parameters:
+//   - name: policy input
+//     in: body
+//     description: policy input object
+//     required: true
+//     schema:
+//       "$ref": "#/definitions/PolicyCreate"
+// responses:
+//   '200':
+//     description: the new Policy
+//     schema:
+//       "$ref": "#/definitions/Policy"
+func policiesCreateCorporate(c buffalo.Context) error {
+
+	var input api.PolicyCreate
+	if err := StrictBind(c, &input); err != nil {
+		return reportError(c, err)
+	}
+
+	tx := models.Tx(c)
+	user := models.CurrentUser(c)
+
+	var policy models.Policy
+	if err := policy.CreateCorporateType(tx, user); err != nil {
+		return reportError(c, err)
+	}
+
+	return renderOk(c, policy.ConvertToAPI(tx))
+}
+
 // swagger:operation PUT /policies/{id} Policies PoliciesUpdate
 //
 // PoliciesUpdate
