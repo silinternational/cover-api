@@ -49,5 +49,6 @@ type ItemCategory struct {
 	// swagger:strfmt date-time
 	UpdatedAt time.Time `json:"updated_at"`
 
+	// whether make and model are required in order for item coverage to be auto approved
 	RequireMakeModel bool `json:"require_make_model"`
 }
