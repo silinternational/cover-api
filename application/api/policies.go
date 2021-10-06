@@ -65,18 +65,37 @@ type Policy struct {
 	Claims Claims `json:"claims,omitempty"`
 }
 
+// PolicyCreate represents payload for creating a policy
+// swagger:model
+type PolicyCreate struct {
+	// Policy type. Only needed for steward endpoints. For customers, this will be set by the api.
+	Type string `json:"type"`
+
+	// Household ID for billing. Only required/allowed on Household type policies.
+	HouseholdID nulls.String `json:"household_id,omitempty"`
+
+	// Cost center for billing. Only required/allowed on Corporate type policies.
+	CostCenter string `json:"cost_center,omitempty"`
+
+	// Account code for billing. Only required/allowed on Corporate type policies.
+	Account string `json:"account,omitempty"`
+
+	// Entity code for billing. Only required/allowed on Corporate type policies.
+	EntityCode string `json:"entity_code,omitempty"`
+}
+
 // PolicyUpdate represents payload for updating a policy
 // swagger:model
 type PolicyUpdate struct {
-	// Household ID for billing
+	// Household ID for billing. Only required/allowed on Household type policies.
 	HouseholdID nulls.String `json:"household_id,omitempty"`
 
-	// Cost center for billing
+	// Cost center for billing. Only required/allowed on Corporate type policies.
 	CostCenter string `json:"cost_center,omitempty"`
 
-	// Account code for billing
+	// Account code for billing. Only required/allowed on Corporate type policies.
 	Account string `json:"account,omitempty"`
 
-	// Entity code for billing
+	// Entity code for billing. Only required/allowed on Corporate type policies.
 	EntityCode string `json:"entity_code,omitempty"`
 }
