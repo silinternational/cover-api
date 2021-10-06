@@ -99,9 +99,7 @@ func (as *ActionSuite) Test_PoliciesList() {
 }
 
 func (as *ActionSuite) Test_PoliciesCreateCorporate() {
-	fixConfig := models.FixturesConfig{NumberOfEntityCodes: 1}
-
-	fixtures := models.CreatePolicyFixtures(as.DB, fixConfig)
+	fixtures := models.CreatePolicyFixtures(as.DB, models.FixturesConfig{NumberOfEntityCodes: 1})
 
 	entCode := fixtures.EntityCodes[0]
 	user := fixtures.Policies[0].Members[0]
@@ -169,6 +167,9 @@ func (as *ActionSuite) Test_PoliciesCreateCorporate() {
 			var policy api.Policy
 			as.NoError(json.Unmarshal([]byte(body), &policy))
 			as.Equal(tt.input.CostCenter, policy.CostCenter)
+			as.Equal(tt.input.Account, policy.Account)
+			as.Equal(tt.input.EntityCode, policy.EntityCode.Code)
+			as.Equal(api.PolicyTypeCorporate, policy.Type)
 		})
 	}
 }

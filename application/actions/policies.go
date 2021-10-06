@@ -67,7 +67,7 @@ func policiesListMine(c buffalo.Context) error {
 // parameters:
 //   - name: policy input
 //     in: body
-//     description: policy input object
+//     description: policy create input object
 //     required: true
 //     schema:
 //       "$ref": "#/definitions/PolicyCreate"

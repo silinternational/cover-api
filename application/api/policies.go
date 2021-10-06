@@ -65,7 +65,7 @@ type Policy struct {
 	Claims Claims `json:"claims,omitempty"`
 }
 
-// PolicyCreate represents payload for updating a policy
+// PolicyCreate represents payload for creating a policy
 // swagger:model
 type PolicyCreate struct {
 	// Policy type. Only needed for steward endpoints. For customers, this will be set by the api.

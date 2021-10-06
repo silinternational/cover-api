@@ -160,8 +160,8 @@ func (ms *ModelSuite) TestPolicy_CreateCorporateType() {
 	user := uf.Users[0]
 
 	goodPolicy := Policy{
-		CostCenter:   "abc123",
-		Account:      "def456",
+		CostCenter:   randStr(8),
+		Account:      randStr(8),
 		EntityCodeID: nulls.NewUUID(entCode.ID),
 	}
 
@@ -222,9 +222,11 @@ func (ms *ModelSuite) TestPolicy_CreateCorporateType() {
 			ms.NoError(err)
 
 			dbPolicy := Policy{}
-			err = ms.DB.Where("cost_center = ?", &tt.policy.CostCenter).First(&dbPolicy)
+			err = ms.DB.Where("id = ?", &tt.policy.ID).First(&dbPolicy)
+
 			ms.NoError(err, "error trying to find resulting policy")
 			ms.Equal(tt.policy.Account, dbPolicy.Account)
+			ms.Equal(tt.user.EmailOfChoice(), dbPolicy.Email)
 			ms.Equal(api.PolicyTypeCorporate, dbPolicy.Type)
 
 			policyUsers := PolicyUsers{}
