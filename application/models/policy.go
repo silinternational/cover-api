@@ -72,7 +72,7 @@ func (p *Policy) Update(ctx context.Context) error {
 }
 
 // CreateCorporateType creates a new Corporate type policy for the user.
-//   The CostCenter and Account must have non-blank values
+//   The EntityCodeID, CostCenter and Account must have non-blank values
 func (p *Policy) CreateCorporateType(tx *pop.Connection, actor User) error {
 	p.Type = api.PolicyTypeCorporate
 	p.Email = actor.EmailOfChoice()
