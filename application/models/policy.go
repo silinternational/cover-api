@@ -230,17 +230,18 @@ func (p *Policy) ConvertToAPI(tx *pop.Connection) api.Policy {
 	members := p.Members.ConvertToPolicyMembers()
 
 	return api.Policy{
-		ID:          p.ID,
-		Type:        p.Type,
-		HouseholdID: p.HouseholdID.String,
-		CostCenter:  p.CostCenter,
-		Account:     p.Account,
-		EntityCode:  p.EntityCode.ConvertToAPI(tx),
-		CreatedAt:   p.CreatedAt,
-		UpdatedAt:   p.UpdatedAt,
-		Claims:      claims,
-		Dependents:  dependents,
-		Members:     members,
+		ID:            p.ID,
+		Type:          p.Type,
+		HouseholdID:   p.HouseholdID.String,
+		CostCenter:    p.CostCenter,
+		Account:       p.Account,
+		AccountDetail: p.AccountDetail,
+		EntityCode:    p.EntityCode.ConvertToAPI(tx),
+		CreatedAt:     p.CreatedAt,
+		UpdatedAt:     p.UpdatedAt,
+		Claims:        claims,
+		Dependents:    dependents,
+		Members:       members,
 	}
 }
 

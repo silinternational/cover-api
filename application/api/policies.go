@@ -42,6 +42,9 @@ type Policy struct {
 	// Account code for billing
 	Account string `json:"account,omitempty"`
 
+	// AccountDetail allows for optional detail to route transactions. Example: "Nigeria Grp Off-Ins"
+	AccountDetail string `json:"account_detail,omitempty"`
+
 	// Entity code for billing
 	EntityCode EntityCode `json:"entity_code,omitempty"`
 
@@ -80,6 +83,9 @@ type PolicyCreate struct {
 	// Account code for billing. Only required/allowed on Corporate type policies.
 	Account string `json:"account,omitempty"`
 
+	// AccountDetail allows for optional detail to route transactions. Example: "Nigeria Grp Off-Ins"
+	AccountDetail string `json:"account_detail,omitempty"`
+
 	// Entity code for billing. Only required/allowed on Corporate type policies.
 	EntityCode string `json:"entity_code,omitempty"`
 }
@@ -95,6 +101,9 @@ type PolicyUpdate struct {
 
 	// Account code for billing. Only required/allowed on Corporate type policies.
 	Account string `json:"account,omitempty"`
+
+	// AccountDetail allows for optional detail to route transactions. Example: "Nigeria Grp Off-Ins"
+	AccountDetail string `json:"account_detail,omitempty"`
 
 	// Entity code for billing. Only required/allowed on Corporate type policies.
 	EntityCode string `json:"entity_code,omitempty"`
