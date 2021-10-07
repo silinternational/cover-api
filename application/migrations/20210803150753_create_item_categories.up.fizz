@@ -14,9 +14,3 @@ create_table("item_categories") {
 
 	t.ForeignKey("risk_category_id", {"risk_categories": ["id"]}, {"on_delete": "cascade"})
 }
-
-sql(`
-	UPDATE item_categories
-	SET require_make_model = false
-	WHERE risk_category_id = '7bed3c00-23cf-4282-b2b8-da89426cef2f';
-`)
