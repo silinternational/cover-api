@@ -52,7 +52,7 @@ type LedgerEntry struct {
 	ClaimID          nulls.UUID      `db:"claim_id"`
 	EntityCode       string          `db:"entity_code"`
 	RiskCategoryName string          `db:"risk_category_name"`
-	RiskCategoryCC   string          `db:"risk_category_cc"`
+	RiskCategoryCC   string          `db:"risk_category_cc"` // Risk Category Cost Center
 	Type             LedgerEntryType `db:"type" validate:"ledgerEntryType"`
 	PolicyType       api.PolicyType  `db:"policy_type" validate:"policyType"`
 	HouseholdID      string          `db:"household_id"`
