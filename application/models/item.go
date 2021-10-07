@@ -519,6 +519,7 @@ func parseItemDates(input api.ItemInput, modelItem *Item) error {
 	return nil
 }
 
+// setAccountablePerson sets the appropriate field to the given ID, but does not update the database
 func (i *Item) setAccountablePerson(tx *pop.Connection, id uuid.UUID) error {
 	i.LoadPolicy(tx, false)
 
@@ -539,48 +540,18 @@ func (i *Item) setAccountablePerson(tx *pop.Connection, id uuid.UUID) error {
 
 func (i *Item) CreateLedgerEntry(tx *pop.Connection) error {
 	i.LoadPolicy(tx, false)
+	i.LoadRiskCategory(tx, false)
 	i.Policy.LoadEntityCode(tx, false)
 
 	firstName, lastName := i.GetAccountablePersonName(tx)
-	le := LedgerEntry{
-		PolicyID:           i.PolicyID,
-		ItemID:             nulls.NewUUID(i.ID),
-		EntityCode:         i.Policy.EntityCode.Code,
-		Amount:             i.GetProratedPremium(time.Now().UTC()),
-		DateSubmitted:      time.Now().UTC(),
-		AccountNumber:      i.Policy.Account,
-		AccountCostCenter1: i.Policy.CostCenter,
-		IncomeAccount:      i.getIncomeAccount(tx),
-		FirstName:          firstName,
-		LastName:           lastName,
-	}
+
+	le := NewLedgerEntry(i.Policy, i, nil)
+	le.Type = LedgerEntryTypeNewCoverage
+	le.Amount = i.GetProratedPremium(time.Now().UTC())
+	le.FirstName = firstName
+	le.LastName = lastName
+
 	return le.Create(tx)
-}
-
-// getIncomeAccount maps the item data to the income account for billing
-//
-// WARNING: requires Policy and Policy.EntityCode to be pre-loaded
-func (i *Item) getIncomeAccount(tx *pop.Connection) string {
-	// TODO: move hard-coded account numbers to the database or to environment variables
-	accountMap := map[string]string{
-		"MMB/STM": "40200",
-		"SIL":     "43250",
-		"WBT":     "44250",
-	}
-
-	billingEntity := "MMB/STM"
-	if i.Policy.EntityCodeID.Valid {
-		switch i.Policy.EntityCode.Code {
-		case "SIL":
-			billingEntity = "SIL"
-		default:
-			billingEntity = "WBT"
-		}
-	}
-	i.LoadRiskCategory(tx, false)
-	incomeAccount := accountMap[billingEntity] + i.RiskCategory.CostCenter
-
-	return incomeAccount
 }
 
 // GetAccountablePersonName gets the name of the accountable person. In case of error, empty strings

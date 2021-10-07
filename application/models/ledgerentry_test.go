@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/gobuffalo/nulls"
+	"github.com/gofrs/uuid"
 
 	"github.com/silinternational/cover-api/api"
 	"github.com/silinternational/cover-api/domain"
@@ -66,18 +67,17 @@ func (ms *ModelSuite) TestLedgerEntries_ToCsv() {
 	date := time.Date(2021, 3, 1, 0, 0, 0, 0, time.UTC)
 
 	entry := LedgerEntry{
-		PolicyID:           domain.GetUUID(),
-		EntityCode:         "EntityCode",
-		RiskCategoryName:   "Mobile",
-		Type:               LedgerEntryTypeClaim,
-		IncomeAccount:      "IncomeAccount",
-		FirstName:          "FirstName",
-		LastName:           "LastName",
-		Amount:             100,
-		DateSubmitted:      date,
-		AccountNumber:      "AccountNumber",
-		AccountCostCenter1: "AccountCostCenter1",
-		AccountCostCenter2: "AccountCostCenter2",
+		PolicyID:         domain.GetUUID(),
+		EntityCode:       "EntityCode",
+		RiskCategoryName: "Mobile",
+		Type:             LedgerEntryTypeClaim,
+		FirstName:        "FirstName",
+		LastName:         "LastName",
+		Amount:           100,
+		DateSubmitted:    date,
+		AccountNumber:    "AccountNumber",
+		HouseholdID:      "HouseholdID",
+		CostCenter:       "CostCenter",
 	}
 
 	domain.Env.ExpenseAccount = "XYZ123"
@@ -110,7 +110,7 @@ func (ms *ModelSuite) TestLedgerEntries_ToCsv() {
 					date.Format("20060102"),
 				),
 				fmt.Sprintf(`"2","000000","00001","0000000040","",0,"%s","",%s,"2","%s","",%s,"GL","JE"`,
-					entry.IncomeAccount,
+					entry.getIncomeAccount(),
 					api.Currency(entry.Amount).String(),
 					entry.balanceDescription(),
 					date.Format("20060102"),
@@ -134,17 +134,83 @@ func (ms *ModelSuite) TestLedgerEntries_MakeBlocks() {
 	policy3 := domain.GetUUID()
 
 	entries := LedgerEntries{
-		{PolicyID: policy1, IncomeAccount: "1"},
-		{PolicyID: policy2, IncomeAccount: "2"},
-		{PolicyID: policy3, IncomeAccount: "2"},
+		{PolicyID: policy1, EntityCode: "ABC", RiskCategoryCC: "12345"},
+		{PolicyID: policy2, EntityCode: "", RiskCategoryCC: "67890"},
+		{PolicyID: policy3, EntityCode: "", RiskCategoryCC: "67890"},
 	}
 	blocks := entries.MakeBlocks()
 	ms.Equal(2, len(blocks))
 
-	ms.Equal(1, len(blocks["1"]))
-	ms.Equal(policy1, blocks["1"][0].PolicyID)
+	ms.Equal(1, len(blocks["4425012345"]))
+	ms.Equal(policy1, blocks["4425012345"][0].PolicyID)
 
-	ms.Equal(2, len(blocks["2"]))
-	ms.Equal(policy2, blocks["2"][0].PolicyID)
-	ms.Equal(policy3, blocks["2"][1].PolicyID)
+	ms.Equal(2, len(blocks["4020067890"]))
+	ms.Equal(policy2, blocks["4020067890"][0].PolicyID)
+	ms.Equal(policy3, blocks["4020067890"][1].PolicyID)
+}
+
+func (ms *ModelSuite) Test_NewLedgerEntry() {
+	f := CreateItemFixtures(ms.DB, FixturesConfig{NumberOfPolicies: 2, ClaimsPerPolicy: 1})
+	householdPolicy := f.Policies[0]
+	householdPolicyItem := householdPolicy.Items[0]
+	ms.NoError(householdPolicyItem.setAccountablePerson(ms.DB, f.Users[0].ID))
+	householdPolicyClaim := f.Policies[0].Claims[0]
+	ms.False(uuid.Nil == householdPolicyClaim.ID, "householdPolicyClaim is not hydrated")
+
+	corporatePolicy := ConvertPolicyType(ms.DB, f.Policies[1])
+	corporatePolicyItem := corporatePolicy.Items[0]
+	ms.NoError(corporatePolicyItem.setAccountablePerson(ms.DB, f.Users[1].ID))
+
+	tests := []struct {
+		name   string
+		policy Policy
+		item   *Item
+		claim  *Claim
+	}{
+		{
+			name:   "household policy item with claim",
+			policy: householdPolicy,
+			item:   &householdPolicyItem,
+			claim:  &householdPolicyClaim,
+		},
+		{
+			name:   "corporate policy item no claim",
+			policy: corporatePolicy,
+			item:   &corporatePolicyItem,
+		},
+		{
+			name:   "policy only",
+			policy: corporatePolicy,
+		},
+	}
+	for _, tt := range tests {
+		ms.T().Run(tt.name, func(t *testing.T) {
+			le := NewLedgerEntry(tt.policy, tt.item, tt.claim)
+
+			ms.Equal(tt.policy.ID, le.PolicyID, "PolicyID is incorrect")
+			ms.WithinDuration(time.Now().UTC(), le.DateSubmitted, time.Minute, "DateSubmitted is incorrect")
+			ms.Equal(tt.policy.Type, le.PolicyType, "PolicyType is incorrect")
+			if tt.policy.Type == api.PolicyTypeCorporate {
+				ms.Equal(tt.policy.Account, le.AccountNumber, "AccountNumber is incorrect")
+				ms.Equal(tt.policy.CostCenter+" / "+tt.policy.AccountDetail, le.CostCenter, "CostCenter is incorrect")
+				ms.Equal(tt.policy.EntityCode.Code, le.EntityCode, "EntityCode is incorrect")
+			} else {
+				ms.Equal(tt.policy.HouseholdID.String, le.HouseholdID, "HouseholdID is incorrect")
+			}
+
+			if tt.item == nil {
+				ms.False(le.ItemID.Valid, "ItemID is not nil")
+			} else {
+				ms.Equal(tt.item.RiskCategory.Name, le.RiskCategoryName, "RiskCategoryName is incorrect")
+				ms.Equal(tt.item.RiskCategory.CostCenter, le.RiskCategoryCC, "RiskCategoryCC is incorrect")
+				ms.Equal(tt.item.ID, le.ItemID.UUID, "ItemID is incorrect")
+			}
+
+			if tt.claim == nil {
+				ms.False(le.ClaimID.Valid, "ClaimID is not nil")
+			} else {
+				ms.Equal(tt.claim.ID, le.ClaimID.UUID, "ClaimID is incorrect")
+			}
+		})
+	}
 }

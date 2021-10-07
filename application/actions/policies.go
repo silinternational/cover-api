@@ -77,7 +77,6 @@ func policiesListMine(c buffalo.Context) error {
 //     schema:
 //       "$ref": "#/definitions/Policy"
 func policiesCreateCorporate(c buffalo.Context) error {
-
 	var input api.PolicyCreate
 	if err := StrictBind(c, &input); err != nil {
 		return reportError(c, err)
@@ -92,9 +91,10 @@ func policiesCreateCorporate(c buffalo.Context) error {
 	}
 
 	policy := models.Policy{
-		CostCenter:   input.CostCenter,
-		Account:      input.Account,
-		EntityCodeID: nulls.NewUUID(entityCode.ID),
+		CostCenter:    input.CostCenter,
+		Account:       input.Account,
+		AccountDetail: input.AccountDetail,
+		EntityCodeID:  nulls.NewUUID(entityCode.ID),
 	}
 
 	if err := policy.CreateCorporateType(tx, user); err != nil {
@@ -141,6 +141,7 @@ func policiesUpdate(c buffalo.Context) error {
 		policy.HouseholdID = update.HouseholdID
 		policy.CostCenter = ""
 		policy.Account = ""
+		policy.AccountDetail = ""
 		policy.EntityCodeID = nulls.UUID{}
 	case api.PolicyTypeCorporate:
 		var entityCode models.EntityCode
@@ -151,6 +152,7 @@ func policiesUpdate(c buffalo.Context) error {
 		policy.HouseholdID = nulls.String{}
 		policy.CostCenter = update.CostCenter
 		policy.Account = update.Account
+		policy.AccountDetail = update.AccountDetail
 		policy.EntityCodeID = nulls.NewUUID(entityCode.ID)
 	}
 

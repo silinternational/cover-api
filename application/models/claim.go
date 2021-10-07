@@ -468,6 +468,9 @@ func (c *Claim) Approve(ctx context.Context) error {
 	}
 	emitEvent(e)
 
+	if c.Status == api.ClaimStatusApproved {
+		return c.CreateLedgerEntry(Tx(ctx))
+	}
 	return nil
 }
 
@@ -739,4 +742,30 @@ func ClaimsWithRecentStatusChanges(tx *pop.Connection) (api.RecentClaims, error)
 	}
 
 	return claims, nil
+}
+
+func (c *Claim) CreateLedgerEntry(tx *pop.Connection) error {
+	if c.Status != api.ClaimStatusApproved {
+		return errors.New("cannot pay out a claim that is not approved")
+	}
+
+	c.LoadPolicy(tx, false)
+	c.Policy.LoadEntityCode(tx, false)
+	c.Policy.LoadItems(tx, false)
+
+	for _, item := range c.Policy.Items {
+		firstName, lastName := item.GetAccountablePersonName(tx)
+		item.LoadRiskCategory(tx, false)
+
+		le := NewLedgerEntry(c.Policy, &item, c) // #nosec G601
+		le.Type = LedgerEntryTypeClaim
+		le.Amount = int(-c.TotalPayout)
+		le.FirstName = firstName
+		le.LastName = lastName
+
+		if err := le.Create(tx); err != nil {
+			return err
+		}
+	}
+	return nil
 }

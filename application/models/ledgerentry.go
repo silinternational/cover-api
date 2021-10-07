@@ -15,6 +15,13 @@ import (
 
 type LedgerEntryType string
 
+func (t LedgerEntryType) IsClaim() bool {
+	if t == LedgerEntryTypeClaim || t == LedgerEntryTypeClaimAdjustment {
+		return true
+	}
+	return false
+}
+
 const (
 	LedgerEntryTypeNewCoverage      = LedgerEntryType("NewCoverage")
 	LedgerEntryTypeCoverageChange   = LedgerEntryType("CoverageChange")
@@ -42,22 +49,21 @@ type LedgerEntry struct {
 
 	PolicyID         uuid.UUID       `db:"policy_id"`
 	ItemID           nulls.UUID      `db:"item_id"`
+	ClaimID          nulls.UUID      `db:"claim_id"`
 	EntityCode       string          `db:"entity_code"`
 	RiskCategoryName string          `db:"risk_category_name"`
+	RiskCategoryCC   string          `db:"risk_category_cc"` // Risk Category Cost Center
 	Type             LedgerEntryType `db:"type" validate:"ledgerEntryType"`
-	IncomeAccount    string          `db:"income_account"`
+	PolicyType       api.PolicyType  `db:"policy_type" validate:"policyType"`
+	HouseholdID      string          `db:"household_id"`
+	CostCenter       string          `db:"cost_center"`
+	AccountNumber    string          `db:"account_number"`
 	FirstName        string          `db:"first_name"`
 	LastName         string          `db:"last_name"`
 	Amount           int             `db:"amount"`
 	DateSubmitted    time.Time       `db:"date_submitted"`
 	DateEntered      nulls.Time      `db:"date_entered"`
-
-	// The following fields are primarily for legacy data and may not be needed long-term
-	// However, some may be useful as a permanent record in case policies change...TBD.
-	LegacyID           nulls.Int `db:"legacy_id"`
-	AccountNumber      string    `db:"account_number"`
-	AccountCostCenter1 string    `db:"account_cost_center1"` // TODO: rename to HouseholdID
-	AccountCostCenter2 string    `db:"account_cost_center2"` // TODO: rename to CostCenter
+	LegacyID         nulls.Int       `db:"legacy_id"`
 
 	CreatedAt time.Time `db:"created_at"`
 	UpdatedAt time.Time `db:"updated_at"`
@@ -115,10 +121,33 @@ func (le *LedgerEntries) ToCsv(batchDate time.Time) []byte {
 func (le *LedgerEntries) MakeBlocks() TransactionBlocks {
 	blocks := TransactionBlocks{}
 	for _, e := range *le {
-		account := e.IncomeAccount
+		account := e.getIncomeAccount()
 		blocks[account] = append(blocks[account], e)
 	}
 	return blocks
+}
+
+// getIncomeAccount maps the ledger data to an income account for billing
+func (le *LedgerEntry) getIncomeAccount() string {
+	// TODO: move hard-coded account numbers to the database or to environment variables
+	account := ""
+
+	if le.Type.IsClaim() {
+		account = "63550"
+	} else {
+		switch le.EntityCode {
+		case "", "MMB/STM":
+			account = "40200"
+		case "SIL":
+			account = "43250"
+		default:
+			account = "44250"
+		}
+	}
+
+	incomeAccount := account + le.RiskCategoryCC
+
+	return incomeAccount
 }
 
 // TODO: make a better description format unless it has to be the same as before (which I doubt)
@@ -132,19 +161,19 @@ func (le *LedgerEntry) transactionDescription() string {
 			le.LastName, le.FirstName, le.RiskCategoryName, le.Type, dateString)
 	} else {
 		description = fmt.Sprintf("%s %s (%s) %s",
-			le.RiskCategoryName, le.Type, le.AccountCostCenter2, dateString)
+			le.RiskCategoryName, le.Type, le.CostCenter, dateString)
 	}
 
 	return fmt.Sprintf("%.60s", description) // truncate to Sage limit of 60 characters
 }
 
-// Merge AccountCostCenter1 and AccountCostCenter2 into one column
+// Merge HouseholdID and CostCenter into one column
 func (le *LedgerEntry) transactionReference() string {
 	// TODO: change this to api.PolicyTypeHousehold (requires a database update)
 	if le.EntityCode == "MMB/STM" {
-		return fmt.Sprintf("MC %s", le.AccountCostCenter1)
+		return fmt.Sprintf("MC %s", le.HouseholdID)
 	}
-	return le.AccountCostCenter2
+	return le.CostCenter
 }
 
 func (le *LedgerEntry) balanceDescription() string {
@@ -153,4 +182,31 @@ func (le *LedgerEntry) balanceDescription() string {
 		premiumsOrClaims = "Claims"
 	}
 	return fmt.Sprintf("Total %s %s %s", le.EntityCode, le.RiskCategoryName, premiumsOrClaims)
+}
+
+// NewLedgerEntry creates a basic LedgerEntry with common fields completed.
+// Requires pre-hydration of policy.EntityCode. If item is not nil, item.RiskCategory must be hydrated.
+func NewLedgerEntry(policy Policy, item *Item, claim *Claim) LedgerEntry {
+	costCenter := ""
+	if policy.Type == api.PolicyTypeCorporate {
+		costCenter = policy.CostCenter + " / " + policy.AccountDetail
+	}
+	le := LedgerEntry{
+		PolicyID:      policy.ID,
+		PolicyType:    policy.Type,
+		EntityCode:    policy.EntityCode.Code,
+		DateSubmitted: time.Now().UTC(),
+		AccountNumber: policy.Account,
+		CostCenter:    costCenter,
+		HouseholdID:   policy.HouseholdID.String,
+	}
+	if item != nil {
+		le.ItemID = nulls.NewUUID(item.ID)
+		le.RiskCategoryName = item.RiskCategory.Name
+		le.RiskCategoryCC = item.RiskCategory.CostCenter
+	}
+	if claim != nil {
+		le.ClaimID = nulls.NewUUID(claim.ID)
+	}
+	return le
 }

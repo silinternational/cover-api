@@ -23,17 +23,18 @@ var ValidPolicyTypes = map[api.PolicyType]struct{}{
 }
 
 type Policy struct {
-	ID           uuid.UUID      `db:"id"`
-	Type         api.PolicyType `db:"type" validate:"policyType"`
-	HouseholdID  nulls.String   `db:"household_id"` // validation is checked at the struct level
-	CostCenter   string         `db:"cost_center" validate:"required_if=Type Corporate"`
-	Account      string         `db:"account" validate:"required_if=Type Corporate"`
-	EntityCodeID nulls.UUID     `db:"entity_code_id"` // validation is checked at the struct level
-	Notes        string         `db:"notes"`
-	LegacyID     nulls.Int      `db:"legacy_id"`
-	Email        string         `db:"email"`
-	CreatedAt    time.Time      `db:"created_at"`
-	UpdatedAt    time.Time      `db:"updated_at"`
+	ID            uuid.UUID      `db:"id"`
+	Type          api.PolicyType `db:"type" validate:"policyType"`
+	HouseholdID   nulls.String   `db:"household_id"` // validation is checked at the struct level
+	CostCenter    string         `db:"cost_center" validate:"required_if=Type Corporate"`
+	AccountDetail string         `db:"account_detail"`
+	Account       string         `db:"account" validate:"required_if=Type Corporate"`
+	EntityCodeID  nulls.UUID     `db:"entity_code_id"` // validation is checked at the struct level
+	Notes         string         `db:"notes"`
+	LegacyID      nulls.Int      `db:"legacy_id"`
+	Email         string         `db:"email"`
+	CreatedAt     time.Time      `db:"created_at"`
+	UpdatedAt     time.Time      `db:"updated_at"`
 
 	Claims     Claims           `has_many:"claims" validate:"-"`
 	Dependents PolicyDependents `has_many:"policy_dependents" validate:"-"`
@@ -229,17 +230,18 @@ func (p *Policy) ConvertToAPI(tx *pop.Connection) api.Policy {
 	members := p.Members.ConvertToPolicyMembers()
 
 	return api.Policy{
-		ID:          p.ID,
-		Type:        p.Type,
-		HouseholdID: p.HouseholdID.String,
-		CostCenter:  p.CostCenter,
-		Account:     p.Account,
-		EntityCode:  p.EntityCode.ConvertToAPI(tx),
-		CreatedAt:   p.CreatedAt,
-		UpdatedAt:   p.UpdatedAt,
-		Claims:      claims,
-		Dependents:  dependents,
-		Members:     members,
+		ID:            p.ID,
+		Type:          p.Type,
+		HouseholdID:   p.HouseholdID.String,
+		CostCenter:    p.CostCenter,
+		Account:       p.Account,
+		AccountDetail: p.AccountDetail,
+		EntityCode:    p.EntityCode.ConvertToAPI(tx),
+		CreatedAt:     p.CreatedAt,
+		UpdatedAt:     p.UpdatedAt,
+		Claims:        claims,
+		Dependents:    dependents,
+		Members:       members,
 	}
 }
 

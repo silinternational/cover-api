@@ -719,19 +719,17 @@ func (ms *ModelSuite) TestItem_CreateLedgerEntry() {
 	f := CreateItemFixtures(ms.DB, FixturesConfig{})
 	item := f.Items[0]
 	ms.NoError(item.setAccountablePerson(ms.DB, f.Users[0].ID))
+	ms.NoError(item.Update(ms.DB, item.CoverageStatus))
 
 	ms.NoError(item.CreateLedgerEntry(ms.DB))
 
 	var le LedgerEntry
 	ms.NoError(ms.DB.Where("item_id = ?", item.ID).First(&le))
+
+	ms.Equal(LedgerEntryTypeNewCoverage, le.Type, "Type is incorrect")
 	ms.Equal(item.PolicyID, le.PolicyID, "PolicyID is incorrect")
 	ms.Equal(item.ID, le.ItemID.UUID, "ItemID is incorrect")
 	ms.Equal(2500, le.Amount, "Amount is incorrect")
-	ms.Equal(time.Now().UTC().Truncate(time.Hour*24), le.DateSubmitted, "DateSubmitted is incorrect")
-	ms.Equal(item.Policy.Account, le.AccountNumber, "AccountNumber is incorrect")
-	ms.Equal(item.Policy.CostCenter, le.AccountCostCenter1, "AccountCostCenter1 is incorrect")
-	ms.Equal(item.Policy.EntityCode.Code, le.EntityCode, "EntityCode is incorrect")
-	ms.Equal("40200STATIONARY", le.IncomeAccount, "IncomeAccount is incorrect")
 	ms.Equal(f.Users[0].FirstName, le.FirstName, "FirstName is incorrect")
 	ms.Equal(f.Users[0].LastName, le.LastName, "LastName is incorrect")
 }

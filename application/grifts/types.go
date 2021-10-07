@@ -30,21 +30,22 @@ type LegacyUser struct {
 }
 
 type LegacyPolicy struct {
-	Id          string        `json:"id"`
-	Claims      []LegacyClaim `json:"claims"`
-	Notes       string        `json:"notes"`
-	IdentCode   string        `json:"ident_code"`
-	CostCenter  string        `json:"cost_center"`
-	Items       []LegacyItem  `json:"items"`
-	Account     int           `json:"account"`
-	HouseholdId string        `json:"household_id"`
-	EntityCode  nulls.String  `json:"entity_code"`
-	Type        string        `json:"type"`
-	Email       string        `json:"email"`
-	LastName    string        `json:"last_name"`
-	FirstName   string        `json:"first_name"`
-	UpdatedAt   nulls.String  `json:"updated_at"`
-	CreatedAt   string        `json:"created_at"`
+	Id            string        `json:"id"`
+	Claims        []LegacyClaim `json:"claims"`
+	Notes         string        `json:"notes"`
+	IdentCode     string        `json:"ident_code"`
+	CostCenter    string        `json:"cost_center"`
+	AccountDetail string        `json:"account_detail"`
+	Items         []LegacyItem  `json:"items"`
+	Account       int           `json:"account"`
+	HouseholdId   string        `json:"household_id"`
+	EntityCode    nulls.String  `json:"entity_code"`
+	Type          string        `json:"type"`
+	Email         string        `json:"email"`
+	LastName      string        `json:"last_name"`
+	FirstName     string        `json:"first_name"`
+	UpdatedAt     nulls.String  `json:"updated_at"`
+	CreatedAt     string        `json:"created_at"`
 }
 
 type LegacyItem struct {
