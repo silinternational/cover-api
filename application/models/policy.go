@@ -72,6 +72,24 @@ func (p *Policy) Update(ctx context.Context) error {
 	return update(tx, p)
 }
 
+// CreateCorporateType creates a new Corporate type policy for the user.
+//   The EntityCodeID, CostCenter and Account must have non-blank values
+func (p *Policy) CreateCorporateType(tx *pop.Connection, actor User) error {
+	p.Type = api.PolicyTypeCorporate
+	p.Email = actor.EmailOfChoice()
+
+	if err := p.Create(tx); err != nil {
+		return err
+	}
+
+	polUser := PolicyUser{
+		PolicyID: p.ID,
+		UserID:   actor.ID,
+	}
+
+	return polUser.Create(tx)
+}
+
 func (p *Policy) GetID() uuid.UUID {
 	return p.ID
 }
@@ -83,6 +101,10 @@ func (p *Policy) FindByID(tx *pop.Connection, id uuid.UUID) error {
 // IsActorAllowedTo ensure the actor is either an admin, or a member of this policy to perform any permission
 func (p *Policy) IsActorAllowedTo(tx *pop.Connection, actor User, perm Permission, sub SubResource, r *http.Request) bool {
 	if actor.IsAdmin() || perm == PermissionList {
+		return true
+	}
+
+	if perm == PermissionCreate && sub == "" {
 		return true
 	}
 

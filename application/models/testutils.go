@@ -25,6 +25,7 @@ import (
 )
 
 type FixturesConfig struct {
+	NumberOfEntityCodes int
 	NumberOfPolicies    int
 	ItemsPerPolicy      int
 	ClaimsPerPolicy     int
@@ -38,6 +39,7 @@ type FixturesConfig struct {
 type Fixtures struct {
 	Claims
 	ClaimHistories
+	EntityCodes
 	Files
 	Items
 	ItemCategories
@@ -334,6 +336,18 @@ func CreatePolicyFixtures(tx *pop.Connection, config FixturesConfig) Fixtures {
 		config.UsersPerPolicy = 1
 	}
 
+	entCodes := make(EntityCodes, config.NumberOfEntityCodes)
+	for i := range entCodes {
+		code := randStr(6)
+
+		entCodes[i] = EntityCode{
+			Code:   code,
+			Name:   "Entity-Code-" + code,
+			Active: true,
+		}
+		MustCreate(tx, &entCodes[i])
+	}
+
 	var policyUsers PolicyUsers
 	var policyDependents PolicyDependents
 	var users Users
@@ -357,6 +371,7 @@ func CreatePolicyFixtures(tx *pop.Connection, config FixturesConfig) Fixtures {
 		policies[i].LoadDependents(tx, false)
 	}
 	return Fixtures{
+		EntityCodes:      entCodes,
 		Policies:         policies,
 		PolicyDependents: policyDependents,
 		PolicyUsers:      policyUsers,

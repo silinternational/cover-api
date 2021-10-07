@@ -150,6 +150,93 @@ func (ms *ModelSuite) TestPolicy_Validate() {
 	}
 }
 
+func (ms *ModelSuite) TestPolicy_CreateCorporateType() {
+	t := ms.T()
+
+	pf := CreatePolicyFixtures(ms.DB, FixturesConfig{NumberOfEntityCodes: 1})
+	entCode := pf.EntityCodes[0]
+
+	uf := CreateUserFixtures(ms.DB, 2)
+	user := uf.Users[0]
+
+	goodPolicy := Policy{
+		CostCenter:   randStr(8),
+		Account:      randStr(8),
+		EntityCodeID: nulls.NewUUID(entCode.ID),
+	}
+
+	missingCC := goodPolicy
+	missingCC.CostCenter = ""
+
+	missingAcc := goodPolicy
+	missingAcc.Account = ""
+
+	missingEntCode := goodPolicy
+	missingEntCode.EntityCodeID = nulls.UUID{}
+
+	tests := []struct {
+		name    string
+		user    User
+		policy  Policy
+		wantErr bool
+	}{
+		{
+			name:    "empty user",
+			user:    User{},
+			policy:  goodPolicy,
+			wantErr: true,
+		},
+		{
+			name:    "missing CostCenter",
+			user:    user,
+			policy:  missingCC,
+			wantErr: true,
+		},
+		{
+			name:    "missing Account",
+			user:    user,
+			policy:  missingAcc,
+			wantErr: true,
+		},
+		{
+			name:    "missing EntityCode",
+			user:    user,
+			policy:  missingEntCode,
+			wantErr: true,
+		},
+		{
+			name:    "good policy to be created",
+			user:    user,
+			policy:  goodPolicy,
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := tt.policy.CreateCorporateType(ms.DB, tt.user)
+			if tt.wantErr {
+				ms.Error(err)
+				return
+			}
+
+			ms.NoError(err)
+
+			dbPolicy := Policy{}
+			err = ms.DB.Where("id = ?", &tt.policy.ID).First(&dbPolicy)
+
+			ms.NoError(err, "error trying to find resulting policy")
+			ms.Equal(tt.policy.Account, dbPolicy.Account)
+			ms.Equal(tt.user.EmailOfChoice(), dbPolicy.Email)
+			ms.Equal(api.PolicyTypeCorporate, dbPolicy.Type)
+
+			policyUsers := PolicyUsers{}
+			err = ms.DB.Where("user_id = ?", tt.user.ID).All(&policyUsers)
+			ms.NoError(err, "error trying to find resulting policyUsers")
+			ms.Len(policyUsers, 1, "incorrect number of policyUsers")
+		})
+	}
+}
+
 func (ms *ModelSuite) TestPolicy_LoadMembers() {
 	rando := randStr(6)
 	policy := Policy{
