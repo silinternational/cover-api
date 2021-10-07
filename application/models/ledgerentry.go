@@ -15,6 +15,13 @@ import (
 
 type LedgerEntryType string
 
+func (t LedgerEntryType) IsClaim() bool {
+	if t == LedgerEntryTypeClaim || t == LedgerEntryTypeClaimAdjustment {
+		return true
+	}
+	return false
+}
+
 const (
 	LedgerEntryTypeNewCoverage      = LedgerEntryType("NewCoverage")
 	LedgerEntryTypeCoverageChange   = LedgerEntryType("CoverageChange")
@@ -124,14 +131,20 @@ func (le *LedgerEntries) MakeBlocks() TransactionBlocks {
 func (le *LedgerEntry) getIncomeAccount() string {
 	// TODO: move hard-coded account numbers to the database or to environment variables
 	account := ""
-	switch le.EntityCode {
-	case "":
-		account = "40200"
-	case "SIL":
-		account = "43250"
-	default:
-		account = "44250"
+
+	if le.Type.IsClaim() {
+		account = "63550"
+	} else {
+		switch le.EntityCode {
+		case "", "MMB/STM":
+			account = "40200"
+		case "SIL":
+			account = "43250"
+		default:
+			account = "44250"
+		}
 	}
+
 	incomeAccount := account + le.RiskCategoryCC
 
 	return incomeAccount
