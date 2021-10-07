@@ -338,14 +338,7 @@ func CreatePolicyFixtures(tx *pop.Connection, config FixturesConfig) Fixtures {
 
 	entCodes := make(EntityCodes, config.NumberOfEntityCodes)
 	for i := range entCodes {
-		code := randStr(6)
-
-		entCodes[i] = EntityCode{
-			Code:   code,
-			Name:   "Entity-Code-" + code,
-			Active: true,
-		}
-		MustCreate(tx, &entCodes[i])
+		entCodes[i] = CreateEntityFixture(tx)
 	}
 
 	var policyUsers PolicyUsers
@@ -738,9 +731,7 @@ func CreateEntityFixture(tx *pop.Connection) EntityCode {
 		Name:   code + " Name",
 		Active: true,
 	}
-	if err := e.Create(tx); err != nil {
-		panic("error creating Entity fixture, " + err.Error())
-	}
+	MustCreate(tx, &e)
 	return e
 }
 
