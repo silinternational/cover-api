@@ -224,7 +224,7 @@ func (p *Policy) ConvertToAPI(tx *pop.Connection) api.Policy {
 	p.LoadMembers(tx, true)
 	p.LoadEntityCode(tx, true)
 
-	claims := p.Claims.ConvertToAPI(tx)
+	claims := p.Claims.ConvertToAPI(tx, User{})
 	dependents := p.Dependents.ConvertToAPI()
 	members := p.Members.ConvertToPolicyMembers()
 

@@ -284,6 +284,31 @@ func isClaimTransitionValid(status1, status2 api.ClaimStatus) (bool, error) {
 	return false, nil
 }
 
+func (c *Claim) authorizedActionsForAdmin() map[string]bool {
+	actions := map[string]bool{}
+	switch c.Status {
+	case api.ClaimStatusReview1:
+		actions[api.ResourcePreapprove] = true
+		actions[api.ResourceApprove] = true
+		actions[api.ResourceRevision] = true
+		actions[api.ResourceDeny] = true
+	}
+	return actions
+}
+
+func (c *Claim) authorizedActionsForCustomer() map[string]bool {
+	actions := map[string]bool{}
+	return actions
+
+}
+
+func (c *Claim) AuthorizedActions(actor User) map[string]bool {
+	if actor.IsAdmin() {
+		return c.authorizedActionsForAdmin()
+	}
+	return c.authorizedActionsForCustomer()
+}
+
 func (c *Claim) AddItem(tx *pop.Connection, input api.ClaimItemCreateInput) (ClaimItem, error) {
 	if c == nil {
 		panic("claim is nil in AddItem")
@@ -547,11 +572,12 @@ func (c *Claim) HasReceiptFile(tx *pop.Connection) bool {
 	return count > 0
 }
 
-func (c *Claim) ConvertToAPI(tx *pop.Connection) api.Claim {
+func (c *Claim) ConvertToAPI(tx *pop.Connection, actor User) api.Claim {
+
 	c.LoadClaimItems(tx, true)
 	c.LoadClaimFiles(tx, true)
 
-	return api.Claim{
+	apiClm := api.Claim{
 		ID:                  c.ID,
 		PolicyID:            c.PolicyID,
 		ReferenceNumber:     c.ReferenceNumber,
@@ -567,12 +593,18 @@ func (c *Claim) ConvertToAPI(tx *pop.Connection) api.Claim {
 		Items:               c.ClaimItems.ConvertToAPI(tx),
 		Files:               c.ClaimFiles.ConvertToAPI(tx),
 	}
+
+	if actor.ID == uuid.Nil {
+		actions := c.AuthorizedActions(actor)
+		apiClm.MayPerform = actions
+	}
+	return apiClm
 }
 
-func (c *Claims) ConvertToAPI(tx *pop.Connection) api.Claims {
+func (c *Claims) ConvertToAPI(tx *pop.Connection, actor User) api.Claims {
 	claims := make(api.Claims, len(*c))
 	for i, cc := range *c {
-		claims[i] = cc.ConvertToAPI(tx)
+		claims[i] = cc.ConvertToAPI(tx, actor)
 	}
 	return claims
 }
@@ -719,7 +751,7 @@ func (c *Claim) setReviewer(ctx context.Context) {
 // ClaimsWithRecentStatusChanges returns the RecentClaims associated with
 //  claims that have had their Status changed recently.
 //  The slice is sorted by updated time with most recent first.
-func ClaimsWithRecentStatusChanges(tx *pop.Connection) (api.RecentClaims, error) {
+func ClaimsWithRecentStatusChanges(tx *pop.Connection, actor User) (api.RecentClaims, error) {
 	var cHistories ClaimHistories
 
 	if err := cHistories.RecentClaimStatusChanges(tx); err != nil {
@@ -734,7 +766,7 @@ func ClaimsWithRecentStatusChanges(tx *pop.Connection) (api.RecentClaims, error)
 			panic("error finding claim by ID: " + err.Error())
 		}
 
-		apiClaim := claim.ConvertToAPI(tx)
+		apiClaim := claim.ConvertToAPI(tx, actor)
 		claims[i] = api.RecentClaim{Claim: apiClaim, StatusUpdatedAt: next.CreatedAt}
 	}
 

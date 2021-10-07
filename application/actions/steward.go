@@ -37,7 +37,7 @@ func stewardListRecentObjects(c buffalo.Context) error {
 		return reportError(c, err)
 	}
 
-	claims, err := models.ClaimsWithRecentStatusChanges(tx)
+	claims, err := models.ClaimsWithRecentStatusChanges(tx, actor)
 	if err != nil {
 		return reportError(c, err)
 	}

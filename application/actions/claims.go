@@ -41,14 +41,14 @@ func claimsListAll(c buffalo.Context) error {
 		return reportError(c, err)
 	}
 
-	return renderOk(c, claims.ConvertToAPI(tx))
+	return renderOk(c, claims.ConvertToAPI(tx, models.User{}))
 }
 
 func claimsListMine(c buffalo.Context) error {
 	tx := models.Tx(c)
 	currentUser := models.CurrentUser(c)
 	claims := currentUser.MyClaims(models.Tx(c))
-	return renderOk(c, claims.ConvertToAPI(tx))
+	return renderOk(c, claims.ConvertToAPI(tx, currentUser))
 }
 
 // swagger:operation GET /claims/{id} Claims ClaimsView
@@ -71,7 +71,7 @@ func claimsListMine(c buffalo.Context) error {
 func claimsView(c buffalo.Context) error {
 	tx := models.Tx(c)
 	claim := getReferencedClaimFromCtx(c)
-	return renderOk(c, claim.ConvertToAPI(tx))
+	return renderOk(c, claim.ConvertToAPI(tx, models.CurrentUser(c)))
 }
 
 // swagger:operation PUT /claims/{id} Claims ClaimsUpdate
@@ -114,7 +114,7 @@ func claimsUpdate(c buffalo.Context) error {
 		return reportError(c, err)
 	}
 
-	return renderOk(c, claim.ConvertToAPI(tx))
+	return renderOk(c, claim.ConvertToAPI(tx, models.CurrentUser(c)))
 }
 
 // swagger:operation POST /policies/{id}/claims Claims ClaimsCreate
@@ -154,7 +154,7 @@ func claimsCreate(c buffalo.Context) error {
 		return reportError(c, err)
 	}
 
-	return renderOk(c, dbClaim.ConvertToAPI(tx))
+	return renderOk(c, dbClaim.ConvertToAPI(tx, models.CurrentUser(c)))
 }
 
 // swagger:operation POST /claims/{id}/submit Claims ClaimsSubmit
@@ -183,7 +183,7 @@ func claimsSubmit(c buffalo.Context) error {
 		return reportError(c, err)
 	}
 
-	output := claim.ConvertToAPI(tx)
+	output := claim.ConvertToAPI(tx, models.CurrentUser(c))
 	return c.Render(http.StatusOK, r.JSON(output))
 }
 
@@ -223,7 +223,7 @@ func claimsRequestRevision(c buffalo.Context) error {
 		return reportError(c, err)
 	}
 
-	output := claim.ConvertToAPI(tx)
+	output := claim.ConvertToAPI(tx, models.CurrentUser(c))
 	return c.Render(http.StatusOK, r.JSON(output))
 }
 
@@ -252,7 +252,7 @@ func claimsPreapprove(c buffalo.Context) error {
 		return reportError(c, err)
 	}
 
-	output := claim.ConvertToAPI(tx)
+	output := claim.ConvertToAPI(tx, models.CurrentUser(c))
 	return c.Render(http.StatusOK, r.JSON(output))
 }
 
@@ -293,7 +293,7 @@ func claimsRequestReceipt(c buffalo.Context) error {
 		return reportError(c, err)
 	}
 
-	output := claim.ConvertToAPI(tx)
+	output := claim.ConvertToAPI(tx, models.CurrentUser(c))
 	return c.Render(http.StatusOK, r.JSON(output))
 }
 
@@ -323,7 +323,7 @@ func claimsApprove(c buffalo.Context) error {
 		return reportError(c, err)
 	}
 
-	output := claim.ConvertToAPI(tx)
+	output := claim.ConvertToAPI(tx, models.CurrentUser(c))
 	return c.Render(http.StatusOK, r.JSON(output))
 }
 
@@ -364,7 +364,7 @@ func claimsDeny(c buffalo.Context) error {
 		return reportError(c, err)
 	}
 
-	output := claim.ConvertToAPI(tx)
+	output := claim.ConvertToAPI(tx, models.CurrentUser(c))
 	return c.Render(http.StatusOK, r.JSON(output))
 }
 
