@@ -757,7 +757,7 @@ func (c *Claim) CreateLedgerEntry(tx *pop.Connection) error {
 		firstName, lastName := item.GetAccountablePersonName(tx)
 		item.LoadRiskCategory(tx, false)
 
-		le := NewLedgerEntry(c.Policy, &item, c)
+		le := NewLedgerEntry(c.Policy, &item, c) // #nosec G601
 		le.Type = LedgerEntryTypeClaim
 		le.Amount = int(-c.TotalPayout)
 		le.FirstName = firstName
