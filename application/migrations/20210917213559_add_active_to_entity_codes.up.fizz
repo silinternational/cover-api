@@ -1,1 +1,0 @@
-add_column("entity_codes", "active", "bool", {"default": false})

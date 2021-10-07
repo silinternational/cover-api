@@ -5,6 +5,7 @@ create_table("item_categories") {
 	t.Column("help_text", "string", {})
 	t.Column("status", "string", {})
 	t.Column("auto_approve_max", "integer", {})
+	t.Column("require_make_model", "bool", {"default": true})
 	t.Column("legacy_id", "int", {"null": true})
 
 	t.Timestamps()

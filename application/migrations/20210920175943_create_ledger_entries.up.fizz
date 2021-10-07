@@ -1,21 +1,22 @@
 create_table("ledger_entries") {
 	t.Column("id", "uuid", {primary: true})
+	t.Column("type", "string", {})
 	t.Column("policy_id", "uuid", {})
 	t.Column("item_id", "uuid", {"null": true})
-	t.Column("entity_id", "uuid", {"null": true})
+	t.Column("claim_id", "uuid", {"null": true})
 	t.Column("amount", "int", {})
-	t.Column("date_submitted", "date", {"null": true})
+	t.Column("date_submitted", "date", {})
 	t.Column("date_entered", "date", {"null": true})
-
-	t.Column("legacy_id", "int", {"null": true})
-	t.Column("record_type", "int", {"null": true})
-	t.Column("policy_type", "int", {"null": true})
+	t.Column("risk_category_name", "string", {})
+	t.Column("risk_category_cc", "string", {})
+	t.Column("policy_type", "string", {})
+	t.Column("household_id", "string", {})
 	t.Column("account_number", "string", {})
-	t.Column("account_cost_center1", "string", {})
-	t.Column("account_cost_center2", "string", {})
+	t.Column("cost_center", "string", {})
 	t.Column("entity_code", "string", {})
 	t.Column("first_name", "string", {})
 	t.Column("last_name", "string", {})
+	t.Column("legacy_id", "int", {"null": true})
 
 	t.Timestamps()
 
@@ -23,5 +24,5 @@ create_table("ledger_entries") {
 
 	t.ForeignKey("policy_id", {"policies": ["id"]}, {"on_delete": "restrict"})
 	t.ForeignKey("item_id", {"items": ["id"]}, {"on_delete": "restrict"})
-	t.ForeignKey("entity_id", {"entity_codes": ["id"]}, {"on_delete": "restrict"})
+	t.ForeignKey("claim_id", {"claims": ["id"]}, {"on_delete": "restrict"})
 }

@@ -1,2 +1,3 @@
+drop_table("claim_files")
 drop_table("claim_items")
 drop_table("claims")

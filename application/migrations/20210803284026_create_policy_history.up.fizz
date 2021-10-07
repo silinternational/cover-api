@@ -1,12 +1,12 @@
-create_table("policy_history") {
+create_table("policy_histories") {
 	t.Column("id", "uuid", {primary: true})
 	t.Column("policy_id", "uuid", {})
 	t.Column("user_id", "uuid", {})
 	t.Column("action", "string", {})
-	t.Column("item_id", "uuid", {})
-	t.Column("description", "string", {})
-	t.Column("old_value", "string", {}) 
+	t.Column("item_id", "uuid", {"null": true})
+	t.Column("old_value", "string", {})
 	t.Column("new_value", "string", {})
+	t.Column("field_name", "string", {})
 	t.Timestamps()
 
 	t.ForeignKey("policy_id", {"policies": ["id"]}, {"on_delete": "cascade"})

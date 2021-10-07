@@ -1,2 +1,0 @@
-change_column("ledger_entries", "date_submitted", "date", {"null": true})
-rename_column("ledger_entries", "entity_code_id", "entity_id")

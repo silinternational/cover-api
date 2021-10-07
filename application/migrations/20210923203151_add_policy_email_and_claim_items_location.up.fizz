@@ -1,2 +1,0 @@
-add_column("policies", "email", "string", {"default": ""})
-add_column("claim_items", "location", "string", {"default": ""})

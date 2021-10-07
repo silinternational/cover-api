@@ -1,3 +1,0 @@
-<%# This will fail if any records have null in the user_id column. %>
-change_column("notification_users", "user_id", "uuid", {})
-drop_column("notification_users", "to_name")
