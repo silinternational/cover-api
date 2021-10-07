@@ -1,3 +1,0 @@
-change_column("notification_users", "user_id", "uuid", {"null": true})
-add_column("notification_users", "to_name", "string", {"default": ""})
-

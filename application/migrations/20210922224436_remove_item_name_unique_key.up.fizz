@@ -1,2 +1,0 @@
-drop_index("items", "items_name_policy_id_idx")
-

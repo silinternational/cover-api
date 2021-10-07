@@ -1,1 +1,0 @@
-drop_column("item_categories", "require_make_model")

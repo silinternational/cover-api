@@ -16,11 +16,11 @@ create_table("items") {
 	t.Column("coverage_status", "string", {})
 	t.Column("coverage_start_date", "timestamp", {})
 	t.Column("legacy_id", "int", {"null": true})
+	t.Column("status_reason", "string", {})
 	t.Column("risk_category_id", "uuid", {})
 
 	t.Timestamps()
 
-	t.Index(["name", "policy_id"], {"unique": true})
 	t.Index("legacy_id", {"unique": true})
 
 	t.ForeignKey("category_id", {"item_categories": ["id"]}, {})

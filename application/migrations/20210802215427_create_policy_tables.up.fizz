@@ -4,9 +4,11 @@ create_table("policies") {
 	t.Column("household_id", "string", {"null": true})
 	t.Column("cost_center", "string", {})
 	t.Column("account", "string", {})
+	t.Column("account_detail", "string", {})
 	t.Column("entity_code", "string", {})
 	t.Column("legacy_id", "int", {"null": true})
 	t.Column("notes", "string", {"size": 2048})
+	t.Column("email", "string", {})
 
 	t.Timestamps()
 

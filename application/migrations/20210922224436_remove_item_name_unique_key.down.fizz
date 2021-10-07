@@ -1,1 +1,0 @@
-add_index("items", ["name", "policy_id"], {"unique": true})
