@@ -468,7 +468,10 @@ func (c *Claim) Approve(ctx context.Context) error {
 	}
 	emitEvent(e)
 
-	return c.CreateLedgerEntry(Tx(ctx))
+	if c.Status == api.ClaimStatusApproved {
+		return c.CreateLedgerEntry(Tx(ctx))
+	}
+	return nil
 }
 
 // Deny changes the status of the claim to Denied and adds the ReviewerID and ReviewDate.
