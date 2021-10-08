@@ -521,6 +521,10 @@ func parseItemDates(input api.ItemInput, modelItem *Item) error {
 
 // setAccountablePerson sets the appropriate field to the given ID, but does not update the database
 func (i *Item) setAccountablePerson(tx *pop.Connection, id uuid.UUID) error {
+	if id == uuid.Nil {
+		return api.NewAppError(errors.New("accountable person ID must not be nil"), api.ErrorItemNullAccountablePerson, api.CategoryUser)
+	}
+
 	i.LoadPolicy(tx, false)
 
 	if i.Policy.isMember(tx, id) {
