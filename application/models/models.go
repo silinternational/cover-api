@@ -231,11 +231,14 @@ func emitEvent(e events.Event) {
 	}
 }
 
-func addFile(tx *pop.Connection, m Updatable, fileID uuid.UUID) error {
-	var f File
-
-	if err := f.Find(tx, fileID); err != nil {
-		return err
+func addFile(tx *pop.Connection, m Updatable, f File) error {
+	if f.URL == "" {
+		if err := tx.Find(&f, f.ID); err != nil {
+			return appErrorFromDB(
+				fmt.Errorf("error finding file %w", err),
+				api.ErrorResourceNotFound,
+			)
+		}
 	}
 
 	fileField := fieldByName(m, "FileID", "PhotoFileID")
@@ -251,11 +254,11 @@ func addFile(tx *pop.Connection, m Updatable, fileID uuid.UUID) error {
 	}
 
 	if err := m.Update(tx); err != nil {
-		return fmt.Errorf("failed to update the file ID column, %s", err)
+		return appErrorFromDB(err, api.ErrorQueryFailure)
 	}
 
 	if err := f.SetLinked(tx); err != nil {
-		return fmt.Errorf("error marking file %s as linked, %s", f.ID, err)
+		return err
 	}
 
 	if !oldID.Valid {

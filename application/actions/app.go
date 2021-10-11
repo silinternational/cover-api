@@ -130,9 +130,10 @@ func App() *buffalo.App {
 		// users
 		usersGroup := app.Group("/" + domain.TypeUser)
 		usersGroup.GET("/", usersList)
-		usersGroup.Middleware.Skip(AuthZ, usersMe, usersMeUpdate)
+		usersGroup.Middleware.Skip(AuthZ, usersMe, usersMeUpdate, usersMeFilesAttach)
 		usersGroup.GET("/me", usersMe)
 		usersGroup.PUT("/me", usersMeUpdate)
+		usersGroup.POST("/me", usersMeFilesAttach)
 		usersGroup.GET(idRegex, usersView)
 
 		auth := app.Group("/auth")
