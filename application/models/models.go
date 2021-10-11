@@ -235,7 +235,7 @@ func addFile(tx *pop.Connection, m Updatable, f File) error {
 	if f.URL == "" {
 		if err := tx.Find(&f, f.ID); err != nil {
 			return appErrorFromDB(
-				fmt.Errorf("error finding file %w", err.Error()),
+				fmt.Errorf("error finding file %w", err),
 				api.ErrorResourceNotFound,
 			)
 		}
