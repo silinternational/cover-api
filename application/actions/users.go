@@ -72,6 +72,44 @@ func usersMe(c buffalo.Context) error {
 	return renderUser(c, models.CurrentUser(c))
 }
 
+// swagger:operation PUT /users/me Users UserMeUpdate
+//
+// UserMeUpdate
+//
+// update the current user's personal settings
+//
+// ---
+// parameters:
+//   - name: user's settings input
+//     in: body
+//     description: the editable settings for a user
+//     required: true
+//     schema:
+//       "$ref": "#/definitions/UserInput"
+// responses:
+//   '200':
+//     description: updated User
+//     schema:
+//       "$ref": "#/definitions/User"
+func usersMeUpdate(c buffalo.Context) error {
+	tx := models.Tx(c)
+	user := models.CurrentUser(c)
+
+	var input api.UserInput
+	if err := StrictBind(c, &input); err != nil {
+		return reportError(c, err)
+	}
+
+	user.EmailOverride = input.EmailOverride
+	user.Location = input.Location
+
+	if err := user.Update(tx); err != nil {
+		return reportError(c, err)
+	}
+
+	return renderUser(c, user)
+}
+
 func renderUser(c buffalo.Context, user models.User) error {
 	tx := models.Tx(c)
 	user.LoadPolicies(tx, false)

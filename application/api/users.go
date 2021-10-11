@@ -55,3 +55,13 @@ type User struct {
 	// File object that contains the user's photo
 	PhotoFile *File `json:"photo_file,omitempty"`
 }
+
+// app user update input
+// swagger:model
+type UserInput struct {
+	// email address
+	EmailOverride string `json:"email_override,omitempty"`
+
+	// country or something similar
+	Location string `json:"location,omitempty"`
+}
