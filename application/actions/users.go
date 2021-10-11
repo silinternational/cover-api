@@ -142,7 +142,7 @@ func usersMeFilesAttach(c buffalo.Context) error {
 		return reportError(c, err)
 	}
 
-	return renderOk(c, user.ConvertToAPI(tx))
+	return renderUser(c, user)
 }
 
 func renderUser(c buffalo.Context, user models.User) error {
