@@ -68,7 +68,7 @@ type UserInput struct {
 
 // swagger:model
 type UserFileAttachInput struct {
-	// File ID to attach to the claim
+	// File ID to attach to the current user
 	//
 	// swagger:strfmt uuid4
 	FileID uuid.UUID `json:"file_id"`
