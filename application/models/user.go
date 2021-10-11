@@ -300,26 +300,38 @@ func (u *Users) GetAll(tx *pop.Connection) error {
 }
 
 // OwnsFile returns true if the user owns the file identified by the given ID
-func (u *User) OwnsFile(tx *pop.Connection, fileID uuid.UUID) (bool, error) {
+func (u *User) OwnsFile(tx *pop.Connection, f File) (bool, error) {
 	if u.ID == uuid.Nil {
 		return false, errors.New("no user ID provided")
 	}
-	var f File
-	err := tx.Find(&f, fileID)
-	if err != nil {
-		if domain.IsOtherThanNoRows(err) {
-			panic("error finding file: " + err.Error())
-		}
 
-		return false, errors.New("unable to find file with ID : " + fileID.String())
-
-	}
 	return u.ID == f.CreatedByID, nil
 }
 
 // AttachPhotoFile assigns a previously-stored File to this User as a profile photo
 func (u *User) AttachPhotoFile(tx *pop.Connection, fileID uuid.UUID) error {
-	if err := addFile(tx, u, fileID); err != nil {
+	var f File
+	if err := tx.Find(&f, fileID); err != nil {
+		return appErrorFromDB(
+			errors.New("error finding file "+err.Error()),
+			api.ErrorResourceNotFound,
+		)
+	}
+
+	isOwner, err := u.OwnsFile(tx, f)
+	if err != nil {
+		return err
+	}
+
+	if !isOwner {
+		return api.NewAppError(
+			errors.New("user is not owner of PhotoFile, ID: "+fileID.String()),
+			api.ErrorNotAuthorized,
+			api.CategoryForbidden,
+		)
+	}
+
+	if err := addFile(tx, u, f); err != nil {
 		return err
 	}
 

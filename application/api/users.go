@@ -65,3 +65,11 @@ type UserInput struct {
 	// country or something similar
 	Location string `json:"location,omitempty"`
 }
+
+// swagger:model
+type UserFileAttachInput struct {
+	// File ID to attach to the claim
+	//
+	// swagger:strfmt uuid4
+	FileID uuid.UUID `json:"file_id"`
+}

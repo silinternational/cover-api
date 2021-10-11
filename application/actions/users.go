@@ -110,6 +110,41 @@ func usersMeUpdate(c buffalo.Context) error {
 	return renderUser(c, user)
 }
 
+// swagger:operation POST /users/me/files Users UsersMeFileAttach
+//
+// UsersMeFileAttach
+//
+// attach a File to the current user
+//
+// ---
+// parameters:
+//   - name: user file input
+//     in: body
+//     description: photo/avatar to attach to the current user
+//     required: true
+//     schema:
+//       "$ref": "#/definitions/UserFileAttachInput"
+// responses:
+//   '200':
+//     description: the User
+//     schema:
+//       "$ref": "#/definitions/User"
+func usersMeFilesAttach(c buffalo.Context) error {
+	var input api.UserFileAttachInput
+	if err := StrictBind(c, &input); err != nil {
+		return reportError(c, err)
+	}
+
+	tx := models.Tx(c)
+
+	user := models.CurrentUser(c)
+	if err := user.AttachPhotoFile(tx, input.FileID); err != nil {
+		return reportError(c, err)
+	}
+
+	return renderOk(c, user.ConvertToAPI(tx))
+}
+
 func renderUser(c buffalo.Context, user models.User) error {
 	tx := models.Tx(c)
 	user.LoadPolicies(tx, false)

@@ -191,3 +191,85 @@ func (as *ActionSuite) Test_UsersMeUpdate() {
 		})
 	}
 }
+
+func (as *ActionSuite) Test_UsersMeFilesAttach() {
+	fixConfig := models.FixturesConfig{
+		NumberOfPolicies: 2,
+		UsersPerPolicy:   1,
+	}
+
+	fixtures := models.CreateItemFixtures(as.DB, fixConfig)
+	currentUser := fixtures.Policies[0].Members[0]
+	otherUser := fixtures.Policies[1].Members[0]
+
+	ff := models.CreateFileFixtures(as.DB, 2, currentUser.ID)
+	linkedFile := ff.Files[0]
+	as.NoError(linkedFile.SetLinked(as.DB))
+
+	newFileID := ff.Files[1].ID
+
+	tests := []struct {
+		name       string
+		actor      models.User
+		input      api.UserFileAttachInput
+		wantStatus int
+		wantInBody string
+	}{
+		{
+			name:       "not allowed",
+			actor:      otherUser,
+			input:      api.UserFileAttachInput{FileID: newFileID},
+			wantStatus: http.StatusNotFound,
+			wantInBody: fmt.Sprintf(`"key":"%s"`, api.ErrorNotAuthorized),
+		},
+		{
+			name:       "bad input",
+			actor:      currentUser,
+			input:      api.UserFileAttachInput{FileID: domain.GetUUID()},
+			wantStatus: http.StatusBadRequest,
+			wantInBody: fmt.Sprintf(`"key":"%s"`, api.ErrorNoRows),
+		},
+		{
+			name:       "file already linked to the user",
+			actor:      currentUser,
+			input:      api.UserFileAttachInput{FileID: linkedFile.ID},
+			wantStatus: http.StatusBadRequest,
+			wantInBody: fmt.Sprintf(`"key":"%s"`, api.ErrorFileAlreadyLinked),
+		},
+		{
+			name:       "file linked to something else",
+			actor:      currentUser,
+			input:      api.UserFileAttachInput{FileID: linkedFile.ID},
+			wantStatus: http.StatusBadRequest,
+			wantInBody: fmt.Sprintf(`"key":"%s"`, api.ErrorFileAlreadyLinked),
+		},
+		{
+			name:       "ok",
+			actor:      currentUser,
+			input:      api.UserFileAttachInput{FileID: newFileID},
+			wantStatus: http.StatusOK,
+			wantInBody: fmt.Sprintf(`"photo_file_id":"%s"`, newFileID),
+		},
+	}
+	for _, tt := range tests {
+		as.T().Run(tt.name, func(t *testing.T) {
+			req := as.JSON("/users/me")
+			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
+			req.Headers["content-type"] = "application/json"
+			res := req.Post(tt.input)
+
+			body := res.Body.String()
+			as.Equal(tt.wantStatus, res.Code, "incorrect status code returned, body: %s", body)
+
+			as.verifyResponseData([]string{tt.wantInBody}, body, "")
+
+			if res.Code != http.StatusOK {
+				return
+			}
+
+			var file models.File
+			as.NoError(as.DB.Where("id = ?", tt.input.FileID).First(&file),
+				"new File not found in database")
+		})
+	}
+}

@@ -205,38 +205,33 @@ func (ms *ModelSuite) TestUser_OwnsFile() {
 	tests := []struct {
 		name    string
 		user    User
-		fileID  uuid.UUID
+		file    File
 		want    bool
 		wantErr bool
 	}{
 		{
 			name:    "user not valid",
-			fileID:  file.ID,
-			wantErr: true,
-		},
-		{
-			name:    "file ID not valid",
-			user:    userNoFile,
+			file:    file,
 			wantErr: true,
 		},
 		{
 			name:    "not owned",
 			user:    userNoFile,
-			fileID:  file.ID,
+			file:    file,
 			want:    false,
 			wantErr: false,
 		},
 		{
 			name:    "owned",
 			user:    userOwnsFile,
-			fileID:  file.ID,
+			file:    file,
 			want:    true,
 			wantErr: false,
 		},
 	}
 	for _, tt := range tests {
 		ms.T().Run(tt.name, func(t *testing.T) {
-			ownsFile, err := tt.user.OwnsFile(ms.DB, tt.fileID)
+			ownsFile, err := tt.user.OwnsFile(ms.DB, tt.file)
 			if tt.wantErr {
 				ms.Error(err)
 				return
