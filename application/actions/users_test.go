@@ -149,7 +149,7 @@ func (as *ActionSuite) Test_UsersMeUpdate() {
 			},
 		},
 		{
-			name:       "just add email",
+			name:       "add both email and location",
 			actor:      userAddBoth,
 			oldUser:    userAddBoth,
 			input:      inputAddBoth,
