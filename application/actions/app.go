@@ -133,7 +133,7 @@ func App() *buffalo.App {
 		usersGroup.Middleware.Skip(AuthZ, usersMe, usersMeUpdate, usersMeFilesAttach)
 		usersGroup.GET("/me", usersMe)
 		usersGroup.PUT("/me", usersMeUpdate)
-		usersGroup.POST("/me", usersMeFilesAttach)
+		usersGroup.POST("/me/files", usersMeFilesAttach)
 		usersGroup.GET(idRegex, usersView)
 
 		auth := app.Group("/auth")

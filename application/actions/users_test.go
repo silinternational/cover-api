@@ -253,7 +253,7 @@ func (as *ActionSuite) Test_UsersMeFilesAttach() {
 	}
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
-			req := as.JSON("/users/me")
+			req := as.JSON("/users/me/files")
 			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
 			req.Headers["content-type"] = "application/json"
 			res := req.Post(tt.input)

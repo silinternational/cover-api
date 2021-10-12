@@ -332,7 +332,7 @@ func (i *Item) AutoApprove(tx *pop.Connection) error {
 	}
 	emitEvent(e)
 
-	return i.Approve(tx, false)
+	return i.Approve(tx, true)
 }
 
 // Approve takes the item from Pending coverage status to Approved.
