@@ -37,6 +37,14 @@ const (
 	MessageTemplatePolicyUserInvite = "policy_user_invite"
 )
 
+// blockSending is used to avoid having duplicate emails sent out when
+// two notifications are created one after the other.
+var blockSending bool
+
+func unBlockSending() {
+	blockSending = false
+}
+
 type MessageData render.Data
 
 func newEmailMessageData() MessageData {
@@ -76,6 +84,17 @@ func (m MessageData) renderHTML(template string) string {
 }
 
 func SendQueuedNotifications(tx *pop.Connection) {
+	// Wait up to two minutes to see if it's OK to try sending emails
+	for i := 0; i < 24; i++ {
+		if !blockSending {
+			break
+		}
+		time.Sleep(5 * time.Second)
+	}
+
+	blockSending = true
+	defer unBlockSending()
+
 	var notnUsers models.NotificationUsers
 	if err := notnUsers.GetEmailsToSend(tx); err != nil {
 		panic(err.Error())
