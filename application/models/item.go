@@ -332,24 +332,28 @@ func (i *Item) AutoApprove(tx *pop.Connection) error {
 	}
 	emitEvent(e)
 
-	return i.Approve(tx)
+	return i.Approve(tx, false)
 }
 
 // Approve takes the item from Pending coverage status to Approved.
 // It assumes that the item's current status has already been validated.
-func (i *Item) Approve(tx *pop.Connection) error {
+// Only emits an event for an email notification if requested.
+// (No need to emit it following an auto-approval which has already emitted and event.)
+func (i *Item) Approve(tx *pop.Connection, doEmitEvent bool) error {
 	oldStatus := i.CoverageStatus
 	i.CoverageStatus = api.ItemCoverageStatusApproved
 	if err := i.Update(tx, oldStatus); err != nil {
 		return err
 	}
 
-	e := events.Event{
-		Kind:    domain.EventApiItemApproved,
-		Message: fmt.Sprintf("Item Approved: %s  ID: %s", i.Name, i.ID.String()),
-		Payload: events.Payload{domain.EventPayloadID: i.ID},
+	if doEmitEvent {
+		e := events.Event{
+			Kind:    domain.EventApiItemApproved,
+			Message: fmt.Sprintf("Item Approved: %s  ID: %s", i.Name, i.ID.String()),
+			Payload: events.Payload{domain.EventPayloadID: i.ID},
+		}
+		emitEvent(e)
 	}
-	emitEvent(e)
 
 	return i.CreateLedgerEntry(tx)
 }

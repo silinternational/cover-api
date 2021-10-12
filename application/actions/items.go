@@ -229,7 +229,7 @@ func itemsApprove(c buffalo.Context) error {
 	tx := models.Tx(c)
 	item := getReferencedItemFromCtx(c)
 
-	if err := item.Approve(tx); err != nil {
+	if err := item.Approve(tx, true); err != nil {
 		return reportError(c, err)
 	}
 

@@ -26,7 +26,7 @@ func (as *ActionSuite) Test_BatchesLatest() {
 	datesEntered := []nulls.Time{nulls.NewTime(now), {}}
 
 	for i := range f.Items {
-		as.NoError(f.Items[i].Approve(as.DB))
+		as.NoError(f.Items[i].Approve(as.DB, false))
 
 		entry := models.LedgerEntry{}
 		as.NoError(as.DB.Where("item_id = ?", f.Items[i].ID).First(&entry))
