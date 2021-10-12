@@ -23,7 +23,7 @@ func (ms *ModelSuite) TestLedgerEntries_AllForMonth() {
 	datesEntered := []nulls.Time{nulls.NewTime(april), {}}
 
 	for i := range f.Items {
-		ms.NoError(f.Items[i].Approve(ms.DB))
+		ms.NoError(f.Items[i].Approve(ms.DB, false))
 
 		entry := LedgerEntry{}
 		ms.NoError(ms.DB.Where("item_id = ?", f.Items[i].ID).First(&entry))
