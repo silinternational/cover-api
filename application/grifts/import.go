@@ -577,6 +577,9 @@ func createUserFromEmailAddress(tx *pop.Connection, email, firstName, lastName s
 }
 
 func validMailAddress(address string) (string, bool) {
+	if strings.HasSuffix(address, "@sil") {
+		address = address + ".org"
+	}
 	addr, err := mail.ParseAddress(address)
 	if err != nil {
 		return "", false
@@ -779,7 +782,6 @@ func importItems(tx *pop.Connection, policyUUID uuid.UUID, policyID int, items [
 			RiskCategoryID:    riskCategoryMap[item.CategoryId],
 			InStorage:         item.InStorage == 1,
 			Country:           trim(item.Country),
-			Description:       trim(item.Description),
 			PolicyID:          policyUUID,
 			Make:              trim(item.Make),
 			Model:             trim(item.Model),
