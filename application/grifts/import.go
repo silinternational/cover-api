@@ -365,7 +365,6 @@ func importPolicies(tx *pop.Connection, policies []LegacyPolicy) {
 				parseNullStringTimeToTime(p.UpdatedAt, desc+"UpdatedAt"), newPolicy.ID).Exec(); err != nil {
 				log.Fatalf("failed to set updated_at on policies, %s", err)
 			}
-			policyNotes[id] = p.Notes
 
 			policyIDMap[policyID] = policyUUID
 
