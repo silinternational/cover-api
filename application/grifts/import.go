@@ -577,6 +577,9 @@ func createUserFromEmailAddress(tx *pop.Connection, email, firstName, lastName s
 }
 
 func validMailAddress(address string) (string, bool) {
+	if strings.HasSuffix(address, "@sil") {
+		address = address + ".org"
+	}
 	addr, err := mail.ParseAddress(address)
 	if err != nil {
 		return "", false
