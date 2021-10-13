@@ -175,7 +175,7 @@ func importCustomers() {
 }
 
 func importIdpUsersFromFile(filename string, idColumn, emailColumn, personalColumn int) int {
-	f, err := os.Open(filename)
+	f, err := os.Open(filename) // #nosec G304
 	if err != nil {
 		log.Fatal(err)
 	}
