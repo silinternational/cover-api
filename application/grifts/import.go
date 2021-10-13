@@ -41,11 +41,6 @@ const (
 	defaultID                = "9999999999"
 )
 
-const (
-	SILUsersFilename      = "./sil-users.csv"
-	PartnersUsersFilename = "./partners-users.csv"
-)
-
 var trim = strings.TrimSpace
 
 // userEmailStaffIDMap is a map of email address to staff ID
@@ -89,10 +84,23 @@ var emptyTime time.Time
 
 var nPolicyUsersWithStaffID int
 
+var idpFilenames = map[string]string{
+	"SIL":      "./sil-users.csv",
+	"USA":      "./usa_idp_users.csv",
+	"WPA":      "./wpa_idp_users.csv",
+	"Partners": "./partners-users.csv",
+}
+
+var workdayFilenames = map[string]string{
+	"WPA": "./wpa_workday.csv",
+	"SIL": "./sil_workday.csv",
+	"USA": "./usa_workday.csv",
+}
+
 var _ = grift.Namespace("db", func() {
 	_ = grift.Desc("import", "Import legacy data")
 	_ = grift.Add("import", func(c *grift.Context) error {
-		importIdpUsers()
+		importCustomers()
 
 		var obj LegacyData
 
@@ -113,7 +121,7 @@ var _ = grift.Namespace("db", func() {
 			return errors.New("json decode error: " + err.Error())
 		}
 
-		fmt.Println("record counts: ")
+		fmt.Println("\nJSON record counts: ")
 		fmt.Printf("  Admin Users: %d\n", len(obj.Users))
 		fmt.Printf("  Policies: %d\n", len(obj.Policies))
 		fmt.Printf("  PolicyTypes: %d\n", len(obj.PolicyTypes))
@@ -145,17 +153,29 @@ func init() {
 	pop.Debug = false // Disable the Pop log messages
 }
 
-func importIdpUsers() {
-	nSilUsers := importIdpUsersFromFile("SIL")
-	fmt.Printf("SIL users: %d\n", nSilUsers)
+func importCustomers() {
+	const IDPStaffIDColumn = 0
+	const IDPEmailColumn = 1
+	const IDPPersonalEmailColumn = 2
+	const WorkdayStaffIDColumn = 0
+	const WorkdayEmailColumn = 5
+	const WorkdayPersonalEmailColumn = 6
 
-	nPartnersUsers := importIdpUsersFromFile("Partners")
-	fmt.Printf("Partners users: %d\n", nPartnersUsers)
+	fmt.Println("\nImporting IDP users")
+	for idp, filename := range idpFilenames {
+		n := importIdpUsersFromFile(filename, IDPStaffIDColumn, IDPEmailColumn, IDPPersonalEmailColumn)
+		fmt.Printf("%s IDP users: %d\n", idp, n)
+	}
+
+	fmt.Println("\nImporting Workday users")
+	for idp, filename := range workdayFilenames {
+		n := importIdpUsersFromFile(filename, WorkdayStaffIDColumn, WorkdayEmailColumn, WorkdayPersonalEmailColumn)
+		fmt.Printf("%s Workday users: %d\n", idp, n)
+	}
 }
 
-func importIdpUsersFromFile(idpName string) int {
-	filenames := map[string]string{"SIL": SILUsersFilename, "Partners": PartnersUsersFilename}
-	f, err := os.Open(filenames[idpName])
+func importIdpUsersFromFile(filename string, idColumn, emailColumn, personalColumn int) int {
+	f, err := os.Open(filename)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -174,26 +194,35 @@ func importIdpUsersFromFile(idpName string) int {
 			break
 		}
 		if err != nil {
-			log.Fatalf("failed to read from IDP data file %s, %s", filenames[idpName], err)
+			log.Fatalf("failed to read from IDP data file %s, %s", filename, err)
 		}
 
-		staffID := csvLine[2]
-		email := csvLine[7]
-		if staffID == "NULL" || email == "NULL" {
-			continue
-		}
+		staffID := csvLine[idColumn]
+		email := csvLine[emailColumn]
+		n += addStaffID(staffID, email)
 
-		if userEmailStaffIDMap[strings.ToLower(email)] == "" {
-			userEmailStaffIDMap[strings.ToLower(email)] = staffID
-			n++
-		} else {
-			if userEmailStaffIDMap[strings.ToLower(email)] != staffID {
-				log.Fatalf("in file %s, email address '%s' maps to two different staff IDs: '%s' and '%s'",
-					filenames[idpName], email, userEmailStaffIDMap[strings.ToLower(email)], staffID)
-			}
-		}
+		email = csvLine[personalColumn]
+		n += addStaffID(staffID, email)
 	}
 	return n
+}
+
+func addStaffID(staffID, email string) int {
+	if staffID == "NULL" || staffID == "" || email == "NULL" || email == "" {
+		return 0
+	}
+
+	if userEmailStaffIDMap[strings.ToLower(email)] == "" {
+		userEmailStaffIDMap[strings.ToLower(email)] = staffID
+		return 1
+	}
+
+	if userEmailStaffIDMap[strings.ToLower(email)] != staffID {
+		log.Printf("email address '%s' maps to two different staff IDs: '%s' and '%s'",
+			email, userEmailStaffIDMap[strings.ToLower(email)], staffID)
+	}
+
+	return 0
 }
 
 func assignRiskCategoryCostCenters(tx *pop.Connection) {
