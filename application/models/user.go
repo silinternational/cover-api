@@ -40,17 +40,17 @@ type Users []User
 
 // User model
 type User struct {
-	ID            uuid.UUID   `json:"-" db:"id"`
-	Email         string      `db:"email" validate:"required"`
-	EmailOverride string      `db:"email_override"`
-	FirstName     string      `db:"first_name"`
-	LastName      string      `db:"last_name"`
-	IsBlocked     bool        `db:"is_blocked"`
-	LastLoginUTC  time.Time   `db:"last_login_utc"`
-	Location      string      `db:"location"`
-	StaffID       string      `db:"staff_id"`
-	AppRole       UserAppRole `db:"app_role" validate:"appRole"`
-	PhotoFileID   nulls.UUID  `json:"photo_file_id" db:"photo_file_id"`
+	ID            uuid.UUID    `json:"-" db:"id"`
+	Email         string       `db:"email" validate:"required"`
+	EmailOverride string       `db:"email_override"`
+	FirstName     string       `db:"first_name"`
+	LastName      string       `db:"last_name"`
+	IsBlocked     bool         `db:"is_blocked"`
+	LastLoginUTC  time.Time    `db:"last_login_utc"`
+	Location      string       `db:"location"`
+	StaffID       nulls.String `db:"staff_id"`
+	AppRole       UserAppRole  `db:"app_role" validate:"appRole"`
+	PhotoFileID   nulls.UUID   `json:"photo_file_id" db:"photo_file_id"`
 
 	CreatedAt time.Time `db:"created_at"`
 	UpdatedAt time.Time `db:"updated_at"`
@@ -147,7 +147,7 @@ func (u *User) FindOrCreateFromAuthUser(tx *pop.Connection, authUser *auth.User)
 	u.FirstName = authUser.FirstName
 	u.LastName = authUser.LastName
 	u.Email = authUser.Email
-	u.StaffID = authUser.StaffID
+	u.StaffID = nulls.NewString(authUser.StaffID)
 	u.LastLoginUTC = time.Now().UTC()
 
 	if err := tx.Save(u); err != nil {

@@ -309,7 +309,7 @@ func CreateUserFixtures(tx *pop.Connection, n int) Fixtures {
 		users[i].FirstName = "first" + iStr
 		users[i].LastName = "last" + iStr
 		users[i].LastLoginUTC = time.Now()
-		users[i].StaffID = randStr(10)
+		users[i].StaffID = nulls.NewString(randStr(10))
 		users[i].AppRole = AppRoleUser
 		MustCreate(tx, &users[i])
 

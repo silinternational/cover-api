@@ -250,7 +250,7 @@ func (ms *ModelSuite) TestPolicy_LoadMembers() {
 		FirstName: "Test",
 		LastName:  "Testerson",
 		IsBlocked: false,
-		StaffID:   rando,
+		StaffID:   nulls.NewString(rando),
 		AppRole:   AppRoleUser,
 	}
 	MustCreate(ms.DB, &user)
@@ -278,7 +278,7 @@ func (ms *ModelSuite) TestPolicy_LoadDependents() {
 		FirstName: "Test",
 		LastName:  "Testerson",
 		IsBlocked: false,
-		StaffID:   rando,
+		StaffID:   nulls.NewString(rando),
 		AppRole:   AppRoleUser,
 	}
 	MustCreate(ms.DB, &user)

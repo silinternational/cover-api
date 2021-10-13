@@ -233,7 +233,7 @@ func importAdminUsers(tx *pop.Connection, users []LegacyUser) {
 			LastName:      trim(user.LastName),
 			LastLoginUTC:  parseStringTime(user.LastLoginUtc, userDesc+"LastLoginUTC"),
 			Location:      trim(user.Location),
-			StaffID:       user.StaffId,
+			StaffID:       nulls.NewString(user.StaffId),
 			AppRole:       appRole,
 			CreatedAt:     parseStringTime(user.CreatedAt, userDesc+"CreatedAt"),
 		}
@@ -557,8 +557,10 @@ func createPolicyUser(tx *pop.Connection, email, firstName, lastName string, pol
 }
 
 func createUserFromEmailAddress(tx *pop.Connection, email, firstName, lastName string) models.User {
-	staffID, ok := userEmailStaffIDMap[email]
-	if ok {
+	var staffID nulls.String
+	if id, ok := userEmailStaffIDMap[email]; ok {
+		staffID = nulls.NewString(id)
+
 		nPolicyUsersWithStaffID++
 	}
 
