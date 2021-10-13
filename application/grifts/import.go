@@ -782,7 +782,6 @@ func importItems(tx *pop.Connection, policyUUID uuid.UUID, policyID int, items [
 			RiskCategoryID:    riskCategoryMap[item.CategoryId],
 			InStorage:         item.InStorage == 1,
 			Country:           trim(item.Country),
-			Description:       trim(item.Description),
 			PolicyID:          policyUUID,
 			Make:              trim(item.Make),
 			Model:             trim(item.Model),
