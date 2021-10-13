@@ -352,6 +352,7 @@ func importPolicies(tx *pop.Connection, policies []LegacyPolicy) {
 				Notes:         p.Notes,
 				Email:         p.Email,
 				LegacyID:      nulls.NewInt(policyID),
+				IdentCode:     trim(p.IdentCode),
 				CreatedAt:     parseStringTime(p.CreatedAt, desc+"CreatedAt"),
 			}
 			if newPolicy.Type == api.PolicyTypeHousehold {
