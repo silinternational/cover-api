@@ -20,9 +20,7 @@ import (
 //   '200':
 //     description: a list of Items and a list of Claims which each have the time when their status was last changed.
 //     schema:
-//       type: array
-//       items:
-//         "$ref": "#/definitions/RecentObjects"
+//       "$ref": "#/definitions/RecentObjects"
 func stewardListRecentObjects(c buffalo.Context) error {
 	actor := models.CurrentUser(c)
 	if !actor.IsAdmin() {
