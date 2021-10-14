@@ -66,7 +66,7 @@ func (p *Policy) Update(ctx context.Context) error {
 	for i := range updates {
 		history := p.NewHistory(ctx, api.HistoryActionUpdate, updates[i])
 		if err := history.Create(tx); err != nil {
-			return appErrorFromDB(err, api.ErrorCreateFailure)
+			return err
 		}
 	}
 
