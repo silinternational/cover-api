@@ -109,11 +109,131 @@ func (i *Item) Update(ctx context.Context) error {
 func (i *Item) Compare(old Item) []FieldUpdate {
 	var updates []FieldUpdate
 
+	if i.Name != old.Name {
+		updates = append(updates, FieldUpdate{
+			OldValue:  old.Name,
+			NewValue:  i.Name,
+			FieldName: FieldItemName,
+		})
+	}
+
+	if i.CategoryID != old.CategoryID {
+		updates = append(updates, FieldUpdate{
+			OldValue:  old.CategoryID.String(),
+			NewValue:  i.CategoryID.String(),
+			FieldName: FieldItemCategoryID,
+		})
+	}
+
+	if i.RiskCategoryID != old.RiskCategoryID {
+		updates = append(updates, FieldUpdate{
+			OldValue:  old.RiskCategoryID.String(),
+			NewValue:  i.RiskCategoryID.String(),
+			FieldName: FieldItemRiskCategoryID,
+		})
+	}
+
+	if i.InStorage != old.InStorage {
+		updates = append(updates, FieldUpdate{
+			OldValue:  fmt.Sprintf(`%t`, old.InStorage),
+			NewValue:  fmt.Sprintf(`%t`, i.InStorage),
+			FieldName: FieldItemInStorage,
+		})
+	}
+
+	if i.Country != old.Country {
+		updates = append(updates, FieldUpdate{
+			OldValue:  old.Country,
+			NewValue:  i.Country,
+			FieldName: FieldItemCountry,
+		})
+	}
+
+	if i.Description != old.Description {
+		updates = append(updates, FieldUpdate{
+			OldValue:  old.Description,
+			NewValue:  i.Description,
+			FieldName: FieldItemDescription,
+		})
+	}
+
+	if i.PolicyDependentID != old.PolicyDependentID {
+		updates = append(updates, FieldUpdate{
+			OldValue:  old.PolicyDependentID.UUID.String(),
+			NewValue:  i.PolicyDependentID.UUID.String(),
+			FieldName: FieldItemPolicyDependentID,
+		})
+	}
+
+	if i.PolicyUserID != old.PolicyUserID {
+		updates = append(updates, FieldUpdate{
+			OldValue:  old.PolicyUserID.UUID.String(),
+			NewValue:  i.PolicyUserID.UUID.String(),
+			FieldName: FieldItemPolicyUserID,
+		})
+	}
+
+	if i.Make != old.Make {
+		updates = append(updates, FieldUpdate{
+			OldValue:  old.Make,
+			NewValue:  i.Make,
+			FieldName: FieldItemMake,
+		})
+	}
+
+	if i.Model != old.Model {
+		updates = append(updates, FieldUpdate{
+			OldValue:  old.Model,
+			NewValue:  i.Model,
+			FieldName: FieldItemModel,
+		})
+	}
+
+	if i.SerialNumber != old.SerialNumber {
+		updates = append(updates, FieldUpdate{
+			OldValue:  old.SerialNumber,
+			NewValue:  i.SerialNumber,
+			FieldName: FieldItemSerialNumber,
+		})
+	}
+
+	if i.CoverageAmount != old.CoverageAmount {
+		updates = append(updates, FieldUpdate{
+			OldValue:  fmt.Sprintf(`%d`, old.CoverageAmount),
+			NewValue:  fmt.Sprintf(`%d`, i.CoverageAmount),
+			FieldName: FieldItemCoverageAmount,
+		})
+	}
+
+	if i.PurchaseDate != old.PurchaseDate {
+		updates = append(updates, FieldUpdate{
+			OldValue:  old.PurchaseDate.Format(domain.DateFormat),
+			NewValue:  i.PurchaseDate.Format(domain.DateFormat),
+			FieldName: FieldItemPurchaseDate,
+		})
+	}
+
 	if i.CoverageStatus != old.CoverageStatus {
 		updates = append(updates, FieldUpdate{
 			OldValue:  string(old.CoverageStatus),
 			NewValue:  string(i.CoverageStatus),
 			FieldName: FieldItemCoverageStatus,
+		})
+	}
+
+	if i.CoverageStartDate != old.CoverageStartDate {
+		updates = append(updates, FieldUpdate{
+			OldValue:  old.CoverageStartDate.Format(domain.DateFormat),
+			NewValue:  i.CoverageStartDate.Format(domain.DateFormat),
+			FieldName: FieldItemCoverageStartDate,
+		})
+	}
+
+	if i.StatusReason != old.StatusReason {
+		updates = append(updates, FieldUpdate{
+			OldValue:  old.StatusReason,
+			NewValue:  i.StatusReason,
+			FieldName: FieldItemStatusReason,
 		})
 	}
 

@@ -1,6 +1,7 @@
 package models
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -806,4 +807,129 @@ func (ms *ModelSuite) Test_ItemsWithRecentStatusChanges() {
 	}
 
 	ms.ElementsMatch(want, got, "incorrect results")
+}
+
+func (ms *ModelSuite) TestItem_Compare() {
+	fixtures := CreateItemFixtures(ms.DB, FixturesConfig{})
+	newItem := fixtures.Items[0]
+
+	oldItem := Item{
+		Name:              "OldName",
+		CategoryID:        domain.GetUUID(),
+		RiskCategoryID:    domain.GetUUID(),
+		InStorage:         true,
+		Country:           "CH",
+		Description:       "OldDescription",
+		PolicyDependentID: nulls.NewUUID(domain.GetUUID()),
+		PolicyUserID:      nulls.NewUUID(domain.GetUUID()),
+		Make:              "OldMake",
+		Model:             "OldModel",
+		SerialNumber:      "OldSerialNumber",
+		CoverageAmount:    777,
+		PurchaseDate:      time.Date(1991, 1, 1, 1, 1, 1, 1, time.UTC),
+		CoverageStatus:    api.ItemCoverageStatusRevision,
+		CoverageStartDate: time.Date(1992, 2, 2, 2, 2, 2, 2, time.UTC),
+		StatusReason:      "oldStatusReason",
+	}
+
+	tests := []struct {
+		name string
+		new  Item
+		old  Item
+		want []FieldUpdate
+	}{
+		{
+			name: "single test case",
+			new:  newItem,
+			old:  oldItem,
+			want: []FieldUpdate{
+				{
+					FieldName: FieldItemName,
+					OldValue:  oldItem.Name,
+					NewValue:  newItem.Name,
+				},
+				{
+					FieldName: FieldItemCategoryID,
+					OldValue:  oldItem.CategoryID.String(),
+					NewValue:  newItem.CategoryID.String(),
+				},
+				{
+					FieldName: FieldItemRiskCategoryID,
+					OldValue:  oldItem.RiskCategoryID.String(),
+					NewValue:  newItem.RiskCategoryID.String(),
+				},
+				{
+					FieldName: FieldItemInStorage,
+					OldValue:  fmt.Sprintf(`%t`, oldItem.InStorage),
+					NewValue:  fmt.Sprintf(`%t`, newItem.InStorage),
+				},
+				{
+					FieldName: FieldItemCountry,
+					OldValue:  oldItem.Country,
+					NewValue:  newItem.Country,
+				},
+				{
+					FieldName: FieldItemDescription,
+					OldValue:  oldItem.Description,
+					NewValue:  newItem.Description,
+				},
+				{
+					FieldName: FieldItemPolicyDependentID,
+					OldValue:  oldItem.PolicyDependentID.UUID.String(),
+					NewValue:  newItem.PolicyDependentID.UUID.String(),
+				},
+				{
+					FieldName: FieldItemPolicyUserID,
+					OldValue:  oldItem.PolicyUserID.UUID.String(),
+					NewValue:  newItem.PolicyUserID.UUID.String(),
+				},
+				{
+					FieldName: FieldItemMake,
+					OldValue:  oldItem.Make,
+					NewValue:  newItem.Make,
+				},
+				{
+					FieldName: FieldItemModel,
+					OldValue:  oldItem.Model,
+					NewValue:  newItem.Model,
+				},
+				{
+					FieldName: FieldItemSerialNumber,
+					OldValue:  oldItem.SerialNumber,
+					NewValue:  newItem.SerialNumber,
+				},
+				{
+					FieldName: FieldItemCoverageAmount,
+					OldValue:  fmt.Sprintf(`%d`, oldItem.CoverageAmount),
+					NewValue:  fmt.Sprintf(`%d`, newItem.CoverageAmount),
+				},
+				{
+					FieldName: FieldItemPurchaseDate,
+					OldValue:  oldItem.PurchaseDate.Format(domain.DateFormat),
+					NewValue:  newItem.PurchaseDate.Format(domain.DateFormat),
+				},
+				{
+					FieldName: FieldItemCoverageStatus,
+					OldValue:  string(oldItem.CoverageStatus),
+					NewValue:  string(newItem.CoverageStatus),
+				},
+				{
+					FieldName: FieldItemCoverageStartDate,
+					OldValue:  oldItem.CoverageStartDate.Format(domain.DateFormat),
+					NewValue:  newItem.CoverageStartDate.Format(domain.DateFormat),
+				},
+				{
+					FieldName: FieldItemStatusReason,
+					OldValue:  oldItem.StatusReason,
+					NewValue:  newItem.StatusReason,
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		ms.T().Run(tt.name, func(t *testing.T) {
+			got := tt.new.Compare(tt.old)
+			ms.ElementsMatch(tt.want, got)
+		})
+	}
 }

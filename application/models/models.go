@@ -40,8 +40,24 @@ const (
 	PermissionDelete
 	PermissionDenied
 
-	FieldClaimStatus        = "Status"
-	FieldItemCoverageStatus = "CoverageStatus"
+	FieldClaimStatus = "Status"
+
+	FieldItemName              = "Name"
+	FieldItemCategoryID        = "CategoryID"
+	FieldItemRiskCategoryID    = "RiskCategoryID"
+	FieldItemInStorage         = "InStorage"
+	FieldItemCountry           = "Country"
+	FieldItemDescription       = "Description"
+	FieldItemPolicyDependentID = "PolicyDependentID"
+	FieldItemPolicyUserID      = "PolicyUserID"
+	FieldItemMake              = "Make"
+	FieldItemModel             = "Model"
+	FieldItemSerialNumber      = "SerialNumber"
+	FieldItemCoverageAmount    = "CoverageAmount"
+	FieldItemPurchaseDate      = "PurchaseDate"
+	FieldItemCoverageStatus    = "CoverageStatus"
+	FieldItemCoverageStartDate = "CoverageStartDate"
+	FieldItemStatusReason      = "CoverageStatusReason"
 )
 
 type Authable interface {
