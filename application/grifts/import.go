@@ -70,9 +70,6 @@ var entityCodesMap = map[string]uuid.UUID{}
 // policyUserMap is a list of existing PolicyUser records to prevent duplicates
 var policyUserMap = map[string]struct{}{}
 
-// policyNotes is used for accumulating policy notes as policies are merged
-var policyNotes = map[uuid.UUID]string{}
-
 // policyIDMap is a map of legacy ID to new ID
 var policyIDMap = map[int]uuid.UUID{}
 
@@ -363,7 +360,7 @@ func importPolicies(tx *pop.Connection, policies []LegacyPolicy) {
 			policyIDMap[policyID] = policyUUID
 			nDuplicatePolicies++
 			householdsWithMultiplePolicies[p.HouseholdId] = struct{}{}
-			appendNotesToPolicy(tx, policyUUID, p.Notes, policyID)
+			appendToPolicy(tx, policyUUID, p, policyID)
 		} else {
 			householdID := nulls.String{}
 			if p.HouseholdId != "" {
@@ -397,7 +394,6 @@ func importPolicies(tx *pop.Connection, policies []LegacyPolicy) {
 				parseNullStringTimeToTime(p.UpdatedAt, desc+"UpdatedAt"), newPolicy.ID).Exec(); err != nil {
 				log.Fatalf("failed to set updated_at on policies, %s", err)
 			}
-			policyNotes[id] = p.Notes
 
 			policyIDMap[policyID] = policyUUID
 
@@ -466,17 +462,32 @@ func importEntityCode(tx *pop.Connection, code string) uuid.UUID {
 	return newEntityCode.ID
 }
 
-func appendNotesToPolicy(tx *pop.Connection, policyUUID uuid.UUID, newNotes string, legacyID int) {
-	newNotes = fmt.Sprintf("%s (ID=%d)", newNotes, legacyID)
-
-	if policyNotes[policyUUID] != "" {
-		policyNotes[policyUUID] += " ---- " + newNotes
-	} else {
-		policyNotes[policyUUID] = newNotes
+func appendToPolicy(tx *pop.Connection, policyUUID uuid.UUID, p LegacyPolicy, legacyID int) {
+	var policy models.Policy
+	if err := policy.FindByID(tx, policyUUID); err != nil {
+		log.Fatalf("failed to read existing policy %s", policyUUID)
 	}
 
-	err := tx.RawQuery("update policies set notes = ? where id = ?", policyNotes[policyUUID], policyUUID).Exec()
-	if err != nil {
+	newNotes := fmt.Sprintf("%s (ID=%d)", p.Notes, legacyID)
+	if policy.Notes != "" {
+		policy.Notes += " ---- " + newNotes
+	} else {
+		policy.Notes = newNotes
+	}
+
+	if policy.Email != "" {
+		policy.Email += "," + p.Email
+	} else {
+		policy.Email = p.Email
+	}
+
+	if policy.IdentCode != "" {
+		policy.IdentCode += "," + p.IdentCode
+	} else {
+		policy.IdentCode = p.IdentCode
+	}
+
+	if err := tx.UpdateColumns(&policy, "notes", "email", "ident_code"); err != nil {
 		panic(err.Error())
 	}
 }
