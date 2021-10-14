@@ -74,26 +74,28 @@ func (i *Item) Create(tx *pop.Connection) error {
 	return create(tx, i)
 }
 
-func (i *Item) Update(ctx context.Context, oldStatus api.ItemCoverageStatus) error {
+func (i *Item) Update(ctx context.Context) error {
 	tx := Tx(ctx)
-	validTrans, err := isItemTransitionValid(oldStatus, i.CoverageStatus)
+	var oldItem Item
+	if err := oldItem.FindByID(tx, i.ID); err != nil {
+		return appErrorFromDB(err, api.ErrorQueryFailure)
+	}
+	validTrans, err := isItemTransitionValid(oldItem.CoverageStatus, i.CoverageStatus)
 	if err != nil {
 		panic(err)
 	}
 	if !validTrans {
 		err := fmt.Errorf("invalid item coverage status transition from %s to %s",
-			oldStatus, i.CoverageStatus)
+			oldItem.CoverageStatus, i.CoverageStatus)
 		appErr := api.NewAppError(err, api.ErrorValidation, api.CategoryUser)
 		return appErr
 	}
 
-	if i.CoverageStatus != oldStatus {
-		i.LoadPolicy(tx, false)
-		history := i.Policy.NewHistory(ctx, api.HistoryActionUpdate, FieldUpdate{
-			FieldName: FieldItemCoverageStatus,
-			OldValue:  string(oldStatus),
-			NewValue:  string(i.CoverageStatus),
-		})
+	i.LoadPolicy(tx, false)
+
+	updates := i.Compare(oldItem)
+	for ii := range updates {
+		history := i.Policy.NewHistory(ctx, api.HistoryActionUpdate, updates[ii])
 		history.ItemID = nulls.NewUUID(i.ID)
 		if err := history.Create(tx); err != nil {
 			return err
@@ -101,6 +103,21 @@ func (i *Item) Update(ctx context.Context, oldStatus api.ItemCoverageStatus) err
 	}
 
 	return update(tx, i)
+}
+
+// Compare returns a list of fields that are different between two objects
+func (i *Item) Compare(old Item) []FieldUpdate {
+	var updates []FieldUpdate
+
+	if i.CoverageStatus != old.CoverageStatus {
+		updates = append(updates, FieldUpdate{
+			OldValue:  string(old.CoverageStatus),
+			NewValue:  string(i.CoverageStatus),
+			FieldName: FieldItemCoverageStatus,
+		})
+	}
+
+	return updates
 }
 
 func (i *Item) GetID() uuid.UUID {
@@ -151,9 +168,8 @@ func (i *Item) isNewEnough() bool {
 // Inactivate sets the item's CoverageStatus to Inactive
 //  TODO deal with coverage payment changes
 func (i *Item) Inactivate(ctx context.Context) error {
-	oldStatus := i.CoverageStatus
 	i.CoverageStatus = api.ItemCoverageStatusInactive
-	return i.Update(ctx, oldStatus)
+	return i.Update(ctx)
 }
 
 // IsActorAllowedTo ensure the actor is either an admin, or a member of this policy to perform any permission
@@ -260,7 +276,6 @@ func isItemActionAllowed(actorIsAdmin bool, oldStatus api.ItemCoverageStatus, pe
 func (i *Item) SubmitForApproval(ctx context.Context) error {
 	tx := Tx(ctx)
 
-	oldStatus := i.CoverageStatus
 	i.CoverageStatus = api.ItemCoverageStatusPending
 
 	i.Load(tx)
@@ -269,7 +284,7 @@ func (i *Item) SubmitForApproval(ctx context.Context) error {
 		return i.AutoApprove(ctx)
 	}
 
-	if err := i.Update(ctx, oldStatus); err != nil {
+	if err := i.Update(ctx); err != nil {
 		return err
 	}
 
@@ -324,10 +339,9 @@ func (i *Item) canAutoApprove(tx *pop.Connection) bool {
 // Revision takes the item from Pending coverage status to Revision.
 // It assumes that the item's current status has already been validated.
 func (i *Item) Revision(ctx context.Context, reason string) error {
-	oldStatus := i.CoverageStatus
 	i.CoverageStatus = api.ItemCoverageStatusRevision
 	i.StatusReason = reason
-	if err := i.Update(ctx, oldStatus); err != nil {
+	if err := i.Update(ctx); err != nil {
 		return err
 	}
 
@@ -359,9 +373,8 @@ func (i *Item) AutoApprove(ctx context.Context) error {
 // Only emits an event for an email notification if requested.
 // (No need to emit it following an auto-approval which has already emitted and event.)
 func (i *Item) Approve(ctx context.Context, doEmitEvent bool) error {
-	oldStatus := i.CoverageStatus
 	i.CoverageStatus = api.ItemCoverageStatusApproved
-	if err := i.Update(ctx, oldStatus); err != nil {
+	if err := i.Update(ctx); err != nil {
 		return err
 	}
 
@@ -380,13 +393,12 @@ func (i *Item) Approve(ctx context.Context, doEmitEvent bool) error {
 // Deny takes the item from Pending coverage status to Denied.
 // It assumes that the item's current status has already been validated.
 func (i *Item) Deny(ctx context.Context, reason string) error {
-	oldStatus := i.CoverageStatus
 	i.CoverageStatus = api.ItemCoverageStatusDenied
 	i.StatusReason = reason
 
 	i.LoadPolicy(Tx(ctx), false)
 
-	if err := i.Update(ctx, oldStatus); err != nil {
+	if err := i.Update(ctx); err != nil {
 		return err
 	}
 

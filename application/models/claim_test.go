@@ -803,7 +803,7 @@ func (ms *ModelSuite) TestClaim_CreateLedgerEntry() {
 	user := f.Users[0]
 	ctx := CreateTestContext(user)
 	ms.NoError(item.setAccountablePerson(ms.DB, user.ID))
-	ms.NoError(item.Update(ctx, item.CoverageStatus))
+	ms.NoError(item.Update(ctx))
 
 	claim := f.Claims[0]
 

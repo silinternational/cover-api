@@ -404,7 +404,7 @@ func (ms *ModelSuite) TestItem_SubmitForApproval() {
 		{
 			name:       "item without dependent gets auto approval",
 			item:       itemAutoApprove,
-			oldStatus:  api.ItemCoverageStatusPending, // gets changed from draft to pending before update
+			oldStatus:  itemAutoApprove.CoverageStatus,
 			wantStatus: api.ItemCoverageStatusApproved,
 		},
 		{
@@ -422,7 +422,7 @@ func (ms *ModelSuite) TestItem_SubmitForApproval() {
 		{
 			name:       "item for dependent gets auto approval",
 			item:       itemAutoApproveDependent,
-			oldStatus:  api.ItemCoverageStatusPending, // gets changed from draft to pending before update
+			oldStatus:  itemAutoApproveDependent.CoverageStatus,
 			wantStatus: api.ItemCoverageStatusApproved,
 		},
 		{
@@ -434,7 +434,7 @@ func (ms *ModelSuite) TestItem_SubmitForApproval() {
 		{
 			name:       "item missing fields but stationary",
 			item:       itemStationaryMissingFields,
-			oldStatus:  api.ItemCoverageStatusPending, // gets changed from draft to pending before update
+			oldStatus:  itemStationaryMissingFields.CoverageStatus,
 			wantStatus: api.ItemCoverageStatusApproved,
 		},
 		{
@@ -756,7 +756,7 @@ func (ms *ModelSuite) TestItem_CreateLedgerEntry() {
 	ctx := CreateTestContext(user)
 
 	ms.NoError(item.setAccountablePerson(ms.DB, f.Users[0].ID))
-	ms.NoError(item.Update(ctx, item.CoverageStatus))
+	ms.NoError(item.Update(ctx))
 
 	ms.NoError(item.CreateLedgerEntry(ms.DB))
 

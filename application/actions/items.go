@@ -131,7 +131,7 @@ func itemsUpdate(c buffalo.Context) error {
 	newItem.ID = item.ID
 	newItem.StatusReason = item.StatusReason // don't let this change through an update
 
-	if err := newItem.Update(c, item.CoverageStatus); err != nil {
+	if err := newItem.Update(c); err != nil {
 		return reportError(c, err)
 	}
 
