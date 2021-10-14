@@ -85,7 +85,7 @@ func createUserFixtures(tx *pop.Connection) ([]*models.User, error) {
 			FirstName:    "Clark",
 			LastName:     "Kent",
 			LastLoginUTC: time.Now().UTC().Add(time.Hour * -48),
-			StaffID:      "111111",
+			StaffID:      nulls.NewString("111111"),
 			AppRole:      models.AppRoleAdmin,
 		},
 		{
@@ -94,7 +94,7 @@ func createUserFixtures(tx *pop.Connection) ([]*models.User, error) {
 			FirstName:     "Bruce",
 			LastName:      "Wayne",
 			LastLoginUTC:  time.Now().UTC().Add(time.Hour * -47),
-			StaffID:       "111222",
+			StaffID:       nulls.NewString("111222"),
 			AppRole:       models.AppRoleSignator,
 		},
 		{
@@ -103,7 +103,7 @@ func createUserFixtures(tx *pop.Connection) ([]*models.User, error) {
 			FirstName:     "Jason",
 			LastName:      "Todd",
 			LastLoginUTC:  time.Now().UTC().Add(time.Hour * -46),
-			StaffID:       "111333",
+			StaffID:       nulls.NewString("111333"),
 			AppRole:       models.AppRoleSteward,
 		},
 		{
@@ -111,7 +111,7 @@ func createUserFixtures(tx *pop.Connection) ([]*models.User, error) {
 			FirstName:    "Jane",
 			LastName:     "Eyre",
 			LastLoginUTC: time.Now().UTC().Add(time.Hour * -36),
-			StaffID:      "222222",
+			StaffID:      nulls.NewString("222222"),
 		},
 		{
 			Email:        "carol.danvers@example.org",
@@ -119,21 +119,21 @@ func createUserFixtures(tx *pop.Connection) ([]*models.User, error) {
 			LastName:     "Danvers",
 			IsBlocked:    true,
 			LastLoginUTC: time.Now().UTC().Add(time.Hour * -24),
-			StaffID:      "333333",
+			StaffID:      nulls.NewString("333333"),
 		},
 		{
 			Email:        "denethor.ben.ecthelion@example.org",
 			FirstName:    "Denethor",
 			LastName:     "Ben Ecthelion",
 			LastLoginUTC: time.Now().UTC().Add(time.Hour * -18),
-			StaffID:      "444444",
+			StaffID:      nulls.NewString("444444"),
 		},
 		{
 			Email:        "john.smith@example.org",
 			FirstName:    "John",
 			LastName:     "Smith",
 			LastLoginUTC: time.Now().UTC().Add(time.Hour * -12),
-			StaffID:      "555555",
+			StaffID:      nulls.NewString("555555"),
 		},
 	}
 

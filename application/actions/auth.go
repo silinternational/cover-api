@@ -257,7 +257,7 @@ func authCallback(c buffalo.Context) error {
 	authUser.AccessTokenExpiresAt = uat.ExpiresAt.UTC().Unix()
 
 	// set person on rollbar session
-	domain.RollbarSetPerson(c, user.StaffID, user.FirstName, user.LastName, user.Email)
+	domain.RollbarSetPerson(c, user.StaffID.String, user.FirstName, user.LastName, user.Email)
 
 	return c.Redirect(302, getLoginSuccessRedirectURL(*authUser, returnTo))
 }
