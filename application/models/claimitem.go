@@ -3,6 +3,7 @@ package models
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -78,9 +79,16 @@ func (c *ClaimItem) Create(tx *pop.Connection) error {
 }
 
 // Update changes the status if it is a valid transition.
-func (c *ClaimItem) Update(tx *pop.Connection, oldStatus api.ClaimItemStatus, user User) error {
+func (c *ClaimItem) Update(ctx context.Context, oldStatus api.ClaimItemStatus, user User) error {
+	tx := Tx(ctx)
 	// Get the parent Claim's status
 	c.LoadClaim(tx, false)
+
+	var oldClaimItem ClaimItem
+	if err := oldClaimItem.FindByID(tx, c.ID); err != nil {
+		return appErrorFromDB(err, api.ErrorQueryFailure)
+	}
+
 	c.Status = api.ClaimItemStatus(c.Claim.Status)
 
 	// Maybe One day we will want to worry about the status on the ClaimItem itself
@@ -96,6 +104,14 @@ func (c *ClaimItem) Update(tx *pop.Connection, oldStatus api.ClaimItemStatus, us
 		c.ReviewDate = nulls.NewTime(time.Now().UTC())
 	}
 
+	updates := c.Compare(oldClaimItem)
+	for i := range updates {
+		history := c.Claim.NewHistory(ctx, api.HistoryActionUpdate, updates[i])
+		if err := history.Create(tx); err != nil {
+			return appErrorFromDB(err, api.ErrorCreateFailure)
+		}
+	}
+
 	return update(tx, c)
 }
 
@@ -104,7 +120,7 @@ func (c *ClaimItem) Update(tx *pop.Connection, oldStatus api.ClaimItemStatus, us
 func (c *ClaimItem) UpdateByUser(ctx context.Context, oldStatus api.ClaimItemStatus, user User) error {
 	tx := Tx(ctx)
 	if user.IsAdmin() {
-		return c.Update(tx, oldStatus, user)
+		return c.Update(ctx, oldStatus, user)
 	}
 
 	c.LoadClaim(tx, false)
@@ -128,7 +144,7 @@ func (c *ClaimItem) UpdateByUser(ctx context.Context, oldStatus api.ClaimItemSta
 		return err
 	}
 
-	return c.Update(tx, oldStatus, user)
+	return c.Update(ctx, oldStatus, user)
 }
 
 // Maybe one day we will want to do something like this on a ClaimItem
@@ -307,4 +323,115 @@ func ConvertClaimItemCreateInput(input api.ClaimItemCreateInput) ClaimItem {
 	item.Status = api.ClaimItemStatusDraft
 
 	return item
+}
+
+// Compare returns a list of fields that are different between two objects
+func (c *ClaimItem) Compare(old ClaimItem) []FieldUpdate {
+	var updates []FieldUpdate
+
+	if c.ItemID != old.ItemID {
+		updates = append(updates, FieldUpdate{
+			OldValue:  old.ItemID.String(),
+			NewValue:  c.ItemID.String(),
+			FieldName: FieldClaimItemItemID,
+		})
+	}
+
+	if c.Status != old.Status {
+		updates = append(updates, FieldUpdate{
+			OldValue:  string(old.Status),
+			NewValue:  string(c.Status),
+			FieldName: FieldClaimItemStatus,
+		})
+	}
+
+	if c.IsRepairable != old.IsRepairable {
+		updates = append(updates, FieldUpdate{
+			OldValue:  fmt.Sprintf("%t", old.IsRepairable),
+			NewValue:  fmt.Sprintf("%t", c.IsRepairable),
+			FieldName: FieldClaimItemIsRepairable,
+		})
+	}
+
+	if c.RepairEstimate != old.RepairEstimate {
+		updates = append(updates, FieldUpdate{
+			OldValue:  api.Currency(old.RepairEstimate).String(),
+			NewValue:  api.Currency(c.RepairEstimate).String(),
+			FieldName: FieldClaimItemRepairEstimate,
+		})
+	}
+
+	if c.RepairActual != old.RepairActual {
+		updates = append(updates, FieldUpdate{
+			OldValue:  api.Currency(old.RepairActual).String(),
+			NewValue:  api.Currency(c.RepairActual).String(),
+			FieldName: FieldClaimItemRepairActual,
+		})
+	}
+
+	if c.ReplaceEstimate != old.ReplaceEstimate {
+		updates = append(updates, FieldUpdate{
+			OldValue:  api.Currency(old.ReplaceEstimate).String(),
+			NewValue:  api.Currency(c.ReplaceEstimate).String(),
+			FieldName: FieldClaimItemReplaceEstimate,
+		})
+	}
+
+	if c.ReplaceActual != old.ReplaceActual {
+		updates = append(updates, FieldUpdate{
+			OldValue:  api.Currency(old.ReplaceActual).String(),
+			NewValue:  api.Currency(c.ReplaceActual).String(),
+			FieldName: FieldClaimItemReplaceActual,
+		})
+	}
+
+	if c.PayoutOption != old.PayoutOption {
+		updates = append(updates, FieldUpdate{
+			OldValue:  string(old.PayoutOption),
+			NewValue:  string(c.PayoutOption),
+			FieldName: FieldClaimItemPayoutOption,
+		})
+	}
+
+	if c.PayoutAmount != old.PayoutAmount {
+		updates = append(updates, FieldUpdate{
+			OldValue:  api.Currency(old.PayoutAmount).String(),
+			NewValue:  api.Currency(c.PayoutAmount).String(),
+			FieldName: FieldClaimItemPayoutAmount,
+		})
+	}
+
+	if c.FMV != old.FMV {
+		updates = append(updates, FieldUpdate{
+			OldValue:  api.Currency(old.FMV).String(),
+			NewValue:  api.Currency(c.FMV).String(),
+			FieldName: FieldClaimItemFMV,
+		})
+	}
+
+	if c.ReviewDate != old.ReviewDate {
+		updates = append(updates, FieldUpdate{
+			OldValue:  old.ReviewDate.Time.Format(domain.DateFormat),
+			NewValue:  c.ReviewDate.Time.Format(domain.DateFormat),
+			FieldName: FieldClaimItemReviewDate,
+		})
+	}
+
+	if c.ReviewerID != old.ReviewerID {
+		updates = append(updates, FieldUpdate{
+			OldValue:  old.ReviewerID.UUID.String(),
+			NewValue:  c.ReviewerID.UUID.String(),
+			FieldName: FieldClaimItemReviewerID,
+		})
+	}
+
+	if c.Location != old.Location {
+		updates = append(updates, FieldUpdate{
+			OldValue:  old.Location,
+			NewValue:  c.Location,
+			FieldName: FieldClaimItemLocation,
+		})
+	}
+
+	return updates
 }

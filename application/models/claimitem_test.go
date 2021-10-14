@@ -1,12 +1,14 @@
 package models
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
 	"github.com/gobuffalo/nulls"
 
 	"github.com/silinternational/cover-api/api"
+	"github.com/silinternational/cover-api/domain"
 )
 
 func (ms *ModelSuite) TestClaimItem_Validate() {
@@ -408,6 +410,119 @@ func (ms *ModelSuite) TestClaimItem_ValidateForSubmit() {
 			if got := tt.claimItem.ValidateForSubmit(ms.DB); got != tt.want {
 				t.Errorf("ValidateForSubmit() = %v, want %v", got, tt.want)
 			}
+		})
+	}
+}
+
+func (ms *ModelSuite) TestClaimItem_Compare() {
+	fixtures := CreateItemFixtures(ms.DB, FixturesConfig{
+		ClaimsPerPolicy:    1,
+		ClaimItemsPerClaim: 1,
+	})
+	claim := fixtures.Claims[0]
+	claim.LoadClaimItems(ms.DB, false)
+	newCItem := claim.ClaimItems[0]
+
+	oldCItem := ClaimItem{
+		ItemID:          domain.GetUUID(),
+		Status:          api.ClaimItemStatusReview3,
+		IsRepairable:    true,
+		RepairEstimate:  1111,
+		RepairActual:    1112,
+		ReplaceEstimate: 2221,
+		ReplaceActual:   2222,
+		PayoutOption:    api.PayoutOptionReplacement,
+		PayoutAmount:    3331,
+		FMV:             4441,
+		ReviewDate:      nulls.NewTime(time.Date(1991, 1, 1, 1, 1, 1, 1, time.UTC)),
+		ReviewerID:      nulls.NewUUID(domain.GetUUID()),
+		Location:        "Timbuktu",
+	}
+
+	tests := []struct {
+		name string
+		new  ClaimItem
+		old  ClaimItem
+		want []FieldUpdate
+	}{
+		{
+			name: "single test case",
+			new:  newCItem,
+			old:  oldCItem,
+			want: []FieldUpdate{
+				{
+					FieldName: FieldClaimItemItemID,
+					OldValue:  oldCItem.ItemID.String(),
+					NewValue:  newCItem.ItemID.String(),
+				},
+				{
+					FieldName: FieldClaimItemStatus,
+					OldValue:  string(oldCItem.Status),
+					NewValue:  string(newCItem.Status),
+				},
+				{
+					FieldName: FieldClaimItemIsRepairable,
+					OldValue:  fmt.Sprintf("%t", oldCItem.IsRepairable),
+					NewValue:  fmt.Sprintf("%t", newCItem.IsRepairable),
+				},
+				{
+					FieldName: FieldClaimItemRepairEstimate,
+					OldValue:  api.Currency(oldCItem.RepairEstimate).String(),
+					NewValue:  api.Currency(newCItem.RepairEstimate).String(),
+				},
+				{
+					FieldName: FieldClaimItemRepairActual,
+					OldValue:  api.Currency(oldCItem.RepairActual).String(),
+					NewValue:  api.Currency(newCItem.RepairActual).String(),
+				},
+				{
+					FieldName: FieldClaimItemReplaceEstimate,
+					OldValue:  api.Currency(oldCItem.ReplaceEstimate).String(),
+					NewValue:  api.Currency(newCItem.ReplaceEstimate).String(),
+				},
+				{
+					FieldName: FieldClaimItemReplaceActual,
+					OldValue:  api.Currency(oldCItem.ReplaceActual).String(),
+					NewValue:  api.Currency(newCItem.ReplaceActual).String(),
+				},
+				{
+					FieldName: FieldClaimItemPayoutOption,
+					OldValue:  string(oldCItem.PayoutOption),
+					NewValue:  string(newCItem.PayoutOption),
+				},
+				{
+					FieldName: FieldClaimItemPayoutAmount,
+					OldValue:  api.Currency(oldCItem.PayoutAmount).String(),
+					NewValue:  api.Currency(newCItem.PayoutAmount).String(),
+				},
+				{
+					FieldName: FieldClaimItemFMV,
+					OldValue:  api.Currency(oldCItem.FMV).String(),
+					NewValue:  api.Currency(newCItem.FMV).String(),
+				},
+				{
+					FieldName: FieldClaimItemReviewDate,
+					OldValue:  oldCItem.ReviewDate.Time.Format(domain.DateFormat),
+					NewValue:  newCItem.ReviewDate.Time.Format(domain.DateFormat),
+				},
+				{
+					FieldName: FieldClaimItemReviewerID,
+					OldValue:  oldCItem.ReviewerID.UUID.String(),
+					NewValue:  newCItem.ReviewerID.UUID.String(),
+				},
+				{
+					FieldName: FieldClaimItemLocation,
+					OldValue:  oldCItem.Location,
+					NewValue:  newCItem.Location,
+				},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		ms.T().Run(tt.name, func(t *testing.T) {
+			got := tt.new.Compare(tt.old)
+			ms.ElementsMatch(tt.want, got)
 		})
 	}
 }

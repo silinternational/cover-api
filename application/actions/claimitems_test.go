@@ -47,7 +47,9 @@ func (as *ActionSuite) Test_ClaimItemsUpdate() {
 	review3ClaimItem := review3Claim.ClaimItems[0]
 	review3ClaimItem.ReviewerID = nulls.NewUUID(appAdmin.ID)
 	review3ClaimItem.ReviewDate = nulls.NewTime(time.Now().UTC())
-	review3ClaimItem.Update(db, api.ClaimItemStatusReview3, appAdmin)
+
+	ctx := models.CreateTestContext(appAdmin)
+	review3ClaimItem.Update(ctx, api.ClaimItemStatusReview3, appAdmin)
 
 	input := api.ClaimItemUpdateInput{
 		IsRepairable:    true,
