@@ -199,8 +199,8 @@ func (i *Item) Compare(old Item) []FieldUpdate {
 
 	if i.CoverageAmount != old.CoverageAmount {
 		updates = append(updates, FieldUpdate{
-			OldValue:  fmt.Sprintf(`%d`, old.CoverageAmount),
-			NewValue:  fmt.Sprintf(`%d`, i.CoverageAmount),
+			OldValue:  api.Currency(old.CoverageAmount).String(),
+			NewValue:  api.Currency(i.CoverageAmount).String(),
 			FieldName: FieldItemCoverageAmount,
 		})
 	}

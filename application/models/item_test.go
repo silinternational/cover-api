@@ -900,8 +900,8 @@ func (ms *ModelSuite) TestItem_Compare() {
 				},
 				{
 					FieldName: FieldItemCoverageAmount,
-					OldValue:  fmt.Sprintf(`%d`, oldItem.CoverageAmount),
-					NewValue:  fmt.Sprintf(`%d`, newItem.CoverageAmount),
+					OldValue:  api.Currency(oldItem.CoverageAmount).String(),
+					NewValue:  api.Currency(newItem.CoverageAmount).String(),
 				},
 				{
 					FieldName: FieldItemPurchaseDate,
