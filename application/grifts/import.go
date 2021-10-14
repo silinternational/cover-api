@@ -41,11 +41,6 @@ const (
 	defaultID                = "9999999999"
 )
 
-const (
-	SILUsersFilename      = "./sil-users.csv"
-	PartnersUsersFilename = "./partners-users.csv"
-)
-
 var trim = strings.TrimSpace
 
 // userEmailStaffIDMap is a map of email address to staff ID
@@ -75,9 +70,6 @@ var entityCodesMap = map[string]uuid.UUID{}
 // policyUserMap is a list of existing PolicyUser records to prevent duplicates
 var policyUserMap = map[string]struct{}{}
 
-// policyNotes is used for accumulating policy notes as policies are merged
-var policyNotes = map[uuid.UUID]string{}
-
 // policyIDMap is a map of legacy ID to new ID
 var policyIDMap = map[int]uuid.UUID{}
 
@@ -89,10 +81,23 @@ var emptyTime time.Time
 
 var nPolicyUsersWithStaffID int
 
+var idpFilenames = map[string]string{
+	"SIL":      "./sil-users.csv",
+	"USA":      "./usa_idp_users.csv",
+	"WPA":      "./wpa_idp_users.csv",
+	"Partners": "./partners-users.csv",
+}
+
+var workdayFilenames = map[string]string{
+	"WPA": "./wpa_workday.csv",
+	"SIL": "./sil_workday.csv",
+	"USA": "./usa_workday.csv",
+}
+
 var _ = grift.Namespace("db", func() {
 	_ = grift.Desc("import", "Import legacy data")
 	_ = grift.Add("import", func(c *grift.Context) error {
-		importIdpUsers()
+		importCustomers()
 
 		var obj LegacyData
 
@@ -113,7 +118,7 @@ var _ = grift.Namespace("db", func() {
 			return errors.New("json decode error: " + err.Error())
 		}
 
-		fmt.Println("record counts: ")
+		fmt.Println("\nJSON record counts: ")
 		fmt.Printf("  Admin Users: %d\n", len(obj.Users))
 		fmt.Printf("  Policies: %d\n", len(obj.Policies))
 		fmt.Printf("  PolicyTypes: %d\n", len(obj.PolicyTypes))
@@ -145,17 +150,29 @@ func init() {
 	pop.Debug = false // Disable the Pop log messages
 }
 
-func importIdpUsers() {
-	nSilUsers := importIdpUsersFromFile("SIL")
-	fmt.Printf("SIL users: %d\n", nSilUsers)
+func importCustomers() {
+	const IDPStaffIDColumn = 0
+	const IDPEmailColumn = 1
+	const IDPPersonalEmailColumn = 2
+	const WorkdayStaffIDColumn = 0
+	const WorkdayEmailColumn = 5
+	const WorkdayPersonalEmailColumn = 6
 
-	nPartnersUsers := importIdpUsersFromFile("Partners")
-	fmt.Printf("Partners users: %d\n", nPartnersUsers)
+	fmt.Println("\nImporting IDP users")
+	for idp, filename := range idpFilenames {
+		n := importIdpUsersFromFile(filename, IDPStaffIDColumn, IDPEmailColumn, IDPPersonalEmailColumn)
+		fmt.Printf("%s IDP users: %d\n", idp, n)
+	}
+
+	fmt.Println("\nImporting Workday users")
+	for idp, filename := range workdayFilenames {
+		n := importIdpUsersFromFile(filename, WorkdayStaffIDColumn, WorkdayEmailColumn, WorkdayPersonalEmailColumn)
+		fmt.Printf("%s Workday users: %d\n", idp, n)
+	}
 }
 
-func importIdpUsersFromFile(idpName string) int {
-	filenames := map[string]string{"SIL": SILUsersFilename, "Partners": PartnersUsersFilename}
-	f, err := os.Open(filenames[idpName])
+func importIdpUsersFromFile(filename string, idColumn, emailColumn, personalColumn int) int {
+	f, err := os.Open(filename) // #nosec G304
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -174,26 +191,35 @@ func importIdpUsersFromFile(idpName string) int {
 			break
 		}
 		if err != nil {
-			log.Fatalf("failed to read from IDP data file %s, %s", filenames[idpName], err)
+			log.Fatalf("failed to read from IDP data file %s, %s", filename, err)
 		}
 
-		staffID := csvLine[2]
-		email := csvLine[7]
-		if staffID == "NULL" || email == "NULL" {
-			continue
-		}
+		staffID := csvLine[idColumn]
+		email := csvLine[emailColumn]
+		n += addStaffID(staffID, email)
 
-		if userEmailStaffIDMap[strings.ToLower(email)] == "" {
-			userEmailStaffIDMap[strings.ToLower(email)] = staffID
-			n++
-		} else {
-			if userEmailStaffIDMap[strings.ToLower(email)] != staffID {
-				log.Fatalf("in file %s, email address '%s' maps to two different staff IDs: '%s' and '%s'",
-					filenames[idpName], email, userEmailStaffIDMap[strings.ToLower(email)], staffID)
-			}
-		}
+		email = csvLine[personalColumn]
+		n += addStaffID(staffID, email)
 	}
 	return n
+}
+
+func addStaffID(staffID, email string) int {
+	if staffID == "NULL" || staffID == "" || email == "NULL" || email == "" {
+		return 0
+	}
+
+	if userEmailStaffIDMap[strings.ToLower(email)] == "" {
+		userEmailStaffIDMap[strings.ToLower(email)] = staffID
+		return 1
+	}
+
+	if userEmailStaffIDMap[strings.ToLower(email)] != staffID {
+		log.Printf("email address '%s' maps to two different staff IDs: '%s' and '%s'",
+			email, userEmailStaffIDMap[strings.ToLower(email)], staffID)
+	}
+
+	return 0
 }
 
 func assignRiskCategoryCostCenters(tx *pop.Connection) {
@@ -334,7 +360,7 @@ func importPolicies(tx *pop.Connection, policies []LegacyPolicy) {
 			policyIDMap[policyID] = policyUUID
 			nDuplicatePolicies++
 			householdsWithMultiplePolicies[p.HouseholdId] = struct{}{}
-			appendNotesToPolicy(tx, policyUUID, p.Notes, policyID)
+			appendToPolicy(tx, policyUUID, p, policyID)
 		} else {
 			householdID := nulls.String{}
 			if p.HouseholdId != "" {
@@ -368,7 +394,6 @@ func importPolicies(tx *pop.Connection, policies []LegacyPolicy) {
 				parseNullStringTimeToTime(p.UpdatedAt, desc+"UpdatedAt"), newPolicy.ID).Exec(); err != nil {
 				log.Fatalf("failed to set updated_at on policies, %s", err)
 			}
-			policyNotes[id] = p.Notes
 
 			policyIDMap[policyID] = policyUUID
 
@@ -437,17 +462,32 @@ func importEntityCode(tx *pop.Connection, code string) uuid.UUID {
 	return newEntityCode.ID
 }
 
-func appendNotesToPolicy(tx *pop.Connection, policyUUID uuid.UUID, newNotes string, legacyID int) {
-	newNotes = fmt.Sprintf("%s (ID=%d)", newNotes, legacyID)
-
-	if policyNotes[policyUUID] != "" {
-		policyNotes[policyUUID] += " ---- " + newNotes
-	} else {
-		policyNotes[policyUUID] = newNotes
+func appendToPolicy(tx *pop.Connection, policyUUID uuid.UUID, p LegacyPolicy, legacyID int) {
+	var policy models.Policy
+	if err := policy.FindByID(tx, policyUUID); err != nil {
+		log.Fatalf("failed to read existing policy %s", policyUUID)
 	}
 
-	err := tx.RawQuery("update policies set notes = ? where id = ?", policyNotes[policyUUID], policyUUID).Exec()
-	if err != nil {
+	newNotes := fmt.Sprintf("%s (ID=%d)", p.Notes, legacyID)
+	if policy.Notes != "" {
+		policy.Notes += " ---- " + newNotes
+	} else {
+		policy.Notes = newNotes
+	}
+
+	if policy.Email != "" {
+		policy.Email += "," + p.Email
+	} else {
+		policy.Email = p.Email
+	}
+
+	if policy.IdentCode != "" {
+		policy.IdentCode += "," + p.IdentCode
+	} else {
+		policy.IdentCode = p.IdentCode
+	}
+
+	if err := tx.UpdateColumns(&policy, "notes", "email", "ident_code"); err != nil {
 		panic(err.Error())
 	}
 }
@@ -579,6 +619,7 @@ func createUserFromEmailAddress(tx *pop.Connection, email, firstName, lastName s
 	if err := user.Create(tx); err != nil {
 		log.Fatalf("failed to create new User for policy, %s", err)
 	}
+	userStaffIDMap[staffID.String] = user.ID
 	userEmailMap[email] = user.ID
 	return 1, user.ID
 }
