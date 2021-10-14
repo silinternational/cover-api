@@ -33,7 +33,10 @@ func (p *PolicyHistory) Validate(tx *pop.Connection) (*validate.Errors, error) {
 }
 
 func (p *PolicyHistory) Create(tx *pop.Connection) error {
-	return create(tx, p)
+	if err := create(tx, p); err != nil {
+		return appErrorFromDB(err, api.ErrorCreateFailure)
+	}
+	return nil
 }
 
 func (p *PolicyHistory) GetID() uuid.UUID {
