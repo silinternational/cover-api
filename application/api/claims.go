@@ -132,6 +132,8 @@ type Claim struct {
 	// message from a reviewer detailing the revisions needed
 	StatusReason string `json:"status_reason"`
 
+	MayPerform map[string]bool `json:"may_perform"`
+
 	// list of items included in claim
 	Items ClaimItems `json:"claim_items"`
 

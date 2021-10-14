@@ -602,7 +602,7 @@ func (ms *ModelSuite) TestClaim_ConvertToAPI() {
 	})
 	claim.StatusReason = "change request " + domain.RandomString(8, "0123456789")
 
-	got := claim.ConvertToAPI(ms.DB)
+	got := claim.ConvertToAPI(ms.DB, User{})
 
 	ms.Equal(claim.ID, got.ID, "ID is not correct")
 	ms.Equal(claim.PolicyID, got.PolicyID, "PolicyID is not correct")
@@ -778,7 +778,7 @@ func (ms *ModelSuite) Test_ClaimsWithRecentStatusChanges() {
 	fixtures := CreateClaimHistoryFixtures_RecentClaimStatusChanges(ms.DB)
 	chFixes := fixtures.ClaimHistories
 
-	gotRaw, gotErr := ClaimsWithRecentStatusChanges(ms.DB)
+	gotRaw, gotErr := ClaimsWithRecentStatusChanges(ms.DB, User{})
 	ms.NoError(gotErr)
 
 	const tmFmt = "Jan _2 15:04:05.00"
