@@ -14,6 +14,8 @@ import (
 
 func (ms *ModelSuite) TestLedgerEntries_AllForMonth() {
 	f := CreateItemFixtures(ms.DB, FixturesConfig{ItemsPerPolicy: 2})
+	user := f.Users[0]
+	ctx := CreateTestContext(user)
 
 	march := time.Date(2021, 3, 1, 0, 0, 0, 0, time.UTC)
 	april := time.Date(2021, 4, 1, 0, 0, 0, 0, time.UTC)
@@ -23,7 +25,7 @@ func (ms *ModelSuite) TestLedgerEntries_AllForMonth() {
 	datesEntered := []nulls.Time{nulls.NewTime(april), {}}
 
 	for i := range f.Items {
-		ms.NoError(f.Items[i].Approve(ms.DB, false))
+		ms.NoError(f.Items[i].Approve(ctx, false))
 
 		entry := LedgerEntry{}
 		ms.NoError(ms.DB.Where("item_id = ?", f.Items[i].ID).First(&entry))

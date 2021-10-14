@@ -799,8 +799,11 @@ func (ms *ModelSuite) Test_ClaimsWithRecentStatusChanges() {
 func (ms *ModelSuite) TestClaim_CreateLedgerEntry() {
 	f := CreateItemFixtures(ms.DB, FixturesConfig{ClaimsPerPolicy: 1})
 	item := f.Items[0]
-	ms.NoError(item.setAccountablePerson(ms.DB, f.Users[0].ID))
-	ms.NoError(item.Update(ms.DB, item.CoverageStatus))
+
+	user := f.Users[0]
+	ctx := CreateTestContext(user)
+	ms.NoError(item.setAccountablePerson(ms.DB, user.ID))
+	ms.NoError(item.Update(ctx))
 
 	claim := f.Claims[0]
 
@@ -820,6 +823,6 @@ func (ms *ModelSuite) TestClaim_CreateLedgerEntry() {
 	ms.Equal(item.ID, le.ItemID.UUID, "ItemID is incorrect")
 	ms.Equal(claim.ID, le.ClaimID.UUID, "ClaimID is incorrect")
 	ms.Equal(-12345, le.Amount, "Amount is incorrect")
-	ms.Equal(f.Users[0].FirstName, le.FirstName, "FirstName is incorrect")
-	ms.Equal(f.Users[0].LastName, le.LastName, "LastName is incorrect")
+	ms.Equal(user.FirstName, le.FirstName, "FirstName is incorrect")
+	ms.Equal(user.LastName, le.LastName, "LastName is incorrect")
 }

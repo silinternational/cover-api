@@ -1,6 +1,7 @@
 package models
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -398,56 +399,87 @@ func (ms *ModelSuite) TestItem_SubmitForApproval() {
 	tests := []struct {
 		name       string
 		item       Item
+		oldStatus  api.ItemCoverageStatus
 		wantStatus api.ItemCoverageStatus
 	}{
 		{
 			name:       "item without dependent gets auto approval",
 			item:       itemAutoApprove,
+			oldStatus:  itemAutoApprove.CoverageStatus,
 			wantStatus: api.ItemCoverageStatusApproved,
 		},
 		{
 			name:       "item requires manual approval",
 			item:       itemManualApprove,
+			oldStatus:  itemManualApprove.CoverageStatus,
 			wantStatus: api.ItemCoverageStatusPending,
 		},
 		{
 			name:       "item for dependent requires manual approval",
 			item:       itemManualApproveDependent,
+			oldStatus:  itemManualApproveDependent.CoverageStatus,
 			wantStatus: api.ItemCoverageStatusPending,
 		},
 		{
 			name:       "item for dependent gets auto approval",
 			item:       itemAutoApproveDependent,
+			oldStatus:  itemAutoApproveDependent.CoverageStatus,
 			wantStatus: api.ItemCoverageStatusApproved,
 		},
 		{
 			name:       "item coverage amount exceeds max",
 			item:       itemExceedsMax,
+			oldStatus:  itemExceedsMax.CoverageStatus,
 			wantStatus: api.ItemCoverageStatusPending,
 		},
 		{
 			name:       "item missing fields but stationary",
 			item:       itemStationaryMissingFields,
+			oldStatus:  itemStationaryMissingFields.CoverageStatus,
 			wantStatus: api.ItemCoverageStatusApproved,
 		},
 		{
 			name:       "mobile item missing make",
 			item:       itemMobileMissingMake,
+			oldStatus:  itemMobileMissingMake.CoverageStatus,
 			wantStatus: api.ItemCoverageStatusPending,
 		},
 		{
 			name:       "mobile item missing model",
 			item:       itemMobileMissingModel,
+			oldStatus:  itemMobileMissingModel.CoverageStatus,
 			wantStatus: api.ItemCoverageStatusPending,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := tt.item.SubmitForApproval(ms.DB)
+			tt.item.LoadPolicy(ms.DB, false)
+			tt.item.Policy.LoadMembers(ms.DB, false)
+			ctxUser := policy.Members[0]
+			ctx := CreateTestContext(ctxUser)
+
+			got := tt.item.SubmitForApproval(ctx)
 			ms.NoError(got)
 
 			ms.Equal(tt.wantStatus, tt.item.CoverageStatus, "incorrect status")
+
+			var gotH PolicyHistory
+			ms.NoError(ms.DB.Last(&gotH), "error fetching PolicyHistory from db")
+			wantH := PolicyHistory{
+				ID:        gotH.ID, // Not concerned about testing auto-generated fields
+				PolicyID:  tt.item.PolicyID,
+				UserID:    ctxUser.ID,
+				ItemID:    nulls.NewUUID(tt.item.ID),
+				Action:    api.HistoryActionUpdate,
+				FieldName: FieldItemCoverageStatus,
+				OldValue:  string(tt.oldStatus),
+				NewValue:  string(tt.wantStatus),
+				CreatedAt: gotH.CreatedAt,
+				UpdatedAt: gotH.UpdatedAt,
+			}
+
+			ms.Equal(wantH, gotH, "incorrect policy history")
 		})
 	}
 }
@@ -465,6 +497,8 @@ func (ms *ModelSuite) TestItem_SafeDeleteOrInactivate() {
 	policy.LoadItems(ms.DB, false)
 	user := policy.Members[0]
 	items := policy.Items
+
+	ctx := CreateTestContext(user)
 
 	now := time.Now().UTC()
 	oldTime := now.Add(time.Hour * time.Duration(domain.ItemDeleteCutOffHours+1) * -1)
@@ -548,7 +582,7 @@ func (ms *ModelSuite) TestItem_SafeDeleteOrInactivate() {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := tt.item.SafeDeleteOrInactivate(ms.DB, user)
+			got := tt.item.SafeDeleteOrInactivate(ctx, user)
 			ms.NoError(got)
 
 			dbItem := Item{}
@@ -718,8 +752,12 @@ func (ms *ModelSuite) TestItem_GetProratedPremium() {
 func (ms *ModelSuite) TestItem_CreateLedgerEntry() {
 	f := CreateItemFixtures(ms.DB, FixturesConfig{})
 	item := f.Items[0]
+
+	user := f.Users[0]
+	ctx := CreateTestContext(user)
+
 	ms.NoError(item.setAccountablePerson(ms.DB, f.Users[0].ID))
-	ms.NoError(item.Update(ms.DB, item.CoverageStatus))
+	ms.NoError(item.Update(ctx))
 
 	ms.NoError(item.CreateLedgerEntry(ms.DB))
 
@@ -730,8 +768,8 @@ func (ms *ModelSuite) TestItem_CreateLedgerEntry() {
 	ms.Equal(item.PolicyID, le.PolicyID, "PolicyID is incorrect")
 	ms.Equal(item.ID, le.ItemID.UUID, "ItemID is incorrect")
 	ms.Equal(2500, le.Amount, "Amount is incorrect")
-	ms.Equal(f.Users[0].FirstName, le.FirstName, "FirstName is incorrect")
-	ms.Equal(f.Users[0].LastName, le.LastName, "LastName is incorrect")
+	ms.Equal(user.FirstName, le.FirstName, "FirstName is incorrect")
+	ms.Equal(user.LastName, le.LastName, "LastName is incorrect")
 }
 
 func (ms *ModelSuite) TestItem_GetAccountablePersonName() {
@@ -769,4 +807,129 @@ func (ms *ModelSuite) Test_ItemsWithRecentStatusChanges() {
 	}
 
 	ms.ElementsMatch(want, got, "incorrect results")
+}
+
+func (ms *ModelSuite) TestItem_Compare() {
+	fixtures := CreateItemFixtures(ms.DB, FixturesConfig{})
+	newItem := fixtures.Items[0]
+
+	oldItem := Item{
+		Name:              "OldName",
+		CategoryID:        domain.GetUUID(),
+		RiskCategoryID:    domain.GetUUID(),
+		InStorage:         true,
+		Country:           "CH",
+		Description:       "OldDescription",
+		PolicyDependentID: nulls.NewUUID(domain.GetUUID()),
+		PolicyUserID:      nulls.NewUUID(domain.GetUUID()),
+		Make:              "OldMake",
+		Model:             "OldModel",
+		SerialNumber:      "OldSerialNumber",
+		CoverageAmount:    777,
+		PurchaseDate:      time.Date(1991, 1, 1, 1, 1, 1, 1, time.UTC),
+		CoverageStatus:    api.ItemCoverageStatusRevision,
+		CoverageStartDate: time.Date(1992, 2, 2, 2, 2, 2, 2, time.UTC),
+		StatusReason:      "oldStatusReason",
+	}
+
+	tests := []struct {
+		name string
+		new  Item
+		old  Item
+		want []FieldUpdate
+	}{
+		{
+			name: "single test case",
+			new:  newItem,
+			old:  oldItem,
+			want: []FieldUpdate{
+				{
+					FieldName: FieldItemName,
+					OldValue:  oldItem.Name,
+					NewValue:  newItem.Name,
+				},
+				{
+					FieldName: FieldItemCategoryID,
+					OldValue:  oldItem.CategoryID.String(),
+					NewValue:  newItem.CategoryID.String(),
+				},
+				{
+					FieldName: FieldItemRiskCategoryID,
+					OldValue:  oldItem.RiskCategoryID.String(),
+					NewValue:  newItem.RiskCategoryID.String(),
+				},
+				{
+					FieldName: FieldItemInStorage,
+					OldValue:  fmt.Sprintf(`%t`, oldItem.InStorage),
+					NewValue:  fmt.Sprintf(`%t`, newItem.InStorage),
+				},
+				{
+					FieldName: FieldItemCountry,
+					OldValue:  oldItem.Country,
+					NewValue:  newItem.Country,
+				},
+				{
+					FieldName: FieldItemDescription,
+					OldValue:  oldItem.Description,
+					NewValue:  newItem.Description,
+				},
+				{
+					FieldName: FieldItemPolicyDependentID,
+					OldValue:  oldItem.PolicyDependentID.UUID.String(),
+					NewValue:  newItem.PolicyDependentID.UUID.String(),
+				},
+				{
+					FieldName: FieldItemPolicyUserID,
+					OldValue:  oldItem.PolicyUserID.UUID.String(),
+					NewValue:  newItem.PolicyUserID.UUID.String(),
+				},
+				{
+					FieldName: FieldItemMake,
+					OldValue:  oldItem.Make,
+					NewValue:  newItem.Make,
+				},
+				{
+					FieldName: FieldItemModel,
+					OldValue:  oldItem.Model,
+					NewValue:  newItem.Model,
+				},
+				{
+					FieldName: FieldItemSerialNumber,
+					OldValue:  oldItem.SerialNumber,
+					NewValue:  newItem.SerialNumber,
+				},
+				{
+					FieldName: FieldItemCoverageAmount,
+					OldValue:  api.Currency(oldItem.CoverageAmount).String(),
+					NewValue:  api.Currency(newItem.CoverageAmount).String(),
+				},
+				{
+					FieldName: FieldItemPurchaseDate,
+					OldValue:  oldItem.PurchaseDate.Format(domain.DateFormat),
+					NewValue:  newItem.PurchaseDate.Format(domain.DateFormat),
+				},
+				{
+					FieldName: FieldItemCoverageStatus,
+					OldValue:  string(oldItem.CoverageStatus),
+					NewValue:  string(newItem.CoverageStatus),
+				},
+				{
+					FieldName: FieldItemCoverageStartDate,
+					OldValue:  oldItem.CoverageStartDate.Format(domain.DateFormat),
+					NewValue:  newItem.CoverageStartDate.Format(domain.DateFormat),
+				},
+				{
+					FieldName: FieldItemStatusReason,
+					OldValue:  oldItem.StatusReason,
+					NewValue:  newItem.StatusReason,
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		ms.T().Run(tt.name, func(t *testing.T) {
+			got := tt.new.Compare(tt.old)
+			ms.ElementsMatch(tt.want, got)
+		})
+	}
 }

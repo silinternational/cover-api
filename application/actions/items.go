@@ -131,7 +131,7 @@ func itemsUpdate(c buffalo.Context) error {
 	newItem.ID = item.ID
 	newItem.StatusReason = item.StatusReason // don't let this change through an update
 
-	if err := newItem.Update(tx, item.CoverageStatus); err != nil {
+	if err := newItem.Update(c); err != nil {
 		return reportError(c, err)
 	}
 
@@ -160,7 +160,7 @@ func itemsSubmit(c buffalo.Context) error {
 	tx := models.Tx(c)
 	item := getReferencedItemFromCtx(c)
 
-	if err := item.SubmitForApproval(tx); err != nil {
+	if err := item.SubmitForApproval(c); err != nil {
 		return reportError(c, err)
 	}
 
@@ -200,7 +200,7 @@ func itemsRevision(c buffalo.Context) error {
 		return reportError(c, err)
 	}
 
-	if err := item.Revision(tx, input.StatusReason); err != nil {
+	if err := item.Revision(c, input.StatusReason); err != nil {
 		return reportError(c, err)
 	}
 
@@ -229,7 +229,7 @@ func itemsApprove(c buffalo.Context) error {
 	tx := models.Tx(c)
 	item := getReferencedItemFromCtx(c)
 
-	if err := item.Approve(tx, true); err != nil {
+	if err := item.Approve(c, true); err != nil {
 		return reportError(c, err)
 	}
 
@@ -269,7 +269,7 @@ func itemsDeny(c buffalo.Context) error {
 		return reportError(c, err)
 	}
 
-	if err := item.Deny(tx, input.StatusReason); err != nil {
+	if err := item.Deny(c, input.StatusReason); err != nil {
 		return reportError(c, err)
 	}
 
@@ -294,12 +294,11 @@ func itemsDeny(c buffalo.Context) error {
 //   '204':
 //     description: OK but no content in response
 func itemsRemove(c buffalo.Context) error {
-	tx := models.Tx(c)
 	item := getReferencedItemFromCtx(c)
 
 	user := models.CurrentUser(c)
 
-	if err := item.SafeDeleteOrInactivate(tx, user); err != nil {
+	if err := item.SafeDeleteOrInactivate(c, user); err != nil {
 		return reportError(c, err)
 	}
 
