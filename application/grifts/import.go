@@ -209,14 +209,17 @@ func addStaffID(staffID, email string) int {
 		return 0
 	}
 
-	if userEmailStaffIDMap[strings.ToLower(email)] == "" {
-		userEmailStaffIDMap[strings.ToLower(email)] = staffID
+	trim(email)
+	strings.ToLower(email)
+
+	if userEmailStaffIDMap[email] == "" {
+		userEmailStaffIDMap[email] = staffID
 		return 1
 	}
 
-	if userEmailStaffIDMap[strings.ToLower(email)] != staffID {
+	if userEmailStaffIDMap[email] != staffID {
 		log.Printf("email address '%s' maps to two different staff IDs: '%s' and '%s'",
-			email, userEmailStaffIDMap[strings.ToLower(email)], staffID)
+			email, userEmailStaffIDMap[email], staffID)
 	}
 
 	return 0
