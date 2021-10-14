@@ -1,6 +1,7 @@
 package models
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"math"
@@ -73,7 +74,8 @@ func (i *Item) Create(tx *pop.Connection) error {
 	return create(tx, i)
 }
 
-func (i *Item) Update(tx *pop.Connection, oldStatus api.ItemCoverageStatus) error {
+func (i *Item) Update(ctx context.Context, oldStatus api.ItemCoverageStatus) error {
+	tx := Tx(ctx)
 	validTrans, err := isItemTransitionValid(oldStatus, i.CoverageStatus)
 	if err != nil {
 		panic(err)
@@ -84,6 +86,20 @@ func (i *Item) Update(tx *pop.Connection, oldStatus api.ItemCoverageStatus) erro
 		appErr := api.NewAppError(err, api.ErrorValidation, api.CategoryUser)
 		return appErr
 	}
+
+	if i.CoverageStatus != oldStatus {
+		i.LoadPolicy(tx, false)
+		history := i.Policy.NewHistory(ctx, api.HistoryActionUpdate, FieldUpdate{
+			FieldName: FieldItemCoverageStatus,
+			OldValue:  string(oldStatus),
+			NewValue:  string(i.CoverageStatus),
+		})
+		history.ItemID = nulls.NewUUID(i.ID)
+		if err := history.Create(tx); err != nil {
+			return err
+		}
+	}
+
 	return update(tx, i)
 }
 
@@ -99,17 +115,18 @@ func (i *Item) FindByID(tx *pop.Connection, id uuid.UUID) error {
 //  and if it has a Draft, Revision or Pending status.
 //  If the item's status is Denied or Inactive, it does nothing.
 //  Otherwise, it changes its status to Inactive.
-func (i *Item) SafeDeleteOrInactivate(tx *pop.Connection, actor User) error {
+func (i *Item) SafeDeleteOrInactivate(ctx context.Context, actor User) error {
+	tx := Tx(ctx)
 	switch i.CoverageStatus {
 	case api.ItemCoverageStatusInactive, api.ItemCoverageStatusDenied:
 		return nil
 	case api.ItemCoverageStatusApproved:
-		return i.Inactivate(tx)
+		return i.Inactivate(ctx)
 	case api.ItemCoverageStatusDraft, api.ItemCoverageStatusRevision, api.ItemCoverageStatusPending:
 		if i.isNewEnough() {
 			return tx.Destroy(i)
 		}
-		return i.Inactivate(tx)
+		return i.Inactivate(ctx)
 	default:
 		panic(`invalid item status in SafeDeleteOrInactivate`)
 	}
@@ -133,10 +150,10 @@ func (i *Item) isNewEnough() bool {
 
 // Inactivate sets the item's CoverageStatus to Inactive
 //  TODO deal with coverage payment changes
-func (i *Item) Inactivate(tx *pop.Connection) error {
+func (i *Item) Inactivate(ctx context.Context) error {
 	oldStatus := i.CoverageStatus
 	i.CoverageStatus = api.ItemCoverageStatusInactive
-	return i.Update(tx, oldStatus)
+	return i.Update(ctx, oldStatus)
 }
 
 // IsActorAllowedTo ensure the actor is either an admin, or a member of this policy to perform any permission
@@ -240,17 +257,19 @@ func isItemActionAllowed(actorIsAdmin bool, oldStatus api.ItemCoverageStatus, pe
 
 // SubmitForApproval takes the item from Draft or Revision status to Pending or Approved status.
 // It assumes that the item's current status has already been validated.
-func (i *Item) SubmitForApproval(tx *pop.Connection) error {
+func (i *Item) SubmitForApproval(ctx context.Context) error {
+	tx := Tx(ctx)
+
 	oldStatus := i.CoverageStatus
 	i.CoverageStatus = api.ItemCoverageStatusPending
 
 	i.Load(tx)
 
 	if i.canAutoApprove(tx) {
-		return i.AutoApprove(tx)
+		return i.AutoApprove(ctx)
 	}
 
-	if err := i.Update(tx, oldStatus); err != nil {
+	if err := i.Update(ctx, oldStatus); err != nil {
 		return err
 	}
 
@@ -304,11 +323,11 @@ func (i *Item) canAutoApprove(tx *pop.Connection) bool {
 
 // Revision takes the item from Pending coverage status to Revision.
 // It assumes that the item's current status has already been validated.
-func (i *Item) Revision(tx *pop.Connection, reason string) error {
+func (i *Item) Revision(ctx context.Context, reason string) error {
 	oldStatus := i.CoverageStatus
 	i.CoverageStatus = api.ItemCoverageStatusRevision
 	i.StatusReason = reason
-	if err := i.Update(tx, oldStatus); err != nil {
+	if err := i.Update(ctx, oldStatus); err != nil {
 		return err
 	}
 
@@ -324,7 +343,7 @@ func (i *Item) Revision(tx *pop.Connection, reason string) error {
 
 // AutoApprove fires an event and marks the item as `Approved`
 // It assumes that the item's current status has already been validated.
-func (i *Item) AutoApprove(tx *pop.Connection) error {
+func (i *Item) AutoApprove(ctx context.Context) error {
 	e := events.Event{
 		Kind:    domain.EventApiItemAutoApproved,
 		Message: fmt.Sprintf("Item AutoApproved: %s  ID: %s", i.Name, i.ID.String()),
@@ -332,17 +351,17 @@ func (i *Item) AutoApprove(tx *pop.Connection) error {
 	}
 	emitEvent(e)
 
-	return i.Approve(tx, true)
+	return i.Approve(ctx, true)
 }
 
 // Approve takes the item from Pending coverage status to Approved.
 // It assumes that the item's current status has already been validated.
 // Only emits an event for an email notification if requested.
 // (No need to emit it following an auto-approval which has already emitted and event.)
-func (i *Item) Approve(tx *pop.Connection, doEmitEvent bool) error {
+func (i *Item) Approve(ctx context.Context, doEmitEvent bool) error {
 	oldStatus := i.CoverageStatus
 	i.CoverageStatus = api.ItemCoverageStatusApproved
-	if err := i.Update(tx, oldStatus); err != nil {
+	if err := i.Update(ctx, oldStatus); err != nil {
 		return err
 	}
 
@@ -355,16 +374,19 @@ func (i *Item) Approve(tx *pop.Connection, doEmitEvent bool) error {
 		emitEvent(e)
 	}
 
-	return i.CreateLedgerEntry(tx)
+	return i.CreateLedgerEntry(Tx(ctx))
 }
 
 // Deny takes the item from Pending coverage status to Denied.
 // It assumes that the item's current status has already been validated.
-func (i *Item) Deny(tx *pop.Connection, reason string) error {
+func (i *Item) Deny(ctx context.Context, reason string) error {
 	oldStatus := i.CoverageStatus
 	i.CoverageStatus = api.ItemCoverageStatusDenied
 	i.StatusReason = reason
-	if err := i.Update(tx, oldStatus); err != nil {
+
+	i.LoadPolicy(Tx(ctx), false)
+
+	if err := i.Update(ctx, oldStatus); err != nil {
 		return err
 	}
 

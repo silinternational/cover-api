@@ -398,56 +398,87 @@ func (ms *ModelSuite) TestItem_SubmitForApproval() {
 	tests := []struct {
 		name       string
 		item       Item
+		oldStatus  api.ItemCoverageStatus
 		wantStatus api.ItemCoverageStatus
 	}{
 		{
 			name:       "item without dependent gets auto approval",
 			item:       itemAutoApprove,
+			oldStatus:  api.ItemCoverageStatusPending, // gets changed from draft to pending before update
 			wantStatus: api.ItemCoverageStatusApproved,
 		},
 		{
 			name:       "item requires manual approval",
 			item:       itemManualApprove,
+			oldStatus:  itemManualApprove.CoverageStatus,
 			wantStatus: api.ItemCoverageStatusPending,
 		},
 		{
 			name:       "item for dependent requires manual approval",
 			item:       itemManualApproveDependent,
+			oldStatus:  itemManualApproveDependent.CoverageStatus,
 			wantStatus: api.ItemCoverageStatusPending,
 		},
 		{
 			name:       "item for dependent gets auto approval",
 			item:       itemAutoApproveDependent,
+			oldStatus:  api.ItemCoverageStatusPending, // gets changed from draft to pending before update
 			wantStatus: api.ItemCoverageStatusApproved,
 		},
 		{
 			name:       "item coverage amount exceeds max",
 			item:       itemExceedsMax,
+			oldStatus:  itemExceedsMax.CoverageStatus,
 			wantStatus: api.ItemCoverageStatusPending,
 		},
 		{
 			name:       "item missing fields but stationary",
 			item:       itemStationaryMissingFields,
+			oldStatus:  api.ItemCoverageStatusPending, // gets changed from draft to pending before update
 			wantStatus: api.ItemCoverageStatusApproved,
 		},
 		{
 			name:       "mobile item missing make",
 			item:       itemMobileMissingMake,
+			oldStatus:  itemMobileMissingMake.CoverageStatus,
 			wantStatus: api.ItemCoverageStatusPending,
 		},
 		{
 			name:       "mobile item missing model",
 			item:       itemMobileMissingModel,
+			oldStatus:  itemMobileMissingModel.CoverageStatus,
 			wantStatus: api.ItemCoverageStatusPending,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := tt.item.SubmitForApproval(ms.DB)
+			tt.item.LoadPolicy(ms.DB, false)
+			tt.item.Policy.LoadMembers(ms.DB, false)
+			ctxUser := policy.Members[0]
+			ctx := CreateTestContext(ctxUser)
+
+			got := tt.item.SubmitForApproval(ctx)
 			ms.NoError(got)
 
 			ms.Equal(tt.wantStatus, tt.item.CoverageStatus, "incorrect status")
+
+			var gotH PolicyHistory
+			ms.NoError(ms.DB.Last(&gotH), "error fetching PolicyHistory from db")
+			wantH := PolicyHistory{
+				ID:        gotH.ID, // Not concerned about testing auto-generated fields
+				PolicyID:  tt.item.PolicyID,
+				UserID:    ctxUser.ID,
+				ItemID:    nulls.NewUUID(tt.item.ID),
+				Action:    api.HistoryActionUpdate,
+				FieldName: FieldItemCoverageStatus,
+				OldValue:  string(tt.oldStatus),
+				NewValue:  string(tt.wantStatus),
+				CreatedAt: gotH.CreatedAt,
+				UpdatedAt: gotH.UpdatedAt,
+			}
+
+			ms.Equal(wantH, gotH, "incorrect policy history")
 		})
 	}
 }
@@ -465,6 +496,8 @@ func (ms *ModelSuite) TestItem_SafeDeleteOrInactivate() {
 	policy.LoadItems(ms.DB, false)
 	user := policy.Members[0]
 	items := policy.Items
+
+	ctx := CreateTestContext(user)
 
 	now := time.Now().UTC()
 	oldTime := now.Add(time.Hour * time.Duration(domain.ItemDeleteCutOffHours+1) * -1)
@@ -548,7 +581,7 @@ func (ms *ModelSuite) TestItem_SafeDeleteOrInactivate() {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := tt.item.SafeDeleteOrInactivate(ms.DB, user)
+			got := tt.item.SafeDeleteOrInactivate(ctx, user)
 			ms.NoError(got)
 
 			dbItem := Item{}
@@ -718,8 +751,12 @@ func (ms *ModelSuite) TestItem_GetProratedPremium() {
 func (ms *ModelSuite) TestItem_CreateLedgerEntry() {
 	f := CreateItemFixtures(ms.DB, FixturesConfig{})
 	item := f.Items[0]
+
+	user := f.Users[0]
+	ctx := CreateTestContext(user)
+
 	ms.NoError(item.setAccountablePerson(ms.DB, f.Users[0].ID))
-	ms.NoError(item.Update(ms.DB, item.CoverageStatus))
+	ms.NoError(item.Update(ctx, item.CoverageStatus))
 
 	ms.NoError(item.CreateLedgerEntry(ms.DB))
 
@@ -730,8 +767,8 @@ func (ms *ModelSuite) TestItem_CreateLedgerEntry() {
 	ms.Equal(item.PolicyID, le.PolicyID, "PolicyID is incorrect")
 	ms.Equal(item.ID, le.ItemID.UUID, "ItemID is incorrect")
 	ms.Equal(2500, le.Amount, "Amount is incorrect")
-	ms.Equal(f.Users[0].FirstName, le.FirstName, "FirstName is incorrect")
-	ms.Equal(f.Users[0].LastName, le.LastName, "LastName is incorrect")
+	ms.Equal(user.FirstName, le.FirstName, "FirstName is incorrect")
+	ms.Equal(user.LastName, le.LastName, "LastName is incorrect")
 }
 
 func (ms *ModelSuite) TestItem_GetAccountablePersonName() {
