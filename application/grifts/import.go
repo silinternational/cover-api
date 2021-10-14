@@ -533,9 +533,7 @@ func createPolicyUser(tx *pop.Connection, email, firstName, lastName string, pol
 	email = strings.ToLower(email)
 	userID, ok := userEmailMap[email]
 	if !ok {
-		user := createUserFromEmailAddress(tx, email, firstName, lastName)
-		userID = user.ID
-		result.usersCreated = 1
+		result.usersCreated, userID = createUserFromEmailAddress(tx, email, firstName, lastName)
 	}
 
 	if _, ok = policyUserMap[policyID.String()+userID.String()]; ok {
@@ -556,7 +554,7 @@ func createPolicyUser(tx *pop.Connection, email, firstName, lastName string, pol
 	return result
 }
 
-func createUserFromEmailAddress(tx *pop.Connection, email, firstName, lastName string) models.User {
+func createUserFromEmailAddress(tx *pop.Connection, email, firstName, lastName string) (int, uuid.UUID) {
 	var staffID nulls.String
 	if id, ok := userEmailStaffIDMap[email]; ok {
 		staffID = nulls.NewString(id)
@@ -564,6 +562,12 @@ func createUserFromEmailAddress(tx *pop.Connection, email, firstName, lastName s
 		nPolicyUsersWithStaffID++
 	}
 
+	// check for existing user with this staff ID
+	if staffID.Valid {
+		if userID, ok := userStaffIDMap[staffID.String]; ok {
+			return 0, userID
+		}
+	}
 	user := models.User{
 		Email:        email,
 		FirstName:    trim(firstName),
@@ -576,7 +580,7 @@ func createUserFromEmailAddress(tx *pop.Connection, email, firstName, lastName s
 		log.Fatalf("failed to create new User for policy, %s", err)
 	}
 	userEmailMap[email] = user.ID
-	return user
+	return 1, user.ID
 }
 
 func validMailAddress(address string) (string, bool) {
