@@ -67,11 +67,14 @@ var householdPolicyMap = map[string]uuid.UUID{}
 // entityCodesMap is a map of entity code to entity code UUID
 var entityCodesMap = map[string]uuid.UUID{}
 
-// policyUserMap is a list of existing PolicyUser records to prevent duplicates
-var policyUserMap = map[string]struct{}{}
+// policyUsersCreated is a list of existing PolicyUser records to prevent duplicates
+var policyUsersCreated = map[string]struct{}{}
 
 // policyIDMap is a map of legacy ID to new ID
 var policyIDMap = map[int]uuid.UUID{}
+
+// policyUserMap identifies one user on each policy, used for populating the accountable person field on items
+var policyUserMap = map[uuid.UUID]uuid.UUID{}
 
 // activeEntities is used to track which entity codes are used on active policies
 var activeEntities = map[uuid.UUID]struct{}{}
@@ -415,15 +418,15 @@ func importPolicies(tx *pop.Connection, policies []LegacyPolicy) {
 			nPolicies++
 		}
 
+		r := importPolicyUsers(tx, p, policyUUID)
+		nUsers.policyUsersCreated += r.policyUsersCreated
+		nUsers.usersCreated += r.usersCreated
+
 		policyIsActive := importItems(tx, policyUUID, policyID, p.Items)
 		nItems += len(p.Items)
 
 		nClaimItems += importClaims(tx, policyUUID, p.Claims)
 		nClaims += len(p.Claims)
-
-		r := importPolicyUsers(tx, p, policyUUID)
-		nUsers.policyUsersCreated += r.policyUsersCreated
-		nUsers.usersCreated += r.usersCreated
 
 		if policyIsActive && entityCodeID.Valid {
 			activeEntities[entityCodeID.UUID] = struct{}{}
@@ -591,7 +594,7 @@ func createPolicyUser(tx *pop.Connection, email, firstName, lastName string, pol
 		result.usersCreated, userID = createUserFromEmailAddress(tx, email, firstName, lastName)
 	}
 
-	if _, ok = policyUserMap[policyID.String()+userID.String()]; ok {
+	if _, ok = policyUsersCreated[policyID.String()+userID.String()]; ok {
 		return result
 	}
 
@@ -604,7 +607,8 @@ func createPolicyUser(tx *pop.Connection, email, firstName, lastName string, pol
 	}
 	result.policyUsersCreated = 1
 
-	policyUserMap[policyID.String()+userID.String()] = struct{}{}
+	policyUsersCreated[policyID.String()+userID.String()] = struct{}{}
+	policyUserMap[policyID] = userID // each user added to the policy will overwrite the previous, but that's OK
 
 	return result
 }
@@ -839,6 +843,10 @@ func importItems(tx *pop.Connection, policyUUID uuid.UUID, policyID int, items [
 		itemID := stringToInt(item.Id, "Item ID")
 		itemDesc := fmt.Sprintf("Policy[%d] Item[%d] ", policyID, itemID)
 
+		var policyUserID nulls.UUID
+		if u, ok := policyUserMap[policyUUID]; ok {
+			policyUserID = nulls.NewUUID(u)
+		}
 		newItem := models.Item{
 			Name:              trim(item.Name),
 			CategoryID:        itemCategoryIDMap[item.CategoryId],
@@ -849,6 +857,7 @@ func importItems(tx *pop.Connection, policyUUID uuid.UUID, policyID int, items [
 			Make:              trim(item.Make),
 			Model:             trim(item.Model),
 			SerialNumber:      trim(item.SerialNumber),
+			PolicyUserID:      policyUserID,
 			CoverageAmount:    fixedPointStringToInt(item.CoverageAmount, itemDesc+"CoverageAmount"),
 			PurchaseDate:      parseStringTime(item.PurchaseDate, itemDesc+"PurchaseDate"),
 			CoverageStatus:    getCoverageStatus(item),
@@ -860,6 +869,10 @@ func importItems(tx *pop.Connection, policyUUID uuid.UUID, policyID int, items [
 			log.Fatalf("failed to create item, %s\n%+v", err, newItem)
 		}
 		itemIDMap[itemID] = newItem.ID
+
+		if newItem.CoverageStatus == api.ItemCoverageStatusApproved && !newItem.PolicyUserID.Valid {
+			log.Printf("Policy[%d] Item[%d] has no PolicyUser", policyID, itemID)
+		}
 
 		if err := tx.RawQuery("update items set updated_at = ? where id = ?",
 			parseStringTime(item.CreatedAt, itemDesc+"CreatedAt"), newItem.ID).Exec(); err != nil {
