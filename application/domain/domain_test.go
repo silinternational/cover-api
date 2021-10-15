@@ -85,7 +85,7 @@ func (ts *TestSuite) TestCalculatePartialYearValue() {
 		},
 		{
 			name:      "leap year minus one day",
-			input:     365, // this looks like days per year just to make the calculations easy to figure out
+			input:     366, // this looks like days per year just to make the calculations easy to figure out
 			startDate: time.Date(2020, 1, 2, 10, 0, 0, 0, time.UTC),
 			want:      365,
 		},

@@ -400,6 +400,9 @@ func CalculatePartialYearValue(value int, startDate time.Time) int {
 
 	daysSince := hoursSince / 24
 
+	if IsLeapYear(startDate) {
+		return value * daysSince / 366
+	}
 	return value * daysSince / 365
 }
 
