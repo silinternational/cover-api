@@ -40,6 +40,15 @@ const (
 	PermissionDelete
 	PermissionDenied
 
+	ClaimStatusChangeReturnedToDraft = "Returned to draft by "
+	ClaimStatusChangeReview1         = "Submitted for review1"
+	ClaimStatusChangeRevisions       = "Revisions requested by "
+	ClaimStatusChangeReceipt         = "Receipt requested by "
+	ClaimStatusChangeReview2         = "Resubmitted for review2 by "
+	ClaimStatusChangeReview3         = "Advanced to review3 by "
+	ClaimStatusChangeApproved        = "Approved by "
+	ClaimStatusChangeDenied          = "Denied by "
+
 	ItemStatusChangeSubmitted    = "Submitted for approval"
 	ItemStatusChangeAutoApproved = "Auto approved"
 	ItemStatusChangeApproved     = "Approved by "
