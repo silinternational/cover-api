@@ -254,16 +254,18 @@ func (i *Item) FindByID(tx *pop.Connection, id uuid.UUID) error {
 //  If the item's status is Denied or Inactive, it does nothing.
 //  Otherwise, it changes its status to Inactive.
 func (i *Item) SafeDeleteOrInactivate(ctx context.Context, actor User) error {
-	tx := Tx(ctx)
 	switch i.CoverageStatus {
 	case api.ItemCoverageStatusInactive, api.ItemCoverageStatusDenied:
 		return nil
 	case api.ItemCoverageStatusApproved:
 		return i.Inactivate(ctx)
 	case api.ItemCoverageStatusDraft, api.ItemCoverageStatusRevision, api.ItemCoverageStatusPending:
-		if i.isNewEnough() {
-			return tx.Destroy(i)
-		}
+		// TODO: figure out when a destroy will work and when it won't, based on searching for child records
+		// that may have been created for an item that traverses states and then back to one of these
+		// "safe-to-delete" states.
+		//if i.isNewEnough() {
+		//	return Tx(ctx).Destroy(i)
+		//}
 		return i.Inactivate(ctx)
 	default:
 		panic(`invalid item status in SafeDeleteOrInactivate`)
