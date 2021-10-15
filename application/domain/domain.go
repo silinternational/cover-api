@@ -385,20 +385,21 @@ func RandomString(n int, includeLetters string) string {
 }
 
 // CalculatePartialYearValue returns the value multiplied by the number
-//   of days left between the startDate and the last day of the same year (inclusive)
-//   divided by 365  (rounded down)
-// If the startDate is January 1, then the input value is returned.
+//   of days left between the startDate and the last day of the same year
+//   divided by 365  (rounded down). If `includeStart` is true, the calculation is
+//   inclusive of the given `startDate`.
 // Note that the startDate's time of day is ignored.
-func CalculatePartialYearValue(value int, startDate time.Time) int {
-	if startDate.Month() == 1 && startDate.Day() == 1 {
-		return value
-	}
+func CalculatePartialYearValue(value int, startDate time.Time, includeStart bool) int {
 	startMidnight := startDate.Truncate(time.Hour * 24)
 	thisYear := startDate.Year()
 	newYears := time.Date(thisYear+1, 1, 1, 0, 0, 0, 0, time.UTC)
 	hoursSince := int(newYears.Sub(startMidnight).Hours())
 
 	daysSince := hoursSince / 24
+
+	if !includeStart {
+		daysSince--
+	}
 
 	if IsLeapYear(startDate) {
 		return value * daysSince / 366

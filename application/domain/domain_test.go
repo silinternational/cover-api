@@ -2,6 +2,7 @@ package domain
 
 import (
 	"fmt"
+	"strconv"
 	"testing"
 	"time"
 
@@ -68,49 +69,70 @@ func (ts *TestSuite) TestCalculatePartialYearValue() {
 	tests := []struct {
 		name      string
 		input     int
+		inclusive bool
 		startDate time.Time
 		want      int
 	}{
 		{
 			name:      "whole year",
 			input:     10,
+			inclusive: true,
 			startDate: time.Date(2021, 1, 1, 23, 0, 0, 0, time.UTC),
 			want:      10,
 		},
 		{
 			name:      "whole year minus one day",
 			input:     3650,
+			inclusive: true,
 			startDate: time.Date(2021, 1, 2, 10, 0, 0, 0, time.UTC),
 			want:      3640,
 		},
 		{
 			name:      "leap year minus one day",
 			input:     366, // this looks like days per year just to make the calculations easy to figure out
+			inclusive: true,
 			startDate: time.Date(2020, 1, 2, 10, 0, 0, 0, time.UTC),
 			want:      365,
 		},
 		{
 			name:      "a month and a day",
 			input:     365,
+			inclusive: true,
 			startDate: time.Date(2021, 11, 30, 20, 0, 0, 0, time.UTC),
 			want:      32,
 		},
 		{
 			name:      "a day",
 			input:     365,
+			inclusive: true,
 			startDate: time.Date(2021, 12, 31, 0, 0, 0, 0, time.UTC),
 			want:      1,
 		},
 		{
 			name:      "a complicated day",
 			input:     365 * 40,
+			inclusive: true,
 			startDate: time.Date(2021, 12, 31, 0, 0, 0, 0, time.UTC),
 			want:      40,
+		},
+		{
+			name:      "first day, not inclusive",
+			input:     365,
+			inclusive: false,
+			startDate: time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC),
+			want:      364,
+		},
+		{
+			name:      "last day, not inclusive",
+			input:     365,
+			inclusive: false,
+			startDate: time.Date(2021, 12, 31, 0, 0, 0, 0, time.UTC),
+			want:      0,
 		},
 	}
 	for _, tt := range tests {
 		ts.T().Run(tt.name, func(t *testing.T) {
-			got := CalculatePartialYearValue(tt.input, tt.startDate)
+			got := CalculatePartialYearValue(tt.input, tt.startDate, tt.inclusive)
 			ts.Equal(tt.want, got, "incorrect output value")
 		})
 	}
