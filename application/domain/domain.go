@@ -6,6 +6,7 @@ import (
 	"errors"
 	"io"
 	"log"
+	"math"
 	"math/rand"
 	"net/http"
 	"os"
@@ -401,10 +402,12 @@ func CalculatePartialYearValue(value int, startDate time.Time, includeStart bool
 		daysSince--
 	}
 
+	days := 365
 	if IsLeapYear(startDate) {
-		return value * daysSince / 366
+		days = 366
 	}
-	return value * daysSince / 365
+
+	return int(math.Round(float64(value*daysSince) / float64(days)))
 }
 
 func BeginningOfLastMonth(date time.Time) time.Time {

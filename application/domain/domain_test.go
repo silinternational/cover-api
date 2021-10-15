@@ -129,6 +129,13 @@ func (ts *TestSuite) TestCalculatePartialYearValue() {
 			startDate: time.Date(2021, 12, 31, 0, 0, 0, 0, time.UTC),
 			want:      0,
 		},
+		{
+			name:      "check rounding",
+			input:     1000,
+			inclusive: false,
+			startDate: time.Date(2021, 12, 30, 0, 0, 0, 0, time.UTC),
+			want:      3, // 2.7 rounded up to 3
+		},
 	}
 	for _, tt := range tests {
 		ts.T().Run(tt.name, func(t *testing.T) {
