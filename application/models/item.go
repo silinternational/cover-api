@@ -620,20 +620,14 @@ func (i *Items) ConvertToAPI(tx *pop.Connection) api.Items {
 	return apiItems
 }
 
-func (i *Item) GetAnnualPremium() int {
+func (i *Item) GetAnnualPremium() api.Currency {
 	p := int(math.Round(float64(i.CoverageAmount) * domain.Env.PremiumFactor))
-	if p < domain.Env.PremiumMinimum {
-		return domain.Env.PremiumMinimum
-	}
-	return p
+	return api.Currency(p)
 }
 
-func (i *Item) GetProratedPremium(t time.Time) int {
-	p := domain.CalculatePartialYearValue(i.GetAnnualPremium(), t)
-	if p < domain.Env.PremiumMinimum {
-		return domain.Env.PremiumMinimum
-	}
-	return p
+func (i *Item) GetProratedPremium(t time.Time) api.Currency {
+	p := domain.CalculatePartialYearValue(int(i.GetAnnualPremium()), t)
+	return api.Currency(p)
 }
 
 // NewItemFromApiInput creates a new `Item` from a `ItemInput`.

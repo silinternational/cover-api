@@ -759,7 +759,7 @@ func (c *Claim) CreateLedgerEntry(tx *pop.Connection) error {
 
 		le := NewLedgerEntry(c.Policy, &item, c) // #nosec G601
 		le.Type = LedgerEntryTypeClaim
-		le.Amount = int(-c.TotalPayout)
+		le.Amount = -c.TotalPayout
 		le.FirstName = firstName
 		le.LastName = lastName
 
