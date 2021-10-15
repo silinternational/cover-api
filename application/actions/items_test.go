@@ -292,6 +292,7 @@ func (as *ActionSuite) Test_ItemsSubmit() {
 				`"purchase_date":"` + revisionItem.PurchaseDate.Format(domain.DateFormat) + `"`,
 				`"coverage_status":"` + string(api.ItemCoverageStatusApproved), // lower than auto-approve max
 				`"category":{"id":"` + iCatID.String(),
+				`"status_change":"` + models.ItemStatusChangeAutoApproved,
 			},
 		},
 	}
@@ -405,6 +406,7 @@ func (as *ActionSuite) Test_ItemsRevision() {
 				`"purchase_date":"` + pendingItem.PurchaseDate.Format(domain.DateFormat) + `"`,
 				`"coverage_status":"` + string(api.ItemCoverageStatusRevision),
 				`"category":{"id":"` + iCatID.String(),
+				`"status_change":"` + models.ItemStatusChangeRevisions + adminUser.Name(),
 			},
 		},
 	}
@@ -494,6 +496,7 @@ func (as *ActionSuite) Test_ItemsApprove() {
 				`"name":"` + pendingItem.Name,
 				// other fields are tested in the revision test above
 				`"coverage_status":"` + string(api.ItemCoverageStatusApproved),
+				`"status_change":"` + models.ItemStatusChangeApproved + adminUser.Name(),
 			},
 		},
 	}
@@ -595,6 +598,7 @@ func (as *ActionSuite) Test_ItemsDeny() {
 				`"name":"` + pendingItem.Name,
 				// other fields are tested in the revision test above
 				`"coverage_status":"` + string(api.ItemCoverageStatusDenied),
+				`"status_change":"` + models.ItemStatusChangeDenied + adminUser.Name(),
 			},
 		},
 	}
@@ -1031,6 +1035,7 @@ func (as *ActionSuite) Test_NewItemFromApiInput() {
 			as.Equal(tt.input.SerialNumber, got.SerialNumber, "SerialNumber is not correct")
 			as.Equal(tt.input.CoverageAmount, got.CoverageAmount, "CoverageAmount is not correct")
 			as.Equal(tt.input.CoverageStatus, got.CoverageStatus, "CoverageStatus is not correct")
+			as.Equal("", got.StatusChange, "StatusChange is not correct")
 		})
 	}
 }
