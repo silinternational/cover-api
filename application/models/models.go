@@ -45,7 +45,7 @@ const (
 	ItemStatusChangeApproved     = "Approved by "
 	ItemStatusChangeRevisions    = "Revisions requested by "
 	ItemStatusChangeDenied       = "Denied by "
-	ItemStatusChangeInactivated  = "Inactivated by "
+	ItemStatusChangeInactivated  = "Deactivated by "
 
 	FieldClaimStatus = "Status"
 
