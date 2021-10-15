@@ -688,7 +688,7 @@ func (ms *ModelSuite) TestItem_GetAnnualPremium() {
 		want     int
 	}{
 		{
-			name:     "above the minimum",
+			name:     "even amount",
 			coverage: 200000,
 			want:     4000,
 		},
@@ -697,17 +697,12 @@ func (ms *ModelSuite) TestItem_GetAnnualPremium() {
 			coverage: 199999,
 			want:     4000,
 		},
-		{
-			name:     "under the minimum",
-			coverage: 100000,
-			want:     2500,
-		},
 	}
 	for _, tt := range tests {
 		ms.T().Run(tt.name, func(t *testing.T) {
 			item := Item{CoverageAmount: tt.coverage}
 			got := item.GetAnnualPremium()
-			ms.Equal(tt.want, got)
+			ms.Equal(api.Currency(tt.want), got)
 		})
 	}
 }
@@ -722,7 +717,7 @@ func (ms *ModelSuite) TestItem_GetProratedPremium() {
 		want     int
 	}{
 		{
-			name:     "above the minimum",
+			name:     "even amount",
 			coverage: 200000,
 			now:      now,
 			want:     3200,
@@ -733,18 +728,12 @@ func (ms *ModelSuite) TestItem_GetProratedPremium() {
 			now:      now,
 			want:     3200,
 		},
-		{
-			name:     "under the minimum",
-			coverage: 100000,
-			now:      now,
-			want:     2500,
-		},
 	}
 	for _, tt := range tests {
 		ms.T().Run(tt.name, func(t *testing.T) {
 			item := Item{CoverageAmount: tt.coverage}
 			got := item.GetProratedPremium(tt.now)
-			ms.Equal(tt.want, got)
+			ms.Equal(api.Currency(tt.want), got)
 		})
 	}
 }
@@ -767,7 +756,7 @@ func (ms *ModelSuite) TestItem_CreateLedgerEntry() {
 	ms.Equal(LedgerEntryTypeNewCoverage, le.Type, "Type is incorrect")
 	ms.Equal(item.PolicyID, le.PolicyID, "PolicyID is incorrect")
 	ms.Equal(item.ID, le.ItemID.UUID, "ItemID is incorrect")
-	ms.Equal(2500, le.Amount, "Amount is incorrect")
+	ms.Equal(item.GetProratedPremium(time.Now()), le.Amount, "Amount is incorrect")
 	ms.Equal(user.FirstName, le.FirstName, "FirstName is incorrect")
 	ms.Equal(user.LastName, le.LastName, "LastName is incorrect")
 }

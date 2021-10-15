@@ -91,7 +91,7 @@ type Item struct {
 	RiskCategory RiskCategory `json:"risk_category"`
 
 	// annual premium (0.01 USD)
-	AnnualPremium int `json:"annual_premium"`
+	AnnualPremium Currency `json:"annual_premium"`
 
 	// ID of a dependent designated as accountable person, must be null if accountable_user_id is not null
 	//
