@@ -50,6 +50,7 @@ type Item struct {
 	CoverageAmount    int                    `db:"coverage_amount" validate:"min=0"`
 	PurchaseDate      time.Time              `db:"purchase_date"`
 	CoverageStatus    api.ItemCoverageStatus `db:"coverage_status" validate:"itemCoverageStatus"`
+	StatusChange      string                 `db:"status_change"`
 	CoverageStartDate time.Time              `db:"coverage_start_date"`
 	StatusReason      string                 `db:"status_reason" validate:"required_if=CoverageStatus Revision,required_if=CoverageStatus Denied"`
 	LegacyID          nulls.Int              `db:"legacy_id"`
@@ -289,6 +290,9 @@ func (i *Item) isNewEnough() bool {
 //  TODO deal with coverage payment changes
 func (i *Item) Inactivate(ctx context.Context) error {
 	i.CoverageStatus = api.ItemCoverageStatusInactive
+
+	user := CurrentUser(ctx)
+	i.StatusChange = ItemStatusChangeInactivated + user.Name()
 	return i.Update(ctx)
 }
 
@@ -404,6 +408,7 @@ func (i *Item) SubmitForApproval(ctx context.Context) error {
 		return i.AutoApprove(ctx)
 	}
 
+	i.StatusChange = ItemStatusChangeSubmitted
 	if err := i.Update(ctx); err != nil {
 		return err
 	}
@@ -461,6 +466,10 @@ func (i *Item) canAutoApprove(tx *pop.Connection) bool {
 func (i *Item) Revision(ctx context.Context, reason string) error {
 	i.CoverageStatus = api.ItemCoverageStatusRevision
 	i.StatusReason = reason
+
+	user := CurrentUser(ctx)
+	i.StatusChange = ItemStatusChangeRevisions + user.Name()
+
 	if err := i.Update(ctx); err != nil {
 		return err
 	}
@@ -485,6 +494,7 @@ func (i *Item) AutoApprove(ctx context.Context) error {
 	}
 	emitEvent(e)
 
+	i.StatusChange = ItemStatusChangeAutoApproved
 	return i.Approve(ctx, true)
 }
 
@@ -494,6 +504,12 @@ func (i *Item) AutoApprove(ctx context.Context) error {
 // (No need to emit it following an auto-approval which has already emitted and event.)
 func (i *Item) Approve(ctx context.Context, doEmitEvent bool) error {
 	i.CoverageStatus = api.ItemCoverageStatusApproved
+
+	if i.StatusChange != ItemStatusChangeAutoApproved {
+		user := CurrentUser(ctx)
+		i.StatusChange = ItemStatusChangeApproved + user.Name()
+	}
+
 	if err := i.Update(ctx); err != nil {
 		return err
 	}
@@ -518,6 +534,8 @@ func (i *Item) Deny(ctx context.Context, reason string) error {
 
 	i.LoadPolicy(Tx(ctx), false)
 
+	user := CurrentUser(ctx)
+	i.StatusChange = ItemStatusChangeDenied + user.Name()
 	if err := i.Update(ctx); err != nil {
 		return err
 	}
@@ -583,6 +601,7 @@ func (i *Item) ConvertToAPI(tx *pop.Connection) api.Item {
 		CoverageAmount:         i.CoverageAmount,
 		PurchaseDate:           i.PurchaseDate.Format(domain.DateFormat),
 		CoverageStatus:         i.CoverageStatus,
+		StatusChange:           i.StatusChange,
 		CoverageStartDate:      i.CoverageStartDate.Format(domain.DateFormat),
 		AccountableUserID:      i.PolicyUserID,
 		AccountableDependentID: i.PolicyDependentID,

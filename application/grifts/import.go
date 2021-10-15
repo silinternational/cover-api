@@ -108,7 +108,9 @@ var _ = grift.Namespace("db", func() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		defer func() {
+
+		/*  #nosec G307 */
+		defer func(f *os.File) {
 			if err := f.Close(); err != nil {
 				panic("failed to close file, " + err.Error())
 			}
@@ -191,6 +193,9 @@ func importIdpUsersFromFile(filename string, idColumn, emailColumn int, personal
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	/*  #nosec G307 */
+
 	defer func(f *os.File) {
 		if err := f.Close(); err != nil {
 			panic("failed to close file, " + err.Error())

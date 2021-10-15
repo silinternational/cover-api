@@ -40,7 +40,28 @@ const (
 	PermissionDelete
 	PermissionDenied
 
+	ItemStatusChangeSubmitted    = "Submitted for approval"
+	ItemStatusChangeAutoApproved = "Auto approved"
+	ItemStatusChangeApproved     = "Approved by "
+	ItemStatusChangeRevisions    = "Revisions requested by "
+	ItemStatusChangeDenied       = "Denied by "
+	ItemStatusChangeInactivated  = "Deactivated by "
+
 	FieldClaimStatus = "Status"
+
+	FieldClaimItemItemID          = "ItemID"
+	FieldClaimItemStatus          = "Status"
+	FieldClaimItemIsRepairable    = "IsRepairable"
+	FieldClaimItemRepairEstimate  = "RepairEstimate"
+	FieldClaimItemRepairActual    = "RepairActual"
+	FieldClaimItemReplaceEstimate = "ReplaceEstimate"
+	FieldClaimItemReplaceActual   = "ReplaceActual"
+	FieldClaimItemPayoutOption    = "PayoutOption"
+	FieldClaimItemPayoutAmount    = "PayoutAmount"
+	FieldClaimItemFMV             = "FMV"
+	FieldClaimItemReviewDate      = "ReviewDate"
+	FieldClaimItemReviewerID      = "ReviewerID"
+	FieldClaimItemLocation        = "Location"
 
 	FieldItemName              = "Name"
 	FieldItemCategoryID        = "CategoryID"
