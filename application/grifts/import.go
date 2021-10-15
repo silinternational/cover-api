@@ -110,7 +110,7 @@ var _ = grift.Namespace("db", func() {
 		}
 
 		/*  #nosec G307 */
-		defer func(f *os.File) {
+		defer func() {
 			if err := f.Close(); err != nil {
 				panic("failed to close file, " + err.Error())
 			}
