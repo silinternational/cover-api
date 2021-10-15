@@ -83,6 +83,7 @@ type Claim struct {
 	IncidentType        api.ClaimIncidentType `db:"incident_type" validate:"claimIncidentType,required_unless=Status Draft"`
 	IncidentDescription string                `db:"incident_description" validate:"required_unless=Status Draft"`
 	Status              api.ClaimStatus       `db:"status" validate:"claimStatus"`
+	StatusChange        string                `db:"status_change"`
 	ReviewDate          nulls.Time            `db:"review_date"`
 	ReviewerID          nulls.UUID            `db:"reviewer_id"`
 	PaymentDate         nulls.Time            `db:"payment_date"`
@@ -176,6 +177,7 @@ func (c *Claim) UpdateByUser(ctx context.Context) error {
 	//  also force the user to resubmit it.
 	if c.Status == api.ClaimStatusReview1 {
 		c.Status = api.ClaimStatusDraft
+		c.StatusChange = ClaimStatusChangeReturnedToDraft + user.Name()
 	}
 
 	return c.Update(ctx)
@@ -321,6 +323,7 @@ func (c *Claim) AddItem(tx *pop.Connection, input api.ClaimItemCreateInput) (Cla
 //   depending on its current status.
 func (c *Claim) SubmitForApproval(ctx context.Context) error {
 	tx := Tx(ctx)
+	user := CurrentUser(ctx)
 
 	oldStatus := c.Status
 	var eventType string
@@ -328,6 +331,7 @@ func (c *Claim) SubmitForApproval(ctx context.Context) error {
 	switch oldStatus {
 	case api.ClaimStatusDraft, api.ClaimStatusRevision:
 		c.Status = api.ClaimStatusReview1
+		c.StatusChange = ClaimStatusChangeReview1
 		eventType = domain.EventApiClaimReview1
 	case api.ClaimStatusReceipt:
 		if !c.HasReceiptFile(tx) {
@@ -335,6 +339,7 @@ func (c *Claim) SubmitForApproval(ctx context.Context) error {
 			return api.NewAppError(err, api.ErrorClaimStatus, api.CategoryUser)
 		}
 		c.Status = api.ClaimStatusReview2
+		c.StatusChange = ClaimStatusChangeReview2 + user.Name()
 		eventType = domain.EventApiClaimReview2
 	default:
 		err := fmt.Errorf("invalid claim status for submit: %s", oldStatus)
@@ -372,10 +377,12 @@ func (c *Claim) SubmitForApproval(ctx context.Context) error {
 //   provided that the current status is Review1 or Review3.
 func (c *Claim) RequestRevision(ctx context.Context, message string) error {
 	oldStatus := c.Status
+	user := CurrentUser(ctx)
 
 	switch oldStatus {
 	case api.ClaimStatusReview1, api.ClaimStatusReview3:
 		c.Status = api.ClaimStatusRevision
+		c.StatusChange = ClaimStatusChangeRevisions + user.Name()
 		c.StatusReason = message
 		c.setReviewer(ctx)
 	default:
@@ -416,7 +423,9 @@ func (c *Claim) RequestReceipt(ctx buffalo.Context, reason string) error {
 		return appErr
 	}
 
+	user := CurrentUser(ctx)
 	c.Status = api.ClaimStatusReceipt
+	c.StatusChange = ClaimStatusChangeReceipt + user.Name()
 	c.StatusReason = reason
 	c.setReviewer(ctx)
 
@@ -442,12 +451,16 @@ func (c *Claim) Approve(ctx context.Context) error {
 	oldStatus := c.Status
 	var eventType string
 
+	user := CurrentUser(ctx)
+
 	switch oldStatus {
 	case api.ClaimStatusReview1, api.ClaimStatusReview2:
 		c.Status = api.ClaimStatusReview3
+		c.StatusChange = ClaimStatusChangeReview3 + user.Name()
 		eventType = domain.EventApiClaimReview3
 	case api.ClaimStatusReview3:
 		c.Status = api.ClaimStatusApproved
+		c.StatusChange = ClaimStatusChangeApproved + user.Name()
 		eventType = domain.EventApiClaimApproved
 	default:
 		err := fmt.Errorf("invalid claim status for approve: %s", oldStatus)
@@ -485,7 +498,10 @@ func (c *Claim) Deny(ctx context.Context, message string) error {
 		return appErr
 	}
 
+	user := CurrentUser(ctx)
+
 	c.Status = api.ClaimStatusDenied
+	c.StatusChange = ClaimStatusChangeDenied + user.Name()
 	c.StatusReason = message
 	c.setReviewer(ctx)
 
@@ -562,6 +578,7 @@ func (c *Claim) ConvertToAPI(tx *pop.Connection) api.Claim {
 		IncidentType:        c.IncidentType,
 		IncidentDescription: c.IncidentDescription,
 		Status:              c.Status,
+		StatusChange:        c.StatusChange,
 		ReviewDate:          c.ReviewDate,
 		ReviewerID:          c.ReviewerID,
 		PaymentDate:         c.PaymentDate,
