@@ -713,26 +713,23 @@ func (ms *ModelSuite) TestItem_calculateProratedPremium() {
 	tests := []struct {
 		name     string
 		coverage int
-		now      time.Time
 		want     int
 	}{
 		{
 			name:     "even amount",
 			coverage: 200000,
-			now:      now,
 			want:     3200,
 		},
 		{
 			name:     "round up",
 			coverage: 199999,
-			now:      now,
 			want:     3200,
 		},
 	}
 	for _, tt := range tests {
 		ms.T().Run(tt.name, func(t *testing.T) {
 			item := Item{CoverageAmount: tt.coverage}
-			got := item.calculateProratedPremium(tt.now)
+			got := item.calculateProratedPremium(now)
 			ms.Equal(api.Currency(tt.want), got)
 		})
 	}
@@ -744,26 +741,23 @@ func (ms *ModelSuite) TestItem_calculateCancellationCredit() {
 	tests := []struct {
 		name     string
 		coverage int
-		now      time.Time
 		want     int
 	}{
 		{
 			name:     "even amount",
 			coverage: 200000,
-			now:      now,
 			want:     -3200,
 		},
 		{
 			name:     "round up",
 			coverage: 199999,
-			now:      now,
 			want:     -3200,
 		},
 	}
 	for _, tt := range tests {
 		ms.T().Run(tt.name, func(t *testing.T) {
 			item := Item{CoverageAmount: tt.coverage}
-			got := item.calculateCancellationCredit(tt.now)
+			got := item.calculateCancellationCredit(now)
 			ms.Equal(api.Currency(tt.want), got)
 		})
 	}
