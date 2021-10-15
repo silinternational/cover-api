@@ -566,6 +566,7 @@ func (as *ActionSuite) Test_ClaimsSubmit() {
 			wantInBody: []string{
 				`"incident_description":"` + draftClaim.IncidentDescription,
 				`"status":"` + string(api.ClaimStatusReview1),
+				`"status_change":"`,
 			},
 		},
 	}
@@ -642,6 +643,7 @@ func (as *ActionSuite) Test_ClaimsRequestRevision() {
 			wantInBody: []string{
 				`"incident_description":"` + review1Claim.IncidentDescription,
 				`"status":"` + string(api.ClaimStatusRevision),
+				`"status_change":"` + models.ClaimStatusChangeRevisions + appAdmin.Name(),
 			},
 		},
 	}
@@ -721,6 +723,7 @@ func (as *ActionSuite) Test_ClaimsPreapprove() {
 			wantInBody: []string{
 				`"incident_description":"` + review1Claim.IncidentDescription,
 				`"status":"` + string(api.ClaimStatusReceipt),
+				`"status_change":"` + models.ClaimStatusChangeReceipt + appAdmin.Name(),
 			},
 		},
 	}
@@ -802,6 +805,7 @@ func (as *ActionSuite) Test_ClaimsReceipt() {
 				`"incident_description":"` + review3Claim.IncidentDescription,
 				`"status_reason":"`, review3Claim.StatusReason,
 				`"status":"` + string(api.ClaimStatusReceipt),
+				`"status_change":"` + models.ClaimStatusChangeReceipt + appAdmin.Name(),
 			},
 		},
 	}
@@ -885,6 +889,7 @@ func (as *ActionSuite) Test_ClaimsApprove() {
 			wantInBody: []string{
 				`"incident_description":"` + review1Claim.IncidentDescription,
 				`"status":"` + string(api.ClaimStatusReview3),
+				`"status_change":"` + models.ClaimStatusChangeReview3 + appAdmin.Name(),
 				`"review_date":"` + time.Now().UTC().Format(domain.DateFormat),
 				`"reviewer_id":"` + appAdmin.ID.String(),
 			},
@@ -898,6 +903,7 @@ func (as *ActionSuite) Test_ClaimsApprove() {
 			wantInBody: []string{
 				`"incident_description":"` + review2Claim.IncidentDescription,
 				`"status":"` + string(api.ClaimStatusReview3),
+				`"status_change":"` + models.ClaimStatusChangeReview3 + appAdmin.Name(),
 				`"review_date":"` + time.Now().UTC().Format(domain.DateFormat),
 				`"reviewer_id":"` + appAdmin.ID.String(),
 			},
@@ -911,6 +917,7 @@ func (as *ActionSuite) Test_ClaimsApprove() {
 			wantInBody: []string{
 				`"incident_description":"` + review3Claim.IncidentDescription,
 				`"status":"` + string(api.ClaimStatusApproved),
+				`"status_change":"` + models.ClaimStatusChangeApproved + appAdmin.Name(),
 				`"review_date":"` + time.Now().UTC().Format(domain.DateFormat),
 				`"reviewer_id":"` + appAdmin.ID.String(),
 			},
@@ -994,6 +1001,7 @@ func (as *ActionSuite) Test_ClaimsDeny() {
 			wantInBody: []string{
 				`"incident_description":"` + review1Claim.IncidentDescription,
 				`"status":"` + string(api.ClaimStatusDenied),
+				`"status_change":"` + models.ClaimStatusChangeDenied + appAdmin.Name(),
 				`"review_date":"` + time.Now().UTC().Format(domain.DateFormat),
 				`"reviewer_id":"` + appAdmin.ID.String(),
 			},
@@ -1006,6 +1014,7 @@ func (as *ActionSuite) Test_ClaimsDeny() {
 			wantInBody: []string{
 				`"incident_description":"` + review2Claim.IncidentDescription,
 				`"status":"` + string(api.ClaimStatusDenied),
+				`"status_change":"` + models.ClaimStatusChangeDenied + appAdmin.Name(),
 				`"review_date":"` + time.Now().UTC().Format(domain.DateFormat),
 				`"reviewer_id":"` + appAdmin.ID.String(),
 			},
@@ -1018,6 +1027,7 @@ func (as *ActionSuite) Test_ClaimsDeny() {
 			wantInBody: []string{
 				`"incident_description":"` + review3Claim.IncidentDescription,
 				`"status":"` + string(api.ClaimStatusDenied),
+				`"status_change":"` + models.ClaimStatusChangeDenied + appAdmin.Name(),
 				`"review_date":"` + time.Now().UTC().Format(domain.DateFormat),
 				`"reviewer_id":"` + appAdmin.ID.String(),
 			},

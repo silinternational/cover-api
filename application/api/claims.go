@@ -111,6 +111,9 @@ type Claim struct {
 	// incident status
 	Status ClaimStatus `json:"status"`
 
+	// how the status changed most recently (for the stewards dashboard)
+	StatusChange string `json:"status_change"`
+
 	// review date
 	//
 	// swagger:strfmt date-time
