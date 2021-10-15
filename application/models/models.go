@@ -43,9 +43,9 @@ const (
 	ItemStatusChangeSubmitted    = "Submitted for approval"
 	ItemStatusChangeAutoApproved = "Auto approved"
 	ItemStatusChangeApproved     = "Approved by "
-	ItemStatusChangeRevisions    = `Revisions requested by `
-	ItemStatusChangeDenied       = `Denied by `
-	ItemStatusChangeInactivated  = `Inactivated by `
+	ItemStatusChangeRevisions    = "Revisions requested by "
+	ItemStatusChangeDenied       = "Denied by "
+	ItemStatusChangeInactivated  = "Inactivated by "
 
 	FieldClaimStatus = "Status"
 
