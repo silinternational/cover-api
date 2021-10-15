@@ -41,11 +41,11 @@ const (
 	PermissionDenied
 
 	ClaimStatusChangeReturnedToDraft = "Returned to draft by "
-	ClaimStatusChangeReview1         = "Submitted for review1"
+	ClaimStatusChangeReview1         = "Submitted for preapproval"
 	ClaimStatusChangeRevisions       = "Revisions requested by "
 	ClaimStatusChangeReceipt         = "Receipt requested by "
-	ClaimStatusChangeReview2         = "Resubmitted for review2 by "
-	ClaimStatusChangeReview3         = "Advanced to review3 by "
+	ClaimStatusChangeReview2         = "Submitted for steward review by "
+	ClaimStatusChangeReview3         = "Submitted for signator approval by "
 	ClaimStatusChangeApproved        = "Approved by "
 	ClaimStatusChangeDenied          = "Denied by "
 
