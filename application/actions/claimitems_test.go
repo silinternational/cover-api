@@ -49,7 +49,7 @@ func (as *ActionSuite) Test_ClaimItemsUpdate() {
 	review3ClaimItem.ReviewDate = nulls.NewTime(time.Now().UTC())
 
 	ctx := models.CreateTestContext(appAdmin)
-	review3ClaimItem.Update(ctx, api.ClaimItemStatusReview3, appAdmin)
+	review3ClaimItem.Update(ctx)
 
 	input := api.ClaimItemUpdateInput{
 		IsRepairable:    true,

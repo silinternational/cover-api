@@ -48,7 +48,7 @@ func claimItemsUpdate(c buffalo.Context) error {
 	claimItem.PayoutOption = input.PayoutOption
 	claimItem.FMV = input.FMV
 
-	if err := claimItem.UpdateByUser(c, claimItem.Status, models.CurrentUser(c)); err != nil {
+	if err := claimItem.UpdateByUser(c); err != nil {
 		return reportError(c, err)
 	}
 
