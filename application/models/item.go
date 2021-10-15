@@ -81,15 +81,15 @@ func (i *Item) Update(ctx context.Context) error {
 	if err := oldItem.FindByID(tx, i.ID); err != nil {
 		return appErrorFromDB(err, api.ErrorQueryFailure)
 	}
-	validTrans, err := isItemTransitionValid(oldItem.CoverageStatus, i.CoverageStatus)
-	if err != nil {
+	if validTrans, err := isItemTransitionValid(oldItem.CoverageStatus, i.CoverageStatus); err != nil {
 		panic(err)
-	}
-	if !validTrans {
-		err := fmt.Errorf("invalid item coverage status transition from %s to %s",
-			oldItem.CoverageStatus, i.CoverageStatus)
-		appErr := api.NewAppError(err, api.ErrorValidation, api.CategoryUser)
-		return appErr
+	} else {
+		if !validTrans {
+			err := fmt.Errorf("invalid item coverage status transition from %s to %s",
+				oldItem.CoverageStatus, i.CoverageStatus)
+			appErr := api.NewAppError(err, api.ErrorValidation, api.CategoryUser)
+			return appErr
+		}
 	}
 
 	i.LoadPolicy(tx, false)
