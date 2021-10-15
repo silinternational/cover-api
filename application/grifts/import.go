@@ -108,11 +108,11 @@ var _ = grift.Namespace("db", func() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		defer func(f *os.File) {
+		defer func() {
 			if err := f.Close(); err != nil {
 				panic("failed to close file, " + err.Error())
 			}
-		}(f)
+		}()
 
 		r := bufio.NewReader(f)
 		dec := json.NewDecoder(r)
