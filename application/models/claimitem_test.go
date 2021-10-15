@@ -262,9 +262,8 @@ func (ms *ModelSuite) TestClaimItem_UpdateByUser() {
 	}
 	for _, tt := range tests {
 		ms.T().Run(tt.name, func(t *testing.T) {
-			ctx := CreateTestContext(fixtures.Users[0])
+			ctx := CreateTestContext(tt.user)
 			claimItem := tt.claimItem
-			oldStatus := claimItem.Status
 			claimItem.ReplaceEstimate = tt.input.ReplaceEstimate
 			claimItem.ReplaceActual = tt.input.ReplaceActual
 
@@ -273,7 +272,7 @@ func (ms *ModelSuite) TestClaimItem_UpdateByUser() {
 				claimItem.ReviewDate = nulls.NewTime(time.Now().UTC())
 			}
 
-			err := claimItem.UpdateByUser(ctx, oldStatus, tt.user)
+			err := claimItem.UpdateByUser(ctx)
 
 			var fromDB ClaimItem
 			ms.NoError(fromDB.FindByID(db, claimItem.ID))

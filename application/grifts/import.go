@@ -105,6 +105,8 @@ var _ = grift.Namespace("db", func() {
 		if err != nil {
 			log.Fatal(err)
 		}
+
+		/*  #nosec G307 */
 		defer func(f *os.File) {
 			if err := f.Close(); err != nil {
 				panic("failed to close file, " + err.Error())
@@ -158,24 +160,39 @@ func importCustomers() {
 	const WorkdayEmailColumn = 5
 	const WorkdayPersonalEmailColumn = 6
 
-	fmt.Println("\nImporting IDP users")
-	for idp, filename := range idpFilenames {
-		n := importIdpUsersFromFile(filename, IDPStaffIDColumn, IDPEmailColumn, IDPPersonalEmailColumn)
-		fmt.Printf("%s IDP users: %d\n", idp, n)
-	}
-
 	fmt.Println("\nImporting Workday users")
 	for idp, filename := range workdayFilenames {
-		n := importIdpUsersFromFile(filename, WorkdayStaffIDColumn, WorkdayEmailColumn, WorkdayPersonalEmailColumn)
-		fmt.Printf("%s Workday users: %d\n", idp, n)
+		n := importIdpUsersFromFile(filename, WorkdayStaffIDColumn, WorkdayEmailColumn, false)
+		fmt.Printf("  %s Workday users: %d\n", idp, n)
+	}
+
+	fmt.Println("\nImporting IDP users")
+	for idp, filename := range idpFilenames {
+		n := importIdpUsersFromFile(filename, IDPStaffIDColumn, IDPEmailColumn, false)
+		fmt.Printf("  %s IDP users: %d\n", idp, n)
+	}
+
+	fmt.Println("\nImporting Workday users - personal email addresses")
+	for idp, filename := range workdayFilenames {
+		n := importIdpUsersFromFile(filename, WorkdayStaffIDColumn, WorkdayPersonalEmailColumn, true)
+		fmt.Printf("  %s Workday users: %d\n", idp, n)
+	}
+
+	fmt.Println("\nImporting IDP users - personal email addresses")
+	for idp, filename := range idpFilenames {
+		n := importIdpUsersFromFile(filename, IDPStaffIDColumn, IDPPersonalEmailColumn, true)
+		fmt.Printf("  %s IDP users: %d\n", idp, n)
 	}
 }
 
-func importIdpUsersFromFile(filename string, idColumn, emailColumn, personalColumn int) int {
+func importIdpUsersFromFile(filename string, idColumn, emailColumn int, personal bool) int {
 	f, err := os.Open(filename) // #nosec G304
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	/*  #nosec G307 */
+
 	defer func(f *os.File) {
 		if err := f.Close(); err != nil {
 			panic("failed to close file, " + err.Error())
@@ -183,6 +200,9 @@ func importIdpUsersFromFile(filename string, idColumn, emailColumn, personalColu
 	}(f)
 
 	r := csv.NewReader(bufio.NewReader(f))
+	if _, err := r.Read(); err == io.EOF {
+		log.Fatalf("empty file '%s'", filename)
+	}
 
 	n := 0
 	for {
@@ -196,15 +216,12 @@ func importIdpUsersFromFile(filename string, idColumn, emailColumn, personalColu
 
 		staffID := csvLine[idColumn]
 		email := csvLine[emailColumn]
-		n += addStaffID(staffID, email)
-
-		email = csvLine[personalColumn]
-		n += addStaffID(staffID, email)
+		n += addStaffID(staffID, email, personal)
 	}
 	return n
 }
 
-func addStaffID(staffID, email string) int {
+func addStaffID(staffID, email string, personal bool) int {
 	if staffID == "NULL" || staffID == "" || email == "NULL" || email == "" {
 		return 0
 	}
@@ -217,7 +234,7 @@ func addStaffID(staffID, email string) int {
 		return 1
 	}
 
-	if userEmailStaffIDMap[email] != staffID {
+	if !personal && userEmailStaffIDMap[email] != staffID {
 		log.Printf("email address '%s' maps to two different staff IDs: '%s' and '%s'",
 			email, userEmailStaffIDMap[email], staffID)
 	}

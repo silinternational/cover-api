@@ -79,7 +79,7 @@ func (c *ClaimItem) Create(tx *pop.Connection) error {
 }
 
 // Update changes the status if it is a valid transition.
-func (c *ClaimItem) Update(ctx context.Context, oldStatus api.ClaimItemStatus, user User) error {
+func (c *ClaimItem) Update(ctx context.Context) error {
 	tx := Tx(ctx)
 	// Get the parent Claim's status
 	c.LoadClaim(tx, false)
@@ -97,6 +97,8 @@ func (c *ClaimItem) Update(ctx context.Context, oldStatus api.ClaimItemStatus, u
 	//	appErr := api.NewAppError(err, api.ErrorValidation, api.CategoryUser)
 	//	return appErr
 	//}
+
+	user := CurrentUser(ctx)
 
 	// Set the Reviewer fields when needed.
 	if user.IsAdmin() {
@@ -117,10 +119,11 @@ func (c *ClaimItem) Update(ctx context.Context, oldStatus api.ClaimItemStatus, u
 
 // UpdateByUser ensures the parent Claim has an appropriate status for being modified by the user
 //  and then writes the ClaimItem data to an existing database record.
-func (c *ClaimItem) UpdateByUser(ctx context.Context, oldStatus api.ClaimItemStatus, user User) error {
+func (c *ClaimItem) UpdateByUser(ctx context.Context) error {
 	tx := Tx(ctx)
+	user := CurrentUser(ctx)
 	if user.IsAdmin() {
-		return c.Update(ctx, oldStatus, user)
+		return c.Update(ctx)
 	}
 
 	c.LoadClaim(tx, false)
@@ -144,7 +147,7 @@ func (c *ClaimItem) UpdateByUser(ctx context.Context, oldStatus api.ClaimItemSta
 		return err
 	}
 
-	return c.Update(ctx, oldStatus, user)
+	return c.Update(ctx)
 }
 
 // Maybe one day we will want to do something like this on a ClaimItem
