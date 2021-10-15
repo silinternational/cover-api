@@ -738,6 +738,75 @@ func (ms *ModelSuite) TestItem_calculateProratedPremium() {
 	}
 }
 
+func (ms *ModelSuite) TestItem_calculateCancellationCredit() {
+	now := time.Date(1999, 3, 15, 0, 0, 0, 0, time.UTC)
+
+	tests := []struct {
+		name     string
+		coverage int
+		now      time.Time
+		want     int
+	}{
+		{
+			name:     "even amount",
+			coverage: 200000,
+			now:      now,
+			want:     -3200,
+		},
+		{
+			name:     "round up",
+			coverage: 199999,
+			now:      now,
+			want:     -3200,
+		},
+	}
+	for _, tt := range tests {
+		ms.T().Run(tt.name, func(t *testing.T) {
+			item := Item{CoverageAmount: tt.coverage}
+			got := item.calculateCancellationCredit(tt.now)
+			ms.Equal(api.Currency(tt.want), got)
+		})
+	}
+}
+
+func (ms *ModelSuite) TestItem_calculatePremiumChange() {
+	// 10 days remaining in the year
+	now := time.Date(1999, 12, 22, 0, 0, 0, 0, time.UTC)
+
+	tests := []struct {
+		name        string
+		coverage    int
+		oldCoverage int
+		want        int
+	}{
+		{
+			name:        "no change",
+			coverage:    200000,
+			oldCoverage: 200000,
+			want:        0,
+		},
+		{
+			name:        "increased",
+			coverage:    730000,
+			oldCoverage: 365000,
+			want:        200,
+		},
+		{
+			name:        "decreased",
+			coverage:    365000,
+			oldCoverage: 730000,
+			want:        -200,
+		},
+	}
+	for _, tt := range tests {
+		ms.T().Run(tt.name, func(t *testing.T) {
+			item := Item{CoverageAmount: tt.coverage}
+			got := item.calculatePremiumChange(now, tt.oldCoverage)
+			ms.Equal(api.Currency(tt.want), got)
+		})
+	}
+}
+
 func (ms *ModelSuite) TestItem_CreateLedgerEntry() {
 	f := CreateItemFixtures(ms.DB, FixturesConfig{})
 	item := f.Items[0]

@@ -645,13 +645,20 @@ func (i *Item) calculateProratedPremium(t time.Time) api.Currency {
 }
 
 func (i *Item) calculateCancellationCredit(t time.Time) api.Currency {
-	// TODO: finish this
-	return api.Currency(0)
+	p := domain.CalculatePartialYearValue(int(i.calculateAnnualPremium()), t)
+	return api.Currency(-1 * p)
 }
 
 func (i *Item) calculatePremiumChange(t time.Time, oldCoverageAmount int) api.Currency {
-	// TODO: finish this
-	return api.Currency(0)
+	oldItem := Item{CoverageAmount: oldCoverageAmount}
+
+	oldPremium := oldItem.calculateAnnualPremium()
+	credit := domain.CalculatePartialYearValue(int(oldPremium), t)
+
+	newPremium := i.calculateAnnualPremium()
+	charge := domain.CalculatePartialYearValue(int(newPremium), t)
+
+	return api.Currency(charge - credit)
 }
 
 // NewItemFromApiInput creates a new `Item` from a `ItemInput`.
