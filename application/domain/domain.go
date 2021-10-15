@@ -388,8 +388,12 @@ func RandomString(n int, includeLetters string) string {
 // CalculatePartialYearValue returns the value multiplied by the number
 //   of days left between the startDate and the last day of the same year (inclusive)
 //   divided by 365  (rounded down)
+// If the startDate is January 1, then the input value is returned.
 // Note that the startDate's time of day is ignored.
 func CalculatePartialYearValue(value int, startDate time.Time) int {
+	if startDate.Month() == 1 && startDate.Day() == 1 {
+		return value
+	}
 	startMidnight := startDate.Truncate(time.Hour * 24)
 	thisYear := startDate.Year()
 	newYears := time.Date(thisYear+1, 1, 1, 0, 0, 0, 0, time.UTC)
