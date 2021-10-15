@@ -702,7 +702,7 @@ func (ms *ModelSuite) TestItem_GetAnnualPremium() {
 		ms.T().Run(tt.name, func(t *testing.T) {
 			item := Item{CoverageAmount: tt.coverage}
 			got := item.GetAnnualPremium()
-			ms.Equal(tt.want, got)
+			ms.Equal(api.Currency(tt.want), got)
 		})
 	}
 }
@@ -733,7 +733,7 @@ func (ms *ModelSuite) TestItem_GetProratedPremium() {
 		ms.T().Run(tt.name, func(t *testing.T) {
 			item := Item{CoverageAmount: tt.coverage}
 			got := item.GetProratedPremium(tt.now)
-			ms.Equal(tt.want, got)
+			ms.Equal(api.Currency(tt.want), got)
 		})
 	}
 }

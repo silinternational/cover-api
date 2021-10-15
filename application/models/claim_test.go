@@ -822,7 +822,7 @@ func (ms *ModelSuite) TestClaim_CreateLedgerEntry() {
 	ms.Equal(item.PolicyID, le.PolicyID, "PolicyID is incorrect")
 	ms.Equal(item.ID, le.ItemID.UUID, "ItemID is incorrect")
 	ms.Equal(claim.ID, le.ClaimID.UUID, "ClaimID is incorrect")
-	ms.Equal(-12345, le.Amount, "Amount is incorrect")
+	ms.Equal(api.Currency(-12345), le.Amount, "Amount is incorrect")
 	ms.Equal(user.FirstName, le.FirstName, "FirstName is incorrect")
 	ms.Equal(user.LastName, le.LastName, "LastName is incorrect")
 }
