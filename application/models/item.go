@@ -103,6 +103,13 @@ func (i *Item) Update(ctx context.Context) error {
 		}
 	}
 
+	if oldItem.CoverageAmount != i.CoverageAmount {
+		amount := i.calculatePremiumChange(time.Now().UTC(), oldItem.CoverageAmount)
+		if err := i.CreateLedgerEntry(Tx(ctx), LedgerEntryTypeCoverageChange, amount); err != nil {
+			return err
+		}
+	}
+
 	return update(tx, i)
 }
 
@@ -295,7 +302,11 @@ func (i *Item) Inactivate(ctx context.Context) error {
 
 	user := CurrentUser(ctx)
 	i.StatusChange = ItemStatusChangeInactivated + user.Name()
-	return i.Update(ctx)
+	if err := i.Update(ctx); err != nil {
+		return err
+	}
+
+	return i.CreateLedgerEntry(Tx(ctx), LedgerEntryTypeCoverageChange, i.calculateCancellationCredit(time.Now().UTC()))
 }
 
 // IsActorAllowedTo ensure the actor is either an admin, or a member of this policy to perform any permission
@@ -631,6 +642,16 @@ func (i *Item) calculateAnnualPremium() api.Currency {
 func (i *Item) calculateProratedPremium(t time.Time) api.Currency {
 	p := domain.CalculatePartialYearValue(int(i.calculateAnnualPremium()), t)
 	return api.Currency(p)
+}
+
+func (i *Item) calculateCancellationCredit(t time.Time) api.Currency {
+	// TODO: finish this
+	return api.Currency(0)
+}
+
+func (i *Item) calculatePremiumChange(t time.Time, oldCoverageAmount int) api.Currency {
+	// TODO: finish this
+	return api.Currency(0)
 }
 
 // NewItemFromApiInput creates a new `Item` from a `ItemInput`.
