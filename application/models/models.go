@@ -42,6 +42,20 @@ const (
 
 	FieldClaimStatus = "Status"
 
+	FieldClaimItemItemID          = "ItemID"
+	FieldClaimItemStatus          = "Status"
+	FieldClaimItemIsRepairable    = "IsRepairable"
+	FieldClaimItemRepairEstimate  = "RepairEstimate"
+	FieldClaimItemRepairActual    = "RepairActual"
+	FieldClaimItemReplaceEstimate = "ReplaceEstimate"
+	FieldClaimItemReplaceActual   = "ReplaceActual"
+	FieldClaimItemPayoutOption    = "PayoutOption"
+	FieldClaimItemPayoutAmount    = "PayoutAmount"
+	FieldClaimItemFMV             = "FMV"
+	FieldClaimItemReviewDate      = "ReviewDate"
+	FieldClaimItemReviewerID      = "ReviewerID"
+	FieldClaimItemLocation        = "Location"
+
 	FieldItemName              = "Name"
 	FieldItemCategoryID        = "CategoryID"
 	FieldItemRiskCategoryID    = "RiskCategoryID"
