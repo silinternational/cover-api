@@ -410,3 +410,8 @@ func BeginningOfLastMonth(date time.Time) time.Time {
 func EndOfMonth(date time.Time) time.Time {
 	return date.AddDate(0, 1, -date.Day())
 }
+
+func IsLeapYear(t time.Time) bool {
+	tt := time.Date(t.Year(), 2, 29, 0, 0, 0, 0, time.UTC)
+	return tt.Day() == 29
+}

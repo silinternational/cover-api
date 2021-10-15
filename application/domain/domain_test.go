@@ -198,3 +198,21 @@ func (ts *TestSuite) Test_EndOfMonth() {
 		})
 	}
 }
+
+func (ts *TestSuite) TestIsLeapYear() {
+	tests := []struct {
+		year int
+		want bool
+	}{
+		{year: 1900, want: false},
+		{year: 2000, want: true},
+		{year: 2100, want: false},
+		{year: 2400, want: true},
+	}
+
+	for _, tt := range tests {
+		ts.T().Run(strconv.Itoa(tt.year), func(t *testing.T) {
+			ts.Equal(tt.want, IsLeapYear(time.Date(tt.year, 1, 1, 0, 0, 0, 0, time.UTC)))
+		})
+	}
+}
