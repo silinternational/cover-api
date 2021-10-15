@@ -525,7 +525,8 @@ func (i *Item) Approve(ctx context.Context, doEmitEvent bool) error {
 		emitEvent(e)
 	}
 
-	return i.CreateLedgerEntry(Tx(ctx))
+	amount := i.calculateProratedPremium(time.Now().UTC())
+	return i.CreateLedgerEntry(Tx(ctx), LedgerEntryTypeNewCoverage, amount)
 }
 
 // Deny takes the item from Pending coverage status to Denied.
@@ -607,7 +608,7 @@ func (i *Item) ConvertToAPI(tx *pop.Connection) api.Item {
 		CoverageStartDate:      i.CoverageStartDate.Format(domain.DateFormat),
 		AccountableUserID:      i.PolicyUserID,
 		AccountableDependentID: i.PolicyDependentID,
-		AnnualPremium:          i.GetAnnualPremium(),
+		AnnualPremium:          i.calculateAnnualPremium(),
 		CreatedAt:              i.CreatedAt,
 		UpdatedAt:              i.UpdatedAt,
 	}
@@ -622,13 +623,13 @@ func (i *Items) ConvertToAPI(tx *pop.Connection) api.Items {
 	return apiItems
 }
 
-func (i *Item) GetAnnualPremium() api.Currency {
+func (i *Item) calculateAnnualPremium() api.Currency {
 	p := int(math.Round(float64(i.CoverageAmount) * domain.Env.PremiumFactor))
 	return api.Currency(p)
 }
 
-func (i *Item) GetProratedPremium(t time.Time) api.Currency {
-	p := domain.CalculatePartialYearValue(int(i.GetAnnualPremium()), t)
+func (i *Item) calculateProratedPremium(t time.Time) api.Currency {
+	p := domain.CalculatePartialYearValue(int(i.calculateAnnualPremium()), t)
 	return api.Currency(p)
 }
 
@@ -715,7 +716,7 @@ func (i *Item) setAccountablePerson(tx *pop.Connection, id uuid.UUID) error {
 	return api.NewAppError(errors.New("accountable person ID not found"), api.ErrorNoRows, api.CategoryUser)
 }
 
-func (i *Item) CreateLedgerEntry(tx *pop.Connection) error {
+func (i *Item) CreateLedgerEntry(tx *pop.Connection, entryType LedgerEntryType, amount api.Currency) error {
 	i.LoadPolicy(tx, false)
 	i.LoadRiskCategory(tx, false)
 	i.Policy.LoadEntityCode(tx, false)
@@ -723,8 +724,8 @@ func (i *Item) CreateLedgerEntry(tx *pop.Connection) error {
 	firstName, lastName := i.GetAccountablePersonName(tx)
 
 	le := NewLedgerEntry(i.Policy, i, nil)
-	le.Type = LedgerEntryTypeNewCoverage
-	le.Amount = i.GetProratedPremium(time.Now().UTC())
+	le.Type = entryType
+	le.Amount = amount
 	le.FirstName = firstName
 	le.LastName = lastName
 

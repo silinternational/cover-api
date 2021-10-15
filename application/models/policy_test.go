@@ -516,7 +516,7 @@ func (ms *ModelSuite) TestPolicy_NewHistory() {
 	}
 }
 
-func (ms *ModelSuite) TestPolicy_GetAnnualPremium() {
+func (ms *ModelSuite) TestPolicy_calculateAnnualPremium() {
 	f := CreateItemFixtures(ms.DB, FixturesConfig{NumberOfPolicies: 2})
 
 	secondItem := createItemFixture(ms.DB, f.Policies[1].ID, CreateCategoryFixtures(ms.DB, 1).ItemCategories[0].ID)
@@ -544,12 +544,12 @@ func (ms *ModelSuite) TestPolicy_GetAnnualPremium() {
 		{
 			name:   "two items, above minimum",
 			policy: secondPolicy,
-			want:   f.Policies[1].Items[0].GetAnnualPremium() + f.Policies[1].Items[1].GetAnnualPremium(),
+			want:   f.Policies[1].Items[0].calculateAnnualPremium() + f.Policies[1].Items[1].calculateAnnualPremium(),
 		},
 	}
 	for _, tt := range tests {
 		ms.T().Run(tt.name, func(t *testing.T) {
-			got := tt.policy.GetAnnualPremium(ms.DB)
+			got := tt.policy.calculateAnnualPremium(ms.DB)
 			ms.Equal(tt.want, got)
 		})
 	}

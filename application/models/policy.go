@@ -361,11 +361,11 @@ func (p *Policy) NewHistory(ctx context.Context, action string, fieldUpdate Fiel
 	}
 }
 
-func (p *Policy) GetAnnualPremium(tx *pop.Connection) api.Currency {
+func (p *Policy) calculateAnnualPremium(tx *pop.Connection) api.Currency {
 	p.LoadItems(tx, false)
 	var premium api.Currency
 	for _, item := range p.Items {
-		premium += item.GetAnnualPremium()
+		premium += item.calculateAnnualPremium()
 	}
 	if int(premium) < domain.Env.PremiumMinimum {
 		return api.Currency(domain.Env.PremiumMinimum)
