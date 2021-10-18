@@ -83,7 +83,7 @@ func (m MessageData) addItemData(tx *pop.Connection, item models.Item) {
 
 	m["coverageAmount"] = "$" + api.Currency(item.CoverageAmount).String()
 	m["coverageStartDate"] = item.CoverageStartDate.Format(domain.DateFormat)
-	m["annualPremium"] = "$" + api.Currency(item.GetAnnualPremium()).String()
+	m["annualPremium"] = "$" + item.CalculateAnnualPremium().String()
 }
 
 func (m MessageData) renderHTML(template string) string {

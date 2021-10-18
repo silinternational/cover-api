@@ -701,7 +701,7 @@ func (ms *ModelSuite) TestItem_calculateAnnualPremium() {
 	for _, tt := range tests {
 		ms.T().Run(tt.name, func(t *testing.T) {
 			item := Item{CoverageAmount: tt.coverage}
-			got := item.calculateAnnualPremium()
+			got := item.CalculateAnnualPremium()
 			ms.Equal(api.Currency(tt.want), got)
 		})
 	}

@@ -544,7 +544,7 @@ func (ms *ModelSuite) TestPolicy_calculateAnnualPremium() {
 		{
 			name:   "two items, above minimum",
 			policy: secondPolicy,
-			want:   f.Policies[1].Items[0].calculateAnnualPremium() + f.Policies[1].Items[1].calculateAnnualPremium(),
+			want:   f.Policies[1].Items[0].CalculateAnnualPremium() + f.Policies[1].Items[1].CalculateAnnualPremium(),
 		},
 	}
 	for _, tt := range tests {

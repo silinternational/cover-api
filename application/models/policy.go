@@ -365,7 +365,7 @@ func (p *Policy) calculateAnnualPremium(tx *pop.Connection) api.Currency {
 	p.LoadItems(tx, false)
 	var premium api.Currency
 	for _, item := range p.Items {
-		premium += item.calculateAnnualPremium()
+		premium += item.CalculateAnnualPremium()
 	}
 	if int(premium) < domain.Env.PremiumMinimum {
 		return api.Currency(domain.Env.PremiumMinimum)
