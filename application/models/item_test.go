@@ -547,24 +547,24 @@ func (ms *ModelSuite) TestItem_SafeDeleteOrInactivate() {
 			wantStatus:  api.ItemCoverageStatusInactive,
 		},
 		{
-			name:        "new draft item",
-			item:        newDraftItem,
-			wantDeleted: true,
+			name:       "new draft item",
+			item:       newDraftItem,
+			wantStatus: api.ItemCoverageStatusInactive,
 		},
 		{
-			name:        "new approved item",
-			item:        newApprovedItem,
-			wantDeleted: true,
+			name:       "new approved item",
+			item:       newApprovedItem,
+			wantStatus: api.ItemCoverageStatusInactive,
 		},
 		{
-			name:        "new pending item",
-			item:        newPendingItem,
-			wantDeleted: true,
+			name:       "new pending item",
+			item:       newPendingItem,
+			wantStatus: api.ItemCoverageStatusInactive,
 		},
 		{
-			name:        "new revision item",
-			item:        newRevisionItem,
-			wantDeleted: true,
+			name:       "new revision item",
+			item:       newRevisionItem,
+			wantStatus: api.ItemCoverageStatusInactive,
 		},
 		{
 			name:        "new inactive item",
@@ -681,7 +681,7 @@ func (ms *ModelSuite) TestItem_setAccountablePerson() {
 	}
 }
 
-func (ms *ModelSuite) TestItem_GetAnnualPremium() {
+func (ms *ModelSuite) TestItem_calculateAnnualPremium() {
 	tests := []struct {
 		name     string
 		coverage int
@@ -701,13 +701,13 @@ func (ms *ModelSuite) TestItem_GetAnnualPremium() {
 	for _, tt := range tests {
 		ms.T().Run(tt.name, func(t *testing.T) {
 			item := Item{CoverageAmount: tt.coverage}
-			got := item.GetAnnualPremium()
+			got := item.calculateAnnualPremium()
 			ms.Equal(api.Currency(tt.want), got)
 		})
 	}
 }
 
-func (ms *ModelSuite) TestItem_GetProratedPremium() {
+func (ms *ModelSuite) TestItem_calculateProratedPremium() {
 	now := time.Date(1999, 3, 15, 0, 0, 0, 0, time.UTC)
 
 	tests := []struct {
@@ -732,7 +732,7 @@ func (ms *ModelSuite) TestItem_GetProratedPremium() {
 	for _, tt := range tests {
 		ms.T().Run(tt.name, func(t *testing.T) {
 			item := Item{CoverageAmount: tt.coverage}
-			got := item.GetProratedPremium(tt.now)
+			got := item.calculateProratedPremium(tt.now)
 			ms.Equal(api.Currency(tt.want), got)
 		})
 	}
@@ -748,7 +748,9 @@ func (ms *ModelSuite) TestItem_CreateLedgerEntry() {
 	ms.NoError(item.setAccountablePerson(ms.DB, f.Users[0].ID))
 	ms.NoError(item.Update(ctx))
 
-	ms.NoError(item.CreateLedgerEntry(ms.DB))
+	amount := item.calculateProratedPremium(time.Now().UTC())
+
+	ms.NoError(item.CreateLedgerEntry(ms.DB, LedgerEntryTypeNewCoverage, amount))
 
 	var le LedgerEntry
 	ms.NoError(ms.DB.Where("item_id = ?", item.ID).First(&le))
@@ -756,7 +758,7 @@ func (ms *ModelSuite) TestItem_CreateLedgerEntry() {
 	ms.Equal(LedgerEntryTypeNewCoverage, le.Type, "Type is incorrect")
 	ms.Equal(item.PolicyID, le.PolicyID, "PolicyID is incorrect")
 	ms.Equal(item.ID, le.ItemID.UUID, "ItemID is incorrect")
-	ms.Equal(item.GetProratedPremium(time.Now()), le.Amount, "Amount is incorrect")
+	ms.Equal(amount, le.Amount, "Amount is incorrect")
 	ms.Equal(user.FirstName, le.FirstName, "FirstName is incorrect")
 	ms.Equal(user.LastName, le.LastName, "LastName is incorrect")
 }

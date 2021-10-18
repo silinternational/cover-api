@@ -81,15 +81,15 @@ func (i *Item) Update(ctx context.Context) error {
 	if err := oldItem.FindByID(tx, i.ID); err != nil {
 		return appErrorFromDB(err, api.ErrorQueryFailure)
 	}
-	validTrans, err := isItemTransitionValid(oldItem.CoverageStatus, i.CoverageStatus)
-	if err != nil {
+	if validTrans, err := isItemTransitionValid(oldItem.CoverageStatus, i.CoverageStatus); err != nil {
 		panic(err)
-	}
-	if !validTrans {
-		err := fmt.Errorf("invalid item coverage status transition from %s to %s",
-			oldItem.CoverageStatus, i.CoverageStatus)
-		appErr := api.NewAppError(err, api.ErrorValidation, api.CategoryUser)
-		return appErr
+	} else {
+		if !validTrans {
+			err := fmt.Errorf("invalid item coverage status transition from %s to %s",
+				oldItem.CoverageStatus, i.CoverageStatus)
+			appErr := api.NewAppError(err, api.ErrorValidation, api.CategoryUser)
+			return appErr
+		}
 	}
 
 	i.LoadPolicy(tx, false)
@@ -99,6 +99,13 @@ func (i *Item) Update(ctx context.Context) error {
 		history := i.Policy.NewHistory(ctx, api.HistoryActionUpdate, updates[ii])
 		history.ItemID = nulls.NewUUID(i.ID)
 		if err := history.Create(tx); err != nil {
+			return err
+		}
+	}
+
+	if oldItem.CoverageAmount != i.CoverageAmount {
+		amount := i.calculatePremiumChange(time.Now().UTC(), oldItem.CoverageAmount)
+		if err := i.CreateLedgerEntry(Tx(ctx), LedgerEntryTypeCoverageChange, amount); err != nil {
 			return err
 		}
 	}
@@ -254,16 +261,18 @@ func (i *Item) FindByID(tx *pop.Connection, id uuid.UUID) error {
 //  If the item's status is Denied or Inactive, it does nothing.
 //  Otherwise, it changes its status to Inactive.
 func (i *Item) SafeDeleteOrInactivate(ctx context.Context, actor User) error {
-	tx := Tx(ctx)
 	switch i.CoverageStatus {
 	case api.ItemCoverageStatusInactive, api.ItemCoverageStatusDenied:
 		return nil
 	case api.ItemCoverageStatusApproved:
 		return i.Inactivate(ctx)
 	case api.ItemCoverageStatusDraft, api.ItemCoverageStatusRevision, api.ItemCoverageStatusPending:
-		if i.isNewEnough() {
-			return tx.Destroy(i)
-		}
+		// TODO: figure out when a destroy will work and when it won't, based on searching for child records
+		// that may have been created for an item that traverses states and then back to one of these
+		// "safe-to-delete" states.
+		//if i.isNewEnough() {
+		//	return Tx(ctx).Destroy(i)
+		//}
 		return i.Inactivate(ctx)
 	default:
 		panic(`invalid item status in SafeDeleteOrInactivate`)
@@ -293,7 +302,11 @@ func (i *Item) Inactivate(ctx context.Context) error {
 
 	user := CurrentUser(ctx)
 	i.StatusChange = ItemStatusChangeInactivated + user.Name()
-	return i.Update(ctx)
+	if err := i.Update(ctx); err != nil {
+		return err
+	}
+
+	return i.CreateLedgerEntry(Tx(ctx), LedgerEntryTypeCoverageChange, i.calculateCancellationCredit(time.Now().UTC()))
 }
 
 // IsActorAllowedTo ensure the actor is either an admin, or a member of this policy to perform any permission
@@ -523,7 +536,8 @@ func (i *Item) Approve(ctx context.Context, doEmitEvent bool) error {
 		emitEvent(e)
 	}
 
-	return i.CreateLedgerEntry(Tx(ctx))
+	amount := i.calculateProratedPremium(time.Now().UTC())
+	return i.CreateLedgerEntry(Tx(ctx), LedgerEntryTypeNewCoverage, amount)
 }
 
 // Deny takes the item from Pending coverage status to Denied.
@@ -605,7 +619,7 @@ func (i *Item) ConvertToAPI(tx *pop.Connection) api.Item {
 		CoverageStartDate:      i.CoverageStartDate.Format(domain.DateFormat),
 		AccountableUserID:      i.PolicyUserID,
 		AccountableDependentID: i.PolicyDependentID,
-		AnnualPremium:          i.GetAnnualPremium(),
+		AnnualPremium:          i.calculateAnnualPremium(),
 		CreatedAt:              i.CreatedAt,
 		UpdatedAt:              i.UpdatedAt,
 	}
@@ -620,14 +634,24 @@ func (i *Items) ConvertToAPI(tx *pop.Connection) api.Items {
 	return apiItems
 }
 
-func (i *Item) GetAnnualPremium() api.Currency {
+func (i *Item) calculateAnnualPremium() api.Currency {
 	p := int(math.Round(float64(i.CoverageAmount) * domain.Env.PremiumFactor))
 	return api.Currency(p)
 }
 
-func (i *Item) GetProratedPremium(t time.Time) api.Currency {
-	p := domain.CalculatePartialYearValue(int(i.GetAnnualPremium()), t)
+func (i *Item) calculateProratedPremium(t time.Time) api.Currency {
+	p := domain.CalculatePartialYearValue(int(i.calculateAnnualPremium()), t)
 	return api.Currency(p)
+}
+
+func (i *Item) calculateCancellationCredit(t time.Time) api.Currency {
+	// TODO: finish this
+	return api.Currency(0)
+}
+
+func (i *Item) calculatePremiumChange(t time.Time, oldCoverageAmount int) api.Currency {
+	// TODO: finish this
+	return api.Currency(0)
 }
 
 // NewItemFromApiInput creates a new `Item` from a `ItemInput`.
@@ -713,7 +737,7 @@ func (i *Item) setAccountablePerson(tx *pop.Connection, id uuid.UUID) error {
 	return api.NewAppError(errors.New("accountable person ID not found"), api.ErrorNoRows, api.CategoryUser)
 }
 
-func (i *Item) CreateLedgerEntry(tx *pop.Connection) error {
+func (i *Item) CreateLedgerEntry(tx *pop.Connection, entryType LedgerEntryType, amount api.Currency) error {
 	i.LoadPolicy(tx, false)
 	i.LoadRiskCategory(tx, false)
 	i.Policy.LoadEntityCode(tx, false)
@@ -721,8 +745,8 @@ func (i *Item) CreateLedgerEntry(tx *pop.Connection) error {
 	firstName, lastName := i.GetAccountablePersonName(tx)
 
 	le := NewLedgerEntry(i.Policy, i, nil)
-	le.Type = LedgerEntryTypeNewCoverage
-	le.Amount = i.GetProratedPremium(time.Now().UTC())
+	le.Type = entryType
+	le.Amount = amount
 	le.FirstName = firstName
 	le.LastName = lastName
 
