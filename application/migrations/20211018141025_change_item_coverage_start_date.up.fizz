@@ -1,0 +1,2 @@
+change_column("items", "coverage_start_date", "date", {})
+change_column("items", "purchase_date", "date", {})

@@ -149,8 +149,8 @@ func createItemFixture(tx *pop.Connection, policyID uuid.UUID, categoryID uuid.U
 		Model:             randStr(10),
 		SerialNumber:      randStr(10),
 		CoverageAmount:    (int(rand.Int31n(100)) + 100) * domain.CurrencyFactor,
-		PurchaseDate:      time.Date(2010, 4, 1, 12, 0, 0, 0, time.UTC),
-		CoverageStartDate: time.Date(2010, 4, 1, 13, 0, 0, 0, time.UTC),
+		PurchaseDate:      time.Date(2010, 4, 1, 0, 0, 0, 0, time.UTC),
+		CoverageStartDate: time.Date(2010, 4, 1, 0, 0, 0, 0, time.UTC),
 		// By default, CoverageStatus gets set to Draft by the Item.Create function
 	}
 	MustCreate(tx, &item)
