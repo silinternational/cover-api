@@ -24,7 +24,6 @@ func (ts *TestSuite) Test_itemSubmitted() {
 	}
 
 	f := models.CreateItemFixtures(db, fixConfig)
-
 	models.CreateAdminUsers(db)
 
 	submittedItem := f.Items[0]
@@ -72,7 +71,6 @@ func (ts *TestSuite) Test_itemAutoApproved() {
 	}
 
 	f := models.CreateItemFixtures(db, fixConfig)
-
 	models.CreateAdminUsers(db)
 
 	approvedItem := f.Items[1]
@@ -122,6 +120,7 @@ func (ts *TestSuite) Test_itemRevision() {
 	}
 
 	f := models.CreateItemFixtures(db, fixConfig)
+	models.CreateAdminUsers(db)
 
 	revisionItem := f.Items[0]
 	models.UpdateItemStatus(db, revisionItem, api.ItemCoverageStatusRevision, "try again, please")
@@ -164,6 +163,7 @@ func (ts *TestSuite) Test_itemDenied() {
 	}
 
 	f := models.CreateItemFixtures(db, fixConfig)
+	models.CreateAdminUsers(db)
 
 	revisionItem := f.Items[0]
 	models.UpdateItemStatus(db, revisionItem, api.ItemCoverageStatusDenied, "sorry Charlie")

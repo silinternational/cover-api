@@ -177,6 +177,15 @@ func (u *User) EmailOfChoice() string {
 	return u.Email
 }
 
+// GetDefaultSteward returns the User with AppRoleSteward who logged in most recently
+func GetDefaultSteward(tx *pop.Connection) User {
+	u := User{}
+	if err := tx.Where("app_role = ?", AppRoleSteward).Order("last_login_utc desc").First(&u); err != nil {
+		panic("error finding most recently logged in steward user " + err.Error())
+	}
+	return u
+}
+
 // FindStewards finds all the users with AppRoleSteward
 func (u *Users) FindStewards(tx *pop.Connection) {
 	if err := tx.Where("app_role = ?", AppRoleSteward).All(u); err != nil {

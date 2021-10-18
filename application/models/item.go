@@ -619,7 +619,7 @@ func (i *Item) ConvertToAPI(tx *pop.Connection) api.Item {
 		CoverageStartDate:      i.CoverageStartDate.Format(domain.DateFormat),
 		AccountableUserID:      i.PolicyUserID,
 		AccountableDependentID: i.PolicyDependentID,
-		AnnualPremium:          i.calculateAnnualPremium(),
+		AnnualPremium:          i.CalculateAnnualPremium(),
 		CreatedAt:              i.CreatedAt,
 		UpdatedAt:              i.UpdatedAt,
 	}
@@ -634,13 +634,14 @@ func (i *Items) ConvertToAPI(tx *pop.Connection) api.Items {
 	return apiItems
 }
 
-func (i *Item) calculateAnnualPremium() api.Currency {
+// CalculateAnnualPremium returns the rounded product of the item's CoverageAmount and the PremiumFactor
+func (i *Item) CalculateAnnualPremium() api.Currency {
 	p := int(math.Round(float64(i.CoverageAmount) * domain.Env.PremiumFactor))
 	return api.Currency(p)
 }
 
 func (i *Item) calculateProratedPremium(t time.Time) api.Currency {
-	p := domain.CalculatePartialYearValue(int(i.calculateAnnualPremium()), t)
+	p := domain.CalculatePartialYearValue(int(i.CalculateAnnualPremium()), t)
 	return api.Currency(p)
 }
 

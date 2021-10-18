@@ -124,6 +124,7 @@ func (ts *TestSuite) Test_ItemRevisionQueueMessage() {
 	}
 
 	f := models.CreateItemFixtures(db, fixConfig)
+	models.CreateAdminUsers(db)
 
 	member0 := f.Policies[0].Members[0]
 	member1 := f.Policies[0].Members[1]
@@ -169,6 +170,7 @@ func (ts *TestSuite) Test_ItemDeniedQueueMessage() {
 	}
 
 	f := models.CreateItemFixtures(db, fixConfig)
+	models.CreateAdminUsers(db)
 
 	member0 := f.Policies[0].Members[0]
 	member1 := f.Policies[0].Members[1]

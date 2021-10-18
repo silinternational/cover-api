@@ -1,0 +1,21 @@
+<%= if ( title != "" ) { %>
+ <div style="padding: 0 0 2em 0;"><%= title %></div>
+<% } %>
+
+<%= if ( alert != "" ) { %>
+ <div style="padding:8px; border-radius: 8px; background: #EBEEF2;">
+	<table style="width: 100%;">
+		<tr>
+			<td rowspan="2" style="padding-right: 0.5em;">&#128339;</td>
+			<th style="text-align: left;"><%= alert %></th>
+		</tr>
+		<%= if ( alert_description != "" ) { %>
+		 <tr>
+			<td>
+				<%= alert_description %>
+			</td>
+		 </tr>
+		<% } %>
+	</table>
+ </div>
+<% } %>

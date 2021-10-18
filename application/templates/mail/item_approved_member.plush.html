@@ -1,5 +1,36 @@
-<h4><a href="<%= itemURL %>"><%= itemName %></a></h4>
-<p>
-	This is an unofficial draft email.
-    Your newly submitted policy item has been approved.
-</p>
+
+<div>
+	<%= partial("body_header", {
+	  title: "Coverage Added for " + item.Name,
+	  alert: "Billing pending",
+	  alert_description: "The premium is prorated for the remainder of the year."}
+	) %>
+
+	<%# TODO Add this back in when we're ready for it %>
+	<%# coverageEndDate: item.CoverageEndDate, %>
+
+	<%= partial("item_card", {
+	  name: item.Name,
+	  makeModel: item.Make + item.Model,
+	  serialNumber: item.SerialNumber,
+	  description: item.Description,
+	  categoryName: item.Category.Name,
+	  categoryHelpText: item.Category.HelpText,
+	  coverageAmount: coverageAmount,
+	  premium: annualPremium,
+	  coverageStartDate: coverageStartDate,
+	  accountablePerson: accountablePerson,
+	  householdID: policy.HouseholdID}
+	) %>
+
+	<%= partial("button", {
+	  url: itemURL,
+	  label: "Open in Cover"}
+	) %>
+
+	<%= partial("customer_footer", {
+	supportEmail: supportEmail,
+	supportName: supportName}
+	) %>
+</div>
+
