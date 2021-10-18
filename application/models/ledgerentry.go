@@ -155,8 +155,7 @@ func (le *LedgerEntry) transactionDescription() string {
 	dateString := le.DateSubmitted.Format("Jan 02, 2006")
 
 	description := ""
-	// TODO: change this to api.PolicyTypeHousehold (requires a database update)
-	if le.EntityCode == "MMB/STM" {
+	if le.PolicyType == api.PolicyTypeHousehold {
 		description = fmt.Sprintf("%s,%s %s %s %s",
 			le.LastName, le.FirstName, le.RiskCategoryName, le.Type, dateString)
 	} else {
@@ -169,8 +168,7 @@ func (le *LedgerEntry) transactionDescription() string {
 
 // Merge HouseholdID and CostCenter into one column
 func (le *LedgerEntry) transactionReference() string {
-	// TODO: change this to api.PolicyTypeHousehold (requires a database update)
-	if le.EntityCode == "MMB/STM" {
+	if le.PolicyType == api.PolicyTypeHousehold {
 		return fmt.Sprintf("MC %s", le.HouseholdID)
 	}
 	return le.CostCenter
