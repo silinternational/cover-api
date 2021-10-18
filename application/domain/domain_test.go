@@ -2,6 +2,7 @@ package domain
 
 import (
 	"fmt"
+	"strconv"
 	"testing"
 	"time"
 
@@ -85,7 +86,7 @@ func (ts *TestSuite) TestCalculatePartialYearValue() {
 		},
 		{
 			name:      "leap year minus one day",
-			input:     365, // this looks like days per year just to make the calculations easy to figure out
+			input:     366, // this looks like days per year just to make the calculations easy to figure out
 			startDate: time.Date(2020, 1, 2, 10, 0, 0, 0, time.UTC),
 			want:      365,
 		},
@@ -106,6 +107,12 @@ func (ts *TestSuite) TestCalculatePartialYearValue() {
 			input:     365 * 40,
 			startDate: time.Date(2021, 12, 31, 0, 0, 0, 0, time.UTC),
 			want:      40,
+		},
+		{
+			name:      "check rounding",
+			input:     1000,
+			startDate: time.Date(2021, 12, 31, 0, 0, 0, 0, time.UTC),
+			want:      3, // 2.7 rounded up to 3
 		},
 	}
 	for _, tt := range tests {
@@ -195,6 +202,24 @@ func (ts *TestSuite) Test_EndOfMonth() {
 	for _, tt := range tests {
 		ts.T().Run(tt.name, func(t *testing.T) {
 			ts.Equal(tt.want, EndOfMonth(tt.time))
+		})
+	}
+}
+
+func (ts *TestSuite) TestIsLeapYear() {
+	tests := []struct {
+		year int
+		want bool
+	}{
+		{year: 1900, want: false},
+		{year: 2000, want: true},
+		{year: 2100, want: false},
+		{year: 2400, want: true},
+	}
+
+	for _, tt := range tests {
+		ts.T().Run(strconv.Itoa(tt.year), func(t *testing.T) {
+			ts.Equal(tt.want, IsLeapYear(time.Date(tt.year, 1, 1, 0, 0, 0, 0, time.UTC)))
 		})
 	}
 }
