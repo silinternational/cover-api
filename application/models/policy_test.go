@@ -515,3 +515,42 @@ func (ms *ModelSuite) TestPolicy_NewHistory() {
 		})
 	}
 }
+
+func (ms *ModelSuite) TestPolicy_calculateAnnualPremium() {
+	f := CreateItemFixtures(ms.DB, FixturesConfig{NumberOfPolicies: 2})
+
+	secondItem := createItemFixture(ms.DB, f.Policies[1].ID, CreateCategoryFixtures(ms.DB, 1).ItemCategories[0].ID)
+	secondItem.CoverageAmount = int(float64(domain.Env.PremiumMinimum) / domain.Env.PremiumFactor)
+	ms.NoError(secondItem.Update(CreateTestContext(f.Users[0])))
+	f.Policies[1].LoadItems(ms.DB, true)
+
+	// Use a fresh copy, since the UUT does not expect pre-hydration
+	firstPolicy := Policy{ID: f.Policies[0].ID}
+	ms.NoError(ms.DB.Reload(&firstPolicy))
+
+	secondPolicy := Policy{ID: f.Policies[1].ID}
+	ms.NoError(ms.DB.Reload(&secondPolicy))
+
+	tests := []struct {
+		name   string
+		policy Policy
+		want   api.Currency
+	}{
+		{
+			name:   "one item, below minimum",
+			policy: firstPolicy,
+			want:   api.Currency(domain.Env.PremiumMinimum),
+		},
+		{
+			name:   "two items, above minimum",
+			policy: secondPolicy,
+			want:   f.Policies[1].Items[0].calculateAnnualPremium() + f.Policies[1].Items[1].calculateAnnualPremium(),
+		},
+	}
+	for _, tt := range tests {
+		ms.T().Run(tt.name, func(t *testing.T) {
+			got := tt.policy.calculateAnnualPremium(ms.DB)
+			ms.Equal(tt.want, got)
+		})
+	}
+}

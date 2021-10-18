@@ -60,7 +60,7 @@ type LedgerEntry struct {
 	AccountNumber    string          `db:"account_number"`
 	FirstName        string          `db:"first_name"`
 	LastName         string          `db:"last_name"`
-	Amount           int             `db:"amount"`
+	Amount           api.Currency    `db:"amount"`
 	DateSubmitted    time.Time       `db:"date_submitted"`
 	DateEntered      nulls.Time      `db:"date_entered"`
 	LegacyID         nulls.Int       `db:"legacy_id"`
@@ -98,13 +98,13 @@ func (le *LedgerEntries) ToCsv(batchDate time.Time) []byte {
 		for _, l := range ledgerEntries {
 			sage.AppendToBatch(fin.Transaction{
 				Account:     domain.Env.ExpenseAccount,
-				Amount:      l.Amount,
+				Amount:      int(l.Amount),
 				Description: l.transactionDescription(),
 				Reference:   l.transactionReference(),
 				Date:        l.DateSubmitted,
 			})
 
-			balance -= l.Amount
+			balance -= int(l.Amount)
 		}
 		sage.AppendToBatch(fin.Transaction{
 			Account:     account,
