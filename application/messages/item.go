@@ -9,7 +9,7 @@ import (
 
 func itemApprovedQueueMsg(tx *pop.Connection, item models.Item) {
 	data := newEmailMessageData()
-	data.addItemData(item)
+	data.addItemData(tx, item)
 
 	notn := models.Notification{
 		ItemID:  nulls.NewUUID(item.ID),
@@ -33,7 +33,7 @@ func itemApprovedQueueMsg(tx *pop.Connection, item models.Item) {
 
 func itemAutoApprovedQueueMessage(tx *pop.Connection, item models.Item, member models.User) {
 	data := newEmailMessageData()
-	data.addItemData(item)
+	data.addItemData(tx, item)
 	memberName := member.Name()
 	data["memberName"] = memberName
 
@@ -57,7 +57,7 @@ func itemAutoApprovedQueueMessage(tx *pop.Connection, item models.Item, member m
 
 func itemPendingQueueMessage(tx *pop.Connection, item models.Item, member models.User) {
 	data := newEmailMessageData()
-	data.addItemData(item)
+	data.addItemData(tx, item)
 	data["memberName"] = member.Name()
 
 	notn := models.Notification{
@@ -92,7 +92,7 @@ func ItemRevisionQueueMessage(tx *pop.Connection, item models.Item) {
 	item.LoadPolicyMembers(tx, false)
 
 	data := newEmailMessageData()
-	data.addItemData(item)
+	data.addItemData(tx, item)
 	data["itemStatusReason"] = item.StatusReason
 
 	notn := models.Notification{
@@ -135,7 +135,7 @@ func ItemDeniedQueueMessage(tx *pop.Connection, item models.Item) {
 	item.LoadPolicyMembers(tx, false)
 
 	data := newEmailMessageData()
-	data.addItemData(item)
+	data.addItemData(tx, item)
 	data["itemStatusReason"] = item.StatusReason
 
 	notn := models.Notification{
