@@ -824,6 +824,8 @@ func (ms *ModelSuite) TestItem_CreateLedgerEntry() {
 	ms.Equal(amount, le.Amount, "Amount is incorrect")
 	ms.Equal(user.FirstName, le.FirstName, "FirstName is incorrect")
 	ms.Equal(user.LastName, le.LastName, "LastName is incorrect")
+	ms.Equal(item.CoverageStartDate, le.DateSubmitted,
+		"ledger entry submitted date should be the same as the item CoverageStartDate")
 }
 
 func (ms *ModelSuite) TestItem_GetAccountablePersonName() {
@@ -880,9 +882,9 @@ func (ms *ModelSuite) TestItem_Compare() {
 		Model:             "OldModel",
 		SerialNumber:      "OldSerialNumber",
 		CoverageAmount:    777,
-		PurchaseDate:      time.Date(1991, 1, 1, 1, 1, 1, 1, time.UTC),
+		PurchaseDate:      time.Date(1991, 1, 1, 0, 0, 0, 0, time.UTC),
 		CoverageStatus:    api.ItemCoverageStatusRevision,
-		CoverageStartDate: time.Date(1992, 2, 2, 2, 2, 2, 2, time.UTC),
+		CoverageStartDate: time.Date(1992, 2, 2, 0, 0, 0, 0, time.UTC),
 		StatusReason:      "oldStatusReason",
 	}
 

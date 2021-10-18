@@ -756,6 +756,7 @@ func (i *Item) CreateLedgerEntry(tx *pop.Connection, entryType LedgerEntryType, 
 	le.Amount = amount
 	le.FirstName = firstName
 	le.LastName = lastName
+	le.DateSubmitted = i.CoverageStartDate
 
 	return le.Create(tx)
 }
