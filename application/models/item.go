@@ -646,17 +646,17 @@ func (i *Item) calculateProratedPremium(t time.Time) api.Currency {
 }
 
 func (i *Item) calculateCancellationCredit(t time.Time) api.Currency {
-	p := domain.CalculatePartialYearValue(int(i.calculateAnnualPremium()), t)
+	p := domain.CalculatePartialYearValue(int(i.CalculateAnnualPremium()), t)
 	return api.Currency(-1 * p)
 }
 
 func (i *Item) calculatePremiumChange(t time.Time, oldCoverageAmount int) api.Currency {
 	oldItem := Item{CoverageAmount: oldCoverageAmount}
 
-	oldPremium := oldItem.calculateAnnualPremium()
+	oldPremium := oldItem.CalculateAnnualPremium()
 	credit := domain.CalculatePartialYearValue(int(oldPremium), t)
 
-	newPremium := i.calculateAnnualPremium()
+	newPremium := i.CalculateAnnualPremium()
 	charge := domain.CalculatePartialYearValue(int(newPremium), t)
 
 	return api.Currency(charge - credit)
