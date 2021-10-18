@@ -1,6 +1,32 @@
-<h4><a href="<%= itemURL %>"><%= item.Name %></a></h4>
-<p>
-	This is an unofficial draft email.
-    <%= memberName %> just submitted a policy item which has been auto approved.
-	No action is required by you at this time.
-</p>
+<div>
+	<%= partial("body_header", {
+	title: "Notice",
+	subTitle: "Coverage has been auto approved for " + item.Name,
+	alert: "",
+	alert_description: ""}
+	) %>
+
+	<%# TODO Add this back in when we're ready for it %>
+	<%# coverageEndDate: item.CoverageEndDate, %>
+
+	<%= partial("item_card", {
+	name: item.Name,
+	makeModel: item.Make + " " + item.Model,
+	serialNumber: item.SerialNumber,
+	description: item.Description,
+	categoryName: item.Category.Name,
+	categoryHelpText: item.Category.HelpText,
+	coverageAmount: coverageAmount,
+	premium: annualPremium,
+	coverageStartDate: coverageStartDate,
+	accountablePerson: accountablePerson,
+	householdID: policy.HouseholdID}
+	) %>
+
+	<%= partial("button", {
+	url: itemURL,
+	label: "Open in Cover"}
+	) %>
+
+</div>
+
