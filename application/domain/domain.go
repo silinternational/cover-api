@@ -176,7 +176,7 @@ var Env struct {
 	PremiumMinimum          int `default:"25" split_words:"true"`
 
 	// PremiumFactor is multiplied by CoverageAmount to calculate the annual premium of an item
-	PremiumFactor float64 `default:"0.02" split_words:"true"`
+	PremiumFactor float64 `default:"0.035" split_words:"true"`
 
 	FiscalStartMonth int    `default:"1" split_words:"true"`
 	ExpenseAccount   string `default:"" split_words:"true"`

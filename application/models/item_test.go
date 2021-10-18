@@ -682,6 +682,8 @@ func (ms *ModelSuite) TestItem_setAccountablePerson() {
 }
 
 func (ms *ModelSuite) TestItem_calculateAnnualPremium() {
+	domain.Env.PremiumFactor = 0.02
+
 	tests := []struct {
 		name     string
 		coverage int
@@ -708,6 +710,8 @@ func (ms *ModelSuite) TestItem_calculateAnnualPremium() {
 }
 
 func (ms *ModelSuite) TestItem_calculateProratedPremium() {
+	domain.Env.PremiumFactor = 0.02
+
 	now := time.Date(1999, 3, 15, 0, 0, 0, 0, time.UTC)
 
 	tests := []struct {
@@ -737,6 +741,7 @@ func (ms *ModelSuite) TestItem_calculateProratedPremium() {
 
 func (ms *ModelSuite) TestItem_calculateCancellationCredit() {
 	now := time.Date(1999, 3, 15, 0, 0, 0, 0, time.UTC)
+	domain.Env.PremiumFactor = 0.02
 
 	tests := []struct {
 		name     string
@@ -764,6 +769,8 @@ func (ms *ModelSuite) TestItem_calculateCancellationCredit() {
 }
 
 func (ms *ModelSuite) TestItem_calculatePremiumChange() {
+	domain.Env.PremiumFactor = 0.02
+
 	// 10 days remaining in the year
 	now := time.Date(1999, 12, 22, 0, 0, 0, 0, time.UTC)
 
