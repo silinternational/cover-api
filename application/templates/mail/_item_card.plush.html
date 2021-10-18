@@ -43,7 +43,12 @@
 	</tr>
 	<tr>
 		<td><%= coverageStartDate %></td>
-		<td><%= if ( coverageEndDate != "" ) {coverageEndDate} %></td>
+		<td><%= if ( coverageEndDate != "" ) { %>
+			<%= coverageEndDate %>
+			<% } else { %>
+			  &mdash;
+			<% } %>
+		</td>
 	</tr>
 	<tr>
 		<th colspan="2" style="text-align: left; padding-top: 1em;">Accountable to</th>

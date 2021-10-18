@@ -93,7 +93,7 @@ func (ts *TestSuite) Test_ItemAutoApprovedQueueMessage() {
 				wantBodyContains: []string{
 					domain.Env.UIURL,
 					approvedItem.Name,
-					"just submitted a policy item which has been auto approved.",
+					"Coverage has been auto approved for",
 				},
 			},
 			item: approvedItem,

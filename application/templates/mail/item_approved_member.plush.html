@@ -1,7 +1,8 @@
 
 <div>
 	<%= partial("body_header", {
-	  title: "Coverage Added for " + item.Name,
+	  title: "Invoice",
+	  subTitle: "Coverage Added for " + item.Name,
 	  alert: "Billing pending",
 	  alert_description: "The premium is prorated for the remainder of the year."}
 	) %>
@@ -11,7 +12,7 @@
 
 	<%= partial("item_card", {
 	  name: item.Name,
-	  makeModel: item.Make + item.Model,
+	  makeModel: item.Make + " " + item.Model,
 	  serialNumber: item.SerialNumber,
 	  description: item.Description,
 	  categoryName: item.Category.Name,
