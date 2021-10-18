@@ -4,9 +4,15 @@ import (
 	"text/template"
 
 	"github.com/silinternational/cover-api/domain"
+	"github.com/silinternational/cover-api/models"
 )
 
 func (ts *TestSuite) TestSend() {
+
+	item := models.Item{
+		Name: "My Item",
+	}
+
 	nickname := "nickname"
 	msg := Message{
 		FromName:  "from name",
@@ -18,7 +24,7 @@ func (ts *TestSuite) TestSend() {
 			"uiURL":        "example.com",
 			"appName":      "Our App",
 			"itemURL":      "my-item.example.com",
-			"itemName":     "My Item",
+			"item":         item,
 			"memberName":   "John Doe",
 			"supportEmail": "support@example.com",
 		},

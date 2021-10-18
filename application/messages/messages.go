@@ -10,6 +10,7 @@ import (
 	"github.com/gobuffalo/nulls"
 	"github.com/gobuffalo/pop/v5"
 
+	"github.com/silinternational/cover-api/api"
 	"github.com/silinternational/cover-api/domain"
 	"github.com/silinternational/cover-api/models"
 	"github.com/silinternational/cover-api/notifications"
@@ -65,13 +66,24 @@ func (m MessageData) addClaimData(claim models.Claim) {
 	m["claimRefNum"] = claim.ReferenceNumber
 }
 
-func (m MessageData) addItemData(item models.Item) {
+func (m MessageData) addItemData(tx *pop.Connection, item models.Item) {
 	if m == nil {
 		m = map[string]interface{}{}
 	}
+	steward := models.GetDefaultSteward(tx)
+	m["supportEmail"] = steward.Email
+	m["supportName"] = steward.Name()
 
 	m["itemURL"] = fmt.Sprintf("%s/items/%s", domain.Env.UIURL, item.ID)
-	m["itemName"] = item.Name
+	m["item"] = item
+
+	firstName, lastName := item.GetAccountablePersonName(tx)
+	m["accountablePerson"] = firstName + " " + lastName
+	m["policy"] = item.Policy
+
+	m["coverageAmount"] = "$" + api.Currency(item.CoverageAmount).String()
+	m["coverageStartDate"] = item.CoverageStartDate.Format(domain.DateFormat)
+	m["annualPremium"] = "$" + api.Currency(item.GetAnnualPremium()).String()
 }
 
 func (m MessageData) renderHTML(template string) string {

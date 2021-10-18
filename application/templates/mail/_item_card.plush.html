@@ -1,0 +1,57 @@
+
+<h2><%= name %></h2>
+
+<%= if ( makeModel != "" ) { %>
+ <h3 style="margin: 0; padding: 0; line-height: normal;"><%= makeModel %></h3>
+<% } %>
+
+<%= if ( uniqueID != "" ) { %>
+ <div>
+	<h4 style="margin:0; padding:0;">Unique ID</h4>
+	<%= serialNumber %>
+ </div>
+<% } %>
+
+
+<%= if ( description != "" ) { %>
+ <div style="padding: 1em 0;"><%= description %></div>
+<% } %>
+
+<div>
+	<div style="padding: 6px; background: #EBEEF2; color: #2E5AAC; border-radius: 6px; width:fit-content">
+		<%= categoryName %>
+	</div>
+	<small style="padding-top: 5px;">
+		<%= categoryHelpText %>
+	</small>
+</div>
+
+
+
+<table>
+	<tr>
+		<th style="text-align: left; padding-top: 1em;">Covered value</th>
+		<th style="text-align: left; padding-top: 1em;">Premium</th>
+	</tr>
+	<tr>
+		<td><%= coverageAmount %></td>
+		<td><%= premium %></td>
+	</tr>
+	<tr style="padding-top: 1em;">
+		<th style="text-align: left; padding-top: 1em;">Starts</th>
+		<th style="text-align: left; padding-top: 1em;">Ends</th>
+	</tr>
+	<tr>
+		<td><%= coverageStartDate %></td>
+		<td><%= if ( coverageEndDate != "" ) {coverageEndDate} %></td>
+	</tr>
+	<tr>
+		<th colspan="2" style="text-align: left; padding-top: 1em;">Accountable to</th>
+	</tr>
+	<tr>
+		<td colspan="2"><%= accountablePerson %></td>
+	</tr>
+	<tr>
+		<td colspan="2">Household ID <%= householdID %></td>
+	</tr>
+</table>
