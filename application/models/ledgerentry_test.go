@@ -216,3 +216,53 @@ func (ms *ModelSuite) Test_NewLedgerEntry() {
 		})
 	}
 }
+
+func (ms *ModelSuite) TestLedgerEntries_SetDateEntered() {
+	f := CreateItemFixtures(ms.DB, FixturesConfig{ItemsPerPolicy: 2})
+	user := f.Users[0]
+	ctx := CreateTestContext(user)
+
+	march := time.Date(2021, 3, 1, 0, 0, 0, 0, time.UTC)
+	april := time.Date(2021, 4, 1, 0, 0, 0, 0, time.UTC)
+
+	datesSubmitted := []time.Time{march, april}
+	datesEntered := []nulls.Time{nulls.NewTime(april), {}}
+
+	entries := make(LedgerEntries, len(f.Items))
+	for i := range f.Items {
+		ms.NoError(f.Items[i].Approve(ctx, false))
+
+		ms.NoError(ms.DB.Where("item_id = ?", f.Items[i].ID).First(&entries[i]))
+		entries[i].DateSubmitted = datesSubmitted[i]
+		entries[i].DateEntered = datesEntered[i]
+		ms.NoError(ms.DB.Update(&entries[i]))
+	}
+
+	empty := LedgerEntries{}
+
+	tests := []struct {
+		name    string
+		entries LedgerEntries
+	}{
+		{
+			name:    "empty list",
+			entries: empty,
+		},
+		{
+			name:    "non-empty list",
+			entries: entries,
+		},
+	}
+	for _, tt := range tests {
+		ms.T().Run(tt.name, func(t *testing.T) {
+			err := tt.entries.SetDateEntered(ms.DB)
+			ms.NoError(err)
+
+			for _, e := range tt.entries {
+				var after LedgerEntry
+				ms.NoError(ms.DB.Find(&after, e.ID))
+				ms.True(after.DateEntered.Valid, "DateEntered was not set")
+			}
+		})
+	}
+}

@@ -73,6 +73,10 @@ func (le *LedgerEntry) Create(tx *pop.Connection) error {
 	return create(tx, le)
 }
 
+func (le *LedgerEntry) Update(tx *pop.Connection) error {
+	return update(tx, le)
+}
+
 // AllForMonth returns all the non-entered entries (date_entered is null) for the month.
 // The provided date must be the first day of the month.
 func (le *LedgerEntries) AllForMonth(tx *pop.Connection, firstDay time.Time) error {
@@ -127,6 +131,17 @@ func (le *LedgerEntries) MakeBlocks() TransactionBlocks {
 	return blocks
 }
 
+func (le *LedgerEntries) SetDateEntered(tx *pop.Connection) error {
+	now := nulls.NewTime(time.Now().UTC())
+	for _, e := range *le {
+		e.DateEntered = now
+		if err := e.Update(tx); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // getIncomeAccount maps the ledger data to an income account for billing
 func (le *LedgerEntry) getIncomeAccount() string {
 	// TODO: move hard-coded account numbers to the database or to environment variables
@@ -176,7 +191,7 @@ func (le *LedgerEntry) transactionReference() string {
 
 func (le *LedgerEntry) balanceDescription() string {
 	premiumsOrClaims := "Premiums"
-	if le.Type == LedgerEntryTypeClaim || le.Type == LedgerEntryTypeClaimAdjustment {
+	if le.Type.IsClaim() {
 		premiumsOrClaims = "Claims"
 	}
 	return fmt.Sprintf("Total %s %s %s", le.EntityCode, le.RiskCategoryName, premiumsOrClaims)

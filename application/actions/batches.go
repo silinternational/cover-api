@@ -57,3 +57,44 @@ func batchesGetLatest(c buffalo.Context) error {
 
 	return err
 }
+
+// swagger:operation POST /batches/approve Batches BatchesApprove
+//
+// BatchesApprove
+//
+// Mark the last batch as accepted. Call this only after the recent batch has
+// been fully loaded into the accounting record.
+//
+// ---
+// responses:
+//   '200':
+//     description: batch approval confirmation details
+//     schema:
+//       "$ref": "#/definitions/BatchApproveResponse"
+func batchesApprove(c buffalo.Context) error {
+	actor := models.CurrentUser(c)
+	if !actor.IsAdmin() {
+		err := fmt.Errorf("actor not allowed to perform that action on this resource")
+		return reportError(c, api.NewAppError(err, api.ErrorNotAuthorized, api.CategoryForbidden))
+	}
+
+	tx := models.Tx(c)
+
+	now := time.Now().UTC()
+	firstDay := domain.BeginningOfLastMonth(now)
+	var le models.LedgerEntries
+	if err := le.AllForMonth(tx, firstDay); err != nil {
+		return err
+	}
+
+	response := api.BatchApproveResponse{}
+
+	if len(le) > 0 {
+		if err := le.SetDateEntered(tx); err != nil {
+			return reportError(c, err)
+		}
+		response.NumberOfRecordsApproved = len(le)
+	}
+
+	return renderOk(c, response)
+}
