@@ -3,6 +3,8 @@ package notifications
 import (
 	"text/template"
 
+	"github.com/gobuffalo/nulls"
+
 	"github.com/silinternational/cover-api/domain"
 	"github.com/silinternational/cover-api/models"
 )
@@ -21,12 +23,17 @@ func (ts *TestSuite) TestSend() {
 		ToEmail:   "to@example.com",
 		Template:  "item_pending_steward",
 		Data: map[string]interface{}{
-			"uiURL":        "example.com",
-			"appName":      "Our App",
-			"itemURL":      "my-item.example.com",
-			"item":         item,
-			"memberName":   "John Doe",
-			"supportEmail": "support@example.com",
+			"uiURL":             "example.com",
+			"appName":           "Our App",
+			"itemURL":           "my-item.example.com",
+			"item":              item,
+			"memberName":        "John Doe",
+			"supportEmail":      "support@example.com",
+			"coverageAmount":    "$100",
+			"coverageStartDate": "2021-01-01",
+			"annualPremium":     "$3.50",
+			"accountablePerson": "John Doe",
+			"policy":            models.Policy{HouseholdID: nulls.NewString("007")},
 		},
 	}
 	var emailService EmailService

@@ -41,7 +41,7 @@ func (ts *TestSuite) Test_ItemSubmittedQueueMessage() {
 				wantBodyContains: []string{
 					domain.Env.UIURL,
 					submittedItem.Name,
-					"just submitted a policy item which needs your attention",
+					"Coverage is pending your approval for",
 				},
 			},
 			item: submittedItem,
