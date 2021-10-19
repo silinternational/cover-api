@@ -142,7 +142,7 @@ func (ts *TestSuite) Test_ItemRevisionQueueMessage() {
 				domain.Env.UIURL,
 				revisionItem.Name,
 				revisionItem.StatusReason,
-				"revisions have been requested",
+				"Before coverage is approved for",
 			},
 		},
 	}
