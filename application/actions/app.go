@@ -145,8 +145,9 @@ func App() *buffalo.App {
 
 		// accounting batches
 		batchesGroup := app.Group(batchesPath)
-		batchesGroup.Middleware.Skip(AuthZ, batchesGetLatest) // AuthZ is implemented in the handler
+		batchesGroup.Middleware.Skip(AuthZ, batchesGetLatest, batchesApprove) // AuthZ is implemented in the handler
 		batchesGroup.GET("/latest", batchesGetLatest)
+		batchesGroup.POST("/approve", batchesApprove)
 
 		stewardGroup := app.Group(stewardPath)
 		stewardGroup.Middleware.Skip(AuthZ, stewardListRecentObjects) // AuthZ is implemented in the handler
