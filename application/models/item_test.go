@@ -396,6 +396,13 @@ func (ms *ModelSuite) TestItem_SubmitForApproval() {
 	itemMobileMissingModel.Model = ""
 	ms.NoError(ms.DB.Update(&itemMobileMissingModel), "error updating item fixture for test")
 
+	corpFixtures := CreateItemFixtures(ms.DB, FixturesConfig{})
+	corpPolicy := corpFixtures.Policies[0]
+	ConvertPolicyType(ms.DB, corpPolicy)
+	corpItem := corpPolicy.Items[0]
+	corpItem.CoverageAmount = domain.Env.PolicyMaxCoverage
+	ms.NoError(ms.DB.Update(&itemExceedsMax))
+
 	tests := []struct {
 		name       string
 		item       Item
@@ -449,6 +456,12 @@ func (ms *ModelSuite) TestItem_SubmitForApproval() {
 			item:       itemMobileMissingModel,
 			oldStatus:  itemMobileMissingModel.CoverageStatus,
 			wantStatus: api.ItemCoverageStatusPending,
+		},
+		{
+			name:       "corporate policy",
+			item:       corpItem,
+			oldStatus:  corpItem.CoverageStatus,
+			wantStatus: api.ItemCoverageStatusApproved,
 		},
 	}
 
