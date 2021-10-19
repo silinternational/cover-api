@@ -270,6 +270,11 @@ func update(tx *pop.Connection, m interface{}) error {
 	return nil
 }
 
+func destroy(tx *pop.Connection, m interface{}) error {
+	err := tx.Destroy(m)
+	return appErrorFromDB(err, api.ErrorDestroyFailure)
+}
+
 // This can include an event payload, which is a map[string]interface{}
 func emitEvent(e events.Event) {
 	if err := events.Emit(e); err != nil {

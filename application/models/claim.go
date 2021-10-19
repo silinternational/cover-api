@@ -521,7 +521,7 @@ func (c *Claim) Deny(ctx context.Context, message string) error {
 
 func (c *Claim) LoadClaimItems(tx *pop.Connection, reload bool) {
 	if len(c.ClaimItems) == 0 || reload {
-		if err := tx.Load(c, "ClaimItems"); err != nil {
+		if err := tx.Load(c, "ClaimItems", "ClaimItems.Item"); err != nil {
 			panic("database error loading Claim.ClaimItems, " + err.Error())
 		}
 	}

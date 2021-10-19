@@ -541,12 +541,13 @@ func (ms *ModelSuite) TestItem_SafeDeleteOrInactivate() {
 	newDraftItem := UpdateItemStatus(ms.DB, items[3], api.ItemCoverageStatusDraft, "")
 
 	newApprovedItem := items[4]
+	ms.NoError(newApprovedItem.Approve(ctx, false))
 
-	newPendingItem := UpdateItemStatus(ms.DB, items[4], api.ItemCoverageStatusPending, "")
+	newPendingItem := UpdateItemStatus(ms.DB, items[5], api.ItemCoverageStatusPending, "")
 
-	newRevisionItem := UpdateItemStatus(ms.DB, items[5], api.ItemCoverageStatusRevision, "Just do it")
-	newInactiveItem := UpdateItemStatus(ms.DB, items[6], api.ItemCoverageStatusInactive, "")
-	newDeniedItem := UpdateItemStatus(ms.DB, items[7], api.ItemCoverageStatusDenied, "")
+	newRevisionItem := UpdateItemStatus(ms.DB, items[6], api.ItemCoverageStatusRevision, "Just do it")
+	newInactiveItem := UpdateItemStatus(ms.DB, items[7], api.ItemCoverageStatusInactive, "")
+	newDeniedItem := UpdateItemStatus(ms.DB, items[8], api.ItemCoverageStatusDenied, "")
 
 	tests := []struct {
 		name        string
@@ -573,9 +574,9 @@ func (ms *ModelSuite) TestItem_SafeDeleteOrInactivate() {
 			wantStatus:  api.ItemCoverageStatusInactive,
 		},
 		{
-			name:       "new draft item",
-			item:       newDraftItem,
-			wantStatus: api.ItemCoverageStatusInactive,
+			name:        "new draft item",
+			item:        newDraftItem,
+			wantDeleted: true,
 		},
 		{
 			name:       "new approved item",
@@ -583,14 +584,14 @@ func (ms *ModelSuite) TestItem_SafeDeleteOrInactivate() {
 			wantStatus: api.ItemCoverageStatusInactive,
 		},
 		{
-			name:       "new pending item",
-			item:       newPendingItem,
-			wantStatus: api.ItemCoverageStatusInactive,
+			name:        "new pending item",
+			item:        newPendingItem,
+			wantDeleted: true,
 		},
 		{
-			name:       "new revision item",
-			item:       newRevisionItem,
-			wantStatus: api.ItemCoverageStatusInactive,
+			name:        "new revision item",
+			item:        newRevisionItem,
+			wantDeleted: true,
 		},
 		{
 			name:        "new inactive item",
@@ -1019,6 +1020,48 @@ func (ms *ModelSuite) TestItem_Compare() {
 		ms.T().Run(tt.name, func(t *testing.T) {
 			got := tt.new.Compare(tt.old)
 			ms.ElementsMatch(tt.want, got)
+		})
+	}
+}
+
+func (ms *ModelSuite) TestItem_canBeDeleted() {
+	f := CreateItemFixtures(ms.DB, FixturesConfig{
+		ItemsPerPolicy:     2,
+		ClaimsPerPolicy:    1,
+		ClaimItemsPerClaim: 1,
+	})
+	yes := f.Items[0]
+
+	hasClaim := f.Claims[0].ClaimItems[0].Item
+
+	hasLedgerEntry := f.Items[1]
+	ms.NoError(hasLedgerEntry.Approve(CreateTestContext(f.Users[0]), false))
+
+	tests := []struct {
+		name string
+		item Item
+		want bool
+	}{
+		{
+			name: "yes",
+			item: yes,
+			want: true,
+		},
+		{
+			name: "has Claim",
+			item: hasClaim,
+			want: false,
+		},
+		{
+			name: "has LedgerEntry",
+			item: hasLedgerEntry,
+			want: false,
+		},
+	}
+	for _, tt := range tests {
+		ms.T().Run(tt.name, func(t *testing.T) {
+			got := tt.item.canBeDeleted(ms.DB)
+			ms.Equal(tt.want, got, "item %s gave the wrong result", tt.item.ID)
 		})
 	}
 }
