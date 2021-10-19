@@ -1,7 +1,29 @@
-<h4><a href="<%= itemURL %>"><%= item.Name %></a></h4>
-<p>
-	This is an unofficial draft email.
-    We're sorry.  Coverage on your newly submitted policy item has been denied.
-	<br>
-	<%= itemStatusReason %>
-</p>
+
+<div>
+	<%= partial("body_header", {
+	    title: "We're sorry",
+	    subTitle: "Coverage was not approved for " + item.Name,
+	    alert: "",
+	    alert_description: ""}
+	) %>
+
+	<%= partial("item_card", {
+	    item: item,
+	    coverageAmount: "",
+	    premium: "",
+	    coverageStartDate: "",
+	    accountablePerson: accountablePerson,
+	    householdID: policy.HouseholdID}
+	) %>
+
+	<%= partial("button", {
+	    url: itemURL,
+	    label: "Open in Cover"}
+	) %>
+
+	<%= partial("customer_footer", {
+	    supportEmail: supportEmail,
+	    supportName: supportName}
+	) %>
+</div>
+

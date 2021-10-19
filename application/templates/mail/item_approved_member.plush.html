@@ -11,12 +11,7 @@
 	<%# coverageEndDate: item.CoverageEndDate, %>
 
 	<%= partial("item_card", {
-	  name: item.Name,
-	  makeModel: item.Make + " " + item.Model,
-	  serialNumber: item.SerialNumber,
-	  description: item.Description,
-	  categoryName: item.Category.Name,
-	  categoryHelpText: item.Category.HelpText,
+	  item: item,
 	  coverageAmount: coverageAmount,
 	  premium: annualPremium,
 	  coverageStartDate: coverageStartDate,

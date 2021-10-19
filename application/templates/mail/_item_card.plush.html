@@ -1,55 +1,61 @@
 
-<h2><%= name %></h2>
+<h2><%= item.Name %></h2>
 
-<%= if ( makeModel != "" ) { %>
- <h3 style="margin: 0; padding: 0; line-height: normal;"><%= makeModel %></h3>
+<%= if ( item.GetMakeModel() != "" ) { %>
+   <h3 style="margin: 0; padding: 0; line-height: normal;">
+	   <%= item.GetMakeModel() %>
+   </h3>
 <% } %>
 
-<%= if ( uniqueID != "" ) { %>
+<%= if ( item.SerialNumber != "" ) { %>
  <div>
 	<h4 style="margin:0; padding:0;">Unique ID</h4>
-	<%= serialNumber %>
+	<%= item.SerialNumber %>
  </div>
 <% } %>
 
 
-<%= if ( description != "" ) { %>
- <div style="padding: 1em 0;"><%= description %></div>
+<%= if ( item.Description != "" ) { %>
+ <div style="padding: 1em 0;"><%= item.Description %></div>
 <% } %>
 
 <div>
 	<div style="padding: 6px; background: #EBEEF2; color: #2E5AAC; border-radius: 6px; width:fit-content">
-		<%= categoryName %>
+		<%= item.Category.Name %>
 	</div>
 	<small style="padding-top: 5px;">
-		<%= categoryHelpText %>
+		<%= item.Category.HelpText %>
 	</small>
 </div>
 
 
-
 <table>
-	<tr>
-		<th style="text-align: left; padding-top: 1em;">Covered value</th>
-		<th style="text-align: left; padding-top: 1em;">Premium</th>
-	</tr>
-	<tr>
-		<td><%= coverageAmount %></td>
-		<td><%= premium %></td>
-	</tr>
-	<tr style="padding-top: 1em;">
-		<th style="text-align: left; padding-top: 1em;">Starts</th>
-		<th style="text-align: left; padding-top: 1em;">Ends</th>
-	</tr>
-	<tr>
-		<td><%= coverageStartDate %></td>
-		<td><%= if ( coverageEndDate != "" ) { %>
-			  <%= coverageEndDate %>
-			<% } else { %>
-			  &mdash;
-			<% } %>
-		</td>
-	</tr>
+	<%= if (coverageAmount != "") { %>
+	 <tr>
+	 	<th style="text-align: left; padding-top: 1em;">Covered value</th>
+	 	<th style="text-align: left; padding-top: 1em;">Premium</th>
+	 </tr>
+	 <tr>
+	 	<td><%= coverageAmount %></td>
+	 	<td><%= premium %></td>
+	 </tr>
+	<% } %>
+
+	<%= if (coverageStartDate != "") { %>
+	 <tr style="padding-top: 1em;">
+	 	<th style="text-align: left; padding-top: 1em;">Starts</th>
+	 	<th style="text-align: left; padding-top: 1em;">Ends</th>
+	 </tr>
+	 <tr>
+	 	<td><%= coverageStartDate %></td>
+	 	<td><%= if ( coverageEndDate != "" ) { %>
+	 		  <%= coverageEndDate %>
+	 		<% } else { %>
+	 		  &mdash;
+	 		<% } %>
+	 	</td>
+	 </tr>
+	<% } %>
 	<tr>
 		<th colspan="2" style="text-align: left; padding-top: 1em;">Accountable to</th>
 	</tr>
