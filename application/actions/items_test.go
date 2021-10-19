@@ -866,14 +866,14 @@ func (as *ActionSuite) Test_ItemsRemove() {
 			name:           "ok for policy creator",
 			actor:          policyOwner,
 			item:           item2,
-			wantCount:      6,
+			wantCount:      5,
 			wantHTTPStatus: http.StatusNoContent,
 		},
 		{
 			name:           "ok for admin",
 			actor:          adminUser,
 			item:           item3,
-			wantCount:      6,
+			wantCount:      4,
 			wantHTTPStatus: http.StatusNoContent,
 		},
 	}

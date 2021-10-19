@@ -541,12 +541,13 @@ func (ms *ModelSuite) TestItem_SafeDeleteOrInactivate() {
 	newDraftItem := UpdateItemStatus(ms.DB, items[3], api.ItemCoverageStatusDraft, "")
 
 	newApprovedItem := items[4]
+	ms.NoError(newApprovedItem.Approve(ctx, false))
 
-	newPendingItem := UpdateItemStatus(ms.DB, items[4], api.ItemCoverageStatusPending, "")
+	newPendingItem := UpdateItemStatus(ms.DB, items[5], api.ItemCoverageStatusPending, "")
 
-	newRevisionItem := UpdateItemStatus(ms.DB, items[5], api.ItemCoverageStatusRevision, "Just do it")
-	newInactiveItem := UpdateItemStatus(ms.DB, items[6], api.ItemCoverageStatusInactive, "")
-	newDeniedItem := UpdateItemStatus(ms.DB, items[7], api.ItemCoverageStatusDenied, "")
+	newRevisionItem := UpdateItemStatus(ms.DB, items[6], api.ItemCoverageStatusRevision, "Just do it")
+	newInactiveItem := UpdateItemStatus(ms.DB, items[7], api.ItemCoverageStatusInactive, "")
+	newDeniedItem := UpdateItemStatus(ms.DB, items[8], api.ItemCoverageStatusDenied, "")
 
 	tests := []struct {
 		name        string
@@ -573,9 +574,9 @@ func (ms *ModelSuite) TestItem_SafeDeleteOrInactivate() {
 			wantStatus:  api.ItemCoverageStatusInactive,
 		},
 		{
-			name:       "new draft item",
-			item:       newDraftItem,
-			wantStatus: api.ItemCoverageStatusInactive,
+			name:        "new draft item",
+			item:        newDraftItem,
+			wantDeleted: true,
 		},
 		{
 			name:       "new approved item",
@@ -583,14 +584,14 @@ func (ms *ModelSuite) TestItem_SafeDeleteOrInactivate() {
 			wantStatus: api.ItemCoverageStatusInactive,
 		},
 		{
-			name:       "new pending item",
-			item:       newPendingItem,
-			wantStatus: api.ItemCoverageStatusInactive,
+			name:        "new pending item",
+			item:        newPendingItem,
+			wantDeleted: true,
 		},
 		{
-			name:       "new revision item",
-			item:       newRevisionItem,
-			wantStatus: api.ItemCoverageStatusInactive,
+			name:        "new revision item",
+			item:        newRevisionItem,
+			wantDeleted: true,
 		},
 		{
 			name:        "new inactive item",
