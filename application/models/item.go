@@ -271,17 +271,32 @@ func (i *Item) SafeDeleteOrInactivate(ctx context.Context, actor User) error {
 	case api.ItemCoverageStatusApproved:
 		return i.Inactivate(ctx)
 	case api.ItemCoverageStatusDraft, api.ItemCoverageStatusRevision, api.ItemCoverageStatusPending:
-		// TODO: figure out when a destroy will work and when it won't, based on searching for child records
-		// that may have been created for an item that traverses states and then back to one of these
-		// "safe-to-delete" states.
-		//if i.isNewEnough() {
-		//	return Tx(ctx).Destroy(i)
-		//}
+		tx := Tx(ctx)
+		if i.isNewEnough() && i.canBeDeleted(tx) {
+			return i.Destroy(tx)
+		}
 		return i.Inactivate(ctx)
 	default:
 		panic(`invalid item status in SafeDeleteOrInactivate`)
 	}
 	return nil
+}
+
+// canBeDeleted checks for child records with restricted constraints and returns false if any are found
+func (i *Item) canBeDeleted(tx *pop.Connection) bool {
+	var claimItems ClaimItems
+	if n, err := tx.Where("item_id = ?", i.ID).Count(&claimItems); err != nil {
+		panic(fmt.Sprintf("error counting claim_items with item_id %s, %s", i.ID, err))
+	} else if n > 0 {
+		return false
+	}
+	var ledgerEntries LedgerEntries
+	if n, err := tx.Where("item_id = ?", i.ID).Count(&ledgerEntries); err != nil {
+		panic(fmt.Sprintf("error counting ledger_entries with item_id %s, %s", i.ID, err))
+	} else if n > 0 {
+		return false
+	}
+	return true
 }
 
 // isNewEnough checks whether the item was created in the last X hours

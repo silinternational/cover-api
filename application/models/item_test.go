@@ -1022,3 +1022,45 @@ func (ms *ModelSuite) TestItem_Compare() {
 		})
 	}
 }
+
+func (ms *ModelSuite) TestItem_canBeDeleted() {
+	f := CreateItemFixtures(ms.DB, FixturesConfig{
+		ItemsPerPolicy:     2,
+		ClaimsPerPolicy:    1,
+		ClaimItemsPerClaim: 1,
+	})
+	yes := f.Items[0]
+
+	hasClaim := f.Claims[0].ClaimItems[0].Item
+
+	hasLedgerEntry := f.Items[1]
+	ms.NoError(hasLedgerEntry.Approve(CreateTestContext(f.Users[0]), false))
+
+	tests := []struct {
+		name string
+		item Item
+		want bool
+	}{
+		{
+			name: "yes",
+			item: yes,
+			want: true,
+		},
+		{
+			name: "has Claim",
+			item: hasClaim,
+			want: false,
+		},
+		{
+			name: "has LedgerEntry",
+			item: hasLedgerEntry,
+			want: false,
+		},
+	}
+	for _, tt := range tests {
+		ms.T().Run(tt.name, func(t *testing.T) {
+			got := tt.item.canBeDeleted(ms.DB)
+			ms.Equal(tt.want, got, "item %s gave the wrong result", tt.item.ID)
+		})
+	}
+}
