@@ -1,6 +1,7 @@
 package actions
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strings"
@@ -15,29 +16,9 @@ import (
 )
 
 func (as *ActionSuite) Test_BatchesLatest() {
-	f := models.CreateItemFixtures(as.DB, models.FixturesConfig{ItemsPerPolicy: 2})
+	f := as.createFixturesForBatches()
 	normalUser := f.Users[0]
 	stewardUser := models.CreateAdminUsers(as.DB)[models.AppRoleSteward]
-
-	now := time.Now().UTC()
-	lastMonth := domain.BeginningOfLastMonth(now)
-
-	datesSubmitted := []time.Time{lastMonth, lastMonth}
-	datesEntered := []nulls.Time{nulls.NewTime(now), {}}
-
-	for i := range f.Items {
-		f.Items[i].LoadPolicy(as.DB, false)
-		f.Items[i].Policy.LoadMembers(as.DB, false)
-		user := f.Items[i].Policy.Members[0]
-		ctx := models.CreateTestContext(user)
-		as.NoError(f.Items[i].Approve(ctx, false))
-
-		entry := models.LedgerEntry{}
-		as.NoError(as.DB.Where("item_id = ?", f.Items[i].ID).First(&entry))
-		entry.DateSubmitted = datesSubmitted[i]
-		entry.DateEntered = datesEntered[i]
-		as.NoError(as.DB.Update(&entry))
-	}
 
 	tests := []struct {
 		name       string
@@ -87,4 +68,94 @@ func (as *ActionSuite) Test_BatchesLatest() {
 			as.Equal(tt.wantRows, rows, "incorrect count of CSV rows")
 		})
 	}
+}
+
+func (as *ActionSuite) Test_BatchesApprove() {
+	f := as.createFixturesForBatches()
+	normalUser := f.Users[0]
+	stewardUser := models.CreateAdminUsers(as.DB)[models.AppRoleSteward]
+
+	tests := []struct {
+		name       string
+		actor      models.User
+		want       int // approved records
+		wantStatus int
+		wantInBody []string
+	}{
+		{
+			name:       "unauthenticated",
+			actor:      models.User{},
+			wantStatus: http.StatusUnauthorized,
+			wantInBody: []string{api.ErrorNotAuthorized.String()},
+		},
+		{
+			name:       "insufficient privileges",
+			actor:      normalUser,
+			wantStatus: http.StatusNotFound,
+			wantInBody: []string{`"key":"` + api.ErrorNotAuthorized.String()},
+		},
+		{
+			name:       "normal user good results",
+			actor:      stewardUser,
+			wantStatus: http.StatusOK,
+			want:       1,
+		},
+	}
+
+	for _, tt := range tests {
+		as.T().Run(tt.name, func(t *testing.T) {
+			req := as.JSON(batchesPath + "/approve")
+			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
+			res := req.Post(nil)
+
+			body := res.Body.String()
+			as.Equal(tt.wantStatus, res.Code, "incorrect status code returned, body: %s", body)
+
+			for _, s := range tt.wantInBody {
+				as.Contains(body, s)
+			}
+
+			if res.Code != http.StatusOK {
+				return
+			}
+
+			var response api.BatchApproveResponse
+			err := json.Unmarshal([]byte(body), &response)
+			as.NoError(err)
+
+			as.Equal(tt.want, response.NumberOfRecordsApproved, "incorrect number of approved records")
+
+			var le models.LedgerEntries
+			as.NoError(as.DB.Where("item_id = ?", f.Items[1].ID).All(&le))
+			as.Equal(1, len(le), "something is not right with the test setup")
+			for i := range le {
+				as.True(le[i].DateEntered.Valid, "ledger entry DateEntered was not set")
+			}
+		})
+	}
+}
+
+func (as *ActionSuite) createFixturesForBatches() models.Fixtures {
+	f := models.CreateItemFixtures(as.DB, models.FixturesConfig{ItemsPerPolicy: 2})
+
+	now := time.Now().UTC()
+	lastMonth := domain.BeginningOfLastMonth(now)
+
+	datesSubmitted := []time.Time{lastMonth, lastMonth}
+	datesEntered := []nulls.Time{nulls.NewTime(now), {}}
+
+	for i := range f.Items {
+		f.Items[i].LoadPolicy(as.DB, false)
+		f.Items[i].Policy.LoadMembers(as.DB, false)
+		user := f.Items[i].Policy.Members[0]
+		ctx := models.CreateTestContext(user)
+		as.NoError(f.Items[i].Approve(ctx, false))
+
+		entry := models.LedgerEntry{}
+		as.NoError(as.DB.Where("item_id = ?", f.Items[i].ID).First(&entry))
+		entry.DateSubmitted = datesSubmitted[i]
+		entry.DateEntered = datesEntered[i]
+		as.NoError(as.DB.Update(&entry))
+	}
+	return f
 }
