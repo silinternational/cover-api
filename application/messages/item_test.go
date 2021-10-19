@@ -188,7 +188,7 @@ func (ts *TestSuite) Test_ItemDeniedQueueMessage() {
 				domain.Env.UIURL,
 				deniedItem.Name,
 				deniedItem.StatusReason,
-				"Coverage on your newly submitted policy item has been denied.",
+				"Coverage was not approved for",
 			},
 		},
 	}
