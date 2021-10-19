@@ -3,8 +3,8 @@
 	<%= partial("body_header", {
 	    title: "We're sorry",
 	    subTitle: "Coverage was not approved for " + item.Name,
-	    alert: "",
-	    alert_description: ""}
+	    alert: "Denial reason",
+	    alert_description: item.StatusReason}
 	) %>
 
 	<%= partial("item_card", {
