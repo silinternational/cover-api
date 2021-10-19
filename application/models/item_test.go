@@ -396,12 +396,19 @@ func (ms *ModelSuite) TestItem_SubmitForApproval() {
 	itemMobileMissingModel.Model = ""
 	ms.NoError(ms.DB.Update(&itemMobileMissingModel), "error updating item fixture for test")
 
-	corpFixtures := CreateItemFixtures(ms.DB, FixturesConfig{})
+	corpFixtures := CreateItemFixtures(ms.DB, FixturesConfig{ItemsPerPolicy: 2})
+
 	corpPolicy := corpFixtures.Policies[0]
 	ConvertPolicyType(ms.DB, corpPolicy)
-	corpItem := corpPolicy.Items[0]
-	corpItem.CoverageAmount = domain.Env.PolicyMaxCoverage
-	ms.NoError(ms.DB.Update(&itemExceedsMax))
+	corpItemAutoApprove := corpPolicy.Items[0]
+	corpItemAutoApprove.Load(ms.DB)
+	corpItemAutoApprove.CoverageAmount = corpItemAutoApprove.Category.AutoApproveMax
+	ms.NoError(ms.DB.Update(&corpItemAutoApprove))
+
+	corpItemManualApprove := corpPolicy.Items[1]
+	corpItemManualApprove.Load(ms.DB)
+	corpItemManualApprove.CoverageAmount = corpItemManualApprove.Category.AutoApproveMax + 1
+	ms.NoError(ms.DB.Update(&corpItemManualApprove))
 
 	tests := []struct {
 		name       string
@@ -458,10 +465,16 @@ func (ms *ModelSuite) TestItem_SubmitForApproval() {
 			wantStatus: api.ItemCoverageStatusPending,
 		},
 		{
-			name:       "corporate policy",
-			item:       corpItem,
-			oldStatus:  corpItem.CoverageStatus,
+			name:       "corporate policy, auto approval",
+			item:       corpItemAutoApprove,
+			oldStatus:  corpItemAutoApprove.CoverageStatus,
 			wantStatus: api.ItemCoverageStatusApproved,
+		},
+		{
+			name:       "corporate policy, manual approval",
+			item:       corpItemManualApprove,
+			oldStatus:  corpItemManualApprove.CoverageStatus,
+			wantStatus: api.ItemCoverageStatusPending,
 		},
 	}
 

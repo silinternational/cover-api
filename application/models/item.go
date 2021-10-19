@@ -453,17 +453,16 @@ func (i *Item) canAutoApprove(tx *pop.Connection) bool {
 		return false
 	}
 
+	if i.CoverageAmount > i.Category.AutoApproveMax {
+		return false
+	}
+
 	i.LoadPolicy(tx, false)
 	if i.Policy.Type == api.PolicyTypeCorporate {
 		return true
 	}
 
-	if i.CoverageAmount > i.Category.AutoApproveMax {
-		return false
-	}
-
-	policy := Policy{ID: i.PolicyID}
-	totals := policy.itemCoverageTotals(tx)
+	totals := i.Policy.itemCoverageTotals(tx)
 
 	policyTotal := totals[i.PolicyID]
 
