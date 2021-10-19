@@ -87,14 +87,9 @@ func batchesApprove(c buffalo.Context) error {
 		return err
 	}
 
-	response := api.BatchApproveResponse{}
-
-	if len(le) > 0 {
-		if err := le.SetDateEntered(tx); err != nil {
-			return reportError(c, err)
-		}
-		response.NumberOfRecordsApproved = len(le)
+	if err := le.SetDateEntered(tx); err != nil {
+		return reportError(c, err)
 	}
 
-	return renderOk(c, response)
+	return renderOk(c, api.BatchApproveResponse{NumberOfRecordsApproved: len(le)})
 }
