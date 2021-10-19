@@ -782,6 +782,10 @@ func (i *Item) GetAccountablePersonName(tx *pop.Connection) (firstName, lastName
 	return firstName, lastName
 }
 
+func (i *Item) MakeModel() string {
+	return strings.Join([]string{i.Make, i.Model}, " ")
+}
+
 // ItemsWithRecentStatusChanges returns the RecentItems associated with
 //  items that have had their CoverageStatus changed recently.
 //  The slice is sorted by updated time with most recent first.
