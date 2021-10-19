@@ -113,6 +113,10 @@ func (i *Item) Update(ctx context.Context) error {
 	return update(tx, i)
 }
 
+func (i *Item) Destroy(tx *pop.Connection) error {
+	return destroy(tx, i)
+}
+
 // Compare returns a list of fields that are different between two objects
 func (i *Item) Compare(old Item) []FieldUpdate {
 	var updates []FieldUpdate

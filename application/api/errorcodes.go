@@ -13,6 +13,7 @@ const (
 	// General
 
 	ErrorCreateFailure            = ErrorKey("ErrorCreateFailure")
+	ErrorDestroyFailure           = ErrorKey("ErrorDestroyFailure")
 	ErrorGenericInternalServer    = ErrorKey("ErrorGenericInternalServer")
 	ErrorFailedToConvertToAPIType = ErrorKey("ErrorFailedToConvertToAPIType")
 	ErrorForeignKeyViolation      = ErrorKey("ErrorForeignKeyViolation")
