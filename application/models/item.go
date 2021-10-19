@@ -449,15 +449,20 @@ func (i *Item) areFieldsValidForAutoApproval(tx *pop.Connection) bool {
 
 // Assumes the item already has its Category loaded
 func (i *Item) canAutoApprove(tx *pop.Connection) bool {
-	if i.CoverageAmount > i.Category.AutoApproveMax {
-		return false
-	}
 	if !i.areFieldsValidForAutoApproval(tx) {
 		return false
 	}
 
-	policy := Policy{ID: i.PolicyID}
-	totals := policy.itemCoverageTotals(tx)
+	if i.CoverageAmount > i.Category.AutoApproveMax {
+		return false
+	}
+
+	i.LoadPolicy(tx, false)
+	if i.Policy.Type == api.PolicyTypeCorporate {
+		return true
+	}
+
+	totals := i.Policy.itemCoverageTotals(tx)
 
 	policyTotal := totals[i.PolicyID]
 
