@@ -309,14 +309,16 @@ func (c *Claim) AddItem(tx *pop.Connection, input api.ClaimItemCreateInput) (Cla
 		return ClaimItem{}, appErr
 	}
 
-	clmItem := ConvertClaimItemCreateInput(input)
-	clmItem.ClaimID = c.ID
+	claimItem, err := NewClaimItem(tx, input, item, *c)
+	if err != nil {
+		return claimItem, err
+	}
 
-	if err := clmItem.Create(tx); err != nil {
+	if err := claimItem.Create(tx); err != nil {
 		return ClaimItem{}, err
 	}
 
-	return clmItem, nil
+	return claimItem, nil
 }
 
 // SubmitForApproval changes the status of the claim to either Review1 or Review2
@@ -771,14 +773,14 @@ func (c *Claim) CreateLedgerEntry(tx *pop.Connection) error {
 	c.Policy.LoadItems(tx, false)
 
 	for _, item := range c.Policy.Items {
-		firstName, lastName := item.GetAccountablePersonName(tx)
+		name := item.GetAccountablePersonName(tx)
 		item.LoadRiskCategory(tx, false)
 
 		le := NewLedgerEntry(c.Policy, &item, c) // #nosec G601
 		le.Type = LedgerEntryTypeClaim
 		le.Amount = -c.TotalPayout
-		le.FirstName = firstName
-		le.LastName = lastName
+		le.FirstName = name.First
+		le.LastName = name.Last
 
 		if err := le.Create(tx); err != nil {
 			return err

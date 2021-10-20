@@ -511,8 +511,8 @@ func (ms *ModelSuite) TestClaimItem_Compare() {
 				},
 				{
 					FieldName: FieldClaimItemLocation,
-					OldValue:  oldCItem.GetLocation(),
-					NewValue:  newCItem.GetLocation(),
+					OldValue:  oldCItem.GetLocation().String(),
+					NewValue:  newCItem.GetLocation().String(),
 				},
 			},
 		},

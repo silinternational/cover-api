@@ -313,8 +313,9 @@ func (c *ClaimItems) ConvertToAPI(tx *pop.Connection) api.ClaimItems {
 	return claimItems
 }
 
-func ConvertClaimItemCreateInput(input api.ClaimItemCreateInput) ClaimItem {
-	item := ClaimItem{
+// NewClaimItem makes a new ClaimItem, but does not do a database create
+func NewClaimItem(tx *pop.Connection, input api.ClaimItemCreateInput, item Item, claim Claim) (ClaimItem, error) {
+	claimItem := ClaimItem{
 		ItemID:          input.ItemID,
 		IsRepairable:    input.IsRepairable,
 		RepairEstimate:  input.RepairEstimate,
@@ -325,9 +326,17 @@ func ConvertClaimItemCreateInput(input api.ClaimItemCreateInput) ClaimItem {
 		FMV:             input.FMV,
 	}
 
-	item.Status = api.ClaimItemStatusDraft
+	claimItem.Status = api.ClaimItemStatusDraft
 
-	return item
+	claimItem.ClaimID = claim.ID
+	loc, err := item.GetAccountablePersonLocation(tx)
+	if err != nil {
+		return claimItem, err
+	}
+	claimItem.City = loc.City
+	claimItem.State = loc.State
+	claimItem.Country = loc.Country
+	return claimItem, nil
 }
 
 // Compare returns a list of fields that are different between two objects
@@ -432,8 +441,8 @@ func (c *ClaimItem) Compare(old ClaimItem) []FieldUpdate {
 
 	if c.GetLocation() != old.GetLocation() {
 		updates = append(updates, FieldUpdate{
-			OldValue:  old.GetLocation(),
-			NewValue:  c.GetLocation(),
+			OldValue:  old.GetLocation().String(),
+			NewValue:  c.GetLocation().String(),
 			FieldName: FieldClaimItemLocation,
 		})
 	}
@@ -441,6 +450,10 @@ func (c *ClaimItem) Compare(old ClaimItem) []FieldUpdate {
 	return updates
 }
 
-func (c *ClaimItem) GetLocation() string {
-	return location(c.City, c.State, c.Country)
+func (c *ClaimItem) GetLocation() Location {
+	return Location{
+		City:    c.City,
+		State:   c.State,
+		Country: c.Country,
+	}
 }

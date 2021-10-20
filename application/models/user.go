@@ -4,7 +4,6 @@ import (
 	"crypto/sha256"
 	"fmt"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/gobuffalo/events"
@@ -95,7 +94,7 @@ func (u *User) GetID() uuid.UUID {
 }
 
 func (u *User) FindByID(tx *pop.Connection, id uuid.UUID) error {
-	return tx.Find(u, id)
+	return find(tx, u, id)
 }
 
 func (u *User) FindByEmail(tx *pop.Connection, email string) error {
@@ -241,7 +240,14 @@ func (u *User) MyClaims(tx *pop.Connection) Claims {
 }
 
 func (u *User) Name() string {
-	return strings.TrimSpace(strings.TrimSpace(u.FirstName) + " " + strings.TrimSpace(u.LastName))
+	return u.GetName().String()
+}
+
+func (u *User) GetName() Name {
+	return Name{
+		First: u.FirstName,
+		Last:  u.LastName,
+	}
 }
 
 func (u *User) ConvertToPolicyMember() api.PolicyMember {
@@ -252,7 +258,7 @@ func (u *User) ConvertToPolicyMember() api.PolicyMember {
 		Email:         u.Email,
 		EmailOverride: u.EmailOverride,
 		LastLoginUTC:  u.LastLoginUTC,
-		Country:       u.GetLocation(),
+		Country:       u.GetLocation().Country,
 	}
 }
 
@@ -386,7 +392,7 @@ func (u *User) ConvertToAPI(tx *pop.Connection) api.User {
 		Name:          u.Name(),
 		AppRole:       string(u.AppRole),
 		LastLoginUTC:  u.LastLoginUTC,
-		Country:       u.GetLocation(),
+		Country:       u.GetLocation().Country,
 		PhotoFileID:   u.PhotoFileID,
 		PolicyID:      policyID,
 	}
@@ -399,6 +405,10 @@ func (u *User) ConvertToAPI(tx *pop.Connection) api.User {
 	return output
 }
 
-func (u *User) GetLocation() string {
-	return location(u.City, u.State, u.Country)
+func (u *User) GetLocation() Location {
+	return Location{
+		City:    u.City,
+		State:   u.State,
+		Country: u.Country,
+	}
 }

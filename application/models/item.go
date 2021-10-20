@@ -774,13 +774,13 @@ func (i *Item) CreateLedgerEntry(tx *pop.Connection, entryType LedgerEntryType, 
 	i.LoadRiskCategory(tx, false)
 	i.Policy.LoadEntityCode(tx, false)
 
-	firstName, lastName := i.GetAccountablePersonName(tx)
+	name := i.GetAccountablePersonName(tx)
 
 	le := NewLedgerEntry(i.Policy, i, nil)
 	le.Type = entryType
 	le.Amount = amount
-	le.FirstName = firstName
-	le.LastName = lastName
+	le.FirstName = name.First
+	le.LastName = name.Last
 	le.DateSubmitted = i.CoverageStartDate
 
 	return le.Create(tx)
@@ -788,22 +788,41 @@ func (i *Item) CreateLedgerEntry(tx *pop.Connection, entryType LedgerEntryType, 
 
 // GetAccountablePersonName gets the name of the accountable person. In case of error, empty strings
 // are returned.
-func (i *Item) GetAccountablePersonName(tx *pop.Connection) (firstName, lastName string) {
+func (i *Item) GetAccountablePersonName(tx *pop.Connection) Name {
+	person, err := i.GetAccountablePerson(tx)
+	if err != nil || person == nil {
+		return Name{}
+	}
+	return person.GetName()
+}
+
+// GetAccountablePersonLocation gets the location of the accountable person
+func (i *Item) GetAccountablePersonLocation(tx *pop.Connection) (Location, error) {
+	person, err := i.GetAccountablePerson(tx)
+	if err != nil || person == nil {
+		return Location{}, err
+	}
+	return person.GetLocation(), nil
+}
+
+// GetAccountablePerson gets the accountable person as a Person interface
+func (i *Item) GetAccountablePerson(tx *pop.Connection) (Person, error) {
+	var person Person
 	if i.PolicyUserID.Valid {
 		var user User
-		_ = user.FindByID(tx, i.PolicyUserID.UUID)
-		return user.FirstName, user.LastName
+		if err := user.FindByID(tx, i.PolicyUserID.UUID); err != nil {
+			return person, err
+		}
+		person = &user
 	}
 	if i.PolicyDependentID.Valid {
 		var dep PolicyDependent
-		_ = dep.FindByID(tx, i.PolicyDependentID.UUID)
-		names := strings.SplitN(dep.Name, " ", 2)
-		firstName = names[0]
-		if len(names) > 1 {
-			lastName = names[1]
+		if err := dep.FindByID(tx, i.PolicyDependentID.UUID); err != nil {
+			return person, err
 		}
+		person = &dep
 	}
-	return firstName, lastName
+	return person, nil
 }
 
 func (i *Item) GetMakeModel() string {
