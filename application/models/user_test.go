@@ -19,6 +19,7 @@ func (ms *ModelSuite) TestUser_Validate() {
 			user: User{
 				Email:   "user@example.com",
 				AppRole: AppRoleUser,
+				Country: "USA",
 			},
 			wantErr: false,
 		},
@@ -26,6 +27,7 @@ func (ms *ModelSuite) TestUser_Validate() {
 			name: "missing email",
 			user: User{
 				AppRole: AppRoleUser,
+				Country: "USA",
 			},
 			wantErr:  true,
 			errField: "User.Email",
@@ -33,10 +35,20 @@ func (ms *ModelSuite) TestUser_Validate() {
 		{
 			name: "missing approle",
 			user: User{
-				Email: "dummy@dusos.com",
+				Email:   "dummy@dusos.com",
+				Country: "USA",
 			},
 			wantErr:  true,
 			errField: "User.AppRole",
+		},
+		{
+			name: "missing country",
+			user: User{
+				AppRole: AppRoleUser,
+				Email:   "dummy@dusos.com",
+			},
+			wantErr:  true,
+			errField: "User.Country",
 		},
 	}
 	for _, tt := range tests {
@@ -147,7 +159,6 @@ func (ms *ModelSuite) TestUser_FindSignators() {
 }
 
 func (ms *ModelSuite) TestUser_EmailOfChoice() {
-
 	justEmail := User{Email: "justemail@example.com"}
 	hasOverride := User{Email: "main@example.com", EmailOverride: "override@example.com"}
 

@@ -24,7 +24,9 @@ type PolicyDependent struct {
 	PolicyID       uuid.UUID                       `db:"policy_id"`
 	Name           string                          `db:"name" validate:"required"`
 	Relationship   api.PolicyDependentRelationship `db:"relationship" validate:"policyDependentRelationship"`
-	Location       string                          `db:"location" validate:"required"`
+	City           string                          `db:"city"`
+	State          string                          `db:"state"`
+	Country        string                          `db:"country" validate:"required"`
 	ChildBirthYear int                             `db:"child_birth_year" validate:"policyDependentChildBirthYear,required_if=Relationship Child"`
 
 	CreatedAt time.Time `db:"created_at"`
@@ -76,7 +78,7 @@ func (p *PolicyDependent) ConvertToAPI() api.PolicyDependent {
 		ID:             p.ID,
 		Name:           p.Name,
 		Relationship:   p.Relationship,
-		Location:       p.Location,
+		Country:        p.GetLocation(),
 		ChildBirthYear: p.ChildBirthYear,
 	}
 }
@@ -87,4 +89,8 @@ func (p *PolicyDependents) ConvertToAPI() api.PolicyDependents {
 		deps[i] = pp.ConvertToAPI()
 	}
 	return deps
+}
+
+func (p *PolicyDependent) GetLocation() string {
+	return location(p.City, p.State, p.Country)
 }

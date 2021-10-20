@@ -9,6 +9,7 @@ import (
 	"log"
 	"net/http"
 	"reflect"
+	"strings"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gobuffalo/events"
@@ -102,6 +103,10 @@ type Createable interface {
 
 type Updatable interface {
 	Update(*pop.Connection) error
+}
+
+type HasLocation interface {
+	GetLocation() string
 }
 
 type FieldUpdate struct {
@@ -322,4 +327,15 @@ func addFile(tx *pop.Connection, m Updatable, f File) error {
 	}
 
 	return nil
+}
+
+func location(city, state, country string) string {
+	l := city
+	if state != "" {
+		l += ", " + state
+	}
+	if country != "" {
+		l += " " + country
+	}
+	return strings.Trim(l, " ,")
 }

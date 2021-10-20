@@ -238,59 +238,16 @@ func (ms *ModelSuite) TestPolicy_CreateCorporateType() {
 }
 
 func (ms *ModelSuite) TestPolicy_LoadMembers() {
-	rando := randStr(6)
-	policy := Policy{
-		Type:        api.PolicyTypeHousehold,
-		HouseholdID: nulls.NewString(rando),
-	}
-	MustCreate(ms.DB, &policy)
-
-	user := User{
-		Email:     rando + "@testerson.com",
-		FirstName: "Test",
-		LastName:  "Testerson",
-		IsBlocked: false,
-		StaffID:   nulls.NewString(rando),
-		AppRole:   AppRoleUser,
-	}
-	MustCreate(ms.DB, &user)
-
-	pu := PolicyUser{
-		PolicyID: policy.ID,
-		UserID:   user.ID,
-	}
-	MustCreate(ms.DB, &pu)
+	f := CreatePolicyFixtures(ms.DB, FixturesConfig{})
+	policy := f.Policies[0]
 
 	policy.LoadMembers(ms.DB, false)
 	ms.Len(policy.Members, 1)
 }
 
 func (ms *ModelSuite) TestPolicy_LoadDependents() {
-	rando := randStr(6)
-	policy := Policy{
-		Type:        api.PolicyTypeHousehold,
-		HouseholdID: nulls.NewString(rando),
-	}
-	MustCreate(ms.DB, &policy)
-
-	user := User{
-		Email:     rando + "@testerson.com",
-		FirstName: "Test",
-		LastName:  "Testerson",
-		IsBlocked: false,
-		StaffID:   nulls.NewString(rando),
-		AppRole:   AppRoleUser,
-	}
-	MustCreate(ms.DB, &user)
-
-	pu := PolicyDependent{
-		PolicyID:       policy.ID,
-		Name:           rando + "-kiddo",
-		Relationship:   api.PolicyDependentRelationshipChild,
-		Location:       "Bahamas",
-		ChildBirthYear: 2000,
-	}
-	MustCreate(ms.DB, &pu)
+	f := CreatePolicyFixtures(ms.DB, FixturesConfig{DependentsPerPolicy: 1})
+	policy := f.Policies[0]
 
 	policy.LoadDependents(ms.DB, false)
 	ms.Len(policy.Dependents, 1)

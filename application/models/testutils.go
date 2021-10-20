@@ -230,6 +230,9 @@ func createClaimFixture(tx *pop.Connection, policy Policy, config FixturesConfig
 			PayoutOption:    api.PayoutOptionRepair,
 			PayoutAmount:    85 * domain.CurrencyFactor,
 			FMV:             130 * domain.CurrencyFactor,
+			City:            randStr(10),
+			State:           randStr(2),
+			Country:         randStr(10),
 			ReviewDate:      nulls.Time{},
 			ReviewerID:      nulls.UUID{},
 		}
@@ -311,6 +314,9 @@ func CreateUserFixtures(tx *pop.Connection, n int) Fixtures {
 		users[i].LastLoginUTC = time.Now()
 		users[i].StaffID = nulls.NewString(randStr(10))
 		users[i].AppRole = AppRoleUser
+		users[i].City = randStr(10)
+		users[i].State = randStr(2)
+		users[i].Country = randStr(10)
 		MustCreate(tx, &users[i])
 
 		accessTokenFixtures[i].UserID = users[i].ID
@@ -396,7 +402,9 @@ func CreatePolicyDependentFixtures(tx *pop.Connection, policy Policy, n int) Fix
 		policyDependents[i].PolicyID = policy.ID
 		policyDependents[i].Name = randStr(10) + " " + randStr(10)
 		policyDependents[i].Relationship = api.PolicyDependentRelationshipChild
-		policyDependents[i].Location = randStr(10)
+		policyDependents[i].City = randStr(10)
+		policyDependents[i].State = randStr(2)
+		policyDependents[i].Country = randStr(10)
 		policyDependents[i].ChildBirthYear = time.Now().Year() - 18
 		MustCreate(tx, &policyDependents[i])
 	}

@@ -281,7 +281,9 @@ func importAdminUsers(tx *pop.Connection, users []LegacyUser) {
 			FirstName:     trim(user.FirstName),
 			LastName:      trim(user.LastName),
 			LastLoginUTC:  parseStringTime(user.LastLoginUtc, userDesc+"LastLoginUTC"),
-			Location:      trim(user.Location),
+			City:          "Dallas",
+			State:         "TX",
+			Country:       "USA",
 			StaffID:       nulls.NewString(user.StaffId),
 			AppRole:       appRole,
 			CreatedAt:     parseStringTime(user.CreatedAt, userDesc+"CreatedAt"),
@@ -720,7 +722,9 @@ func importClaimItems(tx *pop.Connection, claim models.Claim, items []LegacyClai
 			ReviewerID:      getAdminUserUUID(strconv.Itoa(c.ReviewerId), itemDesc+"ReviewerID"),
 			LegacyID:        nulls.NewInt(claimItemID),
 			CreatedAt:       parseStringTime(c.CreatedAt, itemDesc+"CreatedAt"),
-			Location:        trim(c.Location),
+			City:            trim(c.City),
+			State:           getState(c.Country),
+			Country:         getCountry(c.Country),
 		}
 
 		if err := newClaimItem.Create(tx); err != nil {
@@ -1085,4 +1089,83 @@ func fixedPointStringToInt(s, desc string) int {
 	}
 	fractionalPart := stringToInt(parts[1], desc+" right of decimal")
 	return intPart*100 + fractionalPart
+}
+
+var states = map[string]string{
+	"Alabama":              "AL",
+	"Alaska":               "AK",
+	"Arizona":              "AZ",
+	"Arkansas":             "AR",
+	"California":           "CA",
+	"Colorado":             "CO",
+	"Connecticut":          "CT",
+	"Delaware":             "DE",
+	"District of Columbia": "DC",
+	"Florida":              "FL",
+	"Georgia":              "GA",
+	"Hawaii":               "HI",
+	"Idaho":                "ID",
+	"Illinois":             "IL",
+	"Indiana":              "IN",
+	"Iowa":                 "IA",
+	"Kansas":               "KS",
+	"Kentucky":             "KY",
+	"Louisiana":            "LA",
+	"Maine":                "ME",
+	"Montana":              "MT",
+	"Nebraska":             "NE",
+	"Nevada":               "NV",
+	"New Hampshire":        "NH",
+	"New Jersey":           "NJ",
+	"New Mexico":           "NM",
+	"New York":             "NY",
+	"North Carolina":       "NC",
+	"North Dakota":         "ND",
+	"Ohio":                 "OH",
+	"Oklahoma":             "OK",
+	"Oregon":               "OR",
+	"Maryland":             "MD",
+	"Massachusetts":        "MA",
+	"Michigan":             "MI",
+	"Minnesota":            "MN",
+	"Mississippi":          "MS",
+	"Missouri":             "MO",
+	"Pennsylvania":         "PA",
+	"Rhode Island":         "RI",
+	"South Carolina":       "SC",
+	"South Dakota":         "SD",
+	"Tennessee":            "TN",
+	"Texas":                "TX",
+	"Utah":                 "UT",
+	"Vermont":              "VT",
+	"Virginia":             "VA",
+	"Washington":           "WA",
+	"West Virginia":        "WV",
+	"Wisconsin":            "WI",
+	"Wyoming":              "WY",
+	"Alberta":              "AB",
+}
+
+func getState(c string) string {
+	c = trim(c)
+
+	if state, ok := states[c]; ok {
+		return state
+	}
+	if len(c) == 2 {
+		return c
+	}
+	return ""
+}
+
+func getCountry(c string) string {
+	c = trim(c)
+
+	if _, ok := states[c]; ok {
+		return ""
+	}
+	if len(c) > 2 {
+		return c
+	}
+	return ""
 }

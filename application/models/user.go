@@ -47,7 +47,9 @@ type User struct {
 	LastName      string       `db:"last_name"`
 	IsBlocked     bool         `db:"is_blocked"`
 	LastLoginUTC  time.Time    `db:"last_login_utc"`
-	Location      string       `db:"location"`
+	City          string       `db:"city"`
+	State         string       `db:"state"`
+	Country       string       `db:"country" validate:"required"`
 	StaffID       nulls.String `db:"staff_id"`
 	AppRole       UserAppRole  `db:"app_role" validate:"appRole"`
 	PhotoFileID   nulls.UUID   `json:"photo_file_id" db:"photo_file_id"`
@@ -250,7 +252,7 @@ func (u *User) ConvertToPolicyMember() api.PolicyMember {
 		Email:         u.Email,
 		EmailOverride: u.EmailOverride,
 		LastLoginUTC:  u.LastLoginUTC,
-		Location:      u.Location,
+		Country:       u.GetLocation(),
 	}
 }
 
@@ -384,7 +386,7 @@ func (u *User) ConvertToAPI(tx *pop.Connection) api.User {
 		Name:          u.Name(),
 		AppRole:       string(u.AppRole),
 		LastLoginUTC:  u.LastLoginUTC,
-		Location:      u.Location,
+		Country:       u.GetLocation(),
 		PhotoFileID:   u.PhotoFileID,
 		PolicyID:      policyID,
 	}
@@ -395,4 +397,8 @@ func (u *User) ConvertToAPI(tx *pop.Connection) api.User {
 	}
 
 	return output
+}
+
+func (u *User) GetLocation() string {
+	return location(u.City, u.State, u.Country)
 }

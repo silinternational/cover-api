@@ -101,7 +101,10 @@ func usersMeUpdate(c buffalo.Context) error {
 	}
 
 	user.EmailOverride = input.EmailOverride
-	user.Location = input.Location
+
+	if input.Country != "" {
+		user.Country = input.Country
+	}
 
 	if err := user.Update(tx); err != nil {
 		return reportError(c, err)

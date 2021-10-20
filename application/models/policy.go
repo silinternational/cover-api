@@ -269,7 +269,7 @@ func (p *Policy) AddDependent(tx *pop.Connection, input api.PolicyDependentInput
 		PolicyID:       p.ID,
 		Name:           input.Name,
 		Relationship:   input.Relationship,
-		Location:       input.Location,
+		Country:        input.Country,
 		ChildBirthYear: input.ChildBirthYear,
 	}
 
