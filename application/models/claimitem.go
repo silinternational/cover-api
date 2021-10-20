@@ -52,7 +52,9 @@ type ClaimItem struct {
 	FMV             int                 `db:"fmv" validate:"min=0"`
 	ReviewDate      nulls.Time          `db:"review_date"`
 	ReviewerID      nulls.UUID          `db:"reviewer_id"`
-	Location        string              `db:"location"`
+	City            string              `db:"city"`
+	State           string              `db:"state"`
+	Country         string              `db:"country"`
 	LegacyID        nulls.Int           `db:"legacy_id"`
 	CreatedAt       time.Time           `db:"created_at"`
 	UpdatedAt       time.Time           `db:"updated_at"`
@@ -428,13 +430,17 @@ func (c *ClaimItem) Compare(old ClaimItem) []FieldUpdate {
 		})
 	}
 
-	if c.Location != old.Location {
+	if c.GetLocation() != old.GetLocation() {
 		updates = append(updates, FieldUpdate{
-			OldValue:  old.Location,
-			NewValue:  c.Location,
+			OldValue:  old.GetLocation(),
+			NewValue:  c.GetLocation(),
 			FieldName: FieldClaimItemLocation,
 		})
 	}
 
 	return updates
+}
+
+func (c *ClaimItem) GetLocation() string {
+	return location(c.City, c.State, c.Country)
 }

@@ -1,0 +1,15 @@
+drop_column("users", "location")
+drop_column("claim_items", "location")
+drop_column("policy_dependents", "location")
+
+add_column("users", "city", "string", {})
+add_column("users", "state", "string", {})
+add_column("users", "country", "string", {})
+
+add_column("claim_items", "city", "string", {})
+add_column("claim_items", "state", "string", {})
+add_column("claim_items", "country", "string", {})
+
+add_column("policy_dependents", "city", "string", {})
+add_column("policy_dependents", "state", "string", {})
+add_column("policy_dependents", "country", "string", {})

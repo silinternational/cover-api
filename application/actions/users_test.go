@@ -104,8 +104,8 @@ func (as *ActionSuite) Test_UsersMeUpdate() {
 	userAddBoth := f.Users[2]
 
 	inputAddEmail := api.UserInput{EmailOverride: "new_email0@example.org"}
-	inputAddLocation := api.UserInput{Location: "New York, NY"}
-	inputAddBoth := api.UserInput{EmailOverride: "new_email2@example.org", Location: "Tucson, AZ"}
+	inputAddLocation := api.UserInput{Country: "Canada"}
+	inputAddBoth := api.UserInput{EmailOverride: "new_email2@example.org", Country: "Mexico"}
 
 	tests := []struct {
 		name       string
@@ -138,18 +138,18 @@ func (as *ActionSuite) Test_UsersMeUpdate() {
 			},
 		},
 		{
-			name:       "just location",
+			name:       "just country",
 			actor:      userAddLocation,
 			oldUser:    userAddLocation,
 			input:      inputAddLocation,
 			wantStatus: http.StatusOK,
 			wantInBody: []string{
 				`"first_name":"` + userAddLocation.FirstName,
-				`"location":"` + inputAddLocation.EmailOverride,
+				inputAddLocation.Country,
 			},
 		},
 		{
-			name:       "add both email and location",
+			name:       "add both email and country",
 			actor:      userAddBoth,
 			oldUser:    userAddBoth,
 			input:      inputAddBoth,
@@ -157,7 +157,7 @@ func (as *ActionSuite) Test_UsersMeUpdate() {
 			wantInBody: []string{
 				`"first_name":"` + userAddBoth.FirstName,
 				`"email_override":"` + inputAddBoth.EmailOverride,
-				`"location":"` + inputAddBoth.Location,
+				inputAddBoth.Country,
 			},
 		},
 	}
@@ -187,7 +187,9 @@ func (as *ActionSuite) Test_UsersMeUpdate() {
 				"error finding newly updated user.")
 			as.Equal(tt.oldUser.LastName, user.LastName, "incorrect LastName")
 			as.Equal(tt.input.EmailOverride, user.EmailOverride, "incorrect EmailOverride")
-			as.Equal(tt.input.Location, user.Location, "incorrect Location")
+			if tt.input.Country != "" {
+				as.Contains(user.GetLocation(), tt.input.Country, "incorrect Country")
+			}
 		})
 	}
 }

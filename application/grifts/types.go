@@ -16,7 +16,6 @@ type LegacyData struct {
 }
 
 type LegacyUser struct {
-	Location      string `json:"location"`
 	CreatedAt     string `json:"created_at"`
 	LastName      string `json:"last_name"`
 	FirstName     string `json:"first_name"`
@@ -104,7 +103,8 @@ type LegacyClaimItem struct {
 	UpdatedAt       string `json:"updated_at"`
 	ReviewDate      string `json:"review_date"`
 	CreatedAt       string `json:"created_at"`
-	Location        string `json:"location"`
+	City            string `json:"city"`
+	Country         string `json:"country"`
 	ReplaceActual   string `json:"replace_actual"`
 	Id              string `json:"id"`
 	ReplaceEstimate string `json:"replace_estimate"`

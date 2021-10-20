@@ -39,8 +39,8 @@ type User struct {
 	// last login date and time (UTC)
 	LastLoginUTC time.Time `json:"last_login_utc"`
 
-	// country or something similar
-	Location string `json:"location,omitempty"`
+	// country
+	Country string `json:"country,omitempty"`
 
 	// policy ID (temporary, will be replaced with a list of policies)
 	// swagger:strfmt uuid4
@@ -62,8 +62,8 @@ type UserInput struct {
 	// email address
 	EmailOverride string `json:"email_override,omitempty"`
 
-	// country or something similar
-	Location string `json:"location,omitempty"`
+	// country
+	Country string `json:"country,omitempty"`
 }
 
 // swagger:model

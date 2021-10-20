@@ -117,14 +117,14 @@ func (as *ActionSuite) Test_DependentsCreate() {
 	goodRequest := api.PolicyDependentInput{
 		Name:           "dependent name",
 		Relationship:   api.PolicyDependentRelationshipChild,
-		Location:       "bahamas",
+		Country:        "Bahamas",
 		ChildBirthYear: 1999,
 	}
 
 	goodRequest2 := api.PolicyDependentInput{
 		Name:           "dependent name2",
 		Relationship:   api.PolicyDependentRelationshipChild,
-		Location:       "USA",
+		Country:        "USA",
 		ChildBirthYear: 2001,
 	}
 

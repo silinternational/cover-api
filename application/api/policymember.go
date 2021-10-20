@@ -33,6 +33,6 @@ type PolicyMember struct {
 	// swagger:strfmt date-time
 	LastLoginUTC time.Time `json:"last_login_utc"`
 
-	// a country or something similar
-	Location string `json:"location,omitempty"`
+	// a country
+	Country string `json:"country,omitempty"`
 }

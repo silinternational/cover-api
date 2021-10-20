@@ -435,7 +435,7 @@ func (ms *ModelSuite) TestClaimItem_Compare() {
 		FMV:             4441,
 		ReviewDate:      nulls.NewTime(time.Date(1991, 1, 1, 1, 1, 1, 1, time.UTC)),
 		ReviewerID:      nulls.NewUUID(domain.GetUUID()),
-		Location:        "Timbuktu",
+		Country:         "Mali",
 	}
 
 	tests := []struct {
@@ -511,8 +511,8 @@ func (ms *ModelSuite) TestClaimItem_Compare() {
 				},
 				{
 					FieldName: FieldClaimItemLocation,
-					OldValue:  oldCItem.Location,
-					NewValue:  newCItem.Location,
+					OldValue:  oldCItem.GetLocation(),
+					NewValue:  newCItem.GetLocation(),
 				},
 			},
 		},
