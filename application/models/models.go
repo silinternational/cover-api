@@ -330,9 +330,9 @@ func addFile(tx *pop.Connection, m Updatable, f File) error {
 }
 
 func location(city, state, country string) string {
-	l := city
+	l := city + ", "
 	if state != "" {
-		l += ", " + state
+		l += state
 	}
 	if country != "" {
 		l += " " + country
