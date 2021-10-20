@@ -145,7 +145,7 @@ func (as *ActionSuite) Test_UsersMeUpdate() {
 			wantStatus: http.StatusOK,
 			wantInBody: []string{
 				`"first_name":"` + userAddLocation.FirstName,
-				inputAddLocation.Country,
+				`"country":"` + inputAddLocation.Country,
 			},
 		},
 		{
@@ -157,7 +157,7 @@ func (as *ActionSuite) Test_UsersMeUpdate() {
 			wantInBody: []string{
 				`"first_name":"` + userAddBoth.FirstName,
 				`"email_override":"` + inputAddBoth.EmailOverride,
-				inputAddBoth.Country,
+				`"country":"` + inputAddBoth.Country,
 			},
 		},
 	}
@@ -188,7 +188,7 @@ func (as *ActionSuite) Test_UsersMeUpdate() {
 			as.Equal(tt.oldUser.LastName, user.LastName, "incorrect LastName")
 			as.Equal(tt.input.EmailOverride, user.EmailOverride, "incorrect EmailOverride")
 			if tt.input.Country != "" {
-				as.Contains(user.GetLocation().Country, tt.input.Country, "incorrect Country")
+				as.Equal(user.GetLocation().Country, tt.input.Country, "incorrect Country")
 			}
 		})
 	}
