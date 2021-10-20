@@ -104,8 +104,8 @@ func (as *ActionSuite) Test_UsersMeUpdate() {
 	userAddBoth := f.Users[2]
 
 	inputAddEmail := api.UserInput{EmailOverride: "new_email0@example.org"}
-	inputAddLocation := api.UserInput{Country: "USA"}
-	inputAddBoth := api.UserInput{EmailOverride: "new_email2@example.org", Country: "USA"}
+	inputAddLocation := api.UserInput{Country: "Canada"}
+	inputAddBoth := api.UserInput{EmailOverride: "new_email2@example.org", Country: "Mexico"}
 
 	tests := []struct {
 		name       string
@@ -145,7 +145,7 @@ func (as *ActionSuite) Test_UsersMeUpdate() {
 			wantStatus: http.StatusOK,
 			wantInBody: []string{
 				`"first_name":"` + userAddLocation.FirstName,
-				`"country":"` + inputAddLocation.Country,
+				inputAddLocation.Country,
 			},
 		},
 		{
@@ -157,7 +157,7 @@ func (as *ActionSuite) Test_UsersMeUpdate() {
 			wantInBody: []string{
 				`"first_name":"` + userAddBoth.FirstName,
 				`"email_override":"` + inputAddBoth.EmailOverride,
-				`"country":"` + inputAddBoth.Country,
+				inputAddBoth.Country,
 			},
 		},
 	}
@@ -188,7 +188,7 @@ func (as *ActionSuite) Test_UsersMeUpdate() {
 			as.Equal(tt.oldUser.LastName, user.LastName, "incorrect LastName")
 			as.Equal(tt.input.EmailOverride, user.EmailOverride, "incorrect EmailOverride")
 			if tt.input.Country != "" {
-				as.Equal(tt.input.Country, user.GetLocation(), "incorrect Country")
+				as.Contains(user.GetLocation(), tt.input.Country, "incorrect Country")
 			}
 		})
 	}
