@@ -49,7 +49,7 @@ type User struct {
 	LastLoginUTC  time.Time    `db:"last_login_utc"`
 	City          string       `db:"city"`
 	State         string       `db:"state"`
-	Country       string       `db:"country" validate:"required"`
+	Country       string       `db:"country"`
 	StaffID       nulls.String `db:"staff_id"`
 	AppRole       UserAppRole  `db:"app_role" validate:"appRole"`
 	PhotoFileID   nulls.UUID   `json:"photo_file_id" db:"photo_file_id"`
