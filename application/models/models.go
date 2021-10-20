@@ -9,7 +9,6 @@ import (
 	"log"
 	"net/http"
 	"reflect"
-	"strings"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gobuffalo/events"
@@ -330,12 +329,14 @@ func addFile(tx *pop.Connection, m Updatable, f File) error {
 }
 
 func location(city, state, country string) string {
-	l := city + ", "
-	if state != "" {
-		l += state
-	}
-	if country != "" {
-		l += " " + country
-	}
-	return strings.Trim(l, " ,")
+	// TODO: when the UI is ready to use more location fields, put this back
+	//l := city + ", "
+	//if state != "" {
+	//	l += state
+	//}
+	//if country != "" {
+	//	l += " " + country
+	//}
+	//return strings.Trim(l, " ,")
+	return country
 }
