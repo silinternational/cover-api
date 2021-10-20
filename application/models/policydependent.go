@@ -2,6 +2,7 @@ package models
 
 import (
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/gobuffalo/pop/v5"
@@ -93,4 +94,17 @@ func (p *PolicyDependents) ConvertToAPI() api.PolicyDependents {
 
 func (p *PolicyDependent) GetLocation() string {
 	return location(p.City, p.State, p.Country)
+}
+
+func (p *PolicyDependent) GetName() Name {
+	names := strings.SplitN(p.Name, " ", 2)
+	firstName := names[0]
+	lastName := ""
+	if len(names) > 1 {
+		lastName = names[1]
+	}
+	return Name{
+		First: firstName,
+		Last:  lastName,
+	}
 }

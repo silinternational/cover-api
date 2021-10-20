@@ -9,6 +9,7 @@ import (
 	"log"
 	"net/http"
 	"reflect"
+	"strings"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gobuffalo/events"
@@ -104,8 +105,18 @@ type Updatable interface {
 	Update(*pop.Connection) error
 }
 
-type HasLocation interface {
-	GetLocation() string
+type Person interface {
+	GetLocation() Location
+	GetName() Name
+}
+
+type Name struct {
+	First string
+	Last  string
+}
+
+func (n Name) String() string {
+	return strings.TrimSpace(strings.TrimSpace(n.First) + " " + strings.TrimSpace(n.Last))
 }
 
 type FieldUpdate struct {

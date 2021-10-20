@@ -77,8 +77,7 @@ func (m MessageData) addItemData(tx *pop.Connection, item models.Item) {
 	m["itemURL"] = fmt.Sprintf("%s/items/%s", domain.Env.UIURL, item.ID)
 	m["item"] = item
 
-	firstName, lastName := item.GetAccountablePersonName(tx)
-	m["accountablePerson"] = firstName + " " + lastName
+	m["accountablePerson"] = item.GetAccountablePersonName(tx).String()
 	m["policy"] = item.Policy
 
 	m["coverageAmount"] = "$" + api.Currency(item.CoverageAmount).String()

@@ -4,7 +4,6 @@ import (
 	"crypto/sha256"
 	"fmt"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/gobuffalo/events"
@@ -241,7 +240,14 @@ func (u *User) MyClaims(tx *pop.Connection) Claims {
 }
 
 func (u *User) Name() string {
-	return strings.TrimSpace(strings.TrimSpace(u.FirstName) + " " + strings.TrimSpace(u.LastName))
+	return u.GetName().String()
+}
+
+func (u *User) GetName() Name {
+	return Name{
+		First: u.FirstName,
+		Last:  u.LastName,
+	}
 }
 
 func (u *User) ConvertToPolicyMember() api.PolicyMember {
