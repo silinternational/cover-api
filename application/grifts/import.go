@@ -1161,11 +1161,8 @@ func getState(c string) string {
 func getCountry(c string) string {
 	c = trim(c)
 
-	if _, ok := states[c]; ok {
+	if _, ok := states[c]; ok || len(c) <= 2 {
 		return ""
 	}
-	if len(c) > 2 {
-		return c
-	}
-	return ""
+	return c
 }
