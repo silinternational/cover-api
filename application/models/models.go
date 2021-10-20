@@ -110,6 +110,23 @@ type Person interface {
 	GetName() Name
 }
 
+type Location struct {
+	City    string
+	State   string
+	Country string
+}
+
+func (l Location) String() string {
+	s := l.City + ", "
+	if l.State != "" {
+		s += l.State
+	}
+	if l.Country != "" {
+		s += " " + l.Country
+	}
+	return strings.Trim(s, " ,")
+}
+
 type Name struct {
 	First string
 	Last  string
@@ -247,6 +264,11 @@ func appErrorFromDB(err error, defaultKey api.ErrorKey) error {
 	return appErr
 }
 
+func find(tx *pop.Connection, m interface{}, id uuid.UUID) error {
+	err := tx.Find(m, id)
+	return appErrorFromDB(err, api.ErrorQueryFailure)
+}
+
 func save(tx *pop.Connection, m interface{}) error {
 	uuidField := fieldByName(m, "ID")
 	if uuidField.IsValid() && uuidField.Interface().(uuid.UUID).Version() == 0 {
@@ -337,17 +359,4 @@ func addFile(tx *pop.Connection, m Updatable, f File) error {
 	}
 
 	return nil
-}
-
-func location(city, state, country string) string {
-	// TODO: when the UI is ready to use more location fields, put this back
-	//l := city + ", "
-	//if state != "" {
-	//	l += state
-	//}
-	//if country != "" {
-	//	l += " " + country
-	//}
-	//return strings.Trim(l, " ,")
-	return country
 }

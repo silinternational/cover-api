@@ -188,7 +188,7 @@ func (as *ActionSuite) Test_UsersMeUpdate() {
 			as.Equal(tt.oldUser.LastName, user.LastName, "incorrect LastName")
 			as.Equal(tt.input.EmailOverride, user.EmailOverride, "incorrect EmailOverride")
 			if tt.input.Country != "" {
-				as.Contains(user.GetLocation(), tt.input.Country, "incorrect Country")
+				as.Contains(user.GetLocation().Country, tt.input.Country, "incorrect Country")
 			}
 		})
 	}

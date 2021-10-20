@@ -796,6 +796,15 @@ func (i *Item) GetAccountablePersonName(tx *pop.Connection) Name {
 	return person.GetName()
 }
 
+// GetAccountablePersonLocation gets the location of the accountable
+func (i *Item) GetAccountablePersonLocation(tx *pop.Connection) (Location, error) {
+	person, err := i.GetAccountablePerson(tx)
+	if err != nil || person == nil {
+		return Location{}, err
+	}
+	return person.GetLocation(), nil
+}
+
 func (i *Item) GetAccountablePerson(tx *pop.Connection) (Person, error) {
 	var person Person
 	if i.PolicyUserID.Valid {

@@ -44,7 +44,7 @@ func (p *PolicyDependent) GetID() uuid.UUID {
 }
 
 func (p *PolicyDependent) FindByID(tx *pop.Connection, id uuid.UUID) error {
-	return tx.Find(p, id)
+	return find(tx, p, id)
 }
 
 func (p *PolicyDependent) Create(tx *pop.Connection) error {
@@ -79,7 +79,7 @@ func (p *PolicyDependent) ConvertToAPI() api.PolicyDependent {
 		ID:             p.ID,
 		Name:           p.Name,
 		Relationship:   p.Relationship,
-		Country:        p.GetLocation(),
+		Country:        p.GetLocation().Country,
 		ChildBirthYear: p.ChildBirthYear,
 	}
 }
@@ -92,8 +92,12 @@ func (p *PolicyDependents) ConvertToAPI() api.PolicyDependents {
 	return deps
 }
 
-func (p *PolicyDependent) GetLocation() string {
-	return location(p.City, p.State, p.Country)
+func (p *PolicyDependent) GetLocation() Location {
+	return Location{
+		City:    p.City,
+		State:   p.State,
+		Country: p.Country,
+	}
 }
 
 func (p *PolicyDependent) GetName() Name {
