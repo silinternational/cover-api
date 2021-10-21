@@ -49,7 +49,6 @@ type LegacyPolicy struct {
 
 type LegacyItem struct {
 	PolicyId          int          `json:"policy_id"`
-	PurchaseDate      string       `json:"purchase_date"`
 	Name              string       `json:"name"`
 	CoverageStartDate string       `json:"coverage_start_date"`
 	Make              string       `json:"make"`

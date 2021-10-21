@@ -869,7 +869,6 @@ func importItems(tx *pop.Connection, policyUUID uuid.UUID, policyID int, items [
 			SerialNumber:      trim(item.SerialNumber),
 			PolicyUserID:      policyUserID,
 			CoverageAmount:    fixedPointStringToInt(item.CoverageAmount, itemDesc+"CoverageAmount"),
-			PurchaseDate:      parseStringTime(item.PurchaseDate, itemDesc+"PurchaseDate"),
 			CoverageStatus:    getCoverageStatus(item),
 			CoverageStartDate: parseStringTime(item.CoverageStartDate, itemDesc+"CoverageStartDate"),
 			LegacyID:          nulls.NewInt(itemID),

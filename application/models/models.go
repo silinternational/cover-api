@@ -85,7 +85,6 @@ const (
 	FieldItemModel             = "Model"
 	FieldItemSerialNumber      = "SerialNumber"
 	FieldItemCoverageAmount    = "CoverageAmount"
-	FieldItemPurchaseDate      = "PurchaseDate"
 	FieldItemCoverageStatus    = "CoverageStatus"
 	FieldItemCoverageStartDate = "CoverageStartDate"
 	FieldItemStatusReason      = "CoverageStatusReason"

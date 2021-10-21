@@ -62,9 +62,6 @@ type Item struct {
 	// coverage amount (0.01 USD)
 	CoverageAmount int `json:"coverage_amount"`
 
-	// date (yyyy-mm-dd) of item's purchase
-	PurchaseDate string `json:"purchase_date"`
-
 	// coverage status
 	CoverageStatus ItemCoverageStatus `json:"coverage_status"`
 
@@ -156,9 +153,6 @@ type ItemInput struct {
 
 	// coverage amount (0.01 USD)
 	CoverageAmount int `json:"coverage_amount"`
-
-	// date (yyyy-mm-dd) of item's purchase
-	PurchaseDate string `json:"purchase_date"`
 
 	// coverage status
 	CoverageStatus ItemCoverageStatus `json:"coverage_status"`

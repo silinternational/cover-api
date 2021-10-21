@@ -144,14 +144,13 @@ func (as *ActionSuite) Test_ItemsCreate() {
 		Model:               "Max",
 		SerialNumber:        "MM1234",
 		CoverageAmount:      101,
-		PurchaseDate:        "2006-01-02",
 		CoverageStatus:      api.ItemCoverageStatusDraft,
 		CoverageStartDate:   "2006-01-03",
 		AccountablePersonID: policyCreator.ID,
 	}
 
 	badItemDate := goodItem
-	badItemDate.PurchaseDate = "1/1/2020"
+	badItemDate.CoverageStartDate = "1/1/2020"
 
 	tests := []struct {
 		name       string
@@ -184,7 +183,7 @@ func (as *ActionSuite) Test_ItemsCreate() {
 			policy:     policy,
 			newItem:    badItemDate,
 			wantStatus: http.StatusBadRequest,
-			wantInBody: []string{api.ErrorItemInvalidPurchaseDate.String()},
+			wantInBody: []string{api.ErrorItemInvalidCoverageStartDate.String()},
 		},
 		{
 			name:       "ok",
@@ -289,7 +288,7 @@ func (as *ActionSuite) Test_ItemsSubmit() {
 				`"serial_number":"` + revisionItem.SerialNumber,
 				// keeps revisionItem coverage_amount
 				fmt.Sprintf(`"coverage_amount":%v`, revisionItem.CoverageAmount),
-				`"purchase_date":"` + revisionItem.PurchaseDate.Format(domain.DateFormat) + `"`,
+				`"coverage_start_date":"` + revisionItem.CoverageStartDate.Format(domain.DateFormat) + `"`,
 				`"coverage_status":"` + string(api.ItemCoverageStatusApproved), // lower than auto-approve max
 				`"category":{"id":"` + iCatID.String(),
 				`"status_change":"` + models.ItemStatusChangeAutoApproved,
@@ -403,7 +402,7 @@ func (as *ActionSuite) Test_ItemsRevision() {
 				`"serial_number":"` + pendingItem.SerialNumber,
 				// keeps pendingItem coverage_amount
 				fmt.Sprintf(`"coverage_amount":%v`, pendingItem.CoverageAmount),
-				`"purchase_date":"` + pendingItem.PurchaseDate.Format(domain.DateFormat) + `"`,
+				`"coverage_start_date":"` + pendingItem.CoverageStartDate.Format(domain.DateFormat) + `"`,
 				`"coverage_status":"` + string(api.ItemCoverageStatusRevision),
 				`"category":{"id":"` + iCatID.String(),
 				`"status_change":"` + models.ItemStatusChangeRevisions + adminUser.Name(),
@@ -650,14 +649,13 @@ func (as *ActionSuite) Test_ItemsUpdate() {
 	iCat := fixtures.ItemCategories[1] // different one
 
 	badItemDate := api.ItemInput{
-		Name:       "Item with bad purchase date",
+		Name:       "Item with bad coverage start date",
 		CategoryID: revisionItem.CategoryID,
 	}
 
 	badCatID := api.ItemInput{
 		Name:              "Item with missing category",
 		CategoryID:        domain.GetUUID(),
-		PurchaseDate:      "2006-01-02",
 		CoverageStartDate: "2006-01-03",
 		CoverageStatus:    api.ItemCoverageStatusDraft,
 	}
@@ -673,7 +671,6 @@ func (as *ActionSuite) Test_ItemsUpdate() {
 		Model:               "Max",
 		SerialNumber:        "MM1234",
 		CoverageAmount:      revisionItem.CoverageAmount,
-		PurchaseDate:        "2006-01-02",
 		CoverageStatus:      api.ItemCoverageStatusRevision,
 		CoverageStartDate:   "2006-01-03",
 		AccountablePersonID: policyCreator.ID,
@@ -712,14 +709,14 @@ func (as *ActionSuite) Test_ItemsUpdate() {
 			wantInBody: []string{api.ErrorResourceNotFound.String()},
 		},
 		{
-			name:       "has bad purchase date",
+			name:       "has bad coverage start date",
 			actor:      policyCreator,
 			oldItem:    revisionItem,
 			newItem:    badItemDate,
 			wantStatus: http.StatusBadRequest,
 			wantInBody: []string{
-				api.ErrorItemInvalidPurchaseDate.String(),
-				"failed to parse item purchase date",
+				api.ErrorItemInvalidCoverageStartDate.String(),
+				"failed to parse item coverage start date",
 			},
 		},
 		{
@@ -755,7 +752,7 @@ func (as *ActionSuite) Test_ItemsUpdate() {
 				`"serial_number":"` + goodItem.SerialNumber,
 				// keeps oldItem coverage_amount
 				fmt.Sprintf(`"coverage_amount":%v`, goodItem.CoverageAmount),
-				`"purchase_date":"` + goodItem.PurchaseDate + `"`,
+				`"coverage_start_date":"` + goodItem.CoverageStartDate + `"`,
 				`"coverage_status":"` + string(goodItem.CoverageStatus),
 				`"category":{"id":"` + iCat.ID.String(),
 				`"name":"` + iCat.Name,
@@ -934,15 +931,14 @@ func (as *ActionSuite) Test_NewItemFromApiInput() {
 		Model:               "Max",
 		SerialNumber:        "MM1234",
 		CoverageAmount:      101,
-		PurchaseDate:        "2006-01-02",
 		CoverageStatus:      api.ItemCoverageStatusDraft,
 		CoverageStartDate:   "2006-01-03",
 		AccountablePersonID: user.ID,
 	}
 
-	itemWithBadPurchaseDate := item
-	itemWithBadPurchaseDate.Name = "Item with bad purchase date"
-	itemWithBadPurchaseDate.PurchaseDate = "1/1/2020"
+	itemWithBadCoverageStartDate := item
+	itemWithBadCoverageStartDate.Name = "Item with bad coverage start date"
+	itemWithBadCoverageStartDate.CoverageStartDate = "1/1/2020"
 
 	itemWithBadCategory := item
 	itemWithBadCategory.Name = "Item with bad category"
@@ -966,12 +962,12 @@ func (as *ActionSuite) Test_NewItemFromApiInput() {
 		wantRiskCat uuid.UUID
 	}{
 		{
-			name:       itemWithBadPurchaseDate.Name,
+			name:       itemWithBadCoverageStartDate.Name,
 			policy:     policy,
-			input:      itemWithBadPurchaseDate,
+			input:      itemWithBadCoverageStartDate,
 			user:       user,
-			wantErr:    "failed to parse item purchase date",
-			wantErrKey: api.ErrorItemInvalidPurchaseDate,
+			wantErr:    "failed to parse item coverage start date",
+			wantErrKey: api.ErrorItemInvalidCoverageStartDate,
 			wantErrCat: api.CategoryUser,
 		},
 		{

@@ -66,7 +66,6 @@ const (
 	// Item
 	ErrorItemFromContext              = ErrorKey("ErrorItemFromContext")
 	ErrorItemNullAccountablePerson    = ErrorKey("ErrorItemNullAccountablePerson")
-	ErrorItemInvalidPurchaseDate      = ErrorKey("ErrorItemInvalidPurchaseDate")
 	ErrorItemCoverageAmount           = ErrorKey("ErrorItemCoverageAmount")
 	ErrorItemInvalidCoverageStartDate = ErrorKey("ErrorItemInvalidCoverageStartDate")
 	ErrorInvalidCategory              = ErrorKey("ErrorInvalidCategory")

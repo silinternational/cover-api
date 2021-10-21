@@ -47,7 +47,6 @@ type Item struct {
 	Model             string                 `db:"model"`
 	SerialNumber      string                 `db:"serial_number"`
 	CoverageAmount    int                    `db:"coverage_amount" validate:"min=0"`
-	PurchaseDate      time.Time              `db:"purchase_date"`
 	CoverageStatus    api.ItemCoverageStatus `db:"coverage_status" validate:"itemCoverageStatus"`
 	StatusChange      string                 `db:"status_change"`
 	CoverageStartDate time.Time              `db:"coverage_start_date"`
@@ -216,14 +215,6 @@ func (i *Item) Compare(old Item) []FieldUpdate {
 			OldValue:  api.Currency(old.CoverageAmount).String(),
 			NewValue:  api.Currency(i.CoverageAmount).String(),
 			FieldName: FieldItemCoverageAmount,
-		})
-	}
-
-	if i.PurchaseDate != old.PurchaseDate {
-		updates = append(updates, FieldUpdate{
-			OldValue:  old.PurchaseDate.Format(domain.DateFormat),
-			NewValue:  i.PurchaseDate.Format(domain.DateFormat),
-			FieldName: FieldItemPurchaseDate,
 		})
 	}
 
@@ -639,7 +630,6 @@ func (i *Item) ConvertToAPI(tx *pop.Connection) api.Item {
 		Model:                  i.Model,
 		SerialNumber:           i.SerialNumber,
 		CoverageAmount:         i.CoverageAmount,
-		PurchaseDate:           i.PurchaseDate.Format(domain.DateFormat),
 		CoverageStatus:         i.CoverageStatus,
 		StatusChange:           i.StatusChange,
 		CoverageStartDate:      i.CoverageStartDate.Format(domain.DateFormat),
@@ -730,14 +720,6 @@ func NewItemFromApiInput(c buffalo.Context, input api.ItemInput, policyID uuid.U
 }
 
 func parseItemDates(input api.ItemInput, modelItem *Item) error {
-	pDate, err := time.Parse(domain.DateFormat, input.PurchaseDate)
-	if err != nil {
-		err = errors.New("failed to parse item purchase date, " + err.Error())
-		appErr := api.NewAppError(err, api.ErrorItemInvalidPurchaseDate, api.CategoryUser)
-		return appErr
-	}
-	modelItem.PurchaseDate = pDate
-
 	csDate, err := time.Parse(domain.DateFormat, input.CoverageStartDate)
 	if err != nil {
 		err = errors.New("failed to parse item coverage start date, " + err.Error())
