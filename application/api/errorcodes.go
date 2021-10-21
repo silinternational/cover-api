@@ -68,6 +68,7 @@ const (
 	ErrorItemNullAccountablePerson    = ErrorKey("ErrorItemNullAccountablePerson")
 	ErrorItemCoverageAmount           = ErrorKey("ErrorItemCoverageAmount")
 	ErrorItemInvalidCoverageStartDate = ErrorKey("ErrorItemInvalidCoverageStartDate")
+	ErrorItemInvalidCoverageEndDate   = ErrorKey("ErrorItemInvalidCoverageEndDate")
 	ErrorInvalidCategory              = ErrorKey("ErrorInvalidCategory")
 
 	// Policy
