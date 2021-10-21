@@ -39,7 +39,6 @@ type Item struct {
 	CategoryID        uuid.UUID              `db:"category_id" validate:"required"`
 	RiskCategoryID    uuid.UUID              `db:"risk_category_id" validate:"required"`
 	InStorage         bool                   `db:"in_storage"`
-	Country           string                 `db:"country"`
 	Description       string                 `db:"description"`
 	PolicyID          uuid.UUID              `db:"policy_id" validate:"required"`
 	PolicyDependentID nulls.UUID             `db:"policy_dependent_id"`
@@ -53,6 +52,9 @@ type Item struct {
 	StatusChange      string                 `db:"status_change"`
 	CoverageStartDate time.Time              `db:"coverage_start_date"`
 	StatusReason      string                 `db:"status_reason" validate:"required_if=CoverageStatus Revision,required_if=CoverageStatus Denied"`
+	City              string                 `db:"city"`
+	State             string                 `db:"state"`
+	Country           string                 `db:"country"`
 	LegacyID          nulls.Int              `db:"legacy_id"`
 	CreatedAt         time.Time              `db:"created_at"`
 	UpdatedAt         time.Time              `db:"updated_at"`
