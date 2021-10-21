@@ -1,0 +1,7 @@
+
+add_column("claims", "city", "string", {})
+add_column("claims", "state", "string", {})
+add_column("claims", "country", "string", {})
+
+add_column("items", "city", "string", {})
+add_column("items", "state", "string", {})

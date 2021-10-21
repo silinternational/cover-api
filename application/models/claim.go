@@ -88,8 +88,11 @@ type Claim struct {
 	ReviewerID          nulls.UUID            `db:"reviewer_id"`
 	PaymentDate         nulls.Time            `db:"payment_date"`
 	TotalPayout         api.Currency          `db:"total_payout"`
-	LegacyID            nulls.Int             `db:"legacy_id"`
 	StatusReason        string                `db:"status_reason" validate:"required_if=Status Revision,required_if=Status Denied"`
+	City                string                `db:"city"`
+	State               string                `db:"state"`
+	Country             string                `db:"country"`
+	LegacyID            nulls.Int             `db:"legacy_id"`
 	CreatedAt           time.Time             `db:"created_at"`
 	UpdatedAt           time.Time             `db:"updated_at"`
 

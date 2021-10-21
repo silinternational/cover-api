@@ -49,7 +49,6 @@ type LegacyPolicy struct {
 
 type LegacyItem struct {
 	PolicyId          int          `json:"policy_id"`
-	InStorage         int          `json:"in_storage"`
 	PurchaseDate      string       `json:"purchase_date"`
 	Name              string       `json:"name"`
 	CoverageStartDate string       `json:"coverage_start_date"`
@@ -58,13 +57,13 @@ type LegacyItem struct {
 	SerialNumber      string       `json:"serial_number"`
 	CreatedAt         string       `json:"created_at"`
 	Id                string       `json:"id"`
-	Country           string       `json:"country"`
 	Model             string       `json:"model"`
 	CategoryId        int          `json:"category_id"`
 	CoverageAmount    string       `json:"coverage_amount"`
 	UpdatedAt         nulls.String `json:"updated_at"`
-	PolicyDependentId int          `json:"policy_dependent_id"`
 	CoverageStatus    string       `json:"coverage_status"`
+	City              string       `json:"city"`
+	Country           string       `json:"country"`
 }
 
 type LegacyItemCategory struct {
@@ -92,6 +91,8 @@ type LegacyClaim struct {
 	TotalPayout         string            `json:"total_payout"`
 	IncidentDate        string            `json:"event_date"`
 	Status              string            `json:"status"`
+	City                string            `json:"city"`
+	Country             string            `json:"country"`
 }
 
 type LegacyClaimItem struct {

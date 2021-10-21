@@ -671,13 +671,16 @@ func importClaims(tx *pop.Connection, policyID uuid.UUID, claims []LegacyClaim) 
 			LegacyID:            nulls.NewInt(claimID),
 			PolicyID:            policyID,
 			IncidentDate:        parseStringTime(c.IncidentDate, claimDesc+"IncidentDate"),
-			IncidentType:        getIncidentType(c),
+			IncidentType:        getIncidentType(c, claimID),
 			IncidentDescription: getIncidentDescription(c),
 			Status:              getClaimStatus(c),
 			ReviewDate:          nulls.NewTime(parseStringTime(c.ReviewDate, claimDesc+"ReviewDate")),
 			ReviewerID:          getAdminUserUUID(strconv.Itoa(c.ReviewerId), claimDesc+"ReviewerID"),
 			PaymentDate:         nulls.NewTime(parseStringTime(c.PaymentDate, claimDesc+"PaymentDate")),
 			TotalPayout:         fixedPointStringToCurrency(c.TotalPayout, "Claim.TotalPayout"),
+			City:                trim(c.City),
+			State:               getState(c.Country),
+			Country:             getCountry(c.Country),
 			CreatedAt:           parseStringTime(c.CreatedAt, claimDesc+"CreatedAt"),
 		}
 		if err := newClaim.Create(tx); err != nil {
@@ -799,7 +802,7 @@ func getAdminUserUUID(staffID, desc string) nulls.UUID {
 	return nulls.NewUUID(userUUID)
 }
 
-func getIncidentType(claim LegacyClaim) api.ClaimIncidentType {
+func getIncidentType(claim LegacyClaim, claimID int) api.ClaimIncidentType {
 	var incidentType api.ClaimIncidentType
 
 	switch claim.IncidentType {
@@ -814,7 +817,7 @@ func getIncidentType(claim LegacyClaim) api.ClaimIncidentType {
 	case "Fire", "Miscellaneous", "Unknown", "Vandalism", "War":
 		incidentType = api.ClaimIncidentTypeOther
 	default:
-		log.Printf("unrecognized incident type: %s\n", claim.IncidentType)
+		log.Printf("Claim[%s] has unrecognized incident type: '%s'\n", claimID, claim.IncidentType)
 		incidentType = api.ClaimIncidentTypeOther
 	}
 
@@ -860,8 +863,6 @@ func importItems(tx *pop.Connection, policyUUID uuid.UUID, policyID int, items [
 			Name:              trim(item.Name),
 			CategoryID:        itemCategoryIDMap[item.CategoryId],
 			RiskCategoryID:    riskCategoryMap[item.CategoryId],
-			InStorage:         item.InStorage == 1,
-			Country:           trim(item.Country),
 			PolicyID:          policyUUID,
 			Make:              trim(item.Make),
 			Model:             trim(item.Model),
@@ -872,6 +873,9 @@ func importItems(tx *pop.Connection, policyUUID uuid.UUID, policyID int, items [
 			CoverageStatus:    getCoverageStatus(item),
 			CoverageStartDate: parseStringTime(item.CoverageStartDate, itemDesc+"CoverageStartDate"),
 			LegacyID:          nulls.NewInt(itemID),
+			City:              trim(item.City),
+			State:             getState(item.Country),
+			Country:           getCountry(item.Country),
 			CreatedAt:         parseStringTime(item.CreatedAt, itemDesc+"CreatedAt"),
 		}
 		if err := newItem.Create(tx); err != nil {
@@ -1144,6 +1148,7 @@ var states = map[string]string{
 	"Wisconsin":            "WI",
 	"Wyoming":              "WY",
 	"Alberta":              "AB",
+	"Ontario":              "ON",
 }
 
 func getState(c string) string {
@@ -1153,7 +1158,7 @@ func getState(c string) string {
 		return state
 	}
 	if len(c) == 2 {
-		return c
+		return strings.ToUpper(c)
 	}
 	return ""
 }
