@@ -817,7 +817,7 @@ func getIncidentType(claim LegacyClaim, claimID int) api.ClaimIncidentType {
 	case "Fire", "Miscellaneous", "Unknown", "Vandalism", "War":
 		incidentType = api.ClaimIncidentTypeOther
 	default:
-		log.Printf("Claim[%s] has unrecognized incident type: '%s'\n", claimID, claim.IncidentType)
+		log.Printf("Claim[%d] has unrecognized incident type: '%s'\n", claimID, claim.IncidentType)
 		incidentType = api.ClaimIncidentTypeOther
 	}
 
