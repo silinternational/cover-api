@@ -93,6 +93,9 @@ type Item struct {
 	// annual premium (0.01 USD)
 	AnnualPremium Currency `json:"annual_premium"`
 
+	// estimated annual premium prorated from now to the end of the year (0.01 USD)
+	ProratedAnnualPremium Currency `json:"prorated_annual_premium"`
+
 	// ID of a dependent designated as accountable person, must be null if accountable_user_id is not null
 	//
 	// swagger:strfmt uuid4

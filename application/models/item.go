@@ -644,6 +644,7 @@ func (i *Item) ConvertToAPI(tx *pop.Connection) api.Item {
 		AccountableUserID:      i.PolicyUserID,
 		AccountableDependentID: i.PolicyDependentID,
 		AnnualPremium:          i.CalculateAnnualPremium(),
+		ProratedAnnualPremium:  i.calculateProratedPremium(time.Now().UTC()),
 		CreatedAt:              i.CreatedAt,
 		UpdatedAt:              i.UpdatedAt,
 	}
