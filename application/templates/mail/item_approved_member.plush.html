@@ -1,32 +1,33 @@
 
 <div>
 	<%= partial("body_header", {
-	  title: "Invoice",
-	  subTitle: "Coverage Added for " + item.Name,
-	  alert: "Billing pending",
-	  alert_description: "The premium is prorated for the remainder of the year."}
+		title: "Invoice",
+		subTitle: "Coverage Added for " + item.Name,
+		alert: "Billing pending",
+		alert_description: "The premium is prorated for the remainder of the year.",
+		alert_icon: "clock"}
 	) %>
 
 	<%# TODO Add this back in when we're ready for it %>
 	<%# coverageEndDate: item.CoverageEndDate, %>
 
 	<%= partial("item_card", {
-	  item: item,
-	  coverageAmount: coverageAmount,
-	  premium: annualPremium,
-	  coverageStartDate: coverageStartDate,
-	  accountablePerson: accountablePerson,
-	  householdID: policy.HouseholdID}
+		item: item,
+		coverageAmount: coverageAmount,
+		premium: annualPremium,
+		coverageStartDate: coverageStartDate,
+		accountablePerson: accountablePerson,
+		householdID: policy.HouseholdID}
 	) %>
 
 	<%= partial("button", {
-	  url: itemURL,
-	  label: "Open in Cover"}
+		url: itemURL,
+		label: "Open in Cover"}
 	) %>
 
 	<%= partial("customer_footer", {
-	supportEmail: supportEmail,
-	supportName: supportName}
+		supportEmail: supportEmail,
+		supportName: supportName}
 	) %>
 </div>
 
