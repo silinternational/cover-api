@@ -2,6 +2,7 @@ package actions
 
 import (
 	"net/http"
+	"strings"
 
 	"github.com/gobuffalo/buffalo"
 
@@ -14,9 +15,18 @@ import (
 //
 // ClaimsList
 //
-// list all the current user's claims, or all Claims if called as an admin
+// List the claims visible to the authenticated user, filtered by the given
+// status values. For a user, all status values are included by default.
+// For an admin (steward or signator) only the review status values are
+// included by default. Accepted status values: Draft, Review1, Review2,
+// Review3, Revision, Receipt, Approved, Paid, Denied
 //
 // ---
+// parameters:
+// - name: status
+//   in: query
+//   required: true
+//   description: comma-separated list of status values to include
 // responses:
 //   '200':
 //     description: a list of Claims
@@ -28,23 +38,29 @@ func claimsList(c buffalo.Context) error {
 	user := models.CurrentUser(c)
 
 	if user.IsAdmin() {
-		return claimsListAll(c)
+		s := strings.Split(c.Param("status"), ",")
+		statuses := make([]api.ClaimStatus, len(s))
+		for i := range s {
+			statuses[i] = api.ClaimStatus(s[i])
+		}
+		return claimsListAdmin(c, statuses)
 	}
 
-	return claimsListMine(c)
+	return claimsListUser(c)
 }
 
-func claimsListAll(c buffalo.Context) error {
+func claimsListAdmin(c buffalo.Context, statuses []api.ClaimStatus) error {
 	tx := models.Tx(c)
 	var claims models.Claims
-	if err := claims.All(tx); err != nil {
+
+	if err := claims.ByStatus(tx, statuses); err != nil {
 		return reportError(c, err)
 	}
 
 	return renderOk(c, claims.ConvertToAPI(tx))
 }
 
-func claimsListMine(c buffalo.Context) error {
+func claimsListUser(c buffalo.Context) error {
 	tx := models.Tx(c)
 	currentUser := models.CurrentUser(c)
 	claims := currentUser.MyClaims(models.Tx(c))

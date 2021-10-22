@@ -602,8 +602,17 @@ func (c *Claims) ConvertToAPI(tx *pop.Connection) api.Claims {
 	return claims
 }
 
-func (c *Claims) All(tx *pop.Connection) error {
-	return appErrorFromDB(tx.All(c), api.ErrorQueryFailure)
+func (c *Claims) ByStatus(tx *pop.Connection, statuses []api.ClaimStatus) error {
+	if len(statuses) == 0 {
+		statuses = []api.ClaimStatus{
+			api.ClaimStatusReview1,
+			api.ClaimStatusReview2,
+			api.ClaimStatusReview3,
+		}
+	}
+
+	err := tx.Where("status in (?)", statuses).All(c)
+	return appErrorFromDB(err, api.ErrorQueryFailure)
 }
 
 func ConvertClaimCreateInput(input api.ClaimCreateInput) Claim {
