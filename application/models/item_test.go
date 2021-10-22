@@ -286,7 +286,6 @@ func (ms *ModelSuite) TestItem_Create() {
 		Model:             "Max",
 		SerialNumber:      "MM1234",
 		CoverageAmount:    200,
-		PurchaseDate:      time.Now().UTC().Add(time.Hour * -48),
 		CoverageStartDate: time.Now().UTC().Add(time.Hour * 48),
 	}
 	itemExceedsPolicy := goodItem
@@ -916,7 +915,6 @@ func (ms *ModelSuite) TestItem_Compare() {
 		Model:             "OldModel",
 		SerialNumber:      "OldSerialNumber",
 		CoverageAmount:    777,
-		PurchaseDate:      time.Date(1991, 1, 1, 0, 0, 0, 0, time.UTC),
 		CoverageStatus:    api.ItemCoverageStatusRevision,
 		CoverageStartDate: time.Date(1992, 2, 2, 0, 0, 0, 0, time.UTC),
 		StatusReason:      "oldStatusReason",
@@ -992,11 +990,6 @@ func (ms *ModelSuite) TestItem_Compare() {
 					FieldName: FieldItemCoverageAmount,
 					OldValue:  api.Currency(oldItem.CoverageAmount).String(),
 					NewValue:  api.Currency(newItem.CoverageAmount).String(),
-				},
-				{
-					FieldName: FieldItemPurchaseDate,
-					OldValue:  oldItem.PurchaseDate.Format(domain.DateFormat),
-					NewValue:  newItem.PurchaseDate.Format(domain.DateFormat),
 				},
 				{
 					FieldName: FieldItemCoverageStatus,

@@ -62,9 +62,6 @@ type Item struct {
 	// coverage amount (0.01 USD)
 	CoverageAmount int `json:"coverage_amount"`
 
-	// date (yyyy-mm-dd) of item's purchase
-	PurchaseDate string `json:"purchase_date"`
-
 	// coverage status
 	CoverageStatus ItemCoverageStatus `json:"coverage_status"`
 
@@ -73,6 +70,9 @@ type Item struct {
 
 	// date (yyyy-mm-dd) of item's coverage start date
 	CoverageStartDate string `json:"coverage_start_date"`
+
+	// date (yyyy-mm-dd) of item's coverage end date
+	CoverageEndDate nulls.String `json:"coverage_end_date"`
 
 	// The time the item was created
 	//
@@ -157,14 +157,14 @@ type ItemInput struct {
 	// coverage amount (0.01 USD)
 	CoverageAmount int `json:"coverage_amount"`
 
-	// date (yyyy-mm-dd) of item's purchase
-	PurchaseDate string `json:"purchase_date"`
-
 	// coverage status
 	CoverageStatus ItemCoverageStatus `json:"coverage_status"`
 
 	// date (yyyy-mm-dd) of item's coverage start date
 	CoverageStartDate string `json:"coverage_start_date"`
+
+	// date (yyyy-mm-dd) of item's coverage end date, optional
+	CoverageEndDate nulls.String `json:"coverage_end_date"`
 
 	// Accountable person ID. Can be either a policy dependent ID or a user ID
 	//

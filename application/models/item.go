@@ -47,10 +47,10 @@ type Item struct {
 	Model             string                 `db:"model"`
 	SerialNumber      string                 `db:"serial_number"`
 	CoverageAmount    int                    `db:"coverage_amount" validate:"min=0"`
-	PurchaseDate      time.Time              `db:"purchase_date"`
 	CoverageStatus    api.ItemCoverageStatus `db:"coverage_status" validate:"itemCoverageStatus"`
 	StatusChange      string                 `db:"status_change"`
 	CoverageStartDate time.Time              `db:"coverage_start_date"`
+	CoverageEndDate   nulls.Time             `db:"coverage_end_date"`
 	StatusReason      string                 `db:"status_reason" validate:"required_if=CoverageStatus Revision,required_if=CoverageStatus Denied"`
 	City              string                 `db:"city"`
 	State             string                 `db:"state"`
@@ -216,14 +216,6 @@ func (i *Item) Compare(old Item) []FieldUpdate {
 			OldValue:  api.Currency(old.CoverageAmount).String(),
 			NewValue:  api.Currency(i.CoverageAmount).String(),
 			FieldName: FieldItemCoverageAmount,
-		})
-	}
-
-	if i.PurchaseDate != old.PurchaseDate {
-		updates = append(updates, FieldUpdate{
-			OldValue:  old.PurchaseDate.Format(domain.DateFormat),
-			NewValue:  i.PurchaseDate.Format(domain.DateFormat),
-			FieldName: FieldItemPurchaseDate,
 		})
 	}
 
@@ -626,6 +618,12 @@ func (i *Item) Load(tx *pop.Connection) {
 
 func (i *Item) ConvertToAPI(tx *pop.Connection) api.Item {
 	i.Load(tx)
+
+	var coverageEndDate nulls.String
+	if i.CoverageEndDate.Valid {
+		coverageEndDate = nulls.NewString(i.CoverageEndDate.Time.Format(domain.DateFormat))
+	}
+
 	return api.Item{
 		ID:                     i.ID,
 		Name:                   i.Name,
@@ -639,10 +637,10 @@ func (i *Item) ConvertToAPI(tx *pop.Connection) api.Item {
 		Model:                  i.Model,
 		SerialNumber:           i.SerialNumber,
 		CoverageAmount:         i.CoverageAmount,
-		PurchaseDate:           i.PurchaseDate.Format(domain.DateFormat),
 		CoverageStatus:         i.CoverageStatus,
 		StatusChange:           i.StatusChange,
 		CoverageStartDate:      i.CoverageStartDate.Format(domain.DateFormat),
+		CoverageEndDate:        coverageEndDate,
 		AccountableUserID:      i.PolicyUserID,
 		AccountableDependentID: i.PolicyDependentID,
 		AnnualPremium:          i.CalculateAnnualPremium(),
@@ -730,21 +728,25 @@ func NewItemFromApiInput(c buffalo.Context, input api.ItemInput, policyID uuid.U
 }
 
 func parseItemDates(input api.ItemInput, modelItem *Item) error {
-	pDate, err := time.Parse(domain.DateFormat, input.PurchaseDate)
-	if err != nil {
-		err = errors.New("failed to parse item purchase date, " + err.Error())
-		appErr := api.NewAppError(err, api.ErrorItemInvalidPurchaseDate, api.CategoryUser)
-		return appErr
-	}
-	modelItem.PurchaseDate = pDate
-
-	csDate, err := time.Parse(domain.DateFormat, input.CoverageStartDate)
+	start, err := time.Parse(domain.DateFormat, input.CoverageStartDate)
 	if err != nil {
 		err = errors.New("failed to parse item coverage start date, " + err.Error())
 		appErr := api.NewAppError(err, api.ErrorItemInvalidCoverageStartDate, api.CategoryUser)
 		return appErr
 	}
-	modelItem.CoverageStartDate = csDate
+	modelItem.CoverageStartDate = start
+
+	if input.CoverageEndDate.Valid {
+		end, err := time.Parse(domain.DateFormat, input.CoverageEndDate.String)
+		if err != nil {
+			err = errors.New("failed to parse item coverage end date, " + err.Error())
+			appErr := api.NewAppError(err, api.ErrorItemInvalidCoverageEndDate, api.CategoryUser)
+			return appErr
+		}
+		modelItem.CoverageEndDate = nulls.NewTime(end)
+	} else {
+		modelItem.CoverageEndDate = nulls.Time{}
+	}
 
 	return nil
 }

@@ -345,7 +345,6 @@ func createItemFixtures(tx *pop.Connection, fixPolicies []*models.Policy) ([]*mo
 			CoverageAmount:    50 * (i + 1) * domain.CurrencyFactor, // increments of $50 starting at $50
 			CoverageStatus:    api.ItemCoverageStatusApproved,
 			CoverageStartDate: time.Now().UTC().Add(time.Hour * time.Duration((i+1)*-40)),
-			PurchaseDate:      time.Now().UTC().Add(time.Hour * time.Duration((i+1)*-48)),
 		}
 
 		err := tx.Create(fixItems[i])
