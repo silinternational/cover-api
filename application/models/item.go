@@ -50,7 +50,7 @@ type Item struct {
 	CoverageStatus    api.ItemCoverageStatus `db:"coverage_status" validate:"itemCoverageStatus"`
 	StatusChange      string                 `db:"status_change"`
 	CoverageStartDate time.Time              `db:"coverage_start_date"`
-	CoverageEndDate   time.Time              `db:"coverage_end_date"`
+	CoverageEndDate   nulls.Time             `db:"coverage_end_date"`
 	StatusReason      string                 `db:"status_reason" validate:"required_if=CoverageStatus Revision,required_if=CoverageStatus Denied"`
 	City              string                 `db:"city"`
 	State             string                 `db:"state"`
@@ -618,6 +618,12 @@ func (i *Item) Load(tx *pop.Connection) {
 
 func (i *Item) ConvertToAPI(tx *pop.Connection) api.Item {
 	i.Load(tx)
+
+	var coverageEndDate nulls.String
+	if i.CoverageEndDate.Valid {
+		coverageEndDate = nulls.NewString(i.CoverageEndDate.Time.Format(domain.DateFormat))
+	}
+
 	return api.Item{
 		ID:                     i.ID,
 		Name:                   i.Name,
@@ -634,7 +640,7 @@ func (i *Item) ConvertToAPI(tx *pop.Connection) api.Item {
 		CoverageStatus:         i.CoverageStatus,
 		StatusChange:           i.StatusChange,
 		CoverageStartDate:      i.CoverageStartDate.Format(domain.DateFormat),
-		CoverageEndDate:        i.CoverageEndDate.Format(domain.DateFormat),
+		CoverageEndDate:        coverageEndDate,
 		AccountableUserID:      i.PolicyUserID,
 		AccountableDependentID: i.PolicyDependentID,
 		AnnualPremium:          i.CalculateAnnualPremium(),
@@ -730,16 +736,16 @@ func parseItemDates(input api.ItemInput, modelItem *Item) error {
 	}
 	modelItem.CoverageStartDate = start
 
-	if input.CoverageEndDate == "" {
-		modelItem.CoverageEndDate = time.Date(9999, 12, 31, 0, 0, 0, 0, time.UTC)
-	} else {
-		end, err := time.Parse(domain.DateFormat, input.CoverageEndDate)
+	if input.CoverageEndDate.Valid {
+		end, err := time.Parse(domain.DateFormat, input.CoverageEndDate.String)
 		if err != nil {
 			err = errors.New("failed to parse item coverage end date, " + err.Error())
 			appErr := api.NewAppError(err, api.ErrorItemInvalidCoverageEndDate, api.CategoryUser)
 			return appErr
 		}
-		modelItem.CoverageStartDate = end
+		modelItem.CoverageEndDate = nulls.NewTime(end)
+	} else {
+		modelItem.CoverageEndDate = nulls.Time{}
 	}
 
 	return nil

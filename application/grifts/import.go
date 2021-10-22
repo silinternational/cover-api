@@ -871,7 +871,7 @@ func importItems(tx *pop.Connection, policyUUID uuid.UUID, policyID int, items [
 			CoverageAmount:    fixedPointStringToInt(item.CoverageAmount, itemDesc+"CoverageAmount"),
 			CoverageStatus:    getCoverageStatus(item),
 			CoverageStartDate: parseStringTime(item.CoverageStartDate, itemDesc+"CoverageStartDate"),
-			CoverageEndDate:   parseStringTime(item.CoverageEndDate, itemDesc+"CoverageEndDate"),
+			CoverageEndDate:   parseStringTimeToNullTime(item.CoverageEndDate, itemDesc+"CoverageEndDate"),
 			LegacyID:          nulls.NewInt(itemID),
 			City:              trim(item.City),
 			State:             getState(item.Country),
