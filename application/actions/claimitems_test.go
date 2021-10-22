@@ -42,14 +42,14 @@ func (as *ActionSuite) Test_ClaimItemsUpdate() {
 	review1Claim.LoadClaimItems(as.DB, false)
 	review1ClaimItem := review1Claim.ClaimItems[0]
 
-	review3Claim := models.UpdateClaimStatus(db, policy.Claims[2], api.ClaimStatusReview3, "")
-	review3Claim.LoadClaimItems(as.DB, false)
-	review3ClaimItem := review3Claim.ClaimItems[0]
-	review3ClaimItem.ReviewerID = nulls.NewUUID(appAdmin.ID)
-	review3ClaimItem.ReviewDate = nulls.NewTime(time.Now().UTC())
+	approvedClaim := models.UpdateClaimStatus(db, policy.Claims[2], api.ClaimStatusApproved, "")
+	approvedClaim.LoadClaimItems(as.DB, false)
+	approvedClaimItem := approvedClaim.ClaimItems[0]
+	approvedClaimItem.ReviewerID = nulls.NewUUID(appAdmin.ID)
+	approvedClaimItem.ReviewDate = nulls.NewTime(time.Now().UTC())
 
 	ctx := models.CreateTestContext(appAdmin)
-	review3ClaimItem.Update(ctx)
+	approvedClaimItem.Update(ctx)
 
 	input := api.ClaimItemUpdateInput{
 		IsRepairable:    true,
@@ -87,7 +87,7 @@ func (as *ActionSuite) Test_ClaimItemsUpdate() {
 		{
 			name:       "authorized user but bad claim status",
 			actor:      authorizedUser,
-			claimItem:  review3ClaimItem,
+			claimItem:  approvedClaimItem,
 			input:      input,
 			wantStatus: http.StatusBadRequest,
 			wantInBody: string(api.ErrorClaimStatus),
@@ -111,10 +111,10 @@ func (as *ActionSuite) Test_ClaimItemsUpdate() {
 		{
 			name:       "admin user",
 			actor:      appAdmin,
-			claimItem:  review3ClaimItem,
+			claimItem:  approvedClaimItem,
 			input:      input,
 			wantStatus: http.StatusOK,
-			wantInBody: review3Claim.ID.String(),
+			wantInBody: approvedClaim.ID.String(),
 		},
 	}
 

@@ -167,11 +167,8 @@ func (c *Claim) UpdateByUser(ctx context.Context) error {
 		return c.Update(ctx)
 	}
 
-	switch c.Status {
-	// OK to modify the Claim when it has one of these statuses but not any others
-	case api.ClaimStatusDraft, api.ClaimStatusRevision, api.ClaimStatusReview1:
-	default:
-		err := errors.New("user may not edit a claim that is too far along in the review process.")
+	if !c.canUpdate(user) {
+		err := errors.New("user may not edit a claim that is too far along in the review process")
 		appErr := api.NewAppError(err, api.ErrorClaimStatus, api.CategoryUser)
 		return appErr
 	}
@@ -184,6 +181,20 @@ func (c *Claim) UpdateByUser(ctx context.Context) error {
 	}
 
 	return c.Update(ctx)
+}
+
+func (c *Claim) canUpdate(user User) bool {
+	if user.IsAdmin() {
+		return true
+	}
+
+	switch c.Status {
+	// cannot modify this when the parent Claim has one of these statuses
+	case api.ClaimStatusApproved, api.ClaimStatusDenied, api.ClaimStatusPaid:
+		return false
+	}
+
+	return true
 }
 
 func (c *Claim) GetID() uuid.UUID {
