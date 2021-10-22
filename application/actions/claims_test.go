@@ -57,7 +57,7 @@ func (as *ActionSuite) Test_ClaimsList() {
 
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
-			qs := fmt.Sprintf("?status=%s", string(api.ClaimStatusDraft))
+			qs := fmt.Sprintf("?status=%s", api.ClaimStatusDraft)
 			req := as.JSON("/claims" + qs)
 			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
 			req.Headers["content-type"] = "application/json"
