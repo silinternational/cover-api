@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/gobuffalo/nulls"
+	"github.com/gofrs/uuid"
 
 	"github.com/silinternational/cover-api/api"
 	"github.com/silinternational/cover-api/domain"
@@ -825,4 +826,57 @@ func (ms *ModelSuite) TestClaim_CreateLedgerEntry() {
 	ms.Equal(api.Currency(-12345), le.Amount, "Amount is incorrect")
 	ms.Equal(user.FirstName, le.FirstName, "FirstName is incorrect")
 	ms.Equal(user.LastName, le.LastName, "LastName is incorrect")
+}
+
+func (ms *ModelSuite) TestClaims_ByStatus() {
+	f := CreateItemFixtures(ms.DB, FixturesConfig{
+		NumberOfPolicies: 9,
+		ClaimsPerPolicy:  1,
+	})
+
+	f.Claims[0].Status = api.ClaimStatusDraft
+	f.Claims[1].Status = api.ClaimStatusReview1
+	f.Claims[2].Status = api.ClaimStatusReview2
+	f.Claims[3].Status = api.ClaimStatusReview3
+	f.Claims[4].Status = api.ClaimStatusRevision
+	f.Claims[5].Status = api.ClaimStatusReceipt
+	f.Claims[6].Status = api.ClaimStatusApproved
+	f.Claims[7].Status = api.ClaimStatusPaid
+	f.Claims[8].Status = api.ClaimStatusDenied
+
+	ms.NoError(ms.DB.Update(&f.Claims))
+
+	tests := []struct {
+		name         string
+		statuses     []api.ClaimStatus
+		wantClaimIDs []uuid.UUID
+		wantErr      bool
+	}{
+		{
+			name:         "default",
+			wantClaimIDs: []uuid.UUID{f.Claims[1].ID, f.Claims[2].ID, f.Claims[3].ID},
+			wantErr:      false,
+		},
+		{
+			name:         "approved and paid",
+			statuses:     []api.ClaimStatus{api.ClaimStatusApproved, api.ClaimStatusPaid},
+			wantClaimIDs: []uuid.UUID{f.Claims[6].ID, f.Claims[7].ID},
+			wantErr:      false,
+		},
+	}
+	for _, tt := range tests {
+		ms.T().Run(tt.name, func(t *testing.T) {
+			var claims Claims
+			err := claims.ByStatus(ms.DB, tt.statuses)
+			ms.NoError(err)
+
+			gotIDs := make([]uuid.UUID, len(claims))
+			for i := range claims {
+				gotIDs[i] = claims[i].ID
+			}
+
+			ms.Equal(len(tt.wantClaimIDs), len(gotIDs))
+			ms.ElementsMatch(tt.wantClaimIDs, gotIDs)
+		})
+	}
 }
