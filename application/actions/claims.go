@@ -46,7 +46,7 @@ func claimsList(c buffalo.Context) error {
 		return claimsListAdmin(c, statuses)
 	}
 
-	return claimsListUser(c)
+	return claimsListCustomer(c)
 }
 
 func claimsListAdmin(c buffalo.Context, statuses []api.ClaimStatus) error {
@@ -60,7 +60,7 @@ func claimsListAdmin(c buffalo.Context, statuses []api.ClaimStatus) error {
 	return renderOk(c, claims.ConvertToAPI(tx))
 }
 
-func claimsListUser(c buffalo.Context) error {
+func claimsListCustomer(c buffalo.Context) error {
 	tx := models.Tx(c)
 	currentUser := models.CurrentUser(c)
 	claims := currentUser.MyClaims(models.Tx(c))
