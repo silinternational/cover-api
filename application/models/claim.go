@@ -169,9 +169,9 @@ func (c *Claim) UpdateByUser(ctx context.Context) error {
 
 	switch c.Status {
 	// OK to modify the Claim when it has one of these statuses but not any others
-	case api.ClaimStatusDraft, api.ClaimStatusRevision, api.ClaimStatusReceipt:
+	case api.ClaimStatusDraft, api.ClaimStatusRevision, api.ClaimStatusReview1:
 	default:
-		err := errors.New("user may not edit a claim that is too far along in the review process")
+		err := errors.New("user may not edit a claim that is too far along in the review process.")
 		appErr := api.NewAppError(err, api.ErrorClaimStatus, api.CategoryUser)
 		return appErr
 	}

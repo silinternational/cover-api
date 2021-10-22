@@ -132,9 +132,9 @@ func (c *ClaimItem) UpdateByUser(ctx context.Context) error {
 
 	switch c.Claim.Status {
 	// OK to modify this when the parent Claim has one of these statuses but not any others
-	case api.ClaimStatusDraft, api.ClaimStatusRevision, api.ClaimStatusReceipt:
+	case api.ClaimStatusDraft, api.ClaimStatusRevision, api.ClaimStatusReview1:
 	default:
-		err := errors.New("user may not edit a claim item that is too far along in the review process")
+		err := errors.New("user may not edit a claim item that is too far along in the review process.")
 		appErr := api.NewAppError(err, api.ErrorClaimStatus, api.CategoryUser)
 		return appErr
 	}
