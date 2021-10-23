@@ -185,7 +185,7 @@ func (as *ActionSuite) Test_ClaimsUpdate() {
 	// alias some claims
 	draftClaim := policy.Claims[0]
 	review1Claim := models.UpdateClaimStatus(db, policy.Claims[1], api.ClaimStatusReview1, "")
-	review3Claim := models.UpdateClaimStatus(db, policy.Claims[2], api.ClaimStatusReview3, "")
+	approvedClaim := models.UpdateClaimStatus(db, policy.Claims[2], api.ClaimStatusApproved, "")
 
 	// make an admin
 	appAdmin.AppRole = models.AppRoleAdmin
@@ -218,7 +218,7 @@ func (as *ActionSuite) Test_ClaimsUpdate() {
 		{
 			name:          "authorized user but bad status",
 			actor:         secondUser,
-			claim:         review3Claim,
+			claim:         approvedClaim,
 			input:         input,
 			wantStatus:    http.StatusBadRequest,
 			wantInBody:    string(api.ErrorClaimStatus),
@@ -243,10 +243,10 @@ func (as *ActionSuite) Test_ClaimsUpdate() {
 		{
 			name:       "admin user",
 			actor:      appAdmin,
-			claim:      review3Claim,
+			claim:      approvedClaim,
 			input:      input,
 			wantStatus: http.StatusOK,
-			wantInBody: `"status":"` + string(api.ClaimStatusReview3),
+			wantInBody: `"status":"` + string(api.ClaimStatusApproved),
 		},
 	}
 

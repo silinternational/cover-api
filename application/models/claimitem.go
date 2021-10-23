@@ -83,73 +83,76 @@ func (c *ClaimItem) Create(tx *pop.Connection) error {
 // Update changes the status if it is a valid transition.
 func (c *ClaimItem) Update(ctx context.Context) error {
 	tx := Tx(ctx)
-	// Get the parent Claim's status
 	c.LoadClaim(tx, false)
 
-	var oldClaimItem ClaimItem
-	if err := oldClaimItem.FindByID(tx, c.ID); err != nil {
-		return appErrorFromDB(err, api.ErrorQueryFailure)
+	user := CurrentUser(ctx)
+	if !c.Claim.canUpdate(user) {
+		err := errors.New("user may not edit a ClaimItem that is too far along in the review process")
+		appErr := api.NewAppError(err, api.ErrorClaimStatus, api.CategoryUser)
+		return appErr
 	}
 
 	c.Status = api.ClaimItemStatus(c.Claim.Status)
 
-	// Maybe One day we will want to worry about the status on the ClaimItem itself
-	//if !isClaimItemTransitionValid(oldStatus, c.Status) {
-	//	err := fmt.Errorf("invalid claim item status transition from %s to %s", oldStatus, c.Status)
-	//	appErr := api.NewAppError(err, api.ErrorValidation, api.CategoryUser)
-	//	return appErr
-	//}
-
-	user := CurrentUser(ctx)
-
-	// Set the Reviewer fields when needed.
 	if user.IsAdmin() {
 		c.ReviewerID = nulls.NewUUID(user.ID)
 		c.ReviewDate = nulls.NewTime(time.Now().UTC())
+	}
+
+	updates, err := c.getUpdates(ctx)
+	if err != nil {
+		return err
+	}
+
+	if err = c.updateClaimStatus(ctx, updates); err != nil {
+		return err
+	}
+
+	return update(tx, c)
+}
+
+func (c *ClaimItem) getUpdates(ctx context.Context) ([]FieldUpdate, error) {
+	tx := Tx(ctx)
+
+	var oldClaimItem ClaimItem
+	if err := oldClaimItem.FindByID(tx, c.ID); err != nil {
+		return []FieldUpdate{}, appErrorFromDB(err, api.ErrorQueryFailure)
 	}
 
 	updates := c.Compare(oldClaimItem)
 	for i := range updates {
 		history := c.Claim.NewHistory(ctx, api.HistoryActionUpdate, updates[i])
 		if err := history.Create(tx); err != nil {
-			return appErrorFromDB(err, api.ErrorCreateFailure)
+			return updates, appErrorFromDB(err, api.ErrorCreateFailure)
 		}
 	}
-
-	return update(tx, c)
+	return updates, nil
 }
 
-// UpdateByUser ensures the parent Claim has an appropriate status for being modified by the user
-//  and then writes the ClaimItem data to an existing database record.
-func (c *ClaimItem) UpdateByUser(ctx context.Context) error {
-	tx := Tx(ctx)
+// If a customer edits something other than ReceiptActual or ReplaceActual, it should take the claim off
+// of the steward's list of things to review and also force the user to resubmit it.
+func (c *ClaimItem) updateClaimStatus(ctx context.Context, updates []FieldUpdate) error {
 	user := CurrentUser(ctx)
 	if user.IsAdmin() {
-		return c.Update(ctx)
+		return nil
 	}
 
-	c.LoadClaim(tx, false)
-
-	switch c.Claim.Status {
-	// OK to modify this when the parent Claim has one of these statuses but not any others
-	case api.ClaimStatusDraft, api.ClaimStatusRevision, api.ClaimStatusReview1:
-	default:
-		err := errors.New("user may not edit a claim item that is too far along in the review process.")
-		appErr := api.NewAppError(err, api.ErrorClaimStatus, api.CategoryUser)
-		return appErr
+	revertToDraft := false
+	for _, u := range updates {
+		if u.FieldName != FieldClaimItemReplaceActual && u.FieldName != FieldClaimItemRepairActual {
+			revertToDraft = true
+			break
+		}
+	}
+	if !revertToDraft {
+		return nil
 	}
 
-	// If the user edits something, it should take the claim off of the steward's list of things to review and
-	//  also force the user to resubmit it.
 	if c.Claim.Status == api.ClaimStatusReview1 {
 		c.Claim.Status = api.ClaimStatusDraft
 	}
 
-	if err := c.Claim.Update(ctx); err != nil {
-		return err
-	}
-
-	return c.Update(ctx)
+	return c.Claim.Update(ctx)
 }
 
 // Maybe one day we will want to do something like this on a ClaimItem
