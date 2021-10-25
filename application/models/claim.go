@@ -259,17 +259,21 @@ func claimStatusTransitions() map[api.ClaimStatus][]api.ClaimStatus {
 			api.ClaimStatusDenied,
 		},
 		api.ClaimStatusRevision: {
+			api.ClaimStatusDraft,
 			api.ClaimStatusReview1,
 		},
 		api.ClaimStatusReceipt: {
+			api.ClaimStatusDraft,
 			api.ClaimStatusReview2,
 		},
 		api.ClaimStatusReview2: {
+			api.ClaimStatusDraft,
 			api.ClaimStatusReceipt,
 			api.ClaimStatusReview3,
 			api.ClaimStatusDenied,
 		},
 		api.ClaimStatusReview3: {
+			api.ClaimStatusDraft,
 			api.ClaimStatusReceipt,
 			api.ClaimStatusRevision,
 			api.ClaimStatusApproved,
