@@ -57,6 +57,24 @@ func policiesListMine(c buffalo.Context) error {
 	return renderOk(c, apiPolicies)
 }
 
+// swagger:operation GET /policies/{id} Policies PoliciesGet
+//
+// PoliciesGet
+//
+// gets the data for a specific policy
+//
+// ---
+// responses:
+//   '200':
+//     description: a policy
+//     schema:
+//       "$ref": "#/definitions/Policy"
+func policiesGet(c buffalo.Context) error {
+	policy := getReferencedPolicyFromCtx(c)
+
+	return renderOk(c, policy)
+}
+
 // swagger:operation POST /policies/ Policies PoliciesCreateCorporate
 //
 // PoliciesCreateCorporate
