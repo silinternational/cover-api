@@ -1,8 +1,54 @@
 package grifts
 
 import (
+	"encoding/json"
+	"fmt"
+	"time"
+
 	"github.com/gobuffalo/nulls"
 )
+
+// time types that use MySQL format for deserialization
+type (
+	MySQLTime     time.Time
+	MySQLNullTime nulls.Time
+)
+
+func (t *MySQLTime) UnmarshalJSON(data []byte) error {
+	var v string
+	if err := json.Unmarshal(data, &v); err != nil {
+		return err
+	}
+
+	t1, err := time.Parse(MySQLTimeFormat, v)
+	*t = MySQLTime(t1)
+
+	return err
+}
+
+func (t *MySQLNullTime) UnmarshalJSON(data []byte) error {
+	t.Valid = false
+	if string(data) == "null" || string(data) == "" {
+		return nil
+	}
+
+	var v string
+	if err := json.Unmarshal(data, &v); err != nil {
+		return err
+	}
+
+	t1, err := time.Parse(MySQLTimeFormat, v)
+	if err == nil && !t1.IsZero() {
+		t.Time = t1
+		t.Valid = true
+		return nil
+	}
+
+	if err != nil {
+		return fmt.Errorf("MySQLNullTime unmarshal error %w", err)
+	}
+	return nil
+}
 
 type LegacyData struct {
 	Users          []LegacyUser         `json:"users"`
@@ -16,104 +62,100 @@ type LegacyData struct {
 }
 
 type LegacyUser struct {
-	CreatedAt     string `json:"created_at"`
-	LastName      string `json:"last_name"`
-	FirstName     string `json:"first_name"`
-	UpdatedAt     string `json:"updated_at"`
-	Id            string `json:"id"`
-	Email         string `json:"email"`
-	EmailOverride string `json:"email_override"`
-	IsBlocked     int    `json:"is_blocked"`
-	LastLoginUtc  string `json:"last_login_utc"`
-	StaffId       string `json:"staff_id"`
+	LastName      string    `json:"last_name"`
+	FirstName     string    `json:"first_name"`
+	Id            string    `json:"id"`
+	Email         string    `json:"email"`
+	EmailOverride string    `json:"email_override"`
+	IsBlocked     int       `json:"is_blocked"`
+	StaffId       string    `json:"staff_id"`
+	LastLoginUtc  MySQLTime `json:"last_login_utc"`
+	CreatedAt     MySQLTime `json:"created_at"`
+	UpdatedAt     MySQLTime `json:"updated_at"`
 }
 
 type LegacyPolicy struct {
 	Id            string        `json:"id"`
-	Claims        []LegacyClaim `json:"claims"`
-	Notes         string        `json:"notes"`
-	IdentCode     string        `json:"ident_code"`
-	CostCenter    string        `json:"cost_center"`
-	AccountDetail string        `json:"account_detail"`
-	Items         []LegacyItem  `json:"items"`
-	Account       int           `json:"account"`
-	HouseholdId   string        `json:"household_id"`
-	EntityCode    nulls.String  `json:"entity_code"`
-	Type          string        `json:"type"`
-	Email         string        `json:"email"`
-	LastName      string        `json:"last_name"`
 	FirstName     string        `json:"first_name"`
-	UpdatedAt     nulls.String  `json:"updated_at"`
-	CreatedAt     string        `json:"created_at"`
+	LastName      string        `json:"last_name"`
+	Email         string        `json:"email"`
+	IdentCode     string        `json:"ident_code"`
+	Type          string        `json:"type"`
+	HouseholdId   string        `json:"household_id"`
+	CostCenter    string        `json:"cost_center"`
+	Account       int           `json:"account"`
+	AccountDetail string        `json:"account_detail"`
+	EntityCode    nulls.String  `json:"entity_code"`
+	Notes         string        `json:"notes"`
+	UpdatedAt     MySQLTime     `json:"updated_at"`
+	CreatedAt     MySQLTime     `json:"created_at"`
+	Claims        []LegacyClaim `json:"claims"`
+	Items         []LegacyItem  `json:"items"`
 }
 
 type LegacyItem struct {
-	PolicyId          int          `json:"policy_id"`
-	Name              string       `json:"name"`
-	CoverageStartDate string       `json:"coverage_start_date"`
-	CoverageEndDate   string       `json:"coverage_end_date"`
-	Make              string       `json:"make"`
-	Description       string       `json:"description"`
-	SerialNumber      string       `json:"serial_number"`
-	CreatedAt         string       `json:"created_at"`
-	Id                string       `json:"id"`
-	Model             string       `json:"model"`
-	CategoryId        int          `json:"category_id"`
-	CoverageAmount    string       `json:"coverage_amount"`
-	UpdatedAt         nulls.String `json:"updated_at"`
-	CoverageStatus    string       `json:"coverage_status"`
-	City              string       `json:"city"`
-	Country           string       `json:"country"`
+	Id              string        `json:"id"`
+	PolicyId        int           `json:"policy_id"`
+	Name            string        `json:"name"`
+	CoverageEndDate MySQLNullTime `json:"coverage_end_date"`
+	Make            string        `json:"make"`
+	Description     string        `json:"description"`
+	SerialNumber    string        `json:"serial_number"`
+	Model           string        `json:"model"`
+	CategoryId      int           `json:"category_id"`
+	CoverageAmount  string        `json:"coverage_amount"`
+	CoverageStatus  string        `json:"coverage_status"`
+	City            string        `json:"city"`
+	Country         string        `json:"country"`
+	CreatedAt       MySQLTime     `json:"created_at"`
+	UpdatedAt       MySQLTime     `json:"updated_at"`
 }
 
 type LegacyItemCategory struct {
-	CreatedAt      string `json:"created_at"`
-	Name           string `json:"name"`
-	Status         string `json:"status"`
-	UpdatedAt      string `json:"updated_at"`
-	AutoApproveMax string `json:"auto_approve_max"`
-	RiskCategoryId int    `json:"risk_category_id"`
-	HelpText       string `json:"help_text"`
-	Id             string `json:"id"`
+	Id             string    `json:"id"`
+	Name           string    `json:"name"`
+	Status         string    `json:"status"`
+	AutoApproveMax string    `json:"auto_approve_max"`
+	RiskCategoryId int       `json:"risk_category_id"`
+	HelpText       string    `json:"help_text"`
+	CreatedAt      MySQLTime `json:"created_at"`
+	UpdatedAt      MySQLTime `json:"updated_at"`
 }
 
 type LegacyClaim struct {
+	Id                  string            `json:"id"`
 	PolicyId            int               `json:"policy_id"`
 	ReviewerId          int               `json:"reviewer_id"`
-	ClaimItems          []LegacyClaimItem `json:"claim_items"`
-	CreatedAt           string            `json:"created_at"`
-	ReviewDate          string            `json:"review_date"`
-	UpdatedAt           string            `json:"updated_at"`
+	ReviewDate          MySQLNullTime     `json:"review_date"`
 	IncidentDescription string            `json:"event_description"`
-	Id                  string            `json:"id"`
 	IncidentType        string            `json:"event_type"`
-	PaymentDate         string            `json:"payment_date"`
+	PaymentDate         MySQLNullTime     `json:"payment_date"`
 	TotalPayout         string            `json:"total_payout"`
-	IncidentDate        string            `json:"event_date"`
-	Status              string            `json:"status"`
+	IncidentDate        MySQLTime         `json:"event_date"`
 	City                string            `json:"city"`
 	Country             string            `json:"country"`
+	CreatedAt           MySQLTime         `json:"created_at"`
+	UpdatedAt           MySQLTime         `json:"updated_at"`
+	ClaimItems          []LegacyClaimItem `json:"claim_items"`
 }
 
 type LegacyClaimItem struct {
-	ReviewerId      int    `json:"reviewer_id"`
-	PayoutAmount    string `json:"payout_amount"`
-	ItemId          int    `json:"item_id"`
-	PayoutOption    string `json:"payout_option"`
-	RepairEstimate  string `json:"repair_estimate"`
-	UpdatedAt       string `json:"updated_at"`
-	ReviewDate      string `json:"review_date"`
-	CreatedAt       string `json:"created_at"`
-	City            string `json:"city"`
-	Country         string `json:"country"`
-	ReplaceActual   string `json:"replace_actual"`
-	Id              string `json:"id"`
-	ReplaceEstimate string `json:"replace_estimate"`
-	IsRepairable    int    `json:"is_repairable"`
-	Status          string `json:"status"`
-	RepairActual    string `json:"repair_actual"`
-	Fmv             string `json:"fmv"`
-	ClaimId         int    `json:"claim_id"`
+	Id              string        `json:"id"`
+	ReviewerId      int           `json:"reviewer_id"`
+	PayoutAmount    string        `json:"payout_amount"`
+	ItemId          int           `json:"item_id"`
+	PayoutOption    string        `json:"payout_option"`
+	RepairEstimate  string        `json:"repair_estimate"`
+	ReviewDate      MySQLNullTime `json:"review_date"`
+	City            string        `json:"city"`
+	Country         string        `json:"country"`
+	ReplaceActual   string        `json:"replace_actual"`
+	ReplaceEstimate string        `json:"replace_estimate"`
+	IsRepairable    int           `json:"is_repairable"`
+	RepairActual    string        `json:"repair_actual"`
+	Fmv             string        `json:"fmv"`
+	ClaimId         int           `json:"claim_id"`
+	CreatedAt       MySQLTime     `json:"created_at"`
 }
 
 type PolicyType struct {
@@ -129,11 +171,11 @@ type PolicyType struct {
 }
 
 type LegacyRiskCategory struct {
-	CreatedAt string       `json:"created_at"`
-	Name      string       `json:"name"`
-	PolicyMax nulls.Int    `json:"policy_max"`
-	UpdatedAt nulls.String `json:"updated_at"`
-	Id        string       `json:"id"`
+	Id        string    `json:"id"`
+	Name      string    `json:"name"`
+	PolicyMax nulls.Int `json:"policy_max"`
+	CreatedAt MySQLTime `json:"created_at"`
+	UpdatedAt MySQLTime `json:"updated_at"`
 }
 
 type LossReason struct {
@@ -150,19 +192,19 @@ type Maintenance struct {
 }
 
 type JournalEntry struct {
-	JERecNum    string  `json:"JE_Rec_Num"`
-	DateSubm    string  `json:"Date_Subm"`
-	JERecType   int     `json:"JE_Rec_Type"`
-	DateEntd    string  `json:"Date_Entd"`
-	AccCostCtr2 string  `json:"Acc_CostCtr2"`
-	FirstName   string  `json:"First_Name"`
-	LastName    string  `json:"Last_Name"`
-	AccNum      int     `json:"Acc_Num"`
-	Field1      string  `json:"Field1"`
-	AccCostCtr1 string  `json:"Acc_CostCtr1"`
-	PolicyID    int     `json:"Policy_ID"`
-	Entity      string  `json:"Entity"`
-	PolicyType  int     `json:"Policy_Type"`
-	CustJE      float64 `json:"Cust_JE"`
-	RMJE        float64 `json:"RM_JE"`
+	JERecNum    string        `json:"JE_Rec_Num"`
+	DateSubm    MySQLNullTime `json:"Date_Subm"`
+	JERecType   int           `json:"JE_Rec_Type"`
+	DateEntd    MySQLNullTime `json:"Date_Entd"`
+	AccCostCtr2 string        `json:"Acc_CostCtr2"`
+	FirstName   string        `json:"First_Name"`
+	LastName    string        `json:"Last_Name"`
+	AccNum      int           `json:"Acc_Num"`
+	Field1      string        `json:"Field1"`
+	AccCostCtr1 string        `json:"Acc_CostCtr1"`
+	PolicyID    int           `json:"Policy_ID"`
+	Entity      string        `json:"Entity"`
+	PolicyType  int           `json:"Policy_Type"`
+	CustJE      float64       `json:"Cust_JE"`
+	RMJE        float64       `json:"RM_JE"`
 }
