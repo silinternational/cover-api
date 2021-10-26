@@ -85,10 +85,17 @@ func (as *ActionSuite) Test_PoliciesList() {
 			if res.Code != http.StatusOK {
 				return
 			}
-			var policies api.Policies
-			err := json.Unmarshal([]byte(body), &policies)
+
+			var response struct {
+				Meta api.Meta     `json:"meta"`
+				Data api.Policies `json:"data"`
+			}
+			dec := json.NewDecoder(strings.NewReader(body))
+			dec.DisallowUnknownFields()
+			err := dec.Decode(&response)
+
 			as.NoError(err)
-			as.Equal(tt.wantCount, len(policies))
+			as.Equal(tt.wantCount, len(response.Data))
 		})
 	}
 }
@@ -168,8 +175,7 @@ func (as *ActionSuite) Test_PoliciesView() {
 				return
 			}
 			var policy api.Policy
-			r := strings.NewReader(body)
-			dec := json.NewDecoder(r)
+			dec := json.NewDecoder(strings.NewReader(body))
 			dec.DisallowUnknownFields()
 			err := dec.Decode(&policy)
 			as.NoError(err)

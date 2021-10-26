@@ -21,6 +21,18 @@ const (
 	ResourceRecent     = "recent"
 )
 
+// swagger:model
+type ListResponse struct {
+	// Meta contains pagination data
+	Meta Meta `json:"meta"`
+
+	// Data containing the relevant list type
+	Data interface{} `json:"data"`
+}
+
+// TODO: implement Meta type to provide pagination properties
+type Meta struct{}
+
 type ErrorKey string
 
 func (e ErrorKey) String() string {
