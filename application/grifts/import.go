@@ -667,7 +667,7 @@ func importClaims(tx *pop.Connection, policyID uuid.UUID, claims []LegacyClaim) 
 			IncidentDate:        time.Time(c.IncidentDate),
 			IncidentType:        getIncidentType(c, claimID),
 			IncidentDescription: getIncidentDescription(c),
-			Status:              getClaimStatus(c),
+			Status:              api.ClaimStatusPaid,
 			ReviewDate:          nulls.Time(c.ReviewDate),
 			ReviewerID:          getAdminUserUUID(strconv.Itoa(c.ReviewerId), claimDesc+"ReviewerID"),
 			PaymentDate:         nulls.Time(c.PaymentDate),
@@ -707,7 +707,7 @@ func importClaimItems(tx *pop.Connection, claim models.Claim, items []LegacyClai
 		newClaimItem := models.ClaimItem{
 			ClaimID:         claim.ID,
 			ItemID:          itemUUID,
-			Status:          getClaimItemStatus(c.Status),
+			Status:          api.ClaimItemStatusPaid,
 			IsRepairable:    getIsRepairable(c),
 			RepairEstimate:  fixedPointStringToInt(c.RepairEstimate, "ClaimItem.RepairEstimate"),
 			RepairActual:    fixedPointStringToInt(c.RepairActual, "ClaimItem.RepairActual"),
@@ -760,28 +760,6 @@ func getPayoutOption(s, desc string) api.PayoutOption {
 	return option
 }
 
-func getClaimItemStatus(status string) api.ClaimItemStatus {
-	var s api.ClaimItemStatus
-
-	switch status {
-	case "pending":
-		s = api.ClaimItemStatusReview1
-	case "revision":
-		s = api.ClaimItemStatusRevision
-	case "approved":
-		s = api.ClaimItemStatusApproved
-	case "paid":
-		s = api.ClaimItemStatusPaid
-	case "denied":
-		s = api.ClaimItemStatusDenied
-	default:
-		log.Printf("unrecognized claim item status: %s\n", status)
-		s = api.ClaimItemStatus(status)
-	}
-
-	return s
-}
-
 func getIsRepairable(c LegacyClaimItem) bool {
 	if c.IsRepairable != 0 && c.IsRepairable != 1 {
 		log.Println("ClaimItem.IsRepairable is neither 0 nor 1")
@@ -825,23 +803,6 @@ func getIncidentDescription(claim LegacyClaim) string {
 		return "[no description provided]"
 	}
 	return claim.IncidentDescription
-}
-
-func getClaimStatus(claim LegacyClaim) api.ClaimStatus {
-	var claimStatus api.ClaimStatus
-
-	switch claim.Status {
-	case "paid":
-		claimStatus = api.ClaimStatusPaid
-	case "approved":
-		claimStatus = api.ClaimStatusApproved
-
-	default:
-		log.Printf("unrecognized claim status %s\n", claim.Status)
-		claimStatus = api.ClaimStatus(claim.Status)
-	}
-
-	return claimStatus
 }
 
 // importItems loads legacy items onto a policy. Returns true if at least one item is approved.
