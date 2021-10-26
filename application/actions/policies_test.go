@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 	"testing"
 
 	"github.com/gobuffalo/nulls"
@@ -167,9 +168,13 @@ func (as *ActionSuite) Test_PoliciesView() {
 				return
 			}
 			var policy api.Policy
-			err := json.Unmarshal([]byte(body), &policy)
+			r := strings.NewReader(body)
+			dec := json.NewDecoder(r)
+			dec.DisallowUnknownFields()
+			err := dec.Decode(&policy)
 			as.NoError(err)
 			as.Equal(tt.policyID, policy.ID)
+			as.Equal(1, len(policy.Members))
 		})
 	}
 }
