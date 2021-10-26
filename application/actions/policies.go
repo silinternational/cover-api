@@ -72,7 +72,7 @@ func policiesListMine(c buffalo.Context) error {
 func policiesView(c buffalo.Context) error {
 	policy := getReferencedPolicyFromCtx(c)
 
-	return renderOk(c, policy)
+	return renderOk(c, policy.ConvertToAPI(models.Tx(c)))
 }
 
 // swagger:operation POST /policies/ Policies PoliciesCreateCorporate
