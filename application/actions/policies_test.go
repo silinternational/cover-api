@@ -92,7 +92,7 @@ func (as *ActionSuite) Test_PoliciesList() {
 	}
 }
 
-func (as *ActionSuite) Test_PoliciesGet() {
+func (as *ActionSuite) Test_PoliciesView() {
 	fixConfig := models.FixturesConfig{
 		NumberOfPolicies:    3,
 		UsersPerPolicy:      1,

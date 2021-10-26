@@ -57,9 +57,9 @@ func policiesListMine(c buffalo.Context) error {
 	return renderOk(c, apiPolicies)
 }
 
-// swagger:operation GET /policies/{id} Policies PoliciesGet
+// swagger:operation GET /policies/{id} Policies PoliciesView
 //
-// PoliciesGet
+// PoliciesView
 //
 // gets the data for a specific policy
 //
@@ -69,7 +69,7 @@ func policiesListMine(c buffalo.Context) error {
 //     description: a policy
 //     schema:
 //       "$ref": "#/definitions/Policy"
-func policiesGet(c buffalo.Context) error {
+func policiesView(c buffalo.Context) error {
 	policy := getReferencedPolicyFromCtx(c)
 
 	return renderOk(c, policy)
