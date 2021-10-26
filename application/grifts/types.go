@@ -132,7 +132,6 @@ type LegacyClaim struct {
 	PaymentDate         MySQLNullTime     `json:"payment_date"`
 	TotalPayout         string            `json:"total_payout"`
 	IncidentDate        MySQLTime         `json:"event_date"`
-	Status              string            `json:"status"`
 	City                string            `json:"city"`
 	Country             string            `json:"country"`
 	CreatedAt           MySQLTime         `json:"created_at"`
@@ -153,7 +152,6 @@ type LegacyClaimItem struct {
 	ReplaceActual   string        `json:"replace_actual"`
 	ReplaceEstimate string        `json:"replace_estimate"`
 	IsRepairable    int           `json:"is_repairable"`
-	Status          string        `json:"status"`
 	RepairActual    string        `json:"repair_actual"`
 	Fmv             string        `json:"fmv"`
 	ClaimId         int           `json:"claim_id"`
