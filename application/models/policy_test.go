@@ -511,3 +511,34 @@ func (ms *ModelSuite) TestPolicy_calculateAnnualPremium() {
 		})
 	}
 }
+
+func (ms *ModelSuite) TestPolicy_ConvertToAPI() {
+	policy := CreateItemFixtures(ms.DB, FixturesConfig{DependentsPerPolicy: 1, ClaimsPerPolicy: 1}).Policies[0]
+	policy = ConvertPolicyType(ms.DB, policy)
+
+	got := policy.ConvertToAPI(ms.DB, false)
+
+	ms.Equal(policy.ID, got.ID, "ID is not correct")
+	ms.Equal(policy.Type, got.Type, "Type is not correct")
+	ms.Equal(policy.HouseholdID.String, got.HouseholdID, "HouseholdID is not correct")
+	ms.Equal(policy.CostCenter, got.CostCenter, "CostCenter is not correct")
+	ms.Equal(policy.Account, got.Account, "Account is not correct")
+	ms.Equal(policy.AccountDetail, got.AccountDetail, "AccountDetail is not correct")
+	ms.Equal(policy.EntityCode.ConvertToAPI(ms.DB), got.EntityCode, "EntityCode is not correct")
+	ms.Equal(policy.CreatedAt, got.CreatedAt, "CreatedAt is not correct")
+	ms.Equal(policy.UpdatedAt, got.UpdatedAt, "UpdatedAt is not correct")
+	ms.Equal(0, len(got.Members), "Members should not be hydrated")
+	ms.Equal(0, len(got.Dependents), "Dependents should not be hydrated")
+	ms.Equal(0, len(got.Claims), "Claims should not be hydrated")
+
+	got = policy.ConvertToAPI(ms.DB, true)
+
+	ms.Greater(len(got.Members), 0, "test should be revised, fixture has no Members")
+	ms.Len(got.Members, len(got.Members), "Members is not correct length")
+
+	ms.Greater(len(got.Dependents), 0, "test should be revised, fixture has no Dependents")
+	ms.Len(got.Dependents, len(got.Dependents), "Files is not correct length")
+
+	ms.Greater(len(got.Claims), 0, "test should be revised, fixture has no Claims")
+	ms.Len(got.Claims, len(got.Claims), "Claims is not correct length")
+}

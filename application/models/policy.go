@@ -221,17 +221,10 @@ func (p *Policy) LoadEntityCode(tx *pop.Connection, reload bool) {
 	}
 }
 
-func (p *Policy) ConvertToAPI(tx *pop.Connection) api.Policy {
-	p.LoadClaims(tx, true)
-	p.LoadDependents(tx, true)
-	p.LoadMembers(tx, true)
+func (p *Policy) ConvertToAPI(tx *pop.Connection, hydrate bool) api.Policy {
 	p.LoadEntityCode(tx, true)
 
-	claims := p.Claims.ConvertToAPI(tx)
-	dependents := p.Dependents.ConvertToAPI()
-	members := p.Members.ConvertToPolicyMembers()
-
-	return api.Policy{
+	apiPolicy := api.Policy{
 		ID:            p.ID,
 		Type:          p.Type,
 		HouseholdID:   p.HouseholdID.String,
@@ -241,16 +234,24 @@ func (p *Policy) ConvertToAPI(tx *pop.Connection) api.Policy {
 		EntityCode:    p.EntityCode.ConvertToAPI(tx),
 		CreatedAt:     p.CreatedAt,
 		UpdatedAt:     p.UpdatedAt,
-		Claims:        claims,
-		Dependents:    dependents,
-		Members:       members,
 	}
+
+	if hydrate {
+		p.LoadClaims(tx, true)
+		p.LoadDependents(tx, true)
+		p.LoadMembers(tx, true)
+		apiPolicy.Claims = p.Claims.ConvertToAPI(tx)
+		apiPolicy.Dependents = p.Dependents.ConvertToAPI()
+		apiPolicy.Members = p.Members.ConvertToPolicyMembers()
+	}
+
+	return apiPolicy
 }
 
 func (p *Policies) ConvertToAPI(tx *pop.Connection) api.Policies {
 	policies := make(api.Policies, len(*p))
 	for i, pp := range *p {
-		policies[i] = pp.ConvertToAPI(tx)
+		policies[i] = pp.ConvertToAPI(tx, false)
 	}
 
 	return policies
