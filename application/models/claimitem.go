@@ -92,9 +92,7 @@ func (c *ClaimItem) Update(ctx context.Context) error {
 		return appErr
 	}
 
-	c.Status = api.ClaimItemStatus(c.Claim.Status)
-
-	if user.IsAdmin() {
+	if user.IsAdmin() && c.Status.WasReviewed() {
 		c.ReviewerID = nulls.NewUUID(user.ID)
 		c.ReviewDate = nulls.NewTime(time.Now().UTC())
 	}
@@ -138,10 +136,14 @@ func (c *ClaimItem) updateClaimStatus(ctx context.Context, updates []FieldUpdate
 	}
 
 	revertToDraft := false
+loop:
 	for _, u := range updates {
-		if u.FieldName != FieldClaimItemReplaceActual && u.FieldName != FieldClaimItemRepairActual {
+		switch u.FieldName {
+		case FieldClaimItemReplaceActual, FieldClaimItemRepairActual, FieldClaimItemStatus:
+			continue
+		default:
 			revertToDraft = true
-			break
+			break loop
 		}
 	}
 	if revertToDraft {
@@ -444,27 +446,6 @@ func (c *ClaimItem) GetLocation() Location {
 		State:   c.State,
 		Country: c.Country,
 	}
-}
-
-// UpdateStatus updates only the status and updated_at fields.
-func (c *ClaimItem) UpdateStatus(ctx context.Context, newStatus api.ClaimItemStatus) error {
-	oldStatus := c.Status
-	c.Status = newStatus
-	tx := Tx(ctx)
-	if err := tx.UpdateColumns(c, "status", "updated_at"); err != nil {
-		return appErrorFromDB(err, api.ErrorUpdateFailure)
-	}
-
-	history := c.NewHistory(ctx, api.HistoryActionUpdate, FieldUpdate{
-		FieldName: FieldClaimStatus,
-		OldValue:  string(oldStatus),
-		NewValue:  string(newStatus),
-	})
-	if err := history.Create(tx); err != nil {
-		return appErrorFromDB(err, api.ErrorCreateFailure)
-	}
-
-	return nil
 }
 
 // NewHistory makes a new ClaimHistory object based on the current ClaimItem.

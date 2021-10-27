@@ -145,6 +145,11 @@ func (c *Claim) Update(ctx context.Context) error {
 			return appErr
 		}
 	}
+
+	if err = update(tx, c); err != nil {
+		return err
+	}
+
 	updates := c.Compare(oldClaim)
 	for i := range updates {
 		history := c.NewHistory(ctx, api.HistoryActionUpdate, updates[i])
@@ -157,13 +162,14 @@ func (c *Claim) Update(ctx context.Context) error {
 		if updates[i].FieldName == FieldClaimStatus && len(c.ClaimItems) > 0 &&
 			c.ClaimItems[0].Status != api.ClaimItemStatus(c.Status) {
 
-			if err = c.ClaimItems[0].UpdateStatus(ctx, api.ClaimItemStatus(c.Status)); err != nil {
+			c.ClaimItems[0].Status = api.ClaimItemStatus(c.Status)
+			if err = c.ClaimItems[0].Update(ctx); err != nil {
 				return appErrorFromDB(err, api.ErrorUpdateFailure)
 			}
 		}
 	}
 
-	return update(tx, c)
+	return nil
 }
 
 // UpdateByUser ensures the Claim has an appropriate status for being modified by the user
@@ -199,7 +205,7 @@ func (c *Claim) canUpdate(user User) bool {
 	}
 
 	switch c.Status {
-	// cannot modify this when the parent Claim has one of these statuses
+	// cannot modify this when the Claim has one of these statuses
 	case api.ClaimStatusApproved, api.ClaimStatusDenied, api.ClaimStatusPaid:
 		return false
 	}
