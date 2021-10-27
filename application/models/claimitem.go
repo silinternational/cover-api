@@ -102,7 +102,7 @@ func (c *ClaimItem) Update(ctx context.Context) error {
 		return err
 	}
 
-	if err = c.updateClaimStatus(ctx, updates); err != nil {
+	if err = c.revertToDraftIfEdited(ctx, updates); err != nil {
 		return err
 	}
 
@@ -129,7 +129,7 @@ func (c *ClaimItem) getUpdates(ctx context.Context) ([]FieldUpdate, error) {
 
 // If a customer edits something other than ReceiptActual or ReplaceActual, it should take the claim off
 // of the steward's list of things to review and also force the user to resubmit it.
-func (c *ClaimItem) updateClaimStatus(ctx context.Context, updates []FieldUpdate) error {
+func (c *ClaimItem) revertToDraftIfEdited(ctx context.Context, updates []FieldUpdate) error {
 	user := CurrentUser(ctx)
 	if user.IsAdmin() {
 		return nil
