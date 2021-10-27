@@ -388,7 +388,6 @@ func (u *User) ConvertToAPI(tx *pop.Connection, hydrate bool) api.User {
 		LastLoginUTC:  u.LastLoginUTC,
 		Country:       u.GetLocation().Country,
 		PhotoFileID:   u.PhotoFileID,
-		PolicyID:      policyID,
 	}
 
 	if hydrate {
