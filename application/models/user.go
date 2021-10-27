@@ -377,12 +377,6 @@ func (u *Users) ConvertToAPI(tx *pop.Connection) api.Users {
 func (u *User) ConvertToAPI(tx *pop.Connection, hydrate bool) api.User {
 	u.LoadPhotoFile(tx)
 
-	// TODO: remove this when the UI is ready to use the Policies list
-	var policyID nulls.UUID
-	if len(u.Policies) > 0 {
-		policyID = nulls.NewUUID(u.Policies[0].ID)
-	}
-
 	output := api.User{
 		ID:            u.ID,
 		Email:         u.Email,
@@ -400,6 +394,11 @@ func (u *User) ConvertToAPI(tx *pop.Connection, hydrate bool) api.User {
 	if hydrate {
 		u.LoadPolicies(tx, false)
 		output.Policies = u.Policies.ConvertToAPI(tx)
+
+		// TODO: remove this when the UI is ready to use the Policies list
+		if len(u.Policies) > 0 {
+			output.PolicyID = nulls.NewUUID(u.Policies[0].ID)
+		}
 	}
 
 	if u.PhotoFile != nil {
