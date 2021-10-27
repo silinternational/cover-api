@@ -16,7 +16,7 @@ import (
 func (as *ActionSuite) Test_usersMe() {
 	db := as.DB
 
-	f := models.CreateUserFixtures(db, 2)
+	f := models.CreatePolicyFixtures(db, models.FixturesConfig{UsersPerPolicy: 2})
 	userWithPhoto := f.Users[0]
 	userNoPhoto := f.Users[1]
 
@@ -52,6 +52,7 @@ func (as *ActionSuite) Test_usersMe() {
 				`"last_name":"` + userNoPhoto.LastName,
 				`"app_role":"` + string(userNoPhoto.AppRole),
 				`"last_login_utc":"` + userNoPhoto.LastLoginUTC.Format(domain.DateFormat),
+				`"policies":[`,
 			},
 		},
 		{
@@ -66,6 +67,7 @@ func (as *ActionSuite) Test_usersMe() {
 				`"first_name":"` + userWithPhoto.FirstName,
 				`"last_name":"` + userWithPhoto.LastName,
 				`"last_login_utc":"` + userWithPhoto.LastLoginUTC.Format(domain.DateFormat),
+				`"policies":[`,
 			},
 		},
 	}

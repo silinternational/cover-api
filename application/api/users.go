@@ -46,6 +46,9 @@ type User struct {
 	// swagger:strfmt uuid4
 	PolicyID nulls.UUID `json:"policy_id"` // TODO: provide either a list of IDs or a list of Policies
 
+	// all policies in which the user is a member
+	Policies Policies `json:"policies,omitempty"`
+
 	// unique id (uuid) for a avatar or photo file
 	//
 	// swagger:strfmt uuid4

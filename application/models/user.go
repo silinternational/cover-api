@@ -369,15 +369,15 @@ func (u *User) LoadPhotoFile(tx *pop.Connection) {
 func (u *Users) ConvertToAPI(tx *pop.Connection) api.Users {
 	out := make(api.Users, len(*u))
 	for i, uu := range *u {
-		out[i] = uu.ConvertToAPI(tx)
+		out[i] = uu.ConvertToAPI(tx, false)
 	}
 	return out
 }
 
-func (u *User) ConvertToAPI(tx *pop.Connection) api.User {
+func (u *User) ConvertToAPI(tx *pop.Connection, hydrate bool) api.User {
 	u.LoadPhotoFile(tx)
 
-	// TODO: provide more than one policy
+	// TODO: remove this when the UI is ready to use the Policies list
 	var policyID nulls.UUID
 	if len(u.Policies) > 0 {
 		policyID = nulls.NewUUID(u.Policies[0].ID)
@@ -395,6 +395,11 @@ func (u *User) ConvertToAPI(tx *pop.Connection) api.User {
 		Country:       u.GetLocation().Country,
 		PhotoFileID:   u.PhotoFileID,
 		PolicyID:      policyID,
+	}
+
+	if hydrate {
+		u.LoadPolicies(tx, false)
+		output.Policies = u.Policies.ConvertToAPI(tx)
 	}
 
 	if u.PhotoFile != nil {
