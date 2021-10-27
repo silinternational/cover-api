@@ -23,38 +23,47 @@ import (
 //   '200':
 //     description: all policies
 //     schema:
-//       type: array
-//       items:
-//         "$ref": "#/definitions/Policy"
+//       type: object
+//       properties:
+//         meta:
+//           "$ref": "#/definitions/Meta"
+//         data:
+//           "$ref": "#/definitions/Policies"
 func policiesList(c buffalo.Context) error {
 	user := models.CurrentUser(c)
 
 	if user.IsAdmin() {
-		return policiesListAll(c)
+		return policiesListAdmin(c)
 	}
 
-	return policiesListMine(c)
+	return policiesListCustomer(c)
 }
 
-func policiesListAll(c buffalo.Context) error {
+func policiesListAdmin(c buffalo.Context) error {
 	tx := models.Tx(c)
 	var policies models.Policies
 	if err := policies.All(tx); err != nil {
 		return reportError(c, err)
 	}
 
-	return renderOk(c, policies.ConvertToAPI(tx))
+	response := api.ListResponse{
+		Data: policies.ConvertToAPI(tx),
+	}
+
+	return renderOk(c, response)
 }
 
-func policiesListMine(c buffalo.Context) error {
+func policiesListCustomer(c buffalo.Context) error {
 	tx := models.Tx(c)
 	user := models.CurrentUser(c)
 
 	user.LoadPolicies(tx, false)
 
-	apiPolicies := user.Policies.ConvertToAPI(tx)
+	response := api.ListResponse{
+		Data: user.Policies.ConvertToAPI(tx),
+	}
 
-	return renderOk(c, apiPolicies)
+	return renderOk(c, response)
 }
 
 // swagger:operation GET /policies/{id} Policies PoliciesView
