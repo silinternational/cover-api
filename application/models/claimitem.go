@@ -140,6 +140,7 @@ func (c *ClaimItem) revertToDraftIfEdited(ctx context.Context, updates []FieldUp
 		case FieldClaimItemReplaceActual, FieldClaimItemRepairActual, FieldClaimItemStatus:
 			continue
 		default:
+			c.Status = api.ClaimItemStatusDraft // leave it to the calling code to update the DB
 			return c.Claim.UpdateStatus(ctx, api.ClaimStatusDraft)
 		}
 	}
