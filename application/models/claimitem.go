@@ -92,9 +92,7 @@ func (c *ClaimItem) Update(ctx context.Context) error {
 		return appErr
 	}
 
-	c.Status = api.ClaimItemStatus(c.Claim.Status)
-
-	if user.IsAdmin() {
+	if user.IsAdmin() && c.Status.WasReviewed() {
 		c.ReviewerID = nulls.NewUUID(user.ID)
 		c.ReviewDate = nulls.NewTime(time.Now().UTC())
 	}
@@ -104,7 +102,7 @@ func (c *ClaimItem) Update(ctx context.Context) error {
 		return err
 	}
 
-	if err = c.updateClaimStatus(ctx, updates); err != nil {
+	if err = c.revertToDraftIfEdited(ctx, updates); err != nil {
 		return err
 	}
 
@@ -121,7 +119,7 @@ func (c *ClaimItem) getUpdates(ctx context.Context) ([]FieldUpdate, error) {
 
 	updates := c.Compare(oldClaimItem)
 	for i := range updates {
-		history := c.Claim.NewHistory(ctx, api.HistoryActionUpdate, updates[i])
+		history := c.NewHistory(ctx, api.HistoryActionUpdate, updates[i])
 		if err := history.Create(tx); err != nil {
 			return updates, appErrorFromDB(err, api.ErrorCreateFailure)
 		}
@@ -131,40 +129,23 @@ func (c *ClaimItem) getUpdates(ctx context.Context) ([]FieldUpdate, error) {
 
 // If a customer edits something other than ReceiptActual or ReplaceActual, it should take the claim off
 // of the steward's list of things to review and also force the user to resubmit it.
-func (c *ClaimItem) updateClaimStatus(ctx context.Context, updates []FieldUpdate) error {
+func (c *ClaimItem) revertToDraftIfEdited(ctx context.Context, updates []FieldUpdate) error {
 	user := CurrentUser(ctx)
 	if user.IsAdmin() {
 		return nil
 	}
 
-	revertToDraft := false
 	for _, u := range updates {
-		if u.FieldName != FieldClaimItemReplaceActual && u.FieldName != FieldClaimItemRepairActual {
-			revertToDraft = true
-			break
+		switch u.FieldName {
+		case FieldClaimItemReplaceActual, FieldClaimItemRepairActual, FieldClaimItemStatus:
+			continue
+		default:
+			c.Status = api.ClaimItemStatusDraft // leave it to the calling code to update the DB
+			return c.Claim.UpdateStatus(ctx, api.ClaimStatusDraft)
 		}
 	}
-	if !revertToDraft {
-		return nil
-	}
-
-	if c.Claim.Status == api.ClaimStatusReview1 {
-		c.Claim.Status = api.ClaimStatusDraft
-	}
-
-	return c.Claim.Update(ctx)
+	return nil
 }
-
-// Maybe one day we will want to do something like this on a ClaimItem
-//func isClaimItemTransitionValid(status1, status2 api.ClaimItemStatus) bool {
-//	if status1 == status2 {
-//		return true
-//	}
-//	cStatus1 := api.ClaimStatus(status1)
-//	cStatus2 := api.ClaimStatus(status2)
-//	valid, _ := isClaimTransitionValid(cStatus1, cStatus2)
-//	return valid
-//}
 
 func (c *ClaimItem) GetID() uuid.UUID {
 	return c.ID
@@ -458,5 +439,18 @@ func (c *ClaimItem) GetLocation() Location {
 		City:    c.City,
 		State:   c.State,
 		Country: c.Country,
+	}
+}
+
+// NewHistory makes a new ClaimHistory object based on the current ClaimItem.
+func (c *ClaimItem) NewHistory(ctx context.Context, action string, fieldUpdate FieldUpdate) ClaimHistory {
+	return ClaimHistory{
+		Action:      action,
+		ClaimID:     c.ClaimID,
+		ClaimItemID: nulls.NewUUID(c.ID),
+		UserID:      CurrentUser(ctx).ID,
+		FieldName:   fieldUpdate.FieldName,
+		OldValue:    fieldUpdate.OldValue,
+		NewValue:    fieldUpdate.NewValue,
 	}
 }

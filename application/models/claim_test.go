@@ -221,6 +221,8 @@ func (ms *ModelSuite) TestClaim_RequestRevision() {
 	ms.NoError(ms.DB.Destroy(&tempClaim.ClaimItems[0]),
 		"error trying to destroy ClaimItem fixture for test")
 
+	admin := CreateAdminUsers(ms.DB)[AppRoleSteward]
+
 	tests := []struct {
 		name            string
 		claim           Claim
@@ -258,7 +260,7 @@ func (ms *ModelSuite) TestClaim_RequestRevision() {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			const message = "change all the things"
-			ctx := CreateTestContext(fixtures.Users[0])
+			ctx := CreateTestContext(admin)
 			got := tt.claim.RequestRevision(ctx, message)
 
 			if tt.wantErrContains != "" {
@@ -301,6 +303,8 @@ func (ms *ModelSuite) TestClaim_Preapprove() {
 	ms.NoError(ms.DB.Destroy(&tempClaim.ClaimItems[0]),
 		"error trying to destroy ClaimItem fixture for test")
 
+	admin := CreateAdminUsers(ms.DB)[AppRoleSteward]
+
 	tests := []struct {
 		name            string
 		claim           Claim
@@ -332,7 +336,7 @@ func (ms *ModelSuite) TestClaim_Preapprove() {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ctx := CreateTestContext(fixtures.Users[0])
+			ctx := CreateTestContext(admin)
 			got := tt.claim.RequestReceipt(ctx, "")
 
 			if tt.wantErrContains != "" {
@@ -365,7 +369,7 @@ func (ms *ModelSuite) TestClaim_Approve() {
 
 	fixtures := CreateItemFixtures(ms.DB, fixConfig)
 
-	appAdmin := CreateAdminUsers(ms.DB)[AppRoleAdmin]
+	admin := CreateAdminUsers(ms.DB)[AppRoleAdmin]
 
 	policy := fixtures.Policies[0]
 	draftClaim := policy.Claims[0]
@@ -382,7 +386,6 @@ func (ms *ModelSuite) TestClaim_Approve() {
 	tests := []struct {
 		name            string
 		claim           Claim
-		actor           User
 		wantErrContains string
 		wantErrKey      api.ErrorKey
 		wantErrCat      api.ErrorCategory
@@ -391,7 +394,6 @@ func (ms *ModelSuite) TestClaim_Approve() {
 		{
 			name:            "bad start status",
 			claim:           draftClaim,
-			actor:           appAdmin,
 			wantErrKey:      api.ErrorClaimStatus,
 			wantErrCat:      api.CategoryUser,
 			wantErrContains: "invalid claim status for approve",
@@ -399,7 +401,6 @@ func (ms *ModelSuite) TestClaim_Approve() {
 		{
 			name:            "claim with no ClaimItem",
 			claim:           emptyClaim,
-			actor:           appAdmin,
 			wantErrKey:      api.ErrorClaimMissingClaimItem,
 			wantErrCat:      api.CategoryUser,
 			wantErrContains: "claim must have a claimItem if no longer in draft",
@@ -407,26 +408,23 @@ func (ms *ModelSuite) TestClaim_Approve() {
 		{
 			name:       "from review1 to review3",
 			claim:      review1Claim,
-			actor:      appAdmin,
 			wantStatus: api.ClaimStatusReview3,
 		},
 		{
 			name:       "from review2 to review3",
 			claim:      review2Claim,
-			actor:      appAdmin,
 			wantStatus: api.ClaimStatusReview3,
 		},
 		{
 			name:       "from review3 to approved",
 			claim:      review3Claim,
-			actor:      appAdmin,
 			wantStatus: api.ClaimStatusApproved,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ctx := CreateTestContext(tt.actor)
+			ctx := CreateTestContext(admin)
 			got := tt.claim.Approve(ctx)
 
 			if tt.wantErrContains != "" {
@@ -441,7 +439,7 @@ func (ms *ModelSuite) TestClaim_Approve() {
 			ms.NoError(got)
 
 			ms.Equal(tt.wantStatus, tt.claim.Status, "incorrect status")
-			ms.Equal(tt.actor.ID.String(), tt.claim.ReviewerID.UUID.String(), "incorrect reviewer id")
+			ms.Equal(admin.ID.String(), tt.claim.ReviewerID.UUID.String(), "incorrect reviewer id")
 			ms.WithinDuration(time.Now().UTC(), tt.claim.ReviewDate.Time, time.Second*2, "incorrect reviewer date id")
 			ms.Equal("", tt.claim.StatusReason, "StatusReason should be empty after approval")
 		})
@@ -462,7 +460,7 @@ func (ms *ModelSuite) TestClaim_Deny() {
 
 	fixtures := CreateItemFixtures(ms.DB, fixConfig)
 
-	appAdmin := CreateAdminUsers(ms.DB)[AppRoleAdmin]
+	admin := CreateAdminUsers(ms.DB)[AppRoleAdmin]
 
 	policy := fixtures.Policies[0]
 	draftClaim := policy.Claims[0]
@@ -479,7 +477,6 @@ func (ms *ModelSuite) TestClaim_Deny() {
 	tests := []struct {
 		name            string
 		claim           Claim
-		actor           User
 		wantErrContains string
 		wantErrKey      api.ErrorKey
 		wantErrCat      api.ErrorCategory
@@ -488,7 +485,6 @@ func (ms *ModelSuite) TestClaim_Deny() {
 		{
 			name:            "bad start status",
 			claim:           draftClaim,
-			actor:           appAdmin,
 			wantErrKey:      api.ErrorClaimStatus,
 			wantErrCat:      api.CategoryUser,
 			wantErrContains: "invalid claim status for deny",
@@ -496,7 +492,6 @@ func (ms *ModelSuite) TestClaim_Deny() {
 		{
 			name:            "claim with no ClaimItem",
 			claim:           emptyClaim,
-			actor:           appAdmin,
 			wantErrKey:      api.ErrorClaimMissingClaimItem,
 			wantErrCat:      api.CategoryUser,
 			wantErrContains: "claim must have a claimItem if no longer in draft",
@@ -504,19 +499,16 @@ func (ms *ModelSuite) TestClaim_Deny() {
 		{
 			name:       "from review1 to denied",
 			claim:      review1Claim,
-			actor:      appAdmin,
 			wantStatus: api.ClaimStatusDenied,
 		},
 		{
 			name:       "from review2 to denied",
 			claim:      review2Claim,
-			actor:      appAdmin,
 			wantStatus: api.ClaimStatusDenied,
 		},
 		{
 			name:       "from review3 to denied",
 			claim:      review3Claim,
-			actor:      appAdmin,
 			wantStatus: api.ClaimStatusDenied,
 		},
 	}
@@ -524,7 +516,7 @@ func (ms *ModelSuite) TestClaim_Deny() {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			const message = "change all the things"
-			ctx := CreateTestContext(tt.actor)
+			ctx := CreateTestContext(admin)
 			got := tt.claim.Deny(ctx, message)
 
 			if tt.wantErrContains != "" {
@@ -539,7 +531,7 @@ func (ms *ModelSuite) TestClaim_Deny() {
 			ms.NoError(got)
 
 			ms.Equal(tt.wantStatus, tt.claim.Status, "incorrect status")
-			ms.Equal(tt.actor.ID.String(), tt.claim.ReviewerID.UUID.String(), "incorrect reviewer id")
+			ms.Equal(admin.ID.String(), tt.claim.ReviewerID.UUID.String(), "incorrect reviewer id")
 			ms.WithinDuration(time.Now().UTC(), tt.claim.ReviewDate.Time, time.Second*2, "incorrect reviewer date id")
 			ms.Equal(message, tt.claim.StatusReason, "incorrect status reason message")
 		})
@@ -654,47 +646,57 @@ func (ms *ModelSuite) TestClaim_Compare() {
 			old:  oldClaim,
 			want: []FieldUpdate{
 				{
-					FieldName: "IncidentDate",
+					FieldName: FieldClaimPolicyID,
+					OldValue:  oldClaim.PolicyID.String(),
+					NewValue:  newClaim.PolicyID.String(),
+				},
+				{
+					FieldName: FieldClaimReferenceNumber,
+					OldValue:  oldClaim.ReferenceNumber,
+					NewValue:  newClaim.ReferenceNumber,
+				},
+				{
+					FieldName: FieldClaimIncidentDate,
 					OldValue:  oldClaim.IncidentDate.String(),
 					NewValue:  newClaim.IncidentDate.String(),
 				},
 				{
-					FieldName: "IncidentType",
+					FieldName: FieldClaimIncidentType,
 					OldValue:  string(oldClaim.IncidentType),
 					NewValue:  string(newClaim.IncidentType),
 				},
 				{
-					FieldName: "IncidentDescription",
+					FieldName: FieldClaimIncidentDescription,
 					OldValue:  oldClaim.IncidentDescription,
 					NewValue:  newClaim.IncidentDescription,
 				},
 				{
-					FieldName: "Status",
+					FieldName: FieldClaimStatus,
 					OldValue:  string(oldClaim.Status),
 					NewValue:  string(newClaim.Status),
 				},
 				{
-					FieldName: "ReviewDate",
+					FieldName: FieldClaimReviewDate,
 					OldValue:  oldClaim.ReviewDate.Time.String(),
 					NewValue:  newClaim.ReviewDate.Time.String(),
 				},
 				{
-					FieldName: "ReviewerID",
+					FieldName: FieldClaimReviewerID,
 					OldValue:  oldClaim.ReviewerID.UUID.String(),
 					NewValue:  newClaim.ReviewerID.UUID.String(),
 				},
 				{
-					FieldName: "PaymentDate",
+					FieldName: FieldClaimPaymentDate,
 					OldValue:  oldClaim.PaymentDate.Time.String(),
 					NewValue:  newClaim.PaymentDate.Time.String(),
 				},
 				{
-					FieldName: "TotalPayout",
+					FieldName: FieldClaimTotalPayout,
 					OldValue:  oldClaim.TotalPayout.String(),
 					NewValue:  newClaim.TotalPayout.String(),
 				},
 				{
-					FieldName: "StatusReason",
+					FieldName: FieldClaimStatusReason,
 					OldValue:  oldClaim.StatusReason,
 					NewValue:  newClaim.StatusReason,
 				},
