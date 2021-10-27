@@ -135,21 +135,14 @@ func (c *ClaimItem) updateClaimStatus(ctx context.Context, updates []FieldUpdate
 		return nil
 	}
 
-	revertToDraft := false
-loop:
 	for _, u := range updates {
 		switch u.FieldName {
 		case FieldClaimItemReplaceActual, FieldClaimItemRepairActual, FieldClaimItemStatus:
 			continue
 		default:
-			revertToDraft = true
-			break loop
+			return c.Claim.UpdateStatus(ctx, api.ClaimStatusDraft)
 		}
 	}
-	if revertToDraft {
-		return c.Claim.UpdateStatus(ctx, api.ClaimStatusDraft)
-	}
-
 	return nil
 }
 
