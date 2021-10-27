@@ -81,7 +81,7 @@ func policiesListCustomer(c buffalo.Context) error {
 func policiesView(c buffalo.Context) error {
 	policy := getReferencedPolicyFromCtx(c)
 
-	return renderOk(c, policy.ConvertToAPI(models.Tx(c)))
+	return renderOk(c, policy.ConvertToAPI(models.Tx(c), true))
 }
 
 // swagger:operation POST /policies/ Policies PoliciesCreateCorporate
@@ -128,7 +128,7 @@ func policiesCreateCorporate(c buffalo.Context) error {
 		return reportError(c, err)
 	}
 
-	return renderOk(c, policy.ConvertToAPI(tx))
+	return renderOk(c, policy.ConvertToAPI(tx, true))
 }
 
 // swagger:operation PUT /policies/{id} Policies PoliciesUpdate
@@ -187,7 +187,7 @@ func policiesUpdate(c buffalo.Context) error {
 		return reportError(c, err)
 	}
 
-	return renderOk(c, policy.ConvertToAPI(tx))
+	return renderOk(c, policy.ConvertToAPI(tx, true))
 }
 
 // swagger:operation GET /policies/{id}/members PolicyMembers PolicyMembersList
