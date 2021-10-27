@@ -240,3 +240,28 @@ func (ms *ModelSuite) TestUser_OwnsFile() {
 		})
 	}
 }
+
+func (ms *ModelSuite) TestUser_ConvertToAPI() {
+	f := CreatePolicyFixtures(ms.DB, FixturesConfig{})
+	user := f.Users[0]
+
+	got := user.ConvertToAPI(ms.DB, false)
+
+	ms.Equal(user.ID, got.ID, "ID is not correct")
+	ms.Equal(user.Email, got.Email, "Email is not correct")
+	ms.Equal(user.EmailOverride, got.EmailOverride, "EmailOverride is not correct")
+	ms.Equal(user.FirstName, got.FirstName, "FirstName is not correct")
+	ms.Equal(user.LastName, got.LastName, "LastName is not correct")
+	ms.Equal(user.Name(), got.Name, "Name is not correct")
+	ms.Equal(string(user.AppRole), got.AppRole, "AppRole is not correct")
+	ms.Equal(user.LastLoginUTC, got.LastLoginUTC, "LastLoginUTC is not correct")
+	ms.Equal(user.Country, got.Country, "Country is not correct")
+	ms.Equal(user.PhotoFileID, got.PhotoFileID, "PhotoFileID is not correct")
+
+	ms.Equal(0, len(got.Policies), "Policies should not be hydrated")
+
+	got = user.ConvertToAPI(ms.DB, true)
+
+	ms.Greater(len(user.Policies), 0, "test should be revised, fixture has no Policies")
+	ms.Equal(len(got.Policies), len(user.Policies), "Policies is not correct length")
+}
