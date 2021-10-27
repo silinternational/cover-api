@@ -654,47 +654,57 @@ func (ms *ModelSuite) TestClaim_Compare() {
 			old:  oldClaim,
 			want: []FieldUpdate{
 				{
-					FieldName: "IncidentDate",
+					FieldName: FieldClaimPolicyID,
+					OldValue:  oldClaim.PolicyID.String(),
+					NewValue:  newClaim.PolicyID.String(),
+				},
+				{
+					FieldName: FieldClaimReferenceNumber,
+					OldValue:  oldClaim.ReferenceNumber,
+					NewValue:  newClaim.ReferenceNumber,
+				},
+				{
+					FieldName: FieldClaimIncidentDate,
 					OldValue:  oldClaim.IncidentDate.String(),
 					NewValue:  newClaim.IncidentDate.String(),
 				},
 				{
-					FieldName: "IncidentType",
+					FieldName: FieldClaimIncidentType,
 					OldValue:  string(oldClaim.IncidentType),
 					NewValue:  string(newClaim.IncidentType),
 				},
 				{
-					FieldName: "IncidentDescription",
+					FieldName: FieldClaimIncidentDescription,
 					OldValue:  oldClaim.IncidentDescription,
 					NewValue:  newClaim.IncidentDescription,
 				},
 				{
-					FieldName: "Status",
+					FieldName: FieldClaimStatus,
 					OldValue:  string(oldClaim.Status),
 					NewValue:  string(newClaim.Status),
 				},
 				{
-					FieldName: "ReviewDate",
+					FieldName: FieldClaimReviewDate,
 					OldValue:  oldClaim.ReviewDate.Time.String(),
 					NewValue:  newClaim.ReviewDate.Time.String(),
 				},
 				{
-					FieldName: "ReviewerID",
+					FieldName: FieldClaimReviewerID,
 					OldValue:  oldClaim.ReviewerID.UUID.String(),
 					NewValue:  newClaim.ReviewerID.UUID.String(),
 				},
 				{
-					FieldName: "PaymentDate",
+					FieldName: FieldClaimPaymentDate,
 					OldValue:  oldClaim.PaymentDate.Time.String(),
 					NewValue:  newClaim.PaymentDate.Time.String(),
 				},
 				{
-					FieldName: "TotalPayout",
+					FieldName: FieldClaimTotalPayout,
 					OldValue:  oldClaim.TotalPayout.String(),
 					NewValue:  newClaim.TotalPayout.String(),
 				},
 				{
-					FieldName: "StatusReason",
+					FieldName: FieldClaimStatusReason,
 					OldValue:  oldClaim.StatusReason,
 					NewValue:  newClaim.StatusReason,
 				},

@@ -154,10 +154,11 @@ func (c *Claim) Update(ctx context.Context) error {
 
 		// If status changed, update the ClaimItem status
 		// TODO: improve this when we support multiple items per claim
-		if updates[i].FieldName == FieldClaimStatus {
-			c.ClaimItems[0].Status = api.ClaimItemStatus(c.Status)
-			if err = c.ClaimItems[0].Update(ctx); err != nil {
-				return err
+		if updates[i].FieldName == FieldClaimStatus && len(c.ClaimItems) > 0 &&
+			c.ClaimItems[0].Status != api.ClaimItemStatus(c.Status) {
+
+			if err = c.ClaimItems[0].UpdateStatus(ctx, api.ClaimItemStatus(c.Status)); err != nil {
+				return appErrorFromDB(err, api.ErrorUpdateFailure)
 			}
 		}
 	}
@@ -862,5 +863,25 @@ func (c *Claim) CreateLedgerEntry(tx *pop.Connection) error {
 			return err
 		}
 	}
+	return nil
+}
+
+func (c *Claim) UpdateStatus(ctx context.Context, newStatus api.ClaimStatus) error {
+	oldStatus := c.Status
+	c.Status = newStatus
+	tx := Tx(ctx)
+	if err := tx.UpdateColumns(c, "status", "updated_at"); err != nil {
+		return appErrorFromDB(err, api.ErrorUpdateFailure)
+	}
+
+	history := c.NewHistory(ctx, api.HistoryActionUpdate, FieldUpdate{
+		FieldName: FieldClaimStatus,
+		OldValue:  string(oldStatus),
+		NewValue:  string(newStatus),
+	})
+	if err := history.Create(tx); err != nil {
+		return appErrorFromDB(err, api.ErrorCreateFailure)
+	}
+
 	return nil
 }

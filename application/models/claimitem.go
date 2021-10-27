@@ -121,7 +121,7 @@ func (c *ClaimItem) getUpdates(ctx context.Context) ([]FieldUpdate, error) {
 
 	updates := c.Compare(oldClaimItem)
 	for i := range updates {
-		history := c.Claim.NewHistory(ctx, api.HistoryActionUpdate, updates[i])
+		history := c.NewHistory(ctx, api.HistoryActionUpdate, updates[i])
 		if err := history.Create(tx); err != nil {
 			return updates, appErrorFromDB(err, api.ErrorCreateFailure)
 		}
@@ -144,27 +144,12 @@ func (c *ClaimItem) updateClaimStatus(ctx context.Context, updates []FieldUpdate
 			break
 		}
 	}
-	if !revertToDraft {
-		return nil
+	if revertToDraft {
+		return c.Claim.UpdateStatus(ctx, api.ClaimStatusDraft)
 	}
 
-	if c.Claim.Status == api.ClaimStatusReview1 {
-		c.Claim.Status = api.ClaimStatusDraft
-	}
-
-	return c.Claim.Update(ctx)
+	return nil
 }
-
-// Maybe one day we will want to do something like this on a ClaimItem
-//func isClaimItemTransitionValid(status1, status2 api.ClaimItemStatus) bool {
-//	if status1 == status2 {
-//		return true
-//	}
-//	cStatus1 := api.ClaimStatus(status1)
-//	cStatus2 := api.ClaimStatus(status2)
-//	valid, _ := isClaimTransitionValid(cStatus1, cStatus2)
-//	return valid
-//}
 
 func (c *ClaimItem) GetID() uuid.UUID {
 	return c.ID
@@ -458,5 +443,39 @@ func (c *ClaimItem) GetLocation() Location {
 		City:    c.City,
 		State:   c.State,
 		Country: c.Country,
+	}
+}
+
+// UpdateStatus updates only the status and updated_at fields.
+func (c *ClaimItem) UpdateStatus(ctx context.Context, newStatus api.ClaimItemStatus) error {
+	oldStatus := c.Status
+	c.Status = newStatus
+	tx := Tx(ctx)
+	if err := tx.UpdateColumns(c, "status", "updated_at"); err != nil {
+		return appErrorFromDB(err, api.ErrorUpdateFailure)
+	}
+
+	history := c.NewHistory(ctx, api.HistoryActionUpdate, FieldUpdate{
+		FieldName: FieldClaimStatus,
+		OldValue:  string(oldStatus),
+		NewValue:  string(newStatus),
+	})
+	if err := history.Create(tx); err != nil {
+		return appErrorFromDB(err, api.ErrorCreateFailure)
+	}
+
+	return nil
+}
+
+// NewHistory makes a new ClaimHistory object based on the current ClaimItem.
+func (c *ClaimItem) NewHistory(ctx context.Context, action string, fieldUpdate FieldUpdate) ClaimHistory {
+	return ClaimHistory{
+		Action:      action,
+		ClaimID:     c.ClaimID,
+		ClaimItemID: nulls.NewUUID(c.ID),
+		UserID:      CurrentUser(ctx).ID,
+		FieldName:   fieldUpdate.FieldName,
+		OldValue:    fieldUpdate.OldValue,
+		NewValue:    fieldUpdate.NewValue,
 	}
 }
