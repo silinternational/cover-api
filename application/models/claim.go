@@ -151,6 +151,15 @@ func (c *Claim) Update(ctx context.Context) error {
 		if err := history.Create(tx); err != nil {
 			return appErrorFromDB(err, api.ErrorCreateFailure)
 		}
+
+		// If status changed, update the ClaimItem status
+		// TODO: improve this when we support multiple items per claim
+		if updates[i].FieldName == FieldClaimStatus {
+			c.ClaimItems[0].Status = api.ClaimItemStatus(c.Status)
+			if err = c.ClaimItems[0].Update(ctx); err != nil {
+				return err
+			}
+		}
 	}
 
 	return update(tx, c)
@@ -672,11 +681,27 @@ func (c *Claim) AttachFile(tx *pop.Connection, input api.ClaimFileAttachInput) (
 func (c *Claim) Compare(old Claim) []FieldUpdate {
 	var updates []FieldUpdate
 
+	if c.PolicyID != old.PolicyID {
+		updates = append(updates, FieldUpdate{
+			OldValue:  old.PolicyID.String(),
+			NewValue:  c.PolicyID.String(),
+			FieldName: FieldClaimPolicyID,
+		})
+	}
+
+	if c.ReferenceNumber != old.ReferenceNumber {
+		updates = append(updates, FieldUpdate{
+			OldValue:  old.ReferenceNumber,
+			NewValue:  c.ReferenceNumber,
+			FieldName: FieldClaimReferenceNumber,
+		})
+	}
+
 	if c.IncidentDate != old.IncidentDate {
 		updates = append(updates, FieldUpdate{
 			OldValue:  old.IncidentDate.String(),
 			NewValue:  c.IncidentDate.String(),
-			FieldName: "IncidentDate",
+			FieldName: FieldClaimIncidentDate,
 		})
 	}
 
@@ -684,7 +709,7 @@ func (c *Claim) Compare(old Claim) []FieldUpdate {
 		updates = append(updates, FieldUpdate{
 			OldValue:  string(old.IncidentType),
 			NewValue:  string(c.IncidentType),
-			FieldName: "IncidentType",
+			FieldName: FieldClaimIncidentType,
 		})
 	}
 
@@ -692,7 +717,7 @@ func (c *Claim) Compare(old Claim) []FieldUpdate {
 		updates = append(updates, FieldUpdate{
 			OldValue:  old.IncidentDescription,
 			NewValue:  c.IncidentDescription,
-			FieldName: "IncidentDescription",
+			FieldName: FieldClaimIncidentDescription,
 		})
 	}
 
@@ -700,7 +725,7 @@ func (c *Claim) Compare(old Claim) []FieldUpdate {
 		updates = append(updates, FieldUpdate{
 			OldValue:  string(old.Status),
 			NewValue:  string(c.Status),
-			FieldName: "Status",
+			FieldName: FieldClaimStatus,
 		})
 	}
 
@@ -708,7 +733,7 @@ func (c *Claim) Compare(old Claim) []FieldUpdate {
 		updates = append(updates, FieldUpdate{
 			OldValue:  old.ReviewDate.Time.String(),
 			NewValue:  c.ReviewDate.Time.String(),
-			FieldName: "ReviewDate",
+			FieldName: FieldClaimReviewDate,
 		})
 	}
 
@@ -716,7 +741,7 @@ func (c *Claim) Compare(old Claim) []FieldUpdate {
 		updates = append(updates, FieldUpdate{
 			OldValue:  old.ReviewerID.UUID.String(),
 			NewValue:  c.ReviewerID.UUID.String(),
-			FieldName: "ReviewerID",
+			FieldName: FieldClaimReviewerID,
 		})
 	}
 
@@ -724,7 +749,7 @@ func (c *Claim) Compare(old Claim) []FieldUpdate {
 		updates = append(updates, FieldUpdate{
 			OldValue:  old.PaymentDate.Time.String(),
 			NewValue:  c.PaymentDate.Time.String(),
-			FieldName: "PaymentDate",
+			FieldName: FieldClaimPaymentDate,
 		})
 	}
 
@@ -732,7 +757,7 @@ func (c *Claim) Compare(old Claim) []FieldUpdate {
 		updates = append(updates, FieldUpdate{
 			OldValue:  old.TotalPayout.String(),
 			NewValue:  c.TotalPayout.String(),
-			FieldName: "TotalPayout",
+			FieldName: FieldClaimTotalPayout,
 		})
 	}
 
@@ -740,7 +765,31 @@ func (c *Claim) Compare(old Claim) []FieldUpdate {
 		updates = append(updates, FieldUpdate{
 			OldValue:  old.StatusReason,
 			NewValue:  c.StatusReason,
-			FieldName: "StatusReason",
+			FieldName: FieldClaimStatusReason,
+		})
+	}
+
+	if c.City != old.City {
+		updates = append(updates, FieldUpdate{
+			OldValue:  old.City,
+			NewValue:  c.City,
+			FieldName: FieldClaimCity,
+		})
+	}
+
+	if c.State != old.State {
+		updates = append(updates, FieldUpdate{
+			OldValue:  old.State,
+			NewValue:  c.State,
+			FieldName: FieldClaimState,
+		})
+	}
+
+	if c.Country != old.Country {
+		updates = append(updates, FieldUpdate{
+			OldValue:  old.Country,
+			NewValue:  c.Country,
+			FieldName: FieldClaimCountry,
 		})
 	}
 
