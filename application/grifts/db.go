@@ -53,12 +53,12 @@ var _ = grift.Namespace("db", func() {
 				return err
 			}
 
-			_, err = createItemFixtures(tx, fixPolicies)
+			fixItems, err := createItemFixtures(tx, fixPolicies)
 			if err != nil {
 				return err
 			}
 
-			_, err = createClaimFixtures(tx, fixPolicies)
+			_, err = createClaimFixtures(tx, fixPolicies, fixItems)
 			if err != nil {
 				return err
 			}
@@ -358,7 +358,7 @@ func createItemFixtures(tx *pop.Connection, fixPolicies []*models.Policy) ([]*mo
 	return fixItems, nil
 }
 
-func createClaimFixtures(tx *pop.Connection, fixPolicies []*models.Policy) ([]models.Claim, error) {
+func createClaimFixtures(tx *pop.Connection, fixPolicies []*models.Policy, items []*models.Item) ([]models.Claim, error) {
 	claimUUIDs := []string{
 		"023b599d-dd17-4eb9-9895-da462f52526a",
 		"1eba86ef-e801-4a9c-a500-fe507040d004",
@@ -368,9 +368,16 @@ func createClaimFixtures(tx *pop.Connection, fixPolicies []*models.Policy) ([]mo
 	}
 
 	if len(claimUUIDs) > len(fixPolicies) {
-		err := fmt.Errorf("mismatching count of fixtures in createPolicyFixtures. "+
-			"Expected the number of user fixtures to be %d, but got %d",
+		err := fmt.Errorf("mismatching count of fixtures in createClaimFixtures. "+
+			"Expected the number of policy fixtures to be %d, but got %d",
 			len(claimUUIDs), len(fixPolicies))
+		return nil, err
+	}
+
+	if len(claimUUIDs) > len(items) {
+		err := fmt.Errorf("mismatching count of fixtures in createClaimFixtures. "+
+			"Expected the number of item fixtures to be %d, but got %d",
+			len(claimUUIDs), len(items))
 		return nil, err
 	}
 
@@ -388,6 +395,21 @@ func createClaimFixtures(tx *pop.Connection, fixPolicies []*models.Policy) ([]mo
 		if err != nil {
 			err = fmt.Errorf("error creating claim fixture ... %+v\n %v",
 				fixClaims[i], err.Error())
+			return nil, err
+		}
+
+		ci := models.ClaimItem{
+			ID:           domain.GetUUID(),
+			ClaimID:      fixClaims[i].ID,
+			ItemID:       items[i].ID,
+			Status:       api.ClaimItemStatusDraft,
+			PayoutOption: api.PayoutOptionRepair,
+		}
+
+		err = ci.Create(tx)
+		if err != nil {
+			err = fmt.Errorf("error creating claim item fixture ... %+v\n %v",
+				ci, err.Error())
 			return nil, err
 		}
 	}
