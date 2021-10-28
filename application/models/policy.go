@@ -223,6 +223,7 @@ func (p *Policy) LoadEntityCode(tx *pop.Connection, reload bool) {
 
 func (p *Policy) ConvertToAPI(tx *pop.Connection, hydrate bool) api.Policy {
 	p.LoadEntityCode(tx, true)
+	p.LoadMembers(tx, true)
 
 	apiPolicy := api.Policy{
 		ID:            p.ID,
@@ -232,6 +233,7 @@ func (p *Policy) ConvertToAPI(tx *pop.Connection, hydrate bool) api.Policy {
 		Account:       p.Account,
 		AccountDetail: p.AccountDetail,
 		EntityCode:    p.EntityCode.ConvertToAPI(tx),
+		Members:       p.Members.ConvertToPolicyMembers(),
 		CreatedAt:     p.CreatedAt,
 		UpdatedAt:     p.UpdatedAt,
 	}
@@ -239,10 +241,8 @@ func (p *Policy) ConvertToAPI(tx *pop.Connection, hydrate bool) api.Policy {
 	if hydrate {
 		p.LoadClaims(tx, true)
 		p.LoadDependents(tx, true)
-		p.LoadMembers(tx, true)
 		apiPolicy.Claims = p.Claims.ConvertToAPI(tx)
 		apiPolicy.Dependents = p.Dependents.ConvertToAPI()
-		apiPolicy.Members = p.Members.ConvertToPolicyMembers()
 	}
 
 	return apiPolicy
