@@ -34,6 +34,8 @@ var _ = grift.Namespace("db", func() {
 		}
 
 		return models.DB.Transaction(func(tx *pop.Connection) error {
+			assignRiskCategoryCostCenters(tx)
+
 			entityCodes, err := createEntityCodes(tx)
 			if err != nil {
 				return err
@@ -53,12 +55,17 @@ var _ = grift.Namespace("db", func() {
 				return err
 			}
 
-			fixItems, err := createItemFixtures(tx, fixPolicies)
+			fixItems, err := createItemFixtures(tx, fixPolicies, fixUsers)
 			if err != nil {
 				return err
 			}
 
-			_, err = createClaimFixtures(tx, fixPolicies, fixItems)
+			fixClaims, err := createClaimFixtures(tx, fixPolicies, fixItems)
+			if err != nil {
+				return err
+			}
+
+			err = createLedgerEntryFixtures(tx, fixItems, fixClaims)
 			if err != nil {
 				return err
 			}
@@ -211,6 +218,7 @@ func createPolicyFixtures(tx *pop.Connection, fixUsers []*models.User, entityCod
 		if i < len(entityCodes) {
 			fixPolicies[i].EntityCodeID = nulls.NewUUID(entityCodes[i].ID)
 			fixPolicies[i].Account = domain.RandomString(6, "0123456789")
+			fixPolicies[i].AccountDetail = domain.RandomString(10, "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ")
 			fixPolicies[i].CostCenter = domain.RandomString(8, "0123456789")
 			fixPolicies[i].Type = api.PolicyTypeCorporate
 		} else {
@@ -296,7 +304,7 @@ INSERT INTO "item_categories" ("id", "risk_category_id", "name", "help_text",
 	return categoryUUIDs, nil
 }
 
-func createItemFixtures(tx *pop.Connection, fixPolicies []*models.Policy) ([]*models.Item, error) {
+func createItemFixtures(tx *pop.Connection, fixPolicies []*models.Policy, users []*models.User) ([]*models.Item, error) {
 	itemUUIDs := []string{
 		"71117366-26b2-4256-b2ab-58c92c3d54c1",
 		"71127366-26b2-4256-b2ab-58c92c3d54c2",
@@ -339,6 +347,7 @@ func createItemFixtures(tx *pop.Connection, fixPolicies []*models.Policy) ([]*mo
 			Country:           fmt.Sprintf("ICountry%d", i),
 			Description:       fmt.Sprintf("This is the description for item %d.", i),
 			PolicyID:          fixPolicies[i/2].ID,
+			PolicyUserID:      nulls.NewUUID(users[i/2].ID),
 			Make:              fmt.Sprintf("IMake-%d", i),
 			Model:             fmt.Sprintf("IModel-%d", i),
 			SerialNumber:      fmt.Sprintf("ISN-%d", i),
@@ -358,7 +367,7 @@ func createItemFixtures(tx *pop.Connection, fixPolicies []*models.Policy) ([]*mo
 	return fixItems, nil
 }
 
-func createClaimFixtures(tx *pop.Connection, fixPolicies []*models.Policy, items []*models.Item) ([]models.Claim, error) {
+func createClaimFixtures(tx *pop.Connection, fixPolicies []*models.Policy, items []*models.Item) ([]*models.Claim, error) {
 	claimUUIDs := []string{
 		"023b599d-dd17-4eb9-9895-da462f52526a",
 		"1eba86ef-e801-4a9c-a500-fe507040d004",
@@ -381,10 +390,10 @@ func createClaimFixtures(tx *pop.Connection, fixPolicies []*models.Policy, items
 		return nil, err
 	}
 
-	fixClaims := make([]models.Claim, len(fixPolicies))
+	fixClaims := make([]*models.Claim, len(fixPolicies))
 
 	for i, uu := range claimUUIDs {
-		fixClaims[i] = models.Claim{
+		fixClaims[i] = &models.Claim{
 			ID:           uuid.FromStringOrNil(uu),
 			PolicyID:     fixPolicies[i].ID,
 			Status:       api.ClaimStatusDraft,
@@ -412,7 +421,52 @@ func createClaimFixtures(tx *pop.Connection, fixPolicies []*models.Policy, items
 				ci, err.Error())
 			return nil, err
 		}
+
+		fixClaims[i].LoadClaimItems(tx, false)
 	}
 
 	return fixClaims, nil
+}
+
+func createLedgerEntryFixtures(tx *pop.Connection, items []*models.Item, claims []*models.Claim) error {
+	// Two entries for Corporate Policies
+	if err := items[0].CreateLedgerEntry(tx, models.LedgerEntryTypeNewCoverage, 1021); err != nil {
+		return err
+	}
+	if err := items[2].CreateLedgerEntry(tx, models.LedgerEntryTypeCoverageChange, 519); err != nil {
+		return err
+	}
+
+	// Two entries for Household Policies
+	if err := items[4].CreateLedgerEntry(tx, models.LedgerEntryTypeNewCoverage, 9876); err != nil {
+		return err
+	}
+	if err := items[5].CreateLedgerEntry(tx, models.LedgerEntryTypeCoverageChange, 1234); err != nil {
+		return err
+	}
+
+	// Corporate policy claim
+	claims[0].TotalPayout = 2849
+	if err := approveClaim(tx, claims[0]); err != nil {
+		return err
+	}
+	if err := claims[0].CreateLedgerEntry(tx); err != nil {
+		return err
+	}
+
+	// Household policy claim
+	claims[4].TotalPayout = 85432
+	if err := approveClaim(tx, claims[4]); err != nil {
+		return err
+	}
+	if err := claims[4].CreateLedgerEntry(tx); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func approveClaim(tx *pop.Connection, claim *models.Claim) error {
+	claim.Status = api.ClaimStatusApproved
+	return tx.Update(claim)
 }
