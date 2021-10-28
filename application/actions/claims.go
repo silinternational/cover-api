@@ -25,7 +25,7 @@ import (
 // parameters:
 // - name: status
 //   in: query
-//   required: true
+//   required: false
 //   description: comma-separated list of status values to include
 // responses:
 //   '200':
@@ -231,7 +231,7 @@ func claimsSubmit(c buffalo.Context) error {
 //
 // ClaimsRequestRevision
 //
-// Admin requests revisions on a claim.  Can be used at state "Review1" or "Review3".
+// Admin requests revisions on a claim.  Can be used at state "Review1", "Review2", or "Review3".
 //
 // ---
 // parameters:

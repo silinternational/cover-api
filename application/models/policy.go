@@ -261,6 +261,29 @@ func (p *Policies) All(tx *pop.Connection) error {
 	return appErrorFromDB(tx.All(p), api.ErrorQueryFailure)
 }
 
+func (p *Policies) Query(tx *pop.Connection, query api.Query) error {
+	q := tx.Order("updated_at DESC")
+
+	if query.Limit > 0 {
+		q = q.Limit(query.Limit)
+	}
+
+	for k, v := range query.Search {
+		switch k {
+		case "name":
+			q = p.SearchByname(q, v)
+		}
+	}
+
+	return appErrorFromDB(q.All(p), api.ErrorQueryFailure)
+}
+
+func (p *Policies) SearchByname(q *pop.Query, name string) *pop.Query {
+	return q.Join("policy_users", "policies.id = policy_users.policy_id").
+		Join("users", "users.id = policy_users.user_id").
+		Where(`users.first_name ILIKE ? OR users.last_name ILIKE ?`, name, name)
+}
+
 func (p *Policy) AddDependent(tx *pop.Connection, input api.PolicyDependentInput) error {
 	if p == nil {
 		return errors.New("policy is nil in AddDependent")
