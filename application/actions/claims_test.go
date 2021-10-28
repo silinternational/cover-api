@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 	"testing"
 	"time"
 
@@ -81,6 +82,84 @@ func (as *ActionSuite) Test_ClaimsList() {
 			for _, c := range responseObject {
 				as.Len(c.Items, fixConfig.ItemsPerPolicy)
 			}
+		})
+	}
+}
+
+func (as *ActionSuite) Test_PoliciesClaimsList() {
+	const numberOfPolicies = 3
+	const claimsPerPolicy = 4
+	fixConfig := models.FixturesConfig{
+		NumberOfPolicies: numberOfPolicies,
+		ClaimsPerPolicy:  claimsPerPolicy,
+	}
+
+	fixtures := models.CreateItemFixtures(as.DB, fixConfig)
+
+	policy := fixtures.Policies[1]
+
+	appAdmin := models.CreateAdminUsers(as.DB)[models.AppRoleAdmin]
+	normalUser := policy.Members[0]
+
+	tests := []struct {
+		name          string
+		actor         models.User
+		wantStatus    int
+		wantClaims    int
+		wantInBody    string
+		notWantInBody string
+	}{
+		{
+			name:          "normal user",
+			actor:         normalUser,
+			wantStatus:    http.StatusOK,
+			wantClaims:    claimsPerPolicy,
+			wantInBody:    policy.Claims[0].ID.String(),
+			notWantInBody: fixtures.Policies[0].Claims[0].ID.String(),
+		},
+		{
+			name:          "wrong user",
+			actor:         fixtures.Policies[0].Members[0],
+			wantStatus:    http.StatusNotFound,
+			wantClaims:    claimsPerPolicy,
+			notWantInBody: policy.Claims[0].ID.String(),
+		},
+		{
+			name:       "admin user",
+			actor:      appAdmin,
+			wantStatus: http.StatusOK,
+			wantClaims: claimsPerPolicy,
+			wantInBody: policy.Claims[0].ID.String(),
+		},
+	}
+
+	for _, tt := range tests {
+		as.T().Run(tt.name, func(t *testing.T) {
+			url := fmt.Sprintf("%s/%s%s", policiesPath, policy.ID, claimsPath)
+			req := as.JSON(url)
+			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
+			req.Headers["content-type"] = "application/json"
+			res := req.Get()
+
+			body := res.Body.String()
+			as.Equal(tt.wantStatus, res.Code, "incorrect status code returned, body: %s", body)
+			if tt.wantInBody != "" {
+				as.Contains(body, tt.wantInBody)
+			}
+			if tt.notWantInBody != "" {
+				as.NotContains(body, tt.notWantInBody)
+			}
+
+			if res.Code != http.StatusOK {
+				return
+			}
+
+			var responseObject api.Claims
+			reader := strings.NewReader(body)
+			decoder := json.NewDecoder(reader)
+			decoder.DisallowUnknownFields()
+			as.NoError(decoder.Decode(&responseObject))
+			as.Len(responseObject, tt.wantClaims, "incorrect # of claims")
 		})
 	}
 }
