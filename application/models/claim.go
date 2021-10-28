@@ -851,6 +851,7 @@ func (c *Claim) CreateLedgerEntry(tx *pop.Connection) error {
 		return errors.New("cannot pay out a claim that is not approved")
 	}
 
+	c.LoadClaimItems(tx, false)
 	c.LoadPolicy(tx, false)
 	c.Policy.LoadEntityCode(tx, false)
 
