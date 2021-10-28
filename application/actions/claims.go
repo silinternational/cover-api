@@ -67,6 +67,30 @@ func claimsListCustomer(c buffalo.Context) error {
 	return renderOk(c, claims.ConvertToAPI(tx))
 }
 
+// swagger:operation GET /policies/{id}/claims Claims PolicyClaimsList
+//
+// PolicyClaimsList
+//
+// List claims for a given policy
+//
+// ---
+// responses:
+//   '200':
+//     description: a list of Claims
+//     schema:
+//       type: array
+//       items:
+//         "$ref": "#/definitions/Claim"
+func policiesClaimsList(c buffalo.Context) error {
+	policy := getReferencedPolicyFromCtx(c)
+
+	tx := models.Tx(c)
+
+	policy.LoadClaims(tx, false)
+
+	return renderOk(c, policy.Claims.ConvertToAPI(tx))
+}
+
 // swagger:operation GET /claims/{id} Claims ClaimsView
 //
 // ClaimsView
