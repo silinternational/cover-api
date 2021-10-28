@@ -234,9 +234,9 @@ func (ms *ModelSuite) TestClaim_RequestRevision() {
 		{
 			name:            "bad start status",
 			claim:           draftClaim,
-			wantErrKey:      api.ErrorClaimStatus,
+			wantErrKey:      api.ErrorValidation,
 			wantErrCat:      api.CategoryUser,
-			wantErrContains: "invalid claim status for request revision",
+			wantErrContains: "invalid claim status transition from Draft to Revision",
 		},
 		{
 			name:            "claim with no ClaimItem",
@@ -268,8 +268,8 @@ func (ms *ModelSuite) TestClaim_RequestRevision() {
 				var appErr *api.AppError
 				ms.True(errors.As(got, &appErr), "returned an error that is not an AppError")
 				ms.Contains(got.Error(), tt.wantErrContains, "error message is not correct")
-				ms.Equal(appErr.Key, tt.wantErrKey, "error key is not correct")
-				ms.Equal(appErr.Category, tt.wantErrCat, "error category is not correct")
+				ms.Equal(tt.wantErrKey, appErr.Key, "error key is not correct")
+				ms.Equal(tt.wantErrCat, appErr.Category, "error category is not correct")
 				return
 			}
 			ms.NoError(got)
