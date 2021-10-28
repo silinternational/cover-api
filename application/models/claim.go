@@ -411,7 +411,6 @@ func (c *Claim) SubmitForApproval(ctx context.Context) error {
 }
 
 // RequestRevision changes the status of the claim to Revision
-//   provided that the current status is Review1 or Review3.
 func (c *Claim) RequestRevision(ctx context.Context, message string) error {
 	user := CurrentUser(ctx)
 
