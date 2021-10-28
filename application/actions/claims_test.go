@@ -707,7 +707,7 @@ func (as *ActionSuite) Test_ClaimsRequestRevision() {
 			actor:      appAdmin,
 			oldClaim:   draftClaim,
 			wantStatus: http.StatusBadRequest,
-			wantInBody: []string{api.ErrorClaimStatus.String()},
+			wantInBody: []string{"invalid claim status transition from Draft to Revision"},
 		},
 		{
 			name:       "non-admin user",

@@ -284,14 +284,15 @@ func claimStatusTransitions() map[api.ClaimStatus][]api.ClaimStatus {
 		},
 		api.ClaimStatusReview2: {
 			api.ClaimStatusDraft,
+			api.ClaimStatusRevision,
 			api.ClaimStatusReceipt,
 			api.ClaimStatusReview3,
 			api.ClaimStatusDenied,
 		},
 		api.ClaimStatusReview3: {
 			api.ClaimStatusDraft,
-			api.ClaimStatusReceipt,
 			api.ClaimStatusRevision,
+			api.ClaimStatusReceipt,
 			api.ClaimStatusApproved,
 			api.ClaimStatusDenied,
 		},
@@ -410,22 +411,13 @@ func (c *Claim) SubmitForApproval(ctx context.Context) error {
 }
 
 // RequestRevision changes the status of the claim to Revision
-//   provided that the current status is Review1 or Review3.
 func (c *Claim) RequestRevision(ctx context.Context, message string) error {
-	oldStatus := c.Status
 	user := CurrentUser(ctx)
 
-	switch oldStatus {
-	case api.ClaimStatusReview1, api.ClaimStatusReview3:
-		c.Status = api.ClaimStatusRevision
-		c.StatusChange = ClaimStatusChangeRevisions + user.Name()
-		c.StatusReason = message
-		c.setReviewer(ctx)
-	default:
-		err := fmt.Errorf("invalid claim status for request revision: %s", oldStatus)
-		appErr := api.NewAppError(err, api.ErrorClaimStatus, api.CategoryUser)
-		return appErr
-	}
+	c.Status = api.ClaimStatusRevision
+	c.StatusChange = ClaimStatusChangeRevisions + user.Name()
+	c.StatusReason = message
+	c.setReviewer(ctx)
 
 	if err := c.Update(ctx); err != nil {
 		return err
