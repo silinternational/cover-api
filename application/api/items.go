@@ -68,6 +68,9 @@ type Item struct {
 	// how the status changed most recently (for the stewards dashboard)
 	StatusChange string `json:"status_change"`
 
+	// message from a reviewer detailing the revisions needed
+	StatusReason string `json:"status_reason"`
+
 	// date (yyyy-mm-dd) of item's coverage start date
 	CoverageStartDate string `json:"coverage_start_date"`
 
