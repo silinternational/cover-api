@@ -639,6 +639,7 @@ func (i *Item) ConvertToAPI(tx *pop.Connection) api.Item {
 		CoverageAmount:         i.CoverageAmount,
 		CoverageStatus:         i.CoverageStatus,
 		StatusChange:           i.StatusChange,
+		StatusReason:           i.StatusReason,
 		CoverageStartDate:      i.CoverageStartDate.Format(domain.DateFormat),
 		CoverageEndDate:        coverageEndDate,
 		AccountableUserID:      i.PolicyUserID,

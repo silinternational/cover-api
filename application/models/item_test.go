@@ -1058,3 +1058,33 @@ func (ms *ModelSuite) TestItem_canBeDeleted() {
 		})
 	}
 }
+
+func (ms *ModelSuite) TestItem() {
+	item := CreateItemFixtures(ms.DB, FixturesConfig{DependentsPerPolicy: 1}).Items[0]
+	item.CoverageEndDate = nulls.NewTime(time.Now().Add(domain.DurationDay * 365))
+
+	got := item.ConvertToAPI(ms.DB)
+
+	ms.Equal(item.ID, got.ID, "ID is not correct")
+	ms.Equal(item.Name, got.Name, "Name is not correct")
+	ms.Equal(item.InStorage, got.InStorage, "InStorage is not correct")
+	ms.Equal(item.Country, got.Country, "Country is not correct")
+	ms.Equal(item.Description, got.Description, "Description is not correct")
+	ms.Equal(item.PolicyID, got.PolicyID, "PolicyID is not correct")
+	ms.Equal(item.Make, got.Make, "Make is not correct")
+	ms.Equal(item.SerialNumber, got.SerialNumber, "SerialNumber is not correct")
+	ms.Equal(item.CoverageAmount, got.CoverageAmount, "CoverageAmount is not correct")
+	ms.Equal(item.CoverageStatus, got.CoverageStatus, "CoverageStatus is not correct")
+	ms.Equal(item.StatusChange, got.StatusChange, "StatusChange is not correct")
+	ms.Equal(item.StatusReason, got.StatusReason, "StatusReason is not correct")
+	ms.Equal(item.CoverageStartDate.Format(domain.DateFormat), got.CoverageStartDate, "CoverageStartDate is not correct")
+	ms.Equal(item.CoverageEndDate.Time.Format(domain.DateFormat), got.CoverageEndDate.String, "CoverageEndDate is not correct")
+	ms.Equal(item.CreatedAt, got.CreatedAt, "CreatedAt is not correct")
+	ms.Equal(item.UpdatedAt, got.UpdatedAt, "UpdatedAt is not correct")
+	ms.Equal(item.Category.ConvertToAPI(ms.DB), got.Category, "Category is not correct")
+	ms.Equal(item.RiskCategory.ConvertToAPI(), got.RiskCategory, "RiskCategory is not correct")
+	ms.Equal(item.CalculateAnnualPremium(), got.AnnualPremium, "AnnualPremium is not correct")
+	ms.Equal(item.calculateProratedPremium(time.Now().UTC()), got.ProratedAnnualPremium, "ProratedAnnualPremium is not correct")
+	ms.Equal(item.PolicyDependentID, got.AccountableDependentID, "AccountableDependentID is not correct")
+	ms.Equal(item.PolicyUserID, got.AccountableUserID, "AccountableUserID is not correct")
+}
