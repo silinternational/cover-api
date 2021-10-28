@@ -800,15 +800,16 @@ func (ms *ModelSuite) Test_ClaimsWithRecentStatusChanges() {
 }
 
 func (ms *ModelSuite) TestClaim_CreateLedgerEntry() {
-	f := CreateItemFixtures(ms.DB, FixturesConfig{ClaimsPerPolicy: 1})
-	item := f.Items[0]
+	f := CreateItemFixtures(ms.DB, FixturesConfig{ClaimsPerPolicy: 1, ClaimItemsPerClaim: 1})
+	item := f.Claims[0].ClaimItems[0].Item
 
 	user := f.Users[0]
 	ctx := CreateTestContext(user)
 	ms.NoError(item.setAccountablePerson(ms.DB, user.ID))
 	ms.NoError(item.Update(ctx))
 
-	claim := f.Claims[0]
+	var claim Claim
+	ms.NoError(ms.DB.Find(&claim, f.Claims[0].ID))
 
 	ms.Error(claim.CreateLedgerEntry(ms.DB), "expected an error, claim isn't approved yet")
 

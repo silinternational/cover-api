@@ -194,7 +194,11 @@ func (le *LedgerEntry) balanceDescription() string {
 	if le.Type.IsClaim() {
 		premiumsOrClaims = "Claims"
 	}
-	return fmt.Sprintf("Total %s %s %s", le.EntityCode, le.RiskCategoryName, premiumsOrClaims)
+	entity := le.EntityCode
+	if le.PolicyType != api.PolicyTypeCorporate {
+		entity = string(le.PolicyType)
+	}
+	return fmt.Sprintf("Total %s %s %s", entity, le.RiskCategoryName, premiumsOrClaims)
 }
 
 // NewLedgerEntry creates a basic LedgerEntry with common fields completed.
