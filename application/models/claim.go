@@ -853,17 +853,21 @@ func (c *Claim) CreateLedgerEntry(tx *pop.Connection) error {
 
 	c.LoadPolicy(tx, false)
 	c.Policy.LoadEntityCode(tx, false)
-	c.Policy.LoadItems(tx, false)
 
-	for _, item := range c.Policy.Items {
-		name := item.GetAccountablePersonName(tx)
+	for i := range c.ClaimItems {
+		c.ClaimItems[i].LoadItem(tx, false)
+		item := c.ClaimItems[i].Item
 		item.LoadRiskCategory(tx, false)
 
-		le := NewLedgerEntry(c.Policy, &item, c) // #nosec G601
+		name := item.GetAccountablePersonName(tx)
+
+		le := NewLedgerEntry(c.Policy, &item, c)
 		le.Type = LedgerEntryTypeClaim
 		le.Amount = -c.TotalPayout
 		le.FirstName = name.First
 		le.LastName = name.Last
+		le.RiskCategoryName = item.RiskCategory.Name
+		le.RiskCategoryCC = item.RiskCategory.CostCenter
 
 		if err := le.Create(tx); err != nil {
 			return err
