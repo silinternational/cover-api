@@ -276,6 +276,7 @@ func (p *Policies) Query(tx *pop.Connection, query api.Query) error {
 }
 
 func (p *Policies) SearchByName(q *pop.Query, name string) *pop.Query {
+	name = "%" + name + "%"
 	return q.Join("policy_users", "policies.id = policy_users.policy_id").
 		Join("users", "users.id = policy_users.user_id").
 		Where(`users.first_name ILIKE ? OR users.last_name ILIKE ?`, name, name)

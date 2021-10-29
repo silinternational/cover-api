@@ -580,6 +580,11 @@ func (ms *ModelSuite) TestPolicies_Query() {
 			wantNumberOfPolicies: 1,
 		},
 		{
+			name:                 "partial",
+			query:                "search=name:matt",
+			wantNumberOfPolicies: 1,
+		},
+		{
 			name:                 "limit",
 			query:                "search=name:john&limit=2",
 			wantNumberOfPolicies: 2,
