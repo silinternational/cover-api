@@ -265,21 +265,23 @@ func (p *Policies) Query(tx *pop.Connection, query api.Query) error {
 	q := tx.Order("updated_at DESC")
 
 	if query.Limit() > 0 {
-		q = q.Limit(query.Limit())
+		q.Limit(query.Limit())
 	}
 
 	if v := query.Search("name"); v != "" {
-		q = p.SearchByName(q, v)
+		q.Scope(scopeSearchPolicyByName(v))
 	}
 
 	return appErrorFromDB(q.All(p), api.ErrorQueryFailure)
 }
 
-func (p *Policies) SearchByName(q *pop.Query, name string) *pop.Query {
+func scopeSearchPolicyByName(name string) pop.ScopeFunc {
 	name = "%" + name + "%"
-	return q.Join("policy_users", "policies.id = policy_users.policy_id").
-		Join("users", "users.id = policy_users.user_id").
-		Where(`users.first_name ILIKE ? OR users.last_name ILIKE ?`, name, name)
+	return func(q *pop.Query) *pop.Query {
+		return q.Join("policy_users", "policies.id = policy_users.policy_id").
+			Join("users", "users.id = policy_users.user_id").
+			Where(`users.first_name ILIKE ? OR users.last_name ILIKE ?`, name, name)
+	}
 }
 
 func (p *Policy) AddDependent(tx *pop.Connection, input api.PolicyDependentInput) error {
