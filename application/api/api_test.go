@@ -3,17 +3,24 @@ package api
 import (
 	"testing"
 
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
 
 // TestSuite establishes a test suite for domain tests
 type TestSuite struct {
+	*require.Assertions
 	suite.Suite
 }
 
 // Test_TestSuite runs the test suite
 func Test_TestSuite(t *testing.T) {
 	suite.Run(t, new(TestSuite))
+}
+
+// SetupTest sets the test suite to abort on first failure and sets the session store
+func (ts *TestSuite) SetupTest() {
+	ts.Assertions = require.New(ts.T())
 }
 
 func (ts *TestSuite) Test_keyToReadableString() {
