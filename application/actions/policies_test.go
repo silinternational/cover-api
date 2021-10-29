@@ -24,6 +24,9 @@ func (as *ActionSuite) Test_PoliciesList() {
 
 	fixtures := models.CreatePolicyFixtures(as.DB, fixConfig)
 
+	fixtures.Users[0].FirstName = "John"
+	as.NoError(as.DB.Update(&fixtures.Users[0]))
+
 	for _, p := range fixtures.Policies {
 		p.LoadMembers(as.DB, false)
 		p.LoadDependents(as.DB, false)
@@ -35,6 +38,7 @@ func (as *ActionSuite) Test_PoliciesList() {
 	tests := []struct {
 		name          string
 		actor         models.User
+		queryString   string
 		wantCount     int
 		wantStatus    int
 		wantInBody    string
@@ -57,6 +61,13 @@ func (as *ActionSuite) Test_PoliciesList() {
 			notWantInBody: "",
 		},
 		{
+			name:        "admin with filter",
+			actor:       appAdmin,
+			queryString: "?limit=1&search=name:john",
+			wantCount:   1,
+			wantStatus:  http.StatusOK,
+		},
+		{
 			name:          "user",
 			actor:         normalUser,
 			wantCount:     1,
@@ -68,7 +79,7 @@ func (as *ActionSuite) Test_PoliciesList() {
 
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
-			req := as.JSON("/policies")
+			req := as.JSON("/policies" + tt.queryString)
 			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
 			req.Headers["content-type"] = "application/json"
 			res := req.Get()
