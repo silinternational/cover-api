@@ -585,9 +585,14 @@ func (ms *ModelSuite) TestPolicies_Query() {
 			wantNumberOfPolicies: 1,
 		},
 		{
-			name:                 "limit",
+			name:                 "limit 2",
 			query:                "search=name:john&limit=2",
 			wantNumberOfPolicies: 2,
+		},
+		{
+			name:                 "limit 1",
+			query:                "search=name:john&limit=1",
+			wantNumberOfPolicies: 1,
 		},
 	}
 	for _, tt := range tests {
