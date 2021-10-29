@@ -1,9 +1,12 @@
 package models
 
 import (
+	"net/url"
 	"testing"
 
+	"github.com/gobuffalo/buffalo"
 	"github.com/gobuffalo/nulls"
+	"github.com/gobuffalo/pop/v5"
 
 	"github.com/silinternational/cover-api/api"
 	"github.com/silinternational/cover-api/domain"
@@ -540,4 +543,68 @@ func (ms *ModelSuite) TestPolicy_ConvertToAPI() {
 
 	ms.Greater(len(got.Claims), 0, "test should be revised, fixture has no Claims")
 	ms.Len(got.Claims, len(got.Claims), "Claims is not correct length")
+}
+
+func (ms *ModelSuite) TestPolicies_Query() {
+	f := CreateItemFixtures(ms.DB, FixturesConfig{NumberOfPolicies: 4})
+
+	f.Users[0].FirstName = "Matthew"
+	ms.NoError(ms.DB.Update(&f.Users[0]))
+	f.Users[1].LastName = "Smith"
+	ms.NoError(ms.DB.Update(&f.Users[1]))
+	f.Users[2].FirstName = "John"
+	ms.NoError(ms.DB.Update(&f.Users[2]))
+	f.Users[3].FirstName = "John"
+	ms.NoError(ms.DB.Update(&f.Users[3]))
+
+	pop.Debug = true // Show Pop debug messages
+
+	tests := []struct {
+		name                 string
+		query                string
+		wantNumberOfPolicies int
+	}{
+		{
+			name:                 "none found",
+			query:                "search=name:not gonna find this one",
+			wantNumberOfPolicies: 0,
+		},
+		{
+			name:                 "first name",
+			query:                "search=name:matthew",
+			wantNumberOfPolicies: 1,
+		},
+		{
+			name:                 "last name",
+			query:                "search=name:smith",
+			wantNumberOfPolicies: 1,
+		},
+		{
+			name:                 "partial",
+			query:                "search=name:matt",
+			wantNumberOfPolicies: 1,
+		},
+		{
+			name:                 "limit 2",
+			query:                "search=name:john&limit=2",
+			wantNumberOfPolicies: 2,
+		},
+		{
+			name:                 "limit 1",
+			query:                "search=name:john&limit=1",
+			wantNumberOfPolicies: 1,
+		},
+	}
+	for _, tt := range tests {
+		ms.T().Run(tt.name, func(t *testing.T) {
+			var policies Policies
+
+			values, _ := url.ParseQuery(tt.query)
+			query := api.NewQuery(buffalo.ParamValues(values))
+
+			err := policies.Query(ms.DB, query)
+			ms.NoError(err)
+			ms.Equal(tt.wantNumberOfPolicies, len(policies), "got wrong number of policies")
+		})
+	}
 }

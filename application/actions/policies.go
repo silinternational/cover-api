@@ -16,9 +16,19 @@ import (
 //
 // PoliciesList
 //
-// gets the data for all the user's Policies, or, if called by an admin, all Policies in the system
+// Get the data for all the user's Policies if the user is not an admin. If called by an admin, returns all Policies
+// in the system, limited by query parameters.
 //
 // ---
+// parameters:
+// - name: limit
+//   in: query
+//   required: false
+//   description: number of records to return, minimum 1, maximum 50, default 10
+// - name: search
+//   in: query
+//   required: false
+//   description: comma-separated list of search pairs like "field:text". Presently, only meta-field 'name' is supported
 // responses:
 //   '200':
 //     description: all policies
@@ -42,7 +52,9 @@ func policiesList(c buffalo.Context) error {
 func policiesListAdmin(c buffalo.Context) error {
 	tx := models.Tx(c)
 	var policies models.Policies
-	if err := policies.All(tx); err != nil {
+
+	q := api.NewQuery(c.Params())
+	if err := policies.Query(tx, q); err != nil {
 		return reportError(c, err)
 	}
 
