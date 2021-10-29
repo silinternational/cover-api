@@ -28,7 +28,7 @@ func NewQuery(values buffalo.ParamValues) Query {
 	if search := values.Get("search"); search != "" {
 		pairs := strings.Split(search, ",")
 		for _, p := range pairs {
-			split := strings.Split(p, ":")
+			split := strings.SplitN(p, ":", 2)
 			if len(split) == 2 {
 				q.Search[split[0]] = split[1]
 			}
