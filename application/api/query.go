@@ -9,21 +9,36 @@ import (
 
 // Query contains criteria to limit the results of List endpoints
 type Query struct {
-	// Search is a map of field name to search text. Field name may be "meta" keys to search across
+	// searchKeys is a map of field name to search text. Field name may be "meta" keys to search across
 	// multiple fields, e.g. "Name" searches "FirstName" and "LastName".
-	Search map[string]string
+	searchKeys map[string]string
 
-	// Limit sets the number of records returned in a single page. Minimum is 1, maximum is 50
-	Limit int
+	// recordLimit sets the number of records returned in a single page. Minimum is 1, maximum is 50
+	recordLimit int
+}
+
+func (q Query) Limit() int {
+	l := q.recordLimit
+	if l < 1 {
+		l = 1
+	}
+	if l > 50 {
+		l = 50
+	}
+	return q.recordLimit
+}
+
+func (q Query) Search(key string) string {
+	return q.searchKeys[key]
 }
 
 // NewQuery parses query string parameter values into valid query criteria.
 //
 // Example:
-//   "search=name:John,description:MacBook" becomes Query{Search:
+//   "search=name:John,description:MacBook" becomes Query{searchKeys:
 //   map[string]string{"name":"John","description":"MacBook"}}
 func NewQuery(values buffalo.ParamValues) Query {
-	q := Query{Limit: 10, Search: map[string]string{}}
+	q := Query{recordLimit: 10, searchKeys: map[string]string{}}
 
 	if search := values.Get("search"); search != "" {
 
@@ -31,15 +46,15 @@ func NewQuery(values buffalo.ParamValues) Query {
 		for _, p := range pairs {
 			split := strings.SplitN(p, ":", 2)
 			if len(split) == 2 {
-				q.Search[strings.TrimSpace(split[0])] = strings.TrimSpace(split[1])
+				q.searchKeys[strings.TrimSpace(split[0])] = strings.TrimSpace(split[1])
 			}
 		}
 	}
 
 	if limit := values.Get("limit"); limit != "" {
 		i, err := strconv.Atoi(strings.TrimSpace(limit))
-		if err == nil && i > 0 && i <= 50 {
-			q.Limit = i
+		if err == nil {
+			q.recordLimit = i
 		}
 	}
 

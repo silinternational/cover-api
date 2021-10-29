@@ -1,8 +1,10 @@
 package models
 
 import (
+	"net/url"
 	"testing"
 
+	"github.com/gobuffalo/buffalo"
 	"github.com/gobuffalo/nulls"
 	"github.com/gobuffalo/pop/v5"
 
@@ -559,54 +561,38 @@ func (ms *ModelSuite) TestPolicies_Query() {
 
 	tests := []struct {
 		name                 string
-		query                api.Query
+		query                string
 		wantNumberOfPolicies int
 	}{
 		{
-			name: "none found",
-			query: api.Query{
-				Search: map[string]string{
-					"name": "not gonna find this one",
-				},
-				Limit: 10,
-			},
+			name:                 "none found",
+			query:                "search=name:not gonna find this one",
 			wantNumberOfPolicies: 0,
 		},
 		{
-			name: "first name",
-			query: api.Query{
-				Search: map[string]string{
-					"name": "Matthew",
-				},
-				Limit: 10,
-			},
+			name:                 "first name",
+			query:                "search=name:matthew",
 			wantNumberOfPolicies: 1,
 		},
 		{
-			name: "last name",
-			query: api.Query{
-				Search: map[string]string{
-					"name": "Smith",
-				},
-				Limit: 10,
-			},
+			name:                 "last name",
+			query:                "search=name:smith",
 			wantNumberOfPolicies: 1,
 		},
 		{
-			name: "limit",
-			query: api.Query{
-				Search: map[string]string{
-					"name": "John",
-				},
-				Limit: 2,
-			},
+			name:                 "limit",
+			query:                "search=name:john&limit=2",
 			wantNumberOfPolicies: 2,
 		},
 	}
 	for _, tt := range tests {
 		ms.T().Run(tt.name, func(t *testing.T) {
 			var policies Policies
-			err := policies.Query(ms.DB, tt.query)
+
+			values, _ := url.ParseQuery(tt.query)
+			query := api.NewQuery(buffalo.ParamValues(values))
+
+			err := policies.Query(ms.DB, query)
 			ms.NoError(err)
 			ms.Equal(tt.wantNumberOfPolicies, len(policies), "got wrong number of policies")
 		})

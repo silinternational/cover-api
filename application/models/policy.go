@@ -264,15 +264,12 @@ func (p *Policies) All(tx *pop.Connection) error {
 func (p *Policies) Query(tx *pop.Connection, query api.Query) error {
 	q := tx.Order("updated_at DESC")
 
-	if query.Limit > 0 {
-		q = q.Limit(query.Limit)
+	if query.Limit() > 0 {
+		q = q.Limit(query.Limit())
 	}
 
-	for k, v := range query.Search {
-		switch k {
-		case "name":
-			q = p.SearchByName(q, v)
-		}
+	if v := query.Search("name"); v != "" {
+		q = p.SearchByName(q, v)
 	}
 
 	return appErrorFromDB(q.All(p), api.ErrorQueryFailure)
