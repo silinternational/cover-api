@@ -184,6 +184,10 @@ func importCustomers() {
 		n := importIdpUsersFromFile(filename, IDPStaffIDColumn, IDPPersonalEmailColumn, true)
 		fmt.Printf("  %s IDP users: %d\n", idp, n)
 	}
+
+	fmt.Println("\nImporting other user table")
+	n := importIdpUsersFromFile("./other_users.csv", 0, 1, false)
+	fmt.Printf("  other users: %d\n", n)
 }
 
 func importIdpUsersFromFile(filename string, idColumn, emailColumn int, personal bool) int {
