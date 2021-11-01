@@ -315,6 +315,9 @@ func importItemCategories(tx *pop.Connection, in []LegacyItemCategory) {
 			LegacyID:       nulls.NewInt(categoryID),
 			CreatedAt:      time.Time(category.CreatedAt),
 		}
+		if category.RiskCategoryId == 2 {
+			newItemCategory.RequireMakeModel = true
+		}
 
 		if err := newItemCategory.Create(tx); err != nil {
 			log.Fatalf("failed to create item category, %s\n%+v", err, newItemCategory)
