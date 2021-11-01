@@ -130,6 +130,7 @@ func policiesCreateCorporate(c buffalo.Context) error {
 	}
 
 	policy := models.Policy{
+		Name:          input.Name,
 		CostCenter:    input.CostCenter,
 		Account:       input.Account,
 		AccountDetail: input.AccountDetail,
