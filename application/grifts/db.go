@@ -216,6 +216,7 @@ func createPolicyFixtures(tx *pop.Connection, fixUsers []*models.User, entityCod
 			Type: api.PolicyTypeHousehold,
 		}
 		if i < len(entityCodes) {
+			fixPolicies[i].Name = fmt.Sprintf("Policy %d", i)
 			fixPolicies[i].EntityCodeID = nulls.NewUUID(entityCodes[i].ID)
 			fixPolicies[i].Account = domain.RandomString(6, "0123456789")
 			fixPolicies[i].AccountDetail = domain.RandomString(10, "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ")

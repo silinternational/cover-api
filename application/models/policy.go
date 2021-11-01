@@ -25,6 +25,7 @@ var ValidPolicyTypes = map[api.PolicyType]struct{}{
 
 type Policy struct {
 	ID            uuid.UUID      `db:"id"`
+	Name          string         `db:"name"`
 	Type          api.PolicyType `db:"type" validate:"policyType"`
 	HouseholdID   nulls.String   `db:"household_id"` // validation is checked at the struct level
 	CostCenter    string         `db:"cost_center" validate:"required_if=Type Corporate"`
@@ -227,6 +228,7 @@ func (p *Policy) ConvertToAPI(tx *pop.Connection, hydrate bool) api.Policy {
 
 	apiPolicy := api.Policy{
 		ID:            p.ID,
+		Name:          p.Name,
 		Type:          p.Type,
 		HouseholdID:   p.HouseholdID.String,
 		CostCenter:    p.CostCenter,
@@ -322,6 +324,14 @@ func (p *Policy) AddClaim(tx *pop.Connection, input api.ClaimCreateInput) (Claim
 // Compare returns a list of fields that are different between two objects
 func (p *Policy) Compare(old Policy) []FieldUpdate {
 	var updates []FieldUpdate
+
+	if p.Name != old.Name {
+		updates = append(updates, FieldUpdate{
+			OldValue:  old.Name,
+			NewValue:  p.Name,
+			FieldName: "Name",
+		})
+	}
 
 	if p.EntityCodeID != old.EntityCodeID {
 		updates = append(updates, FieldUpdate{

@@ -195,6 +195,8 @@ func policiesUpdate(c buffalo.Context) error {
 		policy.EntityCodeID = nulls.NewUUID(entityCode.ID)
 	}
 
+	policy.Name = update.Name
+
 	if err := policy.Update(c); err != nil {
 		return reportError(c, err)
 	}

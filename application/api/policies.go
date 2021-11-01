@@ -30,6 +30,9 @@ type Policy struct {
 	// swagger:strfmt uuid4
 	ID uuid.UUID `json:"id"`
 
+	// policy name
+	Name string `json:"name"`
+
 	// policy type
 	Type PolicyType `json:"type"`
 
@@ -71,6 +74,9 @@ type Policy struct {
 // PolicyCreate represents payload for creating a policy
 // swagger:model
 type PolicyCreate struct {
+	// policy name
+	Name string `json:"name"`
+
 	// Policy type. Only needed for steward endpoints. For customers, this will be set by the api.
 	Type string `json:"type"`
 
@@ -93,6 +99,9 @@ type PolicyCreate struct {
 // PolicyUpdate represents payload for updating a policy
 // swagger:model
 type PolicyUpdate struct {
+	// policy name
+	Name string `json:"name"`
+
 	// Household ID for billing. Only required/allowed on Household type policies.
 	HouseholdID nulls.String `json:"household_id,omitempty"`
 

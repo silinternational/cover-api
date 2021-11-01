@@ -336,6 +336,11 @@ func (ms *ModelSuite) TestPolicy_Compare() {
 			old:  oldPolicy,
 			want: []FieldUpdate{
 				{
+					FieldName: "Name",
+					OldValue:  oldPolicy.Name,
+					NewValue:  newPolicy.Name,
+				},
+				{
 					FieldName: "Type",
 					OldValue:  string(oldPolicy.Type),
 					NewValue:  string(newPolicy.Type),
@@ -522,6 +527,7 @@ func (ms *ModelSuite) TestPolicy_ConvertToAPI() {
 	got := policy.ConvertToAPI(ms.DB, false)
 
 	ms.Equal(policy.ID, got.ID, "ID is not correct")
+	ms.Equal(policy.Name, got.Name, "Name is not correct")
 	ms.Equal(policy.Type, got.Type, "Type is not correct")
 	ms.Equal(policy.HouseholdID.String, got.HouseholdID, "HouseholdID is not correct")
 	ms.Equal(policy.CostCenter, got.CostCenter, "CostCenter is not correct")

@@ -352,6 +352,7 @@ func CreatePolicyFixtures(tx *pop.Connection, config FixturesConfig) Fixtures {
 
 	policies := make(Policies, config.NumberOfPolicies)
 	for i := range policies {
+		policies[i].Name = randStr(20)
 		policies[i].Type = api.PolicyTypeHousehold
 		policies[i].HouseholdID = nulls.NewString(randStr(10))
 		policies[i].Notes = randStr(20)
