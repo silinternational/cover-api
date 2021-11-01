@@ -93,8 +93,7 @@ type Claim struct {
 
 	// reference number
 	//
-	// human friendly seven character string
-	// example: AB43312
+	// human friendly seven character string, e.g.: AB43312
 	ReferenceNumber string `json:"reference_number"`
 
 	// incident date
