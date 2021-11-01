@@ -368,10 +368,7 @@ func importPolicies(tx *pop.Connection, policies []LegacyPolicy) {
 	householdsWithMultiplePolicies := map[string]struct{}{}
 
 	for i := range policies {
-		if err := normalizePolicy(&policies[i]); err != nil {
-			log.Println(err)
-			continue
-		}
+		normalizePolicy(&policies[i])
 		p := policies[i]
 		p.HouseholdId = trim(p.HouseholdId)
 		p.Notes = trim(p.Notes)
@@ -394,6 +391,7 @@ func importPolicies(tx *pop.Connection, policies []LegacyPolicy) {
 			}
 
 			newPolicy := models.Policy{
+				Name:          fmt.Sprintf("Policy %d", policyID),
 				Type:          getPolicyType(p),
 				HouseholdID:   householdID,
 				CostCenter:    trim(p.CostCenter),
@@ -534,7 +532,7 @@ func getPolicyType(p LegacyPolicy) api.PolicyType {
 }
 
 // normalizePolicy adjusts policy fields to pass validation checks
-func normalizePolicy(p *LegacyPolicy) error {
+func normalizePolicy(p *LegacyPolicy) {
 	if p.Type == "household" {
 		p.CostCenter = ""
 		p.EntityCode = nulls.String{}
@@ -557,8 +555,6 @@ func normalizePolicy(p *LegacyPolicy) error {
 			log.Printf("Policy[%s] CostCenter is empty, using %s", p.Id, defaultID)
 		}
 	}
-
-	return nil
 }
 
 type importPolicyUsersResult struct {

@@ -130,6 +130,7 @@ func policiesCreateCorporate(c buffalo.Context) error {
 	}
 
 	policy := models.Policy{
+		Name:          input.Name,
 		CostCenter:    input.CostCenter,
 		Account:       input.Account,
 		AccountDetail: input.AccountDetail,
@@ -194,6 +195,8 @@ func policiesUpdate(c buffalo.Context) error {
 		policy.AccountDetail = update.AccountDetail
 		policy.EntityCodeID = nulls.NewUUID(entityCode.ID)
 	}
+
+	policy.Name = update.Name
 
 	if err := policy.Update(c); err != nil {
 		return reportError(c, err)
