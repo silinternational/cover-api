@@ -28,7 +28,7 @@ import (
 // - name: search
 //   in: query
 //   required: false
-//   description: search text to find across fields: name, household_id, cost_center, and all dependents' first and last names
+//   description: search text to find across fields (name, household_id, cost_center, and all dependents' first and last names)
 // - name: filter
 //   in: query
 //   required: false
