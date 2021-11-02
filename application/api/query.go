@@ -9,8 +9,7 @@ import (
 
 // Query contains criteria to limit the results of List endpoints
 type Query struct {
-	// filterKeys is a map of field name to filter text. Field name may be "meta" keys to filter across
-	// multiple fields, e.g. "Name" matches "FirstName" and "LastName".
+	// filterKeys is a map of field name to filter text.
 	filterKeys map[string]string
 
 	// searchText is text to search across multiple fields
