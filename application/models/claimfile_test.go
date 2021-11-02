@@ -111,17 +111,19 @@ func (ms *ModelSuite) TestClaimFile_ConvertToAPI() {
 		ID:        id,
 		ClaimID:   claimID,
 		FileID:    fileID,
+		Purpose:   api.ClaimFilePurpose(randStr(10)),
 		CreatedAt: createdAt,
 		UpdatedAt: now,
 	}
 
 	got := c.ConvertToAPI(ms.DB)
 
-	ms.Equal(id, got.ID)
-	ms.Equal(claimID, got.ClaimID)
-	ms.Equal(fileID, got.FileID)
-	ms.Equal(createdAt, got.CreatedAt)
-	ms.Equal(now, got.UpdatedAt)
+	ms.Equal(id, got.ID, "ID is incorrect")
+	ms.Equal(claimID, got.ClaimID, "Claim ID is incorrect")
+	ms.Equal(fileID, got.FileID, "File ID is incorrect")
+	ms.Equal(c.Purpose, got.Purpose, "Purpose is incorrect")
+	ms.Equal(createdAt, got.CreatedAt, "CreatedAt is incorrect")
+	ms.Equal(now, got.UpdatedAt, "UpdatedAt is incorrect")
 
 	// At least make sure the URL expiration is set. The File.ConvertToAPI test should cover the rest.
 	ms.WithinDuration(now.Add(time.Minute*10), got.File.URLExpiration, time.Minute*2)
