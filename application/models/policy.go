@@ -271,18 +271,36 @@ func (p *Policies) Query(tx *pop.Connection, query api.Query) error {
 	}
 
 	if v := query.Search("name"); v != "" {
-		q.Scope(scopeSearchPolicyByName(v))
+		q.Scope(scopeSearchPoliciesByName(v))
+	}
+
+	if v := query.Search("active"); v != "" {
+		q.Scope(scopeSearchPoliciesByActive(v))
 	}
 
 	return appErrorFromDB(q.All(p), api.ErrorQueryFailure)
 }
 
-func scopeSearchPolicyByName(name string) pop.ScopeFunc {
+func scopeSearchPoliciesByName(name string) pop.ScopeFunc {
 	name = "%" + name + "%"
 	return func(q *pop.Query) *pop.Query {
 		return q.Join("policy_users", "policies.id = policy_users.policy_id").
 			Join("users", "users.id = policy_users.user_id").
 			Where(`users.first_name ILIKE ? OR users.last_name ILIKE ?`, name, name)
+	}
+}
+
+func scopeSearchPoliciesByActive(active string) pop.ScopeFunc {
+	return func(q *pop.Query) *pop.Query {
+		if active == "true" {
+			return q.Where("policies.id IN (SELECT policies.id FROM policies,items " +
+				"WHERE policies.id=items.policy_id AND items.coverage_status='Approved')")
+		}
+		if active == "false" {
+			return q.Where("policies.id NOT IN (SELECT policies.id FROM policies,items " +
+				"WHERE policies.id=items.policy_id AND items.coverage_status='Approved')")
+		}
+		return q
 	}
 }
 
