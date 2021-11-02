@@ -61,9 +61,9 @@ func (as *ActionSuite) Test_PoliciesList() {
 			notWantInBody: "",
 		},
 		{
-			name:        "admin with filter",
+			name:        "admin with search",
 			actor:       appAdmin,
-			queryString: "?limit=1&search=name:john",
+			queryString: "?limit=1&search=john",
 			wantCount:   1,
 			wantStatus:  http.StatusOK,
 		},

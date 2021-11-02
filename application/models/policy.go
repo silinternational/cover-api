@@ -270,27 +270,29 @@ func (p *Policies) Query(tx *pop.Connection, query api.Query) error {
 		q.Limit(query.Limit())
 	}
 
-	if v := query.Search("name"); v != "" {
-		q.Scope(scopeSearchPoliciesByName(v))
+	if v := query.Search(); v != "" {
+		q.Scope(scopeSearchPolicies(v))
 	}
 
-	if v := query.Search("active"); v != "" {
-		q.Scope(scopeSearchPoliciesByActive(v))
+	if v := query.Filter("active"); v != "" {
+		q.Scope(scopeFilterPoliciesByActive(v))
 	}
 
 	return appErrorFromDB(q.All(p), api.ErrorQueryFailure)
 }
 
-func scopeSearchPoliciesByName(name string) pop.ScopeFunc {
-	name = "%" + name + "%"
+func scopeSearchPolicies(searchText string) pop.ScopeFunc {
+	searchText = "%" + searchText + "%"
 	return func(q *pop.Query) *pop.Query {
 		return q.Join("policy_users", "policies.id = policy_users.policy_id").
 			Join("users", "users.id = policy_users.user_id").
-			Where(`users.first_name ILIKE ? OR users.last_name ILIKE ?`, name, name)
+			Where("users.first_name ILIKE ? OR users.last_name ILIKE ?"+
+				" OR policies.cost_center ILIKE ? OR policies.household_id ILIKE ?"+
+				" OR policies.name ILIKE ?", searchText, searchText, searchText, searchText, searchText)
 	}
 }
 
-func scopeSearchPoliciesByActive(active string) pop.ScopeFunc {
+func scopeFilterPoliciesByActive(active string) pop.ScopeFunc {
 	return func(q *pop.Query) *pop.Query {
 		if active == "true" {
 			return q.Where("policies.id IN (SELECT policies.id FROM policies,items " +

@@ -554,6 +554,8 @@ func (ms *ModelSuite) TestPolicy_ConvertToAPI() {
 func (ms *ModelSuite) TestPolicies_Query() {
 	f := CreateItemFixtures(ms.DB, FixturesConfig{NumberOfPolicies: 4})
 
+	corpPolicy := ConvertPolicyType(ms.DB, f.Policies[0])
+
 	f.Users[0].FirstName = "Matthew"
 	ms.NoError(ms.DB.Update(&f.Users[0]))
 	f.Users[1].LastName = "Smith"
@@ -572,42 +574,57 @@ func (ms *ModelSuite) TestPolicies_Query() {
 	}{
 		{
 			name:                 "none found",
-			query:                "search=name:not gonna find this one",
+			query:                "search=not gonna find this one",
 			wantNumberOfPolicies: 0,
 		},
 		{
 			name:                 "first name",
-			query:                "search=name:matthew",
+			query:                "search=matthew",
 			wantNumberOfPolicies: 1,
 		},
 		{
 			name:                 "last name",
-			query:                "search=name:smith",
+			query:                "search=smith",
 			wantNumberOfPolicies: 1,
 		},
 		{
 			name:                 "partial",
-			query:                "search=name:matt",
+			query:                "search=matt",
+			wantNumberOfPolicies: 1,
+		},
+		{
+			name:                 "policy name",
+			query:                "search=" + corpPolicy.Name,
+			wantNumberOfPolicies: 1,
+		},
+		{
+			name:                 "cost center",
+			query:                "search=" + corpPolicy.CostCenter,
+			wantNumberOfPolicies: 1,
+		},
+		{
+			name:                 "household ID",
+			query:                "search=" + f.Policies[1].HouseholdID.String,
 			wantNumberOfPolicies: 1,
 		},
 		{
 			name:                 "limit 2",
-			query:                "search=name:john&limit=2",
+			query:                "search=john&limit=2",
 			wantNumberOfPolicies: 2,
 		},
 		{
 			name:                 "limit 1",
-			query:                "search=name:john&limit=1",
+			query:                "search=john&limit=1",
 			wantNumberOfPolicies: 1,
 		},
 		{
 			name:                 "only active",
-			query:                "search=active:true",
+			query:                "filter=active:true",
 			wantNumberOfPolicies: 0,
 		},
 		{
 			name:                 "only inactive",
-			query:                "search=active:false",
+			query:                "filter=active:false",
 			wantNumberOfPolicies: 4,
 		},
 	}
