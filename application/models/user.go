@@ -22,16 +22,16 @@ type UserAppRole string
 
 const (
 	AppRoleAdmin    = UserAppRole("Admin")
-	AppRoleSteward  = UserAppRole("Steward")
+	AppRoleCustomer = UserAppRole("Customer")
 	AppRoleSignator = UserAppRole("Signator")
-	AppRoleUser     = UserAppRole("User")
+	AppRoleSteward  = UserAppRole("Steward")
 )
 
 var validUserAppRoles = map[UserAppRole]struct{}{
 	AppRoleAdmin:    {},
-	AppRoleSteward:  {},
+	AppRoleCustomer: {},
 	AppRoleSignator: {},
-	AppRoleUser:     {},
+	AppRoleSteward:  {},
 }
 
 // Users is a slice of User objects
@@ -71,7 +71,7 @@ func (u *User) Validate(tx *pop.Connection) (*validate.Errors, error) {
 // Create stores the User data as a new record in the database.
 func (u *User) Create(tx *pop.Connection) error {
 	if u.AppRole == "" {
-		u.AppRole = AppRoleUser
+		u.AppRole = AppRoleCustomer
 	}
 	return create(tx, u)
 }
@@ -79,7 +79,7 @@ func (u *User) Create(tx *pop.Connection) error {
 // Update writes the User data to an existing database record.
 func (u *User) Update(tx *pop.Connection) error {
 	if u.AppRole == "" {
-		u.AppRole = AppRoleUser
+		u.AppRole = AppRoleCustomer
 	}
 	return update(tx, u)
 }
@@ -141,7 +141,7 @@ func (u *User) FindOrCreateFromAuthUser(tx *pop.Connection, authUser *auth.User)
 	}
 
 	if u.AppRole == "" {
-		u.AppRole = AppRoleUser
+		u.AppRole = AppRoleCustomer
 	}
 
 	// update attributes from authUser

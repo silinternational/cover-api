@@ -18,14 +18,14 @@ func (ms *ModelSuite) TestUser_Validate() {
 			name: "minimum",
 			user: User{
 				Email:   "user@example.com",
-				AppRole: AppRoleUser,
+				AppRole: AppRoleCustomer,
 			},
 			wantErr: false,
 		},
 		{
 			name: "missing email",
 			user: User{
-				AppRole: AppRoleUser,
+				AppRole: AppRoleCustomer,
 			},
 			wantErr:  true,
 			errField: "User.Email",

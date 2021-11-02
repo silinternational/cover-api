@@ -635,7 +635,7 @@ func createUserFromEmailAddress(tx *pop.Connection, email, firstName, lastName s
 		FirstName:    trim(firstName),
 		LastName:     trim(lastName),
 		StaffID:      staffID,
-		AppRole:      models.AppRoleUser,
+		AppRole:      models.AppRoleCustomer,
 		LastLoginUTC: emptyTime,
 	}
 	if err := user.Create(tx); err != nil {
