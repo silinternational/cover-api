@@ -605,6 +605,11 @@ func (ms *ModelSuite) TestPolicies_Query() {
 			query:                "search=active:true",
 			wantNumberOfPolicies: 0,
 		},
+		{
+			name:                 "only inactive",
+			query:                "search=active:false",
+			wantNumberOfPolicies: 4,
+		},
 	}
 	for _, tt := range tests {
 		ms.T().Run(tt.name, func(t *testing.T) {

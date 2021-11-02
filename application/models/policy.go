@@ -297,9 +297,8 @@ func scopeSearchPoliciesByActive(active string) pop.ScopeFunc {
 				"WHERE policies.id=items.policy_id AND items.coverage_status='Approved')")
 		}
 		if active == "false" {
-			return q.Where("policies.id IN (SELECT policies.id FROM policies LEFT JOIN items " +
-				"ON policies.id=items.policy_id " +
-				"WHERE items.coverage_status!='Approved' AND items.id IS NULL)")
+			return q.Where("policies.id NOT IN (SELECT policies.id FROM policies,items " +
+				"WHERE policies.id=items.policy_id AND items.coverage_status='Approved')")
 		}
 		return q
 	}
