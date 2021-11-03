@@ -1,6 +1,7 @@
 package models
 
 import (
+	"fmt"
 	"net/http"
 	"strings"
 	"time"
@@ -53,6 +54,29 @@ func (p *PolicyDependent) Create(tx *pop.Connection) error {
 
 func (p *PolicyDependent) Update(tx *pop.Connection) error {
 	return update(tx, p)
+}
+
+func (p *PolicyDependent) Destroy(tx *pop.Connection) error {
+	return destroy(tx, p)
+}
+
+// RelatedItemNames returns a slice of the names of Items that are related to this dependent
+func (p *PolicyDependent) RelatedItemNames(tx *pop.Connection) []string {
+	names := []string{}
+	for _, item := range p.RelatedItems(tx) {
+		names = append(names, item.Name)
+	}
+	return names
+}
+
+// RelatedItems returns a slice of the Items that are related to this dependent
+func (p *PolicyDependent) RelatedItems(tx *pop.Connection) Items {
+	var items Items
+	if err := tx.Where("policy_dependent_id = ?", p.ID).All(&items); err != nil {
+		panic(fmt.Sprintf("error counting items with policy_dependent_id %s, %s", p.ID, err))
+	}
+
+	return items
 }
 
 // IsActorAllowedTo ensure the actor is either an admin, or a member of this policy to perform any permission

@@ -1,7 +1,9 @@
 package actions
 
 import (
+	"errors"
 	"net/http"
+	"strings"
 
 	"github.com/gobuffalo/buffalo"
 
@@ -122,6 +124,42 @@ func dependentsUpdate(c buffalo.Context) error {
 
 	output := dependent.ConvertToAPI()
 	return c.Render(http.StatusOK, r.JSON(output))
+}
+
+// swagger:operation DELETE /policy-dependents/{id} PolicyDependents PolicyDependentsDelete
+//
+// PolicyDependentsDelete
+//
+// Delete a policy dependent if it has no related policy items.
+//
+// ---
+// parameters:
+//   - name: id
+//     in: path
+//     required: true
+//     description: policy dependent ID
+// responses:
+//   '204':
+//     description: OK but no content in response
+func dependentsDelete(c buffalo.Context) error {
+	tx := models.Tx(c)
+	dependent := getReferencedDependentFromCtx(c)
+
+	relatedItemNames := dependent.RelatedItemNames(tx)
+	if len(relatedItemNames) > 0 {
+		err := errors.New("unable to delete policy dependent, since it is named on these items: " +
+			strings.Join(relatedItemNames, "; "))
+
+		appErr := api.NewAppError(err, api.ErrorPolicyDependentDelete, api.CategoryForbidden)
+		appErr.HttpStatus = http.StatusConflict
+		return reportError(c, appErr)
+	}
+
+	dependent.Destroy(tx)
+	if err := dependent.Destroy(tx); err != nil {
+		return reportError(c, err)
+	}
+	return c.Render(http.StatusNoContent, nil)
 }
 
 // getReferencedDependentFromCtx pulls the models.Item resource from context that was put there

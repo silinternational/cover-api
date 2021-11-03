@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/gobuffalo/nulls"
+
 	"github.com/silinternational/cover-api/api"
 	"github.com/silinternational/cover-api/domain"
 	"github.com/silinternational/cover-api/models"
@@ -321,6 +323,86 @@ func (as *ActionSuite) Test_DependentsUpdate() {
 			as.Equal(tt.input.Relationship, dependent.Relationship, "incorrect Relationship")
 			as.Equal(tt.input.Country, dependent.Country, "incorrect Country")
 			as.Equal(tt.input.ChildBirthYear, dependent.ChildBirthYear, "incorrect ChildBirthYear")
+		})
+	}
+}
+
+func (as *ActionSuite) Test_DependentsDelete() {
+	db := as.DB
+
+	fixtures := models.CreateItemFixtures(db, models.FixturesConfig{NumberOfPolicies: 2})
+	policies := fixtures.Policies
+	item := policies[0].Items[0]
+
+	depFixtures := models.CreatePolicyDependentFixtures(db, policies[0], 2)
+	deletableDep := depFixtures.PolicyDependents[0]
+	lockedDep := depFixtures.PolicyDependents[1]
+
+	item.PolicyDependentID = nulls.NewUUID(lockedDep.ID)
+	as.NoError(db.Update(&item), "failed updating item fixture")
+
+	// alias a couple users
+	goodActor := policies[0].Members[0]
+	wrongActor := policies[1].Members[0]
+
+	tests := []struct {
+		name       string
+		actor      models.User
+		oldDep     models.PolicyDependent
+		wantStatus int
+		wantInBody []string
+	}{
+		{
+			name:       "unauthenticated",
+			actor:      models.User{},
+			oldDep:     deletableDep,
+			wantStatus: http.StatusUnauthorized,
+			wantInBody: []string{
+				api.ErrorNotAuthorized.String(),
+				"no bearer token provided",
+			},
+		},
+		{
+			name:       "unauthorized",
+			actor:      wrongActor,
+			oldDep:     deletableDep,
+			wantStatus: http.StatusNotFound,
+			wantInBody: []string{"actor not allowed to perform that action on this resource"},
+		},
+		{
+			name:       "dependency can't be deleted",
+			actor:      goodActor,
+			oldDep:     lockedDep,
+			wantStatus: http.StatusConflict,
+			wantInBody: []string{string(api.ErrorPolicyDependentDelete), item.Name},
+		},
+		{
+			name:       "deletable dependency",
+			actor:      goodActor,
+			oldDep:     deletableDep,
+			wantStatus: http.StatusNoContent,
+		},
+	}
+
+	for _, tt := range tests {
+		as.T().Run(tt.name, func(t *testing.T) {
+			req := as.JSON("/%s/%s", domain.TypePolicyDependent, tt.oldDep.ID)
+			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
+			req.Headers["content-type"] = "application/json"
+			res := req.Delete()
+
+			body := res.Body.String()
+			as.Equal(tt.wantStatus, res.Code, "incorrect status code returned, body: %s", body)
+
+			if res.Code != http.StatusNoContent {
+				as.verifyResponseData(tt.wantInBody, body, "")
+				return
+			}
+
+			var dependent models.PolicyDependent
+			err := as.DB.Find(&dependent, tt.oldDep.ID)
+			as.Error(err, "expected a no rows error")
+			as.False(domain.IsOtherThanNoRows(err), "expected a no rows error")
 		})
 	}
 }

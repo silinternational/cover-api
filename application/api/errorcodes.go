@@ -80,6 +80,7 @@ const (
 
 	// PolicyDependent
 	ErrorPolicyDependentCreate = ErrorKey("ErrorPolicyDependentCreate")
+	ErrorPolicyDependentDelete = ErrorKey("ErrorPolicyDependentDelete")
 
 	// ClaimItem
 	ErrorClaimItemCreateInvalidInput     = ErrorKey("ErrorClaimItemCreateInvalidInput")
