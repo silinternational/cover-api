@@ -284,11 +284,11 @@ func (p *Policies) Query(tx *pop.Connection, query api.Query) error {
 func scopeSearchPolicies(searchText string) pop.ScopeFunc {
 	searchText = "%" + searchText + "%"
 	return func(q *pop.Query) *pop.Query {
-		return q.Join("policy_users", "policies.id = policy_users.policy_id").
-			Join("users", "users.id = policy_users.user_id").
-			Where("users.first_name ILIKE ? OR users.last_name ILIKE ?"+
-				" OR policies.cost_center ILIKE ? OR policies.household_id ILIKE ?"+
-				" OR policies.name ILIKE ?", searchText, searchText, searchText, searchText, searchText)
+		return q.Where("policies.id IN (SELECT policies.id FROM policies,policy_users,users"+
+			" WHERE policies.id=policy_users.policy_id AND users.id = policy_users.user_id"+
+			" AND (users.first_name ILIKE ? OR users.last_name ILIKE ?"+
+			" OR policies.cost_center ILIKE ? OR policies.household_id ILIKE ?"+
+			" OR policies.name ILIKE ?))", searchText, searchText, searchText, searchText, searchText)
 	}
 }
 

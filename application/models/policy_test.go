@@ -552,18 +552,23 @@ func (ms *ModelSuite) TestPolicy_ConvertToAPI() {
 }
 
 func (ms *ModelSuite) TestPolicies_Query() {
-	f := CreateItemFixtures(ms.DB, FixturesConfig{NumberOfPolicies: 4})
+	f := CreateItemFixtures(ms.DB, FixturesConfig{NumberOfPolicies: 4, ItemsPerPolicy: 2, UsersPerPolicy: 2})
 
 	corpPolicy := ConvertPolicyType(ms.DB, f.Policies[0])
 
-	f.Users[0].FirstName = "Matthew"
-	ms.NoError(ms.DB.Update(&f.Users[0]))
-	f.Users[1].LastName = "Smith"
-	ms.NoError(ms.DB.Update(&f.Users[1]))
-	f.Users[2].FirstName = "John"
-	ms.NoError(ms.DB.Update(&f.Users[2]))
-	f.Users[3].FirstName = "John"
-	ms.NoError(ms.DB.Update(&f.Users[3]))
+	f.Policies[0].Members[0].FirstName = "Matthew"
+	ms.NoError(ms.DB.Update(&f.Policies[0].Members[0]))
+
+	f.Policies[1].Members[0].LastName = "Smith"
+	ms.NoError(ms.DB.Update(&f.Policies[1].Members[0]))
+	f.Policies[1].Members[1].LastName = "Smith"
+	ms.NoError(ms.DB.Update(&f.Policies[1].Members[1]))
+
+	f.Policies[2].Members[0].FirstName = "John"
+	ms.NoError(ms.DB.Update(&f.Policies[2].Members[0]))
+
+	f.Policies[3].Members[0].FirstName = "John"
+	ms.NoError(ms.DB.Update(&f.Policies[3].Members[0]))
 
 	pop.Debug = true // Show Pop debug messages
 
