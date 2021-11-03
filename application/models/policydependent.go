@@ -51,6 +51,10 @@ func (p *PolicyDependent) Create(tx *pop.Connection) error {
 	return create(tx, p)
 }
 
+func (p *PolicyDependent) Update(tx *pop.Connection) error {
+	return update(tx, p)
+}
+
 // IsActorAllowedTo ensure the actor is either an admin, or a member of this policy to perform any permission
 func (p *PolicyDependent) IsActorAllowedTo(tx *pop.Connection, actor User, perm Permission, sub SubResource, r *http.Request) bool {
 	if actor.IsAdmin() {

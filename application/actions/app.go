@@ -51,13 +51,14 @@ import (
 const idRegex = `/{id:[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-4[a-fA-F0-9]{3}-[8|9|aA|bB][a-fA-F0-9]{3}-[a-fA-F0-9]{12}}`
 
 const (
-	stewardPath    = "/steward"
-	batchesPath    = "/batches"
-	claimsPath     = "/" + domain.TypeClaim
-	claimItemsPath = "/" + domain.TypeClaimItem
-	filesPath      = "/" + domain.TypeFile
-	itemsPath      = "/" + domain.TypeItem
-	policiesPath   = "/" + domain.TypePolicy
+	stewardPath         = "/steward"
+	batchesPath         = "/batches"
+	claimsPath          = "/" + domain.TypeClaim
+	claimItemsPath      = "/" + domain.TypeClaimItem
+	filesPath           = "/" + domain.TypeFile
+	itemsPath           = "/" + domain.TypeItem
+	policiesPath        = "/" + domain.TypePolicy
+	policyDependentPath = "/" + domain.TypePolicyDependent
 )
 
 // ENV is used to help switch settings based on where the
@@ -176,6 +177,11 @@ func App() *buffalo.App {
 		configGroup.GET("/claim-incident-types", claimIncidentTypes)
 		configGroup.GET("/item-categories", itemCategoriesList)
 		configGroup.GET("/entity-codes", entityCodesList)
+
+		// dependent
+		depsGroup := app.Group(policyDependentPath)
+		depsGroup.PUT(idRegex, dependentsUpdate)
+		//depsGroup.DELETE(idRegex, dependentsDelete)
 
 		// item
 		itemsGroup := app.Group(itemsPath)
