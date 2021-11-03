@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/silinternational/cover-api/api"
+	"github.com/silinternational/cover-api/domain"
 	"github.com/silinternational/cover-api/models"
 )
 
@@ -213,6 +214,113 @@ func (as *ActionSuite) Test_DependentsCreate() {
 			err := json.Unmarshal([]byte(body), &dependents)
 			as.NoError(err)
 			as.Equal(tt.wantCount, len(dependents))
+		})
+	}
+}
+
+func (as *ActionSuite) Test_DependentsUpdate() {
+	db := as.DB
+	config := models.FixturesConfig{
+		NumberOfPolicies:    2,
+		UsersPerPolicy:      1,
+		DependentsPerPolicy: 2,
+	}
+
+	fixtures := models.CreatePolicyFixtures(db, config)
+
+	// alias a couple users
+	goodActor := fixtures.Policies[0].Members[0]
+	wrongActor := fixtures.Policies[1].Members[0]
+
+	dependent := fixtures.Policies[0].Dependents[1]
+
+	goodDep := api.PolicyDependentInput{
+		Name:           "New-" + dependent.Name,
+		Relationship:   dependent.Relationship,
+		Country:        "New-" + dependent.Country,
+		ChildBirthYear: dependent.ChildBirthYear - 10,
+	}
+
+	badDep := goodDep
+	badDep.Name = ""
+
+	tests := []struct {
+		name       string
+		actor      models.User
+		oldDep     models.PolicyDependent
+		input      api.PolicyDependentInput
+		wantStatus int
+		wantInBody []string
+	}{
+		{
+			name:       "unauthenticated",
+			actor:      models.User{},
+			oldDep:     dependent,
+			input:      goodDep,
+			wantStatus: http.StatusUnauthorized,
+			wantInBody: []string{
+				api.ErrorNotAuthorized.String(),
+				"no bearer token provided",
+			},
+		},
+		{
+			name:       "unauthorized",
+			actor:      wrongActor,
+			oldDep:     dependent,
+			input:      goodDep,
+			wantStatus: http.StatusNotFound,
+			wantInBody: []string{"actor not allowed to perform that action on this resource"},
+		},
+		{
+			name:       "bad input",
+			actor:      goodActor,
+			oldDep:     dependent,
+			input:      badDep,
+			wantStatus: http.StatusBadRequest,
+			wantInBody: []string{"PolicyDependent.Name"},
+		},
+		{
+			name:       "good input",
+			actor:      goodActor,
+			oldDep:     dependent,
+			input:      goodDep,
+			wantStatus: http.StatusOK,
+			wantInBody: []string{
+				`"id":"` + dependent.ID.String(),
+				`"name":"` + goodDep.Name,
+				`"relationship":"` + string(goodDep.Relationship),
+				`"country":"` + goodDep.Country,
+				`"child_birth_year":` + fmt.Sprintf("%d", goodDep.ChildBirthYear),
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		as.T().Run(tt.name, func(t *testing.T) {
+			req := as.JSON("/%s/%s", domain.TypePolicyDependent, tt.oldDep.ID)
+			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
+			req.Headers["content-type"] = "application/json"
+			res := req.Put(tt.input)
+
+			body := res.Body.String()
+			as.Equal(tt.wantStatus, res.Code, "incorrect status code returned, body: %s", body)
+
+			as.verifyResponseData(tt.wantInBody, body, "")
+
+			if res.Code != http.StatusOK {
+				return
+			}
+
+			var apiDep api.PolicyDependent
+			err := json.Unmarshal([]byte(body), &apiDep)
+			as.NoError(err)
+
+			var dependent models.PolicyDependent
+			as.NoError(as.DB.Find(&dependent, tt.oldDep.ID), "error finding newly updated dependent.")
+			as.Equal(tt.input.Name, dependent.Name, "incorrect Name")
+			as.Equal(tt.input.Relationship, dependent.Relationship, "incorrect Relationship")
+			as.Equal(tt.input.Country, dependent.Country, "incorrect Country")
+			as.Equal(tt.input.ChildBirthYear, dependent.ChildBirthYear, "incorrect ChildBirthYear")
 		})
 	}
 }
