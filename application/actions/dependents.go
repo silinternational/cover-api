@@ -128,7 +128,7 @@ func dependentsUpdate(c buffalo.Context) error {
 
 // swagger:operation DELETE /policy-dependents/{id} PolicyDependents PolicyDependentsDelete
 //
-// PolicyItemsDelete
+// PolicyDependentsDelete
 //
 // Delete a policy dependent if it has no related policy items.
 //
@@ -146,19 +146,20 @@ func dependentsDelete(c buffalo.Context) error {
 	dependent := getReferencedDependentFromCtx(c)
 
 	relatedItemNames := dependent.RelatedItemNames(tx)
-	if len(relatedItemNames) == 0 {
-		dependent.Destroy(tx)
-		if err := dependent.Destroy(tx); err != nil {
-			return reportError(c, err)
-		}
-		return c.Render(http.StatusNoContent, nil)
-	}
-	err := errors.New("unable to delete policy dependent, since it is named on these items: " +
-		strings.Join(relatedItemNames, "; "))
+	if len(relatedItemNames) > 0 {
+		err := errors.New("unable to delete policy dependent, since it is named on these items: " +
+			strings.Join(relatedItemNames, "; "))
 
-	appErr := api.NewAppError(err, api.ErrorPolicyDependentDelete, api.CategoryForbidden)
-	appErr.HttpStatus = http.StatusConflict
-	return reportError(c, appErr)
+		appErr := api.NewAppError(err, api.ErrorPolicyDependentDelete, api.CategoryForbidden)
+		appErr.HttpStatus = http.StatusConflict
+		return reportError(c, appErr)
+	}
+
+	dependent.Destroy(tx)
+	if err := dependent.Destroy(tx); err != nil {
+		return reportError(c, err)
+	}
+	return c.Render(http.StatusNoContent, nil)
 }
 
 // getReferencedDependentFromCtx pulls the models.Item resource from context that was put there
