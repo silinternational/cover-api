@@ -1,15 +1,30 @@
 
-<strong>Claim ID</strong>
-<p><%= claim.ReferenceNumber %></p>
-<p><%= claim.IncidentType %></p>
+<div>
+	<h4 style="margin:0; padding:0">Claim ID</h4>
+	<%= claim.ReferenceNumber %>
+</div>
 
-<strong>Incident</strong>
-<p><%= claim.IncidentDate %></p>
-<p><%= claim.IncidentDescription %></p>
+<%= partial("category", {
+		name: claim.IncidentType,
+		helpText: "",
+	}
+) %>
 
-<strong>Desired resolution</strong>
-<p><%= claimItem.PayoutOption %></p>
-<p><%= payoutOptionDescription %></p>
+<div>
+	<h4 style="margin:0; padding:0">Incident</h4>
+	<%= claim.IncidentDate %>
+	<p>
+		<%= claim.IncidentDescription %>
+	</p>
+</div>
 
-<strong>Maximum payout</strong>
-<p><%= maximumPayout %></p>
+<div>
+	<h4 style="margin:0; padding:0">Desired resolution</h4>
+	<%= claimItem.PayoutOption %>
+	<%= payoutOptionDescription %>
+</div>
+
+<div>
+	<h4 style="margin:0; padding:0">Maximum payout</h4>
+	<%= maximumPayout %>
+</div>
