@@ -438,7 +438,7 @@ func TimeBetween(t1, t2 time.Time) string {
 		diff = t1.Sub(t2)
 	}
 
-	var unit, s string
+	var unit string
 	var n int
 
 	if diff < time.Hour {
@@ -453,8 +453,8 @@ func TimeBetween(t1, t2 time.Time) string {
 	}
 
 	if n > 1 {
-		s = "s"
+		unit += "s"
 	}
 
-	return fmt.Sprintf("%d %s%s ago", n, unit, s)
+	return fmt.Sprintf("%d %s ago", n, unit)
 }
