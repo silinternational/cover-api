@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"io"
 	"log"
 	"math"
@@ -420,4 +421,40 @@ func EndOfMonth(date time.Time) time.Time {
 func IsLeapYear(t time.Time) bool {
 	tt := time.Date(t.Year(), 2, 29, 0, 0, 0, 0, time.UTC)
 	return tt.Day() == 29
+}
+
+func TimeBetween(t1, t2 time.Time) string {
+	t1 = t1.Truncate(time.Minute)
+	t2 = t2.Truncate(time.Minute)
+
+	if t1 == t2 {
+		return "just now"
+	}
+
+	var diff time.Duration
+	if t1.Before(t2) {
+		diff = t2.Sub(t1)
+	} else {
+		diff = t1.Sub(t2)
+	}
+
+	var unit, s string
+	var n int
+
+	if diff < time.Hour {
+		n = int(diff / time.Minute)
+		unit = "minute"
+	} else if diff < DurationDay {
+		n = int(diff / time.Hour)
+		unit = "hour"
+	} else {
+		n = int(diff / DurationDay)
+		unit = "day"
+	}
+
+	if n > 1 {
+		s = "s"
+	}
+
+	return fmt.Sprintf("%d %s%s ago", n, unit, s)
 }
