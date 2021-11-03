@@ -19,15 +19,11 @@
  <div style="padding: 1em 0;"><%= item.Description %></div>
 <% } %>
 
-<div>
-	<div style="padding: 6px; background: #EBEEF2; color: #2E5AAC; border-radius: 6px; width:fit-content">
-		<%= item.Category.Name %>
-	</div>
-	<small style="padding-top: 5px;">
-		<%= item.Category.HelpText %>
-	</small>
-</div>
-
+<%= partial("category", {
+		name: item.Category.Name,
+		helpText: item.Category.HelpText
+	}
+) %>
 
 <table>
 	<%= if (coverageAmount != "") { %>

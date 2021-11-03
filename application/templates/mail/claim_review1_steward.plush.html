@@ -1,5 +1,25 @@
-<h4><a href="<%= claimURL %>"><%= claimRefNum %></a></h4>
-<p>
-	This is an unofficial draft email.
-    <%= memberName %> just submitted a claim which needs your attention.
-</p>
+<div>
+	<%= partial("body_header", {
+			title: "New Claim",
+			subTitle: "New claim from " + memberName + ": " + item.Name,
+			alert: "Needs claim review",
+			alert_description: "Submitted " + submitted,
+			alert_icon: "clipboard",
+		}
+	) %>
+
+	<%= partial("claim_card", {
+			claim: claim,
+			claimItem: claimItem,
+			payoutOptionDescription: payoutOptionDescription,
+			maximumPayout: maximumPayout,
+		}
+	) %>
+
+	<%= partial("button", {
+			url: claimURL,
+			label: "Open in Cover",
+		}
+	) %>
+
+</div>
