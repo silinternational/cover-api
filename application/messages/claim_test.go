@@ -42,7 +42,6 @@ func (ts *TestSuite) Test_ClaimReview1QueueMessage() {
 			wantBodyContains: []string{
 				domain.Env.UIURL,
 				review1Claim.ReferenceNumber,
-				"just submitted a claim which needs your attention.",
 			},
 		},
 	}
@@ -88,6 +87,7 @@ func (ts *TestSuite) Test_ClaimRevisionQueueMessage() {
 		})
 	}
 }
+
 func (ts *TestSuite) Test_ClaimPreapprovedQueueMessage() {
 	t := ts.T()
 	db := ts.DB

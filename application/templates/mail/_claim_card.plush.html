@@ -1,0 +1,30 @@
+
+<div>
+	<h4 style="margin:0; padding:0">Claim ID</h4>
+	<%= claim.ReferenceNumber %>
+</div>
+
+<%= partial("category", {
+		name: claim.IncidentType,
+		helpText: "",
+	}
+) %>
+
+<div>
+	<h4 style="margin:0; padding:0">Incident</h4>
+	<%= claim.IncidentDate %>
+	<p>
+		<%= claim.IncidentDescription %>
+	</p>
+</div>
+
+<div>
+	<h4 style="margin:0; padding:0">Desired resolution</h4>
+	<%= claimItem.PayoutOption %>
+	<%= payoutOptionDescription %>
+</div>
+
+<div>
+	<h4 style="margin:0; padding:0">Maximum payout</h4>
+	<%= maximumPayout %>
+</div>

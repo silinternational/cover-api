@@ -63,7 +63,7 @@ func (m MessageData) addClaimData(claim models.Claim) {
 	}
 
 	m["claimURL"] = fmt.Sprintf("%s/claims/%s", domain.Env.UIURL, claim.ID)
-	m["claimRefNum"] = claim.ReferenceNumber
+	m["claim"] = claim
 }
 
 func (m MessageData) addItemData(tx *pop.Connection, item models.Item) {

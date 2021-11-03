@@ -223,3 +223,57 @@ func (ts *TestSuite) TestIsLeapYear() {
 		})
 	}
 }
+
+func (ts *TestSuite) TestTimeBetween() {
+	now := time.Date(2000, 1, 1, 8, 0, 0, 0, time.UTC)
+
+	tests := []struct {
+		name string
+		t1   time.Time
+		t2   time.Time
+		want string
+	}{
+		{
+			name: "zero",
+			t1:   now,
+			t2:   now,
+			want: "just now",
+		},
+		{
+			name: "minutes",
+			t1:   now,
+			t2:   now.Add(time.Minute * 3),
+			want: "3 minutes ago",
+		},
+		{
+			name: "hours",
+			t1:   now,
+			t2:   now.Add(time.Hour * 4),
+			want: "4 hours ago",
+		},
+		{
+			name: "days",
+			t1:   now,
+			t2:   now.Add(DurationDay * 5),
+			want: "5 days ago",
+		},
+		{
+			name: "reverse",
+			t1:   now.Add(DurationDay * 5),
+			t2:   now,
+			want: "5 days ago",
+		},
+		{
+			name: "singular",
+			t1:   now,
+			t2:   now.Add(time.Minute),
+			want: "1 minute ago",
+		},
+	}
+	for _, tt := range tests {
+		ts.T().Run(tt.name, func(t *testing.T) {
+			got := TimeBetween(tt.t1, tt.t2)
+			ts.Equal(tt.want, got)
+		})
+	}
+}

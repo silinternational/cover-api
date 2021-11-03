@@ -2,11 +2,13 @@ package messages
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/gobuffalo/nulls"
 	"github.com/gobuffalo/pop/v5"
 
 	"github.com/silinternational/cover-api/api"
+	"github.com/silinternational/cover-api/domain"
 	"github.com/silinternational/cover-api/models"
 )
 
@@ -19,6 +21,14 @@ func ClaimReview1QueueMessage(tx *pop.Connection, claim models.Claim) {
 	data := newEmailMessageData()
 	data.addClaimData(claim)
 	data["memberName"] = memberName
+
+	claim.LoadClaimItems(tx, false)
+	data["claimItem"] = claim.ClaimItems[0]
+	data["item"] = claim.ClaimItems[0].Item
+
+	data["payoutOptionDescription"] = api.PayoutOptionDescriptions[claim.ClaimItems[0].PayoutOption]
+	data["maximumPayout"] = 0 // TODO: calculate this value
+	data["submitted"] = domain.TimeBetween(time.Now().UTC(), claim.UpdatedAt)
 
 	notn := models.Notification{
 		ClaimID: nulls.NewUUID(claim.ID),
