@@ -93,7 +93,7 @@ func dependentsCreate(c buffalo.Context) error {
 //     description: policy dependent ID
 //   - name: policy dependent update input
 //     in: body
-//     description: policy dependent create update object
+//     description: policy dependent input object
 //     required: true
 //     schema:
 //       "$ref": "#/definitions/PolicyDependentInput"
