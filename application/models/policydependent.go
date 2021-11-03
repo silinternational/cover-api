@@ -1,6 +1,7 @@
 package models
 
 import (
+	"fmt"
 	"net/http"
 	"strings"
 	"time"
@@ -53,6 +54,24 @@ func (p *PolicyDependent) Create(tx *pop.Connection) error {
 
 func (p *PolicyDependent) Update(tx *pop.Connection) error {
 	return update(tx, p)
+}
+
+func (p *PolicyDependent) Destroy(tx *pop.Connection) error {
+	return destroy(tx, p)
+}
+
+// canBeDeleted checks for related items
+func (p *PolicyDependent) RelatedItemNames(tx *pop.Connection) []string {
+	var items Items
+	if err := tx.Where("policy_dependent_id = ?", p.ID).All(&items); err != nil {
+		panic(fmt.Sprintf("error counting items with policy_dependent_id %s, %s", p.ID, err))
+	}
+
+	names := []string{}
+	for _, item := range items {
+		names = append(names, item.Name)
+	}
+	return names
 }
 
 // IsActorAllowedTo ensure the actor is either an admin, or a member of this policy to perform any permission

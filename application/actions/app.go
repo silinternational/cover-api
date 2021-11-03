@@ -181,7 +181,7 @@ func App() *buffalo.App {
 		// dependent
 		depsGroup := app.Group(policyDependentPath)
 		depsGroup.PUT(idRegex, dependentsUpdate)
-		//depsGroup.DELETE(idRegex, dependentsDelete)
+		depsGroup.DELETE(idRegex, dependentsDelete)
 
 		// item
 		itemsGroup := app.Group(itemsPath)
