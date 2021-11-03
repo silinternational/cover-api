@@ -1,0 +1,30 @@
+
+<div>
+	<%= partial("body_header", {
+		title: "New Claim",
+		subTitle: "",
+		alert: "Needs Claim Review",
+		alert_description: "Submitted 0 days ago",
+		alert_icon: "clock"}
+	) %>
+
+	<%= partial("item_card", {
+		item: item,
+		coverageAmount: coverageAmount,
+		premium: annualPremium,
+		coverageStartDate: "",
+		accountablePerson: accountablePerson,
+		householdID: policy.HouseholdID}
+	) %>
+
+	<%= partial("button", {
+		url: claimURL,
+		label: "Open in Cover"}
+	) %>
+
+	<%= partial("customer_footer", {
+		supportEmail: supportEmail,
+		supportName: supportName}
+	) %>
+</div>
+
