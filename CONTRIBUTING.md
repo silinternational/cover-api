@@ -78,7 +78,7 @@ To run all tests, run `make test`.
 - check "Use all custom build tags"
 - set all environment variables defined in `test.env`
 4. Add `127.0.0.1 testdb minio` to `/etc/hosts` (or equivalent)
-5. Click the green arrow next to the test or test step
+5. Click the green arrow (or the debug button) next to the test or test step
 
 ### Database Queries
 
@@ -185,4 +185,12 @@ to `stderr` and Rollbar using `domain.Error` if context is available, or
 `domain.Warn` can be used to log at level "warning" and also send to Rollbar
 
 `domain.Info` or `domain.Logger.printf` will log but not send to Rollbar.
+
+## Debugging with Delve
+
+Remote debugging with a compatible IDE is possible using the `debug` container. It does not have buffalo file watching capability, so any code changes will not be compiled without a manual restart of the container.
+
+Set up in GoLand is as simple as adding a Run/Debug Configuration. Use type "Go Remote" and use default settings (host: localhost, port: 2345, on disconnect: ask).
+
+To begin debugging, run `make debug`. This kills the `buffalo` container and starts the `debug` container. Once the app build is finished, click the debug button on the GoLand toolbar.
 
