@@ -624,31 +624,37 @@ func (i *Item) ConvertToAPI(tx *pop.Connection) api.Item {
 		coverageEndDate = nulls.NewString(i.CoverageEndDate.Time.Format(domain.DateFormat))
 	}
 
-	return api.Item{
-		ID:                     i.ID,
-		Name:                   i.Name,
-		Category:               i.Category.ConvertToAPI(tx),
-		RiskCategory:           i.RiskCategory.ConvertToAPI(),
-		InStorage:              i.InStorage,
-		Country:                i.Country,
-		Description:            i.Description,
-		PolicyID:               i.PolicyID,
-		Make:                   i.Make,
-		Model:                  i.Model,
-		SerialNumber:           i.SerialNumber,
-		CoverageAmount:         i.CoverageAmount,
-		CoverageStatus:         i.CoverageStatus,
-		StatusChange:           i.StatusChange,
-		StatusReason:           i.StatusReason,
-		CoverageStartDate:      i.CoverageStartDate.Format(domain.DateFormat),
-		CoverageEndDate:        coverageEndDate,
-		AccountableUserID:      i.PolicyUserID,
-		AccountableDependentID: i.PolicyDependentID,
-		AnnualPremium:          i.CalculateAnnualPremium(),
-		ProratedAnnualPremium:  i.calculateProratedPremium(time.Now().UTC()),
-		CreatedAt:              i.CreatedAt,
-		UpdatedAt:              i.UpdatedAt,
+	apiItem := api.Item{
+		ID:                    i.ID,
+		Name:                  i.Name,
+		Category:              i.Category.ConvertToAPI(tx),
+		RiskCategory:          i.RiskCategory.ConvertToAPI(),
+		InStorage:             i.InStorage,
+		Country:               i.Country,
+		Description:           i.Description,
+		PolicyID:              i.PolicyID,
+		Make:                  i.Make,
+		Model:                 i.Model,
+		SerialNumber:          i.SerialNumber,
+		CoverageAmount:        i.CoverageAmount,
+		CoverageStatus:        i.CoverageStatus,
+		StatusChange:          i.StatusChange,
+		StatusReason:          i.StatusReason,
+		CoverageStartDate:     i.CoverageStartDate.Format(domain.DateFormat),
+		CoverageEndDate:       coverageEndDate,
+		AnnualPremium:         i.CalculateAnnualPremium(),
+		ProratedAnnualPremium: i.calculateProratedPremium(time.Now().UTC()),
+		CreatedAt:             i.CreatedAt,
+		UpdatedAt:             i.UpdatedAt,
 	}
+	person := i.GetAccountablePerson(tx)
+	if person != nil {
+		apiItem.AccountablePerson = api.AccountablePerson{
+			ID:   person.GetID(),
+			Name: person.GetName().String(),
+		}
+	}
+	return apiItem
 }
 
 func (i *Items) ConvertToAPI(tx *pop.Connection) api.Items {
@@ -795,40 +801,40 @@ func (i *Item) CreateLedgerEntry(tx *pop.Connection, entryType LedgerEntryType, 
 // GetAccountablePersonName gets the name of the accountable person. In case of error, empty strings
 // are returned.
 func (i *Item) GetAccountablePersonName(tx *pop.Connection) Name {
-	person, err := i.GetAccountablePerson(tx)
-	if err != nil || person == nil {
+	person := i.GetAccountablePerson(tx)
+	if person == nil {
 		return Name{}
 	}
 	return person.GetName()
 }
 
 // GetAccountablePersonLocation gets the location of the accountable person
-func (i *Item) GetAccountablePersonLocation(tx *pop.Connection) (Location, error) {
-	person, err := i.GetAccountablePerson(tx)
-	if err != nil || person == nil {
-		return Location{}, err
+func (i *Item) GetAccountablePersonLocation(tx *pop.Connection) Location {
+	person := i.GetAccountablePerson(tx)
+	if person == nil {
+		return Location{}
 	}
-	return person.GetLocation(), nil
+	return person.GetLocation()
 }
 
 // GetAccountablePerson gets the accountable person as a Person interface
-func (i *Item) GetAccountablePerson(tx *pop.Connection) (Person, error) {
+func (i *Item) GetAccountablePerson(tx *pop.Connection) Person {
 	var person Person
 	if i.PolicyUserID.Valid {
 		var user User
 		if err := user.FindByID(tx, i.PolicyUserID.UUID); err != nil {
-			return person, err
+			panic("item PolicyUserID contains invalid user ID")
 		}
 		person = &user
 	}
 	if i.PolicyDependentID.Valid {
 		var dep PolicyDependent
 		if err := dep.FindByID(tx, i.PolicyDependentID.UUID); err != nil {
-			return person, err
+			panic("item PolicyDependentID contains invalid user ID")
 		}
 		person = &dep
 	}
-	return person, nil
+	return person
 }
 
 func (i *Item) GetMakeModel() string {

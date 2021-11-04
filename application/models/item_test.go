@@ -1059,9 +1059,11 @@ func (ms *ModelSuite) TestItem_canBeDeleted() {
 	}
 }
 
-func (ms *ModelSuite) TestItem() {
-	item := CreateItemFixtures(ms.DB, FixturesConfig{DependentsPerPolicy: 1}).Items[0]
+func (ms *ModelSuite) TestItem_ConvertToAPI() {
+	fixtures := CreateItemFixtures(ms.DB, FixturesConfig{DependentsPerPolicy: 1})
+	item := fixtures.Items[0]
 	item.CoverageEndDate = nulls.NewTime(time.Now().Add(domain.DurationDay * 365))
+	ms.NoError(item.setAccountablePerson(ms.DB, fixtures.PolicyDependents[0].ID))
 
 	got := item.ConvertToAPI(ms.DB)
 
@@ -1077,14 +1079,18 @@ func (ms *ModelSuite) TestItem() {
 	ms.Equal(item.CoverageStatus, got.CoverageStatus, "CoverageStatus is not correct")
 	ms.Equal(item.StatusChange, got.StatusChange, "StatusChange is not correct")
 	ms.Equal(item.StatusReason, got.StatusReason, "StatusReason is not correct")
-	ms.Equal(item.CoverageStartDate.Format(domain.DateFormat), got.CoverageStartDate, "CoverageStartDate is not correct")
-	ms.Equal(item.CoverageEndDate.Time.Format(domain.DateFormat), got.CoverageEndDate.String, "CoverageEndDate is not correct")
+	ms.Equal(item.CoverageStartDate.Format(domain.DateFormat), got.CoverageStartDate,
+		"CoverageStartDate is not correct")
+	ms.Equal(item.CoverageEndDate.Time.Format(domain.DateFormat), got.CoverageEndDate.String,
+		"CoverageEndDate is not correct")
 	ms.Equal(item.CreatedAt, got.CreatedAt, "CreatedAt is not correct")
 	ms.Equal(item.UpdatedAt, got.UpdatedAt, "UpdatedAt is not correct")
 	ms.Equal(item.Category.ConvertToAPI(ms.DB), got.Category, "Category is not correct")
 	ms.Equal(item.RiskCategory.ConvertToAPI(), got.RiskCategory, "RiskCategory is not correct")
 	ms.Equal(item.CalculateAnnualPremium(), got.AnnualPremium, "AnnualPremium is not correct")
-	ms.Equal(item.calculateProratedPremium(time.Now().UTC()), got.ProratedAnnualPremium, "ProratedAnnualPremium is not correct")
-	ms.Equal(item.PolicyDependentID, got.AccountableDependentID, "AccountableDependentID is not correct")
-	ms.Equal(item.PolicyUserID, got.AccountableUserID, "AccountableUserID is not correct")
+	ms.Equal(item.calculateProratedPremium(time.Now().UTC()), got.ProratedAnnualPremium,
+		"ProratedAnnualPremium is not correct")
+	ms.Equal(item.PolicyDependentID.UUID, got.AccountablePerson.ID, "AccountablePerson ID is not correct")
+	ms.Equal(fixtures.PolicyDependents[0].GetName().String(), got.AccountablePerson.Name,
+		"AccountablePerson Name is not correct")
 }

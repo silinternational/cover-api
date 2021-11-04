@@ -118,6 +118,7 @@ type Updatable interface {
 }
 
 type Person interface {
+	GetID() uuid.UUID
 	GetLocation() Location
 	GetName() Name
 }
