@@ -38,10 +38,14 @@ func claimsList(c buffalo.Context) error {
 	user := models.CurrentUser(c)
 
 	if user.IsAdmin() {
-		s := strings.Split(c.Param("status"), ",")
-		statuses := make([]api.ClaimStatus, len(s))
-		for i := range s {
-			statuses[i] = api.ClaimStatus(s[i])
+		statusParam := c.Param("status")
+		var statusList []string
+		if statusParam != "" {
+			statusList = strings.Split(statusParam, ",")
+		}
+		statuses := make([]api.ClaimStatus, len(statusList))
+		for i := range statusList {
+			statuses[i] = api.ClaimStatus(statusList[i])
 		}
 		return claimsListAdmin(c, statuses)
 	}

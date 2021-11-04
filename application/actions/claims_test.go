@@ -31,9 +31,13 @@ func (as *ActionSuite) Test_ClaimsList() {
 	appAdmin := models.CreateAdminUsers(as.DB)[models.AppRoleAdmin]
 	normalUser := fixtures.Policies[1].Members[0]
 
+	fixtures.Claims[0].Status = api.ClaimStatusReview1
+	as.NoError(as.DB.Update(&fixtures.Claims[0]))
+
 	tests := []struct {
 		name          string
 		actor         models.User
+		queryString   string
 		wantStatus    int
 		wantClaims    int
 		wantInBody    string
@@ -51,15 +55,22 @@ func (as *ActionSuite) Test_ClaimsList() {
 			name:       "admin user",
 			actor:      appAdmin,
 			wantStatus: http.StatusOK,
-			wantClaims: totalNumberOfClaims,
+			wantClaims: 1,
 			wantInBody: fixtures.Policies[0].Claims[0].ID.String(),
+		},
+		{
+			name:        "admin user",
+			actor:       appAdmin,
+			queryString: "?status=" + string(api.ClaimStatusDraft),
+			wantStatus:  http.StatusOK,
+			wantClaims:  totalNumberOfClaims - 1,
+			wantInBody:  fixtures.Policies[0].Claims[1].ID.String(),
 		},
 	}
 
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
-			qs := fmt.Sprintf("?status=%s", api.ClaimStatusDraft)
-			req := as.JSON("/claims" + qs)
+			req := as.JSON("/claims" + tt.queryString)
 			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
 			req.Headers["content-type"] = "application/json"
 			res := req.Get()
