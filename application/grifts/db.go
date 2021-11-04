@@ -223,6 +223,7 @@ func createPolicyFixtures(tx *pop.Connection, fixUsers []*models.User, entityCod
 			fixPolicies[i].CostCenter = domain.RandomString(8, "0123456789")
 			fixPolicies[i].Type = api.PolicyTypeCorporate
 		} else {
+			fixPolicies[i].Name = user.Name() + " Household policy"
 			fixPolicies[i].HouseholdID = nulls.NewString(fmt.Sprintf("HID-%s-%s", user.FirstName, user.LastName))
 		}
 
