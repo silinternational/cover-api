@@ -391,7 +391,7 @@ func importPolicies(tx *pop.Connection, policies []LegacyPolicy) {
 			}
 
 			newPolicy := models.Policy{
-				Name:          fmt.Sprintf("Policy %d", policyID),
+				Name:          fmt.Sprintf("Policy %s", trim(p.IdentCode)),
 				Type:          getPolicyType(p),
 				HouseholdID:   householdID,
 				CostCenter:    trim(p.CostCenter),
