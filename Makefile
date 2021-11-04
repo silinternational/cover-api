@@ -16,6 +16,10 @@ adminer:
 buffalo: db
 	docker-compose up -d buffalo
 
+debug: killbuffalo
+	docker-compose up -d debug
+	docker-compose logs -f debug
+
 swagger: swaggerspec
 	docker-compose run --rm --service-ports swagger serve -p 8082 --no-open swagger.json
 
@@ -49,6 +53,9 @@ test: testdb minio
 testenv: rmtestdb migratetestdb
 	@echo "\n\nIf minio hasn't been initialized, run grift minio:seed\n"
 	docker-compose run --rm test bash
+
+killbuffalo:
+	docker-compose kill buffalo
 
 clean:
 	docker-compose kill
