@@ -293,6 +293,7 @@ func (u *User) CreateInitialPolicy(tx *pop.Connection) error {
 	}
 
 	policy := Policy{
+		Name:        u.Name() + " Household policy",
 		Type:        api.PolicyTypeHousehold,
 		HouseholdID: nulls.NewString(fmt.Sprintf("HHID-%s-%s", u.FirstName, u.LastName)),
 	}

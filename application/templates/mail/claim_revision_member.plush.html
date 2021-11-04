@@ -1,8 +1,26 @@
-<h4><a href="<%= claimURL %>"><%= claim.ReferenceNumber %></a></h4>
-<p>
-	This is an unofficial draft email.
-    The claim you submitted has not yet been approved.
-	In particular, certain revisions have been requested.
-	<br>
-	<%= claimStatusReason %>
-</p>
+<div>
+	<%= partial("body_header", {
+	title: "Claim revisions needed",
+	subTitle: "Your claim has not yet been approved " + claim.StatusReason,
+	alert: "Needs revisions",
+	alert_description: "Reviewed " + submitted,
+	alert_icon: "clipboard",
+	}
+	) %>
+
+	<%= partial("claim_card", {
+			claim: claim,
+			incidentDate: incidentDate,
+			incidentType: incidentType,
+			payoutOptionDescription: payoutOptionDescription,
+			maximumPayout: maximumPayout,
+		}
+	) %>
+
+	<%= partial("button", {
+			url: claimURL,
+			label: "Open in Cover",
+		}
+	) %>
+
+</div>
