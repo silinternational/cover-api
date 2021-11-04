@@ -8,14 +8,12 @@
 		alert_icon: "clock"}
 	) %>
 
-	<%# TODO Add this back in when we're ready for it %>
-	<%# coverageEndDate: item.CoverageEndDate, %>
-
 	<%= partial("item_card", {
 		item: item,
 		coverageAmount: coverageAmount,
 		premium: annualPremium,
 		coverageStartDate: coverageStartDate,
+		coverageEndDate: coverageEndDate,
 		accountablePerson: accountablePerson,
 		householdID: policy.HouseholdID}
 	) %>

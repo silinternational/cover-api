@@ -5,14 +5,14 @@
 </div>
 
 <%= partial("category", {
-		name: claim.IncidentType,
-		helpText: "",
+		name: incidentType,
+		helpText: "lorem ipsum dolor (description of the incident type)"
 	}
 ) %>
 
 <div>
 	<h4 style="margin:0; padding:0">Incident</h4>
-	<%= claim.IncidentDate %>
+	<%= incidentDate %>
 	<p>
 		<%= claim.IncidentDescription %>
 	</p>
@@ -20,7 +20,7 @@
 
 <div>
 	<h4 style="margin:0; padding:0">Desired resolution</h4>
-	<%= claimItem.PayoutOption %>
+	<%= payoutOption %>
 	<%= payoutOptionDescription %>
 </div>
 

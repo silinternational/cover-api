@@ -84,6 +84,7 @@ const (
 const (
 	CurrencyFactor = 100
 	DateFormat     = "2006-01-02"
+	LocalizedDate  = "2 January 2006"
 
 	// How many hours old an item can be until it's not allowed to be deleted
 	ItemDeleteCutOffHours = 72

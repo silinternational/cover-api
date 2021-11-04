@@ -9,9 +9,8 @@ import (
 
 // PolicyUserInviteQueueMessage queues messages to an invited policy user
 func PolicyUserInviteQueueMessage(tx *pop.Connection, invite models.PolicyUserInvite) {
-
 	data := newEmailMessageData()
-	data["policyName"] = invite.Policy.CostCenter // TODO update with policy name once added to model for corporate policies
+	data["policyName"] = invite.Policy.Name
 	data["acceptURL"] = invite.GetAcceptURL()
 	data["inviterEmail"] = invite.InviterEmail
 	data["inviterName"] = invite.InviterName
@@ -30,5 +29,4 @@ func PolicyUserInviteQueueMessage(tx *pop.Connection, invite models.PolicyUserIn
 	}
 
 	notn.CreateNotificationUser(tx, nulls.UUID{}, invite.Email, invite.InviteeName)
-
 }

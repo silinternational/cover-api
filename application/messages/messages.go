@@ -57,13 +57,24 @@ func newEmailMessageData() MessageData {
 	return m
 }
 
-func (m MessageData) addClaimData(claim models.Claim) {
+func (m MessageData) addClaimData(tx *pop.Connection, claim models.Claim) {
 	if m == nil {
 		m = map[string]interface{}{}
 	}
 
-	m["claimURL"] = fmt.Sprintf("%s/claims/%s", domain.Env.UIURL, claim.ID)
+	m["claimURL"] = fmt.Sprintf("%s/policies/%s/claims/%s", domain.Env.UIURL, claim.PolicyID, claim.ID)
 	m["claim"] = claim
+
+	m["incidentDate"] = claim.IncidentDate.Format(domain.LocalizedDate)
+	m["incidentType"] = string(claim.IncidentType)
+
+	claim.LoadClaimItems(tx, false)
+	m["item"] = claim.ClaimItems[0].Item
+
+	m["payoutOption"] = string(claim.ClaimItems[0].PayoutOption)
+	m["payoutOptionDescription"] = api.PayoutOptionDescriptions[claim.ClaimItems[0].PayoutOption]
+	m["maximumPayout"] = "$0.00" // TODO: calculate this value
+	m["submitted"] = domain.TimeBetween(time.Now().UTC(), claim.SubmittedAt(tx))
 }
 
 func (m MessageData) addItemData(tx *pop.Connection, item models.Item) {
@@ -74,14 +85,21 @@ func (m MessageData) addItemData(tx *pop.Connection, item models.Item) {
 	m["supportEmail"] = steward.Email
 	m["supportName"] = steward.Name()
 
-	m["itemURL"] = fmt.Sprintf("%s/items/%s", domain.Env.UIURL, item.ID)
+	m["itemURL"] = fmt.Sprintf("%s/policies/%s/items/%s", domain.Env.UIURL, item.PolicyID, item.ID)
+
+	item.Load(tx)
 	m["item"] = item
 
 	m["accountablePerson"] = item.GetAccountablePersonName(tx).String()
 	m["policy"] = item.Policy
 
 	m["coverageAmount"] = "$" + api.Currency(item.CoverageAmount).String()
-	m["coverageStartDate"] = item.CoverageStartDate.Format(domain.DateFormat)
+	m["coverageStartDate"] = item.CoverageStartDate.Format(domain.LocalizedDate)
+	if item.CoverageEndDate.Valid {
+		m["coverageEndDate"] = item.CoverageEndDate.Time.Format(domain.LocalizedDate)
+	} else {
+		m["coverageEndDate"] = ""
+	}
 	m["annualPremium"] = "$" + item.CalculateAnnualPremium().String()
 }
 

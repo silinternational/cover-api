@@ -93,7 +93,6 @@ func ItemRevisionQueueMessage(tx *pop.Connection, item models.Item) {
 
 	data := newEmailMessageData()
 	data.addItemData(tx, item)
-	data["itemStatusReason"] = item.StatusReason
 
 	notn := models.Notification{
 		ItemID:  nulls.NewUUID(item.ID),
@@ -136,7 +135,6 @@ func ItemDeniedQueueMessage(tx *pop.Connection, item models.Item) {
 
 	data := newEmailMessageData()
 	data.addItemData(tx, item)
-	data["itemStatusReason"] = item.StatusReason
 
 	notn := models.Notification{
 		ItemID:    nulls.NewUUID(item.ID),

@@ -2,13 +2,11 @@ package messages
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/gobuffalo/nulls"
 	"github.com/gobuffalo/pop/v5"
 
 	"github.com/silinternational/cover-api/api"
-	"github.com/silinternational/cover-api/domain"
 	"github.com/silinternational/cover-api/models"
 )
 
@@ -19,21 +17,13 @@ func ClaimReview1QueueMessage(tx *pop.Connection, claim models.Claim) {
 	memberName := claim.Policy.Members[0].Name()
 
 	data := newEmailMessageData()
-	data.addClaimData(claim)
+	data.addClaimData(tx, claim)
 	data["memberName"] = memberName
-
-	claim.LoadClaimItems(tx, false)
-	data["claimItem"] = claim.ClaimItems[0]
-	data["item"] = claim.ClaimItems[0].Item
-
-	data["payoutOptionDescription"] = api.PayoutOptionDescriptions[claim.ClaimItems[0].PayoutOption]
-	data["maximumPayout"] = 0 // TODO: calculate this value
-	data["submitted"] = domain.TimeBetween(time.Now().UTC(), claim.UpdatedAt)
 
 	notn := models.Notification{
 		ClaimID: nulls.NewUUID(claim.ID),
 		Body:    data.renderHTML(MessageTemplateClaimReview1Steward),
-		Subject: "Action Required. " + memberName + " just (re)submitted a claim for approval",
+		Subject: "Action Required. " + memberName + " just submitted a claim for approval",
 
 		InappText: "A new claim is waiting for your approval",
 
@@ -54,8 +44,7 @@ func ClaimRevisionQueueMessage(tx *pop.Connection, claim models.Claim) {
 	claim.LoadPolicyMembers(tx, false)
 
 	data := newEmailMessageData()
-	data.addClaimData(claim)
-	data["claimStatusReason"] = claim.StatusReason
+	data.addClaimData(tx, claim)
 
 	notn := models.Notification{
 		ClaimID: nulls.NewUUID(claim.ID),
@@ -85,7 +74,7 @@ func ClaimPreapprovedQueueMessage(tx *pop.Connection, claim models.Claim) {
 	// TODO Figure out how to tell the members what receipts are needed
 
 	data := newEmailMessageData()
-	data.addClaimData(claim)
+	data.addClaimData(tx, claim)
 
 	notn := models.Notification{
 		ClaimID: nulls.NewUUID(claim.ID),
@@ -121,7 +110,7 @@ func ClaimReceiptQueueMessage(tx *pop.Connection, claim models.Claim) {
 	clItem := claim.ClaimItems[0]
 
 	data := newEmailMessageData()
-	data.addClaimData(claim)
+	data.addClaimData(tx, claim)
 
 	data["receiptMessage"] = ""
 
@@ -159,7 +148,7 @@ func ClaimReview2QueueMessage(tx *pop.Connection, claim models.Claim) {
 	memberName := claim.Policy.Members[0].Name()
 
 	data := newEmailMessageData()
-	data.addClaimData(claim)
+	data.addClaimData(tx, claim)
 	data["memberName"] = memberName
 
 	notn := models.Notification{
@@ -187,7 +176,7 @@ func ClaimReview3QueueMessage(tx *pop.Connection, claim models.Claim) {
 	memberName := claim.Policy.Members[0].Name()
 
 	data := newEmailMessageData()
-	data.addClaimData(claim)
+	data.addClaimData(tx, claim)
 	data["memberName"] = memberName
 
 	notn := models.Notification{
@@ -214,7 +203,7 @@ func ClaimApprovedQueueMessage(tx *pop.Connection, claim models.Claim) {
 	claim.LoadPolicyMembers(tx, false)
 
 	data := newEmailMessageData()
-	data.addClaimData(claim)
+	data.addClaimData(tx, claim)
 
 	notn := models.Notification{
 		ClaimID:   nulls.NewUUID(claim.ID),
@@ -243,8 +232,7 @@ func ClaimDeniedQueueMessage(tx *pop.Connection, claim models.Claim) {
 	// TODO check if it was denied by the signator and if so, email the steward
 
 	data := newEmailMessageData()
-	data.addClaimData(claim)
-	data["claimStatusReason"] = claim.StatusReason
+	data.addClaimData(tx, claim)
 
 	notn := models.Notification{
 		ClaimID:   nulls.NewUUID(claim.ID),

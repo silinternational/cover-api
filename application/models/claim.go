@@ -888,3 +888,8 @@ func (c *Claim) UpdateStatus(ctx context.Context, newStatus api.ClaimStatus) err
 
 	return nil
 }
+
+func (c *Claim) SubmittedAt(tx *pop.Connection) time.Time {
+	// TODO: use the history table to get the real date
+	return c.UpdatedAt
+}
