@@ -10,7 +10,6 @@ import (
 )
 
 func (ts *TestSuite) TestSend() {
-
 	item := models.Item{
 		Name: "My Item",
 	}
@@ -25,11 +24,12 @@ func (ts *TestSuite) TestSend() {
 		Data: map[string]interface{}{
 			"uiURL":             "example.com",
 			"appName":           "Our App",
-			"itemURL":           "my-item.example.com",
+			"itemURL":           "https://my-item.example.com",
 			"item":              item,
 			"memberName":        "John Doe",
 			"supportEmail":      "support@example.com",
-			"coverageAmount":    "$100",
+			"coverageAmount":    "$100.00",
+			"coverageEndDate":   "2021-12-31",
 			"coverageStartDate": "2021-01-01",
 			"annualPremium":     "$3.50",
 			"accountablePerson": "John Doe",
