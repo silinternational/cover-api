@@ -24,6 +24,30 @@ services:
       - minio
     command: buffalo dev
 
+  debug:
+    build:
+      context: ./application
+      dockerfile: Dockerfile-dev
+    volumes:
+      - ./application:/cover
+      - go-build:/root/.cache/go-build
+    ports:
+      - "3000:3000"
+      - "2345:2345"
+      - "6060"
+    env_file:
+      - ./test.env
+      - ./local.env
+    environment:
+      ADDR: 0.0.0.0
+      PORT: 3000
+      DATABASE_URL: postgres://cover:cover@db:5432/cover?sslmode=disable
+      GO_ENV: development
+    depends_on:
+      - db
+      - minio
+    command: ./debug.sh
+
   test:
     build:
       context: ./application
