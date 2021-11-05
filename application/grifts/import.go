@@ -11,6 +11,7 @@ import (
 	"math"
 	"net/mail"
 	"os"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -65,6 +66,9 @@ var householdPolicyMap = map[string]uuid.UUID{}
 // entityCodesMap is a map of entity code to entity code UUID
 var entityCodesMap = map[string]uuid.UUID{}
 
+// entityCodeNames is a map of entity codes
+var entityCodes = map[string]struct{ name, inactive string }{}
+
 // policyUsersCreated is a list of existing PolicyUser records to prevent duplicates
 var policyUsersCreated = map[string]struct{}{}
 
@@ -73,9 +77,6 @@ var policyIDMap = map[int]uuid.UUID{}
 
 // policyUserMap identifies one user on each policy, used for populating the accountable person field on items
 var policyUserMap = map[uuid.UUID]uuid.UUID{}
-
-// activeEntities is used to track which entity codes are used on active policies
-var activeEntities = map[uuid.UUID]struct{}{}
 
 // time used in place of missing time values
 var emptyTime time.Time
@@ -98,7 +99,8 @@ var workdayFilenames = map[string]string{
 var _ = grift.Namespace("db", func() {
 	_ = grift.Desc("import", "Import legacy data")
 	_ = grift.Add("import", func(c *grift.Context) error {
-		importCustomers()
+		importStaffIDs()
+		readCSVFile("./entity_codes.csv", []int{0, 1, 2}, addEntityCode)
 
 		var obj LegacyData
 
@@ -153,7 +155,7 @@ func init() {
 	pop.Debug = false // Disable the Pop log messages
 }
 
-func importCustomers() {
+func importStaffIDs() {
 	const IDPStaffIDColumn = 0
 	const IDPEmailColumn = 1
 	const IDPPersonalEmailColumn = 2
@@ -163,34 +165,34 @@ func importCustomers() {
 
 	fmt.Println("\nImporting Workday users")
 	for idp, filename := range workdayFilenames {
-		n := importIdpUsersFromFile(filename, WorkdayStaffIDColumn, WorkdayEmailColumn, false)
+		n := readCSVFile(filename, []int{WorkdayStaffIDColumn, WorkdayEmailColumn}, addStaffID)
 		fmt.Printf("  %s Workday users: %d\n", idp, n)
 	}
 
 	fmt.Println("\nImporting IDP users")
 	for idp, filename := range idpFilenames {
-		n := importIdpUsersFromFile(filename, IDPStaffIDColumn, IDPEmailColumn, false)
+		n := readCSVFile(filename, []int{IDPStaffIDColumn, IDPEmailColumn}, addStaffID)
 		fmt.Printf("  %s IDP users: %d\n", idp, n)
 	}
 
 	fmt.Println("\nImporting Workday users - personal email addresses")
 	for idp, filename := range workdayFilenames {
-		n := importIdpUsersFromFile(filename, WorkdayStaffIDColumn, WorkdayPersonalEmailColumn, true)
+		n := readCSVFile(filename, []int{WorkdayStaffIDColumn, WorkdayPersonalEmailColumn}, addStaffID)
 		fmt.Printf("  %s Workday users: %d\n", idp, n)
 	}
 
 	fmt.Println("\nImporting IDP users - personal email addresses")
 	for idp, filename := range idpFilenames {
-		n := importIdpUsersFromFile(filename, IDPStaffIDColumn, IDPPersonalEmailColumn, true)
+		n := readCSVFile(filename, []int{IDPStaffIDColumn, IDPPersonalEmailColumn}, addStaffID)
 		fmt.Printf("  %s IDP users: %d\n", idp, n)
 	}
 
 	fmt.Println("\nImporting other user table")
-	n := importIdpUsersFromFile("./other_users.csv", 0, 1, false)
+	n := readCSVFile("./other_users.csv", []int{0, 1}, addStaffID)
 	fmt.Printf("  other users: %d\n", n)
 }
 
-func importIdpUsersFromFile(filename string, idColumn, emailColumn int, personal bool) int {
+func readCSVFile(filename string, columns []int, storeFunc func([]string) int) int {
 	f, err := os.Open(filename) // #nosec G304
 	if err != nil {
 		log.Fatal(err)
@@ -219,14 +221,18 @@ func importIdpUsersFromFile(filename string, idColumn, emailColumn int, personal
 			log.Fatalf("failed to read from IDP data file %s, %s", filename, err)
 		}
 
-		staffID := csvLine[idColumn]
-		email := csvLine[emailColumn]
-		n += addStaffID(staffID, email, personal)
+		fields := make([]string, len(columns))
+		for i, col := range columns {
+			fields[i] = csvLine[col]
+		}
+		n += storeFunc(fields)
 	}
 	return n
 }
 
-func addStaffID(staffID, email string, personal bool) int {
+func addStaffID(fields []string) int {
+	staffID := fields[0]
+	email := fields[1]
 	if staffID == "NULL" || staffID == "" || email == "NULL" || email == "" {
 		return 0
 	}
@@ -239,12 +245,18 @@ func addStaffID(staffID, email string, personal bool) int {
 		return 1
 	}
 
-	if !personal && userEmailStaffIDMap[email] != staffID {
-		log.Printf("email address '%s' maps to two different staff IDs: '%s' and '%s'",
-			email, userEmailStaffIDMap[email], staffID)
-	}
-
 	return 0
+}
+
+func addEntityCode(fields []string) int {
+	code := fields[0]
+	name := fields[1]
+	inactive := fields[2]
+	re, _ := regexp.Compile(`(.*) Company( \(inactive\))?`)
+	name = re.ReplaceAllString(name, "$1")
+
+	entityCodes[code] = struct{ name, inactive string }{name, inactive}
+	return 1
 }
 
 func assignRiskCategoryCostCenters(tx *pop.Connection) {
@@ -427,17 +439,12 @@ func importPolicies(tx *pop.Connection, policies []LegacyPolicy) {
 		nUsers.policyUsersCreated += r.policyUsersCreated
 		nUsers.usersCreated += r.usersCreated
 
-		policyIsActive := importItems(tx, policyUUID, policyID, p.Items)
+		importItems(tx, policyUUID, policyID, p.Items)
 		nItems += len(p.Items)
 
 		nClaimItems += importClaims(tx, policyUUID, p.Claims)
 		nClaims += len(p.Claims)
-
-		if policyIsActive && entityCodeID.Valid {
-			activeEntities[entityCodeID.UUID] = struct{}{}
-		}
 	}
-	setEntitiesActive(tx)
 
 	fmt.Println("imported: ")
 	fmt.Printf("  Policies: %d, Duplicate Household Policies: %d, Households with multiple Policies: %d\n",
@@ -447,17 +454,7 @@ func importPolicies(tx *pop.Connection, policies []LegacyPolicy) {
 	fmt.Printf("  ClaimItems: %d\n", nClaimItems)
 	fmt.Printf("  PolicyUsers: %d w/staffID: %d\n", nUsers.policyUsersCreated, nPolicyUsersWithStaffID)
 	fmt.Printf("  Users: %d\n", nUsers.usersCreated)
-	fmt.Printf("  Entity Codes: %d total, %d active\n", len(entityCodesMap), len(activeEntities))
-}
-
-func setEntitiesActive(tx *pop.Connection) {
-	e := models.EntityCode{Active: true}
-	for id := range activeEntities {
-		e.ID = id
-		if err := tx.UpdateColumns(&e, "active"); err != nil {
-			panic("error setting entity code active " + err.Error())
-		}
-	}
+	fmt.Printf("  Entity Codes: %d\n", len(entityCodesMap))
 }
 
 func getEntityCodeID(tx *pop.Connection, code nulls.String) nulls.UUID {
@@ -474,11 +471,23 @@ func getEntityCodeID(tx *pop.Connection, code nulls.String) nulls.UUID {
 
 func importEntityCode(tx *pop.Connection, code string) uuid.UUID {
 	code = trim(code)
+
+	// the source data contains "Yes" for inactive but empty for active
+	active := false
+	name := code
+	if e, ok := entityCodes[code]; ok {
+		name = e.name
+		if e.inactive != "Yes" {
+			active = true
+		}
+	}
+
 	newEntityCode := models.EntityCode{
 		Code:   code,
-		Name:   code,
-		Active: false,
+		Name:   name,
+		Active: active,
 	}
+
 	if err := newEntityCode.Create(tx); err != nil {
 		log.Fatalf("failed to create entity code, %s\n%+v", err, newEntityCode)
 	}
