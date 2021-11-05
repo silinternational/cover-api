@@ -45,6 +45,11 @@ func getS3ConfigFromEnv() awsConfig {
 	a.awsS3Bucket = domain.Env.AwsS3Bucket
 	a.awsDisableSSL = domain.Env.AwsS3DisableSSL
 
+	if domain.Env.GoEnv == "development" || domain.Env.GoEnv == "test" {
+		a.awsAccessKeyID = "abc123"
+		a.awsSecretAccessKey = "abcd1234"
+	}
+
 	if len(a.awsEndpoint) > 0 {
 		// a non-empty endpoint means minIO is in use, which doesn't support the S3 object URL scheme
 		a.getPresignedUrl = true

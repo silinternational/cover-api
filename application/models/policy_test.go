@@ -23,20 +23,24 @@ func (ms *ModelSuite) TestPolicy_Validate() {
 		{
 			name: "invalid",
 			Policy: Policy{
+				Name: "my policy",
 				Type: "invalid",
 			},
 			wantErr:  true,
 			errField: "Policy.Type",
 		},
 		{
-			name:     "missing type",
-			Policy:   Policy{},
+			name: "missing type",
+			Policy: Policy{
+				Name: "my policy",
+			},
 			wantErr:  true,
 			errField: "Policy.Type",
 		},
 		{
 			name: "valid type, missing household id",
 			Policy: Policy{
+				Name: "my policy",
 				Type: api.PolicyTypeHousehold,
 			},
 			wantErr:  true,
@@ -45,6 +49,7 @@ func (ms *ModelSuite) TestPolicy_Validate() {
 		{
 			name: "household type, should not have cost center",
 			Policy: Policy{
+				Name:        "my policy",
 				Type:        api.PolicyTypeHousehold,
 				HouseholdID: nulls.NewString("abc123"),
 				CostCenter:  "forbidden",
@@ -55,6 +60,7 @@ func (ms *ModelSuite) TestPolicy_Validate() {
 		{
 			name: "household type, should not have account",
 			Policy: Policy{
+				Name:        "my policy",
 				Type:        api.PolicyTypeHousehold,
 				HouseholdID: nulls.NewString("abc123"),
 				Account:     "forbidden",
@@ -65,6 +71,7 @@ func (ms *ModelSuite) TestPolicy_Validate() {
 		{
 			name: "household type, should not have entity code id",
 			Policy: Policy{
+				Name:         "my policy",
 				Type:         api.PolicyTypeHousehold,
 				HouseholdID:  nulls.NewString("abc123"),
 				EntityCodeID: nulls.NewUUID(domain.GetUUID()),
@@ -75,6 +82,7 @@ func (ms *ModelSuite) TestPolicy_Validate() {
 		{
 			name: "corporate type, should not have household id",
 			Policy: Policy{
+				Name:         "my policy",
 				Type:         api.PolicyTypeCorporate,
 				HouseholdID:  nulls.NewString("abc123"),
 				CostCenter:   "abc123",
@@ -87,6 +95,7 @@ func (ms *ModelSuite) TestPolicy_Validate() {
 		{
 			name: "corporate type, should have cost center",
 			Policy: Policy{
+				Name:         "my policy",
 				Type:         api.PolicyTypeCorporate,
 				Account:      "123456",
 				EntityCodeID: nulls.NewUUID(domain.GetUUID()),
@@ -97,6 +106,7 @@ func (ms *ModelSuite) TestPolicy_Validate() {
 		{
 			name: "corporate type, should have account",
 			Policy: Policy{
+				Name:         "my policy",
 				Type:         api.PolicyTypeCorporate,
 				HouseholdID:  nulls.NewString("abc123"),
 				CostCenter:   "abc123",
@@ -108,6 +118,7 @@ func (ms *ModelSuite) TestPolicy_Validate() {
 		{
 			name: "corporate type, should have entity code id",
 			Policy: Policy{
+				Name:        "my policy",
 				Type:        api.PolicyTypeCorporate,
 				HouseholdID: nulls.NewString("abc123"),
 				CostCenter:  "abc123",
@@ -119,6 +130,7 @@ func (ms *ModelSuite) TestPolicy_Validate() {
 		{
 			name: "valid household type",
 			Policy: Policy{
+				Name:        "my policy",
 				Type:        api.PolicyTypeHousehold,
 				HouseholdID: nulls.NewString("123456"),
 			},
@@ -128,6 +140,7 @@ func (ms *ModelSuite) TestPolicy_Validate() {
 		{
 			name: "valid corporate type",
 			Policy: Policy{
+				Name:         "my policy",
 				Type:         api.PolicyTypeCorporate,
 				CostCenter:   "abc123",
 				Account:      "123456",
@@ -163,6 +176,7 @@ func (ms *ModelSuite) TestPolicy_CreateCorporateType() {
 	user := uf.Users[0]
 
 	goodPolicy := Policy{
+		Name:         "my policy",
 		CostCenter:   randStr(8),
 		Account:      randStr(8),
 		EntityCodeID: nulls.NewUUID(entCode.ID),

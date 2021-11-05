@@ -203,6 +203,7 @@ func (as *ActionSuite) Test_PoliciesCreateCorporate() {
 	user := fixtures.Policies[0].Members[0]
 
 	goodPolicy := api.PolicyCreate{
+		Name:       "my policy",
 		CostCenter: "abc123",
 		Account:    "def456",
 		EntityCode: entCode.Code,

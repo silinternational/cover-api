@@ -223,6 +223,7 @@ func createPolicyFixtures(tx *pop.Connection, fixUsers []*models.User, entityCod
 			fixPolicies[i].CostCenter = domain.RandomString(8, "0123456789")
 			fixPolicies[i].Type = api.PolicyTypeCorporate
 		} else {
+			fixPolicies[i].Name = user.Name() + " Household policy"
 			fixPolicies[i].HouseholdID = nulls.NewString(fmt.Sprintf("HID-%s-%s", user.FirstName, user.LastName))
 		}
 
@@ -377,6 +378,14 @@ func createClaimFixtures(tx *pop.Connection, fixPolicies []*models.Policy, items
 		"41176ee9-b6cc-4064-9295-8fbab81d8a99",
 	}
 
+	claimItemUUIDs := []string{
+		"055c1c87-874c-45ba-afe0-358d35c3ac9a",
+		"99941712-2d5f-46a0-ab3c-930d39e65796",
+		"b50b5be4-8611-4c25-83a8-0066cec17155",
+		"6c1bb8ce-de1c-4d74-9131-dada7ce50a5e",
+		"c376aaf6-7788-4ff6-97ae-c8570a2b8b75",
+	}
+
 	if len(claimUUIDs) > len(fixPolicies) {
 		err := fmt.Errorf("mismatching count of fixtures in createClaimFixtures. "+
 			"Expected the number of policy fixtures to be %d, but got %d",
@@ -384,10 +393,10 @@ func createClaimFixtures(tx *pop.Connection, fixPolicies []*models.Policy, items
 		return nil, err
 	}
 
-	if len(claimUUIDs) > len(items) {
+	if len(claimUUIDs) > len(items)*2 {
 		err := fmt.Errorf("mismatching count of fixtures in createClaimFixtures. "+
 			"Expected the number of item fixtures to be %d, but got %d",
-			len(claimUUIDs), len(items))
+			len(claimUUIDs), len(items)*2)
 		return nil, err
 	}
 
@@ -409,9 +418,9 @@ func createClaimFixtures(tx *pop.Connection, fixPolicies []*models.Policy, items
 		}
 
 		ci := models.ClaimItem{
-			ID:           domain.GetUUID(),
+			ID:           uuid.FromStringOrNil(claimItemUUIDs[i]),
 			ClaimID:      fixClaims[i].ID,
-			ItemID:       items[i].ID,
+			ItemID:       items[i*2].ID,
 			Status:       api.ClaimItemStatusDraft,
 			PayoutOption: api.PayoutOptionRepair,
 		}
