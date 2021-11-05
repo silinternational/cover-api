@@ -393,10 +393,10 @@ func createClaimFixtures(tx *pop.Connection, fixPolicies []*models.Policy, items
 		return nil, err
 	}
 
-	if len(claimUUIDs) > len(items) {
+	if len(claimUUIDs) > len(items)*2 {
 		err := fmt.Errorf("mismatching count of fixtures in createClaimFixtures. "+
 			"Expected the number of item fixtures to be %d, but got %d",
-			len(claimUUIDs), len(items))
+			len(claimUUIDs), len(items)*2)
 		return nil, err
 	}
 
