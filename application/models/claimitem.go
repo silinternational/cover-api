@@ -313,10 +313,7 @@ func NewClaimItem(tx *pop.Connection, input api.ClaimItemCreateInput, item Item,
 	claimItem.Status = api.ClaimItemStatusDraft
 
 	claimItem.ClaimID = claim.ID
-	loc, err := item.GetAccountablePersonLocation(tx)
-	if err != nil {
-		return claimItem, err
-	}
+	loc := item.GetAccountablePersonLocation(tx)
 	claimItem.City = loc.City
 	claimItem.State = loc.State
 	claimItem.Country = loc.Country

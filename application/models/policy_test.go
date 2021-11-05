@@ -6,7 +6,6 @@ import (
 
 	"github.com/gobuffalo/buffalo"
 	"github.com/gobuffalo/nulls"
-	"github.com/gobuffalo/pop/v5"
 
 	"github.com/silinternational/cover-api/api"
 	"github.com/silinternational/cover-api/domain"
@@ -583,8 +582,6 @@ func (ms *ModelSuite) TestPolicies_Query() {
 
 	f.Policies[3].Members[0].FirstName = "John"
 	ms.NoError(ms.DB.Update(&f.Policies[3].Members[0]))
-
-	pop.Debug = true // Show Pop debug messages
 
 	tests := []struct {
 		name                 string
