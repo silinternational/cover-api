@@ -174,17 +174,19 @@ func createUserFixtures(tx *pop.Connection) ([]*models.User, error) {
 
 func createEntityCodes(tx *pop.Connection) ([]models.EntityCode, error) {
 	ec1 := models.EntityCode{
-		ID:   uuid.FromStringOrNil("d10e4de5-9cb9-47e0-b382-386a9513820b"),
-		Code: "XYZ",
-		Name: "XYZ entity code",
+		ID:     uuid.FromStringOrNil("d10e4de5-9cb9-47e0-b382-386a9513820b"),
+		Active: true,
+		Code:   "XYZ",
+		Name:   "XYZ entity code",
 	}
 	if err := ec1.Create(tx); err != nil {
 		return []models.EntityCode{}, err
 	}
 	ec2 := models.EntityCode{
-		ID:   uuid.FromStringOrNil("b16e1cff-effb-4f14-a60d-8160fc155185"),
-		Code: "ABC",
-		Name: "ABC entity code",
+		ID:     uuid.FromStringOrNil("b16e1cff-effb-4f14-a60d-8160fc155185"),
+		Active: true,
+		Code:   "ABC",
+		Name:   "ABC entity code",
 	}
 	return []models.EntityCode{ec1, ec2}, ec2.Create(tx)
 }
