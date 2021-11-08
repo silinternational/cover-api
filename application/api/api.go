@@ -163,6 +163,8 @@ func MergeExtras(extras []map[string]interface{}) map[string]interface{} {
 	return allExtras
 }
 
+// Currency is in US Dollars, specified as an integer representing cents ($0.01 USD)
+// swagger:model
 type Currency int
 
 func (c Currency) String() string {

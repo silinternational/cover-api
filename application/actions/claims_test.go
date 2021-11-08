@@ -559,10 +559,10 @@ func (as *ActionSuite) Test_ClaimsItemsCreate() {
 				`"claim_id":"` + claim.ID.String(),
 				`"status":"` + string(api.ClaimItemStatusDraft),
 				fmt.Sprintf(`"is_repairable":%t`, input.IsRepairable),
-				fmt.Sprintf(`"repair_estimate":%v`, input.RepairEstimate),
-				fmt.Sprintf(`"replace_estimate":%v`, input.ReplaceEstimate),
+				fmt.Sprintf(`"repair_estimate":%v`, int(input.RepairEstimate)),
+				fmt.Sprintf(`"replace_estimate":%v`, int(input.ReplaceEstimate)),
 				`"payout_option":"` + string(input.PayoutOption),
-				fmt.Sprintf(`"fmv":%v`, input.FMV),
+				fmt.Sprintf(`"fmv":%v`, int(input.FMV)),
 			},
 		},
 		{

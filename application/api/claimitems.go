@@ -88,25 +88,25 @@ type ClaimItem struct {
 	IsRepairable bool `json:"is_repairable"`
 
 	// repair estimate (0.01 USD)
-	RepairEstimate int `json:"repair_estimate,omitempty"`
+	RepairEstimate Currency `json:"repair_estimate,omitempty"`
 
 	// actual repair cost (0.01 USD)
-	RepairActual int `json:"repair_actual,omitempty"`
+	RepairActual Currency `json:"repair_actual,omitempty"`
 
 	// replacement estimate (0.01 USD)
-	ReplaceEstimate int `json:"replace_estimate,omitempty"`
+	ReplaceEstimate Currency `json:"replace_estimate,omitempty"`
 
 	// actual replacement cost (0.01 USD)
-	ReplaceActual int `json:"replace_actual,omitempty"`
+	ReplaceActual Currency `json:"replace_actual,omitempty"`
 
 	// payout option
 	PayoutOption PayoutOption `json:"payout_option,omitempty"`
 
 	// payout amount (0.01 USD)
-	PayoutAmount int `json:"payout_amount,omitempty"`
+	PayoutAmount Currency `json:"payout_amount,omitempty"`
 
 	// fair market value (0.01 USD)
-	FMV int `json:"fmv,omitempty"`
+	FMV Currency `json:"fmv,omitempty"`
 
 	// review date
 	//
@@ -140,22 +140,22 @@ type ClaimItemCreateInput struct {
 	IsRepairable bool `json:"is_repairable"`
 
 	// repair estimate (0.01 USD)
-	RepairEstimate int `json:"repair_estimate"`
+	RepairEstimate Currency `json:"repair_estimate"`
 
 	// actual repair cost (0.01 USD)
-	RepairActual int `json:"repair_actual"`
+	RepairActual Currency `json:"repair_actual"`
 
 	// replacement estimate (0.01 USD)
-	ReplaceEstimate int `json:"replace_estimate"`
+	ReplaceEstimate Currency `json:"replace_estimate"`
 
 	// actual replacement cost (0.01 USD)
-	ReplaceActual int `json:"replace_actual"`
+	ReplaceActual Currency `json:"replace_actual"`
 
 	// payout option
 	PayoutOption PayoutOption `json:"payout_option"`
 
 	// fair market value (0.01 USD)
-	FMV int `json:"fmv"`
+	FMV Currency `json:"fmv"`
 }
 
 // swagger:model
@@ -164,20 +164,20 @@ type ClaimItemUpdateInput struct {
 	IsRepairable bool `json:"is_repairable"`
 
 	// repair estimate (0.01 USD)
-	RepairEstimate int `json:"repair_estimate"`
+	RepairEstimate Currency `json:"repair_estimate"`
 
 	// actual repair cost (0.01 USD)
-	RepairActual int `json:"repair_actual"`
+	RepairActual Currency `json:"repair_actual"`
 
 	// replacement estimate (0.01 USD)
-	ReplaceEstimate int `json:"replace_estimate"`
+	ReplaceEstimate Currency `json:"replace_estimate"`
 
 	// actual replacement cost (0.01 USD)
-	ReplaceActual int `json:"replace_actual"`
+	ReplaceActual Currency `json:"replace_actual"`
 
 	// payout option
 	PayoutOption PayoutOption `json:"payout_option"`
 
 	// fair market value (0.01 USD)
-	FMV int `json:"fmv"`
+	FMV Currency `json:"fmv"`
 }

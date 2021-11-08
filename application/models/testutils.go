@@ -176,10 +176,10 @@ func UpdateClaimStatus(tx *pop.Connection, claim Claim, status api.ClaimStatus, 
 
 type UpdateClaimItemsParams struct {
 	PayoutOption    api.PayoutOption
-	FMV             int
+	FMV             api.Currency
 	IsRepairable    bool
-	RepairEstimate  int
-	ReplaceEstimate int
+	RepairEstimate  api.Currency
+	ReplaceEstimate api.Currency
 }
 
 // UpdateClaimItems sets the claim items to a state ready for submission.
