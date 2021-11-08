@@ -1019,16 +1019,16 @@ func (ms *ModelSuite) TestItem_Compare() {
 
 func (ms *ModelSuite) TestItem_canBeDeleted() {
 	f := CreateItemFixtures(ms.DB, FixturesConfig{
-		ItemsPerPolicy:     2,
-		ClaimsPerPolicy:    1,
-		ClaimItemsPerClaim: 1,
+		NumberOfPolicies: 3,
+		ItemsPerPolicy:   1,
 	})
-	yes := f.Items[0]
+	yes := f.Policies[0].Items[0]
 
-	hasClaim := f.Claims[0].ClaimItems[0].Item
+	hasClaim := f.Policies[1].Items[0]
+	createClaimFixture(ms.DB, f.Policies[1], FixturesConfig{ClaimItemsPerClaim: 1})
 
-	hasLedgerEntry := f.Items[1]
-	ms.NoError(hasLedgerEntry.Approve(CreateTestContext(f.Users[0]), false))
+	hasLedgerEntry := f.Policies[2].Items[0]
+	ms.NoError(hasLedgerEntry.Approve(CreateTestContext(f.Policies[2].Members[0]), false))
 
 	tests := []struct {
 		name string

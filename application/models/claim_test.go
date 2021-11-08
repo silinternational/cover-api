@@ -588,11 +588,13 @@ func (ms *ModelSuite) TestClaim_HasReceiptFile() {
 }
 
 func (ms *ModelSuite) TestClaim_ConvertToAPI() {
-	policy := CreatePolicyFixtures(ms.DB, FixturesConfig{}).Policies[0]
-	claim := createClaimFixture(ms.DB, policy, FixturesConfig{
+	fixtures := CreateItemFixtures(ms.DB, FixturesConfig{
+		ClaimsPerPolicy:    1,
 		ClaimItemsPerClaim: 2,
 		ClaimFilesPerClaim: 3,
 	})
+	claim := fixtures.Claims[0]
+
 	claim.StatusReason = "change request " + domain.RandomString(8, "0123456789")
 
 	got := claim.ConvertToAPI(ms.DB)
