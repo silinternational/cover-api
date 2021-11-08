@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math"
 	"net/http"
 	"time"
 
@@ -450,4 +451,28 @@ func (c *ClaimItem) NewHistory(ctx context.Context, action string, fieldUpdate F
 		OldValue:    fieldUpdate.OldValue,
 		NewValue:    fieldUpdate.NewValue,
 	}
+}
+
+func (c *ClaimItem) calculatePayout(ctx context.Context) error {
+	c.LoadItem(Tx(ctx), false)
+
+	coverageAmount := c.Item.CoverageAmount
+
+	deductible := 0.05
+	maxValue := 0.0
+	switch c.PayoutOption {
+	case api.PayoutOptionRepair:
+		maxValue = float64(c.RepairEstimate)
+	case api.PayoutOptionReplacement:
+		maxValue = float64(c.ReplaceEstimate)
+	case api.PayoutOptionFMV:
+		maxValue = float64(c.FMV)
+	case api.PayoutOptionFixedFraction:
+		deductible = 1.0 / 3.0
+		maxValue = float64(coverageAmount)
+	}
+
+	c.PayoutAmount = api.Currency(math.Round(math.Min(maxValue, float64(coverageAmount)) * (1.0 - deductible)))
+
+	return c.Update(ctx)
 }

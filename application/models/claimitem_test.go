@@ -432,3 +432,71 @@ func (ms *ModelSuite) TestClaimItem_Compare() {
 		})
 	}
 }
+
+func (ms *ModelSuite) TestClaimItem_calculatePayout() {
+	params := []UpdateClaimItemsParams{
+		{PayoutOption: api.PayoutOptionRepair, RepairEstimate: 100},
+		{PayoutOption: api.PayoutOptionReplacement, ReplaceEstimate: 200},
+		{PayoutOption: api.PayoutOptionFMV, FMV: 300},
+		{PayoutOption: api.PayoutOptionFixedFraction},
+		{PayoutOption: api.PayoutOptionRepair, RepairEstimate: 1000},
+	}
+
+	fixtures := CreateItemFixtures(ms.DB, FixturesConfig{ClaimsPerPolicy: len(params), ClaimItemsPerClaim: 1})
+
+	for i, p := range params {
+		UpdateClaimItems(ms.DB, fixtures.Claims[i], p)
+		fixtures.Items[i].CoverageAmount = 900
+		ms.NoError(ms.DB.Update(&fixtures.Items[i]))
+	}
+
+	// for FixedFraction, the incident type must be Evacuation
+	fixtures.Claims[3].IncidentType = api.ClaimIncidentTypeEvacuation
+	ms.NoError(ms.DB.Update(&fixtures.Claims[3]))
+
+	testCtx := CreateTestContext(fixtures.Users[0])
+
+	tests := []struct {
+		name      string
+		claimItem ClaimItem
+		want      api.Currency
+	}{
+		{
+			name:      "repair",
+			claimItem: fixtures.Claims[0].ClaimItems[0],
+			want:      95,
+		},
+		{
+			name:      "replace",
+			claimItem: fixtures.Claims[1].ClaimItems[0],
+			want:      190,
+		},
+		{
+			name:      "fmv",
+			claimItem: fixtures.Claims[2].ClaimItems[0],
+			want:      285,
+		},
+		{
+			name:      "fixed-fraction",
+			claimItem: fixtures.Claims[3].ClaimItems[0],
+			want:      600,
+		},
+		{
+			name:      "capped by CoverageAmount",
+			claimItem: fixtures.Claims[4].ClaimItems[0],
+			want:      855,
+		},
+	}
+	for _, tt := range tests {
+		ms.T().Run(tt.name, func(t *testing.T) {
+			// Get a fresh copy of the claimItem to ensure the UUT hydrates it as necessary
+			var claimItem ClaimItem
+			ms.NoError(claimItem.FindByID(ms.DB, tt.claimItem.ID))
+
+			err := claimItem.calculatePayout(testCtx)
+			ms.NoError(err)
+
+			ms.Equal(tt.want, claimItem.PayoutAmount, "didn't get the correct PayoutAmount")
+		})
+	}
+}
