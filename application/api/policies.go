@@ -16,7 +16,7 @@ type PolicyType string
 
 const (
 	PolicyTypeHousehold = PolicyType("Household")
-	PolicyTypeCorporate = PolicyType("Team")
+	PolicyTypeTeam      = PolicyType("Team")
 )
 
 // swagger:model

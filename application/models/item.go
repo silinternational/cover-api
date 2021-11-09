@@ -476,7 +476,7 @@ func (i *Item) canAutoApprove(tx *pop.Connection) bool {
 	}
 
 	i.LoadPolicy(tx, false)
-	if i.Policy.Type == api.PolicyTypeCorporate {
+	if i.Policy.Type == api.PolicyTypeTeam {
 		return true
 	}
 

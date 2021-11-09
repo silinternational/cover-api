@@ -20,7 +20,7 @@ type Policies []Policy
 
 var ValidPolicyTypes = map[api.PolicyType]struct{}{
 	api.PolicyTypeHousehold: {},
-	api.PolicyTypeCorporate: {},
+	api.PolicyTypeTeam:      {},
 }
 
 type Policy struct {
@@ -74,10 +74,10 @@ func (p *Policy) Update(ctx context.Context) error {
 	return update(tx, p)
 }
 
-// CreateCorporateType creates a new Team type policy for the user.
+// CreateTeam creates a new Team type policy for the user.
 //   The EntityCodeID, CostCenter and Account must have non-blank values
-func (p *Policy) CreateCorporateType(tx *pop.Connection, actor User) error {
-	p.Type = api.PolicyTypeCorporate
+func (p *Policy) CreateTeam(tx *pop.Connection, actor User) error {
+	p.Type = api.PolicyTypeTeam
 	p.Email = actor.EmailOfChoice()
 
 	if err := p.Create(tx); err != nil {

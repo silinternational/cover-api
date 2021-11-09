@@ -196,7 +196,7 @@ func (as *ActionSuite) Test_PoliciesView() {
 	}
 }
 
-func (as *ActionSuite) Test_PoliciesCreateCorporate() {
+func (as *ActionSuite) Test_PoliciesCreateTeam() {
 	fixtures := models.CreatePolicyFixtures(as.DB, models.FixturesConfig{NumberOfEntityCodes: 1})
 
 	entCode := fixtures.EntityCodes[0]
@@ -268,7 +268,7 @@ func (as *ActionSuite) Test_PoliciesCreateCorporate() {
 			as.Equal(tt.input.CostCenter, policy.CostCenter)
 			as.Equal(tt.input.Account, policy.Account)
 			as.Equal(tt.input.EntityCode, policy.EntityCode.Code)
-			as.Equal(api.PolicyTypeCorporate, policy.Type)
+			as.Equal(api.PolicyTypeTeam, policy.Type)
 		})
 	}
 }

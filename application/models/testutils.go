@@ -758,7 +758,7 @@ func CreateEntityFixture(tx *pop.Connection) EntityCode {
 // ConvertPolicyType converts a household policy to a Team policy. Creates a new Entity
 // for the policy.
 func ConvertPolicyType(tx *pop.Connection, policy Policy) Policy {
-	policy.Type = api.PolicyTypeCorporate
+	policy.Type = api.PolicyTypeTeam
 	policy.CostCenter = "CC1234"
 	policy.Account = "111222"
 	policy.AccountDetail = "Acct Detail"
