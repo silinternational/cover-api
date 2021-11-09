@@ -35,7 +35,6 @@ type Policy struct {
 	Notes         string         `db:"notes"`
 	LegacyID      nulls.Int      `db:"legacy_id"`
 	Email         string         `db:"email"`
-	IdentCode     string         `db:"ident_code"`
 	CreatedAt     time.Time      `db:"created_at"`
 	UpdatedAt     time.Time      `db:"updated_at"`
 
