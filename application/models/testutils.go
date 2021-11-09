@@ -109,6 +109,9 @@ func CreateItemFixtures(tx *pop.Connection, config FixturesConfig) Fixtures {
 	if config.ItemsPerPolicy < 1 {
 		config.ItemsPerPolicy = 1
 	}
+	if config.ItemsPerPolicy < config.ClaimsPerPolicy*config.ClaimItemsPerClaim {
+		config.ItemsPerPolicy = config.ClaimsPerPolicy * config.ClaimItemsPerClaim
+	}
 
 	fixtures := CreatePolicyFixtures(tx, config)
 	policies := fixtures.Policies
@@ -202,6 +205,11 @@ func UpdateClaimItems(tx *pop.Connection, claim Claim, params UpdateClaimItemsPa
 // createClaimFixture generates a Claim, a number of ClaimItems, and a number of ClaimFiles
 // Uses FixturesConfig fields: ClaimItemsPerClaim, ClaimFilesPerClaim
 func createClaimFixture(tx *pop.Connection, policy Policy, config FixturesConfig) Claim {
+	if len(policy.Items) < config.ClaimItemsPerClaim {
+		panic(fmt.Sprintf("policy fixture must have at least %d items, it only has %d",
+			config.ClaimItemsPerClaim, len(policy.Items)))
+	}
+
 	claim := Claim{
 		PolicyID:            policy.ID,
 		IncidentDate:        time.Date(2020, 5, 1, 12, 0, 0, 0, time.UTC),
@@ -211,11 +219,9 @@ func createClaimFixture(tx *pop.Connection, policy Policy, config FixturesConfig
 	}
 	MustCreate(tx, &claim)
 
-	icFixtures := CreateCategoryFixtures(tx, config.ClaimItemsPerClaim)
-
 	claim.ClaimItems = make(ClaimItems, config.ClaimItemsPerClaim)
 	for i := range claim.ClaimItems {
-		item := createItemFixture(tx, policy.ID, icFixtures.ItemCategories[i].ID)
+		item := policy.Items[i]
 		claim.ClaimItems[i] = ClaimItem{
 			ID:              uuid.UUID{},
 			ClaimID:         claim.ID,
