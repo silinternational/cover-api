@@ -458,13 +458,22 @@ func (c *ClaimItem) calculatePayout(ctx context.Context) error {
 
 	coverageAmount := c.Item.CoverageAmount
 
+	useActual := c.Status == api.ClaimItemStatusReview2 || c.Status == api.ClaimItemStatusReview3 ||
+		c.Status == api.ClaimItemStatusApproved || c.Status == api.ClaimItemStatusPaid
+
 	deductible := 0.05
 	maxValue := 0.0
 	switch c.PayoutOption {
 	case api.PayoutOptionRepair:
 		maxValue = float64(c.RepairEstimate)
+		if useActual {
+			maxValue = float64(c.RepairActual)
+		}
 	case api.PayoutOptionReplacement:
 		maxValue = float64(c.ReplaceEstimate)
+		if useActual {
+			maxValue = float64(c.ReplaceActual)
+		}
 	case api.PayoutOptionFMV:
 		maxValue = float64(c.FMV)
 	case api.PayoutOptionFixedFraction:
