@@ -513,7 +513,7 @@ func appendToPolicy(tx *pop.Connection, policyUUID uuid.UUID, p LegacyPolicy, le
 		policy.Email = p.Email
 	}
 
-	if err := tx.UpdateColumns(&policy, "notes", "email", "ident_code"); err != nil {
+	if err := tx.UpdateColumns(&policy, "notes", "email"); err != nil {
 		panic(err.Error())
 	}
 }
