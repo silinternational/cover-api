@@ -403,7 +403,7 @@ func importPolicies(tx *pop.Connection, policies []LegacyPolicy) {
 			}
 
 			newPolicy := models.Policy{
-				Name:          fmt.Sprintf("Policy %s", trim(p.IdentCode)),
+				Name:          trim(p.IdentCode),
 				Type:          getPolicyType(p),
 				HouseholdID:   householdID,
 				CostCenter:    trim(p.CostCenter),
@@ -413,11 +413,11 @@ func importPolicies(tx *pop.Connection, policies []LegacyPolicy) {
 				Notes:         p.Notes,
 				Email:         p.Email,
 				LegacyID:      nulls.NewInt(policyID),
-				IdentCode:     trim(p.IdentCode),
 				CreatedAt:     time.Time(p.CreatedAt),
 			}
 			if newPolicy.Type == api.PolicyTypeHousehold {
 				newPolicy.Account = ""
+				newPolicy.Name = p.LastName + " household"
 			}
 			if err := newPolicy.Create(tx); err != nil {
 				log.Fatalf("failed to create policy, %s\n%+v", err, newPolicy)
@@ -511,12 +511,6 @@ func appendToPolicy(tx *pop.Connection, policyUUID uuid.UUID, p LegacyPolicy, le
 		policy.Email += "," + p.Email
 	} else {
 		policy.Email = p.Email
-	}
-
-	if policy.IdentCode != "" {
-		policy.IdentCode += "," + p.IdentCode
-	} else {
-		policy.IdentCode = p.IdentCode
 	}
 
 	if err := tx.UpdateColumns(&policy, "notes", "email", "ident_code"); err != nil {
