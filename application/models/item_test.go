@@ -1094,3 +1094,37 @@ func (ms *ModelSuite) TestItem_ConvertToAPI() {
 	ms.Equal(fixtures.PolicyDependents[0].GetName().String(), got.AccountablePerson.Name,
 		"AccountablePerson Name is not correct")
 }
+
+func (ms *ModelSuite) TestItem_canBeUpdated() {
+	fixtures := CreateItemFixtures(ms.DB, FixturesConfig{ClaimsPerPolicy: 2, ClaimItemsPerClaim: 1})
+
+	// both claims are on Items[0] since ClaimItemsPerClaim = 1
+	safeItem := fixtures.Items[1]
+
+	unsafeClaim := UpdateClaimStatus(ms.DB, fixtures.Claims[1], api.ClaimStatusReview1, "some reason")
+	unsafeItem := unsafeClaim.ClaimItems[0].Item
+
+	tests := []struct {
+		name string
+		item Item
+		want bool
+	}{
+		{
+			name: "no",
+			item: unsafeItem,
+			want: false,
+		},
+		{
+			name: "yes",
+			item: safeItem,
+			want: true,
+		},
+	}
+	for _, tt := range tests {
+		ms.T().Run(tt.name, func(t *testing.T) {
+			got := tt.item.canBeUpdated(ms.DB)
+
+			ms.Equal(tt.want, got)
+		})
+	}
+}
