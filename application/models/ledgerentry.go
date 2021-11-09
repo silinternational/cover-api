@@ -1,6 +1,7 @@
 package models
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -67,6 +68,8 @@ type LedgerEntry struct {
 
 	CreatedAt time.Time `db:"created_at"`
 	UpdatedAt time.Time `db:"updated_at"`
+
+	Claim *Claim `belongs_to:"claims" validate:"-"`
 }
 
 func (le *LedgerEntry) Create(tx *pop.Connection) error {
@@ -131,11 +134,33 @@ func (le *LedgerEntries) MakeBlocks() TransactionBlocks {
 	return blocks
 }
 
-func (le *LedgerEntries) SetDateEntered(tx *pop.Connection) error {
-	now := nulls.NewTime(time.Now().UTC())
+// Reconcile marks each LedgerEntry as "entered" into the accounting system, and makes any
+// necessary updates to the referenced objects, such as setting Claim status to Paid.
+func (le *LedgerEntries) Reconcile(ctx context.Context) error {
+	now := time.Now().UTC()
 	for _, e := range *le {
-		e.DateEntered = now
-		if err := e.Update(tx); err != nil {
+		if err := e.Reconcile(ctx, now); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// Reconcile marks the LedgerEntry as "entered" into the accounting system, and makes any
+// necessary updates to the referenced objects, such as setting Claim status to Paid.
+func (le *LedgerEntry) Reconcile(ctx context.Context, now time.Time) error {
+	tx := Tx(ctx)
+
+	le.DateEntered = nulls.NewTime(now)
+	if err := le.Update(tx); err != nil {
+		return err
+	}
+
+	le.LoadClaim(tx)
+	if le.Claim != nil {
+		le.Claim.Status = api.ClaimStatusPaid
+		// Use Update instead of UpdateStatus so the ClaimItem(s) get updated as well
+		if err := le.Claim.Update(ctx); err != nil {
 			return err
 		}
 	}
@@ -226,4 +251,13 @@ func NewLedgerEntry(policy Policy, item *Item, claim *Claim) LedgerEntry {
 		le.ClaimID = nulls.NewUUID(claim.ID)
 	}
 	return le
+}
+
+// LoadClaim - a simple wrapper method for loading the claim
+func (le *LedgerEntry) LoadClaim(tx *pop.Connection) {
+	if le.ClaimID.Valid {
+		if err := tx.Load(le, "Claim"); err != nil {
+			panic("error loading ledger entry claim: " + err.Error())
+		}
+	}
 }

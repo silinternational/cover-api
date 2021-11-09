@@ -217,10 +217,9 @@ func (ms *ModelSuite) Test_NewLedgerEntry() {
 	}
 }
 
-func (ms *ModelSuite) TestLedgerEntries_SetDateEntered() {
-	f := CreateItemFixtures(ms.DB, FixturesConfig{ItemsPerPolicy: 2})
-	user := f.Users[0]
-	ctx := CreateTestContext(user)
+func (ms *ModelSuite) TestLedgerEntries_Reconcile() {
+	f := CreateItemFixtures(ms.DB, FixturesConfig{ItemsPerPolicy: 2, ClaimsPerPolicy: 2, ClaimItemsPerClaim: 1})
+	ctx := CreateTestContext(CreateAdminUsers(ms.DB)[AppRoleSteward])
 
 	march := time.Date(2021, 3, 1, 0, 0, 0, 0, time.UTC)
 	april := time.Date(2021, 4, 1, 0, 0, 0, 0, time.UTC)
@@ -228,14 +227,25 @@ func (ms *ModelSuite) TestLedgerEntries_SetDateEntered() {
 	datesSubmitted := []time.Time{march, april}
 	datesEntered := []nulls.Time{nulls.NewTime(april), {}}
 
-	entries := make(LedgerEntries, len(f.Items))
+	itemEntries := make(LedgerEntries, len(f.Items))
 	for i := range f.Items {
 		ms.NoError(f.Items[i].Approve(ctx, false))
 
-		ms.NoError(ms.DB.Where("item_id = ?", f.Items[i].ID).First(&entries[i]))
-		entries[i].DateSubmitted = datesSubmitted[i]
-		entries[i].DateEntered = datesEntered[i]
-		ms.NoError(ms.DB.Update(&entries[i]))
+		ms.NoError(ms.DB.Where("item_id = ?", f.Items[i].ID).First(&itemEntries[i]))
+		itemEntries[i].DateSubmitted = datesSubmitted[i]
+		itemEntries[i].DateEntered = datesEntered[i]
+		ms.NoError(ms.DB.Update(&itemEntries[i]))
+	}
+
+	claimEntries := make(LedgerEntries, len(f.Claims))
+	for i, claim := range f.Claims {
+		claim = UpdateClaimStatus(ms.DB, claim, api.ClaimStatusReview3, "")
+		ms.NoError(claim.Approve(ctx))
+
+		ms.NoError(ms.DB.Where("claim_id = ?", claim.ID).First(&claimEntries[i]))
+		claimEntries[i].DateSubmitted = datesSubmitted[i]
+		claimEntries[i].DateEntered = datesEntered[i]
+		ms.NoError(ms.DB.Update(&claimEntries[i]))
 	}
 
 	empty := LedgerEntries{}
@@ -249,19 +259,31 @@ func (ms *ModelSuite) TestLedgerEntries_SetDateEntered() {
 			entries: empty,
 		},
 		{
-			name:    "non-empty list",
-			entries: entries,
+			name:    "item ledger entries",
+			entries: itemEntries,
+		},
+		{
+			name:    "claim ledger entries",
+			entries: claimEntries,
 		},
 	}
 	for _, tt := range tests {
 		ms.T().Run(tt.name, func(t *testing.T) {
-			err := tt.entries.SetDateEntered(ms.DB)
+			err := tt.entries.Reconcile(ctx)
 			ms.NoError(err)
 
 			for _, e := range tt.entries {
 				var after LedgerEntry
 				ms.NoError(ms.DB.Find(&after, e.ID))
 				ms.True(after.DateEntered.Valid, "DateEntered was not set")
+
+				if after.ClaimID.Valid {
+					after.LoadClaim(ms.DB)
+					ms.Equal(api.ClaimStatusPaid, after.Claim.Status, "claim Status was not set to Paid")
+					after.Claim.LoadClaimItems(ms.DB, true)
+					ms.Equal(api.ClaimItemStatusPaid, after.Claim.ClaimItems[0].Status,
+						"claim item Status was not set to Paid")
+				}
 			}
 		})
 	}
