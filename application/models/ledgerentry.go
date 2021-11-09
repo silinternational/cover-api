@@ -220,7 +220,7 @@ func (le *LedgerEntry) balanceDescription() string {
 		premiumsOrClaims = "Claims"
 	}
 	entity := le.EntityCode
-	if le.PolicyType != api.PolicyTypeCorporate {
+	if le.PolicyType != api.PolicyTypeTeam {
 		entity = string(le.PolicyType)
 	}
 	return fmt.Sprintf("Total %s %s %s", entity, le.RiskCategoryName, premiumsOrClaims)
@@ -230,7 +230,7 @@ func (le *LedgerEntry) balanceDescription() string {
 // Requires pre-hydration of policy.EntityCode. If item is not nil, item.RiskCategory must be hydrated.
 func NewLedgerEntry(policy Policy, item *Item, claim *Claim) LedgerEntry {
 	costCenter := ""
-	if policy.Type == api.PolicyTypeCorporate {
+	if policy.Type == api.PolicyTypeTeam {
 		costCenter = policy.CostCenter + " / " + policy.AccountDetail
 	}
 	le := LedgerEntry{

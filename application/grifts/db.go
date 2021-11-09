@@ -223,7 +223,7 @@ func createPolicyFixtures(tx *pop.Connection, fixUsers []*models.User, entityCod
 			fixPolicies[i].Account = domain.RandomString(6, "0123456789")
 			fixPolicies[i].AccountDetail = domain.RandomString(10, "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ")
 			fixPolicies[i].CostCenter = domain.RandomString(8, "0123456789")
-			fixPolicies[i].Type = api.PolicyTypeCorporate
+			fixPolicies[i].Type = api.PolicyTypeTeam
 		} else {
 			fixPolicies[i].Name = user.LastName + " household"
 			fixPolicies[i].HouseholdID = nulls.NewString(fmt.Sprintf("HID-%s-%s", user.FirstName, user.LastName))
@@ -441,7 +441,7 @@ func createClaimFixtures(tx *pop.Connection, fixPolicies []*models.Policy, items
 }
 
 func createLedgerEntryFixtures(tx *pop.Connection, items []*models.Item, claims []*models.Claim) error {
-	// Two entries for Corporate Policies
+	// Two entries for Team Policies
 	if err := items[0].CreateLedgerEntry(tx, models.LedgerEntryTypeNewCoverage, 1021); err != nil {
 		return err
 	}
@@ -457,7 +457,7 @@ func createLedgerEntryFixtures(tx *pop.Connection, items []*models.Item, claims 
 		return err
 	}
 
-	// Corporate policy claim
+	// Team policy claim
 	claims[0].TotalPayout = 2849
 	if err := approveClaim(tx, claims[0]); err != nil {
 		return err

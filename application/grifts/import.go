@@ -526,7 +526,7 @@ func getPolicyType(p LegacyPolicy) api.PolicyType {
 	case "household":
 		policyType = api.PolicyTypeHousehold
 	case "ou", "corporate":
-		policyType = api.PolicyTypeCorporate
+		policyType = api.PolicyTypeTeam
 	default:
 		log.Fatalf("no policy type in policy '" + p.Id + "'")
 	}
@@ -892,7 +892,7 @@ func importJournalEntries(tx *pop.Connection, entries []JournalEntry) {
 		//		e.DateEntd, e.DateSubm, e.Entity, e.AccNum, e.RMJE, e.JERecNum)
 		//}
 
-		policyType := api.PolicyTypeCorporate
+		policyType := api.PolicyTypeTeam
 		if e.Entity == "MMB/STM" {
 			policyType = api.PolicyTypeHousehold
 		}

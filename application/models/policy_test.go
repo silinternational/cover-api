@@ -79,10 +79,10 @@ func (ms *ModelSuite) TestPolicy_Validate() {
 			errField: "Policy.EntityCodeID",
 		},
 		{
-			name: "corporate type, should not have household id",
+			name: "team type, should not have household id",
 			Policy: Policy{
 				Name:         "my policy",
-				Type:         api.PolicyTypeCorporate,
+				Type:         api.PolicyTypeTeam,
 				HouseholdID:  nulls.NewString("abc123"),
 				CostCenter:   "abc123",
 				Account:      "123456",
@@ -92,10 +92,10 @@ func (ms *ModelSuite) TestPolicy_Validate() {
 			errField: "Policy.HouseholdID",
 		},
 		{
-			name: "corporate type, should have cost center",
+			name: "team type, should have cost center",
 			Policy: Policy{
 				Name:         "my policy",
-				Type:         api.PolicyTypeCorporate,
+				Type:         api.PolicyTypeTeam,
 				Account:      "123456",
 				EntityCodeID: nulls.NewUUID(domain.GetUUID()),
 			},
@@ -103,10 +103,10 @@ func (ms *ModelSuite) TestPolicy_Validate() {
 			errField: "Policy.CostCenter",
 		},
 		{
-			name: "corporate type, should have account",
+			name: "team type, should have account",
 			Policy: Policy{
 				Name:         "my policy",
-				Type:         api.PolicyTypeCorporate,
+				Type:         api.PolicyTypeTeam,
 				HouseholdID:  nulls.NewString("abc123"),
 				CostCenter:   "abc123",
 				EntityCodeID: nulls.NewUUID(domain.GetUUID()),
@@ -115,10 +115,10 @@ func (ms *ModelSuite) TestPolicy_Validate() {
 			errField: "Policy.Account",
 		},
 		{
-			name: "corporate type, should have entity code id",
+			name: "team type, should have entity code id",
 			Policy: Policy{
 				Name:        "my policy",
-				Type:        api.PolicyTypeCorporate,
+				Type:        api.PolicyTypeTeam,
 				HouseholdID: nulls.NewString("abc123"),
 				CostCenter:  "abc123",
 				Account:     "123456",
@@ -137,10 +137,10 @@ func (ms *ModelSuite) TestPolicy_Validate() {
 			errField: "",
 		},
 		{
-			name: "valid corporate type",
+			name: "valid team type",
 			Policy: Policy{
 				Name:         "my policy",
-				Type:         api.PolicyTypeCorporate,
+				Type:         api.PolicyTypeTeam,
 				CostCenter:   "abc123",
 				Account:      "123456",
 				EntityCodeID: nulls.NewUUID(domain.GetUUID()),
@@ -165,7 +165,7 @@ func (ms *ModelSuite) TestPolicy_Validate() {
 	}
 }
 
-func (ms *ModelSuite) TestPolicy_CreateCorporateType() {
+func (ms *ModelSuite) TestPolicy_CreateTeam() {
 	t := ms.T()
 
 	pf := CreatePolicyFixtures(ms.DB, FixturesConfig{NumberOfEntityCodes: 1})
@@ -229,7 +229,7 @@ func (ms *ModelSuite) TestPolicy_CreateCorporateType() {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := tt.policy.CreateCorporateType(ms.DB, tt.user)
+			err := tt.policy.CreateTeam(ms.DB, tt.user)
 			if tt.wantErr {
 				ms.Error(err)
 				return
@@ -243,7 +243,7 @@ func (ms *ModelSuite) TestPolicy_CreateCorporateType() {
 			ms.NoError(err, "error trying to find resulting policy")
 			ms.Equal(tt.policy.Account, dbPolicy.Account)
 			ms.Equal(tt.user.EmailOfChoice(), dbPolicy.Email)
-			ms.Equal(api.PolicyTypeCorporate, dbPolicy.Type)
+			ms.Equal(api.PolicyTypeTeam, dbPolicy.Type)
 
 			policyUsers := PolicyUsers{}
 			err = ms.DB.Where("user_id = ?", tt.user.ID).All(&policyUsers)
@@ -326,7 +326,7 @@ func (ms *ModelSuite) TestPolicy_Compare() {
 	MustCreate(ms.DB, &e)
 
 	oldPolicy := Policy{
-		Type:         api.PolicyTypeCorporate,
+		Type:         api.PolicyTypeTeam,
 		HouseholdID:  nulls.NewString("abc123"),
 		CostCenter:   "xyz789",
 		Account:      "123457890",

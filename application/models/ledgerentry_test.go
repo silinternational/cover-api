@@ -159,9 +159,9 @@ func (ms *ModelSuite) Test_NewLedgerEntry() {
 	householdPolicyClaim := f.Policies[0].Claims[0]
 	ms.False(uuid.Nil == householdPolicyClaim.ID, "householdPolicyClaim is not hydrated")
 
-	corporatePolicy := ConvertPolicyType(ms.DB, f.Policies[1])
-	corporatePolicyItem := corporatePolicy.Items[0]
-	ms.NoError(corporatePolicyItem.setAccountablePerson(ms.DB, f.Users[1].ID))
+	teamPolicy := ConvertPolicyType(ms.DB, f.Policies[1])
+	teamPolicyItem := teamPolicy.Items[0]
+	ms.NoError(teamPolicyItem.setAccountablePerson(ms.DB, f.Users[1].ID))
 
 	tests := []struct {
 		name   string
@@ -176,13 +176,13 @@ func (ms *ModelSuite) Test_NewLedgerEntry() {
 			claim:  &householdPolicyClaim,
 		},
 		{
-			name:   "corporate policy item no claim",
-			policy: corporatePolicy,
-			item:   &corporatePolicyItem,
+			name:   "team policy item no claim",
+			policy: teamPolicy,
+			item:   &teamPolicyItem,
 		},
 		{
 			name:   "policy only",
-			policy: corporatePolicy,
+			policy: teamPolicy,
 		},
 	}
 	for _, tt := range tests {
@@ -192,7 +192,7 @@ func (ms *ModelSuite) Test_NewLedgerEntry() {
 			ms.Equal(tt.policy.ID, le.PolicyID, "PolicyID is incorrect")
 			ms.WithinDuration(time.Now().UTC(), le.DateSubmitted, time.Minute, "DateSubmitted is incorrect")
 			ms.Equal(tt.policy.Type, le.PolicyType, "PolicyType is incorrect")
-			if tt.policy.Type == api.PolicyTypeCorporate {
+			if tt.policy.Type == api.PolicyTypeTeam {
 				ms.Equal(tt.policy.Account, le.AccountNumber, "AccountNumber is incorrect")
 				ms.Equal(tt.policy.CostCenter+" / "+tt.policy.AccountDetail, le.CostCenter, "CostCenter is incorrect")
 				ms.Equal(tt.policy.EntityCode.Code, le.EntityCode, "EntityCode is incorrect")

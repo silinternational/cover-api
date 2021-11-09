@@ -217,7 +217,7 @@ func policyStructLevelValidation(sl validator.StructLevel) {
 		if policy.Account != "" {
 			sl.ReportError(policy.Account, "account", "Account", "account_not_permitted", "")
 		}
-	} else if policy.Type == api.PolicyTypeCorporate {
+	} else if policy.Type == api.PolicyTypeTeam {
 		if !policy.EntityCodeID.Valid {
 			sl.ReportError(policy.EntityCodeID, "entity_code_id", "EntityCodeID", "entity_code_id_required", "")
 		}

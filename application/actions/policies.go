@@ -100,11 +100,11 @@ func policiesView(c buffalo.Context) error {
 	return renderOk(c, policy.ConvertToAPI(models.Tx(c), true))
 }
 
-// swagger:operation POST /policies Policies PoliciesCreateCorporate
+// swagger:operation POST /policies Policies PoliciesCreateTeam
 //
-// PoliciesCreateCorporate
+// PoliciesCreateTeam
 //
-// create a new Policy with type Corporate
+// create a new Policy with type Team
 //
 // ---
 // parameters:
@@ -119,7 +119,7 @@ func policiesView(c buffalo.Context) error {
 //     description: the new Policy
 //     schema:
 //       "$ref": "#/definitions/Policy"
-func policiesCreateCorporate(c buffalo.Context) error {
+func policiesCreateTeam(c buffalo.Context) error {
 	var input api.PolicyCreate
 	if err := StrictBind(c, &input); err != nil {
 		return reportError(c, err)
@@ -141,7 +141,7 @@ func policiesCreateCorporate(c buffalo.Context) error {
 		EntityCodeID:  nulls.NewUUID(entityCode.ID),
 	}
 
-	if err := policy.CreateCorporateType(tx, user); err != nil {
+	if err := policy.CreateTeam(tx, user); err != nil {
 		return reportError(c, err)
 	}
 
@@ -187,7 +187,7 @@ func policiesUpdate(c buffalo.Context) error {
 		policy.Account = ""
 		policy.AccountDetail = ""
 		policy.EntityCodeID = nulls.UUID{}
-	case api.PolicyTypeCorporate:
+	case api.PolicyTypeTeam:
 		var entityCode models.EntityCode
 		if err := entityCode.FindByCode(tx, update.EntityCode); err != nil {
 			return reportError(c, err)

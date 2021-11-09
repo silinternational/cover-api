@@ -195,7 +195,7 @@ func App() *buffalo.App {
 		// policies
 		policiesGroup := app.Group(policiesPath)
 		policiesGroup.GET("/", policiesList)
-		policiesGroup.POST("/", policiesCreateCorporate)
+		policiesGroup.POST("/", policiesCreateTeam)
 		policiesGroup.GET(idRegex, policiesView)
 		policiesGroup.GET(idRegex+"/dependents", dependentsList)
 		policiesGroup.PUT(idRegex, policiesUpdate)
