@@ -193,6 +193,7 @@ func (ms *ModelSuite) TestClaim_SubmitForApproval() {
 			ms.NoError(got)
 
 			ms.Equal(tt.wantStatus, tt.claim.Status, "incorrect status")
+			ms.Greater(tt.claim.TotalPayout, 0, "total payout was not set")
 		})
 	}
 }
@@ -588,11 +589,13 @@ func (ms *ModelSuite) TestClaim_HasReceiptFile() {
 }
 
 func (ms *ModelSuite) TestClaim_ConvertToAPI() {
-	policy := CreatePolicyFixtures(ms.DB, FixturesConfig{}).Policies[0]
-	claim := createClaimFixture(ms.DB, policy, FixturesConfig{
+	fixtures := CreateItemFixtures(ms.DB, FixturesConfig{
+		ClaimsPerPolicy:    1,
 		ClaimItemsPerClaim: 2,
 		ClaimFilesPerClaim: 3,
 	})
+	claim := fixtures.Claims[0]
+
 	claim.StatusReason = "change request " + domain.RandomString(8, "0123456789")
 
 	got := claim.ConvertToAPI(ms.DB)
@@ -882,4 +885,19 @@ func (ms *ModelSuite) TestClaims_ByStatus() {
 			ms.ElementsMatch(tt.wantClaimIDs, gotIDs)
 		})
 	}
+}
+
+func (ms *ModelSuite) TestClaim_calculatePayout() {
+	fixtures := CreateItemFixtures(ms.DB, FixturesConfig{ClaimsPerPolicy: 1, ClaimItemsPerClaim: 1})
+	fixtures.Claims[0].ClaimItems[0].RepairEstimate = 100
+	ms.NoError(ms.DB.Update(&fixtures.Claims[0].ClaimItems[0]))
+
+	// Get a fresh copy of the claim to ensure the UUT hydrates it as necessary
+	var claim Claim
+	ms.NoError(claim.FindByID(ms.DB, fixtures.Claims[0].ID))
+
+	ms.NoError(claim.calculatePayout(CreateTestContext(fixtures.Users[0])))
+
+	// The claim item test will check the actual amount. Just make sure it's not zero.
+	ms.Greater(claim.TotalPayout, 0, "payout was not set")
 }

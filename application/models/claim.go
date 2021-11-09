@@ -396,6 +396,8 @@ func (c *Claim) SubmitForApproval(ctx context.Context) error {
 		}
 	}
 
+	c.calculatePayout(ctx)
+
 	if err := c.Update(ctx); err != nil {
 		return err
 	}
@@ -870,6 +872,9 @@ func (c *Claim) CreateLedgerEntry(tx *pop.Connection) error {
 }
 
 func (c *Claim) UpdateStatus(ctx context.Context, newStatus api.ClaimStatus) error {
+	if newStatus == c.Status {
+		return nil
+	}
 	oldStatus := c.Status
 	c.Status = newStatus
 	tx := Tx(ctx)
@@ -892,4 +897,18 @@ func (c *Claim) UpdateStatus(ctx context.Context, newStatus api.ClaimStatus) err
 func (c *Claim) SubmittedAt(tx *pop.Connection) time.Time {
 	// TODO: use the history table to get the real date
 	return c.UpdatedAt
+}
+
+func (c *Claim) calculatePayout(ctx context.Context) error {
+	c.LoadClaimItems(Tx(ctx), false)
+	var payout api.Currency
+	for _, claimItem := range c.ClaimItems {
+		if err := claimItem.calculatePayout(ctx); err != nil {
+			return err
+		}
+		payout += claimItem.PayoutAmount
+	}
+	c.TotalPayout = payout
+
+	return c.Update(ctx)
 }

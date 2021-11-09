@@ -180,7 +180,8 @@ func claimItemStructLevelValidation(sl validator.StructLevel) {
 				options = append(options, string(k))
 			}
 			sl.ReportError(claimItem.PayoutOption, "payout_option", "PayoutOption",
-				fmt.Sprintf("payout option must be one of: %s", strings.Join(options, ", ")), "")
+				fmt.Sprintf("with incident type %s, payout option must be one of: %s",
+					claimItem.Claim.IncidentType, strings.Join(options, ", ")), "")
 		}
 
 		return
