@@ -87,7 +87,7 @@ func batchesApprove(c buffalo.Context) error {
 		return err
 	}
 
-	if err := le.SetDateEntered(tx); err != nil {
+	if err := le.Reconcile(c); err != nil {
 		return reportError(c, err)
 	}
 
