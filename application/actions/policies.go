@@ -100,11 +100,11 @@ func policiesView(c buffalo.Context) error {
 	return renderOk(c, policy.ConvertToAPI(models.Tx(c), true))
 }
 
-// swagger:operation POST /policies Policies PoliciesCreateCorporate
+// swagger:operation POST /policies Policies PoliciesCreateTeam
 //
-// PoliciesCreateCorporate
+// PoliciesCreateTeam
 //
-// create a new Policy with type Corporate
+// create a new Policy with type Team
 //
 // ---
 // parameters:

@@ -25,12 +25,12 @@ var ValidPolicyTypes = map[api.PolicyType]struct{}{
 
 type Policy struct {
 	ID            uuid.UUID      `db:"id"`
-	Name          string         `db:"name" validate:"required_if=Type Corporate"`
+	Name          string         `db:"name" validate:"required_if=Type Team"`
 	Type          api.PolicyType `db:"type" validate:"policyType"`
 	HouseholdID   nulls.String   `db:"household_id"` // validation is checked at the struct level
-	CostCenter    string         `db:"cost_center" validate:"required_if=Type Corporate"`
+	CostCenter    string         `db:"cost_center" validate:"required_if=Type Team"`
 	AccountDetail string         `db:"account_detail"`
-	Account       string         `db:"account" validate:"required_if=Type Corporate"`
+	Account       string         `db:"account" validate:"required_if=Type Team"`
 	EntityCodeID  nulls.UUID     `db:"entity_code_id"` // validation is checked at the struct level
 	Notes         string         `db:"notes"`
 	LegacyID      nulls.Int      `db:"legacy_id"`
@@ -74,7 +74,7 @@ func (p *Policy) Update(ctx context.Context) error {
 	return update(tx, p)
 }
 
-// CreateCorporateType creates a new Corporate type policy for the user.
+// CreateCorporateType creates a new Team type policy for the user.
 //   The EntityCodeID, CostCenter and Account must have non-blank values
 func (p *Policy) CreateCorporateType(tx *pop.Connection, actor User) error {
 	p.Type = api.PolicyTypeCorporate

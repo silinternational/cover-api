@@ -9,20 +9,20 @@ import (
 
 // PolicyType
 //
-// may be one of: Household, Corporate
+// may be one of: Household, Team
 //
 // swagger:model
 type PolicyType string
 
 const (
 	PolicyTypeHousehold = PolicyType("Household")
-	PolicyTypeCorporate = PolicyType("Corporate")
+	PolicyTypeCorporate = PolicyType("Team")
 )
 
 // swagger:model
 type Policies []Policy
 
-// Policy represents a single policy, either household or corporate
+// Policy represents a single policy, either household or team
 // swagger:model
 type Policy struct {
 	// unique ID
@@ -83,16 +83,16 @@ type PolicyCreate struct {
 	// Household ID for billing. Only required/allowed on Household type policies.
 	HouseholdID nulls.String `json:"household_id,omitempty"`
 
-	// Cost center for billing. Only required/allowed on Corporate type policies.
+	// Cost center for billing. Only required/allowed on Team type policies.
 	CostCenter string `json:"cost_center,omitempty"`
 
-	// Account code for billing. Only required/allowed on Corporate type policies.
+	// Account code for billing. Only required/allowed on Team type policies.
 	Account string `json:"account,omitempty"`
 
 	// AccountDetail allows for optional detail to route transactions. e.g.: "Nigeria Grp Off-Ins"
 	AccountDetail string `json:"account_detail,omitempty"`
 
-	// Entity code for billing. Only required/allowed on Corporate type policies.
+	// Entity code for billing. Only required/allowed on Team type policies.
 	EntityCode string `json:"entity_code,omitempty"`
 }
 
@@ -105,15 +105,15 @@ type PolicyUpdate struct {
 	// Household ID for billing. Only required/allowed on Household type policies.
 	HouseholdID nulls.String `json:"household_id,omitempty"`
 
-	// Cost center for billing. Only required/allowed on Corporate type policies.
+	// Cost center for billing. Only required/allowed on Team type policies.
 	CostCenter string `json:"cost_center,omitempty"`
 
-	// Account code for billing. Only required/allowed on Corporate type policies.
+	// Account code for billing. Only required/allowed on Team type policies.
 	Account string `json:"account,omitempty"`
 
 	// AccountDetail allows for optional detail to route transactions. e.g.: "Nigeria Grp Off-Ins"
 	AccountDetail string `json:"account_detail,omitempty"`
 
-	// Entity code for billing. Only required/allowed on Corporate type policies.
+	// Entity code for billing. Only required/allowed on Team type policies.
 	EntityCode string `json:"entity_code,omitempty"`
 }

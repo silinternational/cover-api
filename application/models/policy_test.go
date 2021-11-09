@@ -79,7 +79,7 @@ func (ms *ModelSuite) TestPolicy_Validate() {
 			errField: "Policy.EntityCodeID",
 		},
 		{
-			name: "corporate type, should not have household id",
+			name: "team type, should not have household id",
 			Policy: Policy{
 				Name:         "my policy",
 				Type:         api.PolicyTypeCorporate,
@@ -92,7 +92,7 @@ func (ms *ModelSuite) TestPolicy_Validate() {
 			errField: "Policy.HouseholdID",
 		},
 		{
-			name: "corporate type, should have cost center",
+			name: "team type, should have cost center",
 			Policy: Policy{
 				Name:         "my policy",
 				Type:         api.PolicyTypeCorporate,
@@ -103,7 +103,7 @@ func (ms *ModelSuite) TestPolicy_Validate() {
 			errField: "Policy.CostCenter",
 		},
 		{
-			name: "corporate type, should have account",
+			name: "team type, should have account",
 			Policy: Policy{
 				Name:         "my policy",
 				Type:         api.PolicyTypeCorporate,
@@ -115,7 +115,7 @@ func (ms *ModelSuite) TestPolicy_Validate() {
 			errField: "Policy.Account",
 		},
 		{
-			name: "corporate type, should have entity code id",
+			name: "team type, should have entity code id",
 			Policy: Policy{
 				Name:        "my policy",
 				Type:        api.PolicyTypeCorporate,
@@ -137,7 +137,7 @@ func (ms *ModelSuite) TestPolicy_Validate() {
 			errField: "",
 		},
 		{
-			name: "valid corporate type",
+			name: "valid team type",
 			Policy: Policy{
 				Name:         "my policy",
 				Type:         api.PolicyTypeCorporate,

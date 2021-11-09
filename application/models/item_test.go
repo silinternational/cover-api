@@ -464,13 +464,13 @@ func (ms *ModelSuite) TestItem_SubmitForApproval() {
 			wantStatus: api.ItemCoverageStatusPending,
 		},
 		{
-			name:       "corporate policy, auto approval",
+			name:       "team policy, auto approval",
 			item:       corpItemAutoApprove,
 			oldStatus:  corpItemAutoApprove.CoverageStatus,
 			wantStatus: api.ItemCoverageStatusApproved,
 		},
 		{
-			name:       "corporate policy, manual approval",
+			name:       "team policy, manual approval",
 			item:       corpItemManualApprove,
 			oldStatus:  corpItemManualApprove.CoverageStatus,
 			wantStatus: api.ItemCoverageStatusPending,

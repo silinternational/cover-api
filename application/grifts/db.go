@@ -441,7 +441,7 @@ func createClaimFixtures(tx *pop.Connection, fixPolicies []*models.Policy, items
 }
 
 func createLedgerEntryFixtures(tx *pop.Connection, items []*models.Item, claims []*models.Claim) error {
-	// Two entries for Corporate Policies
+	// Two entries for Team Policies
 	if err := items[0].CreateLedgerEntry(tx, models.LedgerEntryTypeNewCoverage, 1021); err != nil {
 		return err
 	}
@@ -457,7 +457,7 @@ func createLedgerEntryFixtures(tx *pop.Connection, items []*models.Item, claims 
 		return err
 	}
 
-	// Corporate policy claim
+	// Team policy claim
 	claims[0].TotalPayout = 2849
 	if err := approveClaim(tx, claims[0]); err != nil {
 		return err
