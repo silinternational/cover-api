@@ -1105,10 +1105,9 @@ func (ms *ModelSuite) TestItem_canBeUpdated() {
 	unsafeItem := unsafeClaim.ClaimItems[0].Item
 
 	tests := []struct {
-		name    string
-		item    Item
-		want    bool
-		wantErr bool
+		name string
+		item Item
+		want bool
 	}{
 		{
 			name: "no",
@@ -1123,12 +1122,8 @@ func (ms *ModelSuite) TestItem_canBeUpdated() {
 	}
 	for _, tt := range tests {
 		ms.T().Run(tt.name, func(t *testing.T) {
-			got, err := tt.item.canBeUpdated(ms.DB)
-			if tt.wantErr {
-				ms.Error(err)
-				return
-			}
-			ms.NoError(err)
+			got := tt.item.canBeUpdated(ms.DB)
+
 			ms.Equal(tt.want, got)
 		})
 	}

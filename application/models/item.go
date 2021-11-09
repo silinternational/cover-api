@@ -94,10 +94,8 @@ func (i *Item) Update(ctx context.Context) error {
 		}
 	}
 
-	if safe, err := i.canBeUpdated(tx); err != nil {
-		return err
-	} else if !safe {
-		err = errors.New("item cannot be updated because it has an active claim")
+	if safe := i.canBeUpdated(tx); !safe {
+		err := errors.New("item cannot be updated because it has an active claim")
 		return api.NewAppError(err, api.ErrorItemHasActiveClaim, api.CategoryUser)
 	}
 
@@ -850,7 +848,7 @@ func (i *Item) GetMakeModel() string {
 
 // canBeUpdated returns a value of true when the item can be updated, and returns false when there is an open
 // Claim on the item.
-func (i *Item) canBeUpdated(tx *pop.Connection) (bool, error) {
+func (i *Item) canBeUpdated(tx *pop.Connection) bool {
 	// SafeClaimItemStatuses are states in which related items can be edited, e.g. can change CoverageAmount
 	SafeClaimItemStatuses := []api.ClaimItemStatus{
 		api.ClaimItemStatusDraft,
@@ -863,12 +861,12 @@ func (i *Item) canBeUpdated(tx *pop.Connection) (bool, error) {
 		Where("status NOT IN (?)", SafeClaimItemStatuses).
 		Count(&claimItems)
 	if err != nil {
-		return false, appErrorFromDB(err, api.ErrorQueryFailure)
+		panic(err.Error())
 	}
 	if n > 0 {
-		return false, nil
+		return false
 	}
-	return true, nil
+	return true
 }
 
 // ItemsWithRecentStatusChanges returns the RecentItems associated with
