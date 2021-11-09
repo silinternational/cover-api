@@ -872,6 +872,9 @@ func (c *Claim) CreateLedgerEntry(tx *pop.Connection) error {
 }
 
 func (c *Claim) UpdateStatus(ctx context.Context, newStatus api.ClaimStatus) error {
+	if newStatus == c.Status {
+		return nil
+	}
 	oldStatus := c.Status
 	c.Status = newStatus
 	tx := Tx(ctx)

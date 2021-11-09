@@ -1,6 +1,7 @@
 package models
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/gobuffalo/pop/v5"
@@ -47,6 +48,6 @@ func (ec *EntityCode) ConvertToAPI(tx *pop.Connection) api.EntityCode {
 	return api.EntityCode{
 		ID:   ec.ID,
 		Code: ec.Code,
-		Name: ec.Name,
+		Name: fmt.Sprintf("%s - %s", ec.Code, ec.Name),
 	}
 }
