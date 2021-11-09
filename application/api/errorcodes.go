@@ -70,6 +70,7 @@ const (
 	ErrorItemInvalidCoverageStartDate = ErrorKey("ErrorItemInvalidCoverageStartDate")
 	ErrorItemInvalidCoverageEndDate   = ErrorKey("ErrorItemInvalidCoverageEndDate")
 	ErrorInvalidCategory              = ErrorKey("ErrorInvalidCategory")
+	ErrorItemHasActiveClaim           = ErrorKey("ErrorItemHasActiveClaim")
 
 	// Policy
 	ErrorPolicyFromContext        = ErrorKey("ErrorPolicyFromContext")

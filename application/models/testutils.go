@@ -174,6 +174,12 @@ func UpdateClaimStatus(tx *pop.Connection, claim Claim, status api.ClaimStatus, 
 	if err := tx.Update(&claim); err != nil {
 		panic("error trying to update claim status for test: " + err.Error())
 	}
+	if len(claim.ClaimItems) > 0 {
+		claim.ClaimItems[0].Status = api.ClaimItemStatus(status)
+		if err := tx.Update(&claim.ClaimItems[0]); err != nil {
+			panic("error trying to update claim item status for test: " + err.Error())
+		}
+	}
 	return claim
 }
 

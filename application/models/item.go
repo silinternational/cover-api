@@ -94,6 +94,13 @@ func (i *Item) Update(ctx context.Context) error {
 		}
 	}
 
+	if safe, err := i.canBeUpdated(tx); err != nil {
+		return err
+	} else if !safe {
+		err = errors.New("item cannot be updated because it has an active claim")
+		return api.NewAppError(err, api.ErrorItemHasActiveClaim, api.CategoryUser)
+	}
+
 	i.LoadPolicy(tx, false)
 
 	updates := i.Compare(oldItem)
@@ -839,6 +846,29 @@ func (i *Item) GetAccountablePerson(tx *pop.Connection) Person {
 
 func (i *Item) GetMakeModel() string {
 	return strings.TrimSpace(i.Make + " " + i.Model)
+}
+
+// canBeUpdated returns a value of true when the item can be updated, and returns false when there is an open
+// Claim on the item.
+func (i *Item) canBeUpdated(tx *pop.Connection) (bool, error) {
+	// SafeClaimItemStatuses are states in which related items can be edited, e.g. can change CoverageAmount
+	SafeClaimItemStatuses := []api.ClaimItemStatus{
+		api.ClaimItemStatusDraft,
+		api.ClaimItemStatusPaid,
+		api.ClaimItemStatusDenied,
+	}
+
+	var claimItems ClaimItems
+	n, err := tx.Where("item_id = ?", i.ID).
+		Where("status NOT IN (?)", SafeClaimItemStatuses).
+		Count(&claimItems)
+	if err != nil {
+		return false, appErrorFromDB(err, api.ErrorQueryFailure)
+	}
+	if n > 0 {
+		return false, nil
+	}
+	return true, nil
 }
 
 // ItemsWithRecentStatusChanges returns the RecentItems associated with
