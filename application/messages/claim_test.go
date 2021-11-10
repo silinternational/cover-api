@@ -107,7 +107,6 @@ func (ts *TestSuite) Test_ClaimPreapprovedQueueMessage() {
 			wantBodyContains: []string{
 				domain.Env.UIURL,
 				receiptClaim.ReferenceNumber,
-				"The claim you submitted has been tentatively preapproved.",
 			},
 		},
 	}
@@ -140,8 +139,6 @@ func (ts *TestSuite) Test_ClaimReceiptQueueMessage() {
 			wantBodyContains: []string{
 				domain.Env.UIURL,
 				receiptClaim.ReferenceNumber,
-				"The claim you submitted still needs a receipt.",
-				"Please provide a receipt for repair costs.",
 			},
 		},
 	}
@@ -173,7 +170,6 @@ func (ts *TestSuite) Test_ClaimReview2QueueMessage() {
 			wantBodyContains: []string{
 				domain.Env.UIURL,
 				review2Claim.ReferenceNumber,
-				"has resubmitted a claim which needs your attention.",
 			},
 		},
 	}
@@ -205,7 +201,6 @@ func (ts *TestSuite) Test_ClaimReview3QueueMessage() {
 			wantBodyContains: []string{
 				domain.Env.UIURL,
 				review3Claim.ReferenceNumber,
-				"has submitted a claim which needs your attention.",
 			},
 		},
 	}
@@ -238,7 +233,6 @@ func (ts *TestSuite) Test_ClaimApprovedQueueMessage() {
 			wantBodyContains: []string{
 				domain.Env.UIURL,
 				approvedClaim.ReferenceNumber,
-				"The claim you submitted has been approved.",
 			},
 		},
 	}
@@ -272,7 +266,6 @@ func (ts *TestSuite) Test_ClaimDeniedQueueMessage() {
 				domain.Env.UIURL,
 				deniedClaim.ReferenceNumber,
 				deniedClaim.StatusReason,
-				"The claim you submitted has been denied.",
 			},
 		},
 	}
