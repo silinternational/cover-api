@@ -3,17 +3,12 @@ package models
 import (
 	"fmt"
 	"testing"
-	"time"
-
-	"github.com/gobuffalo/nulls"
 
 	"github.com/silinternational/cover-api/api"
 	"github.com/silinternational/cover-api/domain"
 )
 
 func (ms *ModelSuite) TestClaimItem_Validate() {
-	user := CreateUserFixtures(ms.DB, 1).Users[0]
-
 	tests := []struct {
 		name      string
 		claimItem *ClaimItem
@@ -21,68 +16,20 @@ func (ms *ModelSuite) TestClaimItem_Validate() {
 		wantErr   bool
 	}{
 		{
-			name:      "empty struct",
-			claimItem: &ClaimItem{},
-			errField:  "ClaimItem.Status",
-			wantErr:   true,
-		},
-		{
 			name: "valid status, not approved",
 			claimItem: &ClaimItem{
 				Claim: Claim{
 					IncidentType: api.ClaimIncidentTypeImpact,
 				},
-				Status:       api.ClaimItemStatusReview1,
 				PayoutOption: api.PayoutOptionRepair,
 			},
 			errField: "",
 			wantErr:  false,
 		},
 		{
-			name: "valid status, missing claim incident type",
-			claimItem: &ClaimItem{
-				Status:       api.ClaimItemStatusReview1,
-				PayoutOption: api.PayoutOptionRepair,
-			},
-			errField: "ClaimItem.IncidentType",
-			wantErr:  true,
-		},
-		{
-			name: "approved, but no reviewer",
-			claimItem: &ClaimItem{
-				Claim: Claim{
-					IncidentType: api.ClaimIncidentTypeImpact,
-				},
-				Status:       api.ClaimItemStatusApproved,
-				PayoutOption: api.PayoutOptionRepair,
-				ReviewDate:   nulls.NewTime(time.Now()),
-			},
-			errField: "ClaimItem.ReviewerID",
-			wantErr:  true,
-		},
-		{
-			name: "denied, but no review date",
-			claimItem: &ClaimItem{
-				Claim: Claim{
-					IncidentType: api.ClaimIncidentTypeImpact,
-				},
-				Status:       api.ClaimItemStatusDenied,
-				PayoutOption: api.PayoutOptionRepair,
-				ReviewerID:   nulls.NewUUID(user.ID),
-			},
-			errField: "ClaimItem.ReviewDate",
-			wantErr:  true,
-		},
-		{
 			name: "invalid payout option",
 			claimItem: &ClaimItem{
-				Claim: Claim{
-					IncidentType: api.ClaimIncidentTypeImpact,
-				},
-				Status:       api.ClaimItemStatusDenied,
 				PayoutOption: api.PayoutOption("bitcoin"),
-				ReviewerID:   nulls.NewUUID(user.ID),
-				ReviewDate:   nulls.NewTime(time.Now()),
 			},
 			errField: "ClaimItem.PayoutOption",
 			wantErr:  true,
@@ -91,12 +38,10 @@ func (ms *ModelSuite) TestClaimItem_Validate() {
 			name: "invalid payout option for Evacuation",
 			claimItem: &ClaimItem{
 				Claim: Claim{
+					Status:       api.ClaimStatusDraft,
 					IncidentType: api.ClaimIncidentTypeEvacuation,
 				},
-				Status:       api.ClaimItemStatusDraft,
 				PayoutOption: api.PayoutOptionFMV,
-				ReviewerID:   nulls.NewUUID(user.ID),
-				ReviewDate:   nulls.NewTime(time.Now()),
 			},
 			errField: "ClaimItem.PayoutOption",
 			wantErr:  true,
@@ -107,10 +52,7 @@ func (ms *ModelSuite) TestClaimItem_Validate() {
 				Claim: Claim{
 					IncidentType: api.ClaimIncidentTypeEvacuation,
 				},
-				Status:       api.ClaimItemStatusDraft,
 				PayoutOption: api.PayoutOptionFixedFraction,
-				ReviewerID:   nulls.NewUUID(user.ID),
-				ReviewDate:   nulls.NewTime(time.Now()),
 			},
 			wantErr: false,
 		},
@@ -118,12 +60,10 @@ func (ms *ModelSuite) TestClaimItem_Validate() {
 			name: "invalid payout option for Theft",
 			claimItem: &ClaimItem{
 				Claim: Claim{
+					Status:       api.ClaimStatusDraft,
 					IncidentType: api.ClaimIncidentTypeTheft,
 				},
-				Status:       api.ClaimItemStatusDraft,
 				PayoutOption: api.PayoutOptionFixedFraction,
-				ReviewerID:   nulls.NewUUID(user.ID),
-				ReviewDate:   nulls.NewTime(time.Now()),
 			},
 			errField: "ClaimItem.PayoutOption",
 			wantErr:  true,
@@ -134,10 +74,7 @@ func (ms *ModelSuite) TestClaimItem_Validate() {
 				Claim: Claim{
 					IncidentType: api.ClaimIncidentTypeTheft,
 				},
-				Status:       api.ClaimItemStatusDraft,
 				PayoutOption: api.PayoutOptionFMV,
-				ReviewerID:   nulls.NewUUID(user.ID),
-				ReviewDate:   nulls.NewTime(time.Now()),
 			},
 			wantErr: false,
 		},
@@ -145,12 +82,10 @@ func (ms *ModelSuite) TestClaimItem_Validate() {
 			name: "invalid payout option for Impact",
 			claimItem: &ClaimItem{
 				Claim: Claim{
+					Status:       api.ClaimStatusDraft,
 					IncidentType: api.ClaimIncidentTypeImpact,
 				},
-				Status:       api.ClaimItemStatusDraft,
 				PayoutOption: api.PayoutOptionFixedFraction,
-				ReviewerID:   nulls.NewUUID(user.ID),
-				ReviewDate:   nulls.NewTime(time.Now()),
 			},
 			errField: "ClaimItem.PayoutOption",
 			wantErr:  true,
@@ -161,20 +96,14 @@ func (ms *ModelSuite) TestClaimItem_Validate() {
 				Claim: Claim{
 					IncidentType: api.ClaimIncidentTypeImpact,
 				},
-				Status:       api.ClaimItemStatusDraft,
 				PayoutOption: api.PayoutOptionRepair,
-				ReviewerID:   nulls.NewUUID(user.ID),
-				ReviewDate:   nulls.NewTime(time.Now()),
 			},
 			wantErr: false,
 		},
 		{
 			name: "valid status, approved",
 			claimItem: &ClaimItem{
-				Status:       api.ClaimItemStatusApproved,
 				PayoutOption: api.PayoutOptionRepair,
-				ReviewerID:   nulls.NewUUID(user.ID),
-				ReviewDate:   nulls.NewTime(time.Now()),
 			},
 			errField: "",
 			wantErr:  false,
@@ -331,7 +260,6 @@ func (ms *ModelSuite) TestClaimItem_Compare() {
 
 	oldCItem := ClaimItem{
 		ItemID:          domain.GetUUID(),
-		Status:          api.ClaimItemStatusReview3,
 		IsRepairable:    true,
 		RepairEstimate:  1111,
 		RepairActual:    1112,
@@ -340,8 +268,6 @@ func (ms *ModelSuite) TestClaimItem_Compare() {
 		PayoutOption:    api.PayoutOptionReplacement,
 		PayoutAmount:    3331,
 		FMV:             4441,
-		ReviewDate:      nulls.NewTime(time.Date(1991, 1, 1, 1, 1, 1, 1, time.UTC)),
-		ReviewerID:      nulls.NewUUID(domain.GetUUID()),
 		Country:         "Mali",
 	}
 
@@ -360,11 +286,6 @@ func (ms *ModelSuite) TestClaimItem_Compare() {
 					FieldName: FieldClaimItemItemID,
 					OldValue:  oldCItem.ItemID.String(),
 					NewValue:  newCItem.ItemID.String(),
-				},
-				{
-					FieldName: FieldClaimItemStatus,
-					OldValue:  string(oldCItem.Status),
-					NewValue:  string(newCItem.Status),
 				},
 				{
 					FieldName: FieldClaimItemIsRepairable,
@@ -405,16 +326,6 @@ func (ms *ModelSuite) TestClaimItem_Compare() {
 					FieldName: FieldClaimItemFMV,
 					OldValue:  api.Currency(oldCItem.FMV).String(),
 					NewValue:  api.Currency(newCItem.FMV).String(),
-				},
-				{
-					FieldName: FieldClaimItemReviewDate,
-					OldValue:  oldCItem.ReviewDate.Time.Format(domain.DateFormat),
-					NewValue:  newCItem.ReviewDate.Time.Format(domain.DateFormat),
-				},
-				{
-					FieldName: FieldClaimItemReviewerID,
-					OldValue:  oldCItem.ReviewerID.UUID.String(),
-					NewValue:  newCItem.ReviewerID.UUID.String(),
 				},
 				{
 					FieldName: FieldClaimItemLocation,

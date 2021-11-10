@@ -17,18 +17,6 @@ import (
 	"github.com/silinternational/cover-api/domain"
 )
 
-var ValidClaimItemStatus = map[api.ClaimItemStatus]struct{}{
-	api.ClaimItemStatusDraft:    {},
-	api.ClaimItemStatusReview1:  {},
-	api.ClaimItemStatusReceipt:  {},
-	api.ClaimItemStatusRevision: {},
-	api.ClaimItemStatusReview2:  {},
-	api.ClaimItemStatusReview3:  {},
-	api.ClaimItemStatusApproved: {},
-	api.ClaimItemStatusPaid:     {},
-	api.ClaimItemStatusDenied:   {},
-}
-
 var ValidPayoutOptions = map[api.PayoutOption]struct{}{
 	api.PayoutOptionRepair:        {},
 	api.PayoutOptionReplacement:   {},
@@ -39,30 +27,26 @@ var ValidPayoutOptions = map[api.PayoutOption]struct{}{
 type ClaimItems []ClaimItem
 
 type ClaimItem struct {
-	ID              uuid.UUID           `db:"id"`
-	ClaimID         uuid.UUID           `db:"claim_id"`
-	ItemID          uuid.UUID           `db:"item_id"`
-	Status          api.ClaimItemStatus `db:"status" validate:"required,claimItemStatus"`
-	IsRepairable    bool                `db:"is_repairable"`
-	RepairEstimate  api.Currency        `db:"repair_estimate" validate:"min=0"`
-	RepairActual    api.Currency        `db:"repair_actual" validate:"min=0"`
-	ReplaceEstimate api.Currency        `db:"replace_estimate" validate:"min=0"`
-	ReplaceActual   api.Currency        `db:"replace_actual" validate:"min=0"`
-	PayoutOption    api.PayoutOption    `db:"payout_option" validate:"payoutOption"`
-	PayoutAmount    api.Currency        `db:"payout_amount" validate:"min=0"`
-	FMV             api.Currency        `db:"fmv" validate:"min=0"`
-	ReviewDate      nulls.Time          `db:"review_date"`
-	ReviewerID      nulls.UUID          `db:"reviewer_id"`
-	City            string              `db:"city"`
-	State           string              `db:"state"`
-	Country         string              `db:"country"`
-	LegacyID        nulls.Int           `db:"legacy_id"`
-	CreatedAt       time.Time           `db:"created_at"`
-	UpdatedAt       time.Time           `db:"updated_at"`
+	ID              uuid.UUID        `db:"id"`
+	ClaimID         uuid.UUID        `db:"claim_id"`
+	ItemID          uuid.UUID        `db:"item_id"`
+	IsRepairable    bool             `db:"is_repairable"`
+	RepairEstimate  api.Currency     `db:"repair_estimate" validate:"min=0"`
+	RepairActual    api.Currency     `db:"repair_actual" validate:"min=0"`
+	ReplaceEstimate api.Currency     `db:"replace_estimate" validate:"min=0"`
+	ReplaceActual   api.Currency     `db:"replace_actual" validate:"min=0"`
+	PayoutOption    api.PayoutOption `db:"payout_option" validate:"payoutOption"`
+	PayoutAmount    api.Currency     `db:"payout_amount" validate:"min=0"`
+	FMV             api.Currency     `db:"fmv" validate:"min=0"`
+	City            string           `db:"city"`
+	State           string           `db:"state"`
+	Country         string           `db:"country"`
+	LegacyID        nulls.Int        `db:"legacy_id"`
+	CreatedAt       time.Time        `db:"created_at"`
+	UpdatedAt       time.Time        `db:"updated_at"`
 
-	Claim    Claim `belongs_to:"claims" validate:"-"`
-	Item     Item  `belongs_to:"items" validate:"-"`
-	Reviewer User  `belongs_to:"users" validate:"-"`
+	Claim Claim `belongs_to:"claims" validate:"-"`
+	Item  Item  `belongs_to:"items" validate:"-"`
 }
 
 // Validate gets run every time you call a "pop.Validate*" (pop.ValidateAndSave, pop.ValidateAndCreate, pop.ValidateAndUpdate) method.
@@ -74,14 +58,10 @@ func (c *ClaimItem) Validate(tx *pop.Connection) (*validate.Errors, error) {
 
 // Create validates and stores the data as a new record in the database, assigning a new ID if needed.
 func (c *ClaimItem) Create(tx *pop.Connection) error {
-	// Get the parent Claim's status
-	c.LoadClaim(tx, false)
-	c.Status = api.ClaimItemStatus(c.Claim.Status)
-
 	return create(tx, c)
 }
 
-// Update changes the status if it is a valid transition.
+// Update saves any changes to the database
 func (c *ClaimItem) Update(ctx context.Context) error {
 	tx := Tx(ctx)
 	c.LoadClaim(tx, false)
@@ -91,11 +71,6 @@ func (c *ClaimItem) Update(ctx context.Context) error {
 		err := errors.New("user may not edit a ClaimItem that is too far along in the review process")
 		appErr := api.NewAppError(err, api.ErrorClaimStatus, api.CategoryUser)
 		return appErr
-	}
-
-	if user.IsAdmin() && c.Status.WasReviewed() {
-		c.ReviewerID = nulls.NewUUID(user.ID)
-		c.ReviewDate = nulls.NewTime(time.Now().UTC())
 	}
 
 	updates, err := c.getUpdates(ctx)
@@ -138,10 +113,9 @@ func (c *ClaimItem) revertToDraftIfEdited(ctx context.Context, updates []FieldUp
 
 	for _, u := range updates {
 		switch u.FieldName {
-		case FieldClaimItemReplaceActual, FieldClaimItemRepairActual, FieldClaimItemStatus:
+		case FieldClaimItemReplaceActual, FieldClaimItemRepairActual:
 			continue
 		default:
-			c.Status = api.ClaimItemStatusDraft // leave it to the calling code to update the DB
 			return c.Claim.UpdateStatus(ctx, api.ClaimStatusDraft)
 		}
 	}
@@ -197,23 +171,16 @@ func (c *ClaimItem) LoadItem(tx *pop.Connection, reload bool) {
 	}
 }
 
-func (c *ClaimItem) LoadReviewer(tx *pop.Connection, reload bool) {
-	if c.ReviewerID.Valid && (c.Reviewer.ID == uuid.Nil || reload) {
-		if err := tx.Load(c, "Reviewer"); err != nil {
-			panic("database error loading ClaimItem.Reviewer, " + err.Error())
-		}
-	}
-}
-
 func (c *ClaimItem) ConvertToAPI(tx *pop.Connection) api.ClaimItem {
 	c.LoadItem(tx, false)
+	c.LoadClaim(tx, false)
 
 	return api.ClaimItem{
 		ID:              c.ID,
 		ItemID:          c.ItemID,
 		Item:            c.Item.ConvertToAPI(tx),
 		ClaimID:         c.ClaimID,
-		Status:          c.Status,
+		Status:          c.Claim.Status,
 		IsRepairable:    c.IsRepairable,
 		RepairEstimate:  c.RepairEstimate,
 		RepairActual:    c.RepairActual,
@@ -222,8 +189,8 @@ func (c *ClaimItem) ConvertToAPI(tx *pop.Connection) api.ClaimItem {
 		PayoutOption:    c.PayoutOption,
 		PayoutAmount:    c.PayoutAmount,
 		FMV:             c.FMV,
-		ReviewDate:      c.ReviewDate.Time,
-		ReviewerID:      c.ReviewerID.UUID,
+		ReviewDate:      c.Claim.ReviewDate.Time,
+		ReviewerID:      c.Claim.ReviewerID.UUID,
 		CreatedAt:       c.CreatedAt,
 		UpdatedAt:       c.UpdatedAt,
 	}
@@ -311,8 +278,6 @@ func NewClaimItem(tx *pop.Connection, input api.ClaimItemCreateInput, item Item,
 		FMV:             input.FMV,
 	}
 
-	claimItem.Status = api.ClaimItemStatusDraft
-
 	claimItem.ClaimID = claim.ID
 	loc := item.GetAccountablePersonLocation(tx)
 	claimItem.City = loc.City
@@ -330,14 +295,6 @@ func (c *ClaimItem) Compare(old ClaimItem) []FieldUpdate {
 			OldValue:  old.ItemID.String(),
 			NewValue:  c.ItemID.String(),
 			FieldName: FieldClaimItemItemID,
-		})
-	}
-
-	if c.Status != old.Status {
-		updates = append(updates, FieldUpdate{
-			OldValue:  string(old.Status),
-			NewValue:  string(c.Status),
-			FieldName: FieldClaimItemStatus,
 		})
 	}
 
@@ -405,22 +362,6 @@ func (c *ClaimItem) Compare(old ClaimItem) []FieldUpdate {
 		})
 	}
 
-	if c.ReviewDate != old.ReviewDate {
-		updates = append(updates, FieldUpdate{
-			OldValue:  old.ReviewDate.Time.Format(domain.DateFormat),
-			NewValue:  c.ReviewDate.Time.Format(domain.DateFormat),
-			FieldName: FieldClaimItemReviewDate,
-		})
-	}
-
-	if c.ReviewerID != old.ReviewerID {
-		updates = append(updates, FieldUpdate{
-			OldValue:  old.ReviewerID.UUID.String(),
-			NewValue:  c.ReviewerID.UUID.String(),
-			FieldName: FieldClaimItemReviewerID,
-		})
-	}
-
 	if c.GetLocation() != old.GetLocation() {
 		updates = append(updates, FieldUpdate{
 			OldValue:  old.GetLocation().String(),
@@ -455,11 +396,13 @@ func (c *ClaimItem) NewHistory(ctx context.Context, action string, fieldUpdate F
 
 func (c *ClaimItem) calculatePayout(ctx context.Context) error {
 	c.LoadItem(Tx(ctx), false)
+	c.LoadClaim(Tx(ctx), false)
 
 	coverageAmount := c.Item.CoverageAmount
 
-	useActual := c.Status == api.ClaimItemStatusReview2 || c.Status == api.ClaimItemStatusReview3 ||
-		c.Status == api.ClaimItemStatusApproved || c.Status == api.ClaimItemStatusPaid
+	status := c.Claim.Status
+	useActual := status == api.ClaimStatusReview2 || status == api.ClaimStatusReview3 ||
+		status == api.ClaimStatusApproved || status == api.ClaimStatusPaid
 
 	deductible := 0.05
 	maxValue := 0.0

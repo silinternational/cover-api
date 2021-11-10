@@ -423,7 +423,6 @@ func createClaimFixtures(tx *pop.Connection, fixPolicies []*models.Policy, items
 			ID:           uuid.FromStringOrNil(claimItemUUIDs[i]),
 			ClaimID:      fixClaims[i].ID,
 			ItemID:       items[i*2].ID,
-			Status:       api.ClaimItemStatusDraft,
 			PayoutOption: api.PayoutOptionRepair,
 		}
 

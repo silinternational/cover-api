@@ -713,7 +713,6 @@ func importClaimItems(tx *pop.Connection, claim models.Claim, items []LegacyClai
 		newClaimItem := models.ClaimItem{
 			ClaimID:         claim.ID,
 			ItemID:          itemUUID,
-			Status:          api.ClaimItemStatusPaid,
 			IsRepairable:    getIsRepairable(c),
 			RepairEstimate:  fixedPointStringToCurrency(c.RepairEstimate, "ClaimItem.RepairEstimate"),
 			RepairActual:    fixedPointStringToCurrency(c.RepairActual, "ClaimItem.RepairActual"),
@@ -722,8 +721,6 @@ func importClaimItems(tx *pop.Connection, claim models.Claim, items []LegacyClai
 			PayoutOption:    getPayoutOption(c.PayoutOption, itemDesc+"PayoutOption"),
 			PayoutAmount:    fixedPointStringToCurrency(c.PayoutAmount, "ClaimItem.PayoutAmount"),
 			FMV:             fixedPointStringToCurrency(c.Fmv, "ClaimItem.FMV"),
-			ReviewDate:      nulls.Time(c.ReviewDate),
-			ReviewerID:      getAdminUserUUID(strconv.Itoa(c.ReviewerId), itemDesc+"ReviewerID"),
 			LegacyID:        nulls.NewInt(claimItemID),
 			CreatedAt:       time.Time(c.CreatedAt),
 			City:            trim(c.City),

@@ -174,12 +174,6 @@ func UpdateClaimStatus(tx *pop.Connection, claim Claim, status api.ClaimStatus, 
 	if err := tx.Update(&claim); err != nil {
 		panic("error trying to update claim status for test: " + err.Error())
 	}
-	if len(claim.ClaimItems) > 0 {
-		claim.ClaimItems[0].Status = api.ClaimItemStatus(status)
-		if err := tx.Update(&claim.ClaimItems[0]); err != nil {
-			panic("error trying to update claim item status for test: " + err.Error())
-		}
-	}
 	return claim
 }
 
@@ -232,7 +226,6 @@ func createClaimFixture(tx *pop.Connection, policy Policy, config FixturesConfig
 			ID:              uuid.UUID{},
 			ClaimID:         claim.ID,
 			ItemID:          item.ID,
-			Status:          api.ClaimItemStatus(claim.Status),
 			IsRepairable:    false,
 			RepairEstimate:  0,
 			RepairActual:    0,
@@ -244,8 +237,6 @@ func createClaimFixture(tx *pop.Connection, policy Policy, config FixturesConfig
 			City:            randStr(10),
 			State:           randStr(2),
 			Country:         randStr(10),
-			ReviewDate:      nulls.Time{},
-			ReviewerID:      nulls.UUID{},
 		}
 		MustCreate(tx, &claim.ClaimItems[i])
 	}

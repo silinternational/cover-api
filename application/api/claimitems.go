@@ -6,34 +6,6 @@ import (
 	"github.com/gofrs/uuid"
 )
 
-// ClaimItemStatus
-//
-// may be one of: Draft, Review1, Review2, Review3, Revision, Receipt, Approved, Paid, Denied
-//
-// swagger:model
-type ClaimItemStatus string
-
-func (s ClaimItemStatus) WasReviewed() bool {
-	switch s {
-	case ClaimItemStatusDenied, ClaimItemStatusRevision, ClaimItemStatusReceipt,
-		ClaimItemStatusApproved, ClaimItemStatusPaid, ClaimItemStatusReview3:
-		return true
-	}
-	return false
-}
-
-const (
-	ClaimItemStatusDraft    = ClaimItemStatus(ClaimStatusDraft)
-	ClaimItemStatusReview1  = ClaimItemStatus(ClaimStatusReview1)
-	ClaimItemStatusReview2  = ClaimItemStatus(ClaimStatusReview2)
-	ClaimItemStatusReview3  = ClaimItemStatus(ClaimStatusReview3)
-	ClaimItemStatusRevision = ClaimItemStatus(ClaimStatusRevision)
-	ClaimItemStatusReceipt  = ClaimItemStatus(ClaimStatusReceipt)
-	ClaimItemStatusApproved = ClaimItemStatus(ClaimStatusApproved)
-	ClaimItemStatusPaid     = ClaimItemStatus(ClaimStatusPaid)
-	ClaimItemStatusDenied   = ClaimItemStatus(ClaimStatusDenied)
-)
-
 // PayoutOption
 //
 // may be one of: Repair, Replacement, FMV, FixedFraction
@@ -82,7 +54,7 @@ type ClaimItem struct {
 	ClaimID uuid.UUID `json:"claim_id"`
 
 	// claim item status
-	Status ClaimItemStatus `json:"status"`
+	Status ClaimStatus `json:"status"`
 
 	// is item repairable?
 	IsRepairable bool `json:"is_repairable"`

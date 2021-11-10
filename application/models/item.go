@@ -849,17 +849,18 @@ func (i *Item) GetMakeModel() string {
 // canBeUpdated returns a value of true when the item can be updated, and returns false when there is an open
 // Claim on the item.
 func (i *Item) canBeUpdated(tx *pop.Connection) bool {
-	// SafeClaimItemStatuses are states in which related items can be edited, e.g. can change CoverageAmount
-	SafeClaimItemStatuses := []api.ClaimItemStatus{
-		api.ClaimItemStatusDraft,
-		api.ClaimItemStatusPaid,
-		api.ClaimItemStatusDenied,
+	// SafeClaimStatuses are states in which related items can be edited, e.g. can change CoverageAmount
+	SafeClaimStatuses := []api.ClaimStatus{
+		api.ClaimStatusDraft,
+		api.ClaimStatusPaid,
+		api.ClaimStatusDenied,
 	}
 
-	var claimItems ClaimItems
-	n, err := tx.Where("item_id = ?", i.ID).
-		Where("status NOT IN (?)", SafeClaimItemStatuses).
-		Count(&claimItems)
+	var claims Claims
+	n, err := tx.Where("claim_items.item_id = ?", i.ID).
+		Where("claims.status NOT IN (?)", SafeClaimStatuses).
+		Join("claim_items", "claims.id = claim_items.claim_id").
+		Count(&claims)
 	if err != nil {
 		panic(err.Error())
 	}
