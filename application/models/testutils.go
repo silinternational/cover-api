@@ -183,6 +183,8 @@ type UpdateClaimItemsParams struct {
 	IsRepairable    bool
 	RepairEstimate  api.Currency
 	ReplaceEstimate api.Currency
+	RepairActual    api.Currency
+	ReplaceActual   api.Currency
 }
 
 // UpdateClaimItems sets the claim items to a state ready for submission.
@@ -194,6 +196,8 @@ func UpdateClaimItems(tx *pop.Connection, claim Claim, params UpdateClaimItemsPa
 		claim.ClaimItems[i].IsRepairable = params.IsRepairable
 		claim.ClaimItems[i].RepairEstimate = params.RepairEstimate
 		claim.ClaimItems[i].ReplaceEstimate = params.ReplaceEstimate
+		claim.ClaimItems[i].RepairActual = params.RepairActual
+		claim.ClaimItems[i].ReplaceActual = params.ReplaceActual
 		claim.ClaimItems[i].FMV = params.FMV
 		if err := tx.Update(&claim.ClaimItems[0]); err != nil {
 			panic("error trying to update claim items: " + err.Error())

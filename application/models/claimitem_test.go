@@ -351,6 +351,7 @@ func (ms *ModelSuite) TestClaimItem_updatePayoutAmount() {
 		{PayoutOption: api.PayoutOptionFMV, FMV: 300},
 		{PayoutOption: api.PayoutOptionFixedFraction},
 		{PayoutOption: api.PayoutOptionRepair, RepairEstimate: 1000},
+		{PayoutOption: api.PayoutOptionRepair, RepairActual: 500},
 	}
 
 	fixtures := CreateItemFixtures(ms.DB, FixturesConfig{ClaimsPerPolicy: len(params), ClaimItemsPerClaim: 1})
@@ -364,6 +365,8 @@ func (ms *ModelSuite) TestClaimItem_updatePayoutAmount() {
 	// for FixedFraction, the incident type must be Evacuation
 	fixtures.Claims[3].IncidentType = api.ClaimIncidentTypeEvacuation
 	ms.NoError(ms.DB.Update(&fixtures.Claims[3]))
+
+	review3Claim := UpdateClaimStatus(ms.DB, fixtures.Claims[5], api.ClaimStatusReview3, "")
 
 	testCtx := CreateTestContext(fixtures.Users[0])
 
@@ -397,6 +400,11 @@ func (ms *ModelSuite) TestClaimItem_updatePayoutAmount() {
 			claimItem: fixtures.Claims[4].ClaimItems[0],
 			want:      855,
 		},
+		{
+			name:      "use RepairActual",
+			claimItem: review3Claim.ClaimItems[0],
+			want:      475,
+		},
 	}
 	for _, tt := range tests {
 		ms.T().Run(tt.name, func(t *testing.T) {
@@ -404,7 +412,7 @@ func (ms *ModelSuite) TestClaimItem_updatePayoutAmount() {
 			var claimItem ClaimItem
 			ms.NoError(claimItem.FindByID(ms.DB, tt.claimItem.ID))
 
-			err := claimItem.calculatePayout(testCtx)
+			err := claimItem.updatePayoutAmount(testCtx)
 			ms.NoError(err)
 
 			ms.Equal(tt.want, claimItem.PayoutAmount, "didn't get the correct PayoutAmount")
