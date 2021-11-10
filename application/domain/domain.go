@@ -138,6 +138,7 @@ var Env struct {
 	ApiBaseURL                 string `required:"true" split_words:"true"`
 	AccessTokenLifetimeSeconds int    `default:"1166400" split_words:"true"` // 13.5 days
 	AppName                    string `default:"Cover" split_words:"true"`
+	ServerPort                 int    `default:"3000" split_words:"true"`
 
 	ListenerDelayMilliseconds int `default:"1000" split_words:"true"`
 	ListenerMaxRetries        int `default:"10" split_words:"true"`
@@ -168,6 +169,7 @@ var Env struct {
 	AwsSecretAccessKey string `split_words:"true"`
 	EmailFromAddress   string `required:"true" split_words:"true"`
 	EmailService       string `default:"ses" split_words:"true"`
+	SupportEmail       string `default:"" split_words:"true"`
 
 	InviteLifetimeDays int `default:"14" split_words:"true"`
 	MaxFileDelete      int `default:"10" split_words:"true"`
@@ -182,6 +184,12 @@ var Env struct {
 
 	FiscalStartMonth int    `default:"1" split_words:"true"`
 	ExpenseAccount   string `default:"" split_words:"true"`
+
+	// For CertMagic to provide TLS in container
+	CertDomainName  string `default:"" split_words:"true"`
+	CloudflareToken string `default:"" split_words:"true"`
+	DisableTLS      bool   `default:"true" split_words:"true"`
+	DynamoDBTable   string `default:"" split_words:"true"`
 }
 
 func init() {
