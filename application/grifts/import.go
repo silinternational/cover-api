@@ -417,7 +417,7 @@ func importPolicies(tx *pop.Connection, policies []LegacyPolicy) {
 			}
 			if newPolicy.Type == api.PolicyTypeHousehold {
 				newPolicy.Account = ""
-				newPolicy.Name = p.LastName + " household"
+				newPolicy.Name = trim(p.LastName) + " household"
 			}
 			if err := newPolicy.Create(tx); err != nil {
 				log.Fatalf("failed to create policy, %s\n%+v", err, newPolicy)
