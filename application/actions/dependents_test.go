@@ -109,8 +109,11 @@ func (as *ActionSuite) Test_DependentsCreate() {
 	appAdmin := fixtures.Policies[1].Members[0]
 
 	// Make the last policy a Team type policy
-	teamFixtures := models.CreateTeamPolicyFixtures(as.DB, models.FixturesConfig{})
-	teamPolicy := teamFixtures.Policies[0]
+	teamPolicy := models.ConvertPolicyType(as.DB, fixtures.Policies[2])
+	teamDependant := teamPolicy.Dependents[0]
+	teamDependant.Relationship = api.PolicyDependentRelationshipNone
+	teamDependant.ChildBirthYear = 0
+	as.NoError(teamDependant.Update(as.DB), "error updating dependent fixture pre-test")
 
 	// change user 0 to an admin
 	appAdmin.AppRole = models.AppRoleAdmin
@@ -237,7 +240,7 @@ func (as *ActionSuite) Test_DependentsCreate() {
 func (as *ActionSuite) Test_DependentsUpdate() {
 	db := as.DB
 	config := models.FixturesConfig{
-		NumberOfPolicies:    2,
+		NumberOfPolicies:    3,
 		UsersPerPolicy:      1,
 		DependentsPerPolicy: 2,
 	}
@@ -251,9 +254,9 @@ func (as *ActionSuite) Test_DependentsUpdate() {
 	dependent := fixtures.Policies[0].Dependents[1]
 
 	// Make the last policy a Team type policy
-	teamFixtures := models.CreateTeamPolicyFixtures(as.DB, models.FixturesConfig{DependentsPerPolicy: 1})
-	teamOwner := teamFixtures.Users[0]
-	teamDependent := teamFixtures.PolicyDependents[0]
+	teamPolicy := models.ConvertPolicyType(db, fixtures.Policies[2])
+	teamOwner := teamPolicy.Members[0]
+	teamDependent := teamPolicy.Dependents[0]
 
 	goodDep := api.PolicyDependentInput{
 		Name:           "New-" + dependent.Name,
@@ -315,6 +318,8 @@ func (as *ActionSuite) Test_DependentsUpdate() {
 				`"country":"` + goodDep.Country,
 				`"child_birth_year":` + fmt.Sprintf("%d", goodDep.ChildBirthYear),
 			},
+			wantRelationship: string(goodDep.Relationship),
+			wantBirthYear:    goodDep.ChildBirthYear,
 		},
 		{
 			name:       "team policy",
@@ -359,13 +364,9 @@ func (as *ActionSuite) Test_DependentsUpdate() {
 			as.Equal(tt.input.Name, dependent.Name, "incorrect Name")
 			as.Equal(tt.input.Country, dependent.Country, "incorrect Country")
 
-			if tt.wantRelationship == "" {
-				as.Equal(tt.input.Relationship, dependent.Relationship, "incorrect Relationship")
-				as.Equal(tt.input.ChildBirthYear, dependent.ChildBirthYear, "incorrect ChildBirthYear")
-			} else {
-				as.Equal(tt.wantRelationship, string(dependent.Relationship), "incorrect Relationship")
-				as.Equal(tt.wantBirthYear, dependent.ChildBirthYear, "incorrect ChildBirthYear")
-			}
+			// This may be different than the input for team type policies
+			as.Equal(tt.wantRelationship, string(dependent.Relationship), "incorrect Relationship")
+			as.Equal(tt.wantBirthYear, dependent.ChildBirthYear, "incorrect ChildBirthYear")
 		})
 	}
 }
