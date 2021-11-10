@@ -156,17 +156,6 @@ func (c *Claim) Update(ctx context.Context) error {
 		if err := history.Create(tx); err != nil {
 			return appErrorFromDB(err, api.ErrorCreateFailure)
 		}
-
-		// If status changed, update the ClaimItem status
-		// TODO: improve this when we support multiple items per claim
-		if updates[i].FieldName == FieldClaimStatus && len(c.ClaimItems) > 0 &&
-			c.ClaimItems[0].Status != api.ClaimItemStatus(c.Status) {
-
-			c.ClaimItems[0].Status = api.ClaimItemStatus(c.Status)
-			if err = c.ClaimItems[0].Update(ctx); err != nil {
-				return appErrorFromDB(err, api.ErrorUpdateFailure)
-			}
-		}
 	}
 
 	return nil

@@ -1,0 +1,3 @@
+drop_column("claim_items", "status")
+drop_column("claim_items", "reviewer_id")
+drop_column("claim_items", "review_date")

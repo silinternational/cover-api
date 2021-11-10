@@ -280,9 +280,6 @@ func (ms *ModelSuite) TestLedgerEntries_Reconcile() {
 				if after.ClaimID.Valid {
 					after.LoadClaim(ms.DB)
 					ms.Equal(api.ClaimStatusPaid, after.Claim.Status, "claim Status was not set to Paid")
-					after.Claim.LoadClaimItems(ms.DB, true)
-					ms.Equal(api.ClaimItemStatusPaid, after.Claim.ClaimItems[0].Status,
-						"claim item Status was not set to Paid")
 				}
 			}
 		})

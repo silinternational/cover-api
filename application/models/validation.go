@@ -18,7 +18,6 @@ var fieldValidators = map[string]func(validator.FieldLevel) bool{
 	"appRole":                       validateAppRole,
 	"claimIncidentType":             validateClaimIncidentType,
 	"claimStatus":                   validateClaimStatus,
-	"claimItemStatus":               validateClaimItemStatus,
 	"claimFilePurpose":              validateClaimFilePurpose,
 	"payoutOption":                  validatePayoutOption,
 	"policyDependentChildBirthYear": validatePolicyDependentChildBirthYear,
@@ -61,14 +60,6 @@ func validateClaimIncidentType(field validator.FieldLevel) bool {
 func validateClaimStatus(field validator.FieldLevel) bool {
 	if value, ok := field.Field().Interface().(api.ClaimStatus); ok {
 		_, valid := ValidClaimStatus[value]
-		return valid
-	}
-	return false
-}
-
-func validateClaimItemStatus(field validator.FieldLevel) bool {
-	if value, ok := field.Field().Interface().(api.ClaimItemStatus); ok {
-		_, valid := ValidClaimItemStatus[value]
 		return valid
 	}
 	return false
@@ -166,8 +157,8 @@ func claimItemStructLevelValidation(sl validator.StructLevel) {
 		panic("claimItemStructLevelValidation registered to a type other than ClaimItem")
 	}
 
-	switch claimItem.Status {
-	case api.ClaimItemStatusDraft, api.ClaimItemStatusRevision, api.ClaimItemStatusReview1:
+	switch claimItem.Claim.Status {
+	case api.ClaimStatusDraft, api.ClaimStatusRevision, api.ClaimStatusReview1:
 		incidentTypePayoutOptions, ok := ValidClaimIncidentTypePayoutOptions[claimItem.Claim.IncidentType]
 		if !ok {
 			sl.ReportError(claimItem.Claim.IncidentType, "IncidentType", "IncidentType", "invalid Incident type", "")
@@ -185,16 +176,6 @@ func claimItemStructLevelValidation(sl validator.StructLevel) {
 		}
 
 		return
-	}
-
-	if claimItem.Status.WasReviewed() {
-		if !claimItem.ReviewerID.Valid {
-			sl.ReportError(claimItem.Status, "reviewer_id", "ReviewerID", "reviewer_required", "")
-		}
-
-		if !claimItem.ReviewDate.Valid {
-			sl.ReportError(claimItem.Status, "review_date", "ReviewDate", "review_date_required", "")
-		}
 	}
 }
 

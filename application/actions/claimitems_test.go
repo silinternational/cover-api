@@ -5,9 +5,6 @@ import (
 	"fmt"
 	"net/http"
 	"testing"
-	"time"
-
-	"github.com/gobuffalo/nulls"
 
 	"github.com/silinternational/cover-api/api"
 	"github.com/silinternational/cover-api/models"
@@ -45,8 +42,6 @@ func (as *ActionSuite) Test_ClaimItemsUpdate() {
 	approvedClaim := models.UpdateClaimStatus(db, policy.Claims[2], api.ClaimStatusApproved, "")
 	approvedClaim.LoadClaimItems(as.DB, false)
 	approvedClaimItem := approvedClaim.ClaimItems[0]
-	approvedClaimItem.ReviewerID = nulls.NewUUID(appAdmin.ID)
-	approvedClaimItem.ReviewDate = nulls.NewTime(time.Now().UTC())
 
 	ctx := models.CreateTestContext(appAdmin)
 	approvedClaimItem.Update(ctx)

@@ -557,7 +557,7 @@ func (as *ActionSuite) Test_ClaimsItemsCreate() {
 			wantInBody: []string{
 				`"item_id":"` + input.ItemID.String(),
 				`"claim_id":"` + claim.ID.String(),
-				`"status":"` + string(api.ClaimItemStatusDraft),
+				`"status":"` + string(api.ClaimStatusDraft),
 				fmt.Sprintf(`"is_repairable":%t`, input.IsRepairable),
 				fmt.Sprintf(`"repair_estimate":%v`, int(input.RepairEstimate)),
 				fmt.Sprintf(`"replace_estimate":%v`, int(input.ReplaceEstimate)),

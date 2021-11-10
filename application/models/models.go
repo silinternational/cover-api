@@ -73,7 +73,6 @@ const (
 	FieldClaimCountry             = "Country"
 
 	FieldClaimItemItemID          = "ItemID"
-	FieldClaimItemStatus          = "Status"
 	FieldClaimItemIsRepairable    = "IsRepairable"
 	FieldClaimItemRepairEstimate  = "RepairEstimate"
 	FieldClaimItemRepairActual    = "RepairActual"
