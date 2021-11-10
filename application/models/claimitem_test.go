@@ -344,7 +344,7 @@ func (ms *ModelSuite) TestClaimItem_Compare() {
 	}
 }
 
-func (ms *ModelSuite) TestClaimItem_calculatePayout() {
+func (ms *ModelSuite) TestClaimItem_updatePayoutAmount() {
 	params := []UpdateClaimItemsParams{
 		{PayoutOption: api.PayoutOptionRepair, RepairEstimate: 100},
 		{PayoutOption: api.PayoutOptionReplacement, ReplaceEstimate: 200},

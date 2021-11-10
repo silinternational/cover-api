@@ -394,7 +394,7 @@ func (c *ClaimItem) NewHistory(ctx context.Context, action string, fieldUpdate F
 	}
 }
 
-func (c *ClaimItem) calculatePayout(ctx context.Context) error {
+func (c *ClaimItem) updatePayoutAmount(ctx context.Context) error {
 	c.LoadItem(Tx(ctx), false)
 	c.LoadClaim(Tx(ctx), false)
 

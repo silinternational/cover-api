@@ -887,7 +887,7 @@ func (ms *ModelSuite) TestClaims_ByStatus() {
 	}
 }
 
-func (ms *ModelSuite) TestClaim_calculatePayout() {
+func (ms *ModelSuite) TestClaim_updatePayoutAmount() {
 	fixtures := CreateItemFixtures(ms.DB, FixturesConfig{ClaimsPerPolicy: 1, ClaimItemsPerClaim: 1})
 	fixtures.Claims[0].ClaimItems[0].RepairEstimate = 100
 	ms.NoError(ms.DB.Update(&fixtures.Claims[0].ClaimItems[0]))
@@ -896,7 +896,7 @@ func (ms *ModelSuite) TestClaim_calculatePayout() {
 	var claim Claim
 	ms.NoError(claim.FindByID(ms.DB, fixtures.Claims[0].ID))
 
-	ms.NoError(claim.calculatePayout(CreateTestContext(fixtures.Users[0])))
+	ms.NoError(claim.updatePayoutAmount(CreateTestContext(fixtures.Users[0])))
 
 	// The claim item test will check the actual amount. Just make sure it's not zero.
 	ms.Greater(claim.TotalPayout, 0, "payout was not set")

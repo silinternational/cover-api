@@ -385,7 +385,7 @@ func (c *Claim) SubmitForApproval(ctx context.Context) error {
 		}
 	}
 
-	c.calculatePayout(ctx)
+	c.updatePayoutAmount(ctx)
 
 	if err := c.Update(ctx); err != nil {
 		return err
@@ -888,11 +888,11 @@ func (c *Claim) SubmittedAt(tx *pop.Connection) time.Time {
 	return c.UpdatedAt
 }
 
-func (c *Claim) calculatePayout(ctx context.Context) error {
+func (c *Claim) updatePayoutAmount(ctx context.Context) error {
 	c.LoadClaimItems(Tx(ctx), false)
 	var payout api.Currency
 	for _, claimItem := range c.ClaimItems {
-		if err := claimItem.calculatePayout(ctx); err != nil {
+		if err := claimItem.updatePayoutAmount(ctx); err != nil {
 			return err
 		}
 		payout += claimItem.PayoutAmount
