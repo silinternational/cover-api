@@ -419,7 +419,12 @@ func (c *ClaimItem) updatePayoutAmount(ctx context.Context) error {
 		maxValue = float64(coverageAmount)
 	}
 
+	before := c.PayoutAmount
 	c.PayoutAmount = api.Currency(math.Round(math.Min(maxValue, float64(coverageAmount)) * (1.0 - deductible)))
+
+	if c.PayoutAmount == before {
+		return nil
+	}
 
 	return c.Update(ctx)
 }
