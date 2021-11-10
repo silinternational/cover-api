@@ -10,6 +10,7 @@ import "github.com/gofrs/uuid"
 type PolicyDependentRelationship string
 
 const (
+	PolicyDependentRelationshipNone   = PolicyDependentRelationship("None")
 	PolicyDependentRelationshipSpouse = PolicyDependentRelationship("Spouse")
 	PolicyDependentRelationshipChild  = PolicyDependentRelationship("Child")
 )

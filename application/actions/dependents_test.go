@@ -108,6 +108,13 @@ func (as *ActionSuite) Test_DependentsCreate() {
 	normalUser := fixtures.Policies[0].Members[0]
 	appAdmin := fixtures.Policies[1].Members[0]
 
+	// Make the last policy a Team type policy
+	teamPolicy := models.ConvertPolicyType(as.DB, fixtures.Policies[2])
+	teamDependant := teamPolicy.Dependents[0]
+	teamDependant.Relationship = api.PolicyDependentRelationshipNone
+	teamDependant.ChildBirthYear = 0
+	as.NoError(teamDependant.Update(as.DB), "error updating dependent fixture pre-test")
+
 	// change user 0 to an admin
 	appAdmin.AppRole = models.AppRoleAdmin
 	as.NoError(appAdmin.Update(as.DB), "failed to make first policy user an app admin")
@@ -172,6 +179,16 @@ func (as *ActionSuite) Test_DependentsCreate() {
 			notWantInBody: fixtures.Policies[0].Dependents[0].ID.String(),
 		},
 		{
+			name:          "team policy",
+			actor:         appAdmin,
+			reqBody:       goodRequest,
+			policy:        teamPolicy,
+			wantCount:     1 + len(teamPolicy.Dependents),
+			wantStatus:    http.StatusOK,
+			wantInBody:    `"child_birth_year":0`,
+			notWantInBody: `"relationship":"` + string(goodRequest.Relationship),
+		},
+		{
 			name:          "admin",
 			actor:         appAdmin,
 			reqBody:       goodRequest,
@@ -223,7 +240,7 @@ func (as *ActionSuite) Test_DependentsCreate() {
 func (as *ActionSuite) Test_DependentsUpdate() {
 	db := as.DB
 	config := models.FixturesConfig{
-		NumberOfPolicies:    2,
+		NumberOfPolicies:    3,
 		UsersPerPolicy:      1,
 		DependentsPerPolicy: 2,
 	}
@@ -236,6 +253,11 @@ func (as *ActionSuite) Test_DependentsUpdate() {
 
 	dependent := fixtures.Policies[0].Dependents[1]
 
+	// Make the last policy a Team type policy
+	teamPolicy := models.ConvertPolicyType(db, fixtures.Policies[2])
+	teamOwner := teamPolicy.Members[0]
+	teamDependent := teamPolicy.Dependents[0]
+
 	goodDep := api.PolicyDependentInput{
 		Name:           "New-" + dependent.Name,
 		Relationship:   dependent.Relationship,
@@ -247,12 +269,14 @@ func (as *ActionSuite) Test_DependentsUpdate() {
 	badDep.Name = ""
 
 	tests := []struct {
-		name       string
-		actor      models.User
-		oldDep     models.PolicyDependent
-		input      api.PolicyDependentInput
-		wantStatus int
-		wantInBody []string
+		name             string
+		actor            models.User
+		oldDep           models.PolicyDependent
+		input            api.PolicyDependentInput
+		wantStatus       int
+		wantInBody       []string
+		wantRelationship string
+		wantBirthYear    int
 	}{
 		{
 			name:       "unauthenticated",
@@ -294,6 +318,24 @@ func (as *ActionSuite) Test_DependentsUpdate() {
 				`"country":"` + goodDep.Country,
 				`"child_birth_year":` + fmt.Sprintf("%d", goodDep.ChildBirthYear),
 			},
+			wantRelationship: string(goodDep.Relationship),
+			wantBirthYear:    goodDep.ChildBirthYear,
+		},
+		{
+			name:       "team policy",
+			actor:      teamOwner,
+			oldDep:     teamDependent,
+			input:      goodDep,
+			wantStatus: http.StatusOK,
+			wantInBody: []string{
+				`"id":"` + teamDependent.ID.String(),
+				`"name":"` + goodDep.Name,
+				`"relationship":"` + string(api.PolicyDependentRelationshipNone),
+				`"country":"` + goodDep.Country,
+				`"child_birth_year":0`,
+			},
+			wantRelationship: string(api.PolicyDependentRelationshipNone),
+			wantBirthYear:    0,
 		},
 	}
 
@@ -320,9 +362,11 @@ func (as *ActionSuite) Test_DependentsUpdate() {
 			var dependent models.PolicyDependent
 			as.NoError(as.DB.Find(&dependent, tt.oldDep.ID), "error finding newly updated dependent.")
 			as.Equal(tt.input.Name, dependent.Name, "incorrect Name")
-			as.Equal(tt.input.Relationship, dependent.Relationship, "incorrect Relationship")
 			as.Equal(tt.input.Country, dependent.Country, "incorrect Country")
-			as.Equal(tt.input.ChildBirthYear, dependent.ChildBirthYear, "incorrect ChildBirthYear")
+
+			// This may be different than the input for team type policies
+			as.Equal(tt.wantRelationship, string(dependent.Relationship), "incorrect Relationship")
+			as.Equal(tt.wantBirthYear, dependent.ChildBirthYear, "incorrect ChildBirthYear")
 		})
 	}
 }

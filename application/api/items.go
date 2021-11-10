@@ -100,8 +100,6 @@ type Item struct {
 	ProratedAnnualPremium Currency `json:"prorated_annual_premium"`
 
 	// Accountable person assigned to the policy item
-	//
-	// swagger:strfmt uuid4
 	AccountablePerson AccountablePerson `json:"accountable_person"`
 }
 
