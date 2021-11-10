@@ -108,6 +108,10 @@ func (as *ActionSuite) Test_DependentsCreate() {
 	normalUser := fixtures.Policies[0].Members[0]
 	appAdmin := fixtures.Policies[1].Members[0]
 
+	// Make the last policy a Team type policy
+	teamFixtures := models.CreateTeamPolicyFixtures(as.DB, models.FixturesConfig{})
+	teamPolicy := teamFixtures.Policies[0]
+
 	// change user 0 to an admin
 	appAdmin.AppRole = models.AppRoleAdmin
 	as.NoError(appAdmin.Update(as.DB), "failed to make first policy user an app admin")
@@ -170,6 +174,16 @@ func (as *ActionSuite) Test_DependentsCreate() {
 			wantStatus:    http.StatusBadRequest,
 			wantInBody:    "",
 			notWantInBody: fixtures.Policies[0].Dependents[0].ID.String(),
+		},
+		{
+			name:          "team policy",
+			actor:         appAdmin,
+			reqBody:       goodRequest,
+			policy:        teamPolicy,
+			wantCount:     1 + len(teamPolicy.Dependents),
+			wantStatus:    http.StatusOK,
+			wantInBody:    `"child_birth_year":0`,
+			notWantInBody: `"relationship":"` + string(goodRequest.Relationship),
 		},
 		{
 			name:          "admin",
@@ -236,6 +250,11 @@ func (as *ActionSuite) Test_DependentsUpdate() {
 
 	dependent := fixtures.Policies[0].Dependents[1]
 
+	// Make the last policy a Team type policy
+	teamFixtures := models.CreateTeamPolicyFixtures(as.DB, models.FixturesConfig{DependentsPerPolicy: 1})
+	teamOwner := teamFixtures.Users[0]
+	teamDependent := teamFixtures.PolicyDependents[0]
+
 	goodDep := api.PolicyDependentInput{
 		Name:           "New-" + dependent.Name,
 		Relationship:   dependent.Relationship,
@@ -247,12 +266,14 @@ func (as *ActionSuite) Test_DependentsUpdate() {
 	badDep.Name = ""
 
 	tests := []struct {
-		name       string
-		actor      models.User
-		oldDep     models.PolicyDependent
-		input      api.PolicyDependentInput
-		wantStatus int
-		wantInBody []string
+		name             string
+		actor            models.User
+		oldDep           models.PolicyDependent
+		input            api.PolicyDependentInput
+		wantStatus       int
+		wantInBody       []string
+		wantRelationship string
+		wantBirthYear    int
 	}{
 		{
 			name:       "unauthenticated",
@@ -295,6 +316,22 @@ func (as *ActionSuite) Test_DependentsUpdate() {
 				`"child_birth_year":` + fmt.Sprintf("%d", goodDep.ChildBirthYear),
 			},
 		},
+		{
+			name:       "team policy",
+			actor:      teamOwner,
+			oldDep:     teamDependent,
+			input:      goodDep,
+			wantStatus: http.StatusOK,
+			wantInBody: []string{
+				`"id":"` + teamDependent.ID.String(),
+				`"name":"` + goodDep.Name,
+				`"relationship":"` + string(api.PolicyDependentRelationshipNone),
+				`"country":"` + goodDep.Country,
+				`"child_birth_year":0`,
+			},
+			wantRelationship: string(api.PolicyDependentRelationshipNone),
+			wantBirthYear:    0,
+		},
 	}
 
 	for _, tt := range tests {
@@ -320,9 +357,15 @@ func (as *ActionSuite) Test_DependentsUpdate() {
 			var dependent models.PolicyDependent
 			as.NoError(as.DB.Find(&dependent, tt.oldDep.ID), "error finding newly updated dependent.")
 			as.Equal(tt.input.Name, dependent.Name, "incorrect Name")
-			as.Equal(tt.input.Relationship, dependent.Relationship, "incorrect Relationship")
 			as.Equal(tt.input.Country, dependent.Country, "incorrect Country")
-			as.Equal(tt.input.ChildBirthYear, dependent.ChildBirthYear, "incorrect ChildBirthYear")
+
+			if tt.wantRelationship == "" {
+				as.Equal(tt.input.Relationship, dependent.Relationship, "incorrect Relationship")
+				as.Equal(tt.input.ChildBirthYear, dependent.ChildBirthYear, "incorrect ChildBirthYear")
+			} else {
+				as.Equal(tt.wantRelationship, string(dependent.Relationship), "incorrect Relationship")
+				as.Equal(tt.wantBirthYear, dependent.ChildBirthYear, "incorrect ChildBirthYear")
+			}
 		})
 	}
 }
