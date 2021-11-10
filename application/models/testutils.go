@@ -418,6 +418,12 @@ func CreatePolicyDependentFixtures(tx *pop.Connection, policy Policy, n int) Fix
 		policyDependents[i].State = randStr(2)
 		policyDependents[i].Country = randStr(10)
 		policyDependents[i].ChildBirthYear = time.Now().Year() - 18
+
+		if policy.Type == api.PolicyTypeTeam {
+			policyDependents[i].Relationship = api.PolicyDependentRelationshipNone
+			policyDependents[i].ChildBirthYear = 0
+		}
+
 		MustCreate(tx, &policyDependents[i])
 	}
 

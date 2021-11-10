@@ -318,6 +318,8 @@ func (p *Policy) AddDependent(tx *pop.Connection, input api.PolicyDependentInput
 		ChildBirthYear: input.ChildBirthYear,
 	}
 
+	dependent.FixTeamRelationship(*p)
+
 	if err := dependent.Create(tx); err != nil {
 		return err
 	}

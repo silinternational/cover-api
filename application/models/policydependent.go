@@ -14,6 +14,7 @@ import (
 )
 
 var ValidPolicyDependentRelationships = map[api.PolicyDependentRelationship]struct{}{
+	api.PolicyDependentRelationshipNone:   {},
 	api.PolicyDependentRelationshipSpouse: {},
 	api.PolicyDependentRelationshipChild:  {},
 }
@@ -52,6 +53,13 @@ func (p *PolicyDependent) Create(tx *pop.Connection) error {
 }
 
 func (p *PolicyDependent) Update(tx *pop.Connection) error {
+	var policy Policy
+	if err := policy.FindByID(tx, p.PolicyID); err != nil {
+		panic("error finding dependent's policy: " + err.Error())
+	}
+
+	p.FixTeamRelationship(policy)
+
 	return update(tx, p)
 }
 
@@ -130,5 +138,12 @@ func (p *PolicyDependent) GetLocation() Location {
 func (p *PolicyDependent) GetName() Name {
 	return Name{
 		First: p.Name,
+	}
+}
+
+func (p *PolicyDependent) FixTeamRelationship(policy Policy) {
+	if policy.Type == api.PolicyTypeTeam {
+		p.Relationship = api.PolicyDependentRelationshipNone
+		p.ChildBirthYear = 0
 	}
 }
