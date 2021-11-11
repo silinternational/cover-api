@@ -117,8 +117,6 @@ func claimApproved(e events.Event) {
 		messages.ClaimApprovedQueueMessage(tx, claim)
 		return nil
 	})
-
-	// TODO whatever else needs doing, e.g. trigger payments
 }
 
 func claimDenied(e events.Event) {
@@ -131,5 +129,4 @@ func claimDenied(e events.Event) {
 		messages.ClaimDeniedQueueMessage(tx, claim)
 		return nil
 	})
-
 }

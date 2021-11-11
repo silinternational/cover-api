@@ -188,7 +188,6 @@ type UpdateClaimItemsParams struct {
 }
 
 // UpdateClaimItems sets the claim items to a state ready for submission.
-// TODO: add parameters to provide flexibility in which fields are updated
 func UpdateClaimItems(tx *pop.Connection, claim Claim, params UpdateClaimItemsParams) Claim {
 	claim.LoadClaimItems(tx, false)
 	for i := range claim.ClaimItems {
