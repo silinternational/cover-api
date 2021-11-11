@@ -467,7 +467,6 @@ func (c *Claim) RequestReceipt(ctx buffalo.Context, reason string) error {
 // Approve changes the status of the claim from either Review1, Review2 to Review3 or
 //  from Review3 to Approved. It also adds the ReviewerID and ReviewDate.
 // TODO distinguish between admin types (steward vs. signator)
-// TODO do whatever post-processing is needed for payment
 func (c *Claim) Approve(ctx context.Context) error {
 	oldStatus := c.Status
 	var eventType string

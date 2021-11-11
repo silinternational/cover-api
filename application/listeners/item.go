@@ -61,8 +61,6 @@ func itemAutoApproved(e events.Event) {
 		messages.ItemAutoApprovedQueueMessage(tx, item)
 		return nil
 	})
-
-	// TODO do whatever else needs doing
 }
 
 func itemApproved(e events.Event) {
@@ -80,8 +78,6 @@ func itemApproved(e events.Event) {
 		messages.ItemApprovedQueueMessage(tx, item)
 		return nil
 	})
-
-	// TODO do whatever else needs doing
 }
 
 func itemDenied(e events.Event) {
