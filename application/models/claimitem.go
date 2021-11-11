@@ -394,27 +394,22 @@ func (c *ClaimItem) NewHistory(ctx context.Context, action string, fieldUpdate F
 	}
 }
 
-func (c *ClaimItem) calculatePayout(ctx context.Context) error {
+func (c *ClaimItem) updatePayoutAmount(ctx context.Context) error {
 	c.LoadItem(Tx(ctx), false)
-	c.LoadClaim(Tx(ctx), false)
 
 	coverageAmount := c.Item.CoverageAmount
-
-	status := c.Claim.Status
-	useActual := status == api.ClaimStatusReview2 || status == api.ClaimStatusReview3 ||
-		status == api.ClaimStatusApproved || status == api.ClaimStatusPaid
 
 	deductible := 0.05
 	maxValue := 0.0
 	switch c.PayoutOption {
 	case api.PayoutOptionRepair:
 		maxValue = float64(c.RepairEstimate)
-		if useActual {
+		if c.RepairActual > 0 {
 			maxValue = float64(c.RepairActual)
 		}
 	case api.PayoutOptionReplacement:
 		maxValue = float64(c.ReplaceEstimate)
-		if useActual {
+		if c.ReplaceActual > 0 {
 			maxValue = float64(c.ReplaceActual)
 		}
 	case api.PayoutOptionFMV:
@@ -424,7 +419,11 @@ func (c *ClaimItem) calculatePayout(ctx context.Context) error {
 		maxValue = float64(coverageAmount)
 	}
 
-	c.PayoutAmount = api.Currency(math.Round(math.Min(maxValue, float64(coverageAmount)) * (1.0 - deductible)))
+	payout := api.Currency(math.Round(math.Min(maxValue, float64(coverageAmount)) * (1.0 - deductible)))
+	if c.PayoutAmount == payout {
+		return nil
+	}
 
+	c.PayoutAmount = payout
 	return c.Update(ctx)
 }

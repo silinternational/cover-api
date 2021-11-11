@@ -146,6 +146,10 @@ func (c *Claim) Update(ctx context.Context) error {
 		}
 	}
 
+	if err = c.calculatePayout(ctx); err != nil {
+		return err
+	}
+
 	if err = update(tx, c); err != nil {
 		return err
 	}
@@ -384,8 +388,6 @@ func (c *Claim) SubmitForApproval(ctx context.Context) error {
 			return api.NewAppError(err, errorKey, api.CategoryUser)
 		}
 	}
-
-	c.calculatePayout(ctx)
 
 	if err := c.Update(ctx); err != nil {
 		return err
@@ -892,12 +894,11 @@ func (c *Claim) calculatePayout(ctx context.Context) error {
 	c.LoadClaimItems(Tx(ctx), false)
 	var payout api.Currency
 	for _, claimItem := range c.ClaimItems {
-		if err := claimItem.calculatePayout(ctx); err != nil {
+		if err := claimItem.updatePayoutAmount(ctx); err != nil {
 			return err
 		}
 		payout += claimItem.PayoutAmount
 	}
 	c.TotalPayout = payout
-
-	return c.Update(ctx)
+	return nil
 }

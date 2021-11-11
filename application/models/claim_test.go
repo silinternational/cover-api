@@ -896,8 +896,10 @@ func (ms *ModelSuite) TestClaim_calculatePayout() {
 	var claim Claim
 	ms.NoError(claim.FindByID(ms.DB, fixtures.Claims[0].ID))
 
+	before := claim.TotalPayout
+
 	ms.NoError(claim.calculatePayout(CreateTestContext(fixtures.Users[0])))
 
-	// The claim item test will check the actual amount. Just make sure it's not zero.
-	ms.Greater(claim.TotalPayout, 0, "payout was not set")
+	// The claim item test will check the actual amount. Just make sure it changed.
+	ms.False(claim.TotalPayout == before, "payout was not updated")
 }
