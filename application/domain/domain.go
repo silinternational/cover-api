@@ -180,7 +180,9 @@ var Env struct {
 	PremiumMinimum          int `default:"25" split_words:"true"`
 
 	// PremiumFactor is multiplied by CoverageAmount to calculate the annual premium of an item
-	PremiumFactor float64 `default:"0.035" split_words:"true"`
+	PremiumFactor    float64 `default:"0.035" split_words:"true"`
+	Deductible       float64 `default:"0.05"`
+	DeductibleString string  `ignored:"true"`
 
 	FiscalStartMonth int    `default:"1" split_words:"true"`
 	ExpenseAccount   string `default:"" split_words:"true"`
@@ -213,6 +215,7 @@ func readEnv() {
 	Env.PolicyMaxCoverage *= CurrencyFactor
 	Env.DependentAutoApproveMax *= CurrencyFactor
 	Env.PremiumMinimum *= CurrencyFactor
+	Env.DeductibleString = fmt.Sprintf("%.1f%%", Env.Deductible*100)
 
 	// Doing this separately to avoid needing two environment variables for the same thing
 	Env.GoEnv = envy.Get("GO_ENV", "development")
