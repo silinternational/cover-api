@@ -146,7 +146,7 @@ func (c *Claim) Update(ctx context.Context) error {
 		}
 	}
 
-	if err = c.calculatePayoutAmount(ctx); err != nil {
+	if err = c.calculatePayout(ctx); err != nil {
 		return err
 	}
 
@@ -890,7 +890,7 @@ func (c *Claim) SubmittedAt(tx *pop.Connection) time.Time {
 	return c.UpdatedAt
 }
 
-func (c *Claim) calculatePayoutAmount(ctx context.Context) error {
+func (c *Claim) calculatePayout(ctx context.Context) error {
 	c.LoadClaimItems(Tx(ctx), false)
 	var payout api.Currency
 	for _, claimItem := range c.ClaimItems {
