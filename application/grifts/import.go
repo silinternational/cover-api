@@ -304,6 +304,10 @@ func importAdminUsers(tx *pop.Connection, users []LegacyUser) {
 			log.Fatalf("failed to create user, %s\n%+v", err, newUser)
 		}
 
+		if err := newUser.CreateInitialPolicy(tx); err != nil {
+			log.Fatalf("failed to create a policy for admin user: %s", newUser.Name())
+		}
+
 		userStaffIDMap[user.StaffId] = newUser.ID
 
 		if err := tx.RawQuery("update users set updated_at = ? where id = ?",
@@ -541,8 +545,8 @@ func normalizePolicy(p *LegacyPolicy) {
 		p.EntityCode = nulls.String{}
 
 		if p.HouseholdId == "" {
-			p.HouseholdId = defaultID
-			log.Printf("Policy[%s] HouseholdId is empty, using %s", p.Id, defaultID)
+			p.HouseholdId = domain.GetUUID().String()[0:8]
+			log.Printf("Policy[%s] HouseholdId is empty, using %s", p.Id, p.HouseholdId)
 		}
 	}
 

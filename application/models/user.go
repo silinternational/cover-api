@@ -295,7 +295,7 @@ func (u *User) CreateInitialPolicy(tx *pop.Connection) error {
 	policy := Policy{
 		Name:        u.LastName + " household",
 		Type:        api.PolicyTypeHousehold,
-		HouseholdID: nulls.NewString(fmt.Sprintf("HHID-%s-%s", u.FirstName, u.LastName)),
+		HouseholdID: nulls.NewString(domain.GetUUID().String()[0:8]),
 	}
 
 	if err := policy.Create(tx); err != nil {
