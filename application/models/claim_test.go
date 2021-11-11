@@ -377,12 +377,11 @@ func (ms *ModelSuite) TestClaim_Approve() {
 
 	// Make one of the claims requesting an FMV payout
 	fmvClaim := UpdateClaimStatus(ms.DB, policy.Claims[1], api.ClaimStatusReview1, "")
-	fmvClaim.LoadClaimItems(ms.DB, false)
-	fmvItem := fmvClaim.ClaimItems[0]
-	fmvItem.FMV = 100
-	fmvItem.PayoutOption = api.PayoutOptionFMV
-	ms.NoError(ms.DB.Update(&fmvItem), "error updating claim item fixture")
-	fmvClaim.LoadClaimItems(ms.DB, true)
+	fmvParams := UpdateClaimItemsParams{
+		PayoutOption: api.PayoutOptionFMV,
+		FMV:          2000,
+	}
+	UpdateClaimItems(ms.DB, fmvClaim, fmvParams)
 
 	// Fail from Review1 to Review3 with wrong Payout Option
 	notFMVClaim := UpdateClaimStatus(ms.DB, policy.Claims[5], api.ClaimStatusReview1, "")
