@@ -81,6 +81,8 @@ type PolicyCreate struct {
 	Type string `json:"type"`
 
 	// Household ID for billing. Only required/allowed on Household type policies.
+	//
+	// swagger:strfmt uuid4
 	HouseholdID nulls.String `json:"household_id,omitempty"`
 
 	// Cost center for billing. Only required/allowed on Team type policies.
@@ -101,8 +103,10 @@ type PolicyCreate struct {
 type PolicyUpdate struct {
 	// policy name
 	Name string `json:"name"`
-
+	
 	// Household ID for billing. Only required/allowed on Household type policies.
+	//
+	// swagger:strfmt uuid4
 	HouseholdID nulls.String `json:"household_id,omitempty"`
 
 	// Cost center for billing. Only required/allowed on Team type policies.
