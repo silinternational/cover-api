@@ -399,7 +399,7 @@ func (c *ClaimItem) updatePayoutAmount(ctx context.Context) error {
 
 	coverageAmount := c.Item.CoverageAmount
 
-	deductible := 0.05
+	deductible := domain.Env.Deductible
 	maxValue := 0.0
 	switch c.PayoutOption {
 	case api.PayoutOptionRepair:
