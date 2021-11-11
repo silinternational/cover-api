@@ -545,8 +545,8 @@ func normalizePolicy(p *LegacyPolicy) {
 		p.EntityCode = nulls.String{}
 
 		if p.HouseholdId == "" {
-			p.HouseholdId = defaultID
-			log.Printf("Policy[%s] HouseholdId is empty, using %s", p.Id, defaultID)
+			p.HouseholdId = domain.GetUUID().String()[0:8]
+			log.Printf("Policy[%s] HouseholdId is empty, using %s", p.Id, p.HouseholdId)
 		}
 	}
 
