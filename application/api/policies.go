@@ -103,7 +103,7 @@ type PolicyCreate struct {
 type PolicyUpdate struct {
 	// policy name
 	Name string `json:"name"`
-	
+
 	// Household ID for billing. Only required/allowed on Household type policies.
 	//
 	// swagger:strfmt uuid4
