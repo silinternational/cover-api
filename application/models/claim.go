@@ -475,7 +475,18 @@ func (c *Claim) Approve(ctx context.Context) error {
 	user := CurrentUser(ctx)
 
 	switch oldStatus {
-	case api.ClaimStatusReview1, api.ClaimStatusReview2:
+	case api.ClaimStatusReview1:
+		c.LoadClaimItems(Tx(ctx), false)
+		payOption := c.ClaimItems[0].PayoutOption
+		if payOption != api.PayoutOptionFMV && payOption != api.PayoutOptionFixedFraction {
+			err := fmt.Errorf("invalid claim item payout option for approve: %s", payOption)
+			appErr := api.NewAppError(err, api.ErrorClaimItemInvalidPayoutOption, api.CategoryUser)
+			return appErr
+		}
+		c.Status = api.ClaimStatusReview3
+		c.StatusChange = ClaimStatusChangeReview3 + user.Name()
+		eventType = domain.EventApiClaimReview3
+	case api.ClaimStatusReview2:
 		c.Status = api.ClaimStatusReview3
 		c.StatusChange = ClaimStatusChangeReview3 + user.Name()
 		eventType = domain.EventApiClaimReview3

@@ -364,7 +364,7 @@ func (ms *ModelSuite) TestClaim_Approve() {
 		UsersPerPolicy:      2,
 		DependentsPerPolicy: 2,
 		ItemsPerPolicy:      4,
-		ClaimsPerPolicy:     5,
+		ClaimsPerPolicy:     6,
 		ClaimItemsPerClaim:  1,
 	}
 
@@ -374,10 +374,22 @@ func (ms *ModelSuite) TestClaim_Approve() {
 
 	policy := fixtures.Policies[0]
 	draftClaim := policy.Claims[0]
-	review1Claim := UpdateClaimStatus(ms.DB, policy.Claims[1], api.ClaimStatusReview1, "")
+
+	// Make one of the claims requesting an FMV payout
+	fmvClaim := UpdateClaimStatus(ms.DB, policy.Claims[1], api.ClaimStatusReview1, "")
+	fmvClaim.LoadClaimItems(ms.DB, false)
+	fmvItem := fmvClaim.ClaimItems[0]
+	fmvItem.FMV = 100
+	fmvItem.PayoutOption = api.PayoutOptionFMV
+	ms.NoError(ms.DB.Update(&fmvItem), "error updating claim item fixture")
+	fmvClaim.LoadClaimItems(ms.DB, true)
+
+	// Fail from Review1 to Review3 with wrong Payout Option
+	notFMVClaim := UpdateClaimStatus(ms.DB, policy.Claims[5], api.ClaimStatusReview1, "")
+
 	review2Claim := UpdateClaimStatus(ms.DB, policy.Claims[2], api.ClaimStatusReview2, "")
 	review3Claim := UpdateClaimStatus(ms.DB, policy.Claims[3], api.ClaimStatusReview3, "")
-	emptyClaim := UpdateClaimStatus(ms.DB, policy.Claims[4], api.ClaimStatusReview1, "")
+	emptyClaim := UpdateClaimStatus(ms.DB, policy.Claims[4], api.ClaimStatusReview2, "")
 
 	tempClaim := emptyClaim
 	tempClaim.LoadClaimItems(ms.DB, false)
@@ -407,8 +419,15 @@ func (ms *ModelSuite) TestClaim_Approve() {
 			wantErrContains: "claim must have a claimItem if no longer in draft",
 		},
 		{
+			name:            "not FMV from review1 to review3",
+			claim:           notFMVClaim,
+			wantErrKey:      api.ErrorClaimItemInvalidPayoutOption,
+			wantErrCat:      api.CategoryUser,
+			wantErrContains: "invalid claim item payout option for approve",
+		},
+		{
 			name:       "from review1 to review3",
-			claim:      review1Claim,
+			claim:      fmvClaim,
 			wantStatus: api.ClaimStatusReview3,
 		},
 		{

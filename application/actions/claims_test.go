@@ -946,7 +946,16 @@ func (as *ActionSuite) Test_ClaimsApprove() {
 	appAdmin := models.CreateAdminUsers(as.DB)[models.AppRoleAdmin]
 
 	draftClaim := policy.Claims[0]
-	review1Claim := models.UpdateClaimStatus(as.DB, policy.Claims[1], api.ClaimStatusReview1, "")
+
+	// Make one of the claims requesting a FixedFraction payout
+	ffClaim := models.UpdateClaimStatus(as.DB, policy.Claims[1], api.ClaimStatusReview1, "")
+	ffClaim.IncidentType = api.ClaimIncidentTypeEvacuation
+	as.NoError(as.DB.Update(&ffClaim), "error updating claim fixture")
+	ffClaim.LoadClaimItems(as.DB, false)
+	ffItem := ffClaim.ClaimItems[0]
+	ffItem.PayoutOption = api.PayoutOptionFixedFraction
+	as.NoError(as.DB.Update(&ffItem), "error updating claim item fixture")
+
 	review2Claim := models.UpdateClaimStatus(as.DB, policy.Claims[2], api.ClaimStatusReview2, "")
 	review3Claim := models.UpdateClaimStatus(as.DB, policy.Claims[3], api.ClaimStatusReview3, "")
 
@@ -968,17 +977,17 @@ func (as *ActionSuite) Test_ClaimsApprove() {
 		{
 			name:       "non-admin user",
 			actor:      policyCreator,
-			oldClaim:   review1Claim,
+			oldClaim:   ffClaim,
 			wantStatus: http.StatusNotFound,
 		},
 		{
 			name:            "review1 to review3",
 			actor:           appAdmin,
-			oldClaim:        review1Claim,
+			oldClaim:        ffClaim,
 			wantStatus:      http.StatusOK,
 			wantClaimStatus: api.ClaimStatusReview3,
 			wantInBody: []string{
-				`"incident_description":"` + review1Claim.IncidentDescription,
+				`"incident_description":"` + ffClaim.IncidentDescription,
 				`"status":"` + string(api.ClaimStatusReview3),
 				`"status_change":"` + models.ClaimStatusChangeReview3 + appAdmin.Name(),
 				`"review_date":"` + time.Now().UTC().Format(domain.DateFormat),
