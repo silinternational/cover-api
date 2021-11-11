@@ -951,10 +951,10 @@ func (as *ActionSuite) Test_ClaimsApprove() {
 	ffClaim := models.UpdateClaimStatus(as.DB, policy.Claims[1], api.ClaimStatusReview1, "")
 	ffClaim.IncidentType = api.ClaimIncidentTypeEvacuation
 	as.NoError(as.DB.Update(&ffClaim), "error updating claim fixture")
-	ffClaim.LoadClaimItems(as.DB, false)
-	ffItem := ffClaim.ClaimItems[0]
-	ffItem.PayoutOption = api.PayoutOptionFixedFraction
-	as.NoError(as.DB.Update(&ffItem), "error updating claim item fixture")
+	ffParams := models.UpdateClaimItemsParams{
+		PayoutOption: api.PayoutOptionFixedFraction,
+	}
+	models.UpdateClaimItems(as.DB, ffClaim, ffParams)
 
 	review2Claim := models.UpdateClaimStatus(as.DB, policy.Claims[2], api.ClaimStatusReview2, "")
 	review3Claim := models.UpdateClaimStatus(as.DB, policy.Claims[3], api.ClaimStatusReview3, "")
