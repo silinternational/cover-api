@@ -961,17 +961,18 @@ func importJournalEntries(tx *pop.Connection, entries []JournalEntry) {
 			LastName:         trim(e.LastName),
 		}
 		l.CreatedAt = l.DateSubmitted
-		l.UpdatedAt = l.DateSubmitted
 
 		if err := l.Create(tx); err != nil {
 			log.Fatalf("failed to create ledger entry, %s\n%+v", err, l)
 		}
 
+		updated := l.DateSubmitted
 		if l.DateEntered.Valid {
-			if err = tx.RawQuery("update ledger_entries set updated_at = ? where id = ?",
-				l.DateEntered.Time, l.ID).Exec(); err != nil {
-				log.Fatalf("failed to set updated_at on ledger_entries, %s", err)
-			}
+			updated = l.DateEntered.Time
+		}
+		if err = tx.RawQuery("update ledger_entries set updated_at = ? where id = ?",
+			updated, l.ID).Exec(); err != nil {
+			log.Fatalf("failed to set updated_at on ledger_entries, %s", err)
 		}
 
 		nImported++
