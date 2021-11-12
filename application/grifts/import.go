@@ -51,6 +51,9 @@ var userEmailMap = map[string]uuid.UUID{}
 // userStaffIDMap is a map of staff ID to new ID
 var userStaffIDMap = map[string]uuid.UUID{}
 
+// userStaffIDNames is a map of staff ID to name
+var userStaffIDNames = map[string]models.Name{}
+
 // itemIDMap is a map of legacy ID to new ID
 var itemIDMap = map[int]uuid.UUID{}
 
@@ -160,12 +163,17 @@ func importStaffIDs() {
 	const IDPEmailColumn = 1
 	const IDPPersonalEmailColumn = 2
 	const WorkdayStaffIDColumn = 0
+	const WorkdayFirstNameColumn = 1
+	const WorkdayLastNameColumn = 2
 	const WorkdayEmailColumn = 5
 	const WorkdayPersonalEmailColumn = 6
 
 	fmt.Println("\nImporting Workday users")
 	for idp, filename := range workdayFilenames {
-		n := readCSVFile(filename, []int{WorkdayStaffIDColumn, WorkdayEmailColumn}, addStaffID)
+		n := readCSVFile(filename, []int{
+			WorkdayStaffIDColumn, WorkdayEmailColumn,
+			WorkdayFirstNameColumn, WorkdayLastNameColumn,
+		}, addStaffNameAndID)
 		fmt.Printf("  %s Workday users: %d\n", idp, n)
 	}
 
@@ -246,6 +254,25 @@ func addStaffID(fields []string) int {
 	}
 
 	return 0
+}
+
+func addStaffNameAndID(fields []string) int {
+	staffID := fields[0]
+	firstName := fields[2]
+	lastName := fields[3]
+
+	if staffID == "NULL" || staffID == "" {
+		return 0
+	}
+
+	if _, ok := userStaffIDNames[staffID]; !ok {
+		userStaffIDNames[staffID] = models.Name{
+			First: firstName,
+			Last:  lastName,
+		}
+	}
+
+	return addStaffID([]string{fields[0], fields[1]})
 }
 
 func addEntityCode(fields []string) int {
@@ -629,6 +656,15 @@ func createUserFromEmailAddress(tx *pop.Connection, email, firstName, lastName s
 		staffID = nulls.NewString(id)
 
 		nPolicyUsersWithStaffID++
+
+		// use name imported from Workday
+		name := userStaffIDNames[id]
+		if name.First != "" {
+			firstName = name.First
+		}
+		if name.Last != "" {
+			lastName = name.Last
+		}
 	}
 
 	// check for existing user with this staff ID
@@ -924,9 +960,21 @@ func importJournalEntries(tx *pop.Connection, entries []JournalEntry) {
 			FirstName:        trim(e.FirstName),
 			LastName:         trim(e.LastName),
 		}
+		l.CreatedAt = l.DateSubmitted
+
 		if err := l.Create(tx); err != nil {
 			log.Fatalf("failed to create ledger entry, %s\n%+v", err, l)
 		}
+
+		updated := l.DateSubmitted
+		if l.DateEntered.Valid {
+			updated = l.DateEntered.Time
+		}
+		if err = tx.RawQuery("update ledger_entries set updated_at = ? where id = ?",
+			updated, l.ID).Exec(); err != nil {
+			log.Fatalf("failed to set updated_at on ledger_entries, %s", err)
+		}
+
 		nImported++
 	}
 
