@@ -1,8 +1,10 @@
 package listeners
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
 	"time"
 
 	"github.com/gobuffalo/events"
@@ -119,4 +121,35 @@ func findObject(payload events.Payload, object interface{}, listenerName string)
 // getDelayDuration is a helper function to calculate delay in milliseconds before processing event
 func getDelayDuration(multiplier int) time.Duration {
 	return time.Duration(domain.Env.ListenerDelayMilliseconds) * time.Millisecond * time.Duration(multiplier)
+}
+
+func GetHHID(staffID string) string {
+	if domain.Env.HouseholdIDLookupURL == "" {
+		return ""
+	}
+
+	req, err := http.NewRequest(http.MethodGet, domain.Env.HouseholdIDLookupURL+staffID, nil)
+	if err != nil {
+		domain.ErrLogger.Printf("HHID API error, %s", err)
+		return ""
+	}
+	req.SetBasicAuth(domain.Env.HouseholdIDLookupUsername, domain.Env.HouseholdIDLookupPassword)
+
+	client := &http.Client{Timeout: time.Second * 10}
+	response, err := client.Do(req)
+	if err != nil {
+		domain.ErrLogger.Printf("HHID API error, %s", err)
+		return ""
+	}
+	defer response.Body.Close()
+
+	dec := json.NewDecoder(response.Body)
+	var v struct {
+		ID string `json:"householdIdOut"`
+	}
+	if err = dec.Decode(&v); err != nil {
+		domain.ErrLogger.Printf("HHID API error decoding response, %s", err)
+		return ""
+	}
+	return v.ID
 }
