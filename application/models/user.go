@@ -4,6 +4,7 @@ import (
 	"crypto/sha256"
 	"fmt"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/gobuffalo/events"
@@ -142,6 +143,18 @@ func (u *User) FindOrCreateFromAuthUser(tx *pop.Connection, authUser *auth.User)
 
 	if u.AppRole == "" {
 		u.AppRole = AppRoleCustomer
+		id, _ := strconv.Atoi(authUser.StaffID)
+		if domain.Env.GoEnv == "development" || domain.Env.GoEnv == "staging" {
+			if id >= 1000000 {
+				u.AppRole = AppRoleSteward
+			}
+			if id >= 2000000 {
+				u.AppRole = AppRoleSignator
+			}
+			if id >= 3000000 {
+				u.AppRole = AppRoleAdmin
+			}
+		}
 	}
 
 	// update attributes from authUser
