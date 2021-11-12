@@ -3,12 +3,20 @@
 <header>
 	<table style="background-color: #ffffff; width: 100%">
 		<tr>
-			<td>
+			<td style="width: 45%">
 				<img src="cid:logo" style="max-height: 4em; vertical-align: middle">
 			</td>
 			<%= if ( title != "" ) { %>
-			 <td>
-				 <h1><%= title %></h1>
+			 <td style="padding-top: 20px;">
+				 <span style="
+				 	color: #6D7580;
+				 	font-family: Arial;
+				 	font-size: 32px;
+				 	line-height: 28px;
+				 	display: flex;
+				 	align-items: flex-end;">
+					 <%= title %>
+				 </span>
 			 </td>
 			<% } %>
 		</tr>
@@ -16,7 +24,15 @@
 </header>
 
 <%= if ( subTitle != "" ) { %>
- <div style="padding: 0 0 2em 0;"><%= subTitle %></div>
+ <div style="
+ 	padding: 2em 0 2em 0;
+	color: #09101D;
+	font-family: Arial;
+	font-size: 16px;
+	line-height: 20px;
+">
+	 <%= subTitle %>
+ </div>
 <% } %>
 
 <%= if ( alert != "" ) { %>
