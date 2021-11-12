@@ -895,9 +895,31 @@ func (c *Claim) UpdateStatus(ctx context.Context, newStatus api.ClaimStatus) err
 	return nil
 }
 
+// Based on the claim's UpdatedAt field, unless there is a
+//   ClaimHistory for this claim that is for a Status Update where tne
+//   new field is Review1.  Uses the CreatedAt time of the earliest history
+//   with Status change to Review1.
 func (c *Claim) SubmittedAt(tx *pop.Connection) time.Time {
-	// TODO: use the history table to get the real date
-	return c.UpdatedAt
+	var histories ClaimHistories
+
+	err := tx.RawQuery(`
+		SELECT created_at
+		FROM claim_histories
+		WHERE claim_id = ? AND field_name = ? AND action = ? AND new_value = ?
+		ORDER BY created_at ASC
+		LIMIT 1
+		`, c.ID, FieldClaimStatus, api.HistoryActionUpdate, api.ClaimStatusReview1).All(&histories)
+
+	if err != nil {
+		domain.ErrLogger.Printf("error finding claim's histories: %s", err)
+		return c.UpdatedAt
+	}
+
+	if len(histories) == 0 {
+		return c.UpdatedAt
+	}
+
+	return histories[0].CreatedAt
 }
 
 func (c *Claim) calculatePayout(ctx context.Context) error {

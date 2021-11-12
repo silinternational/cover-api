@@ -606,6 +606,129 @@ func (ms *ModelSuite) TestClaim_HasReceiptFile() {
 	}
 }
 
+func (ms *ModelSuite) TestClaim_SubmittedAt() {
+	fixConfig := FixturesConfig{
+		NumberOfPolicies:   2,
+		ItemsPerPolicy:     4,
+		ClaimsPerPolicy:    5,
+		ClaimItemsPerClaim: 1,
+	}
+
+	fixtures := CreateItemFixtures(ms.DB, fixConfig)
+	policy := fixtures.Policies[0]
+	draftClaim := policy.Claims[0]
+	review1Claim := policy.Claims[1]
+	review2Claim := policy.Claims[2]
+	user := policy.Members[0]
+
+	// Create test history fixtures for the claims
+	historyFixtures := ClaimHistories{
+		{
+			ClaimID: review1Claim.ID,
+			UserID:  user.ID,
+			Action:  api.HistoryActionCreate,
+		},
+		{
+			ClaimID:   review1Claim.ID,
+			UserID:    user.ID,
+			Action:    api.HistoryActionUpdate,
+			FieldName: FieldClaimItemLocation,
+			OldValue:  "USA",
+			NewValue:  "UK",
+		},
+		{ // This is the history that should be used for the SubmittedAt time
+			ClaimID:   review1Claim.ID,
+			UserID:    user.ID,
+			Action:    api.HistoryActionUpdate,
+			FieldName: FieldClaimStatus,
+			OldValue:  string(api.ClaimStatusDraft),
+			NewValue:  string(api.ClaimStatusReview1),
+		},
+		{
+			ClaimID:   review1Claim.ID,
+			UserID:    user.ID,
+			Action:    api.HistoryActionUpdate,
+			FieldName: FieldClaimStatus,
+			OldValue:  string(api.ClaimStatusReview1),
+			NewValue:  string(api.ClaimStatusRevision),
+		},
+		{
+			ClaimID:   review1Claim.ID,
+			UserID:    user.ID,
+			Action:    api.HistoryActionUpdate,
+			FieldName: FieldClaimStatus,
+			OldValue:  string(api.ClaimStatusRevision),
+			NewValue:  string(api.ClaimStatusReview1),
+		},
+		{
+			ClaimID: review2Claim.ID,
+			UserID:  user.ID,
+			Action:  api.HistoryActionCreate,
+		},
+		{
+			ClaimID:   review2Claim.ID,
+			UserID:    user.ID,
+			Action:    api.HistoryActionUpdate,
+			FieldName: FieldClaimItemLocation,
+			OldValue:  "France",
+			NewValue:  "Germany",
+		},
+		{ // This is the history that should be used for the SubmittedAt time
+			ClaimID:   review2Claim.ID,
+			UserID:    user.ID,
+			Action:    api.HistoryActionUpdate,
+			FieldName: FieldClaimStatus,
+			OldValue:  string(api.ClaimStatusDraft),
+			NewValue:  string(api.ClaimStatusReview1),
+		},
+		{
+			ClaimID:   review2Claim.ID,
+			UserID:    user.ID,
+			Action:    api.HistoryActionUpdate,
+			FieldName: FieldClaimStatus,
+			OldValue:  string(api.ClaimStatusReview1),
+			NewValue:  string(api.ClaimStatusReview2),
+		},
+	}
+
+	for i := range historyFixtures {
+		MustCreate(ms.DB, &historyFixtures[i])
+	}
+
+	// The history entries that should be used for the SubmittedAt time
+	review1History := historyFixtures[2]
+	review2History := historyFixtures[7]
+
+	tests := []struct {
+		name  string
+		claim Claim
+		want  time.Time
+	}{
+		{
+			name:  "draft Claim",
+			claim: draftClaim,
+			want:  draftClaim.UpdatedAt,
+		},
+		{
+			name:  "review1Claim",
+			claim: review1Claim,
+			want:  review1History.CreatedAt,
+		},
+		{
+			name:  "has a receipt file",
+			claim: review2Claim,
+			want:  review2History.CreatedAt,
+		},
+	}
+
+	for _, tt := range tests {
+		ms.T().Run(tt.name, func(t *testing.T) {
+			got := tt.claim.SubmittedAt(ms.DB)
+			ms.WithinDuration(tt.want, got, time.Duration(1), "incorrect SubmittedAt")
+		})
+	}
+}
+
 func (ms *ModelSuite) TestClaim_ConvertToAPI() {
 	fixtures := CreateItemFixtures(ms.DB, FixturesConfig{
 		ClaimsPerPolicy:    1,
