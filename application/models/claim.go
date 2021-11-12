@@ -903,11 +903,12 @@ func (c *Claim) SubmittedAt(tx *pop.Connection) time.Time {
 	var histories ClaimHistories
 
 	err := tx.RawQuery(`
-SELECT created_at
-FROM claim_histories
-WHERE claim_id = ? AND field_name = ? AND action = ? AND new_value = ?
-ORDER BY created_at ASC
-`, c.ID, FieldClaimStatus, api.HistoryActionUpdate, api.ClaimStatusReview1).All(&histories)
+		SELECT created_at
+		FROM claim_histories
+		WHERE claim_id = ? AND field_name = ? AND action = ? AND new_value = ?
+		ORDER BY created_at ASC
+		LIMIT 1
+		`, c.ID, FieldClaimStatus, api.HistoryActionUpdate, api.ClaimStatusReview1).All(&histories)
 
 	if err != nil {
 		domain.ErrLogger.Printf("error finding claim's histories: %s", err)
