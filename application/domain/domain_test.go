@@ -123,6 +123,52 @@ func (ts *TestSuite) TestCalculatePartialYearValue() {
 	}
 }
 
+func (ts *TestSuite) TestCalculateMonthlyRefundValue() {
+	tests := []struct {
+		name      string
+		input     int
+		startDate time.Time
+		want      int
+	}{
+		{
+			name:      "end of January",
+			input:     120,
+			startDate: time.Date(2021, 1, 31, 10, 0, 0, 0, time.UTC),
+			want:      110,
+		},
+		{
+			name:      "first of February",
+			input:     120,
+			startDate: time.Date(2021, 2, 1, 20, 0, 0, 0, time.UTC),
+			want:      100,
+		},
+		{
+			name:      "end of November",
+			input:     120,
+			startDate: time.Date(2021, 11, 30, 0, 0, 0, 0, time.UTC),
+			want:      10,
+		},
+		{
+			name:      "first of December",
+			input:     120,
+			startDate: time.Date(2021, 12, 1, 0, 0, 0, 0, time.UTC),
+			want:      0,
+		},
+		{
+			name:      "check rounding",
+			input:     46,
+			startDate: time.Date(2021, 11, 30, 0, 0, 0, 0, time.UTC),
+			want:      4, // 3.83333 rounded up to 4
+		},
+	}
+	for _, tt := range tests {
+		ts.T().Run(tt.name, func(t *testing.T) {
+			got := CalculateMonthlyRefundValue(tt.input, tt.startDate)
+			ts.Equal(tt.want, got, "incorrect output value")
+		})
+	}
+}
+
 func (ts *TestSuite) Test_BeginningOfLastMonth() {
 	tests := []struct {
 		name string

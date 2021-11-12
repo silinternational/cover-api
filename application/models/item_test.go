@@ -766,29 +766,61 @@ func (ms *ModelSuite) TestItem_calculateProratedPremium() {
 }
 
 func (ms *ModelSuite) TestItem_calculateCancellationCredit() {
-	now := time.Date(1999, 3, 15, 0, 0, 0, 0, time.UTC)
 	domain.Env.PremiumFactor = 0.02
+	earlyJanuary := time.Date(2020, 1, 1, 1, 1, 1, 1, time.UTC)
+	midJanuary := time.Date(2020, 1, 11, 1, 1, 1, 1, time.UTC)
+	coverage := 6000 //  6000 * 0.02 == 120  which is easily divisible by 12
 
 	tests := []struct {
-		name     string
-		coverage int
-		want     int
+		name              string
+		coverage          int
+		coverageStartDate time.Time
+		testTime          time.Time
+		want              int
 	}{
 		{
-			name:     "even amount",
-			coverage: 200000,
-			want:     -3200,
+			name:              "Now January and created last year",
+			coverage:          coverage,
+			coverageStartDate: time.Date(2019, 12, 1, 1, 1, 1, 1, time.UTC),
+			testTime:          midJanuary,
+			want:              -120,
 		},
 		{
-			name:     "round up",
-			coverage: 199999,
-			want:     -3200,
+			name:              "Now January and created this year",
+			coverage:          coverage,
+			coverageStartDate: earlyJanuary,
+			testTime:          midJanuary,
+			want:              -110,
+		},
+		{
+			name:              "Now February",
+			coverage:          coverage,
+			coverageStartDate: earlyJanuary,
+			testTime:          time.Date(2020, 2, 1, 1, 1, 1, 1, time.UTC),
+			want:              -100,
+		},
+		{
+			name:              "November Round Up",
+			coverage:          coverage - 100,
+			coverageStartDate: earlyJanuary,
+			testTime:          time.Date(2020, 11, 1, 1, 1, 1, 1, time.UTC),
+			want:              -10,
+		},
+		{
+			name:              "Now December",
+			coverage:          coverage,
+			coverageStartDate: earlyJanuary,
+			testTime:          time.Date(2020, 12, 1, 1, 1, 1, 1, time.UTC),
+			want:              0,
 		},
 	}
 	for _, tt := range tests {
 		ms.T().Run(tt.name, func(t *testing.T) {
-			item := Item{CoverageAmount: tt.coverage}
-			got := item.calculateCancellationCredit(now)
+			item := Item{
+				CoverageAmount:    tt.coverage,
+				CoverageStartDate: tt.coverageStartDate,
+			}
+			got := item.calculateCancellationCredit(tt.testTime)
 			ms.Equal(api.Currency(tt.want), got)
 		})
 	}
