@@ -301,14 +301,6 @@ func (as *ActionSuite) Test_PoliciesUpdate() {
 		notWantInBody string
 	}{
 		{
-			name:          "empty household id",
-			actor:         normalUser,
-			policy:        fixtures.Policies[1],
-			update:        api.PolicyUpdate{},
-			wantStatus:    http.StatusBadRequest,
-			notWantInBody: fixtures.Policies[1].ID.String(),
-		},
-		{
 			name:   "valid household id",
 			actor:  normalUser,
 			policy: fixtures.Policies[1],
