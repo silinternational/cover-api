@@ -426,8 +426,7 @@ func CalculatePartialYearValue(value int, startDate time.Time) int {
 //   of full calendar months left between the startDate and the end of
 //   the same year divided by 12  (rounded)
 func CalculateMonthlyRefundValue(value int, startDate time.Time) int {
-	startMonth := startDate.Month()
-	remainingMonths := 12 - int(startMonth)
+	remainingMonths := 12 - int(startDate.Month())
 	return int(math.Round(float64(value*remainingMonths) / 12.0))
 }
 
