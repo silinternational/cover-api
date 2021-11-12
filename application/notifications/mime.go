@@ -6,11 +6,20 @@ import (
 	"fmt"
 	"mime/multipart"
 	"net/textproto"
+	"strings"
 
 	"jaytaylor.com/html2text"
 
 	"github.com/silinternational/cover-api/domain"
 )
+
+var images = map[string]string{
+	"logo":           "logo-wide.png",
+	"clipboard":      "clipboard.png",
+	"clock":          "clock.png",
+	"new":            "new.png",
+	"signature-logo": "SIL_Glyph_Logo_Andika_RGB.png",
+}
 
 // rawEmail generates a multi-part MIME email message with a plain text, html text, and inline logo attachment as
 // follows:
@@ -90,29 +99,8 @@ func rawEmail(to, from, subject, body string) []byte {
 		_, _ = fmt.Fprint(w, body)
 	}
 
-	w, err = relatedWriter.CreatePart(textproto.MIMEHeader{
-		"Content-Type":              {"image/png"},
-		"Content-Disposition":       {"inline"},
-		"Content-ID":                {"<logo>"},
-		"Content-Transfer-Encoding": {"base64"},
-	})
-	if err != nil {
-		domain.ErrLogger.Printf("failed to create MIME image part, %s", err)
-	} else {
-		logo, err := domain.Assets.Find("logo-wide.png")
-		if err != nil {
-			domain.ErrLogger.Printf("failed to read logo file, %s", err)
-		}
-		encoder := base64.NewEncoder(base64.StdEncoding, b)
-		_, err = encoder.Write(logo)
-		if err != nil {
-			domain.ErrLogger.Printf("failed to write logo to email, %s", err)
-		}
-		err = encoder.Close()
-		if err != nil {
-			domain.ErrLogger.Printf("failed to close logo base64 encoder, %s", err)
-		}
-	}
+	cids := findImagesInBody(body)
+	attachImages(relatedWriter, b, cids)
 
 	if err = relatedWriter.Close(); err != nil {
 		domain.ErrLogger.Printf("failed to close MIME related part, %s", err)
@@ -123,4 +111,43 @@ func rawEmail(to, from, subject, body string) []byte {
 	}
 
 	return b.Bytes()
+}
+
+func findImagesInBody(body string) map[string]string {
+	imagesFound := map[string]string{}
+	for cid, filename := range images {
+		if strings.Contains(body, fmt.Sprintf(`src="cid:%s"`, cid)) {
+			imagesFound[cid] = filename
+		}
+	}
+	return imagesFound
+}
+
+func attachImages(relatedWriter *multipart.Writer, b *bytes.Buffer, images map[string]string) {
+	for cid, filename := range images {
+
+		_, err := relatedWriter.CreatePart(textproto.MIMEHeader{
+			"Content-Type":              {"image/png"},
+			"Content-Disposition":       {"inline"},
+			"Content-ID":                {"<" + cid + ">"},
+			"Content-Transfer-Encoding": {"base64"},
+		})
+		if err != nil {
+			domain.ErrLogger.Printf("failed to create MIME image part for %s, %s", cid, err)
+			break
+		}
+		f, err := domain.Assets.Find(filename)
+		if err != nil {
+			domain.ErrLogger.Printf("failed to read %s file, %s", cid, err)
+		}
+		encoder := base64.NewEncoder(base64.StdEncoding, b)
+		_, err = encoder.Write(f)
+		if err != nil {
+			domain.ErrLogger.Printf("failed to write %s to email, %s", cid, err)
+		}
+		err = encoder.Close()
+		if err != nil {
+			domain.ErrLogger.Printf("failed to close %s base64 encoder, %s", cid, err)
+		}
+	}
 }
