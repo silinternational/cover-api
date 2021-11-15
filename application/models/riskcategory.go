@@ -15,6 +15,11 @@ const (
 	RiskCategoryStationaryIDString = "7bed3c00-23cf-4282-b2b8-da89426cef2f"
 )
 
+var (
+	riskCategoryMobileID     = uuid.FromStringOrNil(RiskCategoryMobileIDString)
+	riskCategoryStationaryID = uuid.FromStringOrNil(RiskCategoryStationaryIDString)
+)
+
 // RiskCategories is a slice of RiskCategory objects
 type RiskCategories []RiskCategory
 
@@ -46,11 +51,11 @@ func (r *RiskCategory) FindByID(tx *pop.Connection, id uuid.UUID) error {
 }
 
 func RiskCategoryMobileID() uuid.UUID {
-	return uuid.FromStringOrNil(RiskCategoryMobileIDString)
+	return riskCategoryMobileID
 }
 
 func RiskCategoryStationaryID() uuid.UUID {
-	return uuid.FromStringOrNil(RiskCategoryStationaryIDString)
+	return riskCategoryStationaryID
 }
 
 func (r *RiskCategory) ConvertToAPI() api.RiskCategory {
