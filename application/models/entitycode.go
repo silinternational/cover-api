@@ -17,10 +17,11 @@ var householdEntityID uuid.UUID
 type EntityCodes []EntityCode
 
 type EntityCode struct {
-	ID     uuid.UUID `db:"id"`
-	Code   string    `db:"code"`
-	Name   string    `db:"name"`
-	Active bool      `db:"active"`
+	ID            uuid.UUID `db:"id"`
+	Code          string    `db:"code"`
+	Name          string    `db:"name"`
+	Active        bool      `db:"active"`
+	IncomeAccount string    `db:"income_account"`
 
 	CreatedAt time.Time `db:"created_at"`
 	UpdatedAt time.Time `db:"updated_at"`

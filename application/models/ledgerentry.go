@@ -59,6 +59,7 @@ type LedgerEntry struct {
 	HouseholdID      string          `db:"household_id"`
 	CostCenter       string          `db:"cost_center"`
 	AccountNumber    string          `db:"account_number"`
+	IncomeAccount    string          `db:"income_account"`
 	FirstName        string          `db:"first_name"`
 	LastName         string          `db:"last_name"`
 	Amount           api.Currency    `db:"amount"`
@@ -128,8 +129,8 @@ func (le *LedgerEntries) ToCsv(batchDate time.Time) []byte {
 func (le *LedgerEntries) MakeBlocks() TransactionBlocks {
 	blocks := TransactionBlocks{}
 	for _, e := range *le {
-		account := e.getIncomeAccount()
-		blocks[account] = append(blocks[account], e)
+		key := e.IncomeAccount + e.RiskCategoryCC
+		blocks[key] = append(blocks[key], e)
 	}
 	return blocks
 }
@@ -165,29 +166,6 @@ func (le *LedgerEntry) Reconcile(ctx context.Context, now time.Time) error {
 		}
 	}
 	return nil
-}
-
-// getIncomeAccount maps the ledger data to an income account for billing
-func (le *LedgerEntry) getIncomeAccount() string {
-	// TODO: move hard-coded account numbers to the database or to environment variables
-	account := ""
-
-	if le.Type.IsClaim() {
-		account = "63550"
-	} else {
-		switch le.EntityCode {
-		case "", "MMB/STM":
-			account = "40200"
-		case "SIL":
-			account = "43250"
-		default:
-			account = "44250"
-		}
-	}
-
-	incomeAccount := account + le.RiskCategoryCC
-
-	return incomeAccount
 }
 
 // TODO: make a better description format unless it has to be the same as before (which I doubt)
