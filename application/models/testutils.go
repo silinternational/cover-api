@@ -361,7 +361,7 @@ func CreatePolicyFixtures(tx *pop.Connection, config FixturesConfig) Fixtures {
 	for i := range policies {
 		policies[i].Name = randStr(20)
 		policies[i].Type = api.PolicyTypeHousehold
-		policies[i].EntityCodeID = (HouseholdEntityID())
+		policies[i].EntityCodeID = HouseholdEntityID()
 		policies[i].HouseholdID = nulls.NewString(randStr(10))
 		policies[i].Notes = randStr(20)
 		MustCreate(tx, &policies[i])
@@ -780,8 +780,7 @@ func ConvertPolicyType(tx *pop.Connection, policy Policy) Policy {
 	policy.CostCenter = "CC1234"
 	policy.Account = "111222"
 	policy.AccountDetail = "Acct Detail"
-	entity := CreateEntityFixture(tx)
-	policy.EntityCodeID = (entity.ID)
+	policy.EntityCodeID = CreateEntityFixture(tx).ID
 
 	if err := tx.Update(&policy); err != nil {
 		panic("error converting policy to Team, " + err.Error())

@@ -423,7 +423,7 @@ func importPolicies(tx *pop.Connection, policies []LegacyPolicy) {
 
 		entityCodeID := getEntityCodeID(tx, p.EntityCode)
 		if p.Type == "household" {
-			entityCodeID = (models.HouseholdEntityID())
+			entityCodeID = models.HouseholdEntityID()
 		}
 		policyID := stringToInt(p.Id, "Policy ID")
 
@@ -499,11 +499,11 @@ func getEntityCodeID(tx *pop.Connection, code nulls.String) uuid.UUID {
 		return uuid.Nil
 	}
 	if foundID, ok := entityCodesMap[code.String]; ok {
-		return (foundID)
+		return foundID
 	}
 	entityCodeUUID := importEntityCode(tx, code.String)
 	entityCodesMap[code.String] = entityCodeUUID
-	return (entityCodeUUID)
+	return entityCodeUUID
 }
 
 func importEntityCode(tx *pop.Connection, code string) uuid.UUID {

@@ -186,7 +186,7 @@ func policiesUpdate(c buffalo.Context) error {
 		policy.CostCenter = ""
 		policy.Account = ""
 		policy.AccountDetail = ""
-		policy.EntityCodeID = (models.HouseholdEntityID())
+		policy.EntityCodeID = models.HouseholdEntityID()
 	case api.PolicyTypeTeam:
 		var entityCode models.EntityCode
 		if err := entityCode.FindByCode(tx, update.EntityCode); err != nil {
@@ -197,7 +197,7 @@ func policiesUpdate(c buffalo.Context) error {
 		policy.CostCenter = update.CostCenter
 		policy.Account = update.Account
 		policy.AccountDetail = update.AccountDetail
-		policy.EntityCodeID = (entityCode.ID)
+		policy.EntityCodeID = entityCode.ID
 	}
 
 	policy.Name = update.Name
