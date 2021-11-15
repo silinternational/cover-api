@@ -24,7 +24,7 @@ const (
 
 var ValidClaimIncidentTypes = map[api.ClaimIncidentType]struct{}{
 	api.ClaimIncidentTypeTheft:           {},
-	api.ClaimIncidentTypeImpact:          {},
+	api.ClaimIncidentTypePhysicalDamage:  {},
 	api.ClaimIncidentTypeElectricalSurge: {},
 	api.ClaimIncidentTypeWaterDamage:     {},
 	api.ClaimIncidentTypeEvacuation:      {},
@@ -51,7 +51,7 @@ var ValidClaimIncidentTypePayoutOptions = map[api.ClaimIncidentType]map[api.Payo
 		api.PayoutOptionFMV:         {},
 		api.PayoutOptionReplacement: {},
 	},
-	api.ClaimIncidentTypeImpact: {
+	api.ClaimIncidentTypePhysicalDamage: {
 		api.PayoutOptionFMV:         {},
 		api.PayoutOptionReplacement: {},
 		api.PayoutOptionRepair:      {},

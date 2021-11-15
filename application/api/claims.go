@@ -52,7 +52,7 @@ func (s ClaimStatus) WasReviewed() bool {
 
 const (
 	ClaimIncidentTypeTheft           = ClaimIncidentType("Theft")
-	ClaimIncidentTypeImpact          = ClaimIncidentType("Physical damage")
+	ClaimIncidentTypePhysicalDamage  = ClaimIncidentType("Physical damage")
 	ClaimIncidentTypeElectricalSurge = ClaimIncidentType("Electrical surge")
 	ClaimIncidentTypeFireDamage      = ClaimIncidentType("Fire damage")
 	ClaimIncidentTypeWaterDamage     = ClaimIncidentType("Water damage")
@@ -69,7 +69,7 @@ type ClaimIncidentTypeStruct struct {
 
 var AllClaimIncidentTypes = []ClaimIncidentTypeStruct{
 	{ClaimIncidentTypeTheft, false, ""},
-	{ClaimIncidentTypeImpact, true, "Drop, impact, or crush"},
+	{ClaimIncidentTypePhysicalDamage, true, "Drop, impact, or crush"},
 	{ClaimIncidentTypeElectricalSurge, true, ""},
 	{ClaimIncidentTypeFireDamage, true, ""},
 	{ClaimIncidentTypeWaterDamage, true, ""},

@@ -216,7 +216,7 @@ func createClaimFixture(tx *pop.Connection, policy Policy, config FixturesConfig
 	claim := Claim{
 		PolicyID:            policy.ID,
 		IncidentDate:        time.Date(2020, 5, 1, 12, 0, 0, 0, time.UTC),
-		IncidentType:        api.ClaimIncidentTypeImpact,
+		IncidentType:        api.ClaimIncidentTypePhysicalDamage,
 		IncidentDescription: randStr(25),
 		// Status is set to Draft by default
 	}

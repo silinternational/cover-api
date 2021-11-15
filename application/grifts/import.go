@@ -832,7 +832,7 @@ func getIncidentType(claim LegacyClaim, claimID int) api.ClaimIncidentType {
 
 	switch claim.IncidentType {
 	case "Broken", "Dropped":
-		incidentType = api.ClaimIncidentTypeImpact
+		incidentType = api.ClaimIncidentTypePhysicalDamage
 	case "Lightning", "Lightening":
 		incidentType = api.ClaimIncidentTypeElectricalSurge
 	case "Theft":
