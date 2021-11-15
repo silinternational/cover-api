@@ -9,7 +9,7 @@ import (
 
 // ClaimIncidentType
 //
-// may be one of: Theft, Impact, Electrical Surge, Water Damage, Evacuation, Other
+// must be one of the values returned by /config/claim-incident-types
 //
 // swagger:model
 type ClaimIncidentType string
@@ -52,9 +52,10 @@ func (s ClaimStatus) WasReviewed() bool {
 
 const (
 	ClaimIncidentTypeTheft           = ClaimIncidentType("Theft")
-	ClaimIncidentTypeImpact          = ClaimIncidentType("Impact")
-	ClaimIncidentTypeElectricalSurge = ClaimIncidentType("Electrical Surge")
-	ClaimIncidentTypeWaterDamage     = ClaimIncidentType("Water Damage")
+	ClaimIncidentTypeImpact          = ClaimIncidentType("Physical damage")
+	ClaimIncidentTypeElectricalSurge = ClaimIncidentType("Electrical surge")
+	ClaimIncidentTypeFireDamage      = ClaimIncidentType("Fire damage")
+	ClaimIncidentTypeWaterDamage     = ClaimIncidentType("Water damage")
 	ClaimIncidentTypeEvacuation      = ClaimIncidentType("Evacuation")
 	ClaimIncidentTypeOther           = ClaimIncidentType("Other")
 )
@@ -70,6 +71,7 @@ var AllClaimIncidentTypes = []ClaimIncidentTypeStruct{
 	{ClaimIncidentTypeTheft, false, ""},
 	{ClaimIncidentTypeImpact, true, "Drop, impact, or crush"},
 	{ClaimIncidentTypeElectricalSurge, true, ""},
+	{ClaimIncidentTypeFireDamage, true, ""},
 	{ClaimIncidentTypeWaterDamage, true, ""},
 	{ClaimIncidentTypeEvacuation, false, "For bulk claims due to large-scale events"},
 	{ClaimIncidentTypeOther, true, ""},
