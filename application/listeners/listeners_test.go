@@ -116,7 +116,7 @@ func (ts *TestSuite) Test_findObject() {
 }
 
 func (ts *TestSuite) TestGetHHID() {
-	if domain.Env.HouseholdIDLookupURL != "" {
+	if domain.Env.HouseholdIDLookupURL == "" {
 		ts.T().Skip("skipping test because no HOUSEHOLD_ID_LOOKUP_URL was provided")
 	}
 
