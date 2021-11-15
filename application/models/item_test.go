@@ -766,29 +766,68 @@ func (ms *ModelSuite) TestItem_calculateProratedPremium() {
 }
 
 func (ms *ModelSuite) TestItem_calculateCancellationCredit() {
-	now := time.Date(1999, 3, 15, 0, 0, 0, 0, time.UTC)
 	domain.Env.PremiumFactor = 0.02
+	earlyJanuary := time.Date(2019, 1, 1, 1, 1, 1, 1, time.UTC)
+	midJanuary := time.Date(2019, 1, 11, 1, 1, 1, 1, time.UTC)
 
 	tests := []struct {
-		name     string
-		coverage int
-		want     int
+		name              string
+		coverage          int
+		coverageStartDate time.Time
+		testTime          time.Time
+		want              int
 	}{
 		{
-			name:     "even amount",
-			coverage: 200000,
-			want:     -3200,
+			name:              "Now January and created last year",
+			coverage:          6000, //  6000 * 0.02 == 120 ,
+			coverageStartDate: time.Date(2018, 12, 1, 1, 1, 1, 1, time.UTC),
+			testTime:          midJanuary,
+			want:              -120,
 		},
 		{
-			name:     "round up",
-			coverage: 199999,
-			want:     -3200,
+			name: "Now January and created same year",
+			//  219000 * 0.02 / 365 (days in the year) = 12 per day
+			//  Prorated Premium = 361 * 12 = 4332  (starting Jan 5)
+			//  Monthly premium = 4332 / 12 = 361
+			//  11 months credit = 3971
+			coverage:          219000,
+			coverageStartDate: time.Date(2019, 1, 5, 1, 1, 1, 1, time.UTC),
+			testTime:          midJanuary,
+			want:              -3971,
+		},
+		{
+			name: "Now February same year",
+			//  219000 * 0.02 / 365 (days in the year) = 12 per day
+			//  Prorated Premium = 355 * 12 = 4260   (starting Jan 11)
+			//  Monthly premium = 4260 / 12 = 355
+			//  10 months credit = 3550
+			coverage:          219000,
+			coverageStartDate: midJanuary,
+			testTime:          time.Date(2019, 2, 1, 1, 1, 1, 1, time.UTC),
+			want:              -3550,
+		},
+		{
+			name:              "November Round Up", // one month's credit
+			coverage:          218900,              // slightly lower than previous test case
+			coverageStartDate: midJanuary,
+			testTime:          time.Date(2019, 11, 1, 1, 1, 1, 1, time.UTC),
+			want:              -355,
+		},
+		{
+			name:              "Now December same year",
+			coverage:          6000,
+			coverageStartDate: earlyJanuary,
+			testTime:          time.Date(2019, 12, 1, 1, 1, 1, 1, time.UTC),
+			want:              0,
 		},
 	}
 	for _, tt := range tests {
 		ms.T().Run(tt.name, func(t *testing.T) {
-			item := Item{CoverageAmount: tt.coverage}
-			got := item.calculateCancellationCredit(now)
+			item := Item{
+				CoverageAmount:    tt.coverage,
+				CoverageStartDate: tt.coverageStartDate,
+			}
+			got := item.calculateCancellationCredit(tt.testTime)
 			ms.Equal(api.Currency(tt.want), got)
 		})
 	}

@@ -422,6 +422,14 @@ func CalculatePartialYearValue(value int, startDate time.Time) int {
 	return int(math.Round(float64(value*daysSince) / float64(days)))
 }
 
+// CalculateMonthlyRefundValue returns the value multiplied by the number
+//   of full calendar months left between the startDate and the end of
+//   the same year divided by 12  (rounded)
+func CalculateMonthlyRefundValue(value int, startDate time.Time) int {
+	remainingMonths := 12 - int(startDate.Month())
+	return int(math.Round(float64(value*remainingMonths) / 12.0))
+}
+
 func BeginningOfLastMonth(date time.Time) time.Time {
 	return date.AddDate(0, -1, -date.Day()+1)
 }

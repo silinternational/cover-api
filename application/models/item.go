@@ -683,8 +683,29 @@ func (i *Item) calculateProratedPremium(t time.Time) api.Currency {
 }
 
 func (i *Item) calculateCancellationCredit(t time.Time) api.Currency {
-	p := domain.CalculatePartialYearValue(int(i.CalculateAnnualPremium()), t)
-	return api.Currency(-1 * p)
+	// If we're in December already, then no credit
+	if t.Month() == 12 {
+		return 0
+	}
+
+	// If the coverage was from a previous year and today is still in January,
+	//   give a full year's refund.
+	// If today is after January, give a refund for the following months only.
+	if i.CoverageStartDate.Year() < t.Year() {
+		premium := int(i.CalculateAnnualPremium())
+		if t.Month() == 1 {
+			return api.Currency(-1 * premium)
+		}
+		credit := domain.CalculateMonthlyRefundValue(premium, t)
+		return api.Currency(-1 * credit)
+	}
+
+	// If the coverage is from this year, give a refund for the following months only
+	//   based on the partial year's premium that would have been calculated for the item.
+	premium := int(i.calculateProratedPremium(i.CoverageStartDate))
+	credit := domain.CalculateMonthlyRefundValue(premium, t)
+	return api.Currency(-1 * credit)
+
 }
 
 func (i *Item) calculatePremiumChange(t time.Time, oldCoverageAmount int) api.Currency {
