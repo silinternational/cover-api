@@ -6,6 +6,7 @@ import (
 
 	"github.com/gobuffalo/buffalo"
 	"github.com/gobuffalo/nulls"
+	"github.com/gofrs/uuid"
 
 	"github.com/silinternational/cover-api/api"
 	"github.com/silinternational/cover-api/domain"
@@ -66,7 +67,7 @@ func (ms *ModelSuite) TestPolicy_Validate() {
 				HouseholdID:  nulls.NewString("abc123"),
 				CostCenter:   "abc123",
 				Account:      "123456",
-				EntityCodeID: nulls.NewUUID(domain.GetUUID()),
+				EntityCodeID: domain.GetUUID(),
 			},
 			wantErr:  true,
 			errField: "Policy.HouseholdID",
@@ -77,7 +78,7 @@ func (ms *ModelSuite) TestPolicy_Validate() {
 				Name:         "my policy",
 				Type:         api.PolicyTypeTeam,
 				Account:      "123456",
-				EntityCodeID: nulls.NewUUID(domain.GetUUID()),
+				EntityCodeID: domain.GetUUID(),
 			},
 			wantErr:  true,
 			errField: "Policy.CostCenter",
@@ -89,22 +90,23 @@ func (ms *ModelSuite) TestPolicy_Validate() {
 				Type:         api.PolicyTypeTeam,
 				HouseholdID:  nulls.NewString("abc123"),
 				CostCenter:   "abc123",
-				EntityCodeID: nulls.NewUUID(domain.GetUUID()),
+				EntityCodeID: domain.GetUUID(),
 			},
 			wantErr:  true,
 			errField: "Policy.Account",
 		},
 		{
-			name: "missing entity code id",
+			name: "incorrect entity code id",
 			Policy: Policy{
-				Name:        "my policy",
-				Type:        api.PolicyTypeTeam,
-				HouseholdID: nulls.NewString("abc123"),
-				CostCenter:  "abc123",
-				Account:     "123456",
+				Name:         "my policy",
+				Type:         api.PolicyTypeHousehold,
+				HouseholdID:  nulls.NewString("abc123"),
+				EntityCodeID: domain.GetUUID(),
+				CostCenter:   "abc123",
+				Account:      "123456",
 			},
 			wantErr:  true,
-			errField: "Policy.HouseholdID",
+			errField: "Policy.EntityCodeID",
 		},
 		{
 			name: "valid household type",
@@ -112,7 +114,7 @@ func (ms *ModelSuite) TestPolicy_Validate() {
 				Name:         "my policy",
 				Type:         api.PolicyTypeHousehold,
 				HouseholdID:  nulls.NewString("123456"),
-				EntityCodeID: nulls.NewUUID(HouseholdEntityID()),
+				EntityCodeID: HouseholdEntityID(),
 			},
 			wantErr:  false,
 			errField: "",
@@ -124,7 +126,7 @@ func (ms *ModelSuite) TestPolicy_Validate() {
 				Type:         api.PolicyTypeTeam,
 				CostCenter:   "abc123",
 				Account:      "123456",
-				EntityCodeID: nulls.NewUUID(domain.GetUUID()),
+				EntityCodeID: domain.GetUUID(),
 			},
 			wantErr:  false,
 			errField: "",
@@ -159,7 +161,7 @@ func (ms *ModelSuite) TestPolicy_CreateTeam() {
 		Name:         "my policy",
 		CostCenter:   randStr(8),
 		Account:      randStr(8),
-		EntityCodeID: nulls.NewUUID(entCode.ID),
+		EntityCodeID: entCode.ID,
 	}
 
 	missingCC := goodPolicy
@@ -169,7 +171,7 @@ func (ms *ModelSuite) TestPolicy_CreateTeam() {
 	missingAcc.Account = ""
 
 	missingEntCode := goodPolicy
-	missingEntCode.EntityCodeID = nulls.UUID{}
+	missingEntCode.EntityCodeID = uuid.Nil
 
 	tests := []struct {
 		name    string
@@ -311,7 +313,7 @@ func (ms *ModelSuite) TestPolicy_Compare() {
 		HouseholdID:  nulls.NewString("abc123"),
 		CostCenter:   "xyz789",
 		Account:      "123457890",
-		EntityCodeID: nulls.NewUUID(e.ID),
+		EntityCodeID: e.ID,
 		Notes:        randStr(19),
 	}
 
@@ -356,8 +358,8 @@ func (ms *ModelSuite) TestPolicy_Compare() {
 				},
 				{
 					FieldName: "EntityCodeID",
-					OldValue:  oldPolicy.EntityCodeID.UUID.String(),
-					NewValue:  newPolicy.EntityCodeID.UUID.String(),
+					OldValue:  oldPolicy.EntityCodeID.String(),
+					NewValue:  newPolicy.EntityCodeID.String(),
 				},
 				{
 					FieldName: "Notes",
@@ -448,7 +450,7 @@ func (ms *ModelSuite) TestPolicy_NewHistory() {
 			user:   user,
 			update: FieldUpdate{
 				FieldName: "EntityCodeID",
-				OldValue:  policy.EntityCodeID.UUID.String(),
+				OldValue:  policy.EntityCodeID.String(),
 				NewValue:  newEntityCodeID,
 			},
 			want: PolicyHistory{
@@ -456,7 +458,7 @@ func (ms *ModelSuite) TestPolicy_NewHistory() {
 				UserID:    user.ID,
 				Action:    api.HistoryActionUpdate,
 				FieldName: "EntityCodeID",
-				OldValue:  policy.EntityCodeID.UUID.String(),
+				OldValue:  policy.EntityCodeID.String(),
 				NewValue:  newEntityCodeID,
 			},
 		},

@@ -176,7 +176,7 @@ func (le *LedgerEntry) getIncomeAccount() string {
 		account = "63550"
 	} else {
 		switch le.EntityCode {
-		case "", "MMB/STM", "MMB":
+		case "", "MMB/STM":
 			account = "40200"
 		case "SIL":
 			account = "43250"

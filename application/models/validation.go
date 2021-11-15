@@ -185,12 +185,8 @@ func policyStructLevelValidation(sl validator.StructLevel) {
 		panic("policyStructLevelValidation registered to a type other than Policy")
 	}
 
-	if !policy.EntityCodeID.Valid {
-		sl.ReportError(policy.EntityCodeID, "entity_code_id", "EntityCodeID", "entity_code_id_required", "")
-	}
-
 	if policy.Type == api.PolicyTypeHousehold {
-		if policy.EntityCodeID.UUID.String() != HouseholdEntityIDString {
+		if policy.EntityCodeID.String() != HouseholdEntityIDString {
 			sl.ReportError(policy.CostCenter, "entity_code_id", "EntityCodeID", "entity_code_id_not_household", "")
 		}
 		if policy.CostCenter != "" {
