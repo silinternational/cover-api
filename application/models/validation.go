@@ -186,9 +186,6 @@ func policyStructLevelValidation(sl validator.StructLevel) {
 	}
 
 	if policy.Type == api.PolicyTypeHousehold {
-		if !policy.HouseholdID.Valid {
-			sl.ReportError(policy.HouseholdID, "household_id", "HouseholdID", "household_id_required", "")
-		}
 		if policy.EntityCodeID.Valid {
 			sl.ReportError(policy.EntityCodeID, "entity_code_id", "EntityCodeID", "entity_code_id_not_permitted", "")
 		}

@@ -192,6 +192,10 @@ var Env struct {
 	CloudflareToken string `default:"" split_words:"true"`
 	DisableTLS      bool   `default:"true" split_words:"true"`
 	DynamoDBTable   string `default:"" split_words:"true"`
+
+	HouseholdIDLookupURL      string `default:"" split_words:"true"`
+	HouseholdIDLookupUsername string `default:"" split_words:"true"`
+	HouseholdIDLookupPassword string `default:"" split_words:"true"`
 }
 
 func init() {

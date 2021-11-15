@@ -285,7 +285,7 @@ func (u *Users) ConvertToPolicyMembers() api.PolicyMembers {
 }
 
 // CreateInitialPolicy creates an initial policy for a new user
-func (u *User) CreateInitialPolicy(tx *pop.Connection) error {
+func (u *User) CreateInitialPolicy(tx *pop.Connection, householdID string) error {
 	if u == nil || u.ID == uuid.Nil {
 		return errors.New("user must have an ID in CreateInitialPolicy")
 	}
@@ -306,9 +306,11 @@ func (u *User) CreateInitialPolicy(tx *pop.Connection) error {
 	}
 
 	policy := Policy{
-		Name:        u.LastName + " household",
-		Type:        api.PolicyTypeHousehold,
-		HouseholdID: nulls.NewString(domain.GetUUID().String()[0:8]),
+		Name: u.LastName + " household",
+		Type: api.PolicyTypeHousehold,
+	}
+	if householdID != "" {
+		policy.HouseholdID = nulls.NewString(householdID)
 	}
 
 	if err := policy.Create(tx); err != nil {
