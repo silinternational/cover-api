@@ -135,7 +135,7 @@ func GetHHID(staffID string) string {
 	}
 	req.SetBasicAuth(domain.Env.HouseholdIDLookupUsername, domain.Env.HouseholdIDLookupPassword)
 
-	client := &http.Client{Timeout: time.Second * 10}
+	client := &http.Client{Timeout: time.Second * 30}
 	response, err := client.Do(req)
 	if err != nil {
 		domain.ErrLogger.Printf("HHID API error, %s", err)
