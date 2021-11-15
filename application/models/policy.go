@@ -31,7 +31,7 @@ type Policy struct {
 	CostCenter    string         `db:"cost_center" validate:"required_if=Type Team"`
 	AccountDetail string         `db:"account_detail"`
 	Account       string         `db:"account" validate:"required_if=Type Team"`
-	EntityCodeID  nulls.UUID     `db:"entity_code_id"` // validation is checked at the struct level
+	EntityCodeID  uuid.UUID      `db:"entity_code_id"` // validation is checked at the struct level
 	Notes         string         `db:"notes"`
 	LegacyID      nulls.Int      `db:"legacy_id"`
 	Email         string         `db:"email"`
@@ -356,8 +356,8 @@ func (p *Policy) Compare(old Policy) []FieldUpdate {
 
 	if p.EntityCodeID != old.EntityCodeID {
 		updates = append(updates, FieldUpdate{
-			OldValue:  old.EntityCodeID.UUID.String(),
-			NewValue:  p.EntityCodeID.UUID.String(),
+			OldValue:  old.EntityCodeID.String(),
+			NewValue:  p.EntityCodeID.String(),
 			FieldName: "EntityCodeID",
 		})
 	}

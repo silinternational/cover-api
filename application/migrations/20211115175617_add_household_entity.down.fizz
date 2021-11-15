@@ -1,2 +1,6 @@
-sql(`DELETE FROM entity_codes WHERE id='5f181e39-0a2a-49ac-8796-2f3a3de9fcbd'`)
+change_column("policies", "entity_code_id", "uuid", {"null": true})
+sql(`
+  UPDATE policies SET entity_code_id=null WHERE type='Household';
+  DELETE FROM entity_codes WHERE id='5f181e39-0a2a-49ac-8796-2f3a3de9fcbd';
+`)
 
