@@ -308,9 +308,12 @@ func importAdminUsers(tx *pop.Connection, users []LegacyUser) {
 	for _, user := range users {
 		user.StaffId = trim(user.StaffId)
 
-		appRole := models.AppRoleSteward
+		appRole := models.AppRoleCustomer
 		if user.Id == "1" {
 			appRole = models.AppRoleSignator
+		}
+		if user.Id == "2" {
+			appRole = models.AppRoleSteward
 		}
 
 		newUser := models.User{
