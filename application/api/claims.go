@@ -24,6 +24,16 @@ func (c ClaimIncidentType) IsRepairable() bool {
 	return false
 }
 
+// Description provides a longer description of the ClaimIncidentType
+func (c ClaimIncidentType) Description() string {
+	for _, cit := range AllClaimIncidentTypes {
+		if cit.Name == c {
+			return cit.Description
+		}
+	}
+	return ""
+}
+
 // ClaimStatus
 //
 // may be one of: Draft, Review1, Review2, Review3, Revision, Receipt, Approved, Paid, Denied
@@ -53,15 +63,16 @@ const (
 type ClaimIncidentTypeStruct struct {
 	Name         ClaimIncidentType `json:"name"`
 	IsRepairable bool              `json:"is_repairable"`
+	Description  string            `json:"description"`
 }
 
 var AllClaimIncidentTypes = []ClaimIncidentTypeStruct{
-	{ClaimIncidentTypeTheft, false},
-	{ClaimIncidentTypeImpact, true},
-	{ClaimIncidentTypeElectricalSurge, true},
-	{ClaimIncidentTypeWaterDamage, true},
-	{ClaimIncidentTypeEvacuation, false},
-	{ClaimIncidentTypeOther, true},
+	{ClaimIncidentTypeTheft, false, ""},
+	{ClaimIncidentTypeImpact, true, "Drop, impact, or crush"},
+	{ClaimIncidentTypeElectricalSurge, true, ""},
+	{ClaimIncidentTypeWaterDamage, true, ""},
+	{ClaimIncidentTypeEvacuation, false, "For bulk claims due to large-scale events"},
+	{ClaimIncidentTypeOther, true, ""},
 }
 
 const (

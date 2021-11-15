@@ -75,6 +75,8 @@ type Item struct {
 	CoverageStartDate string `json:"coverage_start_date"`
 
 	// date (yyyy-mm-dd) of item's coverage end date
+	//
+	// swagger:strfmt date-time
 	CoverageEndDate nulls.String `json:"coverage_end_date"`
 
 	// The time the item was created
@@ -160,6 +162,8 @@ type ItemInput struct {
 	CoverageStartDate string `json:"coverage_start_date"`
 
 	// date (yyyy-mm-dd) of item's coverage end date, optional
+	//
+	// swagger:strfmt date-time
 	CoverageEndDate nulls.String `json:"coverage_end_date"`
 
 	// Accountable person ID. Can be either a policy dependent ID or a user ID

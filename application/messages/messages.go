@@ -67,6 +67,7 @@ func (m MessageData) addClaimData(tx *pop.Connection, claim models.Claim) {
 
 	m["incidentDate"] = claim.IncidentDate.Format(domain.LocalizedDate)
 	m["incidentType"] = string(claim.IncidentType)
+	m["incidentTypeDescription"] = claim.IncidentType.Description()
 
 	claim.LoadClaimItems(tx, false)
 	m["item"] = claim.ClaimItems[0].Item

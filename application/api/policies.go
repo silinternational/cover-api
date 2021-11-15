@@ -80,7 +80,7 @@ type PolicyCreate struct {
 	// Policy type. Only needed for steward endpoints. For customers, this will be set by the api.
 	Type string `json:"type"`
 
-	// Household ID for billing. Only required/allowed on Household type policies.
+	// Household ID for billing. Only required/allowed on Household type policies. (not actually uuid4; added as a doc generator hack)
 	//
 	// swagger:strfmt uuid4
 	HouseholdID nulls.String `json:"household_id,omitempty"`
@@ -104,7 +104,7 @@ type PolicyUpdate struct {
 	// policy name
 	Name string `json:"name"`
 
-	// Household ID for billing. Only required/allowed on Household type policies.
+	// Household ID for billing. Only required/allowed on Household type policies. (not actually uuid4; added as a doc generator hack)
 	//
 	// swagger:strfmt uuid4
 	HouseholdID nulls.String `json:"household_id,omitempty"`
