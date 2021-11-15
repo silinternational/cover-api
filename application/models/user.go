@@ -148,11 +148,8 @@ func (u *User) FindOrCreateFromAuthUser(tx *pop.Connection, authUser *auth.User)
 			if id >= 1000000 {
 				u.AppRole = AppRoleSteward
 			}
-			if id >= 2000000 {
+			if id >= 5000000 {
 				u.AppRole = AppRoleSignator
-			}
-			if id >= 3000000 {
-				u.AppRole = AppRoleAdmin
 			}
 		}
 	}
