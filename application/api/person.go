@@ -13,4 +13,7 @@ type AccountablePerson struct {
 
 	// full name
 	Name string `json:"name"`
+
+	// country where person is located
+	Country string `json:"country"`
 }

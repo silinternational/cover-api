@@ -655,8 +655,9 @@ func (i *Item) ConvertToAPI(tx *pop.Connection) api.Item {
 	person := i.GetAccountablePerson(tx)
 	if person != nil {
 		apiItem.AccountablePerson = api.AccountablePerson{
-			ID:   person.GetID(),
-			Name: person.GetName().String(),
+			ID:      person.GetID(),
+			Name:    person.GetName().String(),
+			Country: person.GetLocation().Country,
 		}
 	}
 	return apiItem
