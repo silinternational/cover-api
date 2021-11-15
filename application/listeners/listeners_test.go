@@ -116,6 +116,10 @@ func (ts *TestSuite) Test_findObject() {
 }
 
 func (ts *TestSuite) TestGetHHID() {
+	if domain.Env.HouseholdIDLookupURL != "" {
+		ts.T().Skip("skipping test because no HOUSEHOLD_ID_LOOKUP_URL was provided")
+	}
+
 	tests := []struct {
 		name    string
 		staffID string
@@ -134,10 +138,8 @@ func (ts *TestSuite) TestGetHHID() {
 	}
 	for _, tt := range tests {
 		ts.T().Run(tt.name, func(t *testing.T) {
-			if domain.Env.HouseholdIDLookupURL != "" {
-				got := GetHHID(tt.staffID)
-				ts.Equal(tt.want, got)
-			}
+			got := GetHHID(tt.staffID)
+			ts.Equal(tt.want, got)
 		})
 	}
 }
