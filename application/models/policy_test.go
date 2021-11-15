@@ -59,17 +59,6 @@ func (ms *ModelSuite) TestPolicy_Validate() {
 			errField: "Policy.Account",
 		},
 		{
-			name: "household type, should not have entity code id",
-			Policy: Policy{
-				Name:         "my policy",
-				Type:         api.PolicyTypeHousehold,
-				HouseholdID:  nulls.NewString("abc123"),
-				EntityCodeID: nulls.NewUUID(domain.GetUUID()),
-			},
-			wantErr:  true,
-			errField: "Policy.EntityCodeID",
-		},
-		{
 			name: "team type, should not have household id",
 			Policy: Policy{
 				Name:         "my policy",
@@ -106,7 +95,7 @@ func (ms *ModelSuite) TestPolicy_Validate() {
 			errField: "Policy.Account",
 		},
 		{
-			name: "team type, should have entity code id",
+			name: "missing entity code id",
 			Policy: Policy{
 				Name:        "my policy",
 				Type:        api.PolicyTypeTeam,
@@ -120,9 +109,10 @@ func (ms *ModelSuite) TestPolicy_Validate() {
 		{
 			name: "valid household type",
 			Policy: Policy{
-				Name:        "my policy",
-				Type:        api.PolicyTypeHousehold,
-				HouseholdID: nulls.NewString("123456"),
+				Name:         "my policy",
+				Type:         api.PolicyTypeHousehold,
+				HouseholdID:  nulls.NewString("123456"),
+				EntityCodeID: nulls.NewUUID(HouseholdEntityID()),
 			},
 			wantErr:  false,
 			errField: "",

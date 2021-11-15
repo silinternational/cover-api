@@ -303,8 +303,9 @@ func (u *User) CreateInitialPolicy(tx *pop.Connection, householdID string) error
 	}
 
 	policy := Policy{
-		Name: u.LastName + " household",
-		Type: api.PolicyTypeHousehold,
+		Name:         u.LastName + " household",
+		Type:         api.PolicyTypeHousehold,
+		EntityCodeID: nulls.NewUUID(HouseholdEntityID()),
 	}
 	if householdID != "" {
 		policy.HouseholdID = nulls.NewString(householdID)

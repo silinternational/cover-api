@@ -422,6 +422,9 @@ func importPolicies(tx *pop.Connection, policies []LegacyPolicy) {
 		var policyUUID uuid.UUID
 
 		entityCodeID := getEntityCodeID(tx, p.EntityCode)
+		if p.Type == "household" {
+			entityCodeID = nulls.NewUUID(models.HouseholdEntityID())
+		}
 		policyID := stringToInt(p.Id, "Policy ID")
 
 		if id, ok := householdPolicyMap[p.HouseholdId]; ok && p.Type == "household" {
