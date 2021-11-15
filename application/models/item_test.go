@@ -1132,6 +1132,8 @@ func (ms *ModelSuite) TestItem_ConvertToAPI() {
 	ms.Equal(item.PolicyDependentID.UUID, got.AccountablePerson.ID, "AccountablePerson ID is not correct")
 	ms.Equal(fixtures.PolicyDependents[0].GetName().String(), got.AccountablePerson.Name,
 		"AccountablePerson Name is not correct")
+	ms.Equal(fixtures.PolicyDependents[0].GetLocation().Country, got.AccountablePerson.Country,
+		"AccountablePerson Country is not correct")
 }
 
 func (ms *ModelSuite) TestItem_canBeUpdated() {
