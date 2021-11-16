@@ -91,4 +91,5 @@ const (
 	ErrorClaimItemMissingRepairEstimate  = ErrorKey("ClaimItemMissingRepairEstimate")
 	ErrorClaimItemMissingFMV             = ErrorKey("ClaimItemMissingFMV")
 	ErrorClaimItemInvalidPayoutOption    = ErrorKey("ClaimItemInvalidPayoutOption")
+	ErrorClaimInvalidApprover            = ErrorKey("ClaimInvalidApprover")
 )

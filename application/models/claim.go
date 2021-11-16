@@ -494,6 +494,11 @@ func (c *Claim) Approve(ctx context.Context) error {
 		c.StatusChange = ClaimStatusChangeReview3 + user.Name()
 		eventType = domain.EventApiClaimReview3
 	case api.ClaimStatusReview3:
+		if user.ID == c.ReviewerID.UUID {
+			err := fmt.Errorf("different approver required for final approval")
+			appErr := api.NewAppError(err, api.ErrorClaimInvalidApprover, api.CategoryUser)
+			return appErr
+		}
 		c.Status = api.ClaimStatusApproved
 		c.StatusChange = ClaimStatusChangeApproved + user.Name()
 		eventType = domain.EventApiClaimApproved
