@@ -78,13 +78,16 @@ var policyUsersCreated = map[string]struct{}{}
 // policyIDMap is a map of legacy ID to new ID
 var policyIDMap = map[int]uuid.UUID{}
 
-// policyUserMap identifies one user on each policy, used for populating the accountable person field on items
-var policyUserMap = map[uuid.UUID]uuid.UUID{}
-
 // time used in place of missing time values
 var emptyTime time.Time
 
 var nPolicyUsersWithStaffID int
+
+var incomeAccounts = map[string]string{
+	"MMB/STM": "40200",
+	"SIL":     "43250",
+	"":        "44250",
+}
 
 var idpFilenames = map[string]string{
 	"SIL":      "./sil-users.csv",
@@ -308,9 +311,12 @@ func importAdminUsers(tx *pop.Connection, users []LegacyUser) {
 	for _, user := range users {
 		user.StaffId = trim(user.StaffId)
 
-		appRole := models.AppRoleSteward
+		appRole := models.AppRoleCustomer
 		if user.Id == "1" {
 			appRole = models.AppRoleSignator
+		}
+		if user.Id == "2" {
+			appRole = models.AppRoleSteward
 		}
 
 		newUser := models.User{
@@ -332,7 +338,7 @@ func importAdminUsers(tx *pop.Connection, users []LegacyUser) {
 		}
 
 		if err := newUser.CreateInitialPolicy(tx, ""); err != nil {
-			log.Fatalf("failed to create a policy for admin user: %s", newUser.Name())
+			log.Fatalf("failed to create a policy for admin user: %s, %s", newUser.Name(), err)
 		}
 
 		userStaffIDMap[user.StaffId] = newUser.ID
@@ -406,7 +412,7 @@ func getItemCategoryStatus(itemCategory LegacyItemCategory) api.ItemCategoryStat
 }
 
 func importPolicies(tx *pop.Connection, policies []LegacyPolicy) {
-	var nPolicies, nClaims, nItems, nClaimItems, nDuplicatePolicies int
+	var nPolicies, nClaims, nItems, nClaimItems, nDuplicatePolicies, nNamesMatch int
 	var nUsers importPolicyUsersResult
 	householdsWithMultiplePolicies := map[string]struct{}{}
 
@@ -419,6 +425,9 @@ func importPolicies(tx *pop.Connection, policies []LegacyPolicy) {
 		var policyUUID uuid.UUID
 
 		entityCodeID := getEntityCodeID(tx, p.EntityCode)
+		if p.Type == "household" {
+			entityCodeID = models.HouseholdEntityID()
+		}
 		policyID := stringToInt(p.Id, "Policy ID")
 
 		if id, ok := householdPolicyMap[p.HouseholdId]; ok && p.Type == "household" {
@@ -470,7 +479,7 @@ func importPolicies(tx *pop.Connection, policies []LegacyPolicy) {
 		nUsers.policyUsersCreated += r.policyUsersCreated
 		nUsers.usersCreated += r.usersCreated
 
-		importItems(tx, policyUUID, policyID, p.Items)
+		nNamesMatch += importItems(tx, policyUUID, policyID, p.Items, r.firstNames)
 		nItems += len(p.Items)
 
 		nClaimItems += importClaims(tx, policyUUID, p.Claims)
@@ -481,23 +490,23 @@ func importPolicies(tx *pop.Connection, policies []LegacyPolicy) {
 	fmt.Printf("  Policies: %d, Duplicate Household Policies: %d, Households with multiple Policies: %d\n",
 		nPolicies, nDuplicatePolicies, len(householdsWithMultiplePolicies))
 	fmt.Printf("  Claims: %d\n", nClaims)
-	fmt.Printf("  Items: %d\n", nItems)
+	fmt.Printf("  Items: %d with User name: %d\n", nItems, nNamesMatch)
 	fmt.Printf("  ClaimItems: %d\n", nClaimItems)
 	fmt.Printf("  PolicyUsers: %d w/staffID: %d\n", nUsers.policyUsersCreated, nPolicyUsersWithStaffID)
 	fmt.Printf("  Users: %d\n", nUsers.usersCreated)
 	fmt.Printf("  Entity Codes: %d\n", len(entityCodesMap))
 }
 
-func getEntityCodeID(tx *pop.Connection, code nulls.String) nulls.UUID {
+func getEntityCodeID(tx *pop.Connection, code nulls.String) uuid.UUID {
 	if !code.Valid {
-		return nulls.UUID{}
+		return uuid.Nil
 	}
 	if foundID, ok := entityCodesMap[code.String]; ok {
-		return nulls.NewUUID(foundID)
+		return foundID
 	}
 	entityCodeUUID := importEntityCode(tx, code.String)
 	entityCodesMap[code.String] = entityCodeUUID
-	return nulls.NewUUID(entityCodeUUID)
+	return entityCodeUUID
 }
 
 func importEntityCode(tx *pop.Connection, code string) uuid.UUID {
@@ -514,9 +523,10 @@ func importEntityCode(tx *pop.Connection, code string) uuid.UUID {
 	}
 
 	newEntityCode := models.EntityCode{
-		Code:   code,
-		Name:   name,
-		Active: active,
+		Code:          code,
+		Name:          name,
+		Active:        active,
+		IncomeAccount: incomeAccount(code),
 	}
 
 	if err := newEntityCode.Create(tx); err != nil {
@@ -588,11 +598,12 @@ func normalizePolicy(p *LegacyPolicy) {
 
 type importPolicyUsersResult struct {
 	policyUsersCreated int
+	firstNames         map[uuid.UUID]string
 	usersCreated       int
 }
 
 func importPolicyUsers(tx *pop.Connection, p LegacyPolicy, policyID uuid.UUID) importPolicyUsersResult {
-	var result importPolicyUsersResult
+	result := importPolicyUsersResult{firstNames: map[uuid.UUID]string{}}
 
 	if p.Email == "" {
 		if !SilenceBadEmailWarning {
@@ -613,12 +624,19 @@ func importPolicyUsers(tx *pop.Connection, p LegacyPolicy, policyID uuid.UUID) i
 		r := createPolicyUser(tx, validEmail, p.FirstName, p.LastName, policyID)
 		result.policyUsersCreated += r.policyUsersCreated
 		result.usersCreated += r.usersCreated
+		result.firstNames[r.userID] = p.FirstName
 	}
 	return result
 }
 
-func createPolicyUser(tx *pop.Connection, email, firstName, lastName string, policyID uuid.UUID) importPolicyUsersResult {
-	result := importPolicyUsersResult{}
+type createPolicyUserResult struct {
+	policyUsersCreated int
+	usersCreated       int
+	userID             uuid.UUID
+}
+
+func createPolicyUser(tx *pop.Connection, email, firstName, lastName string, policyID uuid.UUID) createPolicyUserResult {
+	result := createPolicyUserResult{}
 
 	email = strings.ToLower(email)
 	userID, ok := userEmailMap[email]
@@ -627,6 +645,7 @@ func createPolicyUser(tx *pop.Connection, email, firstName, lastName string, pol
 	}
 
 	if _, ok = policyUsersCreated[policyID.String()+userID.String()]; ok {
+		result.userID = userID
 		return result
 	}
 
@@ -640,8 +659,8 @@ func createPolicyUser(tx *pop.Connection, email, firstName, lastName string, pol
 	result.policyUsersCreated = 1
 
 	policyUsersCreated[policyID.String()+userID.String()] = struct{}{}
-	policyUserMap[policyID] = userID // each user added to the policy will overwrite the previous, but that's OK
 
+	result.userID = userID
 	return result
 }
 
@@ -819,7 +838,7 @@ func getIncidentType(claim LegacyClaim, claimID int) api.ClaimIncidentType {
 
 	switch claim.IncidentType {
 	case "Broken", "Dropped":
-		incidentType = api.ClaimIncidentTypeImpact
+		incidentType = api.ClaimIncidentTypePhysicalDamage
 	case "Lightning", "Lightening":
 		incidentType = api.ClaimIncidentTypeElectricalSurge
 	case "Theft":
@@ -844,16 +863,13 @@ func getIncidentDescription(claim LegacyClaim) string {
 }
 
 // importItems loads legacy items onto a policy. Returns true if at least one item is approved.
-func importItems(tx *pop.Connection, policyUUID uuid.UUID, policyID int, items []LegacyItem) bool {
-	active := false
+func importItems(tx *pop.Connection, policyUUID uuid.UUID, policyID int, items []LegacyItem,
+	names map[uuid.UUID]string) int {
+	nNamesMatch := 0
 	for _, item := range items {
 		itemID := stringToInt(item.Id, "Item ID")
 		itemDesc := fmt.Sprintf("Policy[%d] Item[%d] ", policyID, itemID)
 
-		var policyUserID nulls.UUID
-		if u, ok := policyUserMap[policyUUID]; ok {
-			policyUserID = nulls.NewUUID(u)
-		}
 		newItem := models.Item{
 			Name:              trim(item.Name),
 			CategoryID:        itemCategoryIDMap[item.CategoryId],
@@ -862,7 +878,6 @@ func importItems(tx *pop.Connection, policyUUID uuid.UUID, policyID int, items [
 			Make:              trim(item.Make),
 			Model:             trim(item.Model),
 			SerialNumber:      trim(item.SerialNumber),
-			PolicyUserID:      policyUserID,
 			CoverageAmount:    fixedPointStringToInt(item.CoverageAmount, itemDesc+"CoverageAmount"),
 			CoverageStatus:    getCoverageStatus(item),
 			CoverageStartDate: time.Time(item.CreatedAt),
@@ -872,6 +887,13 @@ func importItems(tx *pop.Connection, policyUUID uuid.UUID, policyID int, items [
 			State:             getState(item.Country),
 			Country:           getCountry(item.Country),
 			CreatedAt:         time.Time(item.CreatedAt),
+		}
+		for id, name := range names {
+			if name != "" && strings.Contains(strings.ToLower(newItem.Name), strings.ToLower(name)) {
+				newItem.PolicyUserID = nulls.NewUUID(id)
+				nNamesMatch++
+				break
+			}
 		}
 		if err := newItem.Create(tx); err != nil {
 			log.Fatalf("failed to create item, %s\n%+v", err, newItem)
@@ -886,12 +908,8 @@ func importItems(tx *pop.Connection, policyUUID uuid.UUID, policyID int, items [
 			item.UpdatedAt, newItem.ID).Exec(); err != nil {
 			log.Fatalf("failed to set updated_at on item, %s", err)
 		}
-
-		if newItem.CoverageStatus == api.ItemCoverageStatusApproved {
-			active = true
-		}
 	}
-	return active
+	return nNamesMatch
 }
 
 func getCoverageStatus(item LegacyItem) api.ItemCoverageStatus {
@@ -952,6 +970,7 @@ func importJournalEntries(tx *pop.Connection, entries []JournalEntry) {
 			HouseholdID:      trim(e.AccCostCtr1),
 			CostCenter:       trim(e.AccCostCtr2),
 			EntityCode:       trim(e.Entity),
+			IncomeAccount:    incomeAccount(e.Entity),
 			FirstName:        trim(e.FirstName),
 			LastName:         trim(e.LastName),
 		}
@@ -1123,4 +1142,12 @@ func getCountry(c string) string {
 		return ""
 	}
 	return c
+}
+
+func incomeAccount(entityCode string) string {
+	account := incomeAccounts[trim(entityCode)]
+	if account == "" {
+		account = incomeAccounts[""]
+	}
+	return account
 }

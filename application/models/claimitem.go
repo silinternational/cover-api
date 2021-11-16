@@ -215,7 +215,7 @@ func (c *ClaimItem) ValidateForSubmit(tx *pop.Connection) api.ErrorKey {
 		if c.fmvMissing() {
 			return api.ErrorClaimItemMissingFMV
 		}
-	case api.ClaimIncidentTypeImpact, api.ClaimIncidentTypeElectricalSurge,
+	case api.ClaimIncidentTypePhysicalDamage, api.ClaimIncidentTypeElectricalSurge,
 		api.ClaimIncidentTypeWaterDamage, api.ClaimIncidentTypeOther:
 		if c.IsRepairable {
 			if c.RepairEstimate == 0 {

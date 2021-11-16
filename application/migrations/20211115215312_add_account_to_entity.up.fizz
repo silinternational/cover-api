@@ -1,0 +1,2 @@
+add_column("entity_codes", "income_account", "string", {"default": ""})
+add_column("ledger_entries", "income_account", "string", {"default": ""})

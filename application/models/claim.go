@@ -24,7 +24,7 @@ const (
 
 var ValidClaimIncidentTypes = map[api.ClaimIncidentType]struct{}{
 	api.ClaimIncidentTypeTheft:           {},
-	api.ClaimIncidentTypeImpact:          {},
+	api.ClaimIncidentTypePhysicalDamage:  {},
 	api.ClaimIncidentTypeElectricalSurge: {},
 	api.ClaimIncidentTypeWaterDamage:     {},
 	api.ClaimIncidentTypeEvacuation:      {},
@@ -51,12 +51,17 @@ var ValidClaimIncidentTypePayoutOptions = map[api.ClaimIncidentType]map[api.Payo
 		api.PayoutOptionFMV:         {},
 		api.PayoutOptionReplacement: {},
 	},
-	api.ClaimIncidentTypeImpact: {
+	api.ClaimIncidentTypePhysicalDamage: {
 		api.PayoutOptionFMV:         {},
 		api.PayoutOptionReplacement: {},
 		api.PayoutOptionRepair:      {},
 	},
 	api.ClaimIncidentTypeElectricalSurge: {
+		api.PayoutOptionFMV:         {},
+		api.PayoutOptionReplacement: {},
+		api.PayoutOptionRepair:      {},
+	},
+	api.ClaimIncidentTypeFireDamage: {
 		api.PayoutOptionFMV:         {},
 		api.PayoutOptionReplacement: {},
 		api.PayoutOptionRepair:      {},
@@ -909,7 +914,6 @@ func (c *Claim) SubmittedAt(tx *pop.Connection) time.Time {
 		ORDER BY created_at ASC
 		LIMIT 1
 		`, c.ID, FieldClaimStatus, api.HistoryActionUpdate, api.ClaimStatusReview1).All(&histories)
-
 	if err != nil {
 		domain.ErrLogger.Printf("error finding claim's histories: %s", err)
 		return c.UpdatedAt

@@ -30,7 +30,7 @@ func (ms *ModelSuite) TestClaim_Validate() {
 			claim: &Claim{
 				ReferenceNumber:     domain.RandomString(ClaimReferenceNumberLength, ""),
 				PolicyID:            domain.GetUUID(),
-				IncidentType:        api.ClaimIncidentTypeImpact,
+				IncidentType:        api.ClaimIncidentTypePhysicalDamage,
 				IncidentDate:        time.Now(),
 				IncidentDescription: "testing123",
 				Status:              api.ClaimStatusRevision,
@@ -43,7 +43,7 @@ func (ms *ModelSuite) TestClaim_Validate() {
 			claim: &Claim{
 				ReferenceNumber:     domain.RandomString(ClaimReferenceNumberLength, ""),
 				PolicyID:            domain.GetUUID(),
-				IncidentType:        api.ClaimIncidentTypeImpact,
+				IncidentType:        api.ClaimIncidentTypePhysicalDamage,
 				IncidentDate:        time.Now(),
 				IncidentDescription: "testing123",
 				Status:              api.ClaimStatusDenied,
@@ -56,7 +56,7 @@ func (ms *ModelSuite) TestClaim_Validate() {
 			claim: &Claim{
 				ReferenceNumber:     domain.RandomString(ClaimReferenceNumberLength, ""),
 				PolicyID:            domain.GetUUID(),
-				IncidentType:        api.ClaimIncidentTypeImpact,
+				IncidentType:        api.ClaimIncidentTypePhysicalDamage,
 				IncidentDate:        time.Now(),
 				IncidentDescription: "testing123",
 				Status:              api.ClaimStatusReview1,
@@ -88,7 +88,7 @@ func (ms *ModelSuite) TestClaim_ReferenceNumber() {
 	claim := &Claim{
 		PolicyID:            fixtures.Policies[0].ID,
 		IncidentDate:        time.Now().UTC(),
-		IncidentType:        api.ClaimIncidentTypeImpact,
+		IncidentType:        api.ClaimIncidentTypePhysicalDamage,
 		IncidentDescription: "fell",
 		Status:              api.ClaimStatusReview1,
 	}
