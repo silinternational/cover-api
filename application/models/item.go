@@ -263,18 +263,19 @@ func (i *Item) FindByID(tx *pop.Connection, id uuid.UUID) error {
 //  and if it has a Draft, Revision or Pending status.
 //  If the item's status is Denied or Inactive, it does nothing.
 //  Otherwise, it changes its status to Inactive.
-func (i *Item) SafeDeleteOrInactivate(ctx context.Context, actor User) error {
+func (i *Item) SafeDeleteOrInactivate(ctx context.Context) error {
+	now := time.Now()
 	switch i.CoverageStatus {
 	case api.ItemCoverageStatusInactive, api.ItemCoverageStatusDenied:
 		return nil
 	case api.ItemCoverageStatusApproved:
-		return i.Inactivate(ctx)
+		return i.ScheduleInactivation(ctx, now)
 	case api.ItemCoverageStatusDraft, api.ItemCoverageStatusRevision, api.ItemCoverageStatusPending:
 		tx := Tx(ctx)
 		if i.isNewEnough() && i.canBeDeleted(tx) {
 			return i.Destroy(tx)
 		}
-		return i.Inactivate(ctx)
+		return i.ScheduleInactivation(ctx, now)
 	default:
 		panic(`invalid item status in SafeDeleteOrInactivate`)
 	}
@@ -313,18 +314,30 @@ func (i *Item) isNewEnough() bool {
 	return !i.CreatedAt.Before(cutOffDate)
 }
 
-// Inactivate sets the item's CoverageStatus to Inactive
+// ScheduleInactivation sets the item's CoverageStatus to Inactive
 //  TODO deal with coverage payment changes
-func (i *Item) Inactivate(ctx context.Context) error {
+func (i *Item) ScheduleInactivation(ctx context.Context, t time.Time) error {
 	i.CoverageStatus = api.ItemCoverageStatusInactive
 
 	user := CurrentUser(ctx)
 	i.StatusChange = ItemStatusChangeInactivated + user.Name()
+
+	// January action on previous year's
+	if i.CoverageStartDate.Year() < t.Year() && t.Month() == 1 {
+		i.CoverageEndDate = nulls.NewTime(t)
+	} else {
+		i.CoverageEndDate = nulls.NewTime(domain.EndOfMonth(t))
+	}
 	if err := i.Update(ctx); err != nil {
 		return err
 	}
 
 	return i.CreateLedgerEntry(Tx(ctx), LedgerEntryTypeCoverageChange, i.calculateCancellationCredit(time.Now().UTC()))
+}
+
+func (i *Item) Inactivate(ctx context.Context) error {
+	i.CoverageStatus = api.ItemCoverageStatusInactive
+	return i.Update(ctx)
 }
 
 // IsActorAllowedTo ensure the actor is either an admin, or a member of this policy to perform any permission
@@ -661,6 +674,35 @@ func (i *Item) ConvertToAPI(tx *pop.Connection) api.Item {
 		}
 	}
 	return apiItem
+}
+
+// InactivateActiveButEnded fetches all the items that have coverage_status=Approved
+//   and coverage_end_date before today and then
+//   saves them with coverage_status=Inactive
+func (i *Items) InactivateActiveButEnded(ctx context.Context) error {
+	tx := Tx(ctx)
+
+	endDate := time.Now().Format(domain.DateFormat)
+	if err := tx.Where(`coverage_status = ? AND coverage_end_date < ?`,
+		api.ItemCoverageStatusApproved, endDate).All(i); domain.IsOtherThanNoRows(err) {
+		return fmt.Errorf("error fetching items that are approved but have "+
+			"a coverage end date before %s: %s", endDate, err)
+	}
+
+	errCount := 0
+	var lastErr error
+	for _, ii := range *i {
+		if err := ii.Inactivate(ctx); err != nil {
+			errCount++
+			domain.ErrLogger.Printf("InactivateActiveButEnded error, %s", err)
+			lastErr = err
+		}
+	}
+	if lastErr != nil {
+		return fmt.Errorf("InactivateActiveButEnded had %d errors. Last error: %s", errCount, lastErr)
+	}
+
+	return nil
 }
 
 func (i *Items) ConvertToAPI(tx *pop.Connection) api.Items {

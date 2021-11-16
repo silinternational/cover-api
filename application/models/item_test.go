@@ -608,7 +608,7 @@ func (ms *ModelSuite) TestItem_SafeDeleteOrInactivate() {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := tt.item.SafeDeleteOrInactivate(ctx, user)
+			got := tt.item.SafeDeleteOrInactivate(ctx)
 			ms.NoError(got)
 
 			dbItem := Item{}
@@ -623,6 +623,51 @@ func (ms *ModelSuite) TestItem_SafeDeleteOrInactivate() {
 			ms.Equal(tt.wantStatus, dbItem.CoverageStatus, "incorrect status")
 		})
 	}
+}
+
+func (ms *ModelSuite) TestItem_InactivateActiveButEnded() {
+	fixConfig := FixturesConfig{
+		NumberOfPolicies: 1,
+		ItemsPerPolicy:   9,
+	}
+
+	fixtures := CreateItemFixtures(ms.DB, fixConfig)
+	policy := fixtures.Policies[0]
+	policy.LoadItems(ms.DB, false)
+	user := policy.Members[0]
+	items := policy.Items
+
+	ctx := CreateTestContext(user)
+
+	now := time.Now().UTC()
+	oldTime := now.Add(time.Hour * -25)
+	futureTime := now.Add(time.Hour)
+
+	items[0].CoverageEndDate = nulls.NewTime(oldTime)
+	pastDue := UpdateItemStatus(ms.DB, items[0], api.ItemCoverageStatusApproved, "")
+
+	items[1].CoverageEndDate = nulls.NewTime(oldTime)
+	pastButInactive := UpdateItemStatus(ms.DB, items[1], api.ItemCoverageStatusInactive, "")
+
+	items[2].CoverageEndDate = nulls.NewTime(futureTime)
+	notDue := UpdateItemStatus(ms.DB, items[2], api.ItemCoverageStatusApproved, "")
+
+	newDraftItem := UpdateItemStatus(ms.DB, items[3], api.ItemCoverageStatusDraft, "")
+
+	var i Items
+	ms.NoError(i.InactivateActiveButEnded(ctx))
+
+	ms.NoError(pastDue.FindByID(ms.DB, pastDue.ID), "error fetching pastDue item")
+	ms.Equal(pastDue.CoverageStatus, api.ItemCoverageStatusInactive, "incorrect status for past Due")
+
+	ms.NoError(pastButInactive.FindByID(ms.DB, pastButInactive.ID), "error fetching pastButInactive item")
+	ms.Equal(pastButInactive.CoverageStatus, api.ItemCoverageStatusInactive, "incorrect status for pastButInactive")
+
+	ms.NoError(notDue.FindByID(ms.DB, notDue.ID), "error fetching notDue item")
+	ms.Equal(notDue.CoverageStatus, api.ItemCoverageStatusApproved, "incorrect status for notDue")
+
+	ms.NoError(newDraftItem.FindByID(ms.DB, newDraftItem.ID), "error fetching newDraftItem item")
+	ms.Equal(newDraftItem.CoverageStatus, api.ItemCoverageStatusDraft, "incorrect status for newDraftItem")
 }
 
 func (ms *ModelSuite) TestItem_LoadPolicyMembers() {
