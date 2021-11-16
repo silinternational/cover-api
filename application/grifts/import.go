@@ -902,7 +902,6 @@ func importItems(tx *pop.Connection, policyUUID uuid.UUID, policyID int, items [
 				continue
 			}
 			if strings.Contains(newItem.Name, name) {
-				fmt.Printf("item %d name '%s' contains user name '%s'\n", itemID, newItem.Name, name)
 				newItem.PolicyUserID = nulls.NewUUID(id)
 				nNamesMatch++
 				break
