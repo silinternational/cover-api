@@ -16,7 +16,7 @@ const (
 
 var w worker.Worker
 
-// TestBuffaloContext is a buffalo context user in tests
+// jobBuffaloContext is a buffalo context for jobs
 type jobBuffaloContext struct {
 	buffalo.DefaultContext
 	params map[interface{}]interface{}
@@ -32,7 +32,7 @@ func (j *jobBuffaloContext) Set(key string, val interface{}) {
 	j.params[key] = val
 }
 
-// CreateTestContext sets the domain.ContextKeyCurrentUser to the user param in the TestBuffaloContext
+// createJobContext creates an empty context
 func createJobContext() buffalo.Context {
 	ctx := &jobBuffaloContext{
 		params: map[interface{}]interface{}{},
