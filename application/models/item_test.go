@@ -625,7 +625,7 @@ func (ms *ModelSuite) TestItem_SafeDeleteOrInactivate() {
 	}
 }
 
-func (ms *ModelSuite) TestItem_InactivateActiveButEnded() {
+func (ms *ModelSuite) TestItem_InactivateApprovedButEnded() {
 	fixConfig := FixturesConfig{
 		NumberOfPolicies: 1,
 		ItemsPerPolicy:   9,
