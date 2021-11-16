@@ -19,7 +19,7 @@ func (ms *ModelSuite) TestClaimItem_Validate() {
 			name: "valid status, not approved",
 			claimItem: &ClaimItem{
 				Claim: Claim{
-					IncidentType: api.ClaimIncidentTypeImpact,
+					IncidentType: api.ClaimIncidentTypePhysicalDamage,
 				},
 				PayoutOption: api.PayoutOptionRepair,
 			},
@@ -83,7 +83,7 @@ func (ms *ModelSuite) TestClaimItem_Validate() {
 			claimItem: &ClaimItem{
 				Claim: Claim{
 					Status:       api.ClaimStatusDraft,
-					IncidentType: api.ClaimIncidentTypeImpact,
+					IncidentType: api.ClaimIncidentTypePhysicalDamage,
 				},
 				PayoutOption: api.PayoutOptionFixedFraction,
 			},
@@ -94,7 +94,7 @@ func (ms *ModelSuite) TestClaimItem_Validate() {
 			name: "valid payout option for Impact",
 			claimItem: &ClaimItem{
 				Claim: Claim{
-					IncidentType: api.ClaimIncidentTypeImpact,
+					IncidentType: api.ClaimIncidentTypePhysicalDamage,
 				},
 				PayoutOption: api.PayoutOptionRepair,
 			},
@@ -152,17 +152,17 @@ func (ms *ModelSuite) TestClaimItem_ValidateForSubmit() {
 
 	missingRepairEstimate := good
 	missingRepairEstimate.IsRepairable = true
-	missingRepairEstimate.Claim.IncidentType = api.ClaimIncidentTypeImpact
+	missingRepairEstimate.Claim.IncidentType = api.ClaimIncidentTypePhysicalDamage
 	missingRepairEstimate.RepairEstimate = 0
 
 	missingImpactFMV := good
 	missingImpactFMV.IsRepairable = true
-	missingImpactFMV.Claim.IncidentType = api.ClaimIncidentTypeImpact
+	missingImpactFMV.Claim.IncidentType = api.ClaimIncidentTypePhysicalDamage
 	missingImpactFMV.FMV = 0
 
 	invalidPayoutOption := good
 	invalidPayoutOption.IsRepairable = false
-	invalidPayoutOption.Claim.IncidentType = api.ClaimIncidentTypeImpact
+	invalidPayoutOption.Claim.IncidentType = api.ClaimIncidentTypePhysicalDamage
 	invalidPayoutOption.PayoutOption = api.PayoutOptionRepair
 
 	invalidPayoutOptionEvacuation := good
@@ -170,12 +170,12 @@ func (ms *ModelSuite) TestClaimItem_ValidateForSubmit() {
 	invalidPayoutOptionEvacuation.PayoutOption = api.PayoutOptionRepair
 
 	missingReplaceEstimateImpact := good
-	missingReplaceEstimateImpact.Claim.IncidentType = api.ClaimIncidentTypeImpact
+	missingReplaceEstimateImpact.Claim.IncidentType = api.ClaimIncidentTypePhysicalDamage
 	missingReplaceEstimateImpact.PayoutOption = api.PayoutOptionReplacement
 	missingReplaceEstimateImpact.ReplaceEstimate = 0
 
 	missingFMVImpact := good
-	missingFMVImpact.Claim.IncidentType = api.ClaimIncidentTypeImpact
+	missingFMVImpact.Claim.IncidentType = api.ClaimIncidentTypePhysicalDamage
 	missingFMVImpact.PayoutOption = api.PayoutOptionFMV
 	missingFMVImpact.FMV = 0
 
