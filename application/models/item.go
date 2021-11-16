@@ -314,8 +314,8 @@ func (i *Item) isNewEnough() bool {
 	return !i.CreatedAt.Before(cutOffDate)
 }
 
-// ScheduleInactivation sets the item's CoverageStatus to Inactive
-//  TODO deal with coverage payment changes
+// ScheduleInactivation sets the item's CoverageEndDate and creates a corresponding
+//  credit ledger entry
 func (i *Item) ScheduleInactivation(ctx context.Context, t time.Time) error {
 	i.CoverageStatus = api.ItemCoverageStatusInactive
 

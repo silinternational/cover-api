@@ -403,7 +403,7 @@ func RandomString(n int, includeLetters string) string {
 	return string(b)
 }
 
-// RandomInsecureIntInRange is insecure because it only uses the math.rand package
+// RandomInsecureIntInRange is insecure because it only uses the math/rand package
 //  and not the crypto/rand package
 func RandomInsecureIntInRange(min, max int) int {
 	if min >= max {
