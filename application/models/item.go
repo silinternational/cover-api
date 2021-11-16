@@ -678,10 +678,10 @@ func (i *Item) ConvertToAPI(tx *pop.Connection) api.Item {
 	return apiItem
 }
 
-// InactivateActiveButEnded fetches all the items that have coverage_status=Approved
+// InactivateApprovedButEnded fetches all the items that have coverage_status=Approved
 //   and coverage_end_date before today and then
 //   saves them with coverage_status=Inactive
-func (i *Items) InactivateActiveButEnded(ctx context.Context) error {
+func (i *Items) InactivateApprovedButEnded(ctx context.Context) error {
 	tx := Tx(ctx)
 
 	endDate := time.Now().Format(domain.DateFormat)
@@ -696,12 +696,12 @@ func (i *Items) InactivateActiveButEnded(ctx context.Context) error {
 	for _, ii := range *i {
 		if err := ii.Inactivate(ctx); err != nil {
 			errCount++
-			domain.ErrLogger.Printf("InactivateActiveButEnded error, %s", err)
+			domain.ErrLogger.Printf("InactivateApprovedButEnded error, %s", err)
 			lastErr = err
 		}
 	}
 	if lastErr != nil {
-		return fmt.Errorf("InactivateActiveButEnded had %d errors. Last error: %s", errCount, lastErr)
+		return fmt.Errorf("InactivateApprovedButEnded had %d errors. Last error: %s", errCount, lastErr)
 	}
 
 	return nil

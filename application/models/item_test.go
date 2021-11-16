@@ -655,7 +655,7 @@ func (ms *ModelSuite) TestItem_InactivateActiveButEnded() {
 	newDraftItem := UpdateItemStatus(ms.DB, items[3], api.ItemCoverageStatusDraft, "")
 
 	var i Items
-	ms.NoError(i.InactivateActiveButEnded(ctx))
+	ms.NoError(i.InactivateApprovedButEnded(ctx))
 
 	ms.NoError(pastDue.FindByID(ms.DB, pastDue.ID), "error fetching pastDue item")
 	ms.Equal(pastDue.CoverageStatus, api.ItemCoverageStatusInactive, "incorrect status for past Due")

@@ -61,7 +61,7 @@ func inactivateItemsHandler(args worker.Args) error {
 	ctx := createJobContext()
 
 	var items models.Items
-	return items.InactivateActiveButEnded(ctx)
+	return items.InactivateApprovedButEnded(ctx)
 }
 
 func resubmitInactivateJob() error {
