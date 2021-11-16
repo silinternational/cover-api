@@ -415,7 +415,7 @@ func getItemCategoryStatus(itemCategory LegacyItemCategory) api.ItemCategoryStat
 }
 
 func importPolicies(tx *pop.Connection, policies []LegacyPolicy) {
-	var nPolicies, nClaims, nItems, nClaimItems, nDuplicatePolicies int
+	var nPolicies, nClaims, nItems, nClaimItems, nDuplicatePolicies, nNamesMatch int
 	var nUsers importPolicyUsersResult
 	householdsWithMultiplePolicies := map[string]struct{}{}
 
@@ -482,7 +482,7 @@ func importPolicies(tx *pop.Connection, policies []LegacyPolicy) {
 		nUsers.policyUsersCreated += r.policyUsersCreated
 		nUsers.usersCreated += r.usersCreated
 
-		importItems(tx, policyUUID, policyID, p.Items)
+		nNamesMatch += importItems(tx, policyUUID, policyID, p.Items, r.firstNames)
 		nItems += len(p.Items)
 
 		nClaimItems += importClaims(tx, policyUUID, p.Claims)
@@ -493,7 +493,7 @@ func importPolicies(tx *pop.Connection, policies []LegacyPolicy) {
 	fmt.Printf("  Policies: %d, Duplicate Household Policies: %d, Households with multiple Policies: %d\n",
 		nPolicies, nDuplicatePolicies, len(householdsWithMultiplePolicies))
 	fmt.Printf("  Claims: %d\n", nClaims)
-	fmt.Printf("  Items: %d\n", nItems)
+	fmt.Printf("  Items: %d with User name: %d\n", nItems, nNamesMatch)
 	fmt.Printf("  ClaimItems: %d\n", nClaimItems)
 	fmt.Printf("  PolicyUsers: %d w/staffID: %d\n", nUsers.policyUsersCreated, nPolicyUsersWithStaffID)
 	fmt.Printf("  Users: %d\n", nUsers.usersCreated)
@@ -601,11 +601,12 @@ func normalizePolicy(p *LegacyPolicy) {
 
 type importPolicyUsersResult struct {
 	policyUsersCreated int
+	firstNames         map[uuid.UUID]string
 	usersCreated       int
 }
 
 func importPolicyUsers(tx *pop.Connection, p LegacyPolicy, policyID uuid.UUID) importPolicyUsersResult {
-	var result importPolicyUsersResult
+	result := importPolicyUsersResult{firstNames: map[uuid.UUID]string{}}
 
 	if p.Email == "" {
 		if !SilenceBadEmailWarning {
@@ -626,12 +627,19 @@ func importPolicyUsers(tx *pop.Connection, p LegacyPolicy, policyID uuid.UUID) i
 		r := createPolicyUser(tx, validEmail, p.FirstName, p.LastName, policyID)
 		result.policyUsersCreated += r.policyUsersCreated
 		result.usersCreated += r.usersCreated
+		result.firstNames[r.userID] = p.FirstName
 	}
 	return result
 }
 
-func createPolicyUser(tx *pop.Connection, email, firstName, lastName string, policyID uuid.UUID) importPolicyUsersResult {
-	result := importPolicyUsersResult{}
+type createPolicyUserResult struct {
+	policyUsersCreated int
+	usersCreated       int
+	userID             uuid.UUID
+}
+
+func createPolicyUser(tx *pop.Connection, email, firstName, lastName string, policyID uuid.UUID) createPolicyUserResult {
+	result := createPolicyUserResult{}
 
 	email = strings.ToLower(email)
 	userID, ok := userEmailMap[email]
@@ -640,6 +648,7 @@ func createPolicyUser(tx *pop.Connection, email, firstName, lastName string, pol
 	}
 
 	if _, ok = policyUsersCreated[policyID.String()+userID.String()]; ok {
+		result.userID = userID
 		return result
 	}
 
@@ -655,6 +664,7 @@ func createPolicyUser(tx *pop.Connection, email, firstName, lastName string, pol
 	policyUsersCreated[policyID.String()+userID.String()] = struct{}{}
 	policyUserMap[policyID] = userID // each user added to the policy will overwrite the previous, but that's OK
 
+	result.userID = userID
 	return result
 }
 
@@ -857,8 +867,9 @@ func getIncidentDescription(claim LegacyClaim) string {
 }
 
 // importItems loads legacy items onto a policy. Returns true if at least one item is approved.
-func importItems(tx *pop.Connection, policyUUID uuid.UUID, policyID int, items []LegacyItem) bool {
-	active := false
+func importItems(tx *pop.Connection, policyUUID uuid.UUID, policyID int, items []LegacyItem,
+	names map[uuid.UUID]string) int {
+	nNamesMatch := 0
 	for _, item := range items {
 		itemID := stringToInt(item.Id, "Item ID")
 		itemDesc := fmt.Sprintf("Policy[%d] Item[%d] ", policyID, itemID)
@@ -886,6 +897,17 @@ func importItems(tx *pop.Connection, policyUUID uuid.UUID, policyID int, items [
 			Country:           getCountry(item.Country),
 			CreatedAt:         time.Time(item.CreatedAt),
 		}
+		for id, name := range names {
+			if name == "" {
+				continue
+			}
+			if strings.Contains(newItem.Name, name) {
+				fmt.Printf("item %d name '%s' contains user name '%s'\n", itemID, newItem.Name, name)
+				newItem.PolicyUserID = nulls.NewUUID(id)
+				nNamesMatch++
+				break
+			}
+		}
 		if err := newItem.Create(tx); err != nil {
 			log.Fatalf("failed to create item, %s\n%+v", err, newItem)
 		}
@@ -899,12 +921,8 @@ func importItems(tx *pop.Connection, policyUUID uuid.UUID, policyID int, items [
 			item.UpdatedAt, newItem.ID).Exec(); err != nil {
 			log.Fatalf("failed to set updated_at on item, %s", err)
 		}
-
-		if newItem.CoverageStatus == api.ItemCoverageStatusApproved {
-			active = true
-		}
 	}
-	return active
+	return nNamesMatch
 }
 
 func getCoverageStatus(item LegacyItem) api.ItemCoverageStatus {
