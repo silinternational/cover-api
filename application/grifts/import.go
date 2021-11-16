@@ -86,6 +86,12 @@ var emptyTime time.Time
 
 var nPolicyUsersWithStaffID int
 
+var incomeAccounts = map[string]string{
+	"MMB/STM": "40200",
+	"SIL":     "43250",
+	"":        "44250",
+}
+
 var idpFilenames = map[string]string{
 	"SIL":      "./sil-users.csv",
 	"USA":      "./usa_idp_users.csv",
@@ -335,7 +341,7 @@ func importAdminUsers(tx *pop.Connection, users []LegacyUser) {
 		}
 
 		if err := newUser.CreateInitialPolicy(tx, ""); err != nil {
-			log.Fatalf("failed to create a policy for admin user: %s", newUser.Name())
+			log.Fatalf("failed to create a policy for admin user: %s, %s", newUser.Name(), err)
 		}
 
 		userStaffIDMap[user.StaffId] = newUser.ID
@@ -520,9 +526,10 @@ func importEntityCode(tx *pop.Connection, code string) uuid.UUID {
 	}
 
 	newEntityCode := models.EntityCode{
-		Code:   code,
-		Name:   name,
-		Active: active,
+		Code:          code,
+		Name:          name,
+		Active:        active,
+		IncomeAccount: incomeAccount(code),
 	}
 
 	if err := newEntityCode.Create(tx); err != nil {
@@ -958,6 +965,7 @@ func importJournalEntries(tx *pop.Connection, entries []JournalEntry) {
 			HouseholdID:      trim(e.AccCostCtr1),
 			CostCenter:       trim(e.AccCostCtr2),
 			EntityCode:       trim(e.Entity),
+			IncomeAccount:    incomeAccount(e.Entity),
 			FirstName:        trim(e.FirstName),
 			LastName:         trim(e.LastName),
 		}
@@ -1129,4 +1137,12 @@ func getCountry(c string) string {
 		return ""
 	}
 	return c
+}
+
+func incomeAccount(entityCode string) string {
+	account := incomeAccounts[trim(entityCode)]
+	if account == "" {
+		account = incomeAccounts[""]
+	}
+	return account
 }

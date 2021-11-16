@@ -396,6 +396,7 @@ func createHouseholdEntity(tx *pop.Connection) {
 		e.Code = "MMB"
 		e.Name = "Household"
 		e.Active = true
+		e.IncomeAccount = "40200"
 		if err := tx.Create(&e); err != nil {
 			panic("failed to create household entity")
 		}

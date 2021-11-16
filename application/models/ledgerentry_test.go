@@ -78,6 +78,7 @@ func (ms *ModelSuite) TestLedgerEntries_ToCsv() {
 		Amount:           100,
 		DateSubmitted:    date,
 		AccountNumber:    "AccountNumber",
+		IncomeAccount:    "12345",
 		HouseholdID:      "HouseholdID",
 		CostCenter:       "CostCenter",
 	}
@@ -112,7 +113,7 @@ func (ms *ModelSuite) TestLedgerEntries_ToCsv() {
 					date.Format("20060102"),
 				),
 				fmt.Sprintf(`"2","000000","00001","0000000040","",0,"%s","",%s,"2","%s","",%s,"GL","JE"`,
-					entry.getIncomeAccount(),
+					entry.IncomeAccount+entry.RiskCategoryCC,
 					api.Currency(entry.Amount).String(),
 					entry.balanceDescription(),
 					date.Format("20060102"),
@@ -136,9 +137,9 @@ func (ms *ModelSuite) TestLedgerEntries_MakeBlocks() {
 	policy3 := domain.GetUUID()
 
 	entries := LedgerEntries{
-		{PolicyID: policy1, EntityCode: "ABC", RiskCategoryCC: "12345"},
-		{PolicyID: policy2, EntityCode: "", RiskCategoryCC: "67890"},
-		{PolicyID: policy3, EntityCode: "", RiskCategoryCC: "67890"},
+		{PolicyID: policy1, IncomeAccount: "44250", RiskCategoryCC: "12345"},
+		{PolicyID: policy2, IncomeAccount: "40200", RiskCategoryCC: "67890"},
+		{PolicyID: policy3, IncomeAccount: "40200", RiskCategoryCC: "67890"},
 	}
 	blocks := entries.MakeBlocks()
 	ms.Equal(2, len(blocks))
