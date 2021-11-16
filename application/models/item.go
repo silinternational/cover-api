@@ -264,7 +264,7 @@ func (i *Item) FindByID(tx *pop.Connection, id uuid.UUID) error {
 //  If the item's status is Denied or Inactive, it does nothing.
 //  Otherwise, it changes its status to Inactive.
 func (i *Item) SafeDeleteOrInactivate(ctx context.Context) error {
-	now := time.Now()
+	now := time.Now().UTC()
 	switch i.CoverageStatus {
 	case api.ItemCoverageStatusInactive, api.ItemCoverageStatusDenied:
 		return nil
@@ -275,7 +275,7 @@ func (i *Item) SafeDeleteOrInactivate(ctx context.Context) error {
 		if i.isNewEnough() && i.canBeDeleted(tx) {
 			return i.Destroy(tx)
 		}
-		return i.ScheduleInactivation(ctx, now)
+		return i.Inactivate(ctx)
 	default:
 		panic(`invalid item status in SafeDeleteOrInactivate`)
 	}
@@ -317,15 +317,13 @@ func (i *Item) isNewEnough() bool {
 // ScheduleInactivation sets the item's CoverageEndDate and creates a corresponding
 //  credit ledger entry
 func (i *Item) ScheduleInactivation(ctx context.Context, t time.Time) error {
-	i.CoverageStatus = api.ItemCoverageStatusInactive
-
 	user := CurrentUser(ctx)
 	i.StatusChange = ItemStatusChangeInactivated + user.Name()
 
 	// If now it's January and the item was created before this year
 	//   set its CoverageEndDate to the current day.
 	// Otherwise, set it to the end of the current month.
-	if i.CoverageStartDate.Year() < t.Year() && t.Month() == 1 {
+	if i.DoesCoverageStraddleYearEndIntoJanuary(t) {
 		i.CoverageEndDate = nulls.NewTime(t)
 	} else {
 		i.CoverageEndDate = nulls.NewTime(domain.EndOfMonth(t))
@@ -727,30 +725,40 @@ func (i *Item) calculateProratedPremium(t time.Time) api.Currency {
 	return api.Currency(p)
 }
 
+func (i *Item) DoesCoverageStraddleYearEndIntoJanuary(t time.Time) bool {
+	return i.CoverageStartDate.Year() < t.Year() && t.Month() == 1
+}
+
 func (i *Item) calculateCancellationCredit(t time.Time) api.Currency {
 	// If we're in December already, then no credit
 	if t.Month() == 12 {
 		return 0
 	}
 
+	var premium int
+
 	// If the coverage was from a previous year and today is still in January,
 	//   give a full year's refund.
-	// If today is after January, give a refund for the following months only.
-	if i.CoverageStartDate.Year() < t.Year() {
-		premium := int(i.CalculateAnnualPremium())
-		if t.Month() == 1 {
-			return api.Currency(-1 * premium)
-		}
-		credit := domain.CalculateMonthlyRefundValue(premium, t)
-		return api.Currency(-1 * credit)
+	if i.DoesCoverageStraddleYearEndIntoJanuary(t) {
+		premium = int(i.CalculateAnnualPremium())
+		return api.Currency(-1 * premium)
+
 	}
 
-	// If the coverage is from this year, give a refund for the following months only
-	//   based on the partial year's premium that would have been calculated for the item.
-	premium := int(i.calculateProratedPremium(i.CoverageStartDate))
+	// Otherwise, give credit for the following calendar months
+
+	// Coverage started previous year, but it is now later than January.
+	// So, a full year's premium would have been charged.
+	if i.CoverageStartDate.Year() < t.Year() {
+		premium = int(i.CalculateAnnualPremium())
+
+		// Coverage started this year, so a partial year's premium would have been charged.
+	} else {
+		premium = int(i.calculateProratedPremium(i.CoverageStartDate))
+	}
+
 	credit := domain.CalculateMonthlyRefundValue(premium, t)
 	return api.Currency(-1 * credit)
-
 }
 
 func (i *Item) calculatePremiumChange(t time.Time, oldCoverageAmount int) api.Currency {

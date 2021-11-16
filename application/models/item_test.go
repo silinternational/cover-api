@@ -580,7 +580,7 @@ func (ms *ModelSuite) TestItem_SafeDeleteOrInactivate() {
 		{
 			name:       "new approved item",
 			item:       newApprovedItem,
-			wantStatus: api.ItemCoverageStatusInactive,
+			wantStatus: api.ItemCoverageStatusApproved,
 		},
 		{
 			name:        "new pending item",
