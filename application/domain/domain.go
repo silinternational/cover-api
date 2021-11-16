@@ -403,9 +403,14 @@ func RandomString(n int, includeLetters string) string {
 	return string(b)
 }
 
-func RandomIntInRange(min, max int) int {
+// RandomInsecureIntInRange is insecure because it only uses the math.rand package
+//  and not the crypto/rand package
+func RandomInsecureIntInRange(min, max int) int {
+	if min >= max {
+		panic("invalid parameters to RandomInsecureIntInRange: max of range must be greater than min.")
+	}
 	rand.Seed(time.Now().UnixNano())
-	return rand.Intn(max-min+1) + min
+	return rand.Intn(max-min+1) + min // #nosec G404
 }
 
 // CalculatePartialYearValue returns the value multiplied by the number

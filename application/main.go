@@ -32,7 +32,7 @@ func main() {
 
 	// Kick off first run of inactivating items between 1h11 and 3h27 from now
 	if domain.Env.GoEnv != "development" {
-		randMins := time.Duration(domain.RandomIntInRange(71, 387))
+		randMins := time.Duration(domain.RandomInsecureIntInRange(71, 387))
 		delay = time.Duration(randMins * time.Minute)
 	}
 
