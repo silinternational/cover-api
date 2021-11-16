@@ -898,10 +898,7 @@ func importItems(tx *pop.Connection, policyUUID uuid.UUID, policyID int, items [
 			CreatedAt:         time.Time(item.CreatedAt),
 		}
 		for id, name := range names {
-			if name == "" {
-				continue
-			}
-			if strings.Contains(newItem.Name, name) {
+			if name != "" && strings.Contains(newItem.Name, name) {
 				newItem.PolicyUserID = nulls.NewUUID(id)
 				nNamesMatch++
 				break
