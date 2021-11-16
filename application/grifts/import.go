@@ -78,9 +78,6 @@ var policyUsersCreated = map[string]struct{}{}
 // policyIDMap is a map of legacy ID to new ID
 var policyIDMap = map[int]uuid.UUID{}
 
-// policyUserMap identifies one user on each policy, used for populating the accountable person field on items
-var policyUserMap = map[uuid.UUID]uuid.UUID{}
-
 // time used in place of missing time values
 var emptyTime time.Time
 
@@ -662,7 +659,6 @@ func createPolicyUser(tx *pop.Connection, email, firstName, lastName string, pol
 	result.policyUsersCreated = 1
 
 	policyUsersCreated[policyID.String()+userID.String()] = struct{}{}
-	policyUserMap[policyID] = userID // each user added to the policy will overwrite the previous, but that's OK
 
 	result.userID = userID
 	return result
@@ -874,10 +870,6 @@ func importItems(tx *pop.Connection, policyUUID uuid.UUID, policyID int, items [
 		itemID := stringToInt(item.Id, "Item ID")
 		itemDesc := fmt.Sprintf("Policy[%d] Item[%d] ", policyID, itemID)
 
-		var policyUserID nulls.UUID
-		if u, ok := policyUserMap[policyUUID]; ok {
-			policyUserID = nulls.NewUUID(u)
-		}
 		newItem := models.Item{
 			Name:              trim(item.Name),
 			CategoryID:        itemCategoryIDMap[item.CategoryId],
@@ -886,7 +878,6 @@ func importItems(tx *pop.Connection, policyUUID uuid.UUID, policyID int, items [
 			Make:              trim(item.Make),
 			Model:             trim(item.Model),
 			SerialNumber:      trim(item.SerialNumber),
-			PolicyUserID:      policyUserID,
 			CoverageAmount:    fixedPointStringToInt(item.CoverageAmount, itemDesc+"CoverageAmount"),
 			CoverageStatus:    getCoverageStatus(item),
 			CoverageStartDate: time.Time(item.CreatedAt),
