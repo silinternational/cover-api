@@ -322,7 +322,9 @@ func (i *Item) ScheduleInactivation(ctx context.Context, t time.Time) error {
 	user := CurrentUser(ctx)
 	i.StatusChange = ItemStatusChangeInactivated + user.Name()
 
-	// January action on previous year's
+	// If now it's January and the item was created before this year
+	//   set its CoverageEndDate to the current day.
+	// Otherwise, set it to the end of the current month.
 	if i.CoverageStartDate.Year() < t.Year() && t.Month() == 1 {
 		i.CoverageEndDate = nulls.NewTime(t)
 	} else {
