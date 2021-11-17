@@ -744,7 +744,6 @@ func (i *Item) calculateCancellationCredit(t time.Time) api.Currency {
 	if i.shouldGiveFullYearRefund(t) {
 		premium = int(i.CalculateAnnualPremium())
 		return api.Currency(-1 * premium)
-
 	}
 
 	// Otherwise, give credit for the following calendar months
