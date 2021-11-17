@@ -3,6 +3,9 @@ package models
 import (
 	"fmt"
 	"testing"
+	"time"
+
+	"github.com/gobuffalo/nulls"
 
 	"github.com/silinternational/cover-api/api"
 	"github.com/silinternational/cover-api/domain"
@@ -418,4 +421,42 @@ func (ms *ModelSuite) TestClaimItem_updatePayoutAmount() {
 			ms.Equal(tt.want, claimItem.PayoutAmount, "didn't get the correct PayoutAmount")
 		})
 	}
+}
+
+func (ms *ModelSuite) TestClaimItem_ConvertToAPI() {
+	fixtures := CreateItemFixtures(ms.DB, FixturesConfig{
+		ClaimsPerPolicy:    1,
+		ClaimItemsPerClaim: 1,
+	})
+	claim := fixtures.Claims[0]
+	claim.ReviewerID = nulls.NewUUID(fixtures.Users[0].ID)
+	claim.ReviewDate = nulls.NewTime(time.Now().UTC())
+	ms.NoError(ms.DB.Update(&claim))
+
+	// fetch a fresh copy to ensure the UUT hydrates as needed
+	var claimItem ClaimItem
+	ms.NoError(ms.DB.Find(&claimItem, claim.ClaimItems[0].ID))
+
+	// fill in more data to improve test quality
+	claimItem.IsRepairable = true
+
+	got := claimItem.ConvertToAPI(ms.DB)
+
+	ms.Equal(claimItem.ID, got.ID, "ID is not correct")
+	ms.Equal(claimItem.ItemID, got.ItemID, "ItemID is not correct")
+	ms.Equal(claimItem.Item.ID, got.Item.ID, "Item.ID is not correct")
+	ms.Equal(claimItem.ClaimID, got.ClaimID, "ClaimID is not correct")
+	ms.Equal(claim.Status, got.Status, "Status is not correct")
+	ms.Equal(claimItem.IsRepairable, got.IsRepairable, "IsRepairable is not correct")
+	ms.Equal(claimItem.RepairEstimate, got.RepairEstimate, "RepairEstimate is not correct")
+	ms.Equal(claimItem.RepairActual, got.RepairActual, "RepairActual is not correct")
+	ms.Equal(claimItem.ReplaceEstimate, got.ReplaceEstimate, "ReplaceEstimate is not correct")
+	ms.Equal(claimItem.ReplaceActual, got.ReplaceActual, "ReplaceActual is not correct")
+	ms.Equal(claimItem.PayoutOption, got.PayoutOption, "PayoutOption is not correct")
+	ms.Equal(claimItem.PayoutAmount, got.PayoutAmount, "PayoutAmount is not correct")
+	ms.Equal(claimItem.FMV, got.FMV, "FMV is not correct")
+	ms.WithinDuration(claim.ReviewDate.Time, got.ReviewDate, time.Minute, "ReviewDate is not correct")
+	ms.Equal(claim.ReviewerID.UUID, got.ReviewerID, "ReviewerID is not correct")
+	ms.Equal(claimItem.CreatedAt, got.CreatedAt, "CreatedAt is not correct")
+	ms.Equal(claimItem.UpdatedAt, got.UpdatedAt, "UpdatedAt is not correct")
 }
