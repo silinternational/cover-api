@@ -298,7 +298,6 @@ func createAdminUserWithRole(tx *pop.Connection, role UserAppRole) User {
 
 func CreateAdminUsers(tx *pop.Connection) map[UserAppRole]User {
 	return map[UserAppRole]User{
-		AppRoleAdmin:    createAdminUserWithRole(tx, AppRoleAdmin),
 		AppRoleSteward:  createAdminUserWithRole(tx, AppRoleSteward),
 		AppRoleSignator: createAdminUserWithRole(tx, AppRoleSignator),
 	}

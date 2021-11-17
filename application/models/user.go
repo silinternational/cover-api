@@ -22,14 +22,12 @@ import (
 type UserAppRole string
 
 const (
-	AppRoleAdmin    = UserAppRole("Admin")
 	AppRoleCustomer = UserAppRole("Customer")
 	AppRoleSignator = UserAppRole("Signator")
 	AppRoleSteward  = UserAppRole("Steward")
 )
 
 var validUserAppRoles = map[UserAppRole]struct{}{
-	AppRoleAdmin:    {},
 	AppRoleCustomer: {},
 	AppRoleSignator: {},
 	AppRoleSteward:  {},
@@ -119,9 +117,9 @@ func (u *User) IsActorAllowedTo(tx *pop.Connection, actor User, p Permission, su
 	}
 }
 
-// IsAdmin returns true if the user has AppRole of Admin, Steward or Signator
+// IsAdmin returns true if the user has AppRole of Steward or Signator
 func (u *User) IsAdmin() bool {
-	return u.AppRole == AppRoleAdmin || u.AppRole == AppRoleSteward || u.AppRole == AppRoleSignator
+	return u.AppRole == AppRoleSteward || u.AppRole == AppRoleSignator
 }
 
 func (u *User) FindOrCreateFromAuthUser(tx *pop.Connection, authUser *auth.User) error {

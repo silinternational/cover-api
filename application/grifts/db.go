@@ -93,7 +93,7 @@ func createUserFixtures(tx *pop.Connection) ([]*models.User, error) {
 			LastName:     "Kent",
 			LastLoginUTC: time.Now().UTC().Add(time.Hour * -48),
 			StaffID:      nulls.NewString("111111"),
-			AppRole:      models.AppRoleAdmin,
+			AppRole:      models.AppRoleSteward,
 		},
 		{
 			Email:         "bruce.wayne@example.org",
@@ -226,6 +226,7 @@ func createPolicyFixtures(tx *pop.Connection, fixUsers []*models.User, entityCod
 			fixPolicies[i].Type = api.PolicyTypeTeam
 		} else {
 			fixPolicies[i].Name = user.LastName + " household"
+			fixPolicies[i].EntityCodeID = models.HouseholdEntityID()
 			fixPolicies[i].HouseholdID = nulls.NewString(fmt.Sprintf("HID-%s-%s", user.FirstName, user.LastName))
 		}
 

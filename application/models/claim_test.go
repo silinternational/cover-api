@@ -370,7 +370,9 @@ func (ms *ModelSuite) TestClaim_Approve() {
 
 	fixtures := CreateItemFixtures(ms.DB, fixConfig)
 
-	admin := CreateAdminUsers(ms.DB)[AppRoleAdmin]
+	adminUsers := CreateAdminUsers(ms.DB)
+	steward := adminUsers[AppRoleSteward]
+	signator := adminUsers[AppRoleSignator]
 
 	policy := fixtures.Policies[0]
 	draftClaim := policy.Claims[0]
@@ -387,7 +389,10 @@ func (ms *ModelSuite) TestClaim_Approve() {
 	notFMVClaim := UpdateClaimStatus(ms.DB, policy.Claims[5], api.ClaimStatusReview1, "")
 
 	review2Claim := UpdateClaimStatus(ms.DB, policy.Claims[2], api.ClaimStatusReview2, "")
+
+	policy.Claims[3].ReviewerID = nulls.NewUUID(steward.ID)
 	review3Claim := UpdateClaimStatus(ms.DB, policy.Claims[3], api.ClaimStatusReview3, "")
+
 	emptyClaim := UpdateClaimStatus(ms.DB, policy.Claims[4], api.ClaimStatusReview2, "")
 
 	tempClaim := emptyClaim
@@ -398,6 +403,7 @@ func (ms *ModelSuite) TestClaim_Approve() {
 	tests := []struct {
 		name            string
 		claim           Claim
+		actor           User
 		wantErrContains string
 		wantErrKey      api.ErrorKey
 		wantErrCat      api.ErrorCategory
@@ -406,6 +412,7 @@ func (ms *ModelSuite) TestClaim_Approve() {
 		{
 			name:            "bad start status",
 			claim:           draftClaim,
+			actor:           steward,
 			wantErrKey:      api.ErrorClaimStatus,
 			wantErrCat:      api.CategoryUser,
 			wantErrContains: "invalid claim status for approve",
@@ -413,12 +420,14 @@ func (ms *ModelSuite) TestClaim_Approve() {
 		{
 			name:            "claim with no ClaimItem",
 			claim:           emptyClaim,
+			actor:           steward,
 			wantErrKey:      api.ErrorClaimMissingClaimItem,
 			wantErrCat:      api.CategoryUser,
 			wantErrContains: "claim must have a claimItem if no longer in draft",
 		},
 		{
 			name:            "not FMV from review1 to review3",
+			actor:           steward,
 			claim:           notFMVClaim,
 			wantErrKey:      api.ErrorClaimItemInvalidPayoutOption,
 			wantErrCat:      api.CategoryUser,
@@ -426,16 +435,27 @@ func (ms *ModelSuite) TestClaim_Approve() {
 		},
 		{
 			name:       "from review1 to review3",
+			actor:      steward,
 			claim:      fmvClaim,
 			wantStatus: api.ClaimStatusReview3,
 		},
 		{
 			name:       "from review2 to review3",
+			actor:      steward,
 			claim:      review2Claim,
 			wantStatus: api.ClaimStatusReview3,
 		},
 		{
-			name:       "from review3 to approved",
+			name:            "from review3 to approved, same user",
+			actor:           steward,
+			claim:           review3Claim,
+			wantErrKey:      api.ErrorClaimInvalidApprover,
+			wantErrCat:      api.CategoryUser,
+			wantErrContains: "different approver required for final approval",
+		},
+		{
+			name:       "from review3 to approved, new user",
+			actor:      signator,
 			claim:      review3Claim,
 			wantStatus: api.ClaimStatusApproved,
 		},
@@ -443,7 +463,7 @@ func (ms *ModelSuite) TestClaim_Approve() {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ctx := CreateTestContext(admin)
+			ctx := CreateTestContext(tt.actor)
 			got := tt.claim.Approve(ctx)
 
 			if tt.wantErrContains != "" {
@@ -458,7 +478,7 @@ func (ms *ModelSuite) TestClaim_Approve() {
 			ms.NoError(got)
 
 			ms.Equal(tt.wantStatus, tt.claim.Status, "incorrect status")
-			ms.Equal(admin.ID.String(), tt.claim.ReviewerID.UUID.String(), "incorrect reviewer id")
+			ms.Equal(tt.actor.ID.String(), tt.claim.ReviewerID.UUID.String(), "incorrect reviewer id")
 			ms.WithinDuration(time.Now().UTC(), tt.claim.ReviewDate.Time, time.Second*2, "incorrect reviewer date id")
 			ms.Equal("", tt.claim.StatusReason, "StatusReason should be empty after approval")
 		})
@@ -479,7 +499,7 @@ func (ms *ModelSuite) TestClaim_Deny() {
 
 	fixtures := CreateItemFixtures(ms.DB, fixConfig)
 
-	admin := CreateAdminUsers(ms.DB)[AppRoleAdmin]
+	admin := CreateAdminUsers(ms.DB)[AppRoleSteward]
 
 	policy := fixtures.Policies[0]
 	draftClaim := policy.Claims[0]
@@ -566,7 +586,7 @@ func (ms *ModelSuite) TestClaim_HasReceiptFile() {
 	}
 	fixtures := CreateItemFixtures(db, config)
 
-	files := CreateFileFixtures(db, 2, CreateAdminUsers(db)[AppRoleAdmin].ID).Files
+	files := CreateFileFixtures(db, 2, CreateAdminUsers(db)[AppRoleSteward].ID).Files
 
 	policies := fixtures.Policies
 

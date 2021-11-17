@@ -473,12 +473,11 @@ func (c *Claim) RequestReceipt(ctx buffalo.Context, reason string) error {
 //  from Review3 to Approved. It also adds the ReviewerID and ReviewDate.
 // TODO distinguish between admin types (steward vs. signator)
 func (c *Claim) Approve(ctx context.Context) error {
-	oldStatus := c.Status
 	var eventType string
 
 	user := CurrentUser(ctx)
 
-	switch oldStatus {
+	switch c.Status {
 	case api.ClaimStatusReview1:
 		c.LoadClaimItems(Tx(ctx), false)
 		payOption := c.ClaimItems[0].PayoutOption
@@ -495,11 +494,16 @@ func (c *Claim) Approve(ctx context.Context) error {
 		c.StatusChange = ClaimStatusChangeReview3 + user.Name()
 		eventType = domain.EventApiClaimReview3
 	case api.ClaimStatusReview3:
+		if user.ID == c.ReviewerID.UUID {
+			err := fmt.Errorf("different approver required for final approval")
+			appErr := api.NewAppError(err, api.ErrorClaimInvalidApprover, api.CategoryUser)
+			return appErr
+		}
 		c.Status = api.ClaimStatusApproved
 		c.StatusChange = ClaimStatusChangeApproved + user.Name()
 		eventType = domain.EventApiClaimApproved
 	default:
-		err := fmt.Errorf("invalid claim status for approve: %s", oldStatus)
+		err := fmt.Errorf("invalid claim status for approve: %s", c.Status)
 		appErr := api.NewAppError(err, api.ErrorClaimStatus, api.CategoryUser)
 		return appErr
 	}

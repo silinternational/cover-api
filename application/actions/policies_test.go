@@ -33,7 +33,7 @@ func (as *ActionSuite) Test_PoliciesList() {
 	}
 
 	normalUser := fixtures.Policies[1].Members[0]
-	appAdmin := models.CreateAdminUsers(as.DB)[models.AppRoleAdmin]
+	appAdmin := models.CreateAdminUsers(as.DB)[models.AppRoleSteward]
 
 	tests := []struct {
 		name          string
@@ -125,7 +125,7 @@ func (as *ActionSuite) Test_PoliciesView() {
 		p.LoadDependents(as.DB, false)
 	}
 
-	appAdmin := models.CreateAdminUsers(as.DB)[models.AppRoleAdmin]
+	appAdmin := models.CreateAdminUsers(as.DB)[models.AppRoleSteward]
 
 	tests := []struct {
 		name          string
@@ -377,7 +377,7 @@ func (as *ActionSuite) Test_PoliciesListMembers() {
 	normalUser := fixtures.Policies[1].Members[0]
 
 	// change user 0 to an admin
-	appAdmin.AppRole = models.AppRoleAdmin
+	appAdmin.AppRole = models.AppRoleSteward
 	err := appAdmin.Update(as.DB)
 	as.NoError(err, "failed to make first policy user an app admin")
 

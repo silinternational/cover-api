@@ -900,10 +900,6 @@ func importItems(tx *pop.Connection, policyUUID uuid.UUID, policyID int, items [
 		}
 		itemIDMap[itemID] = newItem.ID
 
-		if newItem.CoverageStatus == api.ItemCoverageStatusApproved && !newItem.PolicyUserID.Valid {
-			log.Printf("Policy[%d] Item[%d] has no PolicyUser", policyID, itemID)
-		}
-
 		if err := tx.RawQuery("update items set updated_at = ? where id = ?",
 			item.UpdatedAt, newItem.ID).Exec(); err != nil {
 			log.Fatalf("failed to set updated_at on item, %s", err)
