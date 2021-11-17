@@ -551,7 +551,7 @@ func (ms *ModelSuite) TestItem_SafeDeleteOrInactivate() {
 
 	newApprovedItem := items[4]
 	ms.NoError(newApprovedItem.Approve(ctx, false))
-	ms.True(newApprovedItem.CoveragePaidThrough.Valid,
+	ms.Greater(newApprovedItem.PaidThroughYear, 0,
 		"Approved item didn't get a coverage_paid_through value")
 
 	newPendingItem := UpdateItemStatus(ms.DB, items[5], api.ItemCoverageStatusPending, "")
@@ -633,7 +633,7 @@ func (ms *ModelSuite) TestItem_SafeDeleteOrInactivate() {
 			}
 			ms.NoError(err, "error finding the item in the database")
 			ms.Equal(tt.wantStatus, dbItem.CoverageStatus, "incorrect status")
-			ms.False(dbItem.CoveragePaidThrough.Valid, "incorrect coverage_paid_through value")
+			ms.Equal(0, dbItem.PaidThroughYear, "incorrect coverage_paid_through value")
 		})
 	}
 }

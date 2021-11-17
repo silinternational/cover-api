@@ -1,1 +1,1 @@
-drop_column("items", "coverage_paid_through")
+drop_column("items", "paid_through_year")

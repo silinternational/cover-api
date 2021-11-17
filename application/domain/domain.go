@@ -453,10 +453,6 @@ func EndOfMonth(date time.Time) time.Time {
 	return date.AddDate(0, 1, -date.Day())
 }
 
-func EndOfYear() time.Time {
-	return time.Date(time.Now().UTC().Year(), 12, 31, 23, 59, 59, 0, time.UTC)
-}
-
 func IsLeapYear(t time.Time) bool {
 	tt := time.Date(t.Year(), 2, 29, 0, 0, 0, 0, time.UTC)
 	return tt.Day() == 29
