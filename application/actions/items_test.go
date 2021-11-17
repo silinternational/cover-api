@@ -338,7 +338,7 @@ func (as *ActionSuite) Test_ItemsRevision() {
 	policyCreator := policy.Members[0]
 
 	adminUser := fixtures.Policies[1].Members[0]
-	adminUser.AppRole = models.AppRoleAdmin
+	adminUser.AppRole = models.AppRoleSteward
 	as.NoError(as.DB.Save(&adminUser), "failed saving admin user")
 
 	iCatID := pendingItem.CategoryID
@@ -452,7 +452,7 @@ func (as *ActionSuite) Test_ItemsApprove() {
 	policyCreator := policy.Members[0]
 
 	adminUser := fixtures.Policies[1].Members[0]
-	adminUser.AppRole = models.AppRoleAdmin
+	adminUser.AppRole = models.AppRoleSteward
 	as.NoError(as.DB.Save(&adminUser), "failed saving admin user")
 
 	tests := []struct {
@@ -542,7 +542,7 @@ func (as *ActionSuite) Test_ItemsDeny() {
 	policyCreator := policy.Members[0]
 
 	adminUser := fixtures.Policies[1].Members[0]
-	adminUser.AppRole = models.AppRoleAdmin
+	adminUser.AppRole = models.AppRoleSteward
 	as.NoError(as.DB.Save(&adminUser), "failed saving admin user")
 
 	tests := []struct {
@@ -811,7 +811,7 @@ func (as *ActionSuite) Test_ItemsRemove() {
 	as.NoError(err, "error updating item to look old")
 
 	adminUser := fixtures.Policies[0].Members[0]
-	adminUser.AppRole = models.AppRoleAdmin
+	adminUser.AppRole = models.AppRoleSteward
 	as.NoError(as.DB.Save(&adminUser), "failed saving admin user")
 
 	policyOwner := fixtures.Policies[1].Members[0]
@@ -915,7 +915,7 @@ func (as *ActionSuite) Test_NewItemFromApiInput() {
 
 	fixtures := models.CreateItemFixtures(as.DB, fixConfig)
 	user := fixtures.Users[0]
-	admin := models.CreateAdminUsers(as.DB)[models.AppRoleAdmin]
+	admin := models.CreateAdminUsers(as.DB)[models.AppRoleSteward]
 
 	policy := fixtures.Policies[0]
 

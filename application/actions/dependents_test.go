@@ -27,7 +27,7 @@ func (as *ActionSuite) Test_DependentsList() {
 	appAdmin := fixtures.Policies[1].Members[0]
 
 	// change user to an admin
-	appAdmin.AppRole = models.AppRoleAdmin
+	appAdmin.AppRole = models.AppRoleSteward
 	as.NoError(appAdmin.Update(as.DB), "failed to make first policy user an app admin")
 
 	tests := []struct {
@@ -116,7 +116,7 @@ func (as *ActionSuite) Test_DependentsCreate() {
 	as.NoError(teamDependant.Update(as.DB), "error updating dependent fixture pre-test")
 
 	// change user 0 to an admin
-	appAdmin.AppRole = models.AppRoleAdmin
+	appAdmin.AppRole = models.AppRoleSteward
 	as.NoError(appAdmin.Update(as.DB), "failed to make first policy user an app admin")
 
 	incompleteRequest := api.PolicyDependentInput{
