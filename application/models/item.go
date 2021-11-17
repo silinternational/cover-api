@@ -269,7 +269,11 @@ func (i *Item) SafeDeleteOrInactivate(ctx context.Context) error {
 	case api.ItemCoverageStatusInactive, api.ItemCoverageStatusDenied:
 		return nil
 	case api.ItemCoverageStatusApproved:
-		return i.ScheduleInactivation(ctx, now)
+		if err := i.ScheduleInactivation(ctx, now); err != nil {
+			return err
+		}
+		return i.CreateLedgerEntry(Tx(ctx), LedgerEntryTypeCoverageChange, i.calculateCancellationCredit(now))
+
 	case api.ItemCoverageStatusDraft, api.ItemCoverageStatusRevision, api.ItemCoverageStatusPending:
 		tx := Tx(ctx)
 		if i.isNewEnough() && i.canBeDeleted(tx) {
@@ -323,16 +327,12 @@ func (i *Item) ScheduleInactivation(ctx context.Context, t time.Time) error {
 	// If now it's January and the item was created before this year
 	//   set its CoverageEndDate to the current day.
 	// Otherwise, set it to the end of the current month.
-	if i.DoesCoverageStraddleYearEndIntoJanuary(t) {
+	if i.giveFullYearRefund(t) {
 		i.CoverageEndDate = nulls.NewTime(t)
 	} else {
 		i.CoverageEndDate = nulls.NewTime(domain.EndOfMonth(t))
 	}
-	if err := i.Update(ctx); err != nil {
-		return err
-	}
-
-	return i.CreateLedgerEntry(Tx(ctx), LedgerEntryTypeCoverageChange, i.calculateCancellationCredit(time.Now().UTC()))
+	return i.Update(ctx)
 }
 
 func (i *Item) Inactivate(ctx context.Context) error {
@@ -725,7 +725,9 @@ func (i *Item) calculateProratedPremium(t time.Time) api.Currency {
 	return api.Currency(p)
 }
 
-func (i *Item) DoesCoverageStraddleYearEndIntoJanuary(t time.Time) bool {
+// True if coverage on the item started in a previous year and the current
+//  month is January.
+func (i *Item) giveFullYearRefund(t time.Time) bool {
 	return i.CoverageStartDate.Year() < t.Year() && t.Month() == 1
 }
 
@@ -739,7 +741,7 @@ func (i *Item) calculateCancellationCredit(t time.Time) api.Currency {
 
 	// If the coverage was from a previous year and today is still in January,
 	//   give a full year's refund.
-	if i.DoesCoverageStraddleYearEndIntoJanuary(t) {
+	if i.giveFullYearRefund(t) {
 		premium = int(i.CalculateAnnualPremium())
 		return api.Currency(-1 * premium)
 
