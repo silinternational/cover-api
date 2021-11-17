@@ -188,9 +188,9 @@ func init() {
 	mValidate.RegisterStructValidation(notificationStructLevelValidation, Notification{})
 
 	// get fixed IDs
-	riskCategoryStationaryID = uuid.FromStringOrNil(RiskCategoryStationaryIDString)
-	riskCategoryMobileID = uuid.FromStringOrNil(RiskCategoryMobileIDString)
-	householdEntityID = uuid.FromStringOrNil(HouseholdEntityIDString)
+	RiskCategoryStationaryID = uuid.FromStringOrNil(RiskCategoryStationaryIDString)
+	RiskCategoryMobileID = uuid.FromStringOrNil(RiskCategoryMobileIDString)
+	HouseholdEntityID = uuid.FromStringOrNil(HouseholdEntityIDString)
 }
 
 func getRandomToken() (string, error) {

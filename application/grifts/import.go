@@ -291,7 +291,7 @@ func addEntityCode(fields []string) int {
 
 func assignRiskCategoryCostCenters(tx *pop.Connection) {
 	mobile := models.RiskCategory{
-		ID:         models.RiskCategoryMobileID(),
+		ID:         models.RiskCategoryMobileID,
 		CostCenter: "MCMC12",
 	}
 	if err := tx.UpdateColumns(&mobile, "cost_center"); err != nil {
@@ -299,7 +299,7 @@ func assignRiskCategoryCostCenters(tx *pop.Connection) {
 	}
 
 	stationary := models.RiskCategory{
-		ID:         models.RiskCategoryStationaryID(),
+		ID:         models.RiskCategoryStationaryID,
 		CostCenter: "MPRO12",
 	}
 	if err := tx.UpdateColumns(&stationary, "cost_center"); err != nil {
@@ -385,12 +385,12 @@ func importItemCategories(tx *pop.Connection, in []LegacyItemCategory) {
 func getRiskCategoryUUID(legacyID int) uuid.UUID {
 	switch legacyID {
 	case 1:
-		return models.RiskCategoryStationaryID()
+		return models.RiskCategoryStationaryID
 	case 2:
-		return models.RiskCategoryMobileID()
+		return models.RiskCategoryMobileID
 	}
 	log.Printf("unrecognized risk category ID %d", legacyID)
-	return models.RiskCategoryMobileID()
+	return models.RiskCategoryMobileID
 }
 
 func getItemCategoryStatus(itemCategory LegacyItemCategory) api.ItemCategoryStatus {
@@ -426,7 +426,7 @@ func importPolicies(tx *pop.Connection, policies []LegacyPolicy) {
 
 		entityCodeID := getEntityCodeID(tx, p.EntityCode)
 		if p.Type == "household" {
-			entityCodeID = models.HouseholdEntityID()
+			entityCodeID = models.HouseholdEntityID
 		}
 		policyID := stringToInt(p.Id, "Policy ID")
 

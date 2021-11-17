@@ -16,8 +16,8 @@ const (
 )
 
 var (
-	riskCategoryMobileID     = uuid.FromStringOrNil(RiskCategoryMobileIDString)
-	riskCategoryStationaryID = uuid.FromStringOrNil(RiskCategoryStationaryIDString)
+	RiskCategoryMobileID     = uuid.FromStringOrNil(RiskCategoryMobileIDString)
+	RiskCategoryStationaryID = uuid.FromStringOrNil(RiskCategoryStationaryIDString)
 )
 
 // RiskCategories is a slice of RiskCategory objects
@@ -48,14 +48,6 @@ func (r *RiskCategory) GetID() uuid.UUID {
 
 func (r *RiskCategory) FindByID(tx *pop.Connection, id uuid.UUID) error {
 	return tx.Find(r, id)
-}
-
-func RiskCategoryMobileID() uuid.UUID {
-	return riskCategoryMobileID
-}
-
-func RiskCategoryStationaryID() uuid.UUID {
-	return riskCategoryStationaryID
 }
 
 func (r *RiskCategory) ConvertToAPI() api.RiskCategory {

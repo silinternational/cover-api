@@ -226,7 +226,7 @@ func createPolicyFixtures(tx *pop.Connection, fixUsers []*models.User, entityCod
 			fixPolicies[i].Type = api.PolicyTypeTeam
 		} else {
 			fixPolicies[i].Name = user.LastName + " household"
-			fixPolicies[i].EntityCodeID = models.HouseholdEntityID()
+			fixPolicies[i].EntityCodeID = models.HouseholdEntityID
 			fixPolicies[i].HouseholdID = nulls.NewString(fmt.Sprintf("HID-%s-%s", user.FirstName, user.LastName))
 		}
 
