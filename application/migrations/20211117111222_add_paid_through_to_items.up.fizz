@@ -1,0 +1,1 @@
+add_column("items", "coverage_paid_through", "date", {"null": true})

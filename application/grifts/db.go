@@ -344,21 +344,22 @@ func createItemFixtures(tx *pop.Connection, fixPolicies []*models.Policy, users 
 
 	for i, uu := range itemUUIDs {
 		fixItems[i] = &models.Item{
-			ID:                uuid.FromStringOrNil(uu),
-			Name:              fmt.Sprintf("IName-%d", i),
-			CategoryID:        itemCats[i%countICats].ID, // cycle through item categories
-			RiskCategoryID:    itemCats[i%countICats].RiskCategoryID,
-			InStorage:         false,
-			Country:           fmt.Sprintf("ICountry%d", i),
-			Description:       fmt.Sprintf("This is the description for item %d.", i),
-			PolicyID:          fixPolicies[i/2].ID,
-			PolicyUserID:      nulls.NewUUID(users[i/2].ID),
-			Make:              fmt.Sprintf("IMake-%d", i),
-			Model:             fmt.Sprintf("IModel-%d", i),
-			SerialNumber:      fmt.Sprintf("ISN-%d", i),
-			CoverageAmount:    50 * (i + 1) * domain.CurrencyFactor, // increments of $50 starting at $50
-			CoverageStatus:    api.ItemCoverageStatusApproved,
-			CoverageStartDate: time.Now().UTC().Add(time.Hour * time.Duration((i+1)*-40)),
+			ID:                  uuid.FromStringOrNil(uu),
+			Name:                fmt.Sprintf("IName-%d", i),
+			CategoryID:          itemCats[i%countICats].ID, // cycle through item categories
+			RiskCategoryID:      itemCats[i%countICats].RiskCategoryID,
+			InStorage:           false,
+			Country:             fmt.Sprintf("ICountry%d", i),
+			Description:         fmt.Sprintf("This is the description for item %d.", i),
+			PolicyID:            fixPolicies[i/2].ID,
+			PolicyUserID:        nulls.NewUUID(users[i/2].ID),
+			Make:                fmt.Sprintf("IMake-%d", i),
+			Model:               fmt.Sprintf("IModel-%d", i),
+			SerialNumber:        fmt.Sprintf("ISN-%d", i),
+			CoverageAmount:      50 * (i + 1) * domain.CurrencyFactor, // increments of $50 starting at $50
+			CoverageStatus:      api.ItemCoverageStatusApproved,
+			CoveragePaidThrough: nulls.NewTime(domain.EndOfYear()),
+			CoverageStartDate:   time.Now().UTC().Add(time.Hour * time.Duration((i+1)*-40)),
 		}
 
 		err := tx.Create(fixItems[i])
