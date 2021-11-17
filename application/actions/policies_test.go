@@ -291,6 +291,9 @@ func (as *ActionSuite) Test_PoliciesUpdate() {
 	normalUser := fixtures.Policies[1].Members[0]
 
 	id1 := "654978"
+	id2 := "09876"
+	id3 := "998877"
+
 	tests := []struct {
 		name          string
 		actor         models.User
@@ -315,7 +318,7 @@ func (as *ActionSuite) Test_PoliciesUpdate() {
 			actor:  normalUser,
 			policy: fixtures.Policies[0],
 			update: api.PolicyUpdate{
-				HouseholdID: &id1,
+				HouseholdID: &id2,
 			},
 			wantStatus:    http.StatusNotFound,
 			notWantInBody: fixtures.Policies[0].ID.String(),
@@ -325,7 +328,7 @@ func (as *ActionSuite) Test_PoliciesUpdate() {
 			actor:  appAdmin,
 			policy: fixtures.Policies[1],
 			update: api.PolicyUpdate{
-				HouseholdID: &id1,
+				HouseholdID: &id3,
 			},
 			wantStatus: http.StatusOK,
 			wantInBody: fixtures.Policies[1].ID.String(),
