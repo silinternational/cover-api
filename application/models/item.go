@@ -73,7 +73,11 @@ func (i *Item) Create(tx *pop.Connection) error {
 	if _, ok := ValidItemCoverageStatuses[i.CoverageStatus]; !ok {
 		i.CoverageStatus = api.ItemCoverageStatusDraft
 	}
-
+	i.LoadPolicy(tx, false)
+	if i.Policy.Type == api.PolicyTypeHousehold && !i.Policy.HouseholdID.Valid {
+		err := errors.New("policy does not have a household ID")
+		return api.NewAppError(err, api.ErrorPolicyHasNoHouseholdID, api.CategoryUser)
+	}
 	return create(tx, i)
 }
 

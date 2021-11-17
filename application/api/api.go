@@ -134,6 +134,10 @@ func keyToReadableString(key string) string {
 		return key
 	}
 
+	if len(words) > 1 && words[0] == "Error" {
+		words = words[1:]
+	}
+
 	// Lowercase all but first word
 	for i := 1; i < len(words); i++ {
 		words[i] = strings.ToLower(words[i])

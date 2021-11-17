@@ -256,6 +256,10 @@ func (ms *ModelSuite) TestItem_Create() {
 	policy.LoadItems(ms.DB, false)
 	items := policy.Items
 
+	badPolicy := fixtures.Policies[1]
+	badPolicy.HouseholdID = nulls.String{}
+	ms.NoError(ms.DB.Update(&badPolicy))
+
 	// give two items a dependent and calculate expected values
 	dependent := policy.Dependents[0]
 	coverageForPolicy := 0
@@ -288,14 +292,20 @@ func (ms *ModelSuite) TestItem_Create() {
 		CoverageAmount:    200,
 		CoverageStartDate: time.Now().UTC().Add(time.Hour * 48),
 	}
-	itemExceedsPolicy := goodItem
-	itemExceedsPolicy.CoverageAmount = domain.Env.PolicyMaxCoverage - coverageForPolicy + 1
+
+	noHouseholdID := goodItem
+	noHouseholdID.PolicyID = badPolicy.ID
 
 	tests := []struct {
-		name            string
-		item            Item
-		wantErrContains string
+		name     string
+		item     Item
+		appError *api.AppError
 	}{
+		{
+			name:     "no household ID",
+			item:     noHouseholdID,
+			appError: &api.AppError{Key: api.ErrorPolicyHasNoHouseholdID, Category: api.CategoryUser},
+		},
 		{
 			name: "good item",
 			item: goodItem,
@@ -304,14 +314,14 @@ func (ms *ModelSuite) TestItem_Create() {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := tt.item.Create(ms.DB)
+			err := tt.item.Create(ms.DB)
 
-			if tt.wantErrContains != "" {
-				ms.Error(got)
-				ms.Contains(got.Error(), tt.wantErrContains)
+			if tt.appError != nil {
+				ms.Error(err, "test should have produced an error")
+				ms.EqualAppError(*tt.appError, err)
 				return
 			}
-			ms.NoError(got)
+			ms.NoError(err)
 
 			ms.NotEqual(uuid.Nil, tt.item.ID, "expected item to have been given an ID")
 			ms.Equal(api.ItemCoverageStatusDraft, tt.item.CoverageStatus, "incorrect status")

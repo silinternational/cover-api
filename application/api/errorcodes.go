@@ -78,6 +78,7 @@ const (
 	ErrorPolicyLoadingItems       = ErrorKey("ErrorPolicyLoadingItems")
 	ErrorPolicyUpdateInvalidInput = ErrorKey("ErrorPolicyUpdateInvalidInput")
 	ErrorPolicyUserInviteCode     = ErrorKey("ErrorPolicyUserInviteCode")
+	ErrorPolicyHasNoHouseholdID   = ErrorKey("ErrorPolicyHasNoHouseholdID")
 
 	// PolicyDependent
 	ErrorPolicyDependentCreate = ErrorKey("ErrorPolicyDependentCreate")
