@@ -37,6 +37,15 @@ func (ts *TestSuite) Test_RandomString() {
 	}
 }
 
+func (ts *TestSuite) Test_RandomInsecureIntInRange() {
+	for _, min := range [3]int{1, 11, 111} {
+		max := min * 10
+		got := RandomInsecureIntInRange(min, max)
+		ts.GreaterOrEqual(got, min, "result was too small")
+		ts.LessOrEqual(got, max, "result was too large")
+	}
+}
+
 func (ts *TestSuite) TestEmailFromAddress() {
 	nickname := "nickname"
 

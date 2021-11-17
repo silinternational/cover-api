@@ -296,9 +296,7 @@ func itemsDeny(c buffalo.Context) error {
 func itemsRemove(c buffalo.Context) error {
 	item := getReferencedItemFromCtx(c)
 
-	user := models.CurrentUser(c)
-
-	if err := item.SafeDeleteOrInactivate(c, user); err != nil {
+	if err := item.SafeDeleteOrInactivate(c); err != nil {
 		return reportError(c, err)
 	}
 

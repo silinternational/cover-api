@@ -263,12 +263,17 @@ func (i *Item) FindByID(tx *pop.Connection, id uuid.UUID) error {
 //  and if it has a Draft, Revision or Pending status.
 //  If the item's status is Denied or Inactive, it does nothing.
 //  Otherwise, it changes its status to Inactive.
-func (i *Item) SafeDeleteOrInactivate(ctx context.Context, actor User) error {
+func (i *Item) SafeDeleteOrInactivate(ctx context.Context) error {
+	now := time.Now().UTC()
 	switch i.CoverageStatus {
 	case api.ItemCoverageStatusInactive, api.ItemCoverageStatusDenied:
 		return nil
 	case api.ItemCoverageStatusApproved:
-		return i.Inactivate(ctx)
+		if err := i.ScheduleInactivation(ctx, now); err != nil {
+			return err
+		}
+		return i.CreateLedgerEntry(Tx(ctx), LedgerEntryTypeCoverageChange, i.calculateCancellationCredit(now))
+
 	case api.ItemCoverageStatusDraft, api.ItemCoverageStatusRevision, api.ItemCoverageStatusPending:
 		tx := Tx(ctx)
 		if i.isNewEnough() && i.canBeDeleted(tx) {
@@ -313,18 +318,26 @@ func (i *Item) isNewEnough() bool {
 	return !i.CreatedAt.Before(cutOffDate)
 }
 
-// Inactivate sets the item's CoverageStatus to Inactive
-//  TODO deal with coverage payment changes
-func (i *Item) Inactivate(ctx context.Context) error {
-	i.CoverageStatus = api.ItemCoverageStatusInactive
-
+// ScheduleInactivation sets the item's CoverageEndDate and creates a corresponding
+//  credit ledger entry
+func (i *Item) ScheduleInactivation(ctx context.Context, t time.Time) error {
 	user := CurrentUser(ctx)
 	i.StatusChange = ItemStatusChangeInactivated + user.Name()
-	if err := i.Update(ctx); err != nil {
-		return err
-	}
 
-	return i.CreateLedgerEntry(Tx(ctx), LedgerEntryTypeCoverageChange, i.calculateCancellationCredit(time.Now().UTC()))
+	// If now it's January and the item was created before this year
+	//   set its CoverageEndDate to the current day.
+	// Otherwise, set it to the end of the current month.
+	if i.shouldGiveFullYearRefund(t) {
+		i.CoverageEndDate = nulls.NewTime(t)
+	} else {
+		i.CoverageEndDate = nulls.NewTime(domain.EndOfMonth(t))
+	}
+	return i.Update(ctx)
+}
+
+func (i *Item) Inactivate(ctx context.Context) error {
+	i.CoverageStatus = api.ItemCoverageStatusInactive
+	return i.Update(ctx)
 }
 
 // IsActorAllowedTo ensure the actor is either an admin, or a member of this policy to perform any permission
@@ -663,6 +676,35 @@ func (i *Item) ConvertToAPI(tx *pop.Connection) api.Item {
 	return apiItem
 }
 
+// InactivateApprovedButEnded fetches all the items that have coverage_status=Approved
+//   and coverage_end_date before today and then
+//   saves them with coverage_status=Inactive
+func (i *Items) InactivateApprovedButEnded(ctx context.Context) error {
+	tx := Tx(ctx)
+
+	endDate := time.Now().UTC().Format(domain.DateFormat)
+	if err := tx.Where(`coverage_status = ? AND coverage_end_date < ?`,
+		api.ItemCoverageStatusApproved, endDate).All(i); domain.IsOtherThanNoRows(err) {
+		return fmt.Errorf("error fetching items that are approved but have "+
+			"a coverage end date before %s: %s", endDate, err)
+	}
+
+	errCount := 0
+	var lastErr error
+	for _, ii := range *i {
+		if err := ii.Inactivate(ctx); err != nil {
+			errCount++
+			domain.ErrLogger.Printf("InactivateApprovedButEnded error, %s", err)
+			lastErr = err
+		}
+	}
+	if lastErr != nil {
+		return fmt.Errorf("InactivateApprovedButEnded had %d errors. Last error: %s", errCount, lastErr)
+	}
+
+	return nil
+}
+
 func (i *Items) ConvertToAPI(tx *pop.Connection) api.Items {
 	apiItems := make(api.Items, len(*i))
 	for j, ii := range *i {
@@ -683,30 +725,41 @@ func (i *Item) calculateProratedPremium(t time.Time) api.Currency {
 	return api.Currency(p)
 }
 
+// True if coverage on the item started in a previous year and the current
+//  month is January.
+func (i *Item) shouldGiveFullYearRefund(t time.Time) bool {
+	return i.CoverageStartDate.Year() < t.Year() && t.Month() == 1
+}
+
 func (i *Item) calculateCancellationCredit(t time.Time) api.Currency {
 	// If we're in December already, then no credit
 	if t.Month() == 12 {
 		return 0
 	}
 
+	var premium int
+
 	// If the coverage was from a previous year and today is still in January,
 	//   give a full year's refund.
-	// If today is after January, give a refund for the following months only.
-	if i.CoverageStartDate.Year() < t.Year() {
-		premium := int(i.CalculateAnnualPremium())
-		if t.Month() == 1 {
-			return api.Currency(-1 * premium)
-		}
-		credit := domain.CalculateMonthlyRefundValue(premium, t)
-		return api.Currency(-1 * credit)
+	if i.shouldGiveFullYearRefund(t) {
+		premium = int(i.CalculateAnnualPremium())
+		return api.Currency(-1 * premium)
 	}
 
-	// If the coverage is from this year, give a refund for the following months only
-	//   based on the partial year's premium that would have been calculated for the item.
-	premium := int(i.calculateProratedPremium(i.CoverageStartDate))
+	// Otherwise, give credit for the following calendar months
+
+	// Coverage started previous year, but it is now later than January.
+	// So, a full year's premium would have been charged.
+	if i.CoverageStartDate.Year() < t.Year() {
+		premium = int(i.CalculateAnnualPremium())
+
+		// Coverage started this year, so a partial year's premium would have been charged.
+	} else {
+		premium = int(i.calculateProratedPremium(i.CoverageStartDate))
+	}
+
 	credit := domain.CalculateMonthlyRefundValue(premium, t)
 	return api.Currency(-1 * credit)
-
 }
 
 func (i *Item) calculatePremiumChange(t time.Time, oldCoverageAmount int) api.Currency {

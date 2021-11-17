@@ -391,6 +391,7 @@ func IsStringInSlice(needle string, haystack []string) bool {
 }
 
 func RandomString(n int, includeLetters string) string {
+	rand.Seed(time.Now().UnixNano())
 	if includeLetters == "" {
 		includeLetters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 	}
@@ -400,6 +401,16 @@ func RandomString(n int, includeLetters string) string {
 		b[i] = letters[rand.Intn(len(letters))] // #nosec G404
 	}
 	return string(b)
+}
+
+// RandomInsecureIntInRange is insecure because it only uses the math/rand package
+//  and not the crypto/rand package
+func RandomInsecureIntInRange(min, max int) int {
+	if min >= max {
+		panic("invalid parameters to RandomInsecureIntInRange: max of range must be greater than min.")
+	}
+	rand.Seed(time.Now().UnixNano())
+	return rand.Intn(max-min+1) + min // #nosec G404
 }
 
 // CalculatePartialYearValue returns the value multiplied by the number
