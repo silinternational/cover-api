@@ -8,7 +8,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gobuffalo/nulls"
 	"github.com/gofrs/uuid"
 
 	"github.com/silinternational/cover-api/api"
@@ -133,10 +132,12 @@ func (as *ActionSuite) Test_ItemsCreate() {
 
 	iCat := fixtures.ItemCategories[0]
 
+	riskCategoryMobileID := models.RiskCategoryMobileID()
+
 	goodItem := api.ItemInput{
 		Name:                "Good Item",
 		CategoryID:          iCat.ID,
-		RiskCategoryID:      nulls.NewUUID(models.RiskCategoryMobileID()),
+		RiskCategoryID:      &riskCategoryMobileID,
 		InStorage:           true,
 		Country:             "Thailand",
 		Description:         "camera",
@@ -660,10 +661,12 @@ func (as *ActionSuite) Test_ItemsUpdate() {
 		CoverageStatus:    api.ItemCoverageStatusDraft,
 	}
 
+	riskCategoryMobileID := models.RiskCategoryMobileID()
+
 	goodItem := api.ItemInput{
 		Name:                "Good Item",
 		CategoryID:          iCat.ID,
-		RiskCategoryID:      nulls.NewUUID(models.RiskCategoryMobileID()),
+		RiskCategoryID:      &riskCategoryMobileID,
 		InStorage:           true,
 		Country:             "Thailand",
 		Description:         "camera",
@@ -949,7 +952,8 @@ func (as *ActionSuite) Test_NewItemFromApiInput() {
 
 	itemWithRiskCategory := item
 	itemWithRiskCategory.Name = "Item with a specified risk category"
-	itemWithRiskCategory.RiskCategoryID = nulls.NewUUID(models.RiskCategoryMobileID())
+	riskCategoryMobileID := models.RiskCategoryMobileID()
+	itemWithRiskCategory.RiskCategoryID = &riskCategoryMobileID
 
 	tests := []struct {
 		name        string
@@ -998,7 +1002,7 @@ func (as *ActionSuite) Test_NewItemFromApiInput() {
 			policy:      policy,
 			input:       itemWithRiskCategory,
 			user:        admin,
-			wantRiskCat: itemWithRiskCategory.RiskCategoryID.UUID, // admin user can override
+			wantRiskCat: *itemWithRiskCategory.RiskCategoryID, // admin user can override
 		},
 	}
 

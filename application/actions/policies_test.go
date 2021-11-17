@@ -7,7 +7,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gobuffalo/nulls"
 	"github.com/gofrs/uuid"
 
 	"github.com/silinternational/cover-api/api"
@@ -291,6 +290,7 @@ func (as *ActionSuite) Test_PoliciesUpdate() {
 	appAdmin := models.CreateAdminUsers(as.DB)[models.AppRoleSteward]
 	normalUser := fixtures.Policies[1].Members[0]
 
+	id1 := "654978"
 	tests := []struct {
 		name          string
 		actor         models.User
@@ -305,7 +305,7 @@ func (as *ActionSuite) Test_PoliciesUpdate() {
 			actor:  normalUser,
 			policy: fixtures.Policies[1],
 			update: api.PolicyUpdate{
-				HouseholdID: nulls.NewString("654978"),
+				HouseholdID: &id1,
 			},
 			wantStatus: http.StatusOK,
 			wantInBody: fixtures.Policies[1].ID.String(),
@@ -315,7 +315,7 @@ func (as *ActionSuite) Test_PoliciesUpdate() {
 			actor:  normalUser,
 			policy: fixtures.Policies[0],
 			update: api.PolicyUpdate{
-				HouseholdID: nulls.NewString("09876"),
+				HouseholdID: &id1,
 			},
 			wantStatus:    http.StatusNotFound,
 			notWantInBody: fixtures.Policies[0].ID.String(),
@@ -325,7 +325,7 @@ func (as *ActionSuite) Test_PoliciesUpdate() {
 			actor:  appAdmin,
 			policy: fixtures.Policies[1],
 			update: api.PolicyUpdate{
-				HouseholdID: nulls.NewString("998877"),
+				HouseholdID: &id1,
 			},
 			wantStatus: http.StatusOK,
 			wantInBody: fixtures.Policies[1].ID.String(),
@@ -353,7 +353,7 @@ func (as *ActionSuite) Test_PoliciesUpdate() {
 			}
 			var policy api.Policy
 			as.NoError(json.Unmarshal([]byte(body), &policy))
-			as.Equal(tt.update.HouseholdID.String, policy.HouseholdID)
+			as.Equal(*tt.update.HouseholdID, policy.HouseholdID)
 		})
 	}
 }

@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"reflect"
 	"strings"
+	"time"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gobuffalo/events"
@@ -375,5 +376,19 @@ func addFile(tx *pop.Connection, m Updatable, f File) error {
 		domain.ErrLogger.Printf("error marking old file %s as unlinked, %s", oldFile.ID, err)
 	}
 
+	return nil
+}
+
+func convertUUIDToAPI(id nulls.UUID) *uuid.UUID {
+	if id.Valid {
+		return &id.UUID
+	}
+	return nil
+}
+
+func convertTimeToAPI(t nulls.Time) *time.Time {
+	if t.Valid {
+		return &t.Time
+	}
 	return nil
 }

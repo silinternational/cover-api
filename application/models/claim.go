@@ -119,6 +119,7 @@ func (c *Claim) Create(tx *pop.Connection) error {
 	if _, ok := ValidClaimStatus[c.Status]; !ok {
 		c.Status = api.ClaimStatusDraft
 	}
+
 	return create(tx, c)
 }
 
@@ -619,9 +620,9 @@ func (c *Claim) ConvertToAPI(tx *pop.Connection) api.Claim {
 		IncidentDescription: c.IncidentDescription,
 		Status:              c.Status,
 		StatusChange:        c.StatusChange,
-		ReviewDate:          c.ReviewDate,
-		ReviewerID:          c.ReviewerID,
-		PaymentDate:         c.PaymentDate,
+		ReviewDate:          convertTimeToAPI(c.ReviewDate),
+		ReviewerID:          convertUUIDToAPI(c.ReviewerID),
+		PaymentDate:         convertTimeToAPI(c.PaymentDate),
 		TotalPayout:         c.TotalPayout,
 		StatusReason:        c.StatusReason,
 		Items:               c.ClaimItems.ConvertToAPI(tx),

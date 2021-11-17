@@ -3,7 +3,6 @@ package api
 import (
 	"time"
 
-	"github.com/gobuffalo/nulls"
 	"github.com/gofrs/uuid"
 )
 
@@ -77,7 +76,7 @@ type Item struct {
 	// date (yyyy-mm-dd) of item's coverage end date
 	//
 	// swagger:strfmt date-time
-	CoverageEndDate nulls.String `json:"coverage_end_date"`
+	CoverageEndDate *string `json:"coverage_end_date"`
 
 	// The time the item was created
 	//
@@ -132,7 +131,7 @@ type ItemInput struct {
 	// assigned to the item's category
 	//
 	// swagger:strfmt uuid4
-	RiskCategoryID nulls.UUID `json:"risk_category_id"`
+	RiskCategoryID *uuid.UUID `json:"risk_category_id"`
 
 	// is item in storage?
 	InStorage bool `json:"in_storage"`
@@ -164,7 +163,7 @@ type ItemInput struct {
 	// date (yyyy-mm-dd) of item's coverage end date, optional
 	//
 	// swagger:strfmt date-time
-	CoverageEndDate nulls.String `json:"coverage_end_date"`
+	CoverageEndDate *string `json:"coverage_end_date"`
 
 	// Accountable person ID. Can be either a policy dependent ID or a user ID
 	//

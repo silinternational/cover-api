@@ -3,7 +3,6 @@ package api
 import (
 	"time"
 
-	"github.com/gobuffalo/nulls"
 	"github.com/gofrs/uuid"
 )
 
@@ -44,7 +43,7 @@ type User struct {
 
 	// policy ID (temporary, will be replaced with a list of policies)
 	// swagger:strfmt uuid4
-	PolicyID nulls.UUID `json:"policy_id"` // TODO: remove this when the UI is ready
+	PolicyID *uuid.UUID `json:"policy_id"` // TODO: remove this when the UI is ready
 
 	// all policies in which the user is a member
 	Policies Policies `json:"policies,omitempty"`
@@ -53,7 +52,7 @@ type User struct {
 	//
 	// swagger:strfmt uuid4
 	// example: 63d5b060-1460-4348-bdf0-ad03c105a8d5
-	PhotoFileID nulls.UUID `json:"photo_file_id"`
+	PhotoFileID *uuid.UUID `json:"photo_file_id"`
 
 	// File object that contains the user's photo
 	PhotoFile *File `json:"photo_file,omitempty"`
