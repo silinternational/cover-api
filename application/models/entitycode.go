@@ -12,7 +12,7 @@ import (
 
 const HouseholdEntityIDString = "5f181e39-0a2a-49ac-8796-2f3a3de9fcbd"
 
-var HouseholdEntityID uuid.UUID
+var householdEntityID uuid.UUID
 
 type EntityCodes []EntityCode
 
@@ -55,4 +55,8 @@ func (ec *EntityCode) ConvertToAPI(tx *pop.Connection) api.EntityCode {
 		Code: ec.Code,
 		Name: fmt.Sprintf("%s - %s", ec.Code, ec.Name),
 	}
+}
+
+func HouseholdEntityID() uuid.UUID {
+	return householdEntityID
 }

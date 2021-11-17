@@ -144,7 +144,7 @@ func createItemFixture(tx *pop.Connection, policyID uuid.UUID, categoryID uuid.U
 	item := Item{
 		Name:              randStr(10),
 		CategoryID:        categoryID,
-		RiskCategoryID:    RiskCategoryStationaryID,
+		RiskCategoryID:    RiskCategoryStationaryID(),
 		Country:           randStr(10),
 		Description:       randStr(40),
 		PolicyID:          policyID,
@@ -268,10 +268,10 @@ func CreateCategoryFixtures(tx *pop.Connection, n int) Fixtures {
 
 	for i := range categories {
 		if i%2 == 0 {
-			categories[i].RiskCategoryID = RiskCategoryStationaryID
+			categories[i].RiskCategoryID = RiskCategoryStationaryID()
 			categories[i].RequireMakeModel = false
 		} else {
-			categories[i].RiskCategoryID = RiskCategoryMobileID
+			categories[i].RiskCategoryID = RiskCategoryMobileID()
 			categories[i].RequireMakeModel = true
 		}
 
@@ -361,7 +361,7 @@ func CreatePolicyFixtures(tx *pop.Connection, config FixturesConfig) Fixtures {
 	for i := range policies {
 		policies[i].Name = randStr(20)
 		policies[i].Type = api.PolicyTypeHousehold
-		policies[i].EntityCodeID = HouseholdEntityID
+		policies[i].EntityCodeID = HouseholdEntityID()
 		policies[i].HouseholdID = nulls.NewString(randStr(10))
 		policies[i].Notes = randStr(20)
 		MustCreate(tx, &policies[i])
@@ -388,11 +388,11 @@ func CreatePolicyFixtures(tx *pop.Connection, config FixturesConfig) Fixtures {
 
 func createHouseholdEntity(tx *pop.Connection) {
 	var e EntityCode
-	if err := tx.Find(&e, HouseholdEntityID); err != nil {
+	if err := tx.Find(&e, HouseholdEntityID()); err != nil {
 		if domain.IsOtherThanNoRows(err) {
 			panic("database error finding household entity")
 		}
-		e.ID = HouseholdEntityID
+		e.ID = HouseholdEntityID()
 		e.Code = "MMB"
 		e.Name = "Household"
 		e.Active = true
@@ -453,7 +453,7 @@ func CreateRiskCategories(tx *pop.Connection) {
 	}
 
 	riskCategoryMobile := RiskCategory{
-		ID:         RiskCategoryMobileID,
+		ID:         RiskCategoryMobileID(),
 		Name:       "mobile",
 		PolicyMax:  25000,
 		CostCenter: "MOBILE",
@@ -461,7 +461,7 @@ func CreateRiskCategories(tx *pop.Connection) {
 	MustCreate(tx, &riskCategoryMobile)
 
 	riskCategoryStationary := RiskCategory{
-		ID:         RiskCategoryStationaryID,
+		ID:         RiskCategoryStationaryID(),
 		Name:       "stationary",
 		PolicyMax:  25000,
 		CostCenter: "STATIONARY",

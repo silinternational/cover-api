@@ -132,10 +132,12 @@ func (as *ActionSuite) Test_ItemsCreate() {
 
 	iCat := fixtures.ItemCategories[0]
 
+	riskCategoryMobileID := models.RiskCategoryMobileID()
+
 	goodItem := api.ItemInput{
 		Name:                "Good Item",
 		CategoryID:          iCat.ID,
-		RiskCategoryID:      &models.RiskCategoryMobileID,
+		RiskCategoryID:      &riskCategoryMobileID,
 		InStorage:           true,
 		Country:             "Thailand",
 		Description:         "camera",
@@ -659,10 +661,12 @@ func (as *ActionSuite) Test_ItemsUpdate() {
 		CoverageStatus:    api.ItemCoverageStatusDraft,
 	}
 
+	riskCategoryMobileID := models.RiskCategoryMobileID()
+
 	goodItem := api.ItemInput{
 		Name:                "Good Item",
 		CategoryID:          iCat.ID,
-		RiskCategoryID:      &models.RiskCategoryMobileID,
+		RiskCategoryID:      &riskCategoryMobileID,
 		InStorage:           true,
 		Country:             "Thailand",
 		Description:         "camera",
@@ -948,7 +952,8 @@ func (as *ActionSuite) Test_NewItemFromApiInput() {
 
 	itemWithRiskCategory := item
 	itemWithRiskCategory.Name = "Item with a specified risk category"
-	itemWithRiskCategory.RiskCategoryID = &models.RiskCategoryMobileID
+	riskCategoryMobileID := models.RiskCategoryMobileID()
+	itemWithRiskCategory.RiskCategoryID = &riskCategoryMobileID
 
 	tests := []struct {
 		name        string

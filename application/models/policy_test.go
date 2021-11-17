@@ -114,7 +114,7 @@ func (ms *ModelSuite) TestPolicy_Validate() {
 				Name:         "my policy",
 				Type:         api.PolicyTypeHousehold,
 				HouseholdID:  nulls.NewString("123456"),
-				EntityCodeID: HouseholdEntityID,
+				EntityCodeID: HouseholdEntityID(),
 			},
 			wantErr:  false,
 			errField: "",
