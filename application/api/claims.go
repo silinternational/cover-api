@@ -3,7 +3,6 @@ package api
 import (
 	"time"
 
-	"github.com/gobuffalo/nulls"
 	"github.com/gofrs/uuid"
 )
 
@@ -129,17 +128,17 @@ type Claim struct {
 	// review date
 	//
 	// swagger:strfmt date-time
-	ReviewDate nulls.Time `json:"review_date,omitempty"`
+	ReviewDate *time.Time `json:"review_date,omitempty"`
 
 	// reviewer ID
 	//
 	// swagger:strfmt uuid4
-	ReviewerID nulls.UUID `json:"reviewer_id,omitempty"`
+	ReviewerID *uuid.UUID `json:"reviewer_id,omitempty"`
 
 	// payment date
 	//
 	// swagger:strfmt date-time
-	PaymentDate nulls.Time `json:"payment_date,omitempty"`
+	PaymentDate *time.Time `json:"payment_date,omitempty"`
 
 	// total payout (0.01 USD)
 	TotalPayout Currency `json:"total_payout,omitempty"`

@@ -399,7 +399,7 @@ func (u *User) ConvertToAPI(tx *pop.Connection, hydrate bool) api.User {
 		AppRole:       string(u.AppRole),
 		LastLoginUTC:  u.LastLoginUTC,
 		Country:       u.GetLocation().Country,
-		PhotoFileID:   u.PhotoFileID,
+		PhotoFileID:   convertUUIDToAPI(u.PhotoFileID),
 	}
 
 	if hydrate {
@@ -408,7 +408,7 @@ func (u *User) ConvertToAPI(tx *pop.Connection, hydrate bool) api.User {
 
 		// TODO: remove this when the UI is ready to use the Policies list
 		if len(u.Policies) > 0 {
-			output.PolicyID = nulls.NewUUID(u.Policies[0].ID)
+			output.PolicyID = &u.Policies[0].ID
 		}
 	}
 

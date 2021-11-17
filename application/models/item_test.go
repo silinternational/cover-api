@@ -1165,7 +1165,7 @@ func (ms *ModelSuite) TestItem_ConvertToAPI() {
 	ms.Equal(item.StatusReason, got.StatusReason, "StatusReason is not correct")
 	ms.Equal(item.CoverageStartDate.Format(domain.DateFormat), got.CoverageStartDate,
 		"CoverageStartDate is not correct")
-	ms.Equal(item.CoverageEndDate.Time.Format(domain.DateFormat), got.CoverageEndDate.String,
+	ms.Equal(item.CoverageEndDate.Time.Format(domain.DateFormat), *got.CoverageEndDate,
 		"CoverageEndDate is not correct")
 	ms.Equal(item.CreatedAt, got.CreatedAt, "CreatedAt is not correct")
 	ms.Equal(item.UpdatedAt, got.UpdatedAt, "UpdatedAt is not correct")

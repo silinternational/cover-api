@@ -637,9 +637,10 @@ func (i *Item) Load(tx *pop.Connection) {
 func (i *Item) ConvertToAPI(tx *pop.Connection) api.Item {
 	i.Load(tx)
 
-	var coverageEndDate nulls.String
+	var coverageEndDate *string
 	if i.CoverageEndDate.Valid {
-		coverageEndDate = nulls.NewString(i.CoverageEndDate.Time.Format(domain.DateFormat))
+		s := i.CoverageEndDate.Time.Format(domain.DateFormat)
+		coverageEndDate = &s
 	}
 
 	apiItem := api.Item{
@@ -790,8 +791,8 @@ func NewItemFromApiInput(c buffalo.Context, input api.ItemInput, policyID uuid.U
 
 	user := CurrentUser(c)
 	riskCatID := itemCat.RiskCategoryID
-	if input.RiskCategoryID.Valid && user.IsAdmin() {
-		riskCatID = input.RiskCategoryID.UUID
+	if input.RiskCategoryID != nil && user.IsAdmin() {
+		riskCatID = *input.RiskCategoryID
 	}
 
 	item.Name = input.Name
@@ -823,8 +824,8 @@ func parseItemDates(input api.ItemInput, modelItem *Item) error {
 	}
 	modelItem.CoverageStartDate = start
 
-	if input.CoverageEndDate.Valid {
-		end, err := time.Parse(domain.DateFormat, input.CoverageEndDate.String)
+	if input.CoverageEndDate != nil {
+		end, err := time.Parse(domain.DateFormat, *input.CoverageEndDate)
 		if err != nil {
 			err = errors.New("failed to parse item coverage end date, " + err.Error())
 			appErr := api.NewAppError(err, api.ErrorItemInvalidCoverageEndDate, api.CategoryUser)

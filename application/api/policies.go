@@ -3,7 +3,6 @@ package api
 import (
 	"time"
 
-	"github.com/gobuffalo/nulls"
 	"github.com/gofrs/uuid"
 )
 
@@ -96,10 +95,8 @@ type PolicyUpdate struct {
 	// policy name
 	Name string `json:"name"`
 
-	// Household ID for billing. Only required/allowed on Household type policies. (not actually uuid4; added as a doc generator hack)
-	//
-	// swagger:strfmt uuid4
-	HouseholdID nulls.String `json:"household_id,omitempty"`
+	// Household ID for billing. Only required/allowed on Household type policies.
+	HouseholdID *string `json:"household_id,omitempty"`
 
 	// Cost center for billing. Only required/allowed on Team type policies.
 	CostCenter string `json:"cost_center,omitempty"`

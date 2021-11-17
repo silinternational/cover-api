@@ -256,7 +256,7 @@ func (ms *ModelSuite) TestUser_ConvertToAPI() {
 	ms.Equal(string(user.AppRole), got.AppRole, "AppRole is not correct")
 	ms.Equal(user.LastLoginUTC, got.LastLoginUTC, "LastLoginUTC is not correct")
 	ms.Equal(user.Country, got.Country, "Country is not correct")
-	ms.Equal(user.PhotoFileID, got.PhotoFileID, "PhotoFileID is not correct")
+	ms.EqualNullUUID(user.PhotoFileID, got.PhotoFileID, "PhotoFileID is not correct")
 
 	ms.Equal(0, len(got.Policies), "Policies should not be hydrated")
 

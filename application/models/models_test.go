@@ -3,9 +3,12 @@ package models
 import (
 	"errors"
 	"testing"
+	"time"
 
 	"github.com/gobuffalo/buffalo"
+	"github.com/gobuffalo/nulls"
 	"github.com/gobuffalo/pop/v5"
+	"github.com/gofrs/uuid"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
@@ -75,4 +78,20 @@ func (ms *ModelSuite) EqualAppError(expected api.AppError, actual error) {
 	ms.True(errors.As(actual, &appErr), "error does not contain an api.AppError")
 	ms.Equal(appErr.Key, expected.Key, "error key does not match")
 	ms.Equal(appErr.Category, expected.Category, "error category does not match")
+}
+
+func (ms *ModelSuite) EqualNullTime(expected nulls.Time, actual *time.Time, msgAndArgs ...interface{}) {
+	if actual == nil {
+		ms.False(expected.Valid, msgAndArgs...)
+	} else {
+		ms.Equal(expected, *actual, msgAndArgs...)
+	}
+}
+
+func (ms *ModelSuite) EqualNullUUID(expected nulls.UUID, actual *uuid.UUID, msgAndArgs ...interface{}) {
+	if actual == nil {
+		ms.False(expected.Valid, msgAndArgs...)
+	} else {
+		ms.Equal(expected, *actual, msgAndArgs...)
+	}
 }
