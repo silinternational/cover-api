@@ -45,7 +45,7 @@ func (ec *EntityCodes) ConvertToAPI(tx *pop.Connection) []api.EntityCode {
 }
 
 func (ec *EntityCodes) AllActive(tx *pop.Connection) error {
-	err := tx.Where("active = true").Order("code").All(ec)
+	err := tx.Where("active = true").Where("id != ?", HouseholdEntityIDString).Order("code").All(ec)
 	return appErrorFromDB(err, api.ErrorQueryFailure)
 }
 
