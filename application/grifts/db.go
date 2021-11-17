@@ -93,7 +93,7 @@ func createUserFixtures(tx *pop.Connection) ([]*models.User, error) {
 			LastName:     "Kent",
 			LastLoginUTC: time.Now().UTC().Add(time.Hour * -48),
 			StaffID:      nulls.NewString("111111"),
-			AppRole:      models.AppRoleAdmin,
+			AppRole:      models.AppRoleSteward,
 		},
 		{
 			Email:         "bruce.wayne@example.org",

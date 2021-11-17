@@ -499,7 +499,7 @@ func (ms *ModelSuite) TestClaim_Deny() {
 
 	fixtures := CreateItemFixtures(ms.DB, fixConfig)
 
-	admin := CreateAdminUsers(ms.DB)[AppRoleAdmin]
+	admin := CreateAdminUsers(ms.DB)[AppRoleSteward]
 
 	policy := fixtures.Policies[0]
 	draftClaim := policy.Claims[0]
@@ -586,7 +586,7 @@ func (ms *ModelSuite) TestClaim_HasReceiptFile() {
 	}
 	fixtures := CreateItemFixtures(db, config)
 
-	files := CreateFileFixtures(db, 2, CreateAdminUsers(db)[AppRoleAdmin].ID).Files
+	files := CreateFileFixtures(db, 2, CreateAdminUsers(db)[AppRoleSteward].ID).Files
 
 	policies := fixtures.Policies
 
