@@ -327,7 +327,7 @@ func (i *Item) ScheduleInactivation(ctx context.Context, t time.Time) error {
 	// If now it's January and the item was created before this year
 	//   set its CoverageEndDate to the current day.
 	// Otherwise, set it to the end of the current month.
-	if i.giveFullYearRefund(t) {
+	if i.shouldGiveFullYearRefund(t) {
 		i.CoverageEndDate = nulls.NewTime(t)
 	} else {
 		i.CoverageEndDate = nulls.NewTime(domain.EndOfMonth(t))
@@ -682,7 +682,7 @@ func (i *Item) ConvertToAPI(tx *pop.Connection) api.Item {
 func (i *Items) InactivateApprovedButEnded(ctx context.Context) error {
 	tx := Tx(ctx)
 
-	endDate := time.Now().Format(domain.DateFormat)
+	endDate := time.Now().UTC().Format(domain.DateFormat)
 	if err := tx.Where(`coverage_status = ? AND coverage_end_date < ?`,
 		api.ItemCoverageStatusApproved, endDate).All(i); domain.IsOtherThanNoRows(err) {
 		return fmt.Errorf("error fetching items that are approved but have "+
@@ -727,7 +727,7 @@ func (i *Item) calculateProratedPremium(t time.Time) api.Currency {
 
 // True if coverage on the item started in a previous year and the current
 //  month is January.
-func (i *Item) giveFullYearRefund(t time.Time) bool {
+func (i *Item) shouldGiveFullYearRefund(t time.Time) bool {
 	return i.CoverageStartDate.Year() < t.Year() && t.Month() == 1
 }
 
@@ -741,7 +741,7 @@ func (i *Item) calculateCancellationCredit(t time.Time) api.Currency {
 
 	// If the coverage was from a previous year and today is still in January,
 	//   give a full year's refund.
-	if i.giveFullYearRefund(t) {
+	if i.shouldGiveFullYearRefund(t) {
 		premium = int(i.CalculateAnnualPremium())
 		return api.Currency(-1 * premium)
 
