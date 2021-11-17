@@ -34,30 +34,31 @@ type Items []Item
 
 // Item model
 type Item struct {
-	ID                uuid.UUID              `db:"id"`
-	Name              string                 `db:"name" validate:"required"`
-	CategoryID        uuid.UUID              `db:"category_id" validate:"required"`
-	RiskCategoryID    uuid.UUID              `db:"risk_category_id" validate:"required"`
-	InStorage         bool                   `db:"in_storage"`
-	Description       string                 `db:"description"`
-	PolicyID          uuid.UUID              `db:"policy_id" validate:"required"`
-	PolicyDependentID nulls.UUID             `db:"policy_dependent_id"`
-	PolicyUserID      nulls.UUID             `db:"policy_user_id"`
-	Make              string                 `db:"make"`
-	Model             string                 `db:"model"`
-	SerialNumber      string                 `db:"serial_number"`
-	CoverageAmount    int                    `db:"coverage_amount" validate:"min=0"`
-	CoverageStatus    api.ItemCoverageStatus `db:"coverage_status" validate:"itemCoverageStatus"`
-	StatusChange      string                 `db:"status_change"`
-	CoverageStartDate time.Time              `db:"coverage_start_date"`
-	CoverageEndDate   nulls.Time             `db:"coverage_end_date"`
-	StatusReason      string                 `db:"status_reason" validate:"required_if=CoverageStatus Revision,required_if=CoverageStatus Denied"`
-	City              string                 `db:"city"`
-	State             string                 `db:"state"`
-	Country           string                 `db:"country"`
-	LegacyID          nulls.Int              `db:"legacy_id"`
-	CreatedAt         time.Time              `db:"created_at"`
-	UpdatedAt         time.Time              `db:"updated_at"`
+	ID                  uuid.UUID              `db:"id"`
+	Name                string                 `db:"name" validate:"required"`
+	CategoryID          uuid.UUID              `db:"category_id" validate:"required"`
+	RiskCategoryID      uuid.UUID              `db:"risk_category_id" validate:"required"`
+	InStorage           bool                   `db:"in_storage"`
+	Description         string                 `db:"description"`
+	PolicyID            uuid.UUID              `db:"policy_id" validate:"required"`
+	PolicyDependentID   nulls.UUID             `db:"policy_dependent_id"`
+	PolicyUserID        nulls.UUID             `db:"policy_user_id"`
+	Make                string                 `db:"make"`
+	Model               string                 `db:"model"`
+	SerialNumber        string                 `db:"serial_number"`
+	CoverageAmount      int                    `db:"coverage_amount" validate:"min=0"`
+	CoverageStatus      api.ItemCoverageStatus `db:"coverage_status" validate:"itemCoverageStatus"`
+	CoveragePaidThrough nulls.Time             `db:"coverage_paid_through"`
+	StatusChange        string                 `db:"status_change"`
+	CoverageStartDate   time.Time              `db:"coverage_start_date"`
+	CoverageEndDate     nulls.Time             `db:"coverage_end_date"`
+	StatusReason        string                 `db:"status_reason" validate:"required_if=CoverageStatus Revision,required_if=CoverageStatus Denied"`
+	City                string                 `db:"city"`
+	State               string                 `db:"state"`
+	Country             string                 `db:"country"`
+	LegacyID            nulls.Int              `db:"legacy_id"`
+	CreatedAt           time.Time              `db:"created_at"`
+	UpdatedAt           time.Time              `db:"updated_at"`
 
 	Category     ItemCategory `belongs_to:"item_categories" validate:"-"`
 	RiskCategory RiskCategory `belongs_to:"risk_categories" validate:"-"`
@@ -119,6 +120,8 @@ func (i *Item) Update(ctx context.Context) error {
 		if err := i.CreateLedgerEntry(Tx(ctx), LedgerEntryTypeCoverageChange, amount); err != nil {
 			return err
 		}
+
+		i.CoveragePaidThrough = nulls.NewTime(domain.EndOfYear())
 	}
 
 	return update(tx, i)
@@ -276,7 +279,17 @@ func (i *Item) SafeDeleteOrInactivate(ctx context.Context) error {
 		if err := i.ScheduleInactivation(ctx, now); err != nil {
 			return err
 		}
-		return i.CreateLedgerEntry(Tx(ctx), LedgerEntryTypeCoverageChange, i.calculateCancellationCredit(now))
+
+		// Don't give a refund if coverage has not been paid through the end of the year
+		if !i.CoveragePaidThrough.Valid || i.CoveragePaidThrough.Time.Year() < time.Now().UTC().Year() {
+			return nil
+		}
+
+		if err := i.CreateLedgerEntry(Tx(ctx), LedgerEntryTypeCoverageChange, i.calculateCancellationCredit(now)); err != nil {
+			return err
+		}
+		i.CoveragePaidThrough = nulls.Time{}
+		return i.Update(ctx)
 
 	case api.ItemCoverageStatusDraft, api.ItemCoverageStatusRevision, api.ItemCoverageStatusPending:
 		tx := Tx(ctx)
@@ -577,7 +590,12 @@ func (i *Item) Approve(ctx context.Context, doEmitEvent bool) error {
 	}
 
 	amount := i.calculateProratedPremium(time.Now().UTC())
-	return i.CreateLedgerEntry(Tx(ctx), LedgerEntryTypeNewCoverage, amount)
+	if err := i.CreateLedgerEntry(Tx(ctx), LedgerEntryTypeNewCoverage, amount); err != nil {
+		return err
+	}
+
+	i.CoveragePaidThrough = nulls.NewTime(domain.EndOfYear())
+	return i.Update(ctx)
 }
 
 // Deny takes the item from Pending coverage status to Denied.
