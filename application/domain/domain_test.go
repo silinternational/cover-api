@@ -261,6 +261,14 @@ func (ts *TestSuite) Test_EndOfMonth() {
 	}
 }
 
+func (ts *TestSuite) Test_EndOfYear() {
+	now := time.Now().UTC()
+	got := EndOfYear()
+
+	want := time.Date(now.Year(), 12, 31, 23, 59, 59, 0, time.UTC)
+	ts.Equal(want, got, "incorrect time for end of year")
+}
+
 func (ts *TestSuite) TestIsLeapYear() {
 	tests := []struct {
 		year int
