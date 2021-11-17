@@ -51,6 +51,11 @@ func (ts *TestSuite) Test_keyToReadableString() {
 			key:  "initialLowerGetsLost",
 			want: "Lower gets lost",
 		},
+		{
+			name: "trim Error from the front",
+			key:  "ErrorKey",
+			want: "Key",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
