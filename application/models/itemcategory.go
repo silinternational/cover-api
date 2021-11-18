@@ -104,10 +104,9 @@ func (i *ItemCategories) AllEnabled(tx *pop.Connection) error {
 
 	// "Other" should be the last one in the list
 	var other ItemCategory
-	if err := tx.Where("name = 'Other'").First(&other); err != nil {
-		return appErrorFromDB(err, api.ErrorQueryFailure)
+	if err := tx.Where("name = 'Other'").First(&other); err == nil {
+		*i = append(*i, other)
 	}
-	*i = append(*i, other)
 
 	return nil
 }
