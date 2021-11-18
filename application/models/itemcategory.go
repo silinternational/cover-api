@@ -97,6 +97,17 @@ func (i *ItemCategories) ConvertToAPI(tx *pop.Connection) api.ItemCategories {
 }
 
 func (i *ItemCategories) AllEnabled(tx *pop.Connection) error {
-	err := tx.Where("status = ?", api.ItemCategoryStatusEnabled).Order("name asc").All(i)
-	return appErrorFromDB(err, api.ErrorQueryFailure)
+	if err := tx.Where("status = ? AND name != 'Other'", api.ItemCategoryStatusEnabled).
+		Order("name asc").All(i); err != nil {
+		return appErrorFromDB(err, api.ErrorQueryFailure)
+	}
+
+	// "Other" should be the last one in the list
+	var other ItemCategory
+	if err := tx.Where("name = 'Other'").First(&other); err != nil {
+		return appErrorFromDB(err, api.ErrorQueryFailure)
+	}
+	*i = append(*i, other)
+
+	return nil
 }
