@@ -954,7 +954,7 @@ func (ms *ModelSuite) TestItem_CreateLedgerEntry() {
 	ms.Equal(amount, le.Amount, "Amount is incorrect")
 	ms.Equal(user.FirstName, le.FirstName, "FirstName is incorrect")
 	ms.Equal(user.LastName, le.LastName, "LastName is incorrect")
-	ms.WithinDuration(time.Now().UTC(), le.DateSubmitted, time.Minute,
+	ms.Equal(time.Now().UTC().Truncate(domain.DurationDay), le.DateSubmitted,
 		"ledger entry submitted date should be the current time")
 }
 
