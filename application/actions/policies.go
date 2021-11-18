@@ -251,6 +251,12 @@ func policiesListMembers(c buffalo.Context) error {
 //     in: path
 //     required: true
 //     description: policy ID
+//   - name: policy member invite input
+//     in: body
+//     description: policy user invite input object
+//     required: true
+//     schema:
+//       "$ref": "#/definitions/PolicyUserInviteCreate"
 // responses:
 //   '204':
 //     description: success, no content
