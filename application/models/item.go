@@ -878,7 +878,6 @@ func (i *Item) CreateLedgerEntry(tx *pop.Connection, entryType LedgerEntryType, 
 	i.LoadRiskCategory(tx, false)
 	i.Policy.LoadEntityCode(tx, false)
 
-	now := time.Now().UTC()
 	name := i.GetAccountablePersonName(tx)
 
 	le := NewLedgerEntry(i.Policy, i, nil)
@@ -886,7 +885,6 @@ func (i *Item) CreateLedgerEntry(tx *pop.Connection, entryType LedgerEntryType, 
 	le.Amount = amount
 	le.FirstName = name.First
 	le.LastName = name.Last
-	le.DateSubmitted = now
 
 	if err := le.Create(tx); err != nil {
 		return err
@@ -894,7 +892,7 @@ func (i *Item) CreateLedgerEntry(tx *pop.Connection, entryType LedgerEntryType, 
 
 	oldPaidYear := i.PaidThroughYear
 	if le.Type == LedgerEntryTypeNewCoverage {
-		i.PaidThroughYear = now.Year()
+		i.PaidThroughYear = le.DateSubmitted.Year()
 	} else if le.Type == LedgerEntryTypeCoverageRefund {
 		i.PaidThroughYear = 0
 	}
