@@ -138,12 +138,34 @@ func keyToReadableString(key string) string {
 		words = words[1:]
 	}
 
-	// Lowercase all but first word
-	for i := 1; i < len(words); i++ {
-		words[i] = strings.ToLower(words[i])
+	count := len(words)
+	newWords := []string{}
+
+	// Lowercase all but first word.
+	for i := 0; i < count; i++ {
+		// If a word is longer than one character, just use it as is
+		if len(words[i]) > 1 {
+			newWords = append(newWords, strings.ToLower(words[i]))
+			continue
+		}
+
+		// Combine single character words
+		next := words[i]
+		for j := i + 1; j < count; j++ {
+			if len(words[j]) == 1 {
+				next += words[j]
+				i++ // avoid reprocessing the same word
+			} else {
+				break
+			}
+		}
+		newWords = append(newWords, strings.ToLower(next))
 	}
 
-	return strings.Join(words, " ")
+	firstUpper := strings.ToUpper(newWords[0][0:1])
+	newWords[0] = firstUpper + newWords[0][1:]
+
+	return strings.Join(newWords, " ")
 }
 
 // MergeExtras returns a single map with the all the key-values pairs of the input map
