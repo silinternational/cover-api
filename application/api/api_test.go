@@ -67,19 +67,34 @@ func (ts *TestSuite) Test_keyToReadableString() {
 			want: "Bad choice a",
 		},
 		{
-			name: "includes abbreviation",
+			name: "includes id",
 			key:  "ErrorUserIDField",
 			want: "User id field",
 		},
 		{
-			name: "starts with abbreviation",
+			name: "starts with id",
 			key:  "ErrorIDNotFound",
 			want: "Id not found",
 		},
 		{
-			name: "ends with abbreviation",
+			name: "ends with id",
 			key:  "ErrorUserID",
 			want: "User id",
+		},
+		{
+			name: "includes url",
+			key:  "ErrorUserURLField",
+			want: "User url field",
+		},
+		{
+			name: "starts with url",
+			key:  "ErrorURLInvalid",
+			want: "Url invalid",
+		},
+		{
+			name: "ends with url",
+			key:  "ErrorInvalidURL",
+			want: "Invalid url",
 		},
 		{
 			name: "trim Error from the front",
