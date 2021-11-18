@@ -72,13 +72,14 @@ func dependentsCreate(c buffalo.Context) error {
 	}
 
 	tx := models.Tx(c)
-	if err := policy.AddDependent(tx, input); err != nil {
+	dependent, err := policy.AddDependent(tx, input)
+	if err != nil {
 		return reportError(c, err)
 	}
 
 	policy.LoadDependents(tx, false)
 
-	return renderOk(c, policy.Dependents.ConvertToAPI())
+	return renderOk(c, dependent.ConvertToAPI())
 }
 
 // swagger:operation PUT /policy-dependents/{id} PolicyDependents PolicyDependentsUpdate

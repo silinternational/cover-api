@@ -229,10 +229,13 @@ func (as *ActionSuite) Test_DependentsCreate() {
 			if res.Code != http.StatusOK {
 				return
 			}
-			var dependents api.PolicyDependents
-			err := json.Unmarshal([]byte(body), &dependents)
+			var dependent api.PolicyDependent
+			err := json.Unmarshal([]byte(body), &dependent)
 			as.NoError(err)
-			as.Equal(tt.wantCount, len(dependents))
+
+			var allDependents models.PolicyDependents
+			as.NoError(as.DB.Where("policy_id = ?", tt.policy.ID).All(&allDependents))
+			as.Equal(tt.wantCount, len(allDependents))
 		})
 	}
 }
