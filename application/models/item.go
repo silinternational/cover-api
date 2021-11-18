@@ -585,7 +585,6 @@ func (i *Item) Approve(ctx context.Context, doEmitEvent bool) error {
 
 	amount := i.calculateProratedPremium(time.Now().UTC())
 	return i.CreateLedgerEntry(Tx(ctx), LedgerEntryTypeNewCoverage, amount)
-
 }
 
 // Deny takes the item from Pending coverage status to Denied.
@@ -886,7 +885,6 @@ func (i *Item) CreateLedgerEntry(tx *pop.Connection, entryType LedgerEntryType, 
 	le.Amount = amount
 	le.FirstName = name.First
 	le.LastName = name.Last
-	le.DateSubmitted = i.CoverageStartDate
 
 	if err := le.Create(tx); err != nil {
 		return err
@@ -894,7 +892,7 @@ func (i *Item) CreateLedgerEntry(tx *pop.Connection, entryType LedgerEntryType, 
 
 	oldPaidYear := i.PaidThroughYear
 	if le.Type == LedgerEntryTypeNewCoverage {
-		i.PaidThroughYear = time.Now().UTC().Year()
+		i.PaidThroughYear = le.DateSubmitted.Year()
 	} else if le.Type == LedgerEntryTypeCoverageRefund {
 		i.PaidThroughYear = 0
 	}
