@@ -36,19 +36,19 @@ type Policy struct {
 	Type PolicyType `json:"type"`
 
 	// Household ID for billing
-	HouseholdID string `json:"household_id,omitempty"`
+	HouseholdID string `json:"household_id"`
 
 	// Cost center for billing
-	CostCenter string `json:"cost_center,omitempty"`
+	CostCenter string `json:"cost_center"`
 
 	// Account code for billing
-	Account string `json:"account,omitempty"`
+	Account string `json:"account"`
 
 	// AccountDetail allows for optional detail to route transactions. e.g.: "Nigeria Grp Off-Ins"
-	AccountDetail string `json:"account_detail,omitempty"`
+	AccountDetail string `json:"account_detail"`
 
 	// Entity code for billing
-	EntityCode EntityCode `json:"entity_code,omitempty"`
+	EntityCode EntityCode `json:"entity_code"`
 
 	// The time the policy was created
 	//
@@ -64,10 +64,10 @@ type Policy struct {
 	Members PolicyMembers `json:"members"`
 
 	// List of dependents on policy
-	Dependents PolicyDependents `json:"dependents,omitempty"`
+	Dependents PolicyDependents `json:"dependents"`
 
 	// List of claims on policy
-	Claims Claims `json:"claims,omitempty"`
+	Claims Claims `json:"claims"`
 }
 
 // PolicyCreate represents payload for creating a policy
