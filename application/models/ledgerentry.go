@@ -26,7 +26,7 @@ func (t LedgerEntryType) IsClaim() bool {
 const (
 	LedgerEntryTypeNewCoverage      = LedgerEntryType("NewCoverage")
 	LedgerEntryTypeCoverageChange   = LedgerEntryType("CoverageChange")
-	LedgerEntryTypeCoverageRefund   = LedgerEntryType("CoverageChangeRefund")
+	LedgerEntryTypeCoverageRefund   = LedgerEntryType("CoverageRefund")
 	LedgerEntryTypePolicyAdjustment = LedgerEntryType("PolicyAdjustment")
 	LedgerEntryTypeClaim            = LedgerEntryType("Claim")
 	LedgerEntryTypeLegacy5          = LedgerEntryType("5")

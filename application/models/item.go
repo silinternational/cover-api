@@ -584,11 +584,8 @@ func (i *Item) Approve(ctx context.Context, doEmitEvent bool) error {
 	}
 
 	amount := i.calculateProratedPremium(time.Now().UTC())
-	if err := i.CreateLedgerEntry(Tx(ctx), LedgerEntryTypeNewCoverage, amount); err != nil {
-		return err
-	}
+	return i.CreateLedgerEntry(Tx(ctx), LedgerEntryTypeNewCoverage, amount)
 
-	return i.Update(ctx)
 }
 
 // Deny takes the item from Pending coverage status to Denied.
