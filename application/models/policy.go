@@ -305,9 +305,9 @@ func scopeFilterPoliciesByActive(active string) pop.ScopeFunc {
 	}
 }
 
-func (p *Policy) AddDependent(tx *pop.Connection, input api.PolicyDependentInput) error {
+func (p *Policy) AddDependent(tx *pop.Connection, input api.PolicyDependentInput) (PolicyDependent, error) {
 	if p == nil {
-		return errors.New("policy is nil in AddDependent")
+		return PolicyDependent{}, errors.New("policy is nil in AddDependent")
 	}
 
 	dependent := PolicyDependent{
@@ -321,10 +321,10 @@ func (p *Policy) AddDependent(tx *pop.Connection, input api.PolicyDependentInput
 	dependent.FixTeamRelationship(*p)
 
 	if err := dependent.Create(tx); err != nil {
-		return err
+		return dependent, err
 	}
 
-	return nil
+	return dependent, nil
 }
 
 func (p *Policy) AddClaim(tx *pop.Connection, input api.ClaimCreateInput) (Claim, error) {
