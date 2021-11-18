@@ -2,6 +2,7 @@ package models
 
 import (
 	"fmt"
+	"net/http"
 	"time"
 
 	"github.com/gobuffalo/pop/v5"
@@ -9,6 +10,8 @@ import (
 	"github.com/gofrs/uuid"
 
 	"github.com/silinternational/cover-api/api"
+	"github.com/silinternational/cover-api/domain"
+	"github.com/silinternational/cover-api/storage"
 )
 
 var ValidClaimFilePurpose = map[api.ClaimFilePurpose]struct{}{
@@ -52,6 +55,48 @@ func (c *ClaimFile) Create(tx *pop.Connection) error {
 	}
 
 	return nil
+}
+
+// Destroy destroys the claim file and its associated file
+func (c *ClaimFile) Destroy(tx *pop.Connection) {
+	c.LoadFile(tx, false)
+	file := c.File
+
+	if err := tx.Destroy(c); err != nil {
+		panic(fmt.Sprintf("database error destroying ClaimFile with ID: %s. %s, ", c.ID.String(), err))
+	}
+
+	if err := storage.RemoveFile(file.ID.String()); err != nil {
+		domain.ErrLogger.Printf("error removing file from S3, id='%s', %s", file.ID.String(), err)
+	}
+
+	if err := tx.Destroy(&file); err != nil {
+		panic(fmt.Sprintf("database error destroying ClaimFile.File with ID: %s. %s, ", file.ID.String(), err))
+	}
+}
+
+func (c *ClaimFile) GetID() uuid.UUID {
+	return c.ID
+}
+
+func (c *ClaimFile) FindByID(tx *pop.Connection, id uuid.UUID) error {
+	return tx.Find(c, id)
+}
+
+// IsActorAllowedTo ensure the actor is either an admin, or a member of this policy to perform any permission
+func (c *ClaimFile) IsActorAllowedTo(tx *pop.Connection, actor User, perm Permission, sub SubResource, r *http.Request) bool {
+	if actor.IsAdmin() {
+		return true
+	}
+
+	var claim Claim
+	if err := claim.FindByID(tx, c.ClaimID); err != nil {
+		panic(err.Error())
+	}
+
+	claim.LoadPolicy(tx, false)
+	policy := claim.Policy
+	return policy.isMember(tx, actor.ID)
 }
 
 // ConvertToAPI converts a ClaimFile to api.ClaimFile

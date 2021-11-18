@@ -54,6 +54,7 @@ const (
 	stewardPath         = "/steward"
 	batchesPath         = "/batches"
 	claimsPath          = "/" + domain.TypeClaim
+	claimFilesPath      = "/" + domain.TypeClaimFile
 	claimItemsPath      = "/" + domain.TypeClaimItem
 	filesPath           = "/" + domain.TypeFile
 	itemsPath           = "/" + domain.TypeItem
@@ -159,14 +160,17 @@ func App() *buffalo.App {
 		claimsGroup.GET("/", claimsList)
 		claimsGroup.GET(idRegex, claimsView)
 		claimsGroup.PUT(idRegex, claimsUpdate)
+		claimsGroup.POST(idRegex+filesPath, claimFilesAttach)
 		claimsGroup.POST(idRegex+itemsPath, claimsItemsCreate)
-		claimsGroup.POST(idRegex+filesPath, claimsFilesAttach)
 		claimsGroup.POST(idRegex+"/"+api.ResourceSubmit, claimsSubmit)
 		claimsGroup.POST(idRegex+"/"+api.ResourceRevision, claimsRequestRevision)
 		claimsGroup.POST(idRegex+"/"+api.ResourcePreapprove, claimsPreapprove)
 		claimsGroup.POST(idRegex+"/"+api.ResourceReceipt, claimsRequestReceipt)
 		claimsGroup.POST(idRegex+"/"+api.ResourceApprove, claimsApprove)
 		claimsGroup.POST(idRegex+"/"+api.ResourceDeny, claimsDeny)
+
+		claimFilesGroup := app.Group(claimFilesPath)
+		claimFilesGroup.DELETE(idRegex, claimFilesDelete)
 
 		claimItemsGroup := app.Group(claimItemsPath)
 		claimItemsGroup.PUT(idRegex, claimItemsUpdate)

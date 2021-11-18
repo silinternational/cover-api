@@ -73,6 +73,7 @@ const (
 
 	TypeClaim           = "claims"
 	TypeClaimItem       = "claim-items"
+	TypeClaimFile       = "claim-files"
 	TypeFile            = "files"
 	TypeItem            = "items"
 	TypePolicy          = "policies"
