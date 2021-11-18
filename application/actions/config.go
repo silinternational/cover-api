@@ -23,3 +23,21 @@ import (
 func claimIncidentTypes(c buffalo.Context) error {
 	return renderOk(c, api.AllClaimIncidentTypes)
 }
+
+// swagger:operation GET /config/countries Config Countries
+//
+// Countries
+//
+// list of countries
+//
+// ---
+// responses:
+//   '200':
+//     description: list of countries
+//     schema:
+//       type: array
+//       items:
+//         "$ref": "#/definitions/Country"
+func countries(c buffalo.Context) error {
+	return renderOk(c, api.AllCountries)
+}

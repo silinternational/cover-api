@@ -86,9 +86,9 @@ var now = time.Now().UTC()
 var nPolicyUsersWithStaffID int
 
 var incomeAccounts = map[string]string{
-	"MMB/STM": "40200",
-	"SIL":     "43250",
-	"":        "44250",
+	"HH":  "40200",
+	"SIL": "43250",
+	"":    "44250",
 }
 
 var idpFilenames = map[string]string{
@@ -959,6 +959,9 @@ func importJournalEntries(tx *pop.Connection, entries []JournalEntry) {
 		submitted := emptyTime
 		if e.DateSubm.Valid {
 			submitted = e.DateSubm.Time
+		}
+		if e.Entity == "MMB/STM" {
+			e.Entity = "HH"
 		}
 		l := models.LedgerEntry{
 			PolicyID:         policyUUID,
