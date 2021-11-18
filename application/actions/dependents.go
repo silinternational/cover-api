@@ -163,7 +163,7 @@ func dependentsDelete(c buffalo.Context) error {
 	return c.Render(http.StatusNoContent, nil)
 }
 
-// getReferencedDependentFromCtx pulls the models.Item resource from context that was put there
+// getReferencedDependentFromCtx pulls the models.PolicyDependent resource from context that was put there
 // by the AuthZ middleware
 func getReferencedDependentFromCtx(c buffalo.Context) *models.PolicyDependent {
 	dep, ok := c.Value(domain.TypePolicyDependent).(*models.PolicyDependent)
