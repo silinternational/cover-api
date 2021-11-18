@@ -48,6 +48,7 @@ type Item struct {
 	SerialNumber      string                 `db:"serial_number"`
 	CoverageAmount    int                    `db:"coverage_amount" validate:"min=0"`
 	CoverageStatus    api.ItemCoverageStatus `db:"coverage_status" validate:"itemCoverageStatus"`
+	PaidThroughYear   int                    `db:"paid_through_year"`
 	StatusChange      string                 `db:"status_change"`
 	CoverageStartDate time.Time              `db:"coverage_start_date"`
 	CoverageEndDate   nulls.Time             `db:"coverage_end_date"`
@@ -276,7 +277,13 @@ func (i *Item) SafeDeleteOrInactivate(ctx context.Context) error {
 		if err := i.ScheduleInactivation(ctx, now); err != nil {
 			return err
 		}
-		return i.CreateLedgerEntry(Tx(ctx), LedgerEntryTypeCoverageChange, i.calculateCancellationCredit(now))
+
+		// Don't give a refund if coverage has not been paid through the end of the year
+		if i.PaidThroughYear < time.Now().UTC().Year() {
+			return nil
+		}
+
+		return i.CreateLedgerEntry(Tx(ctx), LedgerEntryTypeCoverageRefund, i.calculateCancellationCredit(now))
 
 	case api.ItemCoverageStatusDraft, api.ItemCoverageStatusRevision, api.ItemCoverageStatusPending:
 		tx := Tx(ctx)
@@ -578,6 +585,7 @@ func (i *Item) Approve(ctx context.Context, doEmitEvent bool) error {
 
 	amount := i.calculateProratedPremium(time.Now().UTC())
 	return i.CreateLedgerEntry(Tx(ctx), LedgerEntryTypeNewCoverage, amount)
+
 }
 
 // Deny takes the item from Pending coverage status to Denied.
@@ -880,7 +888,22 @@ func (i *Item) CreateLedgerEntry(tx *pop.Connection, entryType LedgerEntryType, 
 	le.LastName = name.Last
 	le.DateSubmitted = i.CoverageStartDate
 
-	return le.Create(tx)
+	if err := le.Create(tx); err != nil {
+		return err
+	}
+
+	oldPaidYear := i.PaidThroughYear
+	if le.Type == LedgerEntryTypeNewCoverage {
+		i.PaidThroughYear = time.Now().UTC().Year()
+	} else if le.Type == LedgerEntryTypeCoverageRefund {
+		i.PaidThroughYear = 0
+	}
+
+	if oldPaidYear != i.PaidThroughYear {
+		return update(tx, i)
+	}
+
+	return nil
 }
 
 // GetAccountablePersonName gets the name of the accountable person. In case of error, empty strings

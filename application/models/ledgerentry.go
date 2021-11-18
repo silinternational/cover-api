@@ -26,6 +26,7 @@ func (t LedgerEntryType) IsClaim() bool {
 const (
 	LedgerEntryTypeNewCoverage      = LedgerEntryType("NewCoverage")
 	LedgerEntryTypeCoverageChange   = LedgerEntryType("CoverageChange")
+	LedgerEntryTypeCoverageRefund   = LedgerEntryType("CoverageRefund")
 	LedgerEntryTypePolicyAdjustment = LedgerEntryType("PolicyAdjustment")
 	LedgerEntryTypeClaim            = LedgerEntryType("Claim")
 	LedgerEntryTypeLegacy5          = LedgerEntryType("5")
@@ -36,6 +37,7 @@ const (
 var ValidLedgerEntryTypes = map[LedgerEntryType]struct{}{
 	LedgerEntryTypeNewCoverage:      {},
 	LedgerEntryTypeCoverageChange:   {},
+	LedgerEntryTypeCoverageRefund:   {},
 	LedgerEntryTypePolicyAdjustment: {},
 	LedgerEntryTypeClaim:            {},
 	LedgerEntryTypeLegacy5:          {},
