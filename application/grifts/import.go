@@ -888,7 +888,6 @@ func importItems(tx *pop.Connection, policyUUID uuid.UUID, policyID int, items [
 			City:              trim(item.City),
 			State:             getState(item.Country),
 			Country:           getCountry(item.Country),
-			PaidThroughYear:   item.CoverageEndDate.Time.Year(),
 			CreatedAt:         time.Time(item.CreatedAt),
 		}
 		for id, name := range names {
@@ -898,7 +897,9 @@ func importItems(tx *pop.Connection, policyUUID uuid.UUID, policyID int, items [
 				break
 			}
 		}
-		if !item.CoverageEndDate.Valid {
+		if item.CoverageEndDate.Valid {
+			newItem.PaidThroughYear = item.CoverageEndDate.Time.Year()
+		} else if newItem.CoverageAmount > 0 {
 			newItem.PaidThroughYear = now.Year()
 		}
 
