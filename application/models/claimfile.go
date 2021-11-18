@@ -96,15 +96,7 @@ func (c *ClaimFile) IsActorAllowedTo(tx *pop.Connection, actor User, perm Permis
 
 	claim.LoadPolicy(tx, false)
 	policy := claim.Policy
-	policy.LoadMembers(tx, false)
-
-	for _, m := range policy.Members {
-		if m.ID == actor.ID {
-			return true
-		}
-	}
-
-	return false
+	return policy.isMember(tx, actor.ID)
 }
 
 // ConvertToAPI converts a ClaimFile to api.ClaimFile

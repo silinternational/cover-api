@@ -72,7 +72,7 @@ func claimFilesDelete(c buffalo.Context) error {
 	return c.Render(http.StatusNoContent, nil)
 }
 
-// getReferencedClaimFileFromCtx pulls the models.Item resource from context that was put there
+// getReferencedClaimFileFromCtx pulls the models.ClaimFile resource from context that was put there
 // by the AuthZ middleware
 func getReferencedClaimFileFromCtx(c buffalo.Context) *models.ClaimFile {
 	file, ok := c.Value(domain.TypeClaimFile).(*models.ClaimFile)
