@@ -81,6 +81,8 @@ var policyIDMap = map[int]uuid.UUID{}
 // time used in place of missing time values
 var emptyTime time.Time
 
+var now = time.Now().UTC()
+
 var nPolicyUsersWithStaffID int
 
 var incomeAccounts = map[string]string{
@@ -886,6 +888,7 @@ func importItems(tx *pop.Connection, policyUUID uuid.UUID, policyID int, items [
 			City:              trim(item.City),
 			State:             getState(item.Country),
 			Country:           getCountry(item.Country),
+			PaidThroughYear:   item.CoverageEndDate.Time.Year(),
 			CreatedAt:         time.Time(item.CreatedAt),
 		}
 		for id, name := range names {
@@ -895,6 +898,10 @@ func importItems(tx *pop.Connection, policyUUID uuid.UUID, policyID int, items [
 				break
 			}
 		}
+		if !item.CoverageEndDate.Valid {
+			newItem.PaidThroughYear = now.Year()
+		}
+
 		if err := newItem.Create(tx); err != nil {
 			log.Fatalf("failed to create item, %s\n%+v", err, newItem)
 		}
