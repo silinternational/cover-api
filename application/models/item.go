@@ -120,8 +120,6 @@ func (i *Item) Update(ctx context.Context) error {
 		if err := i.CreateLedgerEntry(Tx(ctx), LedgerEntryTypeCoverageChange, amount); err != nil {
 			return err
 		}
-
-		i.PaidThroughYear = time.Now().UTC().Year()
 	}
 
 	return update(tx, i)
@@ -285,11 +283,7 @@ func (i *Item) SafeDeleteOrInactivate(ctx context.Context) error {
 			return nil
 		}
 
-		if err := i.CreateLedgerEntry(Tx(ctx), LedgerEntryTypeCoverageChange, i.calculateCancellationCredit(now)); err != nil {
-			return err
-		}
-		i.PaidThroughYear = 0
-		return i.Update(ctx)
+		return i.CreateLedgerEntry(Tx(ctx), LedgerEntryTypeCoverageRefund, i.calculateCancellationCredit(now))
 
 	case api.ItemCoverageStatusDraft, api.ItemCoverageStatusRevision, api.ItemCoverageStatusPending:
 		tx := Tx(ctx)
@@ -594,7 +588,6 @@ func (i *Item) Approve(ctx context.Context, doEmitEvent bool) error {
 		return err
 	}
 
-	i.PaidThroughYear = time.Now().UTC().Year()
 	return i.Update(ctx)
 }
 
@@ -898,7 +891,22 @@ func (i *Item) CreateLedgerEntry(tx *pop.Connection, entryType LedgerEntryType, 
 	le.LastName = name.Last
 	le.DateSubmitted = i.CoverageStartDate
 
-	return le.Create(tx)
+	if err := le.Create(tx); err != nil {
+		return err
+	}
+
+	oldPaidYear := i.PaidThroughYear
+	if le.Type == LedgerEntryTypeNewCoverage {
+		i.PaidThroughYear = time.Now().UTC().Year()
+	} else if le.Type == LedgerEntryTypeCoverageRefund {
+		i.PaidThroughYear = 0
+	}
+
+	if oldPaidYear != i.PaidThroughYear {
+		return update(tx, i)
+	}
+
+	return nil
 }
 
 // GetAccountablePersonName gets the name of the accountable person. In case of error, empty strings
