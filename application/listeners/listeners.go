@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/gobuffalo/events"
@@ -46,13 +47,17 @@ func notificationCreated(e events.Event) {
 }
 
 func listener(e events.Event) {
-	if err := recover(); err != nil {
-		domain.Logger.Printf("panic occurred in %s: %s", e.Kind, err)
-	}
+	defer func() {
+		if err := recover(); err != nil {
+			domain.ErrLogger.Printf("panic in event %s: %s", e.Kind, err)
+		}
+	}()
 
 	handler, ok := eventTypes[e.Kind]
 	if !ok {
-		panic("event '" + e.Kind + "' has no handler")
+		if strings.HasPrefix(e.Kind, "app") {
+			panic("event '" + e.Kind + "' has no handler")
+		}
 		return
 	}
 
