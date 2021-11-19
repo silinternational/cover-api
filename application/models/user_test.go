@@ -2,8 +2,11 @@ package models
 
 import (
 	"testing"
+	"time"
 
 	"github.com/gofrs/uuid"
+
+	"github.com/silinternational/cover-api/domain"
 )
 
 func (ms *ModelSuite) TestUser_Validate() {
@@ -264,4 +267,26 @@ func (ms *ModelSuite) TestUser_ConvertToAPI() {
 
 	ms.Greater(len(user.Policies), 0, "test should be revised, fixture has no Policies")
 	ms.Equal(len(got.Policies), len(user.Policies), "Policies is not correct length")
+}
+
+func (ms *ModelSuite) TestConvertToPolicyMember() {
+	user := User{
+		ID:            domain.GetUUID(),
+		Email:         randStr(10),
+		EmailOverride: randStr(10),
+		FirstName:     randStr(10),
+		LastName:      randStr(10),
+		Country:       randStr(10),
+		LastLoginUTC:  time.Now(),
+	}
+
+	got := user.ConvertToPolicyMember()
+
+	ms.Equal(user.ID, got.ID, "ID is not correct")
+	ms.Equal(user.FirstName, got.FirstName, "FirstName is not correct")
+	ms.Equal(user.LastName, got.LastName, "LastName is not correct")
+	ms.Equal(user.Email, got.Email, "Email is not correct")
+	ms.Equal(user.EmailOverride, got.EmailOverride, "EmailOverride is not correct")
+	ms.Equal(user.LastLoginUTC, got.LastLoginUTC, "LastLoginUTC is not correct")
+	ms.Equal(user.Country, got.Country, "Country is not correct")
 }

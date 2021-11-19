@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/silinternational/cover-api/api"
+	"github.com/silinternational/cover-api/domain"
 )
 
 func (ms *ModelSuite) TestPolicyDependent_Validate() {
@@ -85,4 +86,22 @@ func (ms *ModelSuite) TestPolicyDependent_Validate() {
 			}
 		})
 	}
+}
+
+func (ms *ModelSuite) TestPolicyDependent_ConvertToAPI() {
+	dependent := PolicyDependent{
+		ID:             domain.GetUUID(),
+		Name:           randStr(10),
+		Relationship:   api.PolicyDependentRelationshipChild,
+		Country:        randStr(10),
+		ChildBirthYear: domain.RandomInsecureIntInRange(2000, 2020),
+	}
+
+	got := dependent.ConvertToAPI()
+
+	ms.Equal(dependent.ID, got.ID, "ID is not correct")
+	ms.Equal(dependent.Name, got.Name, "Name is not correct")
+	ms.Equal(dependent.Relationship, got.Relationship, "Relationship is not correct")
+	ms.Equal(dependent.Country, got.Country, "Country is not correct")
+	ms.Equal(dependent.ChildBirthYear, got.ChildBirthYear, "ChildBirthYear is not correct")
 }
