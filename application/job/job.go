@@ -5,6 +5,7 @@ import (
 
 	"github.com/gobuffalo/buffalo"
 	"github.com/gobuffalo/buffalo/worker"
+	"github.com/rollbar/rollbar-go"
 
 	"github.com/silinternational/cover-api/domain"
 	"github.com/silinternational/cover-api/models"
@@ -37,6 +38,20 @@ func createJobContext() buffalo.Context {
 	ctx := &jobBuffaloContext{
 		params: map[interface{}]interface{}{},
 	}
+
+	if domain.Env.RollbarToken == "" || domain.Env.GoEnv == "test" {
+		return ctx
+	}
+
+	client := rollbar.New(
+		domain.Env.RollbarToken,
+		domain.Env.GoEnv,
+		"",
+		"",
+		domain.Env.RollbarServerRoot)
+	defer client.Close()
+
+	ctx.Set(domain.ContextKeyRollbar, client)
 	return ctx
 }
 
