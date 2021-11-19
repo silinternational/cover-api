@@ -1,26 +1,30 @@
 
 <div>
 	<%= partial("body_header", {
-		title: "Invoice",
-		subTitle: "Coverage Added for " + item.Name,
-		alert: "Billing pending",
-		alert_description: "The premium is prorated for the remainder of the year.",
-		alert_icon: "clock"}
+			title: "Cover",
+			subTitle: "",
+			alert: "Congratulations! Your item coverage has been approved!",
+			alert_description: "",
+			alert_icon: "volunteer_activism",
+		}
 	) %>
 
-	<%= partial("item_card", {
-		item: item,
-		coverageAmount: coverageAmount,
-		premium: annualPremium,
-		coverageStartDate: coverageStartDate,
-		coverageEndDate: coverageEndDate,
-		accountablePerson: accountablePerson,
-		householdID: policy.HouseholdID}
-	) %>
+	<p>
+		Dear <%= personFirstName %>,
+	</p>
+
+	<p>
+		Your <%= item.Name %> has been approved for coverage and added to your <%= policyType %> policy.
+	</p>
+
+	<p>
+		Your annual premium for this item is <%= annualPremium %> and you will be charged a pro-rated amount
+		of <%= proratedPremium %> on <%= coverageStartDate %>.
+	</p>
 
 	<%= partial("button", {
 		url: itemURL,
-		label: "Open in Cover"}
+		label: "View in Cover"}
 	) %>
 
 	<%= partial("customer_footer", {

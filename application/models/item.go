@@ -583,7 +583,7 @@ func (i *Item) Approve(ctx context.Context, doEmitEvent bool) error {
 		emitEvent(e)
 	}
 
-	amount := i.calculateProratedPremium(time.Now().UTC())
+	amount := i.CalculateProratedPremium(time.Now().UTC())
 	return i.CreateLedgerEntry(Tx(ctx), LedgerEntryTypeNewCoverage, amount)
 }
 
@@ -673,7 +673,7 @@ func (i *Item) ConvertToAPI(tx *pop.Connection) api.Item {
 		CoverageStartDate:     i.CoverageStartDate.Format(domain.DateFormat),
 		CoverageEndDate:       coverageEndDate,
 		AnnualPremium:         i.CalculateAnnualPremium(),
-		ProratedAnnualPremium: i.calculateProratedPremium(time.Now().UTC()),
+		ProratedAnnualPremium: i.CalculateProratedPremium(time.Now().UTC()),
 		CreatedAt:             i.CreatedAt,
 		UpdatedAt:             i.UpdatedAt,
 	}
@@ -732,7 +732,7 @@ func (i *Item) CalculateAnnualPremium() api.Currency {
 	return api.Currency(p)
 }
 
-func (i *Item) calculateProratedPremium(t time.Time) api.Currency {
+func (i *Item) CalculateProratedPremium(t time.Time) api.Currency {
 	p := domain.CalculatePartialYearValue(int(i.CalculateAnnualPremium()), t)
 	return api.Currency(p)
 }
@@ -767,7 +767,7 @@ func (i *Item) calculateCancellationCredit(t time.Time) api.Currency {
 
 		// Coverage started this year, so a partial year's premium would have been charged.
 	} else {
-		premium = int(i.calculateProratedPremium(i.CoverageStartDate))
+		premium = int(i.CalculateProratedPremium(i.CoverageStartDate))
 	}
 
 	credit := domain.CalculateMonthlyRefundValue(premium, t)

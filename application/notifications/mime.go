@@ -14,11 +14,12 @@ import (
 )
 
 var images = map[string]string{
-	"logo":           "logo-wide.png",
-	"clipboard":      "clipboard.png",
-	"clock":          "clock.png",
-	"new":            "new.png",
-	"signature-logo": "SIL_Glyph_Logo_Andika_RGB.png",
+	"logo":               "logo-wide.png",
+	"clipboard":          "clipboard.png",
+	"clock":              "clock.png",
+	"new":                "new.png",
+	"signature-logo":     "SIL_Glyph_Logo_Andika_RGB.png",
+	"volunteer_activism": "volunteer_activism.png",
 }
 
 // rawEmail generates a multi-part MIME email message with a plain text, html text, and inline logo attachment as
