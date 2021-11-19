@@ -60,8 +60,13 @@ func inactivateItemsHandler(args worker.Args) error {
 
 	ctx := createJobContext()
 
+	domain.Warn(ctx, "starting inactivateItems job")
 	var items models.Items
-	return items.InactivateApprovedButEnded(ctx)
+	if err := items.InactivateApprovedButEnded(ctx); err != nil {
+		return err
+	}
+	domain.Warn(ctx, "completed inactivateItems job")
+	return nil
 }
 
 func resubmitInactivateJob() error {
