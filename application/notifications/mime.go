@@ -18,6 +18,7 @@ var images = map[string]string{
 	"clipboard":          "clipboard.png",
 	"clock":              "clock.png",
 	"new":                "new.png",
+	"new_releases":       "new_releases.png",
 	"signature-logo":     "SIL_Glyph_Logo_Andika_RGB.png",
 	"volunteer_activism": "volunteer_activism.png",
 }

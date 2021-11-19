@@ -85,6 +85,7 @@ func (m MessageData) addItemData(tx *pop.Connection, item models.Item) {
 	steward := models.GetDefaultSteward(tx)
 	m["supportEmail"] = steward.Email
 	m["supportName"] = steward.Name()
+	m["supportFirstName"] = steward.FirstName
 
 	m["itemURL"] = fmt.Sprintf("%s/policies/%s/items/%s", domain.Env.UIURL, item.PolicyID, item.ID)
 

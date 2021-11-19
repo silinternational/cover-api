@@ -97,9 +97,9 @@ func ItemRevisionQueueMessage(tx *pop.Connection, item models.Item) {
 	notn := models.Notification{
 		ItemID:  nulls.NewUUID(item.ID),
 		Body:    data.renderHTML(MessageTemplateItemRevisionMember),
-		Subject: "changes have been requested on your new policy item",
+		Subject: "Coverage needs attention",
 		// TODO make this more helpful
-		InappText: "changes have been requested on your new policy item",
+		InappText: "Coverage needs attention",
 
 		// TODO make these constants somewhere
 		Event:         "Item Revision Required Notification",
