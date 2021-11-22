@@ -817,7 +817,7 @@ func (ms *ModelSuite) TestItem_calculateProratedPremium() {
 	for _, tt := range tests {
 		ms.T().Run(tt.name, func(t *testing.T) {
 			item := Item{CoverageAmount: tt.coverage}
-			got := item.calculateProratedPremium(now)
+			got := item.CalculateProratedPremium(now)
 			ms.Equal(api.Currency(tt.want), got)
 		})
 	}
@@ -941,7 +941,7 @@ func (ms *ModelSuite) TestItem_CreateLedgerEntry() {
 	ms.NoError(item.setAccountablePerson(ms.DB, f.Users[0].ID))
 	ms.NoError(item.Update(ctx))
 
-	amount := item.calculateProratedPremium(time.Now().UTC())
+	amount := item.CalculateProratedPremium(time.Now().UTC())
 
 	ms.NoError(item.CreateLedgerEntry(ms.DB, LedgerEntryTypeNewCoverage, amount))
 
@@ -1185,7 +1185,7 @@ func (ms *ModelSuite) TestItem_ConvertToAPI() {
 	ms.Equal(item.Category.ConvertToAPI(ms.DB), got.Category, "Category is not correct")
 	ms.Equal(item.RiskCategory.ConvertToAPI(), got.RiskCategory, "RiskCategory is not correct")
 	ms.Equal(item.CalculateAnnualPremium(), got.AnnualPremium, "AnnualPremium is not correct")
-	ms.Equal(item.calculateProratedPremium(time.Now().UTC()), got.ProratedAnnualPremium,
+	ms.Equal(item.CalculateProratedPremium(time.Now().UTC()), got.ProratedAnnualPremium,
 		"ProratedAnnualPremium is not correct")
 	ms.Equal(item.PolicyDependentID.UUID, got.AccountablePerson.ID, "AccountablePerson ID is not correct")
 	ms.Equal(fixtures.PolicyDependents[0].GetName().String(), got.AccountablePerson.Name,

@@ -14,9 +14,9 @@ func itemApprovedQueueMsg(tx *pop.Connection, item models.Item) {
 	notn := models.Notification{
 		ItemID:  nulls.NewUUID(item.ID),
 		Body:    data.renderHTML(MessageTemplateItemApprovedMember),
-		Subject: "your new policy item has been approved",
+		Subject: "Item Coverage Approved",
 		// TODO make this more helpful
-		InappText: "your new policy item has been approved",
+		InappText: "Item Coverage Approved",
 
 		// TODO fix these and make them constants somewhere
 		Event:         "Item Approved Notification",

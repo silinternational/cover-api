@@ -91,8 +91,12 @@ func (m MessageData) addItemData(tx *pop.Connection, item models.Item) {
 	item.Load(tx)
 	m["item"] = item
 
-	m["accountablePerson"] = item.GetAccountablePersonName(tx).String()
+	person := item.GetAccountablePersonName(tx)
+	m["accountablePerson"] = person.String()
+	m["personFirstName"] = person.First
+
 	m["policy"] = item.Policy
+	m["policyType"] = string(item.Policy.Type)
 
 	m["coverageAmount"] = "$" + api.Currency(item.CoverageAmount).String()
 	m["coverageStartDate"] = item.CoverageStartDate.Format(domain.LocalizedDate)
@@ -102,6 +106,7 @@ func (m MessageData) addItemData(tx *pop.Connection, item models.Item) {
 		m["coverageEndDate"] = ""
 	}
 	m["annualPremium"] = "$" + item.CalculateAnnualPremium().String()
+	m["proratedPremium"] = "$" + item.CalculateProratedPremium(item.CoverageStartDate).String()
 }
 
 func (m MessageData) renderHTML(template string) string {
