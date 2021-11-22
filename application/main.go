@@ -32,19 +32,14 @@ func main() {
 
 	// Kick off first run of inactivating items between 1h11 and 3h27 from now
 	if domain.Env.GoEnv != "development" {
-		// TODO. Once this is working properly, revert to commented out code
-		//randMins := time.Duration(domain.RandomInsecureIntInRange(71, 387))
-		randMins := time.Duration(domain.RandomInsecureIntInRange(11, 14))
+		randMins := time.Duration(domain.RandomInsecureIntInRange(71, 387))
 		delay = time.Duration(randMins * time.Minute)
 	}
 
-	domain.ErrLogger.Printf("About to schedule job")
 	if err := job.SubmitDelayed(job.InactivateItems, delay, map[string]interface{}{}); err != nil {
 		domain.ErrLogger.Printf("error initializing InactivateItems job: " + err.Error())
 		os.Exit(1)
 	}
-
-	domain.ErrLogger.Printf("Finished scheduling job")
 
 	// init rollbar
 	rollbar.SetToken(domain.Env.RollbarToken)
