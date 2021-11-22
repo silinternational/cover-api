@@ -75,12 +75,18 @@ func inactivateItemsHandler(args worker.Args) error {
 
 	ctx := createJobContext()
 
-	domain.Warn(ctx, "starting inactivateItems job")
+	// Since domain.Warn logs are not appearing anywhere, I'm trying domain.Error
+	extras := map[string]interface{}{}
+	domain.Error(ctx, "starting inactivateItems job", extras)
+	nw := time.Now().UTC()
+
 	var items models.Items
 	if err := items.InactivateApprovedButEnded(ctx); err != nil {
 		return err
 	}
-	domain.Warn(ctx, "completed inactivateItems job")
+
+	extras["elapsed_time_seconds"] = time.Since(nw).Seconds()
+	domain.Error(ctx, "completed inactivateItems job", extras)
 	return nil
 }
 
