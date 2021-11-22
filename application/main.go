@@ -38,10 +38,13 @@ func main() {
 		delay = time.Duration(randMins * time.Minute)
 	}
 
+	domain.ErrLogger.Printf("About to schedule job")
 	if err := job.SubmitDelayed(job.InactivateItems, delay, map[string]interface{}{}); err != nil {
 		domain.ErrLogger.Printf("error initializing InactivateItems job: " + err.Error())
 		os.Exit(1)
 	}
+
+	domain.ErrLogger.Printf("Finished scheduling job")
 
 	// init rollbar
 	rollbar.SetToken(domain.Env.RollbarToken)

@@ -75,9 +75,7 @@ func inactivateItemsHandler(args worker.Args) error {
 
 	ctx := createJobContext()
 
-	// Since domain.Warn logs are not appearing anywhere, I'm trying domain.Error
-	extras := map[string]interface{}{}
-	domain.Error(ctx, "starting inactivateItems job", extras)
+	domain.ErrLogger.Printf("starting inactivateItems job")
 	nw := time.Now().UTC()
 
 	var items models.Items
@@ -85,8 +83,7 @@ func inactivateItemsHandler(args worker.Args) error {
 		return err
 	}
 
-	extras["elapsed_time_seconds"] = time.Since(nw).Seconds()
-	domain.Error(ctx, "completed inactivateItems job", extras)
+	domain.ErrLogger.Printf("completed inactivateItems job in %v seconds", time.Since(nw).Seconds())
 	return nil
 }
 
