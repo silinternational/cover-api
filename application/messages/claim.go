@@ -115,17 +115,17 @@ func ClaimReceiptQueueMessage(tx *pop.Connection, claim models.Claim) {
 
 	switch clItem.PayoutOption {
 	case api.PayoutOptionRepair:
-		data["receiptMessage"] = "Please provide a receipt for repair costs."
+		data["receiptMessage"] = "repair"
 	case api.PayoutOptionReplacement:
-		data["receiptMessage"] = "Please provide a receipt for replacement costs."
+		data["receiptMessage"] = "receipt"
 	}
 
 	notn := models.Notification{
 		ClaimID: nulls.NewUUID(claim.ID),
 		Body:    data.renderHTML(MessageTemplateClaimReceiptMember),
-		Subject: "new receipt(s) needed on your claim",
+		Subject: "Please provide a receipt",
 
-		InappText: "new/different receipts are needed on your claim",
+		InappText: "Please provide a receipt",
 
 		// TODO make these constants somewhere
 		Event:         "Claim Receipt Notification",
