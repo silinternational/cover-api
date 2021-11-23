@@ -62,6 +62,11 @@ func (m MessageData) addClaimData(tx *pop.Connection, claim models.Claim) {
 		m = map[string]interface{}{}
 	}
 
+	steward := models.GetDefaultSteward(tx)
+	m["supportEmail"] = steward.Email
+	m["supportName"] = steward.Name()
+	m["supportFirstName"] = steward.FirstName
+
 	m["claimURL"] = fmt.Sprintf("%s/policies/%s/claims/%s", domain.Env.UIURL, claim.PolicyID, claim.ID)
 	m["claim"] = claim
 
@@ -70,7 +75,12 @@ func (m MessageData) addClaimData(tx *pop.Connection, claim models.Claim) {
 	m["incidentTypeDescription"] = claim.IncidentType.Description()
 
 	claim.LoadClaimItems(tx, false)
-	m["item"] = claim.ClaimItems[0].Item
+	item := claim.ClaimItems[0].Item
+	m["item"] = item
+
+	person := item.GetAccountablePersonName(tx)
+	m["accountablePerson"] = person.String()
+	m["personFirstName"] = person.First
 
 	m["payoutOption"] = string(claim.ClaimItems[0].PayoutOption)
 	m["payoutOptionDescription"] = api.PayoutOptionDescriptions[claim.ClaimItems[0].PayoutOption]
