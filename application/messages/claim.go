@@ -236,7 +236,7 @@ func ClaimDeniedQueueMessage(tx *pop.Connection, claim models.Claim) {
 	notn := models.Notification{
 		ClaimID:   nulls.NewUUID(claim.ID),
 		Body:      data.renderHTML(MessageTemplateClaimDeniedMember),
-		Subject:   "your claim has been denied",
+		Subject:   "Important Notice",
 		InappText: "your claim has been denied",
 
 		// TODO make these constants somewhere
