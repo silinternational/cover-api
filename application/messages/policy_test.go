@@ -25,7 +25,7 @@ func (ts *TestSuite) Test_PolicyUserInviteQueueMessage() {
 			wantBodyContains: []string{
 				domain.Env.UIURL,
 				"Accept Invite",
-				"You’ve been invited to join",
+				"You've been invited to join",
 				member.Name(),
 				invite0.GetAcceptURL(),
 			},
