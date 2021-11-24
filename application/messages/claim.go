@@ -47,11 +47,10 @@ func ClaimRevisionQueueMessage(tx *pop.Connection, claim models.Claim) {
 	data.addClaimData(tx, claim)
 
 	notn := models.Notification{
-		ClaimID: nulls.NewUUID(claim.ID),
-		Body:    data.renderHTML(MessageTemplateClaimRevisionMember),
-		Subject: "changes have been requested on your claim",
-		// TODO make this more helpful
-		InappText: "changes have been requested on your new claim",
+		ClaimID:   nulls.NewUUID(claim.ID),
+		Body:      data.renderHTML(MessageTemplateClaimRevisionMember),
+		Subject:   "Please provide more information",
+		InappText: "Please provide more information on your new claim",
 
 		// TODO make these constants somewhere
 		Event:         "Claim Revision Required Notification",

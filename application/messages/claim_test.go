@@ -62,18 +62,21 @@ func (ts *TestSuite) Test_ClaimRevisionQueueMessage() {
 
 	member0 := f.Policies[0].Members[0]
 	member1 := f.Policies[0].Members[1]
+	item := f.Policies[0].Items[0]
+
+	models.CreateAdminUsers(db)
 
 	revisionClaim := models.UpdateClaimStatus(db, f.Claims[0], api.ClaimStatusRevision, "too many typos")
 
 	tests := []testData{
 		{
-			name:                  "revisions requiredd",
+			name:                  "revisions required",
 			wantToEmails:          []interface{}{member0.EmailOfChoice(), member1.EmailOfChoice()},
-			wantSubjectContains:   "changes have been requested on your claim",
-			wantInappTextContains: "changes have been requested on your new claim",
+			wantSubjectContains:   "Please provide more information",
+			wantInappTextContains: "Please provide more information on your new claim",
 			wantBodyContains: []string{
 				domain.Env.UIURL,
-				revisionClaim.ReferenceNumber,
+				item.Name,
 				revisionClaim.StatusReason,
 			},
 		},
@@ -95,6 +98,8 @@ func (ts *TestSuite) Test_ClaimPreapprovedQueueMessage() {
 
 	member0 := f.Policies[0].Members[0]
 	member1 := f.Policies[0].Members[1]
+
+	models.CreateAdminUsers(db)
 
 	receiptClaim := models.UpdateClaimStatus(db, f.Claims[0], api.ClaimStatusReceipt, "")
 
@@ -127,6 +132,8 @@ func (ts *TestSuite) Test_ClaimReceiptQueueMessage() {
 
 	member0 := f.Policies[0].Members[0]
 	member1 := f.Policies[0].Members[1]
+
+	models.CreateAdminUsers(db)
 
 	receiptClaim := models.UpdateClaimStatus(db, f.Claims[0], api.ClaimStatusReceipt, "")
 
@@ -222,6 +229,8 @@ func (ts *TestSuite) Test_ClaimApprovedQueueMessage() {
 	member0 := f.Policies[0].Members[0]
 	member1 := f.Policies[0].Members[1]
 
+	models.CreateAdminUsers(db)
+
 	approvedClaim := models.UpdateClaimStatus(db, f.Claims[0], api.ClaimStatusApproved, "")
 
 	tests := []testData{
@@ -253,6 +262,8 @@ func (ts *TestSuite) Test_ClaimDeniedQueueMessage() {
 
 	member0 := f.Policies[0].Members[0]
 	member1 := f.Policies[0].Members[1]
+
+	models.CreateAdminUsers(db)
 
 	deniedClaim := models.UpdateClaimStatus(db, f.Claims[0], api.ClaimStatusDenied, "Try again next year")
 
