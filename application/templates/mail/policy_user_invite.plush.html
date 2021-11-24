@@ -1,16 +1,28 @@
-<h4></h4>
-<p>
-	This is an unofficial draft email.
-</p>
-<p>
-	<%= inviterName %> has invited you to help manage a policy in Cover.
-</p>
-<p>
-	Policy: <%= policyName %>
-	<br />
-	Accept invite: <a href="<%= acceptURL %>">Accept Invite</a>
-</p>
-<p>
-	If you believe this to be an error, you can contact <%= inviterName %> at
-	<%= inviterEmail %>
-</p>
+<div>
+	<%= partial("body_header", {
+		title: "",
+		subTitle: "",
+		alert: "",
+		alert_description: "",
+		alert_icon: ""}
+	) %>
+
+	<p>
+		Dear <%= inviteeName %>,
+	</p>
+	<p>
+		You've been invited to join <%= inviterName %>'s <%= policyType %> policy with Cover,
+the personal property protection community of SIL International. As a policy member
+you'll be able to add items for coverage, manage existing items, and file claims.
+To accept their invite, click the link below and sign in with your corporate identity account.
+
+	</p>
+	<%= partial("button", {
+		url: acceptURL,
+		label: "Accept Invite"}
+	) %>
+	<p>
+		If you believe this to be an error, you can contact <%= inviterName %> at <%= inviterEmail %>
+	</p>
+
+</div>

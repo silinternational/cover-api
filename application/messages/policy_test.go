@@ -21,11 +21,11 @@ func (ts *TestSuite) Test_PolicyUserInviteQueueMessage() {
 		{
 			name:                "ok",
 			wantToEmails:        []interface{}{invite0.Email},
-			wantSubjectContains: "invited you to manage a policy",
+			wantSubjectContains: "Invitation to Cover",
 			wantBodyContains: []string{
 				domain.Env.UIURL,
 				"Accept Invite",
-				"has invited you to help manage a policy",
+				"You've been invited to join",
 				member.Name(),
 				invite0.GetAcceptURL(),
 			},
