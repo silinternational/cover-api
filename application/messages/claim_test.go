@@ -262,6 +262,7 @@ func (ts *TestSuite) Test_ClaimDeniedQueueMessage() {
 
 	member0 := f.Policies[0].Members[0]
 	member1 := f.Policies[0].Members[1]
+	item := f.Policies[0].Items[0]
 
 	models.CreateAdminUsers(db)
 
@@ -271,12 +272,12 @@ func (ts *TestSuite) Test_ClaimDeniedQueueMessage() {
 		{
 			name:                  "coverage denied",
 			wantToEmails:          []interface{}{member0.EmailOfChoice(), member1.EmailOfChoice()},
-			wantSubjectContains:   "your claim has been denied",
+			wantSubjectContains:   "Important Notice",
 			wantInappTextContains: "your claim has been denied",
 			wantBodyContains: []string{
 				domain.Env.UIURL,
-				deniedClaim.ReferenceNumber,
-				deniedClaim.StatusReason,
+				item.Name,
+				"has been denied.",
 			},
 		},
 	}
