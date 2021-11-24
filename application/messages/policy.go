@@ -16,6 +16,7 @@ func PolicyUserInviteQueueMessage(tx *pop.Connection, invite models.PolicyUserIn
 	data["acceptURL"] = invite.GetAcceptURL()
 	data["inviterEmail"] = invite.InviterEmail
 	data["inviterName"] = invite.InviterName
+	data["inviteeName"] = invite.InviteeName
 
 	invite.LoadPolicy(tx, false)
 	data["policyType"] = strings.ToLower(string(invite.Policy.Type))

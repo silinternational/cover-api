@@ -1,25 +1,28 @@
 <div>
 	<%= partial("body_header", {
-		title: "Receipt needed",
+		title: "",
 		subTitle: "",
-		alert: "Claim Needs Attention",
+		alert: "",
 		alert_description: "",
-		alert_icon: "new_releases"}
+		alert_icon: ""}
 	) %>
 
 	<p>
-		You’ve been invited to join <%= inviterName %>'s <%= policyType %> policy with Cover,
+		Dear <%= inviteeName %>,
+	</p>
+	<p>
+		You've been invited to join <%= inviterName %>'s <%= policyType %> policy with Cover,
 the personal property protection community of SIL International. As a policy member
 you'll be able to add items for coverage, manage existing items, and file claims.
 To accept their invite, click the link below and sign in with your corporate identity account.
 
 	</p>
+	<%= partial("button", {
+		url: acceptURL,
+		label: "Accept Invite"}
+	) %>
 	<p>
-		Accept invite: <a href="<%= acceptURL %>">Accept Invite</a>
-	</p>
-	<p>
-		If you believe this to be an error, you can contact <%= inviterName %> at
-		<%= inviterEmail %>
+		If you believe this to be an error, you can contact <%= inviterName %> at <%= inviterEmail %>
 	</p>
 
 </div>
