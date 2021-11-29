@@ -2,6 +2,9 @@
 	<%= partial("body_header", {
 		title: "Claim Resubmitted",
 		subTitle: "Claim from " + memberName + ": " + item.Name,
+	}) %>
+
+	<%= partial("alert", {
 		alert: "Needs the next claim review",
 		alert_description: "This is still just a draft email.  Submitted " + submitted,
 		alert_icon: "clipboard"}
