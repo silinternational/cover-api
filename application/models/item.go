@@ -819,7 +819,7 @@ func NewItemFromApiInput(c buffalo.Context, input api.ItemCreate, policyID uuid.
 	item.CoverageAmount = input.CoverageAmount
 	item.CoverageStatus = input.CoverageStatus
 
-	if err := item.setAccountablePerson(tx, input.AccountablePersonID); err != nil {
+	if err := item.SetAccountablePerson(tx, input.AccountablePersonID); err != nil {
 		return item, err
 	}
 
@@ -850,8 +850,8 @@ func parseItemDates(input api.ItemCreate, modelItem *Item) error {
 	return nil
 }
 
-// setAccountablePerson sets the appropriate field to the given ID, but does not update the database
-func (i *Item) setAccountablePerson(tx *pop.Connection, id uuid.UUID) error {
+// SetAccountablePerson sets the appropriate field to the given ID, but does not update the database
+func (i *Item) SetAccountablePerson(tx *pop.Connection, id uuid.UUID) error {
 	if id == uuid.Nil {
 		return api.NewAppError(errors.New("accountable person ID must not be nil"), api.ErrorItemNullAccountablePerson, api.CategoryUser)
 	}
