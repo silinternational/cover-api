@@ -176,3 +176,47 @@ type ItemStatusInput struct {
 	// message from a reviewer detailing the revisions needed or the reason for denial
 	StatusReason string `json:"status_reason"`
 }
+
+// ItemUpdate represents payload for updating an item
+// swagger:model
+type ItemUpdate struct {
+	// name
+	Name string `json:"name"`
+
+	// category ID
+	//
+	// swagger:strfmt uuid4
+	CategoryID uuid.UUID `json:"category_id"`
+
+	// risk category ID, should only be set if the user has adequate permissions to override the risk category
+	// assigned to the item's category
+	//
+	// swagger:strfmt uuid4
+	RiskCategoryID *uuid.UUID `json:"risk_category_id"`
+
+	// is item in storage?
+	InStorage bool `json:"in_storage"`
+
+	// country where item is located
+	Country string `json:"country"`
+
+	// item description
+	Description string `json:"description"`
+
+	// make (manufacturer)
+	Make string `json:"make"`
+
+	// model
+	Model string `json:"model"`
+
+	// serial number
+	SerialNumber string `json:"serial_number"`
+
+	// coverage status
+	CoverageStatus ItemCoverageStatus `json:"coverage_status"`
+
+	// Accountable person ID. Can be either a policy dependent ID or a user ID
+	//
+	// swagger:strfmt uuid4
+	AccountablePersonID uuid.UUID `json:"accountable_person_id"`
+}

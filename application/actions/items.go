@@ -102,7 +102,7 @@ func itemsCreate(c buffalo.Context) error {
 //     description: policy item create update object
 //     required: true
 //     schema:
-//       "$ref": "#/definitions/ItemInput"
+//       "$ref": "#/definitions/ItemUpdate"
 // responses:
 //   '200':
 //     description: updated Item
@@ -112,30 +112,34 @@ func itemsUpdate(c buffalo.Context) error {
 	tx := models.Tx(c)
 	item := getReferencedItemFromCtx(c)
 
-	var itemPut api.ItemInput
+	var itemPut api.ItemUpdate
 	if err := StrictBind(c, &itemPut); err != nil {
 		return reportError(c, err)
 	}
 
-	if item.CategoryID != itemPut.CategoryID {
-		var iCat models.ItemCategory
-		if err := iCat.FindByID(tx, itemPut.CategoryID); err != nil {
-			return reportError(c, err)
-		}
+	item.Name = itemPut.Name
+	item.CategoryID = itemPut.CategoryID
+	item.InStorage = itemPut.InStorage
+	item.Country = itemPut.Country
+	item.Description = itemPut.Description
+	item.Make = itemPut.Make
+	item.Model = itemPut.Model
+	item.SerialNumber = itemPut.SerialNumber
+	item.CoverageStatus = itemPut.CoverageStatus
+
+	if itemPut.RiskCategoryID != nil {
+		item.RiskCategoryID = *itemPut.RiskCategoryID
 	}
 
-	newItem, err := models.NewItemFromApiInput(c, itemPut, item.PolicyID)
-	if err != nil {
+	if err := item.SetAccountablePerson(tx, itemPut.AccountablePersonID); err != nil {
 		return reportError(c, err)
 	}
-	newItem.ID = item.ID
-	newItem.StatusReason = item.StatusReason // don't let this change through an update
 
-	if err := newItem.Update(c); err != nil {
+	if err := item.Update(c); err != nil {
 		return reportError(c, err)
 	}
 
-	output := newItem.ConvertToAPI(tx)
+	output := item.ConvertToAPI(tx)
 	return c.Render(http.StatusOK, r.JSON(output))
 }
 
