@@ -116,9 +116,9 @@ type RecentItem struct {
 	Item Item
 }
 
-// ItemInput represents payload for adding an item
+// ItemCreate represents payload for adding an item
 // swagger:model
-type ItemInput struct {
+type ItemCreate struct {
 	// name
 	Name string `json:"name"`
 

@@ -134,7 +134,7 @@ func (as *ActionSuite) Test_ItemsCreate() {
 
 	riskCategoryMobileID := models.RiskCategoryMobileID()
 
-	goodItem := api.ItemInput{
+	goodItem := api.ItemCreate{
 		Name:                "Good Item",
 		CategoryID:          iCat.ID,
 		RiskCategoryID:      &riskCategoryMobileID,
@@ -157,7 +157,7 @@ func (as *ActionSuite) Test_ItemsCreate() {
 		name       string
 		actor      models.User
 		policy     models.Policy
-		newItem    api.ItemInput
+		newItem    api.ItemCreate
 		wantStatus int
 		wantInBody []string
 	}{
@@ -649,12 +649,12 @@ func (as *ActionSuite) Test_ItemsUpdate() {
 
 	iCat := fixtures.ItemCategories[1] // different one
 
-	badItemDate := api.ItemInput{
+	badItemDate := api.ItemCreate{
 		Name:       "Item with bad coverage start date",
 		CategoryID: revisionItem.CategoryID,
 	}
 
-	badCatID := api.ItemInput{
+	badCatID := api.ItemCreate{
 		Name:              "Item with missing category",
 		CategoryID:        domain.GetUUID(),
 		CoverageStartDate: "2006-01-03",
@@ -663,7 +663,7 @@ func (as *ActionSuite) Test_ItemsUpdate() {
 
 	riskCategoryMobileID := models.RiskCategoryMobileID()
 
-	goodItem := api.ItemInput{
+	goodItem := api.ItemCreate{
 		Name:                "Good Item",
 		CategoryID:          iCat.ID,
 		RiskCategoryID:      &riskCategoryMobileID,
@@ -683,7 +683,7 @@ func (as *ActionSuite) Test_ItemsUpdate() {
 		name       string
 		actor      models.User
 		oldItem    models.Item
-		newItem    api.ItemInput
+		newItem    api.ItemCreate
 		wantStatus int
 		wantInBody []string
 	}{
@@ -924,7 +924,7 @@ func (as *ActionSuite) Test_NewItemFromApiInput() {
 
 	itemCategory := fixtures.ItemCategories[0]
 
-	item := api.ItemInput{
+	item := api.ItemCreate{
 		Name:                "Good Item",
 		CategoryID:          itemCategory.ID,
 		InStorage:           true,
@@ -958,7 +958,7 @@ func (as *ActionSuite) Test_NewItemFromApiInput() {
 	tests := []struct {
 		name        string
 		policy      models.Policy
-		input       api.ItemInput
+		input       api.ItemCreate
 		user        models.User
 		wantErr     string
 		wantErrKey  api.ErrorKey

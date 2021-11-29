@@ -56,7 +56,7 @@ func itemsList(c buffalo.Context) error {
 //     description: policy item create input object
 //     required: true
 //     schema:
-//       "$ref": "#/definitions/ItemInput"
+//       "$ref": "#/definitions/ItemCreate"
 // responses:
 //   '200':
 //     description: new Item
@@ -66,7 +66,7 @@ func itemsCreate(c buffalo.Context) error {
 	tx := models.Tx(c)
 	policy := getReferencedPolicyFromCtx(c)
 
-	var itemPost api.ItemInput
+	var itemPost api.ItemCreate
 	if err := StrictBind(c, &itemPost); err != nil {
 		return reportError(c, err)
 	}
