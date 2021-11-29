@@ -24,6 +24,8 @@ func userCreated(e events.Event) {
 		domain.ErrLogger.Printf("Failed to create initial policy in %s, %s", e.Kind, err)
 		return
 	}
+
+	// TODO: send welcome email
 }
 
 func policyUserInviteCreated(e events.Event) {

@@ -139,7 +139,7 @@ func ItemDeniedQueueMessage(tx *pop.Connection, item models.Item) {
 	notn := models.Notification{
 		ItemID:    nulls.NewUUID(item.ID),
 		Body:      data.renderHTML(MessageTemplateItemDeniedMember),
-		Subject:   "coverage on your new policy item has been denied",
+		Subject:   "An update on your coverage request",
 		InappText: "coverage on your new policy item has been denied",
 
 		// TODO make these constants somewhere

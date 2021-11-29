@@ -1,26 +1,29 @@
 
 <div>
 	<%= partial("body_header", {
-		title: "We're sorry",
-		subTitle: "Coverage was not approved for " + item.Name,
-		alert: "Denial reason",
-		alert_description: item.StatusReason,
-		alert_icon: "clock"}
-	) %>
+		title: "Notice",
+		subTitle: "",
+	}) %>
 
-	<%= partial("item_card", {
-		item: item,
-		coverageAmount: "",
-		premium: "",
-		coverageStartDate: "",
-		coverageEndDate: "",
-		accountablePerson: accountablePerson,
-		householdID: policy.HouseholdID}
-	) %>
+	<p>
+		Dear <%= personFirstName %>,
+	</p>
+
+	<p>
+		We regret to inform you that your request for coverage on <%= item.Name %> has been denied.
+	</p>
+
+	<p>
+		<%= supportFirstName %> says:
+	</p>
+
+	<p style="text-indent:2em;">
+		<%= item.StatusReason %>
+	</p>
 
 	<%= partial("button", {
 		url: itemURL,
-		label: "Open in Cover"}
+		label: "Review Item Coverage Request"}
 	) %>
 
 	<%= partial("customer_footer", {

@@ -2,6 +2,9 @@
 	<%= partial("body_header", {
 			title: "New Claim",
 			subTitle: "New claim from " + memberName + ": " + item.Name,
+	}) %>
+
+	<%= partial("alert", {
 			alert: "Needs claim review",
 			alert_description: "Submitted " + submitted,
 			alert_icon: "clipboard",

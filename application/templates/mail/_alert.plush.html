@@ -1,0 +1,30 @@
+
+<div style="padding:8px; border-radius: 8px; background: #EBEEF2;">
+	<table style="width: 100%;">
+		<tr>
+			<td rowspan="2" style="padding-right: 0.5em;">
+				<%= if ( alert_icon == "clock" ) { %>
+				 <img src="cid:clock" alt="Clock" />
+				<% } else if ( alert_icon == "clipboard" ) { %>
+				 <img src="cid:clipboard" alt="Clipboard" />
+				<% } else if ( alert_icon == "new" ) { %>
+				 <img src="cid:new" alt="New" />
+				<% } else if ( alert_icon == "new_releases" ) { %>
+				 <img src="cid:new_releases" alt="New" />
+				<% } else if ( alert_icon == "volunteer_activism" ) { %>
+				 <img src="cid:volunteer_activism" alt="Hand" />
+				<% } else {
+					alert_icon
+				} %>
+			</td>
+			<th style="text-align: left;"><%= alert %></th>
+		</tr>
+		<%= if ( alert_description != "" ) { %>
+		 <tr>
+			<td>
+				<%= alert_description %>
+			</td>
+		 </tr>
+		<% } %>
+	</table>
+</div>
