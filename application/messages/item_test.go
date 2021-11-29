@@ -188,7 +188,6 @@ func (ts *TestSuite) Test_ItemDeniedQueueMessage() {
 				domain.Env.UIURL,
 				deniedItem.Name,
 				deniedItem.StatusReason,
-				"Coverage was not approved for",
 			},
 		},
 	}
