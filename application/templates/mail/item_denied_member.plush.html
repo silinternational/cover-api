@@ -1,5 +1,10 @@
 
 <div>
+	<%= partial("body_header", {
+		title: "Notice",
+		subTitle: "",
+	}) %>
+
 	<p>
 		Dear <%= personFirstName %>,
 	</p>
@@ -20,10 +25,6 @@
 		url: itemURL,
 		label: "Review Item Coverage Request"}
 	) %>
-
-	<p>
-		If you wish to resubmit your request, please apply again.
-	</p>
 
 	<%= partial("customer_footer", {
 		supportEmail: supportEmail,
