@@ -212,9 +212,6 @@ type ItemUpdate struct {
 	// serial number
 	SerialNumber string `json:"serial_number"`
 
-	// coverage status
-	CoverageStatus ItemCoverageStatus `json:"coverage_status"`
-
 	// Accountable person ID. Can be either a policy dependent ID or a user ID
 	//
 	// swagger:strfmt uuid4
