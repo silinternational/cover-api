@@ -212,6 +212,9 @@ type ItemUpdate struct {
 	// serial number
 	SerialNumber string `json:"serial_number"`
 
+	// coverage amount (0.01 USD)
+	CoverageAmount int `json:"coverage_amount"`
+
 	// Accountable person ID. Can be either a policy dependent ID or a user ID
 	//
 	// swagger:strfmt uuid4

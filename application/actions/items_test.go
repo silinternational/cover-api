@@ -666,6 +666,7 @@ func (as *ActionSuite) Test_ItemsUpdate() {
 		Make:                "Minolta",
 		Model:               "Max",
 		SerialNumber:        "MM1234",
+		CoverageAmount:      revisionItem.CoverageAmount,
 		AccountablePersonID: policyCreator.ID,
 	}
 
@@ -732,8 +733,8 @@ func (as *ActionSuite) Test_ItemsUpdate() {
 				`"make":"` + goodItem.Make,
 				`"model":"` + goodItem.Model,
 				`"serial_number":"` + goodItem.SerialNumber,
-				// keeps oldItem coverage_amount, coverage_start_date, and coverage_status
-				fmt.Sprintf(`"coverage_amount":%v`, revisionItem.CoverageAmount),
+				fmt.Sprintf(`"coverage_amount":%v`, goodItem.CoverageAmount),
+				// keeps oldItem coverage_start_date, and coverage_status
 				`"coverage_start_date":"` + revisionItem.CoverageStartDate.Format(domain.DateFormat) + `"`,
 				`"coverage_status":"` + string(revisionItem.CoverageStatus),
 				`"category":{"id":"` + iCat.ID.String(),
