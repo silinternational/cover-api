@@ -786,8 +786,8 @@ func (i *Item) calculatePremiumChange(t time.Time, oldCoverageAmount int) api.Cu
 	return api.Currency(charge - credit)
 }
 
-// NewItemFromApiInput creates a new `Item` from a `ItemInput`.
-func NewItemFromApiInput(c buffalo.Context, input api.ItemInput, policyID uuid.UUID) (Item, error) {
+// NewItemFromApiInput creates a new `Item` from a `ItemCreate`.
+func NewItemFromApiInput(c buffalo.Context, input api.ItemCreate, policyID uuid.UUID) (Item, error) {
 	item := Item{}
 	if err := parseItemDates(input, &item); err != nil {
 		return item, err
@@ -819,14 +819,14 @@ func NewItemFromApiInput(c buffalo.Context, input api.ItemInput, policyID uuid.U
 	item.CoverageAmount = input.CoverageAmount
 	item.CoverageStatus = input.CoverageStatus
 
-	if err := item.setAccountablePerson(tx, input.AccountablePersonID); err != nil {
+	if err := item.SetAccountablePerson(tx, input.AccountablePersonID); err != nil {
 		return item, err
 	}
 
 	return item, nil
 }
 
-func parseItemDates(input api.ItemInput, modelItem *Item) error {
+func parseItemDates(input api.ItemCreate, modelItem *Item) error {
 	start, err := time.Parse(domain.DateFormat, input.CoverageStartDate)
 	if err != nil {
 		err = errors.New("failed to parse item coverage start date, " + err.Error())
@@ -850,8 +850,8 @@ func parseItemDates(input api.ItemInput, modelItem *Item) error {
 	return nil
 }
 
-// setAccountablePerson sets the appropriate field to the given ID, but does not update the database
-func (i *Item) setAccountablePerson(tx *pop.Connection, id uuid.UUID) error {
+// SetAccountablePerson sets the appropriate field to the given ID, but does not update the database
+func (i *Item) SetAccountablePerson(tx *pop.Connection, id uuid.UUID) error {
 	if id == uuid.Nil {
 		return api.NewAppError(errors.New("accountable person ID must not be nil"), api.ErrorItemNullAccountablePerson, api.CategoryUser)
 	}

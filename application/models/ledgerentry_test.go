@@ -156,13 +156,13 @@ func (ms *ModelSuite) Test_NewLedgerEntry() {
 	f := CreateItemFixtures(ms.DB, FixturesConfig{NumberOfPolicies: 2, ClaimsPerPolicy: 1})
 	householdPolicy := f.Policies[0]
 	householdPolicyItem := householdPolicy.Items[0]
-	ms.NoError(householdPolicyItem.setAccountablePerson(ms.DB, f.Users[0].ID))
+	ms.NoError(householdPolicyItem.SetAccountablePerson(ms.DB, f.Users[0].ID))
 	householdPolicyClaim := f.Policies[0].Claims[0]
 	ms.False(uuid.Nil == householdPolicyClaim.ID, "householdPolicyClaim is not hydrated")
 
 	teamPolicy := ConvertPolicyType(ms.DB, f.Policies[1])
 	teamPolicyItem := teamPolicy.Items[0]
-	ms.NoError(teamPolicyItem.setAccountablePerson(ms.DB, f.Users[1].ID))
+	ms.NoError(teamPolicyItem.SetAccountablePerson(ms.DB, f.Users[1].ID))
 
 	tests := []struct {
 		name   string

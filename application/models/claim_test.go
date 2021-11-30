@@ -969,7 +969,7 @@ func (ms *ModelSuite) TestClaim_CreateLedgerEntry() {
 
 	user := f.Users[0]
 	ctx := CreateTestContext(user)
-	ms.NoError(item.setAccountablePerson(ms.DB, user.ID))
+	ms.NoError(item.SetAccountablePerson(ms.DB, user.ID))
 	ms.NoError(item.Update(ctx))
 
 	var claim Claim

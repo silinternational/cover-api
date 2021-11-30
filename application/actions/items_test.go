@@ -134,7 +134,7 @@ func (as *ActionSuite) Test_ItemsCreate() {
 
 	riskCategoryMobileID := models.RiskCategoryMobileID()
 
-	goodItem := api.ItemInput{
+	goodItem := api.ItemCreate{
 		Name:                "Good Item",
 		CategoryID:          iCat.ID,
 		RiskCategoryID:      &riskCategoryMobileID,
@@ -157,7 +157,7 @@ func (as *ActionSuite) Test_ItemsCreate() {
 		name       string
 		actor      models.User
 		policy     models.Policy
-		newItem    api.ItemInput
+		newItem    api.ItemCreate
 		wantStatus int
 		wantInBody []string
 	}{
@@ -649,21 +649,14 @@ func (as *ActionSuite) Test_ItemsUpdate() {
 
 	iCat := fixtures.ItemCategories[1] // different one
 
-	badItemDate := api.ItemInput{
-		Name:       "Item with bad coverage start date",
-		CategoryID: revisionItem.CategoryID,
-	}
-
-	badCatID := api.ItemInput{
-		Name:              "Item with missing category",
-		CategoryID:        domain.GetUUID(),
-		CoverageStartDate: "2006-01-03",
-		CoverageStatus:    api.ItemCoverageStatusDraft,
+	badCatID := api.ItemUpdate{
+		Name:       "Item with missing category",
+		CategoryID: domain.GetUUID(),
 	}
 
 	riskCategoryMobileID := models.RiskCategoryMobileID()
 
-	goodItem := api.ItemInput{
+	goodItem := api.ItemUpdate{
 		Name:                "Good Item",
 		CategoryID:          iCat.ID,
 		RiskCategoryID:      &riskCategoryMobileID,
@@ -674,8 +667,6 @@ func (as *ActionSuite) Test_ItemsUpdate() {
 		Model:               "Max",
 		SerialNumber:        "MM1234",
 		CoverageAmount:      revisionItem.CoverageAmount,
-		CoverageStatus:      api.ItemCoverageStatusRevision,
-		CoverageStartDate:   "2006-01-03",
 		AccountablePersonID: policyCreator.ID,
 	}
 
@@ -683,7 +674,7 @@ func (as *ActionSuite) Test_ItemsUpdate() {
 		name       string
 		actor      models.User
 		oldItem    models.Item
-		newItem    api.ItemInput
+		newItem    api.ItemUpdate
 		wantStatus int
 		wantInBody []string
 	}{
@@ -710,17 +701,6 @@ func (as *ActionSuite) Test_ItemsUpdate() {
 			oldItem:    models.Item{ID: domain.GetUUID()},
 			wantStatus: http.StatusNotFound,
 			wantInBody: []string{api.ErrorResourceNotFound.String()},
-		},
-		{
-			name:       "has bad coverage start date",
-			actor:      policyCreator,
-			oldItem:    revisionItem,
-			newItem:    badItemDate,
-			wantStatus: http.StatusBadRequest,
-			wantInBody: []string{
-				api.ErrorItemInvalidCoverageStartDate.String(),
-				"failed to parse item coverage start date",
-			},
 		},
 		{
 			name:       "has bad category id",
@@ -753,10 +733,10 @@ func (as *ActionSuite) Test_ItemsUpdate() {
 				`"make":"` + goodItem.Make,
 				`"model":"` + goodItem.Model,
 				`"serial_number":"` + goodItem.SerialNumber,
-				// keeps oldItem coverage_amount
 				fmt.Sprintf(`"coverage_amount":%v`, goodItem.CoverageAmount),
-				`"coverage_start_date":"` + goodItem.CoverageStartDate + `"`,
-				`"coverage_status":"` + string(goodItem.CoverageStatus),
+				// keeps oldItem coverage_start_date, and coverage_status
+				`"coverage_start_date":"` + revisionItem.CoverageStartDate.Format(domain.DateFormat) + `"`,
+				`"coverage_status":"` + string(revisionItem.CoverageStatus),
 				`"category":{"id":"` + iCat.ID.String(),
 				`"name":"` + iCat.Name,
 			},
@@ -924,7 +904,7 @@ func (as *ActionSuite) Test_NewItemFromApiInput() {
 
 	itemCategory := fixtures.ItemCategories[0]
 
-	item := api.ItemInput{
+	item := api.ItemCreate{
 		Name:                "Good Item",
 		CategoryID:          itemCategory.ID,
 		InStorage:           true,
@@ -958,7 +938,7 @@ func (as *ActionSuite) Test_NewItemFromApiInput() {
 	tests := []struct {
 		name        string
 		policy      models.Policy
-		input       api.ItemInput
+		input       api.ItemCreate
 		user        models.User
 		wantErr     string
 		wantErrKey  api.ErrorKey

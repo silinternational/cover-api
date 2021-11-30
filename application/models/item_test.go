@@ -746,7 +746,7 @@ func (ms *ModelSuite) TestItem_setAccountablePerson() {
 
 	for _, tt := range tests {
 		ms.T().Run(tt.name, func(t *testing.T) {
-			err := tt.item.setAccountablePerson(ms.DB, tt.id)
+			err := tt.item.SetAccountablePerson(ms.DB, tt.id)
 			if tt.appError != nil {
 				ms.Error(err, "test should have produced an error")
 				ms.EqualAppError(*tt.appError, err)
@@ -938,7 +938,7 @@ func (ms *ModelSuite) TestItem_CreateLedgerEntry() {
 	user := f.Users[0]
 	ctx := CreateTestContext(user)
 
-	ms.NoError(item.setAccountablePerson(ms.DB, f.Users[0].ID))
+	ms.NoError(item.SetAccountablePerson(ms.DB, f.Users[0].ID))
 	ms.NoError(item.Update(ctx))
 
 	amount := item.CalculateProratedPremium(time.Now().UTC())
@@ -961,13 +961,13 @@ func (ms *ModelSuite) TestItem_CreateLedgerEntry() {
 func (ms *ModelSuite) TestItem_GetAccountablePersonName() {
 	f := CreateItemFixtures(ms.DB, FixturesConfig{ItemsPerPolicy: 2, DependentsPerPolicy: 1})
 	item0 := f.Items[0]
-	ms.NoError(item0.setAccountablePerson(ms.DB, f.Users[0].ID))
+	ms.NoError(item0.SetAccountablePerson(ms.DB, f.Users[0].ID))
 	name := item0.GetAccountablePersonName(ms.DB)
 	ms.Equal(f.Users[0].FirstName, name.First, "first name is not correct")
 	ms.Equal(f.Users[0].LastName, name.Last, "last name is not correct")
 
 	item1 := f.Items[1]
-	ms.NoError(item1.setAccountablePerson(ms.DB, f.PolicyDependents[0].ID))
+	ms.NoError(item1.SetAccountablePerson(ms.DB, f.PolicyDependents[0].ID))
 	name = item1.GetAccountablePersonName(ms.DB)
 	ms.Contains(f.PolicyDependents[0].Name, name.First, "first name is not correct")
 	ms.Contains(f.PolicyDependents[0].Name, name.Last, "last name is not correct")
@@ -1160,7 +1160,7 @@ func (ms *ModelSuite) TestItem_ConvertToAPI() {
 	fixtures := CreateItemFixtures(ms.DB, FixturesConfig{DependentsPerPolicy: 1})
 	item := fixtures.Items[0]
 	item.CoverageEndDate = nulls.NewTime(time.Now().Add(domain.DurationDay * 365))
-	ms.NoError(item.setAccountablePerson(ms.DB, fixtures.PolicyDependents[0].ID))
+	ms.NoError(item.SetAccountablePerson(ms.DB, fixtures.PolicyDependents[0].ID))
 
 	got := item.ConvertToAPI(ms.DB)
 
