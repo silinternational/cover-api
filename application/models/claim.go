@@ -26,6 +26,7 @@ var ValidClaimIncidentTypes = map[api.ClaimIncidentType]struct{}{
 	api.ClaimIncidentTypeTheft:           {},
 	api.ClaimIncidentTypePhysicalDamage:  {},
 	api.ClaimIncidentTypeElectricalSurge: {},
+	api.ClaimIncidentTypeFireDamage:      {},
 	api.ClaimIncidentTypeWaterDamage:     {},
 	api.ClaimIncidentTypeEvacuation:      {},
 	api.ClaimIncidentTypeOther:           {},
