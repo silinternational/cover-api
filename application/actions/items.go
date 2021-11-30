@@ -112,26 +112,33 @@ func itemsUpdate(c buffalo.Context) error {
 	tx := models.Tx(c)
 	item := getReferencedItemFromCtx(c)
 
-	var itemPut api.ItemUpdate
-	if err := StrictBind(c, &itemPut); err != nil {
+	var input api.ItemUpdate
+	if err := StrictBind(c, &input); err != nil {
 		return reportError(c, err)
 	}
 
-	item.Name = itemPut.Name
-	item.CategoryID = itemPut.CategoryID
-	item.InStorage = itemPut.InStorage
-	item.Country = itemPut.Country
-	item.Description = itemPut.Description
-	item.Make = itemPut.Make
-	item.Model = itemPut.Model
-	item.SerialNumber = itemPut.SerialNumber
-	item.CoverageStatus = itemPut.CoverageStatus
-
-	if itemPut.RiskCategoryID != nil {
-		item.RiskCategoryID = *itemPut.RiskCategoryID
+	if item.CategoryID != input.CategoryID {
+		var iCat models.ItemCategory
+		if err := iCat.FindByID(tx, input.CategoryID); err != nil {
+			return reportError(c, err)
+		}
 	}
 
-	if err := item.SetAccountablePerson(tx, itemPut.AccountablePersonID); err != nil {
+	item.Name = input.Name
+	item.CategoryID = input.CategoryID
+	item.InStorage = input.InStorage
+	item.Country = input.Country
+	item.Description = input.Description
+	item.Make = input.Make
+	item.Model = input.Model
+	item.SerialNumber = input.SerialNumber
+	item.CoverageStatus = input.CoverageStatus
+
+	if input.RiskCategoryID != nil {
+		item.RiskCategoryID = *input.RiskCategoryID
+	}
+
+	if err := item.SetAccountablePerson(tx, input.AccountablePersonID); err != nil {
 		return reportError(c, err)
 	}
 
