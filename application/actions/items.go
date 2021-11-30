@@ -99,7 +99,7 @@ func itemsCreate(c buffalo.Context) error {
 //     description: item ID
 //   - name: policy item update input
 //     in: body
-//     description: policy item create update object
+//     description: policy item update object
 //     required: true
 //     schema:
 //       "$ref": "#/definitions/ItemUpdate"
