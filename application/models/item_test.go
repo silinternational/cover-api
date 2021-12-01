@@ -647,7 +647,7 @@ func (ms *ModelSuite) TestItem_InactivateApprovedButEnded() {
 	fixtures := CreateItemFixtures(ms.DB, fixConfig)
 	policy := fixtures.Policies[0]
 	policy.LoadItems(ms.DB, false)
-	user := policy.Members[0]
+	user := User{}
 	items := policy.Items
 
 	ctx := CreateTestContext(user)

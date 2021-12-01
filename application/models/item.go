@@ -99,7 +99,7 @@ func (i *Item) Update(ctx context.Context) error {
 		}
 	}
 
-	if safe := i.canBeUpdated(tx); !safe {
+	if !i.canBeUpdated(tx) {
 		err := errors.New("item cannot be updated because it has an active claim")
 		return api.NewAppError(err, api.ErrorItemHasActiveClaim, api.CategoryUser)
 	}
@@ -688,6 +688,37 @@ func (i *Item) ConvertToAPI(tx *pop.Connection) api.Item {
 	return apiItem
 }
 
+// This function is only intended to be used for items that have been active
+// but are now scheduled to become inactive.
+// As such, any credit ledger entries should have already been created.
+func (i *Item) inactivateEnded(ctx context.Context) error {
+	tx := Tx(ctx)
+
+	if !i.canBeUpdated(tx) {
+		err := errors.New("item cannot be updated because it has an active claim")
+		return api.NewAppError(err, api.ErrorItemHasActiveClaim, api.CategoryUser)
+	}
+
+	i.LoadPolicyMembers(tx, false)
+
+	history := i.Policy.NewHistory(ctx,
+		api.HistoryActionUpdate,
+		FieldUpdate{
+			OldValue:  string(i.CoverageStatus),
+			NewValue:  string(api.ItemCoverageStatusInactive),
+			FieldName: FieldItemCoverageStatus,
+		})
+	history.ItemID = nulls.NewUUID(i.ID)
+	history.UserID = i.Policy.Members[0].ID
+	if err := history.Create(tx); err != nil {
+		return err
+	}
+
+	i.CoverageStatus = api.ItemCoverageStatusInactive
+
+	return update(tx, i)
+}
+
 // InactivateApprovedButEnded fetches all the items that have coverage_status=Approved
 //   and coverage_end_date before today and then
 //   saves them with coverage_status=Inactive
@@ -704,7 +735,7 @@ func (i *Items) InactivateApprovedButEnded(ctx context.Context) error {
 	errCount := 0
 	var lastErr error
 	for _, ii := range *i {
-		if err := ii.Inactivate(ctx); err != nil {
+		if err := ii.inactivateEnded(ctx); err != nil {
 			errCount++
 			domain.ErrLogger.Printf("InactivateApprovedButEnded error, %s", err)
 			lastErr = err
