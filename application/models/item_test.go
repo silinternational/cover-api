@@ -209,12 +209,12 @@ func (ms *ModelSuite) Test_isItemActionAllowed() {
 			want:         false,
 		},
 		{
-			name:         "approved with update and no sub resource - NO",
+			name:         "approved with update and no sub resource - YES",
 			actorIsAdmin: true,
 			startStatus:  api.ItemCoverageStatusApproved,
 			permission:   PermissionUpdate,
 			subRes:       "",
-			want:         false,
+			want:         true,
 		},
 		{
 			name:         "approved with delete and no sub resource - YES",

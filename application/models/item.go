@@ -437,6 +437,10 @@ func isItemActionAllowed(actorIsAdmin bool, oldStatus api.ItemCoverageStatus, pe
 	// An item with Pending status can have a create done on it by an admin for revision, approve, deny
 	// A non-admin can delete/inactivate it
 	case api.ItemCoverageStatusPending:
+		if perm == PermissionUpdate {
+			return true
+		}
+
 		if !actorIsAdmin {
 			return perm == PermissionDelete && sub == ""
 		}
@@ -444,7 +448,7 @@ func isItemActionAllowed(actorIsAdmin bool, oldStatus api.ItemCoverageStatus, pe
 
 	// An item with approved status can only be deleted/inactivated
 	case api.ItemCoverageStatusApproved:
-		return sub == "" && perm == PermissionDelete
+		return sub == "" && (perm == PermissionDelete || perm == PermissionUpdate)
 	}
 
 	return false

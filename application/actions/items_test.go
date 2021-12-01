@@ -641,7 +641,7 @@ func (as *ActionSuite) Test_ItemsUpdate() {
 	fixtures := models.CreateItemFixtures(as.DB, fixConfig)
 
 	revisionItem := models.UpdateItemStatus(as.DB, fixtures.Items[0], api.ItemCoverageStatusRevision, "too many tribbles")
-	approvedItem := models.UpdateItemStatus(as.DB, fixtures.Items[1], api.ItemCoverageStatusApproved, "")
+	deniedItem := models.UpdateItemStatus(as.DB, fixtures.Items[1], api.ItemCoverageStatusDenied, "can't touch this")
 
 	policy := fixtures.Policies[0]
 	policyCreator := policy.Members[0]
@@ -713,8 +713,8 @@ func (as *ActionSuite) Test_ItemsUpdate() {
 		{
 			name:       "has bad start status",
 			actor:      policyCreator,
-			oldItem:    approvedItem,
-			newItem:    badCatID,
+			oldItem:    deniedItem,
+			newItem:    goodItem,
 			wantStatus: http.StatusNotFound,
 			wantInBody: []string{api.ErrorNotAuthorized.String()},
 		},
