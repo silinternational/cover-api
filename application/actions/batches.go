@@ -130,7 +130,7 @@ func batchesAnnual(c buffalo.Context) error {
 
 	date := time.Date(currentYear, 1, 1, 0, 0, 0, 0, time.UTC)
 	csvData := le.ToCsv(date)
-	filename := fmt.Sprintf("renewal_%s.csv", date.Format("2006"))
+	filename := fmt.Sprintf("renewal_%d.csv", currentYear)
 	return renderCsv(c, filename, csvData)
 }
 

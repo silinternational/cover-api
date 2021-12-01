@@ -245,8 +245,8 @@ func (le *LedgerEntry) LoadClaim(tx *pop.Connection) {
 	}
 }
 
-// ProcessAnnualCoverage creates coverage renewal ledger entries for all items covered for the given year,
-// only for those items not already billed for the year.
+// ProcessAnnualCoverage creates coverage renewal ledger entries for all items covered for the given year.
+// Does not create new records for items already processed.
 func ProcessAnnualCoverage(tx *pop.Connection, year int) error {
 	var items Items
 	if err := tx.Where("coverage_status = ?", api.ItemCoverageStatusApproved).
