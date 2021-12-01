@@ -88,15 +88,11 @@ func (i *Item) Update(ctx context.Context) error {
 	if err := oldItem.FindByID(tx, i.ID); err != nil {
 		return appErrorFromDB(err, api.ErrorQueryFailure)
 	}
-	if validTrans, err := isItemTransitionValid(oldItem.CoverageStatus, i.CoverageStatus); err != nil {
-		panic(err)
-	} else {
-		if !validTrans {
-			err := fmt.Errorf("invalid item coverage status transition from %s to %s",
-				oldItem.CoverageStatus, i.CoverageStatus)
-			appErr := api.NewAppError(err, api.ErrorValidation, api.CategoryUser)
-			return appErr
-		}
+	if !isItemTransitionValid(oldItem.CoverageStatus, i.CoverageStatus) {
+		err := fmt.Errorf("invalid item coverage status transition from %s to %s",
+			oldItem.CoverageStatus, i.CoverageStatus)
+		appErr := api.NewAppError(err, api.ErrorValidation, api.CategoryUser)
+		return appErr
 	}
 
 	if !i.canBeUpdated(tx) {
@@ -401,22 +397,22 @@ func itemStatusTransitions() map[api.ItemCoverageStatus][]api.ItemCoverageStatus
 	}
 }
 
-func isItemTransitionValid(status1, status2 api.ItemCoverageStatus) (bool, error) {
+func isItemTransitionValid(status1, status2 api.ItemCoverageStatus) bool {
 	if status1 == status2 {
-		return true, nil
+		return true
 	}
 	targets, ok := itemStatusTransitions()[status1]
 	if !ok {
-		return false, errors.New("unexpected initial item coverage status - " + string(status1))
+		panic("unexpected initial item coverage status - " + string(status1))
 	}
 
 	for _, target := range targets {
 		if status2 == target {
-			return true, nil
+			return true
 		}
 	}
 
-	return false, nil
+	return false
 }
 
 // isItemActionAllowed does not check whether the actor is the owner of the item.
@@ -926,9 +922,10 @@ func (i *Item) CreateLedgerEntry(tx *pop.Connection, entryType LedgerEntryType, 
 	}
 
 	oldPaidYear := i.PaidThroughYear
-	if le.Type == LedgerEntryTypeNewCoverage {
+	switch le.Type {
+	case LedgerEntryTypeNewCoverage:
 		i.PaidThroughYear = le.DateSubmitted.Year()
-	} else if le.Type == LedgerEntryTypeCoverageRefund {
+	case LedgerEntryTypeCoverageRefund:
 		i.PaidThroughYear = 0
 	}
 
