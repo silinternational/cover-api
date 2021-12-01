@@ -85,7 +85,7 @@ func (ms *ModelSuite) TestLedgerEntries_ToCsv() {
 
 	domain.Env.ExpenseAccount = "XYZ123"
 
-	summaryLine := date.Format("January 2006 Cover JE")
+	summaryLine := fmt.Sprintf("%s %s JE", date.Format("January 2006"), domain.Env.AppName)
 
 	tests := []struct {
 		name      string

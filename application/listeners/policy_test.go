@@ -35,7 +35,7 @@ func (ts *TestSuite) Test_PolicyUserInviteSend() {
 			policyID:            f.Policies[0].ID,
 			inviteEmail:         "new_user_invite@testing123.com",
 			wantEmailsSent:      1,
-			wantSubjectsContain: []string{"invited you to manage a policy on Cover"},
+			wantSubjectsContain: []string{"invited you to manage a policy"},
 		},
 	}
 
@@ -59,7 +59,6 @@ func (ts *TestSuite) Test_PolicyUserInviteSend() {
 			var nus models.NotificationUsers
 			ts.NoError(db.All(&nus), "error fetching NotificationUsers from db")
 			ts.Len(nus, 1, "incorrect number of NotificationUsers queued")
-
 		})
 	}
 }
