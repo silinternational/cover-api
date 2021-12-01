@@ -694,7 +694,7 @@ func (i *Item) ConvertToAPI(tx *pop.Connection) api.Item {
 func (i *Item) inactivateEnded(ctx context.Context) error {
 	tx := Tx(ctx)
 
-	if safe := i.canBeUpdated(tx); !safe {
+	if !i.canBeUpdated(tx) {
 		err := errors.New("item cannot be updated because it has an active claim")
 		return api.NewAppError(err, api.ErrorItemHasActiveClaim, api.CategoryUser)
 	}
