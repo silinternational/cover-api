@@ -99,7 +99,7 @@ func (i *Item) Update(ctx context.Context) error {
 		}
 	}
 
-	if safe := i.canBeUpdated(tx); !safe {
+	if !i.canBeUpdated(tx) {
 		err := errors.New("item cannot be updated because it has an active claim")
 		return api.NewAppError(err, api.ErrorItemHasActiveClaim, api.CategoryUser)
 	}
