@@ -919,7 +919,7 @@ func (i *Item) CreateLedgerEntry(tx *pop.Connection, entryType LedgerEntryType, 
 
 	oldPaidYear := i.PaidThroughYear
 	switch le.Type {
-	case LedgerEntryTypeNewCoverage, LedgerEntryTypeCoverageRenewal:
+	case LedgerEntryTypeNewCoverage:
 		i.PaidThroughYear = le.DateSubmitted.Year()
 	case LedgerEntryTypeCoverageRefund:
 		i.PaidThroughYear = 0
