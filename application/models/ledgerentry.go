@@ -27,6 +27,7 @@ const (
 	LedgerEntryTypeNewCoverage      = LedgerEntryType("NewCoverage")
 	LedgerEntryTypeCoverageChange   = LedgerEntryType("CoverageChange")
 	LedgerEntryTypeCoverageRefund   = LedgerEntryType("CoverageRefund")
+	LedgerEntryTypeCoverageRenewal  = LedgerEntryType("CoverageRenewal")
 	LedgerEntryTypePolicyAdjustment = LedgerEntryType("PolicyAdjustment")
 	LedgerEntryTypeClaim            = LedgerEntryType("Claim")
 	LedgerEntryTypeLegacy5          = LedgerEntryType("5")
@@ -38,6 +39,7 @@ var ValidLedgerEntryTypes = map[LedgerEntryType]struct{}{
 	LedgerEntryTypeNewCoverage:      {},
 	LedgerEntryTypeCoverageChange:   {},
 	LedgerEntryTypeCoverageRefund:   {},
+	LedgerEntryTypeCoverageRenewal:  {},
 	LedgerEntryTypePolicyAdjustment: {},
 	LedgerEntryTypeClaim:            {},
 	LedgerEntryTypeLegacy5:          {},
@@ -219,6 +221,7 @@ func NewLedgerEntry(policy Policy, item *Item, claim *Claim) LedgerEntry {
 		EntityCode:    policy.EntityCode.Code,
 		DateSubmitted: time.Now().UTC(),
 		AccountNumber: policy.Account,
+		IncomeAccount: policy.EntityCode.IncomeAccount,
 		CostCenter:    costCenter,
 		HouseholdID:   policy.HouseholdID.String,
 	}
@@ -240,4 +243,34 @@ func (le *LedgerEntry) LoadClaim(tx *pop.Connection) {
 			panic("error loading ledger entry claim: " + err.Error())
 		}
 	}
+}
+
+// ProcessAnnualCoverage creates coverage renewal ledger entries for all items covered for the given year,
+// only for those items not already billed for the year.
+func ProcessAnnualCoverage(tx *pop.Connection, year int) error {
+	var items Items
+	if err := tx.Where("coverage_status = ?", api.ItemCoverageStatusApproved).
+		Where("paid_through_year < ?", year).
+		All(&items); err != nil {
+		return api.NewAppError(err, api.ErrorQueryFailure, api.CategoryInternal)
+	}
+
+	for _, item := range items {
+		err := item.CreateLedgerEntry(tx, LedgerEntryTypeCoverageRenewal, item.CalculateAnnualPremium())
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// FindCurrentRenewals finds the coverage renewal ledger entries for the given year
+func (le *LedgerEntries) FindCurrentRenewals(tx *pop.Connection, year int) error {
+	if err := tx.Where("type = ?", LedgerEntryTypeCoverageRenewal).
+		Where("EXTRACT(YEAR FROM date_submitted) = ?", year).
+		All(le); err != nil {
+		return api.NewAppError(err, api.ErrorQueryFailure, api.CategoryInternal)
+	}
+	return nil
 }
