@@ -36,6 +36,7 @@ const (
 	MessageTemplateItemDeniedMember   = "item_denied_member"
 
 	MessageTemplatePolicyUserInvite = "policy_user_invite"
+	MessageTemplateUserWelcome      = "user_welcome"
 )
 
 // blockSending is used to avoid having duplicate emails sent out when

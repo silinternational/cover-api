@@ -1,0 +1,37 @@
+<div>
+	<%= partial("body_header", {
+		previewText: emailIntro,
+		title: "",
+		subTitle: "",
+	}) %>
+
+	<p>
+		Welcome <%= personFirstName %>,
+	</p>
+	<p>
+		<%= emailIntro %>
+Cover offers 24/7 access to your policy, fewer restrictions on what can be covered,
+quicker approvals for new items, and no more minimum premium.
+	</p>
+	<p>
+		We’ve automatically imported your existing policies into Cover.
+Login with your SIL, Wycliffe USA, or Workday Partner Access account,
+and verify that your item details are correct.  As usual, contact me, Darryl,
+if you have any questions or concerns with your policy.
+	</p>
+
+	<%= partial("button", {
+		url: uiURL,
+		label: "Open Cover"}
+	) %>
+	<p>
+		Annual premiums are still calculated at the low rate of 2% per year
+and auto-renewed at the beginning of the year. Keep this email for quick
+access to Cover’s terms of service, privacy policy, and support. We’ve got you covered.
+	</p>
+
+	<%= partial("customer_footer", {
+		supportEmail: supportEmail,
+		supportName: supportName}
+	) %>
+</div>
