@@ -200,6 +200,7 @@ var Env struct {
 
 	UserWelcomeEmailIntro       string `default:"" split_words:"true"`
 	UserWelcomeEmailPreviewText string `default:"" split_words:"true"`
+	UserWelcomeEmailAuthOrgText string `default:"Login with your organizational account." split_words:"true"`
 }
 
 func init() {
