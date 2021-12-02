@@ -1,6 +1,7 @@
 package messages
 
 import (
+	"fmt"
 	"html/template"
 
 	"github.com/gobuffalo/pop/v5"
@@ -12,19 +13,15 @@ import (
 // UserWelcomeQueueMessage queues a welcome message to a new user
 func UserWelcomeQueueMessage(tx *pop.Connection, user models.User) {
 	m := newEmailMessageData()
-	m["uiURL"] = domain.Env.UIURL
 	m["personFirstName"] = user.FirstName
 	m["emailIntro"] = template.HTML(domain.Env.UserWelcomeEmailIntro) // #nosec G203
 	m["previewText"] = domain.Env.UserWelcomeEmailPreviewText
-
-	steward := models.GetDefaultSteward(tx)
-	m["supportEmail"] = steward.Email
-	m["supportName"] = steward.Name()
-	m["supportFirstName"] = steward.FirstName
+	m["loginMessage"] = domain.Env.UserWelcomeEmailAuthOrgText
+	m.addStewardData(tx)
 
 	notn := models.Notification{
 		Body:    m.renderHTML(MessageTemplateUserWelcome),
-		Subject: "Welcome to Cover!",
+		Subject: fmt.Sprintf("Welcome to %s!", domain.Env.AppName),
 
 		// TODO make these constants somewhere
 		Event:         "User Welcome Notification",

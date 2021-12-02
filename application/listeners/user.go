@@ -25,7 +25,6 @@ func userCreated(e events.Event) {
 		return
 	}
 
-	// TODO do we need a better way to trigger this
 	userWelcome(e)
 }
 

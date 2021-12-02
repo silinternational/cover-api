@@ -54,6 +54,7 @@ func newEmailMessageData() MessageData {
 
 	m["uiURL"] = domain.Env.UIURL
 	m["appName"] = domain.Env.AppName
+	m["premiumPercentage"] = fmt.Sprintf("%g%%", domain.Env.PremiumFactor*100)
 
 	return m
 }
@@ -63,10 +64,7 @@ func (m MessageData) addClaimData(tx *pop.Connection, claim models.Claim) {
 		m = map[string]interface{}{}
 	}
 
-	steward := models.GetDefaultSteward(tx)
-	m["supportEmail"] = steward.Email
-	m["supportName"] = steward.Name()
-	m["supportFirstName"] = steward.FirstName
+	m.addStewardData(tx)
 
 	m["claimURL"] = fmt.Sprintf("%s/policies/%s/claims/%s", domain.Env.UIURL, claim.PolicyID, claim.ID)
 	m["claim"] = claim
@@ -93,10 +91,7 @@ func (m MessageData) addItemData(tx *pop.Connection, item models.Item) {
 	if m == nil {
 		m = map[string]interface{}{}
 	}
-	steward := models.GetDefaultSteward(tx)
-	m["supportEmail"] = steward.Email
-	m["supportName"] = steward.Name()
-	m["supportFirstName"] = steward.FirstName
+	m.addStewardData(tx)
 
 	m["itemURL"] = fmt.Sprintf("%s/policies/%s/items/%s", domain.Env.UIURL, item.PolicyID, item.ID)
 
@@ -119,6 +114,17 @@ func (m MessageData) addItemData(tx *pop.Connection, item models.Item) {
 	}
 	m["annualPremium"] = "$" + item.CalculateAnnualPremium().String()
 	m["proratedPremium"] = "$" + item.CalculateProratedPremium(item.CoverageStartDate).String()
+}
+
+func (m MessageData) addStewardData(tx *pop.Connection) {
+	if m == nil {
+		m = map[string]interface{}{}
+	}
+
+	steward := models.GetDefaultSteward(tx)
+	m["supportEmail"] = steward.Email
+	m["supportName"] = steward.Name()
+	m["supportFirstName"] = steward.FirstName
 }
 
 func (m MessageData) renderHTML(template string) string {
