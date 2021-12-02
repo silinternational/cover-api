@@ -198,7 +198,8 @@ var Env struct {
 	HouseholdIDLookupUsername string `default:"" split_words:"true"`
 	HouseholdIDLookupPassword string `default:"" split_words:"true"`
 
-	UserWelcomeEmailIntro string `default:"" split_words:"true"`
+	UserWelcomeEmailIntro       string `default:"" split_words:"true"`
+	UserWelcomeEmailPreviewText string `default:"" split_words:"true"`
 }
 
 func init() {
