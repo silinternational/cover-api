@@ -14,9 +14,10 @@ import (
 )
 
 var images = map[string]string{
-	"logo":               "logo-wide.png",
+	"logo":               "logo.png",
 	"clipboard":          "clipboard.png",
 	"clock":              "clock.png",
+	"error":              "error.png",
 	"new":                "new.png",
 	"new_releases":       "new_releases.png",
 	"signature_logo":     "SIL_Glyph_Logo_Andika_RGB.png",
