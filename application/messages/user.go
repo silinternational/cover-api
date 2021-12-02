@@ -14,8 +14,8 @@ func UserWelcomeQueueMessage(tx *pop.Connection, user models.User) {
 	m := newEmailMessageData()
 	m["uiURL"] = domain.Env.UIURL
 	m["personFirstName"] = user.FirstName
-	m["emailIntro"] = template.HTML(domain.Env.UserWelcomeEmailIntro)
-	m["previewText"] = template.HTML(domain.Env.UserWelcomeEmailPreviewText)
+	m["emailIntro"] = template.HTML(domain.Env.UserWelcomeEmailIntro) // #nosec G203
+	m["previewText"] = domain.Env.UserWelcomeEmailPreviewText
 
 	steward := models.GetDefaultSteward(tx)
 	m["supportEmail"] = steward.Email
