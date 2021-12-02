@@ -32,7 +32,13 @@
 		claim: claim,
 		incidentDate: incidentDate,
 		incidentType: incidentType,
-		payoutOptionDescription: payoutOptionDescription,
-		maximumPayout: maximumPayout}
 	) %>
+
+	<div style="padding: 16px;">
+		<%= partial("button", {
+		url: claimURL,
+		label: "Open in " + appName,
+		}) %>
+	</div>
+
 </div>

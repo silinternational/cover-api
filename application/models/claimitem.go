@@ -407,6 +407,7 @@ func (c *ClaimItem) updatePayoutAmount(ctx context.Context) error {
 		if c.RepairActual > 0 {
 			maxValue = float64(c.RepairActual)
 		}
+		maxValue = math.Min(maxValue, float64(c.FMV)*domain.Env.RepairThreshold)
 	case api.PayoutOptionReplacement:
 		maxValue = float64(c.ReplaceEstimate)
 		if c.ReplaceActual > 0 {
@@ -415,7 +416,7 @@ func (c *ClaimItem) updatePayoutAmount(ctx context.Context) error {
 	case api.PayoutOptionFMV:
 		maxValue = float64(c.FMV)
 	case api.PayoutOptionFixedFraction:
-		deductible = 1.0 / 3.0
+		deductible = domain.Env.EvacuationDeductible
 		maxValue = float64(coverageAmount)
 	}
 

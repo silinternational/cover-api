@@ -26,21 +26,3 @@
 		helpText: incidentTypeDescription
 	}) %>
 </div>
-
-<div style="padding: 16px;">
-	<%= partial("button", {
-		url: claimURL,
-		label: "Open Claim in "+appName,
-	}) %>
-
-	<div style="margin:8px 0px;">
-		<h4 style="margin:0; padding:0">Desired resolution</h4>
-		<%= payoutOption %>
-		<%= payoutOptionDescription %>
-	</div>
-
-	<div style="margin:8px 0px;">
-		<h4 style="margin:0; padding:0">Maximum payout</h4>
-		<%= maximumPayout %>
-	</div>
-</div>

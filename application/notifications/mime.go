@@ -15,6 +15,7 @@ import (
 
 var images = map[string]string{
 	"logo":               "logo.png",
+	"check":              "check_circle.png",
 	"clipboard":          "clipboard.png",
 	"clock":              "clock.png",
 	"error":              "error.png",
