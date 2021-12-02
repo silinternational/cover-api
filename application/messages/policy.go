@@ -6,6 +6,7 @@ import (
 	"github.com/gobuffalo/nulls"
 	"github.com/gobuffalo/pop/v5"
 
+	"github.com/silinternational/cover-api/domain"
 	"github.com/silinternational/cover-api/models"
 )
 
@@ -24,7 +25,7 @@ func PolicyUserInviteQueueMessage(tx *pop.Connection, invite models.PolicyUserIn
 	notn := models.Notification{
 		PolicyID: nulls.NewUUID(invite.PolicyID),
 		Body:     data.renderHTML(MessageTemplatePolicyUserInvite),
-		Subject:  "Invitation to Cover",
+		Subject:  "Invitation to " + domain.Env.AppName,
 
 		// TODO make these constants somewhere
 		Event:         "Policy User Invite Notification",
