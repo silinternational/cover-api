@@ -21,7 +21,7 @@ func (ts *TestSuite) Test_PolicyUserInviteQueueMessage() {
 		{
 			name:                "ok",
 			wantToEmails:        []interface{}{invite0.Email},
-			wantSubjectContains: "Invitation to Cover",
+			wantSubjectContains: "Invitation",
 			wantBodyContains: []string{
 				domain.Env.UIURL,
 				"Accept Invite",

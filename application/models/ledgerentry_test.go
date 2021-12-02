@@ -85,7 +85,7 @@ func (ms *ModelSuite) TestLedgerEntries_ToCsv() {
 
 	domain.Env.ExpenseAccount = "XYZ123"
 
-	summaryLine := date.Format("January 2006 Cover JE")
+	summaryLine := fmt.Sprintf("%s %s JE", date.Format("January 2006"), domain.Env.AppName)
 
 	tests := []struct {
 		name      string
@@ -285,4 +285,29 @@ func (ms *ModelSuite) TestLedgerEntries_Reconcile() {
 			}
 		})
 	}
+}
+
+func (ms *ModelSuite) TestProcessAnnualCoverage() {
+	year := time.Now().UTC().Year()
+
+	f := CreateItemFixtures(ms.DB, FixturesConfig{ItemsPerPolicy: 3})
+
+	f.Items[0].PaidThroughYear = year
+	UpdateItemStatus(ms.DB, f.Items[0], api.ItemCoverageStatusApproved, "")
+	UpdateItemStatus(ms.DB, f.Items[1], api.ItemCoverageStatusApproved, "")
+
+	err := ProcessAnnualCoverage(ms.DB, year)
+	ms.NoError(err)
+
+	var l LedgerEntries
+	ms.NoError(l.FindCurrentRenewals(ms.DB, year))
+	ms.Equal(1, len(l))
+
+	// do it again to make sure it doesn't make double ledger entries
+	err = ProcessAnnualCoverage(ms.DB, year)
+	ms.NoError(err)
+
+	var l2 LedgerEntries
+	ms.NoError(l2.FindCurrentRenewals(ms.DB, year))
+	ms.Equal(1, len(l2))
 }
