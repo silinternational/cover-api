@@ -9,25 +9,6 @@ import (
 	"github.com/silinternational/cover-api/models"
 )
 
-func userCreated(e events.Event) {
-	var user models.User
-	if err := findObject(e.Payload, &user, e.Kind); err != nil {
-		return
-	}
-
-	var householdID string
-	if user.StaffID.Valid {
-		householdID = GetHHID(user.StaffID.String)
-	}
-
-	if err := user.CreateInitialPolicy(nil, householdID); err != nil {
-		domain.ErrLogger.Printf("Failed to create initial policy in %s, %s", e.Kind, err)
-		return
-	}
-
-	// TODO: send welcome email
-}
-
 func policyUserInviteCreated(e events.Event) {
 	var invite models.PolicyUserInvite
 	if err := findObject(e.Payload, &invite, e.Kind); err != nil {

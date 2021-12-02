@@ -197,6 +197,10 @@ var Env struct {
 	HouseholdIDLookupURL      string `default:"" split_words:"true"`
 	HouseholdIDLookupUsername string `default:"" split_words:"true"`
 	HouseholdIDLookupPassword string `default:"" split_words:"true"`
+
+	UserWelcomeEmailIntro       string `default:"" split_words:"true"`
+	UserWelcomeEmailPreviewText string `default:"" split_words:"true"`
+	UserWelcomeEmailAuthOrgText string `default:"Login with your organizational account." split_words:"true"`
 }
 
 func init() {
