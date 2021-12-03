@@ -128,24 +128,26 @@ func ClaimReceiptQueueMessage(tx *pop.Connection, claim models.Claim) {
 		panic(msg)
 	}
 
-	clItem := claim.ClaimItems[0]
+	claimItem := claim.ClaimItems[0]
 
 	data := newEmailMessageData()
 	data.addClaimData(tx, claim)
 
-	data["receiptMessage"] = ""
+	data["estimate"] = "$-"
+	data["maxPayout"] = claimItem.PayoutAmount
+	data["deductible"] = domain.Env.DeductibleString
 
-	switch clItem.PayoutOption {
+	switch claimItem.PayoutOption {
 	case api.PayoutOptionRepair:
-		data["receiptMessage"] = "repair"
+		data["estimate"] = "$" + claimItem.RepairEstimate.String()
 	case api.PayoutOptionReplacement:
-		data["receiptMessage"] = "receipt"
+		data["estimate"] = "$" + claimItem.ReplaceEstimate.String()
 	}
 
 	notn := models.Notification{
 		ClaimID: nulls.NewUUID(claim.ID),
 		Body:    data.renderHTML(MessageTemplateClaimReceiptMember),
-		Subject: "Please provide a receipt",
+		Subject: "Claim Approved for " + string(claimItem.PayoutOption),
 
 		InappText: "Please provide a receipt",
 

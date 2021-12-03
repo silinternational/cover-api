@@ -349,12 +349,13 @@ func (ms *ModelSuite) TestClaimItem_Compare() {
 
 func (ms *ModelSuite) TestClaimItem_updatePayoutAmount() {
 	params := []UpdateClaimItemsParams{
-		{PayoutOption: api.PayoutOptionRepair, RepairEstimate: 100},
+		{PayoutOption: api.PayoutOptionRepair, FMV: 1000, RepairEstimate: 100},
 		{PayoutOption: api.PayoutOptionReplacement, ReplaceEstimate: 200},
 		{PayoutOption: api.PayoutOptionFMV, FMV: 300},
 		{PayoutOption: api.PayoutOptionFixedFraction},
-		{PayoutOption: api.PayoutOptionRepair, RepairEstimate: 1000},
-		{PayoutOption: api.PayoutOptionRepair, RepairActual: 500},
+		{PayoutOption: api.PayoutOptionRepair, FMV: 1500, RepairEstimate: 1000},
+		{PayoutOption: api.PayoutOptionRepair, FMV: 1000, RepairActual: 500},
+		{PayoutOption: api.PayoutOptionRepair, FMV: 900, RepairEstimate: 800},
 	}
 
 	fixtures := CreateItemFixtures(ms.DB, FixturesConfig{ClaimsPerPolicy: len(params), ClaimItemsPerClaim: 1})
@@ -369,7 +370,7 @@ func (ms *ModelSuite) TestClaimItem_updatePayoutAmount() {
 	fixtures.Claims[3].IncidentType = api.ClaimIncidentTypeEvacuation
 	ms.NoError(ms.DB.Update(&fixtures.Claims[3]))
 
-	review3Claim := UpdateClaimStatus(ms.DB, fixtures.Claims[5], api.ClaimStatusReview3, "")
+	fixtures.Claims[5] = UpdateClaimStatus(ms.DB, fixtures.Claims[5], api.ClaimStatusReview3, "")
 
 	testCtx := CreateTestContext(fixtures.Users[0])
 
@@ -405,8 +406,13 @@ func (ms *ModelSuite) TestClaimItem_updatePayoutAmount() {
 		},
 		{
 			name:      "use RepairActual",
-			claimItem: review3Claim.ClaimItems[0],
+			claimItem: fixtures.Claims[5].ClaimItems[0],
 			want:      475,
+		},
+		{
+			name:      "capped by FMV",
+			claimItem: fixtures.Claims[6].ClaimItems[0],
+			want:      599,
 		},
 	}
 	for _, tt := range tests {

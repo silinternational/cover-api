@@ -107,7 +107,7 @@ func (ts *TestSuite) Test_ClaimPreapprovedQueueMessage() {
 		{
 			name:                  "preapproved",
 			wantToEmails:          []interface{}{member0.EmailOfChoice(), member1.EmailOfChoice()},
-			wantSubjectContains:   "receipt(s) needed on your new claim",
+			wantSubjectContains:   "Claim Approved for Repair",
 			wantInappTextContains: "receipts are needed on your new claim",
 			wantBodyContains: []string{
 				domain.Env.UIURL,
@@ -141,7 +141,7 @@ func (ts *TestSuite) Test_ClaimReceiptQueueMessage() {
 		{
 			name:                  "receipts required again",
 			wantToEmails:          []interface{}{member0.EmailOfChoice(), member1.EmailOfChoice()},
-			wantSubjectContains:   "Please provide a receipt",
+			wantSubjectContains:   "Claim Approved for Repair",
 			wantInappTextContains: "Please provide a receipt",
 			wantBodyContains: []string{
 				domain.Env.UIURL,
