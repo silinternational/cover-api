@@ -29,4 +29,12 @@ we need you to upload a receipt of your <%= payoutOptionLower %> costs.
 		label: "Upload a Receipt"}
 	) %>
 
+	<%= partial("customer_footer", {
+		supportEmail: supportEmail,
+		supportName: supportName,
+		appName: appName,
+		policy: policy,
+		uiURL: uiURL,
+	}) %>
+
 </div>
