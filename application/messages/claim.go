@@ -7,6 +7,7 @@ import (
 	"github.com/gobuffalo/pop/v5"
 
 	"github.com/silinternational/cover-api/api"
+	"github.com/silinternational/cover-api/domain"
 	"github.com/silinternational/cover-api/models"
 )
 
@@ -75,10 +76,31 @@ func ClaimPreapprovedQueueMessage(tx *pop.Connection, claim models.Claim) {
 	data := newEmailMessageData()
 	data.addClaimData(tx, claim)
 
+	claim.LoadClaimItems(tx, false)
+
+	if len(claim.ClaimItems) == 0 {
+		msg := fmt.Sprintf("claim %s has no claim_item", claim.ID)
+		panic(msg)
+	}
+
+	claimItem := claim.ClaimItems[0]
+	claimItem.LoadItem(tx, false)
+
+	data["estimate"] = "$-"
+	data["deductible"] = domain.Env.DeductibleString
+	data["repairThreshold"] = domain.Env.RepairThresholdString
+
+	switch claimItem.PayoutOption {
+	case api.PayoutOptionRepair:
+		data["estimate"] = "$" + claimItem.RepairEstimate.String()
+	case api.PayoutOptionReplacement:
+		data["estimate"] = "$" + claimItem.ReplaceEstimate.String()
+	}
+
 	notn := models.Notification{
 		ClaimID: nulls.NewUUID(claim.ID),
 		Body:    data.renderHTML(MessageTemplateClaimPreapprovedMember),
-		Subject: "receipt(s) needed on your new claim",
+		Subject: "Claim Approved for " + string(claimItem.PayoutOption),
 
 		InappText: "receipts are needed on your new claim",
 
@@ -106,24 +128,26 @@ func ClaimReceiptQueueMessage(tx *pop.Connection, claim models.Claim) {
 		panic(msg)
 	}
 
-	clItem := claim.ClaimItems[0]
+	claimItem := claim.ClaimItems[0]
 
 	data := newEmailMessageData()
 	data.addClaimData(tx, claim)
 
-	data["receiptMessage"] = ""
+	data["estimate"] = "$-"
+	data["maxPayout"] = claimItem.PayoutAmount
+	data["deductible"] = domain.Env.DeductibleString
 
-	switch clItem.PayoutOption {
+	switch claimItem.PayoutOption {
 	case api.PayoutOptionRepair:
-		data["receiptMessage"] = "repair"
+		data["estimate"] = "$" + claimItem.RepairEstimate.String()
 	case api.PayoutOptionReplacement:
-		data["receiptMessage"] = "receipt"
+		data["estimate"] = "$" + claimItem.ReplaceEstimate.String()
 	}
 
 	notn := models.Notification{
 		ClaimID: nulls.NewUUID(claim.ID),
 		Body:    data.renderHTML(MessageTemplateClaimReceiptMember),
-		Subject: "Please provide a receipt",
+		Subject: "Claim Approved for " + string(claimItem.PayoutOption),
 
 		InappText: "Please provide a receipt",
 

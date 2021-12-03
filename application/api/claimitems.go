@@ -1,12 +1,9 @@
 package api
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/gofrs/uuid"
-
-	"github.com/silinternational/cover-api/domain"
 )
 
 // PayoutOption
@@ -22,17 +19,6 @@ const (
 	PayoutOptionFMV           = PayoutOption("FMV")
 	PayoutOptionFixedFraction = PayoutOption("FixedFraction")
 )
-
-// PayoutOptionDescriptions are used for user-facing descriptions of each of the PayoutOption values
-var PayoutOptionDescriptions = map[PayoutOption]string{
-	PayoutOptionRepair: fmt.Sprintf("Payout is the item's covered value or repair cost, whichever is less, "+
-		"minus a %s deductible", domain.Env.DeductibleString),
-	PayoutOptionReplacement: fmt.Sprintf("Payout is the item's covered value or replacement cost, whichever is "+
-		"less, minus a %s deductible.", domain.Env.DeductibleString),
-	PayoutOptionFMV: fmt.Sprintf("Payout is the item's fair market value minus a %s deductible.",
-		domain.Env.DeductibleString),
-	PayoutOptionFixedFraction: "Payout is a fixed portion of the item's covered value.",
-}
 
 // swagger:model
 type ClaimItems []ClaimItem

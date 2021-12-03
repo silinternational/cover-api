@@ -76,13 +76,14 @@ func (m MessageData) addClaimData(tx *pop.Connection, claim models.Claim) {
 	claim.LoadClaimItems(tx, false)
 	item := claim.ClaimItems[0].Item
 	m["item"] = item
+	m["coverageAmount"] = "$" + api.Currency(item.CoverageAmount).String()
 
 	person := item.GetAccountablePersonName(tx)
 	m["accountablePerson"] = person.String()
 	m["personFirstName"] = person.First
 
 	m["payoutOption"] = string(claim.ClaimItems[0].PayoutOption)
-	m["payoutOptionDescription"] = api.PayoutOptionDescriptions[claim.ClaimItems[0].PayoutOption]
+	m["payoutOptionLower"] = strings.ToLower(string(claim.ClaimItems[0].PayoutOption))
 	m["maximumPayout"] = "$" + claim.TotalPayout.String()
 	m["submitted"] = domain.TimeBetween(time.Now().UTC(), claim.SubmittedAt(tx))
 }
