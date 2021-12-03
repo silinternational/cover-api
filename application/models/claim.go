@@ -176,6 +176,14 @@ func (c *Claim) Update(ctx context.Context) error {
 //  and then writes the Claim data to an existing database record.
 func (c *Claim) UpdateByUser(ctx context.Context) error {
 	user := CurrentUser(ctx)
+
+	// If the user edits something, it should take it off of the steward's list of things to review and
+	//  also force the user to resubmit it.
+	if c.Status == api.ClaimStatusReview1 {
+		c.Status = api.ClaimStatusDraft
+		c.StatusChange = ClaimStatusChangeReturnedToDraft + user.Name()
+	}
+
 	if user.IsAdmin() {
 		if c.Status.WasReviewed() {
 			c.setReviewer(ctx)
@@ -187,13 +195,6 @@ func (c *Claim) UpdateByUser(ctx context.Context) error {
 		err := errors.New("user may not edit a claim that is too far along in the review process")
 		appErr := api.NewAppError(err, api.ErrorClaimStatus, api.CategoryUser)
 		return appErr
-	}
-
-	// If the user edits something, it should take it off of the steward's list of things to review and
-	//  also force the user to resubmit it.
-	if c.Status == api.ClaimStatusReview1 {
-		c.Status = api.ClaimStatusDraft
-		c.StatusChange = ClaimStatusChangeReturnedToDraft + user.Name()
 	}
 
 	return c.Update(ctx)
