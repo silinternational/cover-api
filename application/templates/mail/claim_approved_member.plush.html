@@ -1,15 +1,23 @@
 <div>
 	<%= partial("body_header", {
-		previewText: "",
+		previewText: "Dear " + personFirstName + ", Congratulations! We've approved the payout for your claim on " +
+			item.Name + ". You'll get a credit of " + totalPayout + " in your account by the end of this month.",
 		title: "Claim Approved",
-		subTitle: "Your claim has been approved: " + item.Name,
+		subTitle: "",
 	}) %>
 
-	<%= partial("alert", {
-		alert: "",
-		alert_description: "this is still just a draft email",
-		alert_icon: ""}
-	) %>
+	<p>
+		Dear <%= personFirstName %>,
+	</p>
+
+	<p>
+		Congratulations! We've approved the payout for your claim on <%= item.Name %>. You'll get a credit of
+		<%= totalPayout %> in your account by the end of this month.
+	</p>
+
+	<p>
+		&mdash;<%= supportFirstName %>
+	</p>
 
 	<%= partial("claim_card", {
 		claim: claim,
@@ -17,10 +25,16 @@
 		incidentType: incidentType,
 	}) %>
 
+	<%= partial("alert", {
+		alert: "",
+		alert_description: "Approved for payout",
+		alert_icon: "dollar",
+	}) %>
+
 	<%= partial("button", {
 		url: claimURL,
-		label: "Open in " + appName}
-	) %>
+		label: "View Claim in " + appName
+	}) %>
 
 </div>
 

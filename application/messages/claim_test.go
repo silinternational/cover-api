@@ -237,7 +237,7 @@ func (ts *TestSuite) Test_ClaimApprovedQueueMessage() {
 		{
 			name:                  "coverage approved",
 			wantToEmails:          []interface{}{member0.EmailOfChoice(), member1.EmailOfChoice()},
-			wantSubjectContains:   "your claim has been approved",
+			wantSubjectContains:   "Claim Payout Approved",
 			wantInappTextContains: "your claim has been approved",
 			wantBodyContains: []string{
 				domain.Env.UIURL,
