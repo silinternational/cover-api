@@ -15,6 +15,8 @@ func (ts *TestSuite) Test_PolicyUserInviteSend() {
 	t := ts.T()
 	db := ts.DB
 
+	models.CreateAdminUsers(db)
+
 	fixConfig := models.FixturesConfig{
 		NumberOfPolicies: 1,
 		UsersPerPolicy:   1,
