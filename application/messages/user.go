@@ -15,8 +15,8 @@ func UserWelcomeQueueMessage(tx *pop.Connection, user models.User) {
 	m := newEmailMessageData()
 	m["personFirstName"] = user.FirstName
 	m["emailIntro"] = template.HTML(domain.Env.UserWelcomeEmailIntro) // #nosec G203
-	m["previewText"] = domain.Env.UserWelcomeEmailPreviewText
-	m["loginMessage"] = domain.Env.UserWelcomeEmailAuthOrgText
+	m["previewText"] = fmt.Sprintf("Dear %s, %s", user.FirstName, domain.Env.UserWelcomeEmailPreviewText)
+	m["emailEnding"] = domain.Env.UserWelcomeEmailEnding
 	m.addStewardData(tx)
 
 	notn := models.Notification{
