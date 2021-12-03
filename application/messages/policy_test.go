@@ -11,6 +11,8 @@ func (ts *TestSuite) Test_PolicyUserInviteQueueMessage() {
 	t := ts.T()
 	db := ts.DB
 
+	models.CreateAdminUsers(db)
+
 	f := models.CreatePolicyUserInviteFixtures(db, 2)
 
 	policy := f.Policies[0]
@@ -24,8 +26,8 @@ func (ts *TestSuite) Test_PolicyUserInviteQueueMessage() {
 			wantSubjectContains: "Invitation",
 			wantBodyContains: []string{
 				domain.Env.UIURL,
-				"Accept Invite",
-				"You've been invited to join",
+				"Accept Invitation",
+				"has invited you to join",
 				member.Name(),
 				invite0.GetAcceptURL(),
 			},

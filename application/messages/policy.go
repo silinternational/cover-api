@@ -1,7 +1,8 @@
 package messages
 
 import (
-	"strings"
+	"fmt"
+	"html/template"
 
 	"github.com/gobuffalo/nulls"
 	"github.com/gobuffalo/pop/v5"
@@ -20,12 +21,16 @@ func PolicyUserInviteQueueMessage(tx *pop.Connection, invite models.PolicyUserIn
 	data["inviteeName"] = invite.InviteeName
 
 	invite.LoadPolicy(tx, false)
-	data["policyType"] = strings.ToLower(string(invite.Policy.Type))
+	data["policy"] = invite.Policy
+
+	data["emailIntro"] = template.HTML(domain.Env.UserWelcomeEmailIntro) // #nosec G203
+
+	data.addStewardData(tx)
 
 	notn := models.Notification{
 		PolicyID: nulls.NewUUID(invite.PolicyID),
 		Body:     data.renderHTML(MessageTemplatePolicyUserInvite),
-		Subject:  "Invitation to " + domain.Env.AppName,
+		Subject:  fmt.Sprintf("Invitation to %s policy on %s", invite.Policy.Name, domain.Env.AppName),
 
 		// TODO make these constants somewhere
 		Event:         "Policy User Invite Notification",
