@@ -18,6 +18,7 @@ var images = map[string]string{
 	"check":              "check_circle.png",
 	"clipboard":          "clipboard.png",
 	"clock":              "clock.png",
+	"do_not_enter":       "do_not_enter.png",
 	"error":              "error.png",
 	"new":                "new.png",
 	"new_releases":       "new_releases.png",
