@@ -11,14 +11,18 @@
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
 
+# Local env files
+.env
+codeship.env
+local.env
 
+# Other files
 **/*.log
 **/.DS_Store
 *-packr.go
 *.aes
 *.pid
 .console_history
-.env
 .grifter/
 .idea/
 .jhw-cache/
@@ -29,10 +33,13 @@ application/migrations/schema.sql
 application/swagger.json
 application/vendor/
 bin/
-codeship.env
 coverage
 coverage.data
 generated/
-go-build/
 jhw.*
 tmp/
+go-build/
+
+# Data files
+*.csv
+*.json

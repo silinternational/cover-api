@@ -1,9 +1,15 @@
 package actions
 
 import (
+	"bytes"
+	"encoding/json"
+	"fmt"
 	"net/http"
+	"strings"
 	"testing"
 	"time"
+
+	"github.com/silinternational/cover-api/models"
 
 	"github.com/gobuffalo/buffalo"
 	"github.com/gobuffalo/httptest"
@@ -52,6 +58,18 @@ func (as *ActionSuite) SetupTest() {
 	s, _ := as.app.SessionStore.New(nil, as.app.SessionName)
 	as.Session = &buffalo.Session{
 		Session: s,
+	}
+
+	models.DestroyAll()
+}
+
+func (as *ActionSuite) verifyResponseData(wantData []string, body string, msg string) {
+	var b bytes.Buffer
+	as.NoError(json.Indent(&b, []byte(body), "", "    "))
+	for _, w := range wantData {
+		if !strings.Contains(body, w) {
+			as.Fail(fmt.Sprintf("%s response data is not correct\nwanted: %s\nin body:\n%s\n", msg, w, b.String()))
+		}
 	}
 }
 

@@ -1,0 +1,42 @@
+
+<div>
+	<%= partial("body_header", {
+		previewText: "",
+		title: "Change Needed",
+		subTitle: "",
+	}) %>
+
+	<%= partial("alert", {
+		alert: "Coverage needs attention",
+		alert_description: "",
+		alert_icon: "new_releases"}
+	) %>
+
+	<p>
+		Dear <%= personFirstName %>,
+	</p>
+
+	<p>
+		You recently requested coverage on <%= item.Name %>, but we need to clarify a few things on your request for
+		coverage.
+	</p>
+
+	<p>
+		<%= supportFirstName %> says:
+	</p>
+
+	<p style="text-indent:2em;">
+		<%= item.StatusReason %>
+	</p>
+
+	<%= partial("button", {
+		url: itemURL,
+		label: "Open in " + appName}
+	) %>
+
+	<%= partial("customer_footer", {
+		supportEmail: supportEmail,
+		supportName: supportName}
+	) %>
+</div>
+

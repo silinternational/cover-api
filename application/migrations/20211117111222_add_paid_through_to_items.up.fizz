@@ -1,0 +1,1 @@
+add_column("items", "paid_through_year", "int", {"default": 0})

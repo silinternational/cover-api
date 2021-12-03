@@ -1,0 +1,36 @@
+create_table("notifications") {
+	t.Column("id", "uuid", {primary: true})
+	t.Column("policy_id", "uuid", {"null": true})
+	t.Column("item_id", "uuid", {"null": true})
+	t.Column("claim_id", "uuid", {"null": true})
+	t.Column("event", "string", {})
+	t.Column("event_category", "string", {})
+	t.Column("subject", "string", {})
+	t.Column("inapp_text", "string", {})
+	t.Column("body", "string", {"default": "", "size": 2048})
+	t.Timestamps()
+
+	t.ForeignKey("policy_id", {"policies": ["id"]}, {"on_delete": "SET NULL"})
+	t.ForeignKey("item_id", {"items": ["id"]}, {"on_delete": "SET NULL"})
+	t.ForeignKey("claim_id", {"claims": ["id"]}, {"on_delete": "SET NULL"})
+}
+
+
+create_table("notification_users") {
+	t.Column("id", "uuid", {primary: true})
+	t.Column("notification_id", "uuid", {})
+	t.Column("user_id", "uuid", {"null": true})
+	t.Column("email_address", "string", {})
+	t.Column("viewed_at_utc", "timestamp", {"null": true})
+	t.Column("send_attempt_count", "int", {"default": 0})
+	t.Column("send_after_utc", "timestamp", {})
+	t.Column("last_attempt_utc", "timestamp", {"null": true})
+	t.Column("sent_at_utc", "timestamp", {"null": true})
+	t.Column("to_name", "string", {})
+	t.Timestamps()
+
+	t.Index(["notification_id","user_id"], {"unique": true})
+
+	t.ForeignKey("notification_id", {"notifications": ["id"]}, {"on_delete": "cascade"})
+	t.ForeignKey("user_id", {"users": ["id"]}, {"on_delete": "cascade"})
+}

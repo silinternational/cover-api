@@ -1,4 +1,4 @@
-// Riskman API
+// Cover API
 //
 // Terms Of Service:
 //
@@ -42,8 +42,24 @@ import (
 	"github.com/gorilla/sessions"
 	"github.com/rs/cors"
 
-	"github.com/silinternational/riskman-api/domain"
-	"github.com/silinternational/riskman-api/models"
+	"github.com/silinternational/cover-api/api"
+	"github.com/silinternational/cover-api/domain"
+	"github.com/silinternational/cover-api/listeners"
+	"github.com/silinternational/cover-api/models"
+)
+
+const idRegex = `/{id:[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-4[a-fA-F0-9]{3}-[8|9|aA|bB][a-fA-F0-9]{3}-[a-fA-F0-9]{12}}`
+
+const (
+	stewardPath         = "/steward"
+	batchesPath         = "/batches"
+	claimsPath          = "/" + domain.TypeClaim
+	claimFilesPath      = "/" + domain.TypeClaimFile
+	claimItemsPath      = "/" + domain.TypeClaimItem
+	filesPath           = "/" + domain.TypeFile
+	itemsPath           = "/" + domain.TypeItem
+	policiesPath        = "/" + domain.TypePolicy
+	policyDependentPath = "/" + domain.TypePolicyDependent
 )
 
 // ENV is used to help switch settings based on where the
@@ -78,7 +94,7 @@ func App() *buffalo.App {
 					AllowedHeaders:   []string{"*"},
 				}).Handler,
 			},
-			SessionName:  "_riskman_api_session",
+			SessionName:  "_cover_api_session",
 			SessionStore: sessions.NewCookieStore([]byte(domain.Env.SessionSecret)),
 		})
 
@@ -89,11 +105,18 @@ func App() *buffalo.App {
 		}
 		app.Use(domain.T.Middleware())
 
+		registerCustomErrorHandler(app)
+
 		// Initialize and attach "rollbar" to context
 		app.Use(domain.RollbarMiddleware)
 
 		// Log request parameters (filters apply).
 		app.Use(paramlogger.ParameterLogger)
+
+		//  Add authentication and authorization
+		app.Use(AuthN, AuthZ)
+		app.Middleware.Skip(AuthN, HomeHandler, statusHandler)
+		app.Middleware.Skip(AuthZ, HomeHandler, statusHandler, uploadHandler)
 
 		// Set the request content type to JSON
 		app.Use(contenttype.Set("application/json"))
@@ -102,12 +125,96 @@ func App() *buffalo.App {
 		app.Use(popmw.Transaction(models.DB))
 
 		app.GET("/", HomeHandler)
+		app.GET("/status", statusHandler)
+
+		app.POST("/upload", uploadHandler)
 
 		// users
-		usersGroup := app.Group("/users")
+		usersGroup := app.Group("/" + domain.TypeUser)
 		usersGroup.GET("/", usersList)
+		usersGroup.Middleware.Skip(AuthZ, usersMe, usersMeUpdate, usersMeFilesAttach)
+		usersGroup.GET("/me", usersMe)
+		usersGroup.PUT("/me", usersMeUpdate)
+		usersGroup.POST("/me/files", usersMeFilesAttach)
+		usersGroup.GET(idRegex, usersView)
 
+		auth := app.Group("/auth")
+		auth.Middleware.Skip(AuthN, authRequest, authCallback, authDestroy)
+		auth.Middleware.Skip(AuthZ, authRequest, authCallback, authDestroy)
+		auth.POST("/login", authRequest)
+		auth.POST("/callback", authCallback)
+		auth.GET("/logout", authDestroy)
+
+		// accounting batches
+		batchesGroup := app.Group(batchesPath)
+		batchesGroup.Middleware.Skip(AuthZ, batchesGetLatest, batchesApprove, batchesAnnual) // AuthZ is implemented in the handler
+		batchesGroup.GET("/latest", batchesGetLatest)
+		batchesGroup.POST("/approve", batchesApprove)
+		batchesGroup.GET("/annual", batchesAnnual)
+
+		stewardGroup := app.Group(stewardPath)
+		stewardGroup.Middleware.Skip(AuthZ, stewardListRecentObjects) // AuthZ is implemented in the handler
+		stewardGroup.GET("/"+api.ResourceRecent, stewardListRecentObjects)
+
+		// claims
+		claimsGroup := app.Group(claimsPath)
+		claimsGroup.GET("/", claimsList)
+		claimsGroup.GET(idRegex, claimsView)
+		claimsGroup.PUT(idRegex, claimsUpdate)
+		claimsGroup.POST(idRegex+filesPath, claimFilesAttach)
+		claimsGroup.POST(idRegex+itemsPath, claimsItemsCreate)
+		claimsGroup.POST(idRegex+"/"+api.ResourceSubmit, claimsSubmit)
+		claimsGroup.POST(idRegex+"/"+api.ResourceRevision, claimsRequestRevision)
+		claimsGroup.POST(idRegex+"/"+api.ResourcePreapprove, claimsPreapprove)
+		claimsGroup.POST(idRegex+"/"+api.ResourceReceipt, claimsRequestReceipt)
+		claimsGroup.POST(idRegex+"/"+api.ResourceApprove, claimsApprove)
+		claimsGroup.POST(idRegex+"/"+api.ResourceDeny, claimsDeny)
+
+		claimFilesGroup := app.Group(claimFilesPath)
+		claimFilesGroup.DELETE(idRegex, claimFilesDelete)
+
+		claimItemsGroup := app.Group(claimItemsPath)
+		claimItemsGroup.PUT(idRegex, claimItemsUpdate)
+
+		// config
+		configGroup := app.Group("/config")
+		configGroup.Middleware.Skip(AuthZ, claimIncidentTypes, itemCategoriesList, entityCodesList, countries)
+		configGroup.GET("/countries", countries)
+		configGroup.GET("/claim-incident-types", claimIncidentTypes)
+		configGroup.GET("/item-categories", itemCategoriesList)
+		configGroup.GET("/entity-codes", entityCodesList)
+
+		// dependent
+		depsGroup := app.Group(policyDependentPath)
+		depsGroup.PUT(idRegex, dependentsUpdate)
+		depsGroup.DELETE(idRegex, dependentsDelete)
+
+		// item
+		itemsGroup := app.Group(itemsPath)
+		itemsGroup.POST(idRegex+"/"+api.ResourceSubmit, itemsSubmit)
+		itemsGroup.POST(idRegex+"/"+api.ResourceRevision, itemsRevision)
+		itemsGroup.POST(idRegex+"/"+api.ResourceApprove, itemsApprove)
+		itemsGroup.POST(idRegex+"/"+api.ResourceDeny, itemsDeny)
+		itemsGroup.PUT(idRegex, itemsUpdate)
+		itemsGroup.DELETE(idRegex, itemsRemove)
+
+		// policies
+		policiesGroup := app.Group(policiesPath)
+		policiesGroup.GET("/", policiesList)
+		policiesGroup.POST("/", policiesCreateTeam)
+		policiesGroup.GET(idRegex, policiesView)
+		policiesGroup.GET(idRegex+"/dependents", dependentsList)
+		policiesGroup.PUT(idRegex, policiesUpdate)
+		policiesGroup.POST(idRegex+"/dependents", dependentsCreate)
+		policiesGroup.GET(idRegex+itemsPath, itemsList)
+		policiesGroup.POST(idRegex+itemsPath, itemsCreate)
+		policiesGroup.GET(idRegex+claimsPath, policiesClaimsList)
+		policiesGroup.POST(idRegex+claimsPath, claimsCreate)
+		policiesGroup.GET(idRegex+"/members", policiesListMembers)
+		policiesGroup.POST(idRegex+"/members", policiesInviteMember)
 	}
+
+	listeners.RegisterListener()
 
 	return app
 }

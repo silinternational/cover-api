@@ -1,0 +1,7 @@
+
+drop_column("claims", "city")
+drop_column("claims", "state")
+drop_column("claims", "country")
+
+drop_column("items", "city")
+drop_column("items", "state")

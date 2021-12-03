@@ -1,0 +1,23 @@
+<div>
+	<%= partial("body_header", {
+		previewText: "",
+		title: "Notice",
+		subTitle: "Coverage has been auto approved for " + item.Name,
+	}) %>
+
+	<%= partial("item_card", {
+		item: item,
+		coverageAmount: coverageAmount,
+		premium: annualPremium,
+		coverageStartDate: coverageStartDate,
+		accountablePerson: accountablePerson,
+		householdID: policy.HouseholdID}
+	) %>
+
+	<%= partial("button", {
+		url: itemURL,
+		label: "Open in " + appName}
+	) %>
+
+</div>
+

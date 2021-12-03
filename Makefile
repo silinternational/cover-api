@@ -2,7 +2,7 @@ dev: buffalo adminer migrate
 
 migrate: db
 	docker-compose run --rm buffalo whenavail db 5432 10 buffalo-pop pop migrate up
-	docker-compose run --rm buffalo /bin/bash -c "grift db:seed"
+	docker-compose run --rm buffalo /bin/bash -c "grift db:seed && grift minio:seed"
 
 migratestatus: db
 	docker-compose run buffalo buffalo-pop pop migrate status
@@ -15,6 +15,10 @@ adminer:
 
 buffalo: db
 	docker-compose up -d buffalo
+
+debug: killbuffalo
+	docker-compose up -d debug
+	docker-compose logs -f debug
 
 swagger: swaggerspec
 	docker-compose run --rm --service-ports swagger serve -p 8082 --no-open swagger.json
@@ -43,11 +47,15 @@ rmtestdb:
 	docker-compose kill testdb && docker-compose rm -f testdb
 
 test: testdb minio
+	rm -f application/migrations/schema.sql
 	docker-compose run --rm test whenavail testdb 5432 10 buffalo test
 
 testenv: rmtestdb migratetestdb
 	@echo "\n\nIf minio hasn't been initialized, run grift minio:seed\n"
 	docker-compose run --rm test bash
+
+killbuffalo:
+	docker-compose kill buffalo
 
 clean:
 	docker-compose kill

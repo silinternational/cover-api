@@ -1,0 +1,8 @@
+sql(`
+	INSERT INTO entity_codes (id, code, name, active, created_at, updated_at)
+	VALUES
+		('5f181e39-0a2a-49ac-8796-2f3a3de9fcbd', 'HH', 'Household', true, 'now', 'now');
+	UPDATE policies SET entity_code_id='5f181e39-0a2a-49ac-8796-2f3a3de9fcbd' WHERE type='Household';
+`)
+
+change_column("policies", "entity_code_id", "uuid", {})

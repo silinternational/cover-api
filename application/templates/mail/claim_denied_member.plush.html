@@ -1,0 +1,42 @@
+<div>
+	<%= partial("body_header", {
+		previewText: "Dear " + personFirstName + ", I regret to inform you that your claim on " + item.Name +
+			" has been denied.",
+		title: "An Update on Your Coverage Request",
+		subTitle: "",
+	}) %>
+
+	<p>
+		Dear <%= personFirstName %>,
+	</p>
+
+	<p>
+		I regret to inform you that your claim on <%= item.Name %> has been denied.
+	</p>
+
+	<p>
+		<%= claim.StatusReason %>
+	</p>
+
+	<p>
+		&mdash;<%= supportFirstName %>
+	</p>
+
+	<%= partial("alert", {
+		alert: "Claim denied",
+		alert_description: "",
+		alert_icon: "do_not_enter",
+	}) %>
+
+	<%= partial("claim_card", {
+		claim: claim,
+		incidentDate: incidentDate,
+		incidentType: incidentType,
+	}) %>
+
+	<%= partial("button", {
+		url: claimURL,
+		label: "View Claim in " + appName
+	}) %>
+
+</div>

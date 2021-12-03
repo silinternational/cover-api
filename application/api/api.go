@@ -1,14 +1,37 @@
 package api
 
 import (
+	"fmt"
 	"net/http"
 	"regexp"
 	"strings"
 
 	"github.com/gobuffalo/buffalo"
 
-	"github.com/silinternational/riskman-api/domain"
+	"github.com/silinternational/cover-api/domain"
 )
+
+const (
+	ResourceSubmit     = "submit"
+	ResourceRevision   = "revision"
+	ResourcePreapprove = "preapprove"
+	ResourceReceipt    = "receipt"
+	ResourceApprove    = "approve"
+	ResourceDeny       = "deny"
+	ResourceRecent     = "recent"
+)
+
+// swagger:model
+type ListResponse struct {
+	// Meta contains pagination data
+	Meta Meta `json:"meta"`
+
+	// Data containing the relevant list type
+	Data interface{} `json:"data"`
+}
+
+// TODO: implement Meta type to provide pagination properties
+type Meta struct{}
 
 type ErrorKey string
 
@@ -78,13 +101,15 @@ func (a *AppError) SetHttpStatusFromCategory() {
 		a.HttpStatus = http.StatusInternalServerError
 	case CategoryForbidden, CategoryNotFound:
 		a.HttpStatus = http.StatusNotFound
+	case CategoryUnauthorized:
+		a.HttpStatus = http.StatusUnauthorized
 	default:
 		a.HttpStatus = http.StatusBadRequest
 	}
 }
 
-// LoadTranslatedMessage assigns the error message by translating the Key into a user-friendly string, unless
-// the HttpStatus is 500 in which case a standard message is used.
+// LoadTranslatedMessage assigns the error message by translating the Key into a user-friendly string, either
+// from a list of translated strings (see errors.en) or by breaking down the Key into individual words
 func (a *AppError) LoadTranslatedMessage(c buffalo.Context) {
 	key := a.Key
 
@@ -109,12 +134,38 @@ func keyToReadableString(key string) string {
 		return key
 	}
 
-	// Lowercase all but first word
-	for i := 1; i < len(words); i++ {
-		words[i] = strings.ToLower(words[i])
+	if len(words) > 1 && words[0] == "Error" {
+		words = words[1:]
 	}
 
-	return strings.Join(words, " ")
+	count := len(words)
+	newWords := []string{}
+
+	// Lowercase all but first word.
+	for i := 0; i < count; i++ {
+		// If a word is longer than one character, just use it as is
+		if len(words[i]) > 1 {
+			newWords = append(newWords, strings.ToLower(words[i]))
+			continue
+		}
+
+		// Combine single character words
+		next := words[i]
+		for j := i + 1; j < count; j++ {
+			if len(words[j]) == 1 {
+				next += words[j]
+				i++ // avoid reprocessing the same word
+			} else {
+				break
+			}
+		}
+		newWords = append(newWords, strings.ToLower(next))
+	}
+
+	firstUpper := strings.ToUpper(newWords[0][0:1])
+	newWords[0] = firstUpper + newWords[0][1:]
+
+	return strings.Join(newWords, " ")
 }
 
 // MergeExtras returns a single map with the all the key-values pairs of the input map
@@ -136,4 +187,18 @@ func MergeExtras(extras []map[string]interface{}) map[string]interface{} {
 	}
 
 	return allExtras
+}
+
+// Currency is in US Dollars, specified as an integer representing cents ($0.01 USD is represented as 1 and $105.36 as 10536)
+// swagger:model
+type Currency int
+
+func (c Currency) String() string {
+	return fmt.Sprintf("%0.2f", float32(c)/domain.CurrencyFactor)
+}
+
+// swagger:model
+type RecentObjects struct {
+	Items  RecentItems
+	Claims RecentClaims
 }

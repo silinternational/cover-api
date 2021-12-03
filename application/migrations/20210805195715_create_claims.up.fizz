@@ -1,0 +1,65 @@
+create_table("claims") {
+	t.Column("id", "uuid", {primary: true})
+	t.Column("policy_id", "uuid", {})
+	t.Column("incident_date", "timestamp", {})
+	t.Column("incident_type", "string", {})
+	t.Column("incident_description", "string", {})
+	t.Column("status", "string", {})
+	t.Column("review_date", "timestamp", {"null": true})
+	t.Column("reviewer_id", "uuid", {"null": true})
+	t.Column("payment_date", "timestamp", {"null": true})
+	t.Column("total_payout", "int", {})
+	t.Column("status_reason", "string", {})
+	t.Column("legacy_id", "int", {"null": true})
+	t.Column("reference_number", "string", {})
+
+	t.Timestamps()
+
+	t.Index("incident_type", {})
+	t.Index("legacy_id", {"unique": true})
+	t.Index("reference_number", {"unique": true})
+
+	t.ForeignKey("policy_id", {"policies": ["id"]}, {})
+	t.ForeignKey("reviewer_id", {"users": ["id"]}, {})
+}
+
+create_table("claim_items") {
+	t.Column("id", "uuid", {"primary": true})
+	t.Column("claim_id", "uuid", {})
+	t.Column("item_id", "uuid", {})
+	t.Column("status", "string", {})
+	t.Column("is_repairable", "bool", {})
+	t.Column("repair_estimate", "int", {})
+	t.Column("repair_actual", "int", {})
+	t.Column("replace_estimate", "int", {})
+	t.Column("replace_actual", "int", {})
+	t.Column("payout_option", "string", {})
+	t.Column("payout_amount", "int", {})
+	t.Column("fmv", "int", {})
+	t.Column("review_date", "timestamp", {"null": true})
+	t.Column("reviewer_id", "uuid", {"null": true})
+	t.Column("location", "string", {})
+	t.Column("legacy_id", "int", {"null": true})
+
+	t.Timestamps()
+
+	t.Index(["claim_id","item_id"], {"unique": true})
+	t.Index("legacy_id", {"unique": true})
+
+	t.ForeignKey("claim_id", {"claims": ["id"]}, {})
+	t.ForeignKey("item_id", {"items": ["id"]}, {})
+	t.ForeignKey("reviewer_id", {"users": ["id"]}, {})
+}
+
+create_table("claim_files") {
+	t.Column("id", "uuid", {primary: true})
+	t.Column("claim_id", "uuid")
+	t.Column("file_id", "uuid")
+	t.Column("purpose", "string")
+	t.Timestamps()
+
+	t.Index("file_id", {"unique": true})
+
+	t.ForeignKey("claim_id", {"claims": ["id"]}, {"on_delete": "cascade"})
+	t.ForeignKey("file_id", {"files": ["id"]}, {"on_delete": "cascade"})
+}

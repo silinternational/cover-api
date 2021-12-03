@@ -1,0 +1,35 @@
+
+<div>
+	<%= partial("body_header", {
+		previewText: "",
+		title: "Notice",
+		subTitle: "",
+	}) %>
+
+	<p>
+		Dear <%= personFirstName %>,
+	</p>
+
+	<p>
+		We regret to inform you that your request for coverage on <%= item.Name %> has been denied.
+	</p>
+
+	<p>
+		<%= supportFirstName %> says:
+	</p>
+
+	<p style="text-indent:2em;">
+		<%= item.StatusReason %>
+	</p>
+
+	<%= partial("button", {
+		url: itemURL,
+		label: "Review Item Coverage Request"}
+	) %>
+
+	<%= partial("customer_footer", {
+		supportEmail: supportEmail,
+		supportName: supportName}
+	) %>
+</div>
+

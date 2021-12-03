@@ -1,0 +1,3 @@
+add_column("claim_items", "status", "string", {})
+add_column("claim_items", "review_date", "timestamp", {"null": true})
+add_column("claim_items", "reviewer_id", "uuid", {"null": true})

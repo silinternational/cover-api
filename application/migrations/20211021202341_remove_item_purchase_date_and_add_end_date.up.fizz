@@ -1,0 +1,2 @@
+drop_column("items", "purchase_date")
+add_column("items", "coverage_end_date", "date", {"null": true})

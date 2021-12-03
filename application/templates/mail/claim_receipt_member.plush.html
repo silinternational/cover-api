@@ -1,0 +1,32 @@
+<div>
+	<%= partial("body_header", {
+		previewText: "",
+		title: "Receipt needed",
+		subTitle: "",
+	}) %>
+
+	<%= partial("alert", {
+		alert: "Claim Needs Attention",
+		alert_description: "",
+		alert_icon: "new_releases"}
+	) %>
+
+	<p>
+		Dear <%= personFirstName %>,
+	</p>
+
+	<p>
+		Thank you for reporting your claim! We hope to make this process as simple as possible for you.
+	</p>
+
+	<p>
+		To complete your claim on your <%= item.Name %>,
+we need you to upload a receipt of your <%= payoutOptionLower %> costs.
+	</p>
+
+	<%= partial("button", {
+		url: claimURL,
+		label: "Upload a Receipt"}
+	) %>
+
+</div>

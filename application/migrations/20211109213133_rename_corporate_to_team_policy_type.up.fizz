@@ -1,0 +1,1 @@
+sql(`update policies set type='Team' where type='Corporate'`)

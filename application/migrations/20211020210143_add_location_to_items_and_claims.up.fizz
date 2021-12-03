@@ -1,0 +1,7 @@
+
+add_column("claims", "city", "string", {"default": ""})
+add_column("claims", "state", "string", {"default": ""})
+add_column("claims", "country", "string", {"default": ""})
+
+add_column("items", "city", "string", {"default": ""})
+add_column("items", "state", "string", {"default": ""})

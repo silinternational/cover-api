@@ -1,0 +1,26 @@
+<div>
+	<%= partial("body_header", {
+		previewText: "",
+		title: "",
+		subTitle: "",
+	}) %>
+
+	<p>
+		Dear <%= inviteeName %>,
+	</p>
+	<p>
+		You've been invited to join <%= inviterName %>'s <%= policyType %> policy with <%= appName %>,
+the personal property protection community of SIL International. As a policy member
+you'll be able to add items for coverage, manage existing items, and file claims.
+To accept their invite, click the link below and sign in with your corporate identity account.
+
+	</p>
+	<%= partial("button", {
+		url: acceptURL,
+		label: "Accept Invite"}
+	) %>
+	<p>
+		If you believe this to be an error, you can contact <%= inviterName %> at <%= inviterEmail %>
+	</p>
+
+</div>
