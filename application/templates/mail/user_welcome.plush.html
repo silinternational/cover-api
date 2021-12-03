@@ -19,6 +19,13 @@ your details are correct. As usual, contact me, <%= supportFirstName %>, if you 
 or concerns with your policy.  <%= emailEnding %>
 	</p>
 
+	<%= if ( policyName != "" ) { %>
+		<strong><%= policyName %></strong><br>
+		<%= if ( householdID != "" ) { %>
+			ID <%= householdID %><br>
+		<% } %>
+	<% } %>
+
 	<%= partial("button", {
 		url: uiURL,
 		label: "Open " + appName }
