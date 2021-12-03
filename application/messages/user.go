@@ -19,19 +19,6 @@ func UserWelcomeQueueMessage(tx *pop.Connection, user models.User) {
 	m["emailEnding"] = domain.Env.UserWelcomeEmailEnding
 	m.addStewardData(tx)
 
-	m["policyName"] = ""
-	m["householdID"] = ""
-
-	if len(user.Policies) == 0 {
-		tx.Load(&user, "Policies") // Ignore errors and continue
-	}
-
-	if len(user.Policies) > 0 {
-		policy := user.Policies[0]
-		m["policyName"] = policy.Name
-		m["householdID"] = policy.HouseholdID.String
-	}
-
 	notn := models.Notification{
 		Body:    m.renderHTML(MessageTemplateUserWelcome),
 		Subject: fmt.Sprintf("Welcome to %s!", domain.Env.AppName),

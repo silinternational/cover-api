@@ -14,18 +14,10 @@
 quicker approvals for new items, and no more minimum premium.
 	</p>
 	<p>
-		We’ve automatically imported your existing policies into <%= appName %>, so verify that
+		We’ve automatically imported your existing policies into <%= appName %>. Please verify that
 your details are correct. As usual, contact me, <%= supportFirstName %>, if you have any questions
 or concerns with your policy.  <%= emailEnding %>
 	</p>
-
-	<%= if ( policyName != "" ) { %>
-		<strong><%= policyName %></strong><br>
-		<%= if ( householdID != "" ) { %>
-			ID <%= householdID %><br>
-		<% } %>
-		<br>
-	<% } %>
 
 	<%= partial("button", {
 		url: uiURL,
