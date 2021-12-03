@@ -2,11 +2,11 @@
 	<%= partial("body_header", {
 		previewText: previewText,
 		title: "",
-		subTitle: "",
+		subTitle: "Welcome",
 	}) %>
 
 	<p>
-		Welcome <%= personFirstName %>,
+		Dear <%= personFirstName %>,
 	</p>
 	<p>
 		<%= emailIntro %>
@@ -14,8 +14,9 @@
 quicker approvals for new items, and no more minimum premium.
 	</p>
 	<p>
-		We’ve automatically imported your existing policies into <%= appName %>. <%= loginMessage %>
- As usual, contact me, <%= supportFirstName %>, if you have any questions or concerns with your policy.
+		We’ve automatically imported your existing policies into <%= appName %>. Please verify that
+your details are correct. As usual, contact me, <%= supportFirstName %>, if you have any questions
+or concerns with your policy.  <%= emailEnding %>
 	</p>
 
 	<%= partial("button", {
@@ -23,9 +24,12 @@ quicker approvals for new items, and no more minimum premium.
 		label: "Open " + appName }
 	) %>
 	<p>
-		Annual premiums are calculated at the low rate of <%= premiumPercentage %> per year
-and auto-renewed at the beginning of the year. Keep this email for quick
-access to <%= appName %>’s terms of service, privacy policy, and support. We’ve got you covered.
+		Annual premiums are still auto-renewed at the beginning of the year.
+Keep this email for quick access to <%= appName %>’s terms of service, privacy policy,
+and support. We’ve got you covered.
+	</p>
+	<p>
+		—<%= supportFirstName %>
 	</p>
 
 	<%= partial("customer_footer", {
