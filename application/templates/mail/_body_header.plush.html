@@ -1,24 +1,20 @@
 
 <header>
 	<div style="display: none;"><%= previewText %> </div>
-	<table style="background-color: #ffffff; width: 100%; padding-bottom: 10px;">
-		<tr>
-			<td style="width: 250px;">
-				<img src="cid:logo" style="max-height: 4em; vertical-align: middle">
-			</td>
-			<%= if ( title != "" ) { %>
-			 <td style="padding-top: 20px;">
-				 <span style="
-				 	color: #6D7580;
-				 	font-family: Arial;
-				 	font-size: 32px;
+
+	<div style="width: 250px;">
+		<img src="cid:logo" style="max-height: 4em; vertical-align: middle">
+	</div>
+	<%= if ( title != "" ) { %>
+	 <div style="padding-top: 20px;">
+		 <span style="
+				 	font-family: Source Sans Pro,sans-serif;
+				 	font-size: 24px;
 				 	line-height: 28px;">
 					 <%= title %>
-				 </span>
-			 </td>
-			<% } %>
-		</tr>
-	</table>
+		 </span>
+	 </div>
+	<% } %>
 </header>
 
 <%= if ( subTitle != "" ) { %>
