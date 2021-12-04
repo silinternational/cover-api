@@ -24,6 +24,7 @@ var images = map[string]string{
 	"new_releases":       "new_releases.png",
 	"signature_logo":     "SIL_Glyph_Logo_Andika_RGB.png",
 	"volunteer_activism": "volunteer_activism.png",
+	"beach_access":       "beach_access.png",
 }
 
 // rawEmail generates a multi-part MIME email message with a plain text, html text, and inline logo attachment as
