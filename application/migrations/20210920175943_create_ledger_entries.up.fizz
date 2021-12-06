@@ -12,6 +12,7 @@ create_table("ledger_entries") {
 	t.Column("policy_type", "string", {})
 	t.Column("household_id", "string", {})
 	t.Column("account_number", "string", {})
+	t.Column("income_account", "string", {})
 	t.Column("cost_center", "string", {})
 	t.Column("entity_code", "string", {})
 	t.Column("first_name", "string", {})

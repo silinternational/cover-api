@@ -12,6 +12,10 @@ create_table("claims") {
 	t.Column("status_reason", "string", {})
 	t.Column("legacy_id", "int", {"null": true})
 	t.Column("reference_number", "string", {})
+	t.Column("status_change", "string", {})
+	t.Column("city", "string", {})
+	t.Column("state", "string", {})
+	t.Column("country", "string", {})
 
 	t.Timestamps()
 
@@ -27,7 +31,6 @@ create_table("claim_items") {
 	t.Column("id", "uuid", {"primary": true})
 	t.Column("claim_id", "uuid", {})
 	t.Column("item_id", "uuid", {})
-	t.Column("status", "string", {})
 	t.Column("is_repairable", "bool", {})
 	t.Column("repair_estimate", "int", {})
 	t.Column("repair_actual", "int", {})
@@ -36,9 +39,9 @@ create_table("claim_items") {
 	t.Column("payout_option", "string", {})
 	t.Column("payout_amount", "int", {})
 	t.Column("fmv", "int", {})
-	t.Column("review_date", "timestamp", {"null": true})
-	t.Column("reviewer_id", "uuid", {"null": true})
-	t.Column("location", "string", {})
+	t.Column("city", "string", {})
+	t.Column("state", "string", {})
+	t.Column("country", "string", {})
 	t.Column("legacy_id", "int", {"null": true})
 
 	t.Timestamps()
@@ -48,7 +51,6 @@ create_table("claim_items") {
 
 	t.ForeignKey("claim_id", {"claims": ["id"]}, {})
 	t.ForeignKey("item_id", {"items": ["id"]}, {})
-	t.ForeignKey("reviewer_id", {"users": ["id"]}, {})
 }
 
 create_table("claim_files") {
