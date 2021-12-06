@@ -58,57 +58,6 @@ func (ts *TestSuite) Test_itemSubmitted() {
 	}
 }
 
-func (ts *TestSuite) Test_itemAutoApproved() {
-	t := ts.T()
-	db := ts.DB
-
-	fixConfig := models.FixturesConfig{
-		NumberOfPolicies:    1,
-		UsersPerPolicy:      2,
-		ClaimsPerPolicy:     1,
-		DependentsPerPolicy: 0,
-		ItemsPerPolicy:      2,
-	}
-
-	f := models.CreateItemFixtures(db, fixConfig)
-	models.CreateAdminUsers(db)
-
-	approvedItem := f.Items[1]
-	models.UpdateItemStatus(db, approvedItem, api.ItemCoverageStatusApproved, "")
-
-	testEmailer := notifications.DummyEmailService{}
-
-	tests := []struct {
-		name      string
-		event     events.Event
-		wantCount int
-	}{
-		{
-			name: "auto approved",
-			event: events.Event{
-				Kind: domain.EventApiItemAutoApproved,
-				Payload: events.Payload{
-					domain.EventPayloadID:                  approvedItem.ID,
-					string(api.ItemCoverageStatusApproved): true,
-					EventPayloadNotifier:                   &testEmailer,
-				},
-			},
-			wantCount: 1,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			testEmailer.DeleteSentMessages()
-			itemAutoApproved(tt.event)
-
-			var nus models.NotificationUsers
-			ts.NoError(db.All(&nus), "error fetching NotificationUsers from db")
-			ts.Equal(tt.wantCount, len(nus), "incorrect number of NotificationUsers queued")
-		})
-	}
-}
-
 func (ts *TestSuite) Test_itemRevision() {
 	t := ts.T()
 	db := ts.DB

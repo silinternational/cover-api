@@ -33,31 +33,6 @@ func itemApprovedQueueMsg(tx *pop.Connection, item models.Item) {
 	}
 }
 
-func itemAutoApprovedQueueMessage(tx *pop.Connection, item models.Item, member models.User) {
-	data := newEmailMessageData()
-	data.addItemData(tx, item)
-	memberName := member.Name()
-	data["memberName"] = memberName
-	data["buttonLabel"] = "Open in " + domain.Env.AppName
-
-	notn := models.Notification{
-		ItemID:  nulls.NewUUID(item.ID),
-		Body:    data.renderHTML(MessageTemplateItemAutoSteward),
-		Subject: memberName + " just submitted a new policy item that has been auto approved",
-
-		InappText: "Coverage on a new policy item was just auto approved",
-
-		// TODO make these constants somewhere
-		Event:         "Item Auto Approved Notification",
-		EventCategory: "Item",
-	}
-	if err := notn.Create(tx); err != nil {
-		panic("error creating new Item Auto Approved Notification: " + err.Error())
-	}
-
-	notn.CreateNotificationUsersForStewards(tx)
-}
-
 func itemPendingQueueMessage(tx *pop.Connection, item models.Item, member models.User) {
 	data := newEmailMessageData()
 	data.addItemData(tx, item)
@@ -117,13 +92,6 @@ func ItemRevisionQueueMessage(tx *pop.Connection, item models.Item) {
 	for _, m := range item.Policy.Members {
 		notn.CreateNotificationUserForUser(tx, m)
 	}
-}
-
-// ItemAutoApprovedQueueMessage queues messages to the stewards to
-//  notify them that coverage on an item was auto-approved
-func ItemAutoApprovedQueueMessage(tx *pop.Connection, item models.Item) {
-	item.LoadPolicyMembers(tx, false)
-	itemAutoApprovedQueueMessage(tx, item, item.Policy.Members[0])
 }
 
 // ItemApprovedQueueMessage queues messages to an item's members to

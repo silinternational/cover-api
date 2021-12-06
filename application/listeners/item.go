@@ -46,23 +46,6 @@ func itemRevision(e events.Event) {
 	})
 }
 
-func itemAutoApproved(e events.Event) {
-	var item models.Item
-	if err := findObject(e.Payload, &item, e.Kind); err != nil {
-		return
-	}
-
-	if item.CoverageStatus != api.ItemCoverageStatusApproved {
-		domain.ErrLogger.Printf(wrongStatusMsg, "itemApproved", item.CoverageStatus)
-		return
-	}
-
-	models.DB.Transaction(func(tx *pop.Connection) error {
-		messages.ItemAutoApprovedQueueMessage(tx, item)
-		return nil
-	})
-}
-
 func itemApproved(e events.Event) {
 	var item models.Item
 	if err := findObject(e.Payload, &item, e.Kind); err != nil {

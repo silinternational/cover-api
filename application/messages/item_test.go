@@ -61,58 +61,6 @@ func (ts *TestSuite) Test_ItemSubmittedQueueMessage() {
 	}
 }
 
-func (ts *TestSuite) Test_ItemAutoApprovedQueueMessage() {
-	t := ts.T()
-	db := ts.DB
-
-	fixConfig := models.FixturesConfig{
-		NumberOfPolicies: 1,
-		UsersPerPolicy:   2,
-		ItemsPerPolicy:   2,
-	}
-
-	f := models.CreateItemFixtures(db, fixConfig)
-
-	steward0 := models.CreateAdminUsers(db)[models.AppRoleSteward]
-	steward1 := models.CreateAdminUsers(db)[models.AppRoleSteward]
-
-	approvedItem := models.UpdateItemStatus(db, f.Items[1], api.ItemCoverageStatusApproved, "")
-
-	testEmailer := notifications.DummyEmailService{}
-
-	tests := []struct {
-		data testData
-		item models.Item
-	}{
-		{
-			data: testData{
-				name:                  "auto approved - stewards",
-				wantToEmails:          []interface{}{steward0.EmailOfChoice(), steward1.EmailOfChoice()},
-				wantSubjectContains:   "a new policy item that has been auto approved",
-				wantInappTextContains: "Coverage on a new policy item was just auto approved",
-				wantBodyContains: []string{
-					domain.Env.UIURL,
-					approvedItem.Name,
-					"Coverage has been auto approved for",
-				},
-			},
-			item: approvedItem,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.data.name, func(t *testing.T) {
-			testEmailer.DeleteSentMessages()
-			ItemAutoApprovedQueueMessage(db, tt.item)
-			validateNotificationUsers(ts, db, tt.data)
-
-			notfns := models.Notifications{}
-			ts.NoError(db.All(&notfns), "error fetching all NotificationUsers for destroy")
-			ts.NoError(db.Destroy(&notfns), "error destroying all NotificationUsers")
-		})
-	}
-}
-
 func (ts *TestSuite) Test_ItemRevisionQueueMessage() {
 	t := ts.T()
 	db := ts.DB

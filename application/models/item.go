@@ -544,16 +544,9 @@ func (i *Item) Revision(ctx context.Context, reason string) error {
 	return nil
 }
 
-// AutoApprove fires an event and marks the item as `Approved`
+// AutoApprove marks the item as `Approved`
 // It assumes that the item's current status has already been validated.
 func (i *Item) AutoApprove(ctx context.Context) error {
-	e := events.Event{
-		Kind:    domain.EventApiItemAutoApproved,
-		Message: fmt.Sprintf("Item AutoApproved: %s  ID: %s", i.Name, i.ID.String()),
-		Payload: events.Payload{domain.EventPayloadID: i.ID},
-	}
-	emitEvent(e)
-
 	i.StatusChange = ItemStatusChangeAutoApproved
 	return i.Approve(ctx, true)
 }

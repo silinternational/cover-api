@@ -99,12 +99,11 @@ const (
 
 // Event Kinds
 const (
-	EventApiUserCreated      = "api:user:created"
-	EventApiItemSubmitted    = "api:item:submitted"
-	EventApiItemRevision     = "api:item:revision"
-	EventApiItemAutoApproved = "api:item:autoapproved"
-	EventApiItemApproved     = "api:item:approved"
-	EventApiItemDenied       = "api:item:denied"
+	EventApiUserCreated   = "api:user:created"
+	EventApiItemSubmitted = "api:item:submitted"
+	EventApiItemRevision  = "api:item:revision"
+	EventApiItemApproved  = "api:item:approved"
+	EventApiItemDenied    = "api:item:denied"
 
 	EventApiClaimReview1     = "api:claim:review1"
 	EventApiClaimRevision    = "api:claim:revision"
