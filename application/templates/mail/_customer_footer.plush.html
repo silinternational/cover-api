@@ -1,18 +1,42 @@
-<div style="padding-bottom: 10px;">
-	I’m here to help. If you have any questions, email me at <a href="mailto:<%= supportEmail %>"><%= supportEmail %></a>.
-</div>
 <footer>
-	<table>
-		<tr>
-			<td rowspan="2" style="padding-right: 5px">
-				<img width="84.82px" height="45.43px" src="cid:signature_logo" alt="SIL" />
-			</td>
-			<th style="text-align: left; vertical-align: top;">
-				<%= supportName %>
-			</th>
-		</tr>
-		<tr>
-			<td style="text-align: left; vertical-align: top;">Mutual Aid Program Steward</td>
-		</tr>
-	</table>
+	<div style="background-color: #f4f6f9; padding: 16px; margin-top: 16px;">
+		<table>
+			<tr>
+				<td rowspan="3" style="padding-right: 5px">
+					<img width="84.82px" height="45.43px" src="cid:signature_logo" alt="SIL" />
+				</td>
+				<th style="text-align: left; vertical-align: top; padding: 0px;">
+					<%= supportName %>
+				</th>
+			</tr>
+			<tr>
+				<td style="text-align: left; vertical-align: top; padding: 0px;">
+					Mutual Aid Program Steward
+				</td>
+			</tr>
+			<tr>
+				<td style="text-align: left; vertical-align: top; padding: 0px;">
+					<a href="mailto:<%= supportEmail %>"><%= supportEmail %></a>
+				</td>
+			</tr>
+		</table>
+	</div>
+	<div style="background-color: #ebeef2; padding: 16px;">
+		<div style="font-size: 9px; margin-bottom: 8px;">
+			<%= appName %> is a service of SIL International.
+		</div>
+		<div style="font-size: 9px; margin-bottom: 8px;">
+			<span style="margin-right: 10px;">
+				<a href="<%= uiURL %>/terms">Terms of Use</a>
+			</span> ·
+			<span style="margin-left: 10px;">
+				<a href="<%= uiURL %>/privacy">Privacy Policy</a>
+			</span>
+		</div>
+		<%= if ( policy.Name != "" ) { %>
+		<div style="font-size: 9px;">
+			You've received this email because you're a customer of the <%= policy.Name %> policy in <%= appName %>.
+		</div>
+		<% } %>
+	</div>
 </footer>
