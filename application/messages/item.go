@@ -97,11 +97,12 @@ func ItemRevisionQueueMessage(tx *pop.Connection, item models.Item) {
 
 	data := newEmailMessageData()
 	data.addItemData(tx, item)
+	data["buttonLabel"] = "Change item in " + domain.Env.AppName
 
 	notn := models.Notification{
 		ItemID:  nulls.NewUUID(item.ID),
 		Body:    data.renderHTML(MessageTemplateItemRevisionMember),
-		Subject: "Coverage needs attention",
+		Subject: "Coverage Needs Attention",
 		// TODO make this more helpful
 		InappText: "Coverage needs attention",
 

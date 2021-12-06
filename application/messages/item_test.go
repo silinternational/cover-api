@@ -136,13 +136,13 @@ func (ts *TestSuite) Test_ItemRevisionQueueMessage() {
 		{
 			name:                  "revisions required",
 			wantToEmails:          []interface{}{member0.EmailOfChoice(), member1.EmailOfChoice()},
-			wantSubjectContains:   "Coverage needs attention",
+			wantSubjectContains:   "Coverage Needs Attention",
 			wantInappTextContains: "Coverage needs attention",
 			wantBodyContains: []string{
 				domain.Env.UIURL,
 				revisionItem.Name,
 				revisionItem.StatusReason,
-				"we need to clarify a few things on your request",
+				"I need to clarify a few things on your request",
 			},
 		},
 	}
