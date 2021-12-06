@@ -141,11 +141,11 @@ func (ts *TestSuite) Test_ClaimReceiptQueueMessage() {
 		{
 			name:                  "receipts required again",
 			wantToEmails:          []interface{}{member0.EmailOfChoice(), member1.EmailOfChoice()},
-			wantSubjectContains:   "Claim Approved for Repair",
+			wantSubjectContains:   "Claim Needs Receipt",
 			wantInappTextContains: "Please provide a receipt",
 			wantBodyContains: []string{
 				domain.Env.UIURL,
-				"repair costs",
+				"we need a receipt",
 			},
 		},
 	}
