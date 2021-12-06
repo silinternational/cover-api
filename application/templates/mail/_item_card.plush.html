@@ -38,13 +38,13 @@
 
 <%= partial("button", {
 	url: itemURL,
-	label: "Open Item in " + appName}
+	label: buttonLabel}
 ) %>
 
 <table style="padding: 0 0 1em 0;">
 	<%= if (coverageAmount != "") { %>
 	 <tr>
-	 	<th style="text-align: left; padding-top: 1em;">Covered value</th>
+	 	<th style="text-align: left; padding: 1em 1em 0 0;">Covered value</th>
 	 	<th style="text-align: left; padding-top: 1em;">Premium</th>
 	 </tr>
 	 <tr>
