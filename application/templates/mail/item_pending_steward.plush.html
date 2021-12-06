@@ -1,9 +1,15 @@
 <div>
 	<%= partial("body_header", {
 		previewText: "",
-		title: "Action Required",
-		subTitle: "Coverage is pending your approval for " + item.Name,
+		title: "New Item Coverage Application",
+		subTitle: ""
 	}) %>
+
+	<%= partial("alert", {
+		alert: "Needs item coverage review",
+		alert_description: "",
+		alert_icon: "new"}
+	) %>
 
 	<%= partial("item_card", {
 		item: item,
