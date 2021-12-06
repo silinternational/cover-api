@@ -1,11 +1,22 @@
+<div style="
+	padding: 16px;
+	font-family: Source Sans Pro,sans-serif;
+	line-height: 24px;
+	background-color: #f4f6f9;">
+	<div style="
+		font-family: Source Sans Pro,sans-serif;
+		font-size: 23px;
+		line-height: 24px;">
+		<%= item.Name %>
+	</div>
+	<div style="
+		font-family: Source Sans Pro,sans-serif;
+		font-size: 16px;
+		line-height: 24px;">
+		<%= item.GetMakeModel() %>
+	</div>
+</div>
 
-<h2><%= item.Name %></h2>
-
-<%= if ( item.GetMakeModel() != "" ) { %>
-   <h3 style="margin: 0; padding: 0; line-height: normal;">
-	   <%= item.GetMakeModel() %>
-   </h3>
-<% } %>
 
 <%= if ( item.SerialNumber != "" ) { %>
  <div>
@@ -25,7 +36,12 @@
 	}
 ) %>
 
-<table>
+<%= partial("button", {
+	url: itemURL,
+	label: "Open Item in " + appName}
+) %>
+
+<table style="padding: 0 0 1em 0;">
 	<%= if (coverageAmount != "") { %>
 	 <tr>
 	 	<th style="text-align: left; padding-top: 1em;">Covered value</th>

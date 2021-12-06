@@ -100,6 +100,7 @@ func (m MessageData) addItemData(tx *pop.Connection, item models.Item) {
 	m["itemURL"] = fmt.Sprintf("%s/policies/%s/items/%s", domain.Env.UIURL, item.PolicyID, item.ID)
 
 	item.Load(tx)
+	item.LoadPolicy(tx, false)
 	m["item"] = item
 
 	person := item.GetAccountablePersonName(tx)

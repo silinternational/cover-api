@@ -1,35 +1,37 @@
 
 <div>
 	<%= partial("body_header", {
-			previewText: "",
-			title: "Item approved",
+			previewText: "No action needed. Coverage is now active. Dear "+personFirstName+", "+item.Name+" has been approved for coverage.",
+			title: "Coverage Approved",
 			subTitle: "",
 	}) %>
-
-	<%= partial("alert", {
-			alert: "Congratulations! Your item coverage has been approved!",
-			alert_description: "",
-			alert_icon: "volunteer_activism",
-		}
-	) %>
 
 	<p>
 		Dear <%= personFirstName %>,
 	</p>
 
 	<p>
-		Your <%= item.Name %> has been approved for coverage and added to your <%= policyType %> policy.
+		<%= item.Name %> has been approved for coverage and added to your <%= policyType %> policy.
 	</p>
-
 	<p>
-		Your annual premium for this item is <%= annualPremium %> and you will be charged a pro-rated amount
-		of <%= proratedPremium %> on <%= coverageStartDate %>.
+		&mdash;<%= supportFirstName %>
 	</p>
 
-	<%= partial("button", {
-		url: itemURL,
-		label: "View in " + appName}
-	) %>
+	<%= partial("alert", {
+		alert: "Coverage approved",
+		alert_description: "No action needed. Coverage is now active. ",
+		alert_icon: "beach_access",
+	}) %>
+
+	<%= partial("item_card", {
+		item: item,
+		coverageAmount: coverageAmount,
+		premium: annualPremium,
+		coverageStartDate: coverageStartDate,
+		accountablePerson: accountablePerson,
+		householdID: policy.HouseholdID,
+		itemURL: itemURL
+	}) %>
 
 	<%= partial("customer_footer", {
 		supportEmail: supportEmail,
@@ -38,6 +40,5 @@
 		policy: policy,
 		uiURL: uiURL,
 	}) %>
-
 </div>
 
