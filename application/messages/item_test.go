@@ -36,12 +36,12 @@ func (ts *TestSuite) Test_ItemSubmittedQueueMessage() {
 			data: testData{
 				name:                  "just submitted, not approved",
 				wantToEmails:          []interface{}{steward0.EmailOfChoice(), steward1.EmailOfChoice()},
-				wantSubjectContains:   "just submitted a new policy item for approval",
+				wantSubjectContains:   "Item Needs Review " + f.Items[0].Name,
 				wantInappTextContains: "A new policy item is waiting for your approval",
 				wantBodyContains: []string{
 					domain.Env.UIURL,
 					submittedItem.Name,
-					"Coverage is pending your approval for",
+					"Needs item coverage review",
 				},
 			},
 			item: submittedItem,

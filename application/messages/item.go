@@ -65,11 +65,9 @@ func itemPendingQueueMessage(tx *pop.Connection, item models.Item, member models
 	data["buttonLabel"] = "Open in " + domain.Env.AppName
 
 	notn := models.Notification{
-		ItemID: nulls.NewUUID(item.ID),
-		Body:   data.renderHTML(MessageTemplateItemPendingSteward),
-		Subject: "Action Required. " + member.Name() +
-			" just submitted a new policy item for approval",
-
+		ItemID:    nulls.NewUUID(item.ID),
+		Body:      data.renderHTML(MessageTemplateItemPendingSteward),
+		Subject:   "Item Needs Review " + item.Name,
 		InappText: "A new policy item is waiting for your approval",
 
 		// TODO make these constants somewhere
