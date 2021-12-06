@@ -175,10 +175,12 @@ func ClaimReview2QueueMessage(tx *pop.Connection, claim models.Claim) {
 	data.addClaimData(tx, claim)
 	data["memberName"] = memberName
 
+	item := data["item"].(models.Item)
+
 	notn := models.Notification{
 		ClaimID: nulls.NewUUID(claim.ID),
 		Body:    data.renderHTML(MessageTemplateClaimReview2Steward),
-		Subject: "Action Required. " + memberName + " just resubmitted a claim for approval",
+		Subject: "Consider payout for claim on " + item.Name,
 
 		InappText: "A claim is waiting for your approval",
 
