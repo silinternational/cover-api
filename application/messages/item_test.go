@@ -182,7 +182,7 @@ func (ts *TestSuite) Test_ItemDeniedQueueMessage() {
 		{
 			name:                  "coverage denied",
 			wantToEmails:          []interface{}{member0.EmailOfChoice(), member1.EmailOfChoice()},
-			wantSubjectContains:   "An update on your coverage request",
+			wantSubjectContains:   "An Update on Your Coverage Request",
 			wantInappTextContains: "coverage on your new policy item has been denied",
 			wantBodyContains: []string{
 				domain.Env.UIURL,
