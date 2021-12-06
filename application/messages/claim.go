@@ -146,7 +146,7 @@ func ClaimReceiptQueueMessage(tx *pop.Connection, claim models.Claim) {
 	notn := models.Notification{
 		ClaimID: nulls.NewUUID(claim.ID),
 		Body:    data.renderHTML(MessageTemplateClaimReceiptMember),
-		Subject: "Claim Approved for " + string(claimItem.PayoutOption),
+		Subject: "Claim Needs Receipt",
 
 		InappText: "Please provide a receipt",
 
