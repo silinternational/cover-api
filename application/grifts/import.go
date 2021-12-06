@@ -1137,8 +1137,8 @@ var states = map[string]string{
 func getState(c string) string {
 	c = trim(c)
 
-	if state, ok := states[c]; ok {
-		return state
+	if abbr, ok := states[c]; ok {
+		return abbr
 	}
 	if len(c) == 2 {
 		return strings.ToUpper(c)
@@ -1149,9 +1149,19 @@ func getState(c string) string {
 func getCountry(c string) string {
 	c = trim(c)
 
-	if _, ok := states[c]; ok || len(c) <= 2 {
+	if len(c) < 2 {
 		return ""
 	}
+
+	if state := getState(c); state != "" {
+		switch c {
+		case "AB", "BC", "MB", "NB", "NL", "NT", "NS", "NU", "ON", "PE", "QC", "SK", "YT":
+			return "Canada"
+		default:
+			return "United States of America"
+		}
+	}
+
 	return c
 }
 
