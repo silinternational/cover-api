@@ -134,7 +134,6 @@ func ClaimReceiptQueueMessage(tx *pop.Connection, claim models.Claim) {
 	data.addClaimData(tx, claim)
 
 	data["estimate"] = "$-"
-	data["maxPayout"] = claimItem.PayoutAmount
 	data["deductible"] = domain.Env.DeductibleString
 
 	switch claimItem.PayoutOption {
@@ -231,7 +230,7 @@ func ClaimApprovedQueueMessage(tx *pop.Connection, claim models.Claim) {
 	notn := models.Notification{
 		ClaimID:   nulls.NewUUID(claim.ID),
 		Body:      data.renderHTML(MessageTemplateClaimApprovedMember),
-		Subject:   "your claim has been approved",
+		Subject:   "Claim Payout Approved",
 		InappText: "your claim has been approved",
 
 		// TODO make these constants somewhere

@@ -431,7 +431,7 @@ func (ms *ModelSuite) TestClaim_Approve() {
 			claim:           notFMVClaim,
 			wantErrKey:      api.ErrorClaimItemInvalidPayoutOption,
 			wantErrCat:      api.CategoryUser,
-			wantErrContains: "invalid claim item payout option for approve",
+			wantErrContains: "cannot approve payout option Repair from status Review1",
 		},
 		{
 			name:       "from review1 to review3",
