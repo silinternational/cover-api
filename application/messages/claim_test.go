@@ -37,7 +37,7 @@ func (ts *TestSuite) Test_ClaimReview1QueueMessage() {
 		{
 			name:                  "submitted to review1",
 			wantToEmails:          []interface{}{steward.EmailOfChoice()},
-			wantSubjectContains:   "just submitted a claim for approval",
+			wantSubjectContains:   "New claim on " + review1Claim.ClaimItems[0].Item.Name,
 			wantInappTextContains: "A new claim is waiting for your approval",
 			wantBodyContains: []string{
 				domain.Env.UIURL,
@@ -141,11 +141,11 @@ func (ts *TestSuite) Test_ClaimReceiptQueueMessage() {
 		{
 			name:                  "receipts required again",
 			wantToEmails:          []interface{}{member0.EmailOfChoice(), member1.EmailOfChoice()},
-			wantSubjectContains:   "Claim Approved for Repair",
+			wantSubjectContains:   "Claim Needs Receipt",
 			wantInappTextContains: "Please provide a receipt",
 			wantBodyContains: []string{
 				domain.Env.UIURL,
-				"repair costs",
+				"we need a receipt",
 			},
 		},
 	}
@@ -172,7 +172,7 @@ func (ts *TestSuite) Test_ClaimReview2QueueMessage() {
 		{
 			name:                  "submitted to review2",
 			wantToEmails:          []interface{}{steward.EmailOfChoice()},
-			wantSubjectContains:   "just resubmitted a claim for approval",
+			wantSubjectContains:   "Consider payout for claim on " + review2Claim.ClaimItems[0].Item.Name,
 			wantInappTextContains: "A claim is waiting for your approval",
 			wantBodyContains: []string{
 				domain.Env.UIURL,
