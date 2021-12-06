@@ -205,10 +205,15 @@ func ClaimReview3QueueMessage(tx *pop.Connection, claim models.Claim) {
 	data.addClaimData(tx, claim)
 	data["memberName"] = memberName
 
+	item := data["item"].(models.Item)
+
+	claim.LoadReviewer(tx, false)
+	data["firstReviewer"] = claim.Reviewer.Name()
+
 	notn := models.Notification{
 		ClaimID: nulls.NewUUID(claim.ID),
 		Body:    data.renderHTML(MessageTemplateClaimReview3Signator),
-		Subject: "Action Required. " + memberName + " has a claim waiting for your approval",
+		Subject: "Final approval for claim on " + item.Name,
 
 		InappText: "A claim is waiting for your approval",
 

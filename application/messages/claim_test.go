@@ -203,7 +203,7 @@ func (ts *TestSuite) Test_ClaimReview3QueueMessage() {
 		{
 			name:                  "submitted to review3",
 			wantToEmails:          []interface{}{signator.EmailOfChoice()},
-			wantSubjectContains:   "has a claim waiting for your approval",
+			wantSubjectContains:   "Final approval for claim on " + review3Claim.ClaimItems[0].Item.Name,
 			wantInappTextContains: "A claim is waiting for your approval",
 			wantBodyContains: []string{
 				domain.Env.UIURL,
