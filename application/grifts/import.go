@@ -735,10 +735,10 @@ func importClaims(tx *pop.Connection, policyID uuid.UUID, claims []LegacyClaim) 
 			PaymentDate:         nulls.Time(c.PaymentDate),
 			TotalPayout:         fixedPointStringToCurrency(c.TotalPayout, "Claim.TotalPayout"),
 			City:                trim(c.City),
-			State:               getState(c.Country),
-			Country:             getCountry(c.Country),
 			CreatedAt:           time.Time(c.CreatedAt),
 		}
+
+		newClaim.State, newClaim.Country = getStateAndCountry(c.Country)
 
 		if err := newClaim.Create(tx); err != nil {
 			log.Fatalf("failed to create claim, %s\n%+v", err, newClaim)
@@ -780,9 +780,9 @@ func importClaimItems(tx *pop.Connection, claim models.Claim, items []LegacyClai
 			LegacyID:        nulls.NewInt(claimItemID),
 			CreatedAt:       time.Time(c.CreatedAt),
 			City:            trim(c.City),
-			State:           getState(c.Country),
-			Country:         getCountry(c.Country),
 		}
+
+		newClaimItem.State, newClaimItem.Country = getStateAndCountry(c.Country)
 
 		if err := newClaimItem.Create(tx); err != nil {
 			log.Fatalf("failed to create claim item %d, %s\nClaimItem:\n%+v", claimItemID, err, newClaimItem)
@@ -890,10 +890,11 @@ func importItems(tx *pop.Connection, policyUUID uuid.UUID, policyID int, items [
 			CoverageEndDate:   nulls.Time(item.CoverageEndDate),
 			LegacyID:          nulls.NewInt(itemID),
 			City:              trim(item.City),
-			State:             getState(item.Country),
-			Country:           getCountry(item.Country),
 			CreatedAt:         time.Time(item.CreatedAt),
 		}
+
+		newItem.State, newItem.Country = getStateAndCountry(item.Country)
+
 		for id, name := range names {
 			if name != "" && strings.Contains(strings.ToLower(newItem.Name), strings.ToLower(name)) {
 				newItem.PolicyUserID = nulls.NewUUID(id)
@@ -1134,25 +1135,47 @@ var states = map[string]string{
 	"Ontario":              "ON",
 }
 
-func getState(c string) string {
+func getStateAndCountry(c string) (state, country string) {
 	c = trim(c)
 
-	if state, ok := states[c]; ok {
-		return state
+	if abbr, ok := states[c]; ok {
+		state = abbr
+		switch state {
+		case "AB", "ON":
+			country = "Canada"
+		default:
+			country = "United States of America"
+		}
+		return
 	}
+
 	if len(c) == 2 {
-		return strings.ToUpper(c)
+		abbr := strings.ToUpper(c)
+		switch abbr {
+		case "CH":
+			country = "Switzerland"
+		case "FR":
+			country = "France"
+		case "NZ":
+			country = "New Zealand"
+		case "UK":
+			country = "United Kingdom"
+		case "AB", "BC", "MB", "NB", "NL", "NT", "NS", "NU", "ON", "PE", "QC", "SK", "YT":
+			state = abbr
+			country = "Canada"
+		case "US":
+			state = ""
+			country = "United States of America"
+		default:
+			state = abbr
+			country = "United States of America"
+		}
+		return
 	}
-	return ""
-}
 
-func getCountry(c string) string {
-	c = trim(c)
-
-	if _, ok := states[c]; ok || len(c) <= 2 {
-		return ""
-	}
-	return c
+	state = ""
+	country = c
+	return
 }
 
 func incomeAccount(entityCode string) string {
