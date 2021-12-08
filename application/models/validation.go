@@ -51,6 +51,9 @@ func flattenPopErrors(popErrs *validate.Errors) string {
 
 func validateClaimIncidentType(field validator.FieldLevel) bool {
 	if value, ok := field.Field().Interface().(api.ClaimIncidentType); ok {
+		if value == "" {
+			return true
+		}
 		_, valid := ValidClaimIncidentTypes[value]
 		return valid
 	}

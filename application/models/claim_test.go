@@ -1064,3 +1064,35 @@ func (ms *ModelSuite) TestClaim_calculatePayout() {
 	// The claim item test will check the actual amount. Just make sure it changed.
 	ms.False(claim.TotalPayout == before, "payout was not updated")
 }
+
+func (ms *ModelSuite) TestClaim_Create() {
+	f := CreateItemFixtures(ms.DB, FixturesConfig{})
+
+	tests := []struct {
+		name     string
+		claim    Claim
+		appError *api.AppError
+	}{
+		{
+			name:     "need Policy ID",
+			claim:    Claim{},
+			appError: &api.AppError{Category: api.CategoryUser, Key: api.ErrorValidation},
+		},
+		{
+			name:     "minimum",
+			claim:    Claim{PolicyID: f.Policies[0].ID},
+			appError: nil,
+		},
+	}
+	for _, tt := range tests {
+		ms.T().Run(tt.name, func(t *testing.T) {
+			err := tt.claim.Create(ms.DB)
+			if tt.appError != nil {
+				ms.Error(err, "test should have produced an error")
+				ms.EqualAppError(*tt.appError, err)
+				return
+			}
+			ms.NoError(err)
+		})
+	}
+}
