@@ -38,9 +38,12 @@ const (
 	EmptyTime              = "1970-01-01 00:00:00"
 	SilenceBadEmailWarning = true
 	defaultID              = "9999999999"
+	uuidNamespaceConst     = "89cbb2e8-5832-11ec-af6a-95df0dd7b2c5"
 )
 
 var trim = strings.TrimSpace
+
+var uuidNamespace uuid.UUID
 
 // userEmailStaffIDMap is a map of email address to staff ID
 var userEmailStaffIDMap = map[string]string{}
@@ -161,6 +164,7 @@ var _ = grift.Namespace("db", func() {
 func init() {
 	emptyTime, _ = time.Parse(MySQLTimeFormat, EmptyTime)
 	pop.Debug = false // Disable the Pop log messages
+	uuidNamespace = uuid.FromStringOrNil(uuidNamespaceConst)
 }
 
 func importStaffIDs() {
@@ -322,6 +326,7 @@ func importAdminUsers(tx *pop.Connection, users []LegacyUser) {
 		}
 
 		newUser := models.User{
+			ID:            newUUID(user.Email),
 			Email:         trim(user.Email),
 			EmailOverride: trim(user.EmailOverride),
 			FirstName:     trim(user.FirstName),
@@ -358,6 +363,7 @@ func importItemCategories(tx *pop.Connection, in []LegacyItemCategory) {
 
 		riskCategoryUUID := getRiskCategoryUUID(category.RiskCategoryId)
 		newItemCategory := models.ItemCategory{
+			ID:             newUUID(strconv.Itoa(categoryID)),
 			RiskCategoryID: riskCategoryUUID,
 			Name:           trim(category.Name),
 			HelpText:       trim(category.HelpText),
@@ -445,6 +451,7 @@ func importPolicies(tx *pop.Connection, policies []LegacyPolicy) {
 			}
 
 			newPolicy := models.Policy{
+				ID:            newUUID(strconv.Itoa(policyID)),
 				Name:          trim(p.IdentCode),
 				Type:          getPolicyType(p),
 				HouseholdID:   householdID,
@@ -525,6 +532,7 @@ func importEntityCode(tx *pop.Connection, code string) uuid.UUID {
 	}
 
 	newEntityCode := models.EntityCode{
+		ID:            newUUID(code),
 		Code:          code,
 		Name:          name,
 		Active:        active,
@@ -652,6 +660,7 @@ func createPolicyUser(tx *pop.Connection, email, firstName, lastName string, pol
 	}
 
 	policyUser := models.PolicyUser{
+		ID:       newUUID(policyID.String() + userID.String()),
 		PolicyID: policyID,
 		UserID:   userID,
 	}
@@ -690,6 +699,7 @@ func createUserFromEmailAddress(tx *pop.Connection, email, firstName, lastName s
 		}
 	}
 	user := models.User{
+		ID:           newUUID(email),
 		Email:        email,
 		FirstName:    trim(firstName),
 		LastName:     trim(lastName),
@@ -724,6 +734,7 @@ func importClaims(tx *pop.Connection, policyID uuid.UUID, claims []LegacyClaim) 
 		claimDesc := fmt.Sprintf("Claim[%d].", claimID)
 
 		newClaim := models.Claim{
+			ID:                  newUUID(strconv.Itoa(claimID)),
 			LegacyID:            nulls.NewInt(claimID),
 			PolicyID:            policyID,
 			IncidentDate:        time.Time(c.IncidentDate),
@@ -767,6 +778,7 @@ func importClaimItems(tx *pop.Connection, claim models.Claim, items []LegacyClai
 		}
 
 		newClaimItem := models.ClaimItem{
+			ID:              newUUID(strconv.Itoa(claimItemID)),
 			ClaimID:         claim.ID,
 			ItemID:          itemUUID,
 			IsRepairable:    getIsRepairable(c),
@@ -877,6 +889,7 @@ func importItems(tx *pop.Connection, policyUUID uuid.UUID, policyID int, items [
 		itemDesc := fmt.Sprintf("Policy[%d] Item[%d] ", policyID, itemID)
 
 		newItem := models.Item{
+			ID:                newUUID(strconv.Itoa(itemID)),
 			Name:              trim(item.Name),
 			CategoryID:        itemCategoryIDMap[item.CategoryId],
 			RiskCategoryID:    riskCategoryMap[item.CategoryId],
@@ -969,6 +982,7 @@ func importJournalEntries(tx *pop.Connection, entries []JournalEntry) {
 			e.Entity = "HH"
 		}
 		l := models.LedgerEntry{
+			ID:               newUUID(e.JERecNum),
 			PolicyID:         policyUUID,
 			Amount:           api.Currency(math.Round(e.CustJE * domain.CurrencyFactor)),
 			DateSubmitted:    submitted,
@@ -1184,4 +1198,8 @@ func incomeAccount(entityCode string) string {
 		account = incomeAccounts[""]
 	}
 	return account
+}
+
+func newUUID(seed string) uuid.UUID {
+	return uuid.NewV5(uuidNamespace, seed)
 }
