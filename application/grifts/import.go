@@ -38,7 +38,7 @@ const (
 	EmptyTime              = "1970-01-01 00:00:00"
 	SilenceBadEmailWarning = true
 	defaultID              = "9999999999"
-	uuidNamespaceConst     = "e2eb2fbc-10bb-4220-a151-c47a7feb604a"
+	uuidNamespaceConst     = "89cbb2e8-5832-11ec-af6a-95df0dd7b2c5"
 )
 
 var trim = strings.TrimSpace
