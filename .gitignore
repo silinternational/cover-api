@@ -17,7 +17,7 @@ codeship.env
 local.env
 
 # Local email testing files
-emailtester/*.go
+application/emailtester/*.go
 
 # Other files
 **/*.log
