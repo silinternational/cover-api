@@ -284,6 +284,7 @@ func NewClaimItem(tx *pop.Connection, input api.ClaimItemCreateInput, item Item,
 	claimItem.City = loc.City
 	claimItem.State = loc.State
 	claimItem.Country = loc.Country
+	claimItem.CoverageAmount = api.Currency(item.CoverageAmount)
 	return claimItem, nil
 }
 
