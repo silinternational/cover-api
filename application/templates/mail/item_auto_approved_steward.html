@@ -11,12 +11,9 @@
 		premium: annualPremium,
 		coverageStartDate: coverageStartDate,
 		accountablePerson: accountablePerson,
-		householdID: policy.HouseholdID}
-	) %>
-
-	<%= partial("button", {
-		url: itemURL,
-		label: "Open in " + appName}
+		householdID: policy.HouseholdID,
+		itemURL: itemURL,
+		buttonLabel: buttonLabel}
 	) %>
 
 </div>

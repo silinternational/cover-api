@@ -4,12 +4,14 @@ import (
 	"github.com/gobuffalo/nulls"
 	"github.com/gobuffalo/pop/v5"
 
+	"github.com/silinternational/cover-api/domain"
 	"github.com/silinternational/cover-api/models"
 )
 
 func itemApprovedQueueMsg(tx *pop.Connection, item models.Item) {
 	data := newEmailMessageData()
 	data.addItemData(tx, item)
+	data["buttonLabel"] = "Open in " + domain.Env.AppName
 
 	notn := models.Notification{
 		ItemID:  nulls.NewUUID(item.ID),
@@ -36,6 +38,7 @@ func itemAutoApprovedQueueMessage(tx *pop.Connection, item models.Item, member m
 	data.addItemData(tx, item)
 	memberName := member.Name()
 	data["memberName"] = memberName
+	data["buttonLabel"] = "Open in " + domain.Env.AppName
 
 	notn := models.Notification{
 		ItemID:  nulls.NewUUID(item.ID),
@@ -59,13 +62,12 @@ func itemPendingQueueMessage(tx *pop.Connection, item models.Item, member models
 	data := newEmailMessageData()
 	data.addItemData(tx, item)
 	data["memberName"] = member.Name()
+	data["buttonLabel"] = "Open in " + domain.Env.AppName
 
 	notn := models.Notification{
-		ItemID: nulls.NewUUID(item.ID),
-		Body:   data.renderHTML(MessageTemplateItemPendingSteward),
-		Subject: "Action Required. " + member.Name() +
-			" just submitted a new policy item for approval",
-
+		ItemID:    nulls.NewUUID(item.ID),
+		Body:      data.renderHTML(MessageTemplateItemPendingSteward),
+		Subject:   "Item Needs Review " + item.Name,
 		InappText: "A new policy item is waiting for your approval",
 
 		// TODO make these constants somewhere
@@ -93,11 +95,12 @@ func ItemRevisionQueueMessage(tx *pop.Connection, item models.Item) {
 
 	data := newEmailMessageData()
 	data.addItemData(tx, item)
+	data["buttonLabel"] = "Change item in " + domain.Env.AppName
 
 	notn := models.Notification{
 		ItemID:  nulls.NewUUID(item.ID),
 		Body:    data.renderHTML(MessageTemplateItemRevisionMember),
-		Subject: "Coverage needs attention",
+		Subject: "Coverage Needs Attention",
 		// TODO make this more helpful
 		InappText: "Coverage needs attention",
 
@@ -135,11 +138,12 @@ func ItemDeniedQueueMessage(tx *pop.Connection, item models.Item) {
 
 	data := newEmailMessageData()
 	data.addItemData(tx, item)
+	data["buttonLabel"] = "View in " + domain.Env.AppName
 
 	notn := models.Notification{
 		ItemID:    nulls.NewUUID(item.ID),
 		Body:      data.renderHTML(MessageTemplateItemDeniedMember),
-		Subject:   "An update on your coverage request",
+		Subject:   "An Update on Your Coverage Request",
 		InappText: "coverage on your new policy item has been denied",
 
 		// TODO make these constants somewhere

@@ -1,42 +1,52 @@
 
 <div>
 	<%= partial("body_header", {
-		previewText: "",
-		title: "Change Needed",
+		previewText: "Dear "+personFirstName+", You recently requested coverage on "+
+			item.Name+", but I need to clarify a few things on your request.",
+		title: "Coverage Application Needs Changes",
 		subTitle: "",
 	}) %>
-
-	<%= partial("alert", {
-		alert: "Coverage needs attention",
-		alert_description: "",
-		alert_icon: "new_releases"}
-	) %>
 
 	<p>
 		Dear <%= personFirstName %>,
 	</p>
 
 	<p>
-		You recently requested coverage on <%= item.Name %>, but we need to clarify a few things on your request for
-		coverage.
+		You recently requested coverage on <%= item.Name %>, but I need to clarify a few things on your request.
 	</p>
 
 	<p>
-		<%= supportFirstName %> says:
-	</p>
-
-	<p style="text-indent:2em;">
 		<%= item.StatusReason %>
 	</p>
 
-	<%= partial("button", {
-		url: itemURL,
-		label: "Open in " + appName}
-	) %>
+	<p>
+		&mdash;<%= supportFirstName %>
+	</p>>
+
+	<%= partial("alert", {
+		alert: "Needs changes",
+		alert_description: "",
+		alert_icon: "error"
+	}) %>
+
+	<%= partial("item_card", {
+		item: item,
+		coverageAmount: coverageAmount,
+		premium: annualPremium,
+		coverageStartDate: "",
+		accountablePerson: accountablePerson,
+		householdID: policy.HouseholdID,
+		itemURL: itemURL,
+		buttonLabel: buttonLabel
+	}) %>
 
 	<%= partial("customer_footer", {
 		supportEmail: supportEmail,
-		supportName: supportName}
-	) %>
+		supportName: supportName,
+		appName: appName,
+		policy: policy,
+		uiURL: uiURL,
+	}) %>
+
 </div>
 

@@ -7,7 +7,7 @@ create_table("notifications") {
 	t.Column("event_category", "string", {})
 	t.Column("subject", "string", {})
 	t.Column("inapp_text", "string", {})
-	t.Column("body", "string", {"default": "", "size": 2048})
+	t.Column("body", "text", {})
 	t.Timestamps()
 
 	t.ForeignKey("policy_id", {"policies": ["id"]}, {"on_delete": "SET NULL"})

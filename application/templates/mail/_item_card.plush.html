@@ -1,64 +1,81 @@
+<div style="
+	padding: 16px;
+	font-family: Source Sans Pro,sans-serif;
+	line-height: 24px;
+	background-color: #f4f6f9;">
+	<div style="
+		font-family: Source Sans Pro,sans-serif;
+		font-size: 23px;
+		line-height: 24px;">
+		<%= item.Name %>
+	</div>
+	<div style="
+		font-family: Source Sans Pro,sans-serif;
+		font-size: 16px;
+		line-height: 24px;">
+		<%= item.GetMakeModel() %>
+	</div>
+</div>
 
-<h2><%= item.Name %></h2>
-
-<%= if ( item.GetMakeModel() != "" ) { %>
-   <h3 style="margin: 0; padding: 0; line-height: normal;">
-	   <%= item.GetMakeModel() %>
-   </h3>
-<% } %>
-
-<%= if ( item.SerialNumber != "" ) { %>
- <div>
-	<h4 style="margin:0; padding:0;">Unique ID</h4>
-	<%= item.SerialNumber %>
- </div>
-<% } %>
-
-
-<%= if ( item.Description != "" ) { %>
- <div style="padding: 1em 0;"><%= item.Description %></div>
-<% } %>
-
-<%= partial("category", {
-		name: item.Category.Name,
-		helpText: item.Category.HelpText
-	}
-) %>
-
-<table>
-	<%= if (coverageAmount != "") { %>
-	 <tr>
-	 	<th style="text-align: left; padding-top: 1em;">Covered value</th>
-	 	<th style="text-align: left; padding-top: 1em;">Premium</th>
-	 </tr>
-	 <tr>
-	 	<td><%= coverageAmount %></td>
-	 	<td><%= premium %>/yr</td>
-	 </tr>
+<div style="background-color: #fafbfc; padding: 16px;">
+	<%= if ( item.SerialNumber != "" ) { %>
+	 <div>
+		<h4 style="margin:0; padding:0;">Unique ID</h4>
+		<%= item.SerialNumber %>
+	 </div>
 	<% } %>
 
-	<%= if (coverageStartDate != "") { %>
-	 <tr style="padding-top: 1em;">
-	 	<th style="text-align: left; padding-top: 1em;">Starts</th>
-	 	<th style="text-align: left; padding-top: 1em;">Ends</th>
-	 </tr>
-	 <tr>
-	 	<td><%= coverageStartDate %></td>
-	 	<td><%= if ( coverageEndDate != "" ) { %>
-	 		  <%= coverageEndDate %>
-	 		<% } else { %>
-	 		  &mdash;
-	 		<% } %>
-	 	</td>
-	 </tr>
+
+	<%= if ( item.Description != "" ) { %>
+	 <div style="padding: 1em 0;"><%= item.Description %></div>
 	<% } %>
-	<tr>
-		<th colspan="2" style="text-align: left; padding-top: 1em;">Accountable to</th>
-	</tr>
-	<tr>
-		<td colspan="2"><%= accountablePerson %></td>
-	</tr>
-	<tr>
-		<td colspan="2">Household ID <%= householdID %></td>
-	</tr>
-</table>
+
+	<%= partial("category", {
+			name: item.Category.Name,
+			helpText: item.Category.HelpText
+		}
+	) %>
+</div>
+
+<div style="padding: 16px;">
+	<%= partial("button", {
+		url: itemURL,
+		label: buttonLabel}
+	) %>
+
+	<table style="padding: 0 0 1em 0;">
+		 <tr>
+			<th style="text-align: left; padding: 1em 1em 0 0;">Covered value</th>
+			<th style="text-align: left; padding-top: 1em;">Premium</th>
+		 </tr>
+		 <tr>
+			<td><%= coverageAmount %></td>
+			<td><%= premium %>/yr</td>
+		 </tr>
+
+		<%= if (coverageStartDate != "") { %>
+		 <tr style="padding-top: 1em;">
+			<th style="text-align: left; padding-top: 1em;">Starts</th>
+			<th style="text-align: left; padding-top: 1em;">Ends</th>
+		 </tr>
+		 <tr>
+			<td><%= coverageStartDate %></td>
+			<td><%= if ( coverageEndDate != "" ) { %>
+				  <%= coverageEndDate %>
+				<% } else { %>
+				  &mdash;
+				<% } %>
+			</td>
+		 </tr>
+		<% } %>
+		<tr>
+			<th colspan="2" style="text-align: left; padding-top: 1em;">Accountable to</th>
+		</tr>
+		<tr>
+			<td colspan="2"><%= accountablePerson %></td>
+		</tr>
+		<tr>
+			<td colspan="2">Household ID <%= householdID %></td>
+		</tr>
+	</table>
+</div>

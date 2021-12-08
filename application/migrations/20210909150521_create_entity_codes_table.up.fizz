@@ -3,11 +3,18 @@ create_table("entity_codes") {
 	t.Column("code", "string", {})
 	t.Column("name", "string", {})
 	t.Column("active", "bool", {})
+	t.Column("income_account", "string", {})
 	t.Timestamps()
 
 	t.Index("code", {"unique": true})
 }
 
 drop_column("policies", "entity_code")
-add_column("policies", "entity_code_id", "uuid", {"null": true})
+add_column("policies", "entity_code_id", "uuid", {})
 add_foreign_key("policies", "entity_code_id", {"entity_codes": ["id"]}, {"on_delete": "restrict"})
+
+sql(`
+	INSERT INTO entity_codes (id, code, name, active, income_account, created_at, updated_at)
+	VALUES
+		('5f181e39-0a2a-49ac-8796-2f3a3de9fcbd', 'HH', 'Household', true, '', 'now', 'now');
+`)

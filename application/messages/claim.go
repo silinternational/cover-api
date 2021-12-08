@@ -21,10 +21,12 @@ func ClaimReview1QueueMessage(tx *pop.Connection, claim models.Claim) {
 	data.addClaimData(tx, claim)
 	data["memberName"] = memberName
 
+	item := data["item"].(models.Item)
+
 	notn := models.Notification{
 		ClaimID: nulls.NewUUID(claim.ID),
 		Body:    data.renderHTML(MessageTemplateClaimReview1Steward),
-		Subject: "Action Required. " + memberName + " just submitted a claim for approval",
+		Subject: "New claim on " + item.Name,
 
 		InappText: "A new claim is waiting for your approval",
 
@@ -134,7 +136,6 @@ func ClaimReceiptQueueMessage(tx *pop.Connection, claim models.Claim) {
 	data.addClaimData(tx, claim)
 
 	data["estimate"] = "$-"
-	data["maxPayout"] = claimItem.PayoutAmount
 	data["deductible"] = domain.Env.DeductibleString
 
 	switch claimItem.PayoutOption {
@@ -147,7 +148,7 @@ func ClaimReceiptQueueMessage(tx *pop.Connection, claim models.Claim) {
 	notn := models.Notification{
 		ClaimID: nulls.NewUUID(claim.ID),
 		Body:    data.renderHTML(MessageTemplateClaimReceiptMember),
-		Subject: "Claim Approved for " + string(claimItem.PayoutOption),
+		Subject: "Claim Needs Receipt",
 
 		InappText: "Please provide a receipt",
 
@@ -174,10 +175,12 @@ func ClaimReview2QueueMessage(tx *pop.Connection, claim models.Claim) {
 	data.addClaimData(tx, claim)
 	data["memberName"] = memberName
 
+	item := data["item"].(models.Item)
+
 	notn := models.Notification{
 		ClaimID: nulls.NewUUID(claim.ID),
 		Body:    data.renderHTML(MessageTemplateClaimReview2Steward),
-		Subject: "Action Required. " + memberName + " just resubmitted a claim for approval",
+		Subject: "Consider payout for claim on " + item.Name,
 
 		InappText: "A claim is waiting for your approval",
 
@@ -202,10 +205,15 @@ func ClaimReview3QueueMessage(tx *pop.Connection, claim models.Claim) {
 	data.addClaimData(tx, claim)
 	data["memberName"] = memberName
 
+	item := data["item"].(models.Item)
+
+	claim.LoadReviewer(tx, false)
+	data["firstReviewer"] = claim.Reviewer.Name()
+
 	notn := models.Notification{
 		ClaimID: nulls.NewUUID(claim.ID),
 		Body:    data.renderHTML(MessageTemplateClaimReview3Signator),
-		Subject: "Action Required. " + memberName + " has a claim waiting for your approval",
+		Subject: "Final approval for claim on " + item.Name,
 
 		InappText: "A claim is waiting for your approval",
 
@@ -231,7 +239,7 @@ func ClaimApprovedQueueMessage(tx *pop.Connection, claim models.Claim) {
 	notn := models.Notification{
 		ClaimID:   nulls.NewUUID(claim.ID),
 		Body:      data.renderHTML(MessageTemplateClaimApprovedMember),
-		Subject:   "your claim has been approved",
+		Subject:   "Claim Payout Approved",
 		InappText: "your claim has been approved",
 
 		// TODO make these constants somewhere

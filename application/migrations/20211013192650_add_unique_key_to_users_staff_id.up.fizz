@@ -1,2 +1,0 @@
-change_column("users", "staff_id", "string", {"null": true})
-add_index("users", "staff_id", {"unique": true})

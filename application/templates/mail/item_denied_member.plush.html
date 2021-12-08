@@ -1,8 +1,9 @@
 
 <div>
 	<%= partial("body_header", {
-		previewText: "",
-		title: "Notice",
+		previewText: "Dear "+personFirstName+", You recently requested coverage on "+
+			item.Name+", but we're not able to cover this item at this time.",
+		title: "Coverage Denied",
 		subTitle: "",
 	}) %>
 
@@ -11,25 +12,42 @@
 	</p>
 
 	<p>
-		We regret to inform you that your request for coverage on <%= item.Name %> has been denied.
+		You recently requested coverage on <%= item.Name %>, but we're not able to cover this item
+		at this time.
 	</p>
 
 	<p>
-		<%= supportFirstName %> says:
-	</p>
-
-	<p style="text-indent:2em;">
 		<%= item.StatusReason %>
 	</p>
 
-	<%= partial("button", {
-		url: itemURL,
-		label: "Review Item Coverage Request"}
-	) %>
+	<p>
+		&mdash;<%= supportFirstName %>
+	</p>
+
+	<%= partial("alert", {
+		alert: "Coverage denied",
+		alert_description: "",
+		alert_icon: "do_not_enter",
+	}) %>
+
+	<%= partial("item_card", {
+		item: item,
+		coverageAmount: coverageAmount,
+		premium: annualPremium,
+		coverageStartDate: "",
+		accountablePerson: accountablePerson,
+		householdID: policy.HouseholdID,
+		itemURL: itemURL,
+		buttonLabel: buttonLabel
+	}) %>
 
 	<%= partial("customer_footer", {
 		supportEmail: supportEmail,
-		supportName: supportName}
-	) %>
+		supportName: supportName,
+		appName: appName,
+		policy: policy,
+		uiURL: uiURL,
+	}) %>
+
 </div>
 

@@ -1,1 +1,0 @@
-sql(`update policies set type='Corporate' where type='Team'`)

@@ -1,9 +1,15 @@
 <div>
 	<%= partial("body_header", {
 		previewText: "",
-		title: "Action Required",
-		subTitle: "Coverage is pending your approval for " + item.Name,
+		title: "New Item Coverage Application",
+		subTitle: ""
 	}) %>
+
+	<%= partial("alert", {
+		alert: "Needs item coverage review",
+		alert_description: "",
+		alert_icon: "new"}
+	) %>
 
 	<%= partial("item_card", {
 		item: item,
@@ -12,12 +18,9 @@
 		coverageStartDate: coverageStartDate,
 		coverageEndDate: coverageEndDate,
 		accountablePerson: accountablePerson,
-		householdID: policy.HouseholdID}
-	) %>
-
-	<%= partial("button", {
-		url: itemURL,
-		label: "Open in " + appName}
+		householdID: policy.HouseholdID,
+		itemURL: itemURL,
+		buttonLabel:buttonLabel}
 	) %>
 
 </div>

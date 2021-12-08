@@ -36,12 +36,12 @@ func (ts *TestSuite) Test_ItemSubmittedQueueMessage() {
 			data: testData{
 				name:                  "just submitted, not approved",
 				wantToEmails:          []interface{}{steward0.EmailOfChoice(), steward1.EmailOfChoice()},
-				wantSubjectContains:   "just submitted a new policy item for approval",
+				wantSubjectContains:   "Item Needs Review " + f.Items[0].Name,
 				wantInappTextContains: "A new policy item is waiting for your approval",
 				wantBodyContains: []string{
 					domain.Env.UIURL,
 					submittedItem.Name,
-					"Coverage is pending your approval for",
+					"Needs item coverage review",
 				},
 			},
 			item: submittedItem,
@@ -136,13 +136,13 @@ func (ts *TestSuite) Test_ItemRevisionQueueMessage() {
 		{
 			name:                  "revisions required",
 			wantToEmails:          []interface{}{member0.EmailOfChoice(), member1.EmailOfChoice()},
-			wantSubjectContains:   "Coverage needs attention",
+			wantSubjectContains:   "Coverage Needs Attention",
 			wantInappTextContains: "Coverage needs attention",
 			wantBodyContains: []string{
 				domain.Env.UIURL,
 				revisionItem.Name,
 				revisionItem.StatusReason,
-				"we need to clarify a few things on your request",
+				"I need to clarify a few things on your request",
 			},
 		},
 	}
@@ -182,7 +182,7 @@ func (ts *TestSuite) Test_ItemDeniedQueueMessage() {
 		{
 			name:                  "coverage denied",
 			wantToEmails:          []interface{}{member0.EmailOfChoice(), member1.EmailOfChoice()},
-			wantSubjectContains:   "An update on your coverage request",
+			wantSubjectContains:   "An Update on Your Coverage Request",
 			wantInappTextContains: "coverage on your new policy item has been denied",
 			wantBodyContains: []string{
 				domain.Env.UIURL,

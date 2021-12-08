@@ -18,6 +18,7 @@ func UserWelcomeQueueMessage(tx *pop.Connection, user models.User) {
 	m["previewText"] = fmt.Sprintf("Dear %s, %s", user.FirstName, domain.Env.UserWelcomeEmailPreviewText)
 	m["emailEnding"] = domain.Env.UserWelcomeEmailEnding
 	m.addStewardData(tx)
+	m["policy"] = models.Policy{}
 
 	notn := models.Notification{
 		Body:    m.renderHTML(MessageTemplateUserWelcome),

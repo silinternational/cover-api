@@ -24,6 +24,7 @@ func (ts *TestSuite) TestSend() {
 		Data: map[string]interface{}{
 			"uiURL":             "example.com",
 			"appName":           "Our App",
+			"buttonLabel":       "Open in Our App",
 			"itemURL":           "https://my-item.example.com",
 			"item":              item,
 			"memberName":        "John Doe",

@@ -1,8 +1,8 @@
 <div>
 	<%= partial("body_header", {
 		previewText: previewText,
-		title: "",
-		subTitle: "Welcome",
+		title: "Welcome",
+		subTitle: "",
 	}) %>
 
 	<p>
@@ -10,8 +10,8 @@
 	</p>
 	<p>
 		<%= emailIntro %>
-<%= appName %> offers 24/7 access to your policy, fewer restrictions on what can be covered,
-quicker approvals for new items, and no more minimum premium.
+<%= appName %> offers 24/7 access to your policy, fewer restrictions on what can be covered, and
+quicker approvals for new items.
 	</p>
 	<p>
 		We’ve automatically imported your existing policies into <%= appName %>. Please verify that
@@ -34,6 +34,10 @@ and support. We’ve got you covered.
 
 	<%= partial("customer_footer", {
 		supportEmail: supportEmail,
-		supportName: supportName}
-	) %>
+		supportName: supportName,
+		appName: appName,
+		policy: policy,
+		uiURL: uiURL,
+	}) %>
+
 </div>

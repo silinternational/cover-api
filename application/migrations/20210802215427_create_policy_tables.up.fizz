@@ -1,5 +1,6 @@
 create_table("policies") {
 	t.Column("id", "uuid", {primary: true})
+	t.Column("name", "string", {})
 	t.Column("type", "string", {})
 	t.Column("household_id", "string", {"null": true})
 	t.Column("cost_center", "string", {})
@@ -35,7 +36,9 @@ create_table("policy_dependents") {
 	t.Column("name", "string", {})
 	t.Column("child_birth_year", "int", {})
 	t.Column("relationship", "string", {})
-	t.Column("location", "string", {})
+	t.Column("city", "string", {})
+	t.Column("state", "string", {})
+	t.Column("country", "string", {})
 	t.Timestamps()
 
 	t.Index(["policy_id","name"], {"unique": true})

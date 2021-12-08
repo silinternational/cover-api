@@ -78,13 +78,17 @@ func (m MessageData) addClaimData(tx *pop.Connection, claim models.Claim) {
 	m["item"] = item
 	m["coverageAmount"] = "$" + api.Currency(item.CoverageAmount).String()
 
+	item.LoadPolicy(tx, false)
+	m["policy"] = item.Policy
+
 	person := item.GetAccountablePersonName(tx)
 	m["accountablePerson"] = person.String()
 	m["personFirstName"] = person.First
 
 	m["payoutOption"] = string(claim.ClaimItems[0].PayoutOption)
+	m["payoutOptionDescription"] = api.PayoutOptionDescriptions[claim.ClaimItems[0].PayoutOption]
 	m["payoutOptionLower"] = strings.ToLower(string(claim.ClaimItems[0].PayoutOption))
-	m["maximumPayout"] = "$" + claim.TotalPayout.String()
+	m["totalPayout"] = "$" + claim.TotalPayout.String()
 	m["submitted"] = domain.TimeBetween(time.Now().UTC(), claim.SubmittedAt(tx))
 }
 
@@ -97,6 +101,7 @@ func (m MessageData) addItemData(tx *pop.Connection, item models.Item) {
 	m["itemURL"] = fmt.Sprintf("%s/policies/%s/items/%s", domain.Env.UIURL, item.PolicyID, item.ID)
 
 	item.Load(tx)
+	item.LoadPolicy(tx, false)
 	m["item"] = item
 
 	person := item.GetAccountablePersonName(tx)
@@ -123,7 +128,7 @@ func (m MessageData) addStewardData(tx *pop.Connection) {
 	}
 
 	steward := models.GetDefaultSteward(tx)
-	m["supportEmail"] = steward.Email
+	m["supportEmail"] = domain.Env.SupportEmail
 	m["supportName"] = steward.Name()
 	m["supportFirstName"] = steward.FirstName
 }

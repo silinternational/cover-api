@@ -485,7 +485,7 @@ func (c *Claim) Approve(ctx context.Context) error {
 		c.LoadClaimItems(Tx(ctx), false)
 		payOption := c.ClaimItems[0].PayoutOption
 		if payOption != api.PayoutOptionFMV && payOption != api.PayoutOptionFixedFraction {
-			err := fmt.Errorf("invalid claim item payout option for approve: %s", payOption)
+			err := fmt.Errorf("cannot approve payout option %s from status %s", payOption, c.Status)
 			appErr := api.NewAppError(err, api.ErrorClaimItemInvalidPayoutOption, api.CategoryUser)
 			return appErr
 		}

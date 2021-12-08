@@ -37,6 +37,7 @@ type ClaimItem struct {
 	ReplaceActual   api.Currency     `db:"replace_actual" validate:"min=0"`
 	PayoutOption    api.PayoutOption `db:"payout_option" validate:"payoutOption"`
 	PayoutAmount    api.Currency     `db:"payout_amount" validate:"min=0"`
+	CoverageAmount  api.Currency     `db:"coverage_amount" validate:"min=0"`
 	FMV             api.Currency     `db:"fmv" validate:"min=0"`
 	City            string           `db:"city"`
 	State           string           `db:"state"`
@@ -188,6 +189,7 @@ func (c *ClaimItem) ConvertToAPI(tx *pop.Connection) api.ClaimItem {
 		ReplaceActual:   c.ReplaceActual,
 		PayoutOption:    c.PayoutOption,
 		PayoutAmount:    c.PayoutAmount,
+		CoverageAmount:  c.CoverageAmount,
 		FMV:             c.FMV,
 		ReviewDate:      c.Claim.ReviewDate.Time,
 		ReviewerID:      c.Claim.ReviewerID.UUID,
@@ -283,6 +285,7 @@ func NewClaimItem(tx *pop.Connection, input api.ClaimItemCreateInput, item Item,
 	claimItem.City = loc.City
 	claimItem.State = loc.State
 	claimItem.Country = loc.Country
+	claimItem.CoverageAmount = api.Currency(item.CoverageAmount)
 	return claimItem, nil
 }
 

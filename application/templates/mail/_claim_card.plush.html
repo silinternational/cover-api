@@ -27,3 +27,18 @@
 		helpText: incidentTypeDescription
 	}) %>
 </div>
+
+<%= if (showPayout) { %>
+	<div style="padding: 0px 16px;">
+		<div style="margin-top: 8px;">
+			<h4 style="margin: 0;">Desired resolution</h4>
+			<%= payoutOption %>
+			<%= payoutOptionDescription %>
+		</div>
+
+		<div style="margin-top: 8px;">
+			<h4 style="margin: 0;">Maximum payout</h4>
+			<%= totalPayout %>
+		</div>
+	</div>
+<% } %>
