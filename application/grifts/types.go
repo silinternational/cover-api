@@ -143,6 +143,7 @@ type LegacyClaimItem struct {
 	Id              string        `json:"id"`
 	ReviewerId      int           `json:"reviewer_id"`
 	PayoutAmount    string        `json:"payout_amount"`
+	CoverageAmount  string        `json:"covered_value"`
 	ItemId          int           `json:"item_id"`
 	PayoutOption    string        `json:"payout_option"`
 	RepairEstimate  string        `json:"repair_estimate"`

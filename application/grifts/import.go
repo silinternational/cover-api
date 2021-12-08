@@ -788,6 +788,7 @@ func importClaimItems(tx *pop.Connection, claim models.Claim, items []LegacyClai
 			ReplaceActual:   fixedPointStringToCurrency(c.ReplaceActual, "ClaimItem.ReplaceActual"),
 			PayoutOption:    getPayoutOption(c.PayoutOption, itemDesc+"PayoutOption"),
 			PayoutAmount:    fixedPointStringToCurrency(c.PayoutAmount, "ClaimItem.PayoutAmount"),
+			CoverageAmount:  fixedPointStringToCurrency(c.CoverageAmount, "ClaimItem.CoverageAmount"),
 			FMV:             fixedPointStringToCurrency(c.Fmv, "ClaimItem.FMV"),
 			LegacyID:        nulls.NewInt(claimItemID),
 			CreatedAt:       time.Time(c.CreatedAt),

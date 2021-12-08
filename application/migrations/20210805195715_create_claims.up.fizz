@@ -38,6 +38,7 @@ create_table("claim_items") {
 	t.Column("replace_actual", "int", {})
 	t.Column("payout_option", "string", {})
 	t.Column("payout_amount", "int", {})
+	t.Column("coverage_amount", "int", {})
 	t.Column("fmv", "int", {})
 	t.Column("city", "string", {})
 	t.Column("state", "string", {})
