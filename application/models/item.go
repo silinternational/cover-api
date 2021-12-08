@@ -975,6 +975,28 @@ func (i *Item) GetAccountablePerson(tx *pop.Connection) Person {
 	return person
 }
 
+// GetAccountableMember gets either the accountable person if they are a User or
+//   the first member of the item's policy
+func (i *Item) GetAccountableMember(tx *pop.Connection) Person {
+	var person Person
+	if i.PolicyUserID.Valid {
+		var user User
+		if err := user.FindByID(tx, i.PolicyUserID.UUID); err != nil {
+			panic("item PolicyUserID contains invalid user ID")
+		}
+		person = &user
+		return person
+	}
+
+	i.LoadPolicy(tx, false)
+	i.Policy.LoadMembers(tx, false)
+	if len(i.Policy.Members) < 1 {
+		panic("item policy has no members")
+	}
+	person = &i.Policy.Members[0]
+	return person
+}
+
 func (i *Item) GetMakeModel() string {
 	return strings.TrimSpace(i.Make + " " + i.Model)
 }

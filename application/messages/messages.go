@@ -81,7 +81,7 @@ func (m MessageData) addClaimData(tx *pop.Connection, claim models.Claim) {
 	item.LoadPolicy(tx, false)
 	m["policy"] = item.Policy
 
-	person := item.GetAccountablePersonName(tx)
+	person := item.GetAccountableMember(tx).GetName()
 	m["accountablePerson"] = person.String()
 	m["personFirstName"] = person.First
 
@@ -104,7 +104,7 @@ func (m MessageData) addItemData(tx *pop.Connection, item models.Item) {
 	item.LoadPolicy(tx, false)
 	m["item"] = item
 
-	person := item.GetAccountablePersonName(tx)
+	person := item.GetAccountableMember(tx).GetName()
 	m["accountablePerson"] = person.String()
 	m["personFirstName"] = person.First
 

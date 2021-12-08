@@ -973,6 +973,27 @@ func (ms *ModelSuite) TestItem_GetAccountablePersonName() {
 	ms.Contains(f.PolicyDependents[0].Name, name.Last, "last name is not correct")
 }
 
+func (ms *ModelSuite) TestItem_GetAccountableMember() {
+	f := CreateItemFixtures(ms.DB, FixturesConfig{UsersPerPolicy: 2, ItemsPerPolicy: 2, DependentsPerPolicy: 1})
+	item0 := f.Policies[0].Items[0]
+	item1 := f.Policies[0].Items[1]
+	member0 := f.Policies[0].Members[0]
+	member1 := f.Policies[0].Members[1]
+
+	// item0 has the second member as the accountable person
+	ms.NoError(item0.SetAccountablePerson(ms.DB, member1.ID))
+
+	person := item0.GetAccountableMember(ms.DB)
+	ms.Equal(member1.FirstName, person.GetName().First, "first name is not correct")
+	ms.Equal(member1.LastName, person.GetName().Last, "last name is not correct")
+
+	// item1 has no accountable person
+	person = item1.GetAccountableMember(ms.DB)
+	ms.Equal(member0.FirstName, person.GetName().First, "first name is not correct")
+	ms.Equal(member0.LastName, person.GetName().Last, "last name is not correct")
+
+}
+
 func (ms *ModelSuite) Test_ItemsWithRecentStatusChanges() {
 	fixtures := CreatePolicyHistoryFixtures_RecentItemStatusChanges(ms.DB)
 	phFixes := fixtures.PolicyHistories
