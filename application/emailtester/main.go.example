@@ -11,7 +11,8 @@ import (
 //  This script sends an email based on the last notification in the database.
 //  In order to use it, save a copy of it as main.go and
 //    change {RecipientEmail} and {RecipientName} to your own values
-//  Next, go to the application/emailtester folder and do `go run main.go`
+//  Next, go exec into the buffalo docker container, change to the application/emailtester folder
+//    and do `go run main.go`
 func main() {
 	fmt.Printf("\nEMAILER\n")
 
