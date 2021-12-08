@@ -35,6 +35,7 @@ create_table("claim_items") {
 	t.Column("replace_actual", "int", {})
 	t.Column("payout_option", "string", {})
 	t.Column("payout_amount", "int", {})
+	t.Column("coverage_amount", "int", {})
 	t.Column("fmv", "int", {})
 	t.Column("review_date", "timestamp", {"null": true})
 	t.Column("reviewer_id", "uuid", {"null": true})
