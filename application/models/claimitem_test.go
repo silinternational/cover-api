@@ -460,6 +460,7 @@ func (ms *ModelSuite) TestClaimItem_ConvertToAPI() {
 	ms.Equal(claimItem.ReplaceActual, got.ReplaceActual, "ReplaceActual is not correct")
 	ms.Equal(claimItem.PayoutOption, got.PayoutOption, "PayoutOption is not correct")
 	ms.Equal(claimItem.PayoutAmount, got.PayoutAmount, "PayoutAmount is not correct")
+	ms.Equal(claimItem.CoverageAmount, got.CoverageAmount, "CoverageAmount is not correct")
 	ms.Equal(claimItem.FMV, got.FMV, "FMV is not correct")
 	ms.WithinDuration(claim.ReviewDate.Time, got.ReviewDate, time.Minute, "ReviewDate is not correct")
 	ms.Equal(claim.ReviewerID.UUID, got.ReviewerID, "ReviewerID is not correct")

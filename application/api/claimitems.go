@@ -82,6 +82,9 @@ type ClaimItem struct {
 	// payout amount (0.01 USD)
 	PayoutAmount Currency `json:"payout_amount,omitempty"`
 
+	// coverage amount at the time the Claim was created (0.01 USD)
+	CoverageAmount Currency `json:"coverage_amount,omitempty"`
+
 	// fair market value (0.01 USD)
 	FMV Currency `json:"fmv,omitempty"`
 
