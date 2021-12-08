@@ -1,19 +1,22 @@
 create_table("users") {
 	t.Column("id", "uuid", {primary: true})
 	t.Column("email", "string", {})
-	t.Column("email_override", "string", {"default": ""})
+	t.Column("email_override", "string", {})
 	t.Column("first_name", "string", {})
 	t.Column("last_name", "string", {})
 	t.Column("is_blocked", "bool", {})
 	t.Column("last_login_utc", "timestamp", {})
-	t.Column("location", "string", {"default": ""})
-	t.Column("staff_id", "string", {})
+	t.Column("city", "string", {})
+	t.Column("state", "string", {})
+	t.Column("country", "string", {})
+	t.Column("staff_id", "string", {"null": true})
 	t.Column("photo_file_id", "uuid", {"null": true})
 	t.Column("app_role", "string", {})
 
 	t.Timestamps()
 
 	t.Index("email", {"unique": true})
+	t.Index("staff_id", {"unique": true})
 
 	t.ForeignKey("photo_file_id", {"files": ["id"]}, {"on_delete": "set null"})
 }

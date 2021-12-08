@@ -1,2 +1,0 @@
-add_column("items", "purchase_date", "date", {"default": "1970-01-01"})
-drop_column("items", coverage_end_date")

@@ -1,2 +1,0 @@
-drop_column("ledger_entries", "income_account")
-drop_column("entity_codes", "income_account")
