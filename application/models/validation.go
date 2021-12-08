@@ -78,6 +78,9 @@ func validateClaimFilePurpose(field validator.FieldLevel) bool {
 
 func validatePayoutOption(field validator.FieldLevel) bool {
 	if value, ok := field.Field().Interface().(api.PayoutOption); ok {
+		if value == "" {
+			return true
+		}
 		_, valid := ValidPayoutOptions[value]
 		return valid
 	}
@@ -161,7 +164,7 @@ func claimItemStructLevelValidation(sl validator.StructLevel) {
 	}
 
 	switch claimItem.Claim.Status {
-	case api.ClaimStatusDraft, api.ClaimStatusRevision, api.ClaimStatusReview1:
+	case api.ClaimStatusRevision, api.ClaimStatusReview1:
 		incidentTypePayoutOptions, ok := ValidClaimIncidentTypePayoutOptions[claimItem.Claim.IncidentType]
 		if !ok {
 			sl.ReportError(claimItem.Claim.IncidentType, "IncidentType", "IncidentType", "invalid Incident type", "")

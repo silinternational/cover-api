@@ -38,18 +38,6 @@ func (ms *ModelSuite) TestClaimItem_Validate() {
 			wantErr:  true,
 		},
 		{
-			name: "invalid payout option for Evacuation",
-			claimItem: &ClaimItem{
-				Claim: Claim{
-					Status:       api.ClaimStatusDraft,
-					IncidentType: api.ClaimIncidentTypeEvacuation,
-				},
-				PayoutOption: api.PayoutOptionFMV,
-			},
-			errField: "ClaimItem.PayoutOption",
-			wantErr:  true,
-		},
-		{
 			name: "valid payout option for Evacuation",
 			claimItem: &ClaimItem{
 				Claim: Claim{
@@ -60,18 +48,6 @@ func (ms *ModelSuite) TestClaimItem_Validate() {
 			wantErr: false,
 		},
 		{
-			name: "invalid payout option for Theft",
-			claimItem: &ClaimItem{
-				Claim: Claim{
-					Status:       api.ClaimStatusDraft,
-					IncidentType: api.ClaimIncidentTypeTheft,
-				},
-				PayoutOption: api.PayoutOptionFixedFraction,
-			},
-			errField: "ClaimItem.PayoutOption",
-			wantErr:  true,
-		},
-		{
 			name: "valid payout option for Theft",
 			claimItem: &ClaimItem{
 				Claim: Claim{
@@ -80,18 +56,6 @@ func (ms *ModelSuite) TestClaimItem_Validate() {
 				PayoutOption: api.PayoutOptionFMV,
 			},
 			wantErr: false,
-		},
-		{
-			name: "invalid payout option for Impact",
-			claimItem: &ClaimItem{
-				Claim: Claim{
-					Status:       api.ClaimStatusDraft,
-					IncidentType: api.ClaimIncidentTypePhysicalDamage,
-				},
-				PayoutOption: api.PayoutOptionFixedFraction,
-			},
-			errField: "ClaimItem.PayoutOption",
-			wantErr:  true,
 		},
 		{
 			name: "valid payout option for Impact",
