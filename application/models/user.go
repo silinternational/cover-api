@@ -344,18 +344,21 @@ func (u *User) createInitialPolicyUser(tx *pop.Connection, householdID string) (
 		panic(msg)
 	}
 
-	if policy.ID != uuid.Nil {
-		polUser := PolicyUser{
-			PolicyID: policy.ID,
-			UserID:   u.ID,
-		}
-
-		if err := polUser.Create(tx); err != nil {
-			return false, errors.New("unable to create policy-user in CreateInitialPolicy: " + err.Error())
-		}
-		return true, nil
+	//  If it found no policy with the same household_id then we're done.
+	//   Otherwise, create a matching PolicyUser
+	if policy.ID == uuid.Nil {
+		return false, nil
 	}
-	return false, nil
+
+	polUser := PolicyUser{
+		PolicyID: policy.ID,
+		UserID:   u.ID,
+	}
+
+	if err := polUser.Create(tx); err != nil {
+		return false, errors.New("unable to create policy-user in CreateInitialPolicy: " + err.Error())
+	}
+	return true, nil
 }
 
 func (u *Users) GetAll(tx *pop.Connection) error {
