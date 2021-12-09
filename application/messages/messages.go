@@ -39,6 +39,11 @@ const (
 	MessageTemplateUserWelcome      = "user_welcome"
 )
 
+const (
+	EventCategoryItem  = "Item"
+	EventCategoryClaim = "Claim"
+)
+
 // blockSending is used to avoid having duplicate emails sent out when
 // two notifications are created one after the other.
 var blockSending bool

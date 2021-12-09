@@ -21,10 +21,8 @@ func UserWelcomeQueueMessage(tx *pop.Connection, user models.User) {
 	m["policy"] = models.Policy{}
 
 	notn := models.Notification{
-		Body:    m.renderHTML(MessageTemplateUserWelcome),
-		Subject: fmt.Sprintf("Welcome to %s!", domain.Env.AppName),
-
-		// TODO make these constants somewhere
+		Body:          m.renderHTML(MessageTemplateUserWelcome),
+		Subject:       fmt.Sprintf("Welcome to %s!", domain.Env.AppName),
 		Event:         "User Welcome Notification",
 		EventCategory: "UserWelcome",
 	}
