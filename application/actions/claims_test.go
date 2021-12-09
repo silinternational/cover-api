@@ -415,14 +415,6 @@ func (as *ActionSuite) Test_ClaimsCreate() {
 		notWantInBody string
 	}{
 		{
-			name:          "incomplete input",
-			actor:         normalUser,
-			policy:        policyByUser,
-			input:         api.ClaimCreateInput{},
-			wantStatus:    http.StatusBadRequest,
-			notWantInBody: policyByUser.ID.String(),
-		},
-		{
 			name:       "valid input",
 			actor:      normalUser,
 			policy:     policyByUser,
