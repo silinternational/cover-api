@@ -2,31 +2,27 @@
 <div style="margin:16px 0px; padding:8px; border-radius: 8px; background: #EBEEF2;">
 	<table>
 		<tr>
-			<td rowspan="2" style="column-width:30px">
-				<%= if ( alert_icon == "check" ) { %>
-				 <img src="cid:check" alt="Check" />
+			<td rowspan="2"><div style="width:30px;">
+				<%= if ( alert_icon == "beach_access" ) { %>
+				 <img src="cid:beach_access" alt="Umbrella" style="width:100%;"/>
+				<% } else if ( alert_icon == "check" ) { %>
+				 <img src="cid:check" alt="Check" style="width:100%;"/>
 				<% } else if ( alert_icon == "clock" ) { %>
-				 <img src="cid:clock" alt="Clock" />
+				 <img src="cid:clock" alt="Clock" style="width:100%;"/>
 				<% } else if ( alert_icon == "clipboard" ) { %>
-				 <img src="cid:clipboard" alt="Clipboard" />
+				 <img src="cid:clipboard" alt="Clipboard" style="width:100%;"/>
 				<% } else if ( alert_icon == "do_not_enter" ) { %>
-				 <img src="cid:do_not_enter" alt="Stop" />
+				 <img src="cid:do_not_enter" alt="Stop" style="width:100%;"/>
 				<% } else if ( alert_icon == "dollar" ) { %>
-				 <img src="cid:dollar" alt="Dollar" />
+				 <img src="cid:dollar" alt="Dollar" style="width:100%;"/>
 				<% } else if ( alert_icon == "error" ) { %>
-				 <img src="cid:error" alt="Error" />
+				 <img src="cid:error" alt="Error" style="width:100%;"/>
 				<% } else if ( alert_icon == "new" ) { %>
-				 <img src="cid:new" alt="New" />
-				<% } else if ( alert_icon == "new_releases" ) { %>
-				 <img src="cid:new_releases" alt="New" />
-				<% } else if ( alert_icon == "volunteer_activism" ) { %>
-				 <img src="cid:volunteer_activism" alt="Hand" />
-				<% } else if ( alert_icon == "beach_access" ) { %>
-				 <img src="cid:beach_access" alt="Umbrella" />
+				 <img src="cid:new" alt="New" style="width:100%;"/>
 				<% } else {
 					alert_icon
 				} %>
-			</td>
+				</div></td>
 			<th style="text-align: left;"><%= alert %></th>
 		</tr>
 		<%= if ( alert_description != "" ) { %>
