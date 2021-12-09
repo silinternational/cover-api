@@ -303,7 +303,7 @@ func (u *User) CreateInitialPolicy(tx *pop.Connection, householdID string) error
 	// If there is already a Policy with this householdID, create a PolicyUser but not
 	//  another Policy
 	if householdID != "" {
-		gotCreated, err := u.createdInitialPolicyUser(tx, householdID)
+		gotCreated, err := u.createInitialPolicyUser(tx, householdID)
 		if err != nil {
 			return err
 		}
@@ -336,7 +336,7 @@ func (u *User) CreateInitialPolicy(tx *pop.Connection, householdID string) error
 	return nil
 }
 
-func (u *User) createdInitialPolicyUser(tx *pop.Connection, householdID string) (bool, error) {
+func (u *User) createInitialPolicyUser(tx *pop.Connection, householdID string) (bool, error) {
 	var policy Policy
 	err := tx.Where("household_id = ?", householdID).First(&policy)
 	if domain.IsOtherThanNoRows(err) {
