@@ -6,18 +6,20 @@
 		subTitle: "",
 	}) %>
 
-	<p>
-		Dear <%= personFirstName %>,
-	</p>
+	<div style="max-width: 80ch;">
+		<p>
+			Dear <%= personFirstName %>,
+		</p>
 
-	<p>
-		Congratulations! We've approved the payout for your claim on <%= item.Name %>. You'll get a credit of
-		<%= totalPayout %> in your account by the end of this month.
-	</p>
+		<p>
+			Congratulations! We've approved the payout for your claim on <%= item.Name %>. You'll get a credit of
+			<%= totalPayout %> in your account by the end of this month.
+		</p>
 
-	<p>
-		&mdash;<%= supportFirstName %>
-	</p>
+		<p>
+			&mdash;<%= supportFirstName %>
+		</p>
+	</div>
 
 	<%= partial("claim_card", {
 		claim: claim,

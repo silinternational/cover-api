@@ -7,21 +7,23 @@
 		subTitle: "",
 	}) %>
 
-	<p>
-		Dear <%= personFirstName %>,
-	</p>
+	<div style="max-width: 80ch;">
+		<p>
+			Dear <%= personFirstName %>,
+		</p>
 
-	<p>
-		You recently requested coverage on <%= item.Name %>, but I need to clarify a few things on your request.
-	</p>
+		<p>
+			You recently requested coverage on <%= item.Name %>, but I need to clarify a few things on your request.
+		</p>
 
-	<p>
-		<%= item.StatusReason %>
-	</p>
+		<p>
+			<%= item.StatusReason %>
+		</p>
 
-	<p>
-		&mdash;<%= supportFirstName %>
-	</p>>
+		<p>
+			&mdash;<%= supportFirstName %>
+		</p>
+	</div>
 
 	<%= partial("alert", {
 		alert: "Needs changes",
