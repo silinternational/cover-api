@@ -781,7 +781,7 @@ func importClaimItems(tx *pop.Connection, claim models.Claim, items []LegacyClai
 			ID:              newUUID(strconv.Itoa(claimItemID)),
 			ClaimID:         claim.ID,
 			ItemID:          itemUUID,
-			IsRepairable:    getIsRepairable(c),
+			IsRepairable:    nulls.NewBool(getIsRepairable(c)),
 			RepairEstimate:  fixedPointStringToCurrency(c.RepairEstimate, "ClaimItem.RepairEstimate"),
 			RepairActual:    fixedPointStringToCurrency(c.RepairActual, "ClaimItem.RepairActual"),
 			ReplaceEstimate: fixedPointStringToCurrency(c.ReplaceEstimate, "ClaimItem.ReplaceEstimate"),

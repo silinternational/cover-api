@@ -30,7 +30,7 @@ type ClaimItem struct {
 	ID              uuid.UUID        `db:"id"`
 	ClaimID         uuid.UUID        `db:"claim_id"`
 	ItemID          uuid.UUID        `db:"item_id"`
-	IsRepairable    bool             `db:"is_repairable"`
+	IsRepairable    nulls.Bool       `db:"is_repairable"`
 	RepairEstimate  api.Currency     `db:"repair_estimate" validate:"min=0"`
 	RepairActual    api.Currency     `db:"repair_actual" validate:"min=0"`
 	ReplaceEstimate api.Currency     `db:"replace_estimate" validate:"min=0"`
@@ -176,13 +176,12 @@ func (c *ClaimItem) ConvertToAPI(tx *pop.Connection) api.ClaimItem {
 	c.LoadItem(tx, false)
 	c.LoadClaim(tx, false)
 
-	return api.ClaimItem{
+	apiClaimItem := api.ClaimItem{
 		ID:              c.ID,
 		ItemID:          c.ItemID,
 		Item:            c.Item.ConvertToAPI(tx),
 		ClaimID:         c.ClaimID,
 		Status:          c.Claim.Status,
-		IsRepairable:    c.IsRepairable,
 		RepairEstimate:  c.RepairEstimate,
 		RepairActual:    c.RepairActual,
 		ReplaceEstimate: c.ReplaceEstimate,
@@ -196,6 +195,11 @@ func (c *ClaimItem) ConvertToAPI(tx *pop.Connection) api.ClaimItem {
 		CreatedAt:       c.CreatedAt,
 		UpdatedAt:       c.UpdatedAt,
 	}
+	if c.IsRepairable.Valid {
+		isRepairable := c.IsRepairable.Bool
+		apiClaimItem.IsRepairable = &isRepairable
+	}
+	return apiClaimItem
 }
 
 func (c *ClaimItem) ValidateForSubmit(tx *pop.Connection) api.ErrorKey {
@@ -205,7 +209,11 @@ func (c *ClaimItem) ValidateForSubmit(tx *pop.Connection) api.ErrorKey {
 		return api.ErrorClaimItemMissingPayoutOption
 	}
 
-	if c.IsRepairable && !c.Claim.IncidentType.IsRepairable() {
+	if !c.IsRepairable.Valid {
+		return api.ErrorClaimItemMissingIsRepairable
+	}
+
+	if c.IsRepairable.Bool && !c.Claim.IncidentType.IsRepairable() {
 		return api.ErrorClaimItemNotRepairable
 	}
 
@@ -219,7 +227,7 @@ func (c *ClaimItem) ValidateForSubmit(tx *pop.Connection) api.ErrorKey {
 		}
 	case api.ClaimIncidentTypePhysicalDamage, api.ClaimIncidentTypeElectricalSurge,
 		api.ClaimIncidentTypeWaterDamage, api.ClaimIncidentTypeOther:
-		if c.IsRepairable {
+		if c.IsRepairable.Bool {
 			if c.RepairEstimate == 0 {
 				return api.ErrorClaimItemMissingRepairEstimate
 			}
@@ -271,13 +279,15 @@ func (c *ClaimItems) ConvertToAPI(tx *pop.Connection) api.ClaimItems {
 func NewClaimItem(tx *pop.Connection, input api.ClaimItemCreateInput, item Item, claim Claim) (ClaimItem, error) {
 	claimItem := ClaimItem{
 		ItemID:          input.ItemID,
-		IsRepairable:    input.IsRepairable,
 		RepairEstimate:  input.RepairEstimate,
 		RepairActual:    input.RepairActual,
 		ReplaceEstimate: input.ReplaceEstimate,
 		ReplaceActual:   input.ReplaceActual,
 		PayoutOption:    input.PayoutOption,
 		FMV:             input.FMV,
+	}
+	if input.IsRepairable != nil {
+		claimItem.IsRepairable = nulls.NewBool(*input.IsRepairable)
 	}
 
 	claimItem.ClaimID = claim.ID
