@@ -292,12 +292,24 @@ func (u *User) CreateInitialPolicy(tx *pop.Connection, householdID string) error
 	var pUsers []PolicyUser
 	count, err := tx.Where("user_id = ?", u.ID).Count(&pUsers)
 	if err != nil {
-		msg := fmt.Sprintf("error finding policy users for user %s: %s", u.ID, err.Error())
+		msg := fmt.Sprintf("error getting count of policy users for user %s: %s", u.ID, err.Error())
 		panic(msg)
 	}
 
 	if count > 0 {
 		return nil
+	}
+
+	// If there is already a Policy with this householdID, create a PolicyUser but not
+	//  another Policy
+	if householdID != "" {
+		gotCreated, err := u.createInitialPolicyUser(tx, householdID)
+		if err != nil {
+			return err
+		}
+		if gotCreated {
+			return nil
+		}
 	}
 
 	policy := Policy{
@@ -322,6 +334,31 @@ func (u *User) CreateInitialPolicy(tx *pop.Connection, householdID string) error
 		return errors.New("unable to create policy-user in CreateInitialPolicy: " + err.Error())
 	}
 	return nil
+}
+
+func (u *User) createInitialPolicyUser(tx *pop.Connection, householdID string) (bool, error) {
+	var policy Policy
+	err := tx.Where("household_id = ?", householdID).First(&policy)
+	if domain.IsOtherThanNoRows(err) {
+		msg := fmt.Sprintf("error fetching policies with household id %s: %s", householdID, err.Error())
+		panic(msg)
+	}
+
+	//  If it found no policy with the same household_id then we're done.
+	//   Otherwise, create a matching PolicyUser
+	if policy.ID == uuid.Nil {
+		return false, nil
+	}
+
+	polUser := PolicyUser{
+		PolicyID: policy.ID,
+		UserID:   u.ID,
+	}
+
+	if err := polUser.Create(tx); err != nil {
+		return false, errors.New("unable to create policy-user in CreateInitialPolicy: " + err.Error())
+	}
+	return true, nil
 }
 
 func (u *Users) GetAll(tx *pop.Connection) error {
