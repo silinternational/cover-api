@@ -28,11 +28,9 @@ func PolicyUserInviteQueueMessage(tx *pop.Connection, invite models.PolicyUserIn
 	data.addStewardData(tx)
 
 	notn := models.Notification{
-		PolicyID: nulls.NewUUID(invite.PolicyID),
-		Body:     data.renderHTML(MessageTemplatePolicyUserInvite),
-		Subject:  fmt.Sprintf("Invitation to %s policy on %s", invite.Policy.Name, domain.Env.AppName),
-
-		// TODO make these constants somewhere
+		PolicyID:      nulls.NewUUID(invite.PolicyID),
+		Body:          data.renderHTML(MessageTemplatePolicyUserInvite),
+		Subject:       fmt.Sprintf("Invitation to %s policy on %s", invite.Policy.Name, domain.Env.AppName),
 		Event:         "Policy User Invite Notification",
 		EventCategory: "PolicyUserInvite",
 	}

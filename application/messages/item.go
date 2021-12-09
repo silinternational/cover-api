@@ -14,15 +14,12 @@ func itemApprovedQueueMsg(tx *pop.Connection, item models.Item) {
 	data["buttonLabel"] = "Open in " + domain.Env.AppName
 
 	notn := models.Notification{
-		ItemID:  nulls.NewUUID(item.ID),
-		Body:    data.renderHTML(MessageTemplateItemApprovedMember),
-		Subject: "Item Coverage Approved",
-		// TODO make this more helpful
-		InappText: "Item Coverage Approved",
-
-		// TODO fix these and make them constants somewhere
+		ItemID:        nulls.NewUUID(item.ID),
+		Body:          data.renderHTML(MessageTemplateItemApprovedMember),
+		Subject:       "Item Coverage Approved",
+		InappText:     "Item Coverage Approved",
 		Event:         "Item Approved Notification",
-		EventCategory: "Item",
+		EventCategory: EventCategoryItem,
 	}
 	if err := notn.Create(tx); err != nil {
 		panic("error creating new Notification: " + err.Error())
@@ -41,15 +38,12 @@ func itemAutoApprovedQueueMessage(tx *pop.Connection, item models.Item, member m
 	data["buttonLabel"] = "Open in " + domain.Env.AppName
 
 	notn := models.Notification{
-		ItemID:  nulls.NewUUID(item.ID),
-		Body:    data.renderHTML(MessageTemplateItemAutoSteward),
-		Subject: memberName + " just submitted a new policy item that has been auto approved",
-
-		InappText: "Coverage on a new policy item was just auto approved",
-
-		// TODO make these constants somewhere
+		ItemID:        nulls.NewUUID(item.ID),
+		Body:          data.renderHTML(MessageTemplateItemAutoSteward),
+		Subject:       memberName + " just submitted a new policy item that has been auto approved",
+		InappText:     "Coverage on a new policy item was just auto approved",
 		Event:         "Item Auto Approved Notification",
-		EventCategory: "Item",
+		EventCategory: EventCategoryItem,
 	}
 	if err := notn.Create(tx); err != nil {
 		panic("error creating new Item Auto Approved Notification: " + err.Error())
@@ -65,14 +59,12 @@ func itemPendingQueueMessage(tx *pop.Connection, item models.Item, member models
 	data["buttonLabel"] = "Open in " + domain.Env.AppName
 
 	notn := models.Notification{
-		ItemID:    nulls.NewUUID(item.ID),
-		Body:      data.renderHTML(MessageTemplateItemPendingSteward),
-		Subject:   "Item Needs Review " + item.Name,
-		InappText: "A new policy item is waiting for your approval",
-
-		// TODO make these constants somewhere
+		ItemID:        nulls.NewUUID(item.ID),
+		Body:          data.renderHTML(MessageTemplateItemPendingSteward),
+		Subject:       "Item Needs Review " + item.Name,
+		InappText:     "A new policy item is waiting for your approval",
 		Event:         "Item Pending Notification",
-		EventCategory: "Item",
+		EventCategory: EventCategoryItem,
 	}
 	if err := notn.Create(tx); err != nil {
 		panic("error creating new Item Pending Notification: " + err.Error())
@@ -98,15 +90,12 @@ func ItemRevisionQueueMessage(tx *pop.Connection, item models.Item) {
 	data["buttonLabel"] = "Change item in " + domain.Env.AppName
 
 	notn := models.Notification{
-		ItemID:  nulls.NewUUID(item.ID),
-		Body:    data.renderHTML(MessageTemplateItemRevisionMember),
-		Subject: "Coverage Needs Attention",
-		// TODO make this more helpful
-		InappText: "Coverage needs attention",
-
-		// TODO make these constants somewhere
+		ItemID:        nulls.NewUUID(item.ID),
+		Body:          data.renderHTML(MessageTemplateItemRevisionMember),
+		Subject:       "Coverage Needs Attention",
+		InappText:     "Coverage needs attention",
 		Event:         "Item Revision Required Notification",
-		EventCategory: "Item",
+		EventCategory: EventCategoryItem,
 	}
 	if err := notn.Create(tx); err != nil {
 		panic("error creating new Item Revision Notification: " + err.Error())
@@ -141,14 +130,12 @@ func ItemDeniedQueueMessage(tx *pop.Connection, item models.Item) {
 	data["buttonLabel"] = "View in " + domain.Env.AppName
 
 	notn := models.Notification{
-		ItemID:    nulls.NewUUID(item.ID),
-		Body:      data.renderHTML(MessageTemplateItemDeniedMember),
-		Subject:   "An Update on Your Coverage Request",
-		InappText: "coverage on your new policy item has been denied",
-
-		// TODO make these constants somewhere
+		ItemID:        nulls.NewUUID(item.ID),
+		Body:          data.renderHTML(MessageTemplateItemDeniedMember),
+		Subject:       "An Update on Your Coverage Request",
+		InappText:     "coverage on your new policy item has been denied",
 		Event:         "Item Denied Notification",
-		EventCategory: "Item",
+		EventCategory: EventCategoryItem,
 	}
 	if err := notn.Create(tx); err != nil {
 		panic("error creating new Item Denied Notification: " + err.Error())
