@@ -934,6 +934,11 @@ func (c *Claim) SubmittedAt(tx *pop.Connection) time.Time {
 }
 
 func (c *Claim) calculatePayout(ctx context.Context) error {
+	switch c.Status {
+	case api.ClaimStatusPaid, api.ClaimStatusDenied, api.ClaimStatusApproved:
+		return nil
+	}
+
 	c.LoadClaimItems(Tx(ctx), false)
 	var payout api.Currency
 	for _, claimItem := range c.ClaimItems {
