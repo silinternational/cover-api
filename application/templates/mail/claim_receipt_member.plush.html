@@ -6,22 +6,24 @@
 	subTitle: "",
 	}) %>
 
-	<p>
-		Dear <%= personFirstName %>,
-	</p>
+	<div style="max-width: 80ch;">
+		<p>
+			Dear <%= personFirstName %>,
+		</p>
 
-	<p>
-		Thank you for reporting your claim. We hope to make this process as simple as possible for you.
-		To complete your claim on <%= item.Name %>, we need a receipt.
-	</p>
+		<p>
+			Thank you for reporting your claim. We hope to make this process as simple as possible for you.
+			To complete your claim on <%= item.Name %>, we need a receipt.
+		</p>
 
-	<p>
-		<%= claim.StatusReason %>
-	</p>
+		<p>
+			<%= claim.StatusReason %>
+		</p>
 
-	<p>
-		&mdash;<%= supportFirstName %>
-	</p>
+		<p>
+			&mdash;<%= supportFirstName %>
+		</p>
+	</div>
 
 	<%= partial("alert", {
 		alert: "Needs receipt",
