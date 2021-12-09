@@ -498,9 +498,10 @@ func (as *ActionSuite) Test_ClaimsItemsCreate() {
 	otherUser := fixtures.Policies[0].Members[0]
 	sameUser := fixtures.Policies[1].Members[0]
 
+	isRepairable := true
 	input := api.ClaimItemCreateInput{
 		ItemID:          item.ID,
-		IsRepairable:    true,
+		IsRepairable:    &isRepairable,
 		RepairEstimate:  200,
 		RepairActual:    0,
 		ReplaceEstimate: 300,
@@ -550,7 +551,7 @@ func (as *ActionSuite) Test_ClaimsItemsCreate() {
 				`"item_id":"` + input.ItemID.String(),
 				`"claim_id":"` + claim.ID.String(),
 				`"status":"` + string(api.ClaimStatusDraft),
-				fmt.Sprintf(`"is_repairable":%t`, input.IsRepairable),
+				fmt.Sprintf(`"is_repairable":%t`, *input.IsRepairable),
 				fmt.Sprintf(`"repair_estimate":%v`, int(input.RepairEstimate)),
 				fmt.Sprintf(`"replace_estimate":%v`, int(input.ReplaceEstimate)),
 				`"payout_option":"` + string(input.PayoutOption),

@@ -62,7 +62,7 @@ type ClaimItem struct {
 	Status ClaimStatus `json:"status"`
 
 	// is item repairable?
-	IsRepairable bool `json:"is_repairable"`
+	IsRepairable *bool `json:"is_repairable"`
 
 	// repair estimate (0.01 USD)
 	RepairEstimate Currency `json:"repair_estimate,omitempty"`
@@ -117,7 +117,7 @@ type ClaimItemCreateInput struct {
 	ItemID uuid.UUID `json:"item_id"`
 
 	// is item repairable?
-	IsRepairable bool `json:"is_repairable"`
+	IsRepairable *bool `json:"is_repairable"`
 
 	// repair estimate (0.01 USD)
 	RepairEstimate Currency `json:"repair_estimate"`
@@ -141,7 +141,7 @@ type ClaimItemCreateInput struct {
 // swagger:model
 type ClaimItemUpdateInput struct {
 	// is item repairable?
-	IsRepairable bool `json:"is_repairable"`
+	IsRepairable *bool `json:"is_repairable"`
 
 	// repair estimate (0.01 USD)
 	RepairEstimate Currency `json:"repair_estimate"`
