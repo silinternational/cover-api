@@ -821,7 +821,6 @@ func (c *Claim) NewHistory(ctx context.Context, action string, fieldUpdate Field
 }
 
 func (c *Claim) setReviewer(ctx context.Context) {
-	// TODO: decide if we need more review fields for different review steps
 	actor := CurrentUser(ctx)
 	c.ReviewerID = nulls.NewUUID(actor.ID)
 	c.ReviewDate = nulls.NewTime(time.Now().UTC())
