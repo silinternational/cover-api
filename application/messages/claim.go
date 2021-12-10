@@ -28,11 +28,9 @@ func ClaimReview1QueueMessage(tx *pop.Connection, claim models.Claim) {
 		Body:    data.renderHTML(MessageTemplateClaimReview1Steward),
 		Subject: "New claim on " + item.Name,
 
-		InappText: "A new claim is waiting for your approval",
-
-		// TODO make these constants somewhere
+		InappText:     "A new claim is waiting for your approval",
 		Event:         "Claim Review1 Notification",
-		EventCategory: "Claim",
+		EventCategory: EventCategoryClaim,
 	}
 	if err := notn.Create(tx); err != nil {
 		panic("error creating new Claim Review1 Notification: " + err.Error())
@@ -50,14 +48,12 @@ func ClaimRevisionQueueMessage(tx *pop.Connection, claim models.Claim) {
 	data.addClaimData(tx, claim)
 
 	notn := models.Notification{
-		ClaimID:   nulls.NewUUID(claim.ID),
-		Body:      data.renderHTML(MessageTemplateClaimRevisionMember),
-		Subject:   "Please provide more information",
-		InappText: "Please provide more information on your new claim",
-
-		// TODO make these constants somewhere
+		ClaimID:       nulls.NewUUID(claim.ID),
+		Body:          data.renderHTML(MessageTemplateClaimRevisionMember),
+		Subject:       "Please provide more information",
+		InappText:     "Please provide more information on your new claim",
 		Event:         "Claim Revision Required Notification",
-		EventCategory: "Claim",
+		EventCategory: EventCategoryClaim,
 	}
 	if err := notn.Create(tx); err != nil {
 		panic("error creating new Claim Revision Notification: " + err.Error())
@@ -100,15 +96,12 @@ func ClaimPreapprovedQueueMessage(tx *pop.Connection, claim models.Claim) {
 	}
 
 	notn := models.Notification{
-		ClaimID: nulls.NewUUID(claim.ID),
-		Body:    data.renderHTML(MessageTemplateClaimPreapprovedMember),
-		Subject: "Claim Approved for " + string(claimItem.PayoutOption),
-
-		InappText: "receipts are needed on your new claim",
-
-		// TODO make these constants somewhere
+		ClaimID:       nulls.NewUUID(claim.ID),
+		Body:          data.renderHTML(MessageTemplateClaimPreapprovedMember),
+		Subject:       "Claim Approved for " + string(claimItem.PayoutOption),
+		InappText:     "receipts are needed on your new claim",
 		Event:         "Claim Preapproved Notification",
-		EventCategory: "Claim",
+		EventCategory: EventCategoryClaim,
 	}
 	if err := notn.Create(tx); err != nil {
 		panic("error creating new Claim Preapproved Notification: " + err.Error())
@@ -150,11 +143,9 @@ func ClaimReceiptQueueMessage(tx *pop.Connection, claim models.Claim) {
 		Body:    data.renderHTML(MessageTemplateClaimReceiptMember),
 		Subject: "Claim Needs Receipt",
 
-		InappText: "Please provide a receipt",
-
-		// TODO make these constants somewhere
+		InappText:     "Please provide a receipt",
 		Event:         "Claim Receipt Notification",
-		EventCategory: "Claim",
+		EventCategory: EventCategoryClaim,
 	}
 	if err := notn.Create(tx); err != nil {
 		panic("error creating new Claim Receipt Notification: " + err.Error())
@@ -178,15 +169,12 @@ func ClaimReview2QueueMessage(tx *pop.Connection, claim models.Claim) {
 	item := data["item"].(models.Item)
 
 	notn := models.Notification{
-		ClaimID: nulls.NewUUID(claim.ID),
-		Body:    data.renderHTML(MessageTemplateClaimReview2Steward),
-		Subject: "Consider payout for claim on " + item.Name,
-
-		InappText: "A claim is waiting for your approval",
-
-		// TODO make these constants somewhere
+		ClaimID:       nulls.NewUUID(claim.ID),
+		Body:          data.renderHTML(MessageTemplateClaimReview2Steward),
+		Subject:       "Consider payout for claim on " + item.Name,
+		InappText:     "A claim is waiting for your approval",
 		Event:         "Claim Review2 Notification",
-		EventCategory: "Claim",
+		EventCategory: EventCategoryClaim,
 	}
 	if err := notn.Create(tx); err != nil {
 		panic("error creating new Claim Review2 Notification: " + err.Error())
@@ -211,15 +199,12 @@ func ClaimReview3QueueMessage(tx *pop.Connection, claim models.Claim) {
 	data["firstReviewer"] = claim.Reviewer.Name()
 
 	notn := models.Notification{
-		ClaimID: nulls.NewUUID(claim.ID),
-		Body:    data.renderHTML(MessageTemplateClaimReview3Signator),
-		Subject: "Final approval for claim on " + item.Name,
-
-		InappText: "A claim is waiting for your approval",
-
-		// TODO make these constants somewhere
+		ClaimID:       nulls.NewUUID(claim.ID),
+		Body:          data.renderHTML(MessageTemplateClaimReview3Signator),
+		Subject:       "Final approval for claim on " + item.Name,
+		InappText:     "A claim is waiting for your approval",
 		Event:         "Claim Review3 Notification",
-		EventCategory: "Claim",
+		EventCategory: EventCategoryClaim,
 	}
 	if err := notn.Create(tx); err != nil {
 		panic("error creating new Claim Review3 Notification: " + err.Error())
@@ -237,14 +222,12 @@ func ClaimApprovedQueueMessage(tx *pop.Connection, claim models.Claim) {
 	data.addClaimData(tx, claim)
 
 	notn := models.Notification{
-		ClaimID:   nulls.NewUUID(claim.ID),
-		Body:      data.renderHTML(MessageTemplateClaimApprovedMember),
-		Subject:   "Claim Payout Approved",
-		InappText: "your claim has been approved",
-
-		// TODO make these constants somewhere
+		ClaimID:       nulls.NewUUID(claim.ID),
+		Body:          data.renderHTML(MessageTemplateClaimApprovedMember),
+		Subject:       "Claim Payout Approved",
+		InappText:     "your claim has been approved",
 		Event:         "Claim Approved Notification",
-		EventCategory: "Claim",
+		EventCategory: EventCategoryClaim,
 	}
 	if err := notn.Create(tx); err != nil {
 		panic("error creating new Claim Approved Notification: " + err.Error())
@@ -266,14 +249,12 @@ func ClaimDeniedQueueMessage(tx *pop.Connection, claim models.Claim) {
 	data.addClaimData(tx, claim)
 
 	notn := models.Notification{
-		ClaimID:   nulls.NewUUID(claim.ID),
-		Body:      data.renderHTML(MessageTemplateClaimDeniedMember),
-		Subject:   "An Update on Your Coverage Request",
-		InappText: "your claim has been denied",
-
-		// TODO make these constants somewhere
+		ClaimID:       nulls.NewUUID(claim.ID),
+		Body:          data.renderHTML(MessageTemplateClaimDeniedMember),
+		Subject:       "An Update on Your Coverage Request",
+		InappText:     "your claim has been denied",
 		Event:         "Claim Denied Notification",
-		EventCategory: "Claim",
+		EventCategory: EventCategoryClaim,
 	}
 	if err := notn.Create(tx); err != nil {
 		panic("error creating new Claim Denied Notification: " + err.Error())

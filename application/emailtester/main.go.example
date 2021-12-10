@@ -1,0 +1,39 @@
+package main
+
+import (
+	"fmt"
+
+	"github.com/silinternational/cover-api/domain"
+	"github.com/silinternational/cover-api/models"
+	"github.com/silinternational/cover-api/notifications"
+)
+
+//  This script sends an email based on the last notification in the database.
+//  In order to use it, save a copy of it as main.go and
+//    change {RecipientEmail} and {RecipientName} to your own values
+//  Next, go exec into the buffalo docker container, change to the application/emailtester folder
+//    and do `go run main.go`
+func main() {
+	fmt.Printf("\nEMAILER\n")
+
+	domain.Env.EmailService = "ses"
+	msg := notifications.NewEmailMessage()
+
+	var n models.Notification
+	tx := models.DB
+	if err := tx.Last(&n); err != nil {
+		fmt.Printf("\n\nerror fetching last notification: " + err.Error())
+	}
+
+	msg.ToName = "{RecipientName}"
+	msg.ToEmail = "{RecipientEmail}"
+	msg.Subject = n.Subject
+	msg.Body = n.Body
+
+	fmt.Printf("NfnService: %v\n", domain.Env.EmailService)
+
+	if err := notifications.Send(msg); err != nil {
+		fmt.Printf("\n\nerror sending email: " + err.Error())
+	}
+	fmt.Printf("Sent Notification: \n %+v\n", msg.Subject)
+}

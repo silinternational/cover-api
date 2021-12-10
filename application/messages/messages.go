@@ -39,6 +39,11 @@ const (
 	MessageTemplateUserWelcome      = "user_welcome"
 )
 
+const (
+	EventCategoryItem  = "Item"
+	EventCategoryClaim = "Claim"
+)
+
 // blockSending is used to avoid having duplicate emails sent out when
 // two notifications are created one after the other.
 var blockSending bool
@@ -81,7 +86,7 @@ func (m MessageData) addClaimData(tx *pop.Connection, claim models.Claim) {
 	item.LoadPolicy(tx, false)
 	m["policy"] = item.Policy
 
-	person := item.GetAccountablePersonName(tx)
+	person := item.GetAccountableMember(tx).GetName()
 	m["accountablePerson"] = person.String()
 	m["personFirstName"] = person.First
 
@@ -104,7 +109,7 @@ func (m MessageData) addItemData(tx *pop.Connection, item models.Item) {
 	item.LoadPolicy(tx, false)
 	m["item"] = item
 
-	person := item.GetAccountablePersonName(tx)
+	person := item.GetAccountableMember(tx).GetName()
 	m["accountablePerson"] = person.String()
 	m["personFirstName"] = person.First
 

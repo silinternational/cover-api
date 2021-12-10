@@ -6,27 +6,29 @@
 		subTitle: "",
 	}) %>
 
-	<p>
-		Dear <%= inviteeName %>,
-	</p>
+	<div style="max-width: 80ch;">
+		<p>
+			Dear <%= inviteeName %>,
+		</p>
 
-	<p>
-		<%= inviterName %> has invited you to join their insurance policy, <%= policy.Name %>, on <%= appName %>
-		by SIL. <%= emailIntro %> As a policy member you'll be able to add items for coverage, manage existing items,
-		invite others, and file claims.
-	</p>
+		<p>
+			<%= inviterName %> has invited you to join their insurance policy, <%= policy.Name %>, on <%= appName %>
+			by SIL. <%= emailIntro %> As a policy member you'll be able to add items for coverage, manage existing items,
+			invite others, and file claims.
+		</p>
 
-	<%= partial("button", {
-		url: acceptURL,
-		label: "Accept Invitation in " + appName,
-	}) %>
+		<%= partial("button", {
+			url: acceptURL,
+			label: "Accept Invitation in " + appName,
+		}) %>
 
-	<p>
-		Log in with your corporate identity account to accept the invitation.
-	</p>
+		<p>
+			Log in with your corporate identity account to accept the invitation.
+		</p>
 
-	<p>
-		&mdash;<%= supportFirstName %>
-	</p>
+		<p>
+			&mdash;<%= supportFirstName %>
+		</p>
+	</div>
 
 </div>

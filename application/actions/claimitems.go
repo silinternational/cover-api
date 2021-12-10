@@ -2,6 +2,7 @@ package actions
 
 import (
 	"github.com/gobuffalo/buffalo"
+	"github.com/gobuffalo/nulls"
 
 	"github.com/silinternational/cover-api/api"
 	"github.com/silinternational/cover-api/domain"
@@ -40,7 +41,9 @@ func claimItemsUpdate(c buffalo.Context) error {
 		return reportError(c, err)
 	}
 
-	claimItem.IsRepairable = input.IsRepairable
+	if input.IsRepairable != nil {
+		claimItem.IsRepairable = nulls.NewBool(*input.IsRepairable)
+	}
 	claimItem.RepairEstimate = input.RepairEstimate
 	claimItem.RepairActual = input.RepairActual
 	claimItem.ReplaceEstimate = input.ReplaceEstimate

@@ -88,6 +88,7 @@ const (
 	ErrorClaimItemCreateInvalidInput     = ErrorKey("ErrorClaimItemCreateInvalidInput")
 	ErrorClaimItemNotRepairable          = ErrorKey("ClaimItemNotRepairable")
 	ErrorClaimItemMissingPayoutOption    = ErrorKey("ClaimItemMissingPayoutOption")
+	ErrorClaimItemMissingIsRepairable    = ErrorKey("ErrorClaimItemMissingIsRepairable")
 	ErrorClaimItemMissingReplaceEstimate = ErrorKey("ClaimItemMissingReplaceEstimate")
 	ErrorClaimItemMissingRepairEstimate  = ErrorKey("ClaimItemMissingRepairEstimate")
 	ErrorClaimItemMissingFMV             = ErrorKey("ClaimItemMissingFMV")

@@ -876,6 +876,7 @@ func (c *Claim) CreateLedgerEntry(tx *pop.Connection) error {
 		le.LastName = name.Last
 		le.RiskCategoryName = item.RiskCategory.Name
 		le.RiskCategoryCC = item.RiskCategory.CostCenter
+		le.IncomeAccount = domain.Env.ClaimIncomeAccount
 
 		if err := le.Create(tx); err != nil {
 			return err
@@ -934,6 +935,11 @@ func (c *Claim) SubmittedAt(tx *pop.Connection) time.Time {
 }
 
 func (c *Claim) calculatePayout(ctx context.Context) error {
+	switch c.Status {
+	case api.ClaimStatusPaid, api.ClaimStatusDenied, api.ClaimStatusApproved:
+		return nil
+	}
+
 	c.LoadClaimItems(Tx(ctx), false)
 	var payout api.Currency
 	for _, claimItem := range c.ClaimItems {

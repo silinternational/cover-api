@@ -61,25 +61,30 @@ func (ms *ModelSuite) TestUser_Validate() {
 func (ms *ModelSuite) TestUser_CreateInitialPolicy() {
 	t := ms.T()
 
-	pf := CreatePolicyFixtures(ms.DB, FixturesConfig{NumberOfPolicies: 1})
+	policyCount := 1
+	pf := CreatePolicyFixtures(ms.DB, FixturesConfig{NumberOfPolicies: policyCount})
 	policy := pf.Policies[0]
 
-	uf := CreateUserFixtures(ms.DB, 2)
+	uf := CreateUserFixtures(ms.DB, 3)
 	userNoPolicy := uf.Users[0]
-
-	userWithPolicy := uf.Users[1]
+	userForHouseholdID := uf.Users[1]
+	userWithPolicy := uf.Users[2]
 
 	pUser := PolicyUser{
 		PolicyID: policy.ID,
 		UserID:   userWithPolicy.ID,
 	}
+	policyUserCount := policyCount + 1
 
 	ms.NoError(pUser.Create(ms.DB))
 
 	tests := []struct {
-		name    string
-		user    User
-		wantErr bool
+		name            string
+		user            User
+		householdID     string
+		wantErr         bool
+		wantPolicies    int
+		wantPolicyUsers int
 	}{
 		{
 			name:    "missing ID",
@@ -87,19 +92,32 @@ func (ms *ModelSuite) TestUser_CreateInitialPolicy() {
 			wantErr: true,
 		},
 		{
-			name:    "policy to be created",
-			user:    userNoPolicy,
-			wantErr: false,
+			name:            "user already has policy",
+			user:            userWithPolicy,
+			wantErr:         false,
+			wantPolicies:    policyCount,
+			wantPolicyUsers: policyUserCount,
 		},
 		{
-			name:    "no new policy to create",
-			user:    userWithPolicy,
-			wantErr: false,
+			name:            "new user but has same household_id",
+			user:            userForHouseholdID,
+			householdID:     policy.HouseholdID.String,
+			wantErr:         false,
+			wantPolicies:    policyCount,
+			wantPolicyUsers: policyUserCount + 1,
+		},
+		{
+			name:            "policy to be created",
+			householdID:     "otherHHID",
+			user:            userNoPolicy,
+			wantErr:         false,
+			wantPolicies:    policyCount + 1,
+			wantPolicyUsers: policyUserCount + 2,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := tt.user.CreateInitialPolicy(DB, "")
+			err := tt.user.CreateInitialPolicy(DB, tt.householdID)
 			if tt.wantErr {
 				ms.Error(err)
 				return
@@ -108,9 +126,14 @@ func (ms *ModelSuite) TestUser_CreateInitialPolicy() {
 			ms.NoError(err)
 
 			policyUsers := PolicyUsers{}
-			err = ms.DB.Where("user_id = ?", tt.user.ID).All(&policyUsers)
-			ms.NoError(err, "error trying to find resulting policyUsers")
-			ms.Len(policyUsers, 1, "incorrect number of policyUsers")
+			err = ms.DB.All(&policyUsers)
+			ms.NoError(err, "error fetching policyUsers")
+			ms.Len(policyUsers, tt.wantPolicyUsers, "incorrect number of policyUsers")
+
+			policies := Policies{}
+			err = ms.DB.All(&policies)
+			ms.NoError(err, "error fetching policies")
+			ms.Len(policies, tt.wantPolicies, "incorrect number of policies")
 		})
 	}
 }

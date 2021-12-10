@@ -14,18 +14,16 @@ import (
 )
 
 var images = map[string]string{
-	"logo":               "logo.png",
-	"check":              "check_circle.png",
-	"clipboard":          "clipboard.png",
-	"clock":              "clock.png",
-	"do_not_enter":       "do_not_enter.png",
-	"dollar":             "dollar.png",
-	"error":              "error.png",
-	"new":                "new.png",
-	"new_releases":       "new_releases.png",
-	"signature_logo":     "SIL_Glyph_Logo_Andika_RGB.png",
-	"volunteer_activism": "volunteer_activism.png",
-	"beach_access":       "beach_access.png",
+	"beach_access":   "beach_access.png",
+	"check":          "check_circle.png",
+	"clipboard":      "clipboard.png",
+	"clock":          "clock.png",
+	"do_not_enter":   "do_not_enter.png",
+	"dollar":         "dollar.png",
+	"error":          "error.png",
+	"logo":           "logo.png",
+	"new":            "new.png",
+	"signature_logo": "SIL_Glyph_Logo_Andika_RGB.png",
 }
 
 // rawEmail generates a multi-part MIME email message with a plain text, html text, and inline logo attachment as

@@ -38,18 +38,6 @@ func (ms *ModelSuite) TestClaimItem_Validate() {
 			wantErr:  true,
 		},
 		{
-			name: "invalid payout option for Evacuation",
-			claimItem: &ClaimItem{
-				Claim: Claim{
-					Status:       api.ClaimStatusDraft,
-					IncidentType: api.ClaimIncidentTypeEvacuation,
-				},
-				PayoutOption: api.PayoutOptionFMV,
-			},
-			errField: "ClaimItem.PayoutOption",
-			wantErr:  true,
-		},
-		{
 			name: "valid payout option for Evacuation",
 			claimItem: &ClaimItem{
 				Claim: Claim{
@@ -60,18 +48,6 @@ func (ms *ModelSuite) TestClaimItem_Validate() {
 			wantErr: false,
 		},
 		{
-			name: "invalid payout option for Theft",
-			claimItem: &ClaimItem{
-				Claim: Claim{
-					Status:       api.ClaimStatusDraft,
-					IncidentType: api.ClaimIncidentTypeTheft,
-				},
-				PayoutOption: api.PayoutOptionFixedFraction,
-			},
-			errField: "ClaimItem.PayoutOption",
-			wantErr:  true,
-		},
-		{
 			name: "valid payout option for Theft",
 			claimItem: &ClaimItem{
 				Claim: Claim{
@@ -80,18 +56,6 @@ func (ms *ModelSuite) TestClaimItem_Validate() {
 				PayoutOption: api.PayoutOptionFMV,
 			},
 			wantErr: false,
-		},
-		{
-			name: "invalid payout option for Impact",
-			claimItem: &ClaimItem{
-				Claim: Claim{
-					Status:       api.ClaimStatusDraft,
-					IncidentType: api.ClaimIncidentTypePhysicalDamage,
-				},
-				PayoutOption: api.PayoutOptionFixedFraction,
-			},
-			errField: "ClaimItem.PayoutOption",
-			wantErr:  true,
 		},
 		{
 			name: "valid payout option for Impact",
@@ -131,7 +95,7 @@ func (ms *ModelSuite) TestClaimItem_Validate() {
 
 func (ms *ModelSuite) TestClaimItem_ValidateForSubmit() {
 	good := ClaimItem{
-		IsRepairable:    false,
+		IsRepairable:    nulls.NewBool(false),
 		RepairEstimate:  100,
 		ReplaceEstimate: 1000,
 		PayoutOption:    api.PayoutOptionRepair,
@@ -143,7 +107,7 @@ func (ms *ModelSuite) TestClaimItem_ValidateForSubmit() {
 	missingPayoutOption.PayoutOption = ""
 
 	theftIsNotRepairable := good
-	theftIsNotRepairable.IsRepairable = true
+	theftIsNotRepairable.IsRepairable = nulls.NewBool(true)
 
 	missingReplaceEstimate := good
 	missingReplaceEstimate.PayoutOption = api.PayoutOptionReplacement
@@ -154,17 +118,17 @@ func (ms *ModelSuite) TestClaimItem_ValidateForSubmit() {
 	missingFMV.FMV = 0
 
 	missingRepairEstimate := good
-	missingRepairEstimate.IsRepairable = true
+	missingRepairEstimate.IsRepairable = nulls.NewBool(true)
 	missingRepairEstimate.Claim.IncidentType = api.ClaimIncidentTypePhysicalDamage
 	missingRepairEstimate.RepairEstimate = 0
 
 	missingImpactFMV := good
-	missingImpactFMV.IsRepairable = true
+	missingImpactFMV.IsRepairable = nulls.NewBool(true)
 	missingImpactFMV.Claim.IncidentType = api.ClaimIncidentTypePhysicalDamage
 	missingImpactFMV.FMV = 0
 
 	invalidPayoutOption := good
-	invalidPayoutOption.IsRepairable = false
+	invalidPayoutOption.IsRepairable = nulls.NewBool(false)
 	invalidPayoutOption.Claim.IncidentType = api.ClaimIncidentTypePhysicalDamage
 	invalidPayoutOption.PayoutOption = api.PayoutOptionRepair
 
@@ -263,7 +227,7 @@ func (ms *ModelSuite) TestClaimItem_Compare() {
 
 	oldCItem := ClaimItem{
 		ItemID:          domain.GetUUID(),
-		IsRepairable:    true,
+		IsRepairable:    nulls.NewBool(true),
 		RepairEstimate:  1111,
 		RepairActual:    1112,
 		ReplaceEstimate: 2221,
@@ -444,7 +408,7 @@ func (ms *ModelSuite) TestClaimItem_ConvertToAPI() {
 	ms.NoError(ms.DB.Find(&claimItem, claim.ClaimItems[0].ID))
 
 	// fill in more data to improve test quality
-	claimItem.IsRepairable = true
+	claimItem.IsRepairable = nulls.NewBool(true)
 
 	got := claimItem.ConvertToAPI(ms.DB)
 
@@ -453,7 +417,12 @@ func (ms *ModelSuite) TestClaimItem_ConvertToAPI() {
 	ms.Equal(claimItem.Item.ID, got.Item.ID, "Item.ID is not correct")
 	ms.Equal(claimItem.ClaimID, got.ClaimID, "ClaimID is not correct")
 	ms.Equal(claim.Status, got.Status, "Status is not correct")
-	ms.Equal(claimItem.IsRepairable, got.IsRepairable, "IsRepairable is not correct")
+	if claimItem.IsRepairable.Valid {
+		ms.NotNil(got.IsRepairable)
+		ms.Equal(claimItem.IsRepairable.Bool, *got.IsRepairable, "IsRepairable is not correct")
+	} else {
+		ms.Nil(got.IsRepairable)
+	}
 	ms.Equal(claimItem.RepairEstimate, got.RepairEstimate, "RepairEstimate is not correct")
 	ms.Equal(claimItem.RepairActual, got.RepairActual, "RepairActual is not correct")
 	ms.Equal(claimItem.ReplaceEstimate, got.ReplaceEstimate, "ReplaceEstimate is not correct")

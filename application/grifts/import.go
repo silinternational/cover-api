@@ -781,7 +781,7 @@ func importClaimItems(tx *pop.Connection, claim models.Claim, items []LegacyClai
 			ID:              newUUID(strconv.Itoa(claimItemID)),
 			ClaimID:         claim.ID,
 			ItemID:          itemUUID,
-			IsRepairable:    getIsRepairable(c),
+			IsRepairable:    nulls.NewBool(getIsRepairable(c)),
 			RepairEstimate:  fixedPointStringToCurrency(c.RepairEstimate, "ClaimItem.RepairEstimate"),
 			RepairActual:    fixedPointStringToCurrency(c.RepairActual, "ClaimItem.RepairActual"),
 			ReplaceEstimate: fixedPointStringToCurrency(c.ReplaceEstimate, "ClaimItem.ReplaceEstimate"),
@@ -1002,6 +1002,10 @@ func importJournalEntries(tx *pop.Connection, entries []JournalEntry) {
 			LastName:         trim(e.LastName),
 		}
 		l.CreatedAt = l.DateSubmitted
+
+		if l.Type.IsClaim() {
+			l.IncomeAccount = "63550"
+		}
 
 		if err := l.Create(tx); err != nil {
 			log.Fatalf("failed to create ledger entry, %s\n%+v", err, l)

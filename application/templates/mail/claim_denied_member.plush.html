@@ -6,21 +6,23 @@
 		subTitle: "",
 	}) %>
 
-	<p>
-		Dear <%= personFirstName %>,
-	</p>
+	<div style="max-width: 80ch;">
+		<p>
+			Dear <%= personFirstName %>,
+		</p>
 
-	<p>
-		I regret to inform you that your claim on <%= item.Name %> has been denied.
-	</p>
+		<p>
+			I regret to inform you that your claim on <%= item.Name %> has been denied.
+		</p>
 
-	<p>
-		<%= claim.StatusReason %>
-	</p>
+		<p>
+			<%= claim.StatusReason %>
+		</p>
 
-	<p>
-		&mdash;<%= supportFirstName %>
-	</p>
+		<p>
+			&mdash;<%= supportFirstName %>
+		</p>
+	</div>
 
 	<%= partial("alert", {
 		alert: "Claim denied",

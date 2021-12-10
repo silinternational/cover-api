@@ -31,7 +31,7 @@ create_table("claim_items") {
 	t.Column("id", "uuid", {"primary": true})
 	t.Column("claim_id", "uuid", {})
 	t.Column("item_id", "uuid", {})
-	t.Column("is_repairable", "bool", {})
+	t.Column("is_repairable", "bool", {"null": true})
 	t.Column("repair_estimate", "int", {})
 	t.Column("repair_actual", "int", {})
 	t.Column("replace_estimate", "int", {})

@@ -7,22 +7,24 @@
 		subTitle: "",
 	}) %>
 
-	<p>
-		Dear <%= personFirstName %>,
-	</p>
+	<div style="max-width: 80ch;">
+		<p>
+			Dear <%= personFirstName %>,
+		</p>
 
-	<p>
-		You recently requested coverage on <%= item.Name %>, but we're not able to cover this item
-		at this time.
-	</p>
+		<p>
+			You recently requested coverage on <%= item.Name %>, but we're not able to cover this item
+			at this time.
+		</p>
 
-	<p>
-		<%= item.StatusReason %>
-	</p>
+		<p>
+			<%= item.StatusReason %>
+		</p>
 
-	<p>
-		&mdash;<%= supportFirstName %>
-	</p>
+		<p>
+			&mdash;<%= supportFirstName %>
+		</p>
+	</div>
 
 	<%= partial("alert", {
 		alert: "Coverage denied",

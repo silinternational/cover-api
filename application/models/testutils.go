@@ -192,7 +192,7 @@ func UpdateClaimItems(tx *pop.Connection, claim Claim, params UpdateClaimItemsPa
 	claim.LoadClaimItems(tx, false)
 	for i := range claim.ClaimItems {
 		claim.ClaimItems[i].PayoutOption = params.PayoutOption
-		claim.ClaimItems[i].IsRepairable = params.IsRepairable
+		claim.ClaimItems[i].IsRepairable = nulls.NewBool(params.IsRepairable)
 		claim.ClaimItems[i].RepairEstimate = params.RepairEstimate
 		claim.ClaimItems[i].ReplaceEstimate = params.ReplaceEstimate
 		claim.ClaimItems[i].RepairActual = params.RepairActual
@@ -229,7 +229,7 @@ func createClaimFixture(tx *pop.Connection, policy Policy, config FixturesConfig
 			ID:              uuid.UUID{},
 			ClaimID:         claim.ID,
 			ItemID:          item.ID,
-			IsRepairable:    false,
+			IsRepairable:    nulls.NewBool(false),
 			RepairEstimate:  60 * domain.CurrencyFactor,
 			RepairActual:    70 * domain.CurrencyFactor,
 			ReplaceEstimate: 100 * domain.CurrencyFactor,
