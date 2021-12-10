@@ -34,6 +34,8 @@ app:
     SAML_ASSERTION_CONSUMER_SERVICE_URL: http://example.local:3000/auth/callback
     SAML_SSO_URL: https://our.idp.net/saml2/idp/SSOService.php
     SAML_SLO_URL: https://our.idp.net/saml2/idp/SingleLogoutService.php
+    EXPENSE_ACCOUNT: ABC12345
+    CLAIM_INCOME_ACCOUNT: XYZ23456
   working_dir: /cover
   command: true
 
