@@ -88,12 +88,12 @@ func (ts *TestSuite) Test_ItemAutoApprovedQueueMessage() {
 			data: testData{
 				name:                  "auto approved - stewards",
 				wantToEmails:          []interface{}{steward0.EmailOfChoice(), steward1.EmailOfChoice()},
-				wantSubjectContains:   "a new policy item that has been auto approved",
+				wantSubjectContains:   "has been auto approved",
 				wantInappTextContains: "Coverage on a new policy item was just auto approved",
 				wantBodyContains: []string{
 					domain.Env.UIURL,
 					approvedItem.Name,
-					"Coverage has been auto approved for",
+					"New Item Auto-Approved",
 				},
 			},
 			item: approvedItem,
