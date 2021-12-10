@@ -4,6 +4,7 @@ app:
     context: application
     dockerfile: Dockerfile-dev
   cached: true
+  default_cache_branch: "develop"
   depends_on:
     - testdb
     - minio
@@ -52,6 +53,7 @@ binary:
     context: application
     dockerfile: Dockerfile
   cached: true
+  default_cache_branch: "develop"
   working_dir: /cover
   command: true
 
