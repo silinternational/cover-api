@@ -1003,6 +1003,10 @@ func importJournalEntries(tx *pop.Connection, entries []JournalEntry) {
 		}
 		l.CreatedAt = l.DateSubmitted
 
+		if l.Type.IsClaim() {
+			l.IncomeAccount = "63550"
+		}
+
 		if err := l.Create(tx); err != nil {
 			log.Fatalf("failed to create ledger entry, %s\n%+v", err, l)
 		}
