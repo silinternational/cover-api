@@ -876,6 +876,7 @@ func (c *Claim) CreateLedgerEntry(tx *pop.Connection) error {
 		le.LastName = name.Last
 		le.RiskCategoryName = item.RiskCategory.Name
 		le.RiskCategoryCC = item.RiskCategory.CostCenter
+		le.IncomeAccount = domain.Env.ClaimIncomeAccount
 
 		if err := le.Create(tx); err != nil {
 			return err
