@@ -442,11 +442,6 @@ func (u *User) ConvertToAPI(tx *pop.Connection, hydrate bool) api.User {
 	if hydrate {
 		u.LoadPolicies(tx, false)
 		output.Policies = u.Policies.ConvertToAPI(tx)
-
-		// TODO: remove this when the UI is ready to use the Policies list
-		if len(u.Policies) > 0 {
-			output.PolicyID = &u.Policies[0].ID
-		}
 	}
 
 	if u.PhotoFile != nil {

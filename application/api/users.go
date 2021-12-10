@@ -41,10 +41,6 @@ type User struct {
 	// country
 	Country string `json:"country,omitempty"`
 
-	// policy ID (temporary, will be replaced with a list of policies)
-	// swagger:strfmt uuid4
-	PolicyID *uuid.UUID `json:"policy_id"` // TODO: remove this when the UI is ready
-
 	// all policies in which the user is a member
 	Policies Policies `json:"policies,omitempty"`
 
