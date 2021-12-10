@@ -189,8 +189,8 @@ var Env struct {
 	EvacuationDeductible  float64 `default:"0.333333333" split_words:"true"`
 
 	FiscalStartMonth   int    `default:"1" split_words:"true"`
-	ExpenseAccount     string `default:"" split_words:"true"`
-	ClaimIncomeAccount string `default:"" split_words:"true"`
+	ExpenseAccount     string `split_words:"true"`
+	ClaimIncomeAccount string `split_words:"true"`
 
 	// For CertMagic to provide TLS in container
 	CertDomainName  string `default:"" split_words:"true"`
