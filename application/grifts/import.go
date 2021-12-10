@@ -892,6 +892,7 @@ func importItems(tx *pop.Connection, policyUUID uuid.UUID, policyID int, items [
 		newItem := models.Item{
 			ID:                newUUID(strconv.Itoa(itemID)),
 			Name:              trim(item.Name),
+			Description:       trim(item.Name),
 			CategoryID:        itemCategoryIDMap[item.CategoryId],
 			RiskCategoryID:    riskCategoryMap[item.CategoryId],
 			PolicyID:          policyUUID,
