@@ -8,7 +8,6 @@ package models
 import (
 	"fmt"
 	"math/rand"
-	"strconv"
 	"time"
 
 	"github.com/gobuffalo/events"
@@ -312,9 +311,9 @@ func CreateUserFixtures(tx *pop.Connection, n int) Fixtures {
 	accessTokenFixtures := make(UserAccessTokens, n)
 	for i := range users {
 		users[i].Email = fmt.Sprintf("user%d_%s@example.com", i, unique)
-		iStr := strconv.Itoa(i)
-		users[i].FirstName = "first" + iStr
-		users[i].LastName = "last" + iStr
+		randSuffix := randStr(5)
+		users[i].FirstName = "first" + randSuffix
+		users[i].LastName = "last" + randSuffix
 		users[i].LastLoginUTC = time.Now()
 		users[i].StaffID = nulls.NewString(randStr(10))
 		users[i].AppRole = AppRoleCustomer

@@ -8,6 +8,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/gobuffalo/nulls"
+
 	"github.com/silinternational/cover-api/api"
 	"github.com/silinternational/cover-api/domain"
 	"github.com/silinternational/cover-api/models"
@@ -935,7 +937,8 @@ func (as *ActionSuite) Test_ClaimsApprove() {
 	policy := fixtures.Policies[0]
 	policyCreator := policy.Members[0]
 
-	appAdmin := models.CreateAdminUsers(as.DB)[models.AppRoleSteward]
+	steward := models.CreateAdminUsers(as.DB)[models.AppRoleSteward]
+	signator := models.CreateAdminUsers(as.DB)[models.AppRoleSignator]
 
 	draftClaim := policy.Claims[0]
 
@@ -951,6 +954,9 @@ func (as *ActionSuite) Test_ClaimsApprove() {
 	review2Claim := models.UpdateClaimStatus(as.DB, policy.Claims[2], api.ClaimStatusReview2, "")
 	review3Claim := models.UpdateClaimStatus(as.DB, policy.Claims[3], api.ClaimStatusReview3, "")
 
+	review3Claim.ReviewerID = nulls.NewUUID(steward.ID)
+	as.NoError(as.DB.Update(&review3Claim), "error updating claim fixture")
+
 	tests := []struct {
 		name            string
 		actor           models.User
@@ -961,7 +967,7 @@ func (as *ActionSuite) Test_ClaimsApprove() {
 	}{
 		{
 			name:       "bad start status",
-			actor:      appAdmin,
+			actor:      steward,
 			oldClaim:   draftClaim,
 			wantStatus: http.StatusBadRequest,
 			wantInBody: []string{api.ErrorClaimStatus.String()},
@@ -974,44 +980,52 @@ func (as *ActionSuite) Test_ClaimsApprove() {
 		},
 		{
 			name:            "review1 to review3",
-			actor:           appAdmin,
+			actor:           steward,
 			oldClaim:        ffClaim,
 			wantStatus:      http.StatusOK,
 			wantClaimStatus: api.ClaimStatusReview3,
 			wantInBody: []string{
 				`"incident_description":"` + ffClaim.IncidentDescription,
 				`"status":"` + string(api.ClaimStatusReview3),
-				`"status_change":"` + models.ClaimStatusChangeReview3 + appAdmin.Name(),
+				`"status_change":"` + models.ClaimStatusChangeReview3 + steward.Name(),
 				`"review_date":"` + time.Now().UTC().Format(domain.DateFormat),
-				`"reviewer_id":"` + appAdmin.ID.String(),
+				`"reviewer_id":"` + steward.ID.String(),
 			},
 		},
 		{
 			name:            "review2 to review3",
-			actor:           appAdmin,
+			actor:           steward,
 			oldClaim:        review2Claim,
 			wantStatus:      http.StatusOK,
 			wantClaimStatus: api.ClaimStatusReview3,
 			wantInBody: []string{
 				`"incident_description":"` + review2Claim.IncidentDescription,
 				`"status":"` + string(api.ClaimStatusReview3),
-				`"status_change":"` + models.ClaimStatusChangeReview3 + appAdmin.Name(),
+				`"status_change":"` + models.ClaimStatusChangeReview3 + steward.Name(),
 				`"review_date":"` + time.Now().UTC().Format(domain.DateFormat),
-				`"reviewer_id":"` + appAdmin.ID.String(),
+				`"reviewer_id":"` + steward.ID.String(),
 			},
 		},
 		{
-			name:            "review3 to approved",
-			actor:           appAdmin,
+			name:            "review3 to approved fail with same approver",
+			actor:           steward,
+			oldClaim:        review3Claim,
+			wantStatus:      http.StatusBadRequest,
+			wantClaimStatus: api.ClaimStatusApproved,
+			wantInBody:      []string{api.ErrorClaimInvalidApprover.String()},
+		},
+		{
+			name:            "review3 to approved OK with different approver",
+			actor:           signator,
 			oldClaim:        review3Claim,
 			wantStatus:      http.StatusOK,
 			wantClaimStatus: api.ClaimStatusApproved,
 			wantInBody: []string{
 				`"incident_description":"` + review3Claim.IncidentDescription,
 				`"status":"` + string(api.ClaimStatusApproved),
-				`"status_change":"` + models.ClaimStatusChangeApproved + appAdmin.Name(),
+				`"status_change":"` + models.ClaimStatusChangeApproved + signator.Name(),
 				`"review_date":"` + time.Now().UTC().Format(domain.DateFormat),
-				`"reviewer_id":"` + appAdmin.ID.String(),
+				`"reviewer_id":"` + signator.ID.String(),
 			},
 		},
 	}
@@ -1056,7 +1070,8 @@ func (as *ActionSuite) Test_ClaimsDeny() {
 	policy := fixtures.Policies[0]
 	policyCreator := policy.Members[0]
 
-	appAdmin := models.CreateAdminUsers(as.DB)[models.AppRoleSteward]
+	steward := models.CreateAdminUsers(as.DB)[models.AppRoleSteward]
+	signator := models.CreateAdminUsers(as.DB)[models.AppRoleSignator]
 
 	draftClaim := policy.Claims[0]
 	review1Claim := models.UpdateClaimStatus(as.DB, policy.Claims[1], api.ClaimStatusReview1, "")
@@ -1073,7 +1088,7 @@ func (as *ActionSuite) Test_ClaimsDeny() {
 	}{
 		{
 			name:       "bad start status",
-			actor:      appAdmin,
+			actor:      steward,
 			oldClaim:   draftClaim,
 			wantStatus: http.StatusBadRequest,
 			wantInBody: []string{api.ErrorClaimStatus.String()},
@@ -1086,41 +1101,41 @@ func (as *ActionSuite) Test_ClaimsDeny() {
 		},
 		{
 			name:       "review1 to denied",
-			actor:      appAdmin,
+			actor:      steward,
 			oldClaim:   review1Claim,
 			wantStatus: http.StatusOK,
 			wantInBody: []string{
 				`"incident_description":"` + review1Claim.IncidentDescription,
 				`"status":"` + string(api.ClaimStatusDenied),
-				`"status_change":"` + models.ClaimStatusChangeDenied + appAdmin.Name(),
+				`"status_change":"` + models.ClaimStatusChangeDenied + steward.Name(),
 				`"review_date":"` + time.Now().UTC().Format(domain.DateFormat),
-				`"reviewer_id":"` + appAdmin.ID.String(),
+				`"reviewer_id":"` + steward.ID.String(),
 			},
 		},
 		{
-			name:       "review2 to denied",
-			actor:      appAdmin,
+			name:       "review2 to denied steward",
+			actor:      steward,
 			oldClaim:   review2Claim,
 			wantStatus: http.StatusOK,
 			wantInBody: []string{
 				`"incident_description":"` + review2Claim.IncidentDescription,
 				`"status":"` + string(api.ClaimStatusDenied),
-				`"status_change":"` + models.ClaimStatusChangeDenied + appAdmin.Name(),
+				`"status_change":"` + models.ClaimStatusChangeDenied + steward.Name(),
 				`"review_date":"` + time.Now().UTC().Format(domain.DateFormat),
-				`"reviewer_id":"` + appAdmin.ID.String(),
+				`"reviewer_id":"` + steward.ID.String(),
 			},
 		},
 		{
-			name:       "review3 to denied",
-			actor:      appAdmin,
+			name:       "review3 to denied signator",
+			actor:      signator,
 			oldClaim:   review3Claim,
 			wantStatus: http.StatusOK,
 			wantInBody: []string{
 				`"incident_description":"` + review3Claim.IncidentDescription,
 				`"status":"` + string(api.ClaimStatusDenied),
-				`"status_change":"` + models.ClaimStatusChangeDenied + appAdmin.Name(),
+				`"status_change":"` + models.ClaimStatusChangeDenied + signator.Name(),
 				`"review_date":"` + time.Now().UTC().Format(domain.DateFormat),
-				`"reviewer_id":"` + appAdmin.ID.String(),
+				`"reviewer_id":"` + signator.ID.String(),
 			},
 		},
 	}
