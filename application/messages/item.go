@@ -40,7 +40,7 @@ func itemAutoApprovedQueueMessage(tx *pop.Connection, item models.Item, member m
 	notn := models.Notification{
 		ItemID:        nulls.NewUUID(item.ID),
 		Body:          data.renderHTML(MessageTemplateItemAutoSteward),
-		Subject:       memberName + " just submitted a new policy item that has been auto approved",
+		Subject:       "Item has been auto approved: " + item.Name,
 		InappText:     "Coverage on a new policy item was just auto approved",
 		Event:         "Item Auto Approved Notification",
 		EventCategory: EventCategoryItem,

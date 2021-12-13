@@ -69,8 +69,6 @@ func ClaimRevisionQueueMessage(tx *pop.Connection, claim models.Claim) {
 func ClaimPreapprovedQueueMessage(tx *pop.Connection, claim models.Claim) {
 	claim.LoadPolicyMembers(tx, false)
 
-	// TODO Figure out how to tell the members what receipts are needed
-
 	data := newEmailMessageData()
 	data.addClaimData(tx, claim)
 

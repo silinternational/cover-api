@@ -227,7 +227,6 @@ func (c *Claim) FindByReferenceNumber(tx *pop.Connection, ref string) error {
 }
 
 // IsActorAllowedTo ensure the actor is either an admin, or a member of this policy to perform any permission
-// TODO Differentiate between admins (steward and signator)
 func (c *Claim) IsActorAllowedTo(tx *pop.Connection, actor User, perm Permission, sub SubResource, r *http.Request) bool {
 	if actor.IsAdmin() {
 		return true
@@ -436,7 +435,6 @@ func (c *Claim) RequestRevision(ctx context.Context, message string) error {
 
 // RequestReceipt changes the status of the claim to Receipt
 //   provided that the current status is Review1.
-// TODO consider how to communicate what kind of receipt is needed
 func (c *Claim) RequestReceipt(ctx buffalo.Context, reason string) error {
 	oldStatus := c.Status
 	var eventType string
@@ -474,7 +472,6 @@ func (c *Claim) RequestReceipt(ctx buffalo.Context, reason string) error {
 
 // Approve changes the status of the claim from either Review1, Review2 to Review3 or
 //  from Review3 to Approved. It also adds the ReviewerID and ReviewDate.
-// TODO distinguish between admin types (steward vs. signator)
 func (c *Claim) Approve(ctx context.Context) error {
 	var eventType string
 
@@ -822,7 +819,6 @@ func (c *Claim) NewHistory(ctx context.Context, action string, fieldUpdate Field
 }
 
 func (c *Claim) setReviewer(ctx context.Context) {
-	// TODO: decide if we need more review fields for different review steps
 	actor := CurrentUser(ctx)
 	c.ReviewerID = nulls.NewUUID(actor.ID)
 	c.ReviewDate = nulls.NewTime(time.Now().UTC())

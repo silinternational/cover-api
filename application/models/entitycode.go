@@ -28,12 +28,12 @@ type EntityCode struct {
 }
 
 func (ec *EntityCode) Create(tx *pop.Connection) error {
+	ec.ID = GetV5UUID(ec.Code)
 	return create(tx, ec)
 }
 
-func (ec *EntityCode) FindByCode(tx *pop.Connection, code string) error {
-	err := tx.Where("code = ?", code).First(ec)
-	return appErrorFromDB(err, api.ErrorNoRows)
+func EntityCodeID(code string) uuid.UUID {
+	return GetV5UUID(code)
 }
 
 func (ec *EntityCodes) ConvertToAPI(tx *pop.Connection) []api.EntityCode {

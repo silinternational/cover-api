@@ -128,17 +128,12 @@ func policiesCreateTeam(c buffalo.Context) error {
 	tx := models.Tx(c)
 	user := models.CurrentUser(c)
 
-	var entityCode models.EntityCode
-	if err := entityCode.FindByCode(tx, input.EntityCode); err != nil {
-		return reportError(c, err)
-	}
-
 	policy := models.Policy{
 		Name:          input.Name,
 		CostCenter:    input.CostCenter,
 		Account:       input.Account,
 		AccountDetail: input.AccountDetail,
-		EntityCodeID:  entityCode.ID,
+		EntityCodeID:  models.EntityCodeID(input.EntityCode),
 	}
 
 	if err := policy.CreateTeam(tx, user); err != nil {
@@ -190,16 +185,11 @@ func policiesUpdate(c buffalo.Context) error {
 		policy.AccountDetail = ""
 		policy.EntityCodeID = models.HouseholdEntityID()
 	case api.PolicyTypeTeam:
-		var entityCode models.EntityCode
-		if err := entityCode.FindByCode(tx, update.EntityCode); err != nil {
-			return reportError(c, err)
-		}
-
 		policy.HouseholdID = nulls.String{}
 		policy.CostCenter = update.CostCenter
 		policy.Account = update.Account
 		policy.AccountDetail = update.AccountDetail
-		policy.EntityCodeID = entityCode.ID
+		policy.EntityCodeID = models.EntityCodeID(update.EntityCode)
 	}
 
 	policy.Name = update.Name
