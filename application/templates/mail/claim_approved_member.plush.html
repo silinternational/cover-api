@@ -37,6 +37,23 @@
 		label: "View Claim in " + appName
 	}) %>
 
+	<hr style="margin: 2rem 0;">
+
+	<div style="font-size: 14px; line-height: 50px;">
+		ITEM DETAILS
+	</div>
+
+	<%= partial("item_card", {
+		item: item,
+		coverageAmount: coverageAmount,
+		premium: annualPremium,
+		coverageStartDate: coverageStartDate,
+		accountablePerson: accountablePerson,
+		householdID: policy.HouseholdID,
+		itemURL: itemURL,
+		buttonLabel: "Open Item in " + appName
+	}) %>
+
 	<%= partial("customer_footer", {
 		supportEmail: supportEmail,
 		supportName: supportName,
