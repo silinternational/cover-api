@@ -80,15 +80,7 @@ func (m MessageData) addClaimData(tx *pop.Connection, claim models.Claim) {
 
 	claim.LoadClaimItems(tx, false)
 	item := claim.ClaimItems[0].Item
-	m["item"] = item
-	m["coverageAmount"] = "$" + api.Currency(item.CoverageAmount).String()
-
-	item.LoadPolicy(tx, false)
-	m["policy"] = item.Policy
-
-	person := item.GetAccountableMember(tx).GetName()
-	m["accountablePerson"] = person.String()
-	m["personFirstName"] = person.First
+	m.addItemData(tx, item)
 
 	m["payoutOption"] = string(claim.ClaimItems[0].PayoutOption)
 	m["payoutOptionDescription"] = api.PayoutOptionDescriptions[claim.ClaimItems[0].PayoutOption]
