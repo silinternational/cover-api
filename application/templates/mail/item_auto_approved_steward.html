@@ -1,8 +1,13 @@
 <div>
 	<%= partial("body_header", {
 		previewText: "",
-		title: "Notice",
-		subTitle: "Coverage has been auto approved for " + item.Name,
+		title: "New Item Auto-Approved",
+	}) %>
+
+	<%= partial("alert", {
+		alert: "Item auto-approved",
+		alert_description: "No action required. Coverage is now active.",
+		alert_icon: "beach_access",
 	}) %>
 
 	<%= partial("item_card", {
@@ -13,8 +18,8 @@
 		accountablePerson: accountablePerson,
 		householdID: policy.HouseholdID,
 		itemURL: itemURL,
-		buttonLabel: buttonLabel}
-	) %>
+		buttonLabel: buttonLabel
+	}) %>
 
 </div>
 
