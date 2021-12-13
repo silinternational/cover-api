@@ -1023,7 +1023,7 @@ func (as *ActionSuite) Test_ClaimsApprove() {
 			wantInBody: []string{
 				`"incident_description":"` + review3Claim.IncidentDescription,
 				`"status":"` + string(api.ClaimStatusApproved),
-				`"status_change":"` + models.ClaimStatusChangeApproved + steward.Name(),
+				`"status_change":"` + models.ClaimStatusChangeApproved + signator.Name(),
 				`"review_date":"` + time.Now().UTC().Format(domain.DateFormat),
 				`"reviewer_id":"` + signator.ID.String(),
 			},
@@ -1133,7 +1133,7 @@ func (as *ActionSuite) Test_ClaimsDeny() {
 			wantInBody: []string{
 				`"incident_description":"` + review3Claim.IncidentDescription,
 				`"status":"` + string(api.ClaimStatusDenied),
-				`"status_change":"` + models.ClaimStatusChangeDenied + steward.Name(),
+				`"status_change":"` + models.ClaimStatusChangeDenied + signator.Name(),
 				`"review_date":"` + time.Now().UTC().Format(domain.DateFormat),
 				`"reviewer_id":"` + signator.ID.String(),
 			},
