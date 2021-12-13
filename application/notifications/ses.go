@@ -1,8 +1,6 @@
 package notifications
 
 import (
-	"bytes"
-	"errors"
 	"fmt"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -24,23 +22,10 @@ type awsConfig struct {
 
 // Send a message
 func (s *SES) Send(msg Message) error {
-	body := msg.Body
-	if body == "" { // TODO decide if this is needed, where the body needs to get rendered here
-		msg.Data["uiURL"] = domain.Env.UIURL
-		msg.Data["appName"] = domain.Env.AppName
-
-		bodyBuf := &bytes.Buffer{}
-		if err := EmailRenderer.HTML(msg.Template).Render(bodyBuf, msg.Data); err != nil {
-			return errors.New("error rendering ses message body - " + err.Error())
-		}
-		body = bodyBuf.String()
-	}
-
 	to := addressWithName(msg.ToName, msg.ToEmail)
 	from := addressWithName(msg.FromName, msg.FromEmail)
-	subject := msg.Subject
 
-	return SendRaw(from, rawEmail(to, from, subject, body))
+	return SendRaw(from, rawEmail(to, from, msg.Subject, msg.Body))
 }
 
 func addressWithName(name, address string) string {

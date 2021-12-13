@@ -1,7 +1,6 @@
 package notifications
 
 import (
-	"bytes"
 	"errors"
 
 	"github.com/silinternational/cover-api/domain"
@@ -24,16 +23,7 @@ type DummyMessageInfo struct {
 func (t *DummyEmailService) Send(msg Message) error {
 	body := msg.Body
 
-	if body == "" {
-		eTemplate := msg.Template
-		bodyBuf := &bytes.Buffer{}
-		if err := EmailRenderer.HTML(eTemplate).Render(bodyBuf, msg.Data); err != nil {
-			errMsg := "error rendering dummy email message body - " + err.Error()
-			domain.ErrLogger.Printf(errMsg)
-			return errors.New(errMsg)
-		}
-		body = bodyBuf.String()
-	} else if body == "ERROR" {
+	if body == "ERROR" {
 		return errors.New("mock error for testing sending email message")
 	}
 
