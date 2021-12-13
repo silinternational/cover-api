@@ -782,12 +782,6 @@ func (ms *ModelSuite) TestClaim_ConvertToAPI() {
 }
 
 func (ms *ModelSuite) TestClaim_Compare() {
-	e := EntityCode{
-		Code: randStr(3),
-		Name: "Acme, Inc.",
-	}
-	MustCreate(ms.DB, &e)
-
 	f := CreateItemFixtures(ms.DB, FixturesConfig{ClaimsPerPolicy: 1})
 	oldClaim := f.Claims[0]
 	newClaim := Claim{

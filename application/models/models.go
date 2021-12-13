@@ -29,6 +29,8 @@ var DB *pop.Connection
 
 const tokenBytes = 32
 
+const uuidNamespaceString = "89cbb2e8-5832-11ec-af6a-95df0dd7b2c5"
+
 type (
 	Permission  int
 	SubResource string
@@ -103,6 +105,8 @@ const (
 	FieldItemPaidThroughYear   = "PaidThroughYear"
 	FieldItemStatusReason      = "CoverageStatusReason"
 )
+
+var uuidNamespace uuid.UUID
 
 type Authable interface {
 	GetID() uuid.UUID
@@ -192,6 +196,7 @@ func init() {
 	riskCategoryStationaryID = uuid.FromStringOrNil(RiskCategoryStationaryIDString)
 	riskCategoryMobileID = uuid.FromStringOrNil(RiskCategoryMobileIDString)
 	householdEntityID = uuid.FromStringOrNil(HouseholdEntityIDString)
+	uuidNamespace = uuid.FromStringOrNil(uuidNamespaceString)
 }
 
 func getRandomToken() (string, error) {
@@ -392,4 +397,8 @@ func convertTimeToAPI(t nulls.Time) *time.Time {
 		return &t.Time
 	}
 	return nil
+}
+
+func GetV5UUID(seed string) uuid.UUID {
+	return uuid.NewV5(uuidNamespace, seed)
 }
