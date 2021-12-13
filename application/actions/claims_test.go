@@ -935,7 +935,6 @@ func (as *ActionSuite) Test_ClaimsApprove() {
 	policy := fixtures.Policies[0]
 	policyCreator := policy.Members[0]
 
-	// TODO when code distinguishes between admin types, then check that here
 	appAdmin := models.CreateAdminUsers(as.DB)[models.AppRoleSteward]
 
 	draftClaim := policy.Claims[0]
@@ -1057,7 +1056,6 @@ func (as *ActionSuite) Test_ClaimsDeny() {
 	policy := fixtures.Policies[0]
 	policyCreator := policy.Members[0]
 
-	// TODO when code distinguishes between admin types, then try with both
 	appAdmin := models.CreateAdminUsers(as.DB)[models.AppRoleSteward]
 
 	draftClaim := policy.Claims[0]
