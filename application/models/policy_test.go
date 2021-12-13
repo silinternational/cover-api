@@ -302,11 +302,7 @@ func (ms *ModelSuite) TestPolicy_itemCoverageTotals() {
 }
 
 func (ms *ModelSuite) TestPolicy_Compare() {
-	e := EntityCode{
-		Code: randStr(3),
-		Name: "Acme, Inc.",
-	}
-	MustCreate(ms.DB, &e)
+	e := CreateEntityFixture(ms.DB)
 
 	oldPolicy := Policy{
 		Type:         api.PolicyTypeTeam,
