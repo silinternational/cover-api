@@ -288,14 +288,16 @@ func scopeSearchPolicies(searchText string) pop.ScopeFunc {
 	//  --or--
 	// whose own cost_center, household_id or name contain the search string
 	return func(q *pop.Query) *pop.Query {
-		return q.Where("policies.id IN (SELECT policies.id "+
-			"FROM policies "+
-			"RIGHT JOIN policy_users pu ON policies.id = pu.policy_id "+
-			"RIGHT JOIN users on users.id = pu.user_id "+
-			"AND (CONCAT(users.first_name, ' ', users.last_name) ILIKE ? "+
-			"OR policies.cost_center ILIKE ? OR policies.household_id ILIKE ? "+
-			"OR policies.name ILIKE ?) "+
-			"WHERE policies.id IS NOT NULL)", searchText, searchText, searchText, searchText)
+		return q.Where("policies.id IN ("+
+			"SELECT policies.id FROM policies "+
+			"    JOIN policy_users pu ON policies.id = pu.policy_id "+
+			"    JOIN users on users.id = pu.user_id "+
+			"    AND ("+
+			"        CONCAT(users.first_name, ' ', users.last_name) ILIKE ? "+
+			"        OR policies.cost_center ILIKE ? OR policies.household_id ILIKE ? "+
+			"        OR policies.name ILIKE ?"+
+			"    ) "+
+			")", searchText, searchText, searchText, searchText)
 	}
 }
 
