@@ -283,7 +283,7 @@ func (p *Policies) Query(tx *pop.Connection, query api.Query) error {
 func scopeSearchPolicies(searchText string) pop.ScopeFunc {
 	searchText = "%" + searchText + "%"
 
-	// Include policies that have a related user whose first_name, last_name, or
+	// Include policies that have a related user whose
 	// CONCAT(users.first_name, ' ', users.last_name) contains the search string
 	//  --or--
 	// whose own cost_center, household_id or name contain the search string
@@ -296,12 +296,6 @@ func scopeSearchPolicies(searchText string) pop.ScopeFunc {
 			"OR policies.cost_center ILIKE ? OR policies.household_id ILIKE ? "+
 			"OR policies.name ILIKE ?) "+
 			"where policies.id is not null)", searchText, searchText, searchText, searchText)
-
-		//return q.Where("policies.id IN (SELECT policies.id FROM policies,policy_users,users"+
-		//	" WHERE policies.id=policy_users.policy_id AND users.id = policy_users.user_id"+
-		//	" AND (users.first_name ILIKE ? OR users.last_name ILIKE ?"+
-		//	" OR policies.cost_center ILIKE ? OR policies.household_id ILIKE ?"+
-		//	" OR policies.name ILIKE ?))", searchText, searchText, searchText, searchText, searchText)
 	}
 }
 
