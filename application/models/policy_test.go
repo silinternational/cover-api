@@ -549,10 +549,13 @@ func (ms *ModelSuite) TestPolicies_Query() {
 	corpPolicy := ConvertPolicyType(ms.DB, f.Policies[0])
 
 	f.Policies[0].Members[0].FirstName = "Matthew"
+	f.Policies[0].Members[0].LastName = "Smythe"
 	ms.NoError(ms.DB.Update(&f.Policies[0].Members[0]))
 
+	f.Policies[1].Members[0].FirstName = "Hew"
 	f.Policies[1].Members[0].LastName = "Smith"
 	ms.NoError(ms.DB.Update(&f.Policies[1].Members[0]))
+
 	f.Policies[1].Members[1].LastName = "Smith"
 	ms.NoError(ms.DB.Update(&f.Policies[1].Members[1]))
 
@@ -583,9 +586,19 @@ func (ms *ModelSuite) TestPolicies_Query() {
 			wantNumberOfPolicies: 1,
 		},
 		{
-			name:                 "partial",
+			name:                 "partial first name",
 			query:                "search=matt",
 			wantNumberOfPolicies: 1,
+		},
+		{
+			name:                 "full name",
+			query:                "search=matthew smythe",
+			wantNumberOfPolicies: 1,
+		},
+		{
+			name:                 "partial on full name",
+			query:                "search=hew sm",
+			wantNumberOfPolicies: 2,
 		},
 		{
 			name:                 "policy name",
