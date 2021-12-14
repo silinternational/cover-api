@@ -24,6 +24,7 @@ func (as *ActionSuite) Test_PoliciesList() {
 	fixtures := models.CreatePolicyFixtures(as.DB, fixConfig)
 
 	fixtures.Users[0].FirstName = "John"
+	fixtures.Users[0].LastName = "Bunyan"
 	as.NoError(as.DB.Update(&fixtures.Users[0]))
 
 	for _, p := range fixtures.Policies {
@@ -63,6 +64,13 @@ func (as *ActionSuite) Test_PoliciesList() {
 			name:        "admin with search",
 			actor:       appAdmin,
 			queryString: "?limit=1&search=john",
+			wantCount:   1,
+			wantStatus:  http.StatusOK,
+		},
+		{
+			name:        "admin with username search",
+			actor:       appAdmin,
+			queryString: "?search=john bunyan",
 			wantCount:   1,
 			wantStatus:  http.StatusOK,
 		},

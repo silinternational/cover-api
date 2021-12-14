@@ -17,12 +17,28 @@
 		showPayout: true,
 	}) %>
 
-
 	<div style="padding: 16px;">
 		<%= partial("button", {
 			url: claimURL,
 			label: "Open Claim in " + appName,
 		}) %>
 	</div>
+
+	<hr style="margin: 2rem 0;">
+
+	<div style="font-size: 14px; line-height: 50px;">
+		ITEM DETAILS
+	</div>
+
+	<%= partial("item_card", {
+		item: item,
+		coverageAmount: coverageAmount,
+		premium: annualPremium,
+		coverageStartDate: coverageStartDate,
+		accountablePerson: accountablePerson,
+		householdID: policy.HouseholdID,
+		itemURL: itemURL,
+		buttonLabel: "Open Item in " + appName
+	}) %>
 
 </div>
