@@ -291,12 +291,11 @@ func scopeSearchPolicies(searchText string) pop.ScopeFunc {
 		return q.Where("policies.id IN (SELECT policies.id "+
 			"FROM policies "+
 			"RIGHT JOIN policy_users pu ON policies.id = pu.policy_id "+
-			"RIGHT JOIN users on users.id = pu.user_id AND "+
-			"(CONCAT(users.first_name, ' ', users.last_name) ILIKE ? OR "+
-			"users.first_name ILIKE ? OR users.last_name ILIKE ? "+
+			"RIGHT JOIN users on users.id = pu.user_id "+
+			"AND (CONCAT(users.first_name, ' ', users.last_name) ILIKE ? "+
 			"OR policies.cost_center ILIKE ? OR policies.household_id ILIKE ? "+
 			"OR policies.name ILIKE ?) "+
-			"where policies.id is not null)", searchText, searchText, searchText, searchText, searchText, searchText)
+			"where policies.id is not null)", searchText, searchText, searchText, searchText)
 
 		//return q.Where("policies.id IN (SELECT policies.id FROM policies,policy_users,users"+
 		//	" WHERE policies.id=policy_users.policy_id AND users.id = policy_users.user_id"+
