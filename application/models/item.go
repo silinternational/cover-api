@@ -369,6 +369,19 @@ func (i *Item) IsActorAllowedTo(tx *pop.Connection, actor User, perm Permission,
 	return false
 }
 
+func (i *Items) CalcTotals() api.ItemTotals {
+	var itemTotals api.ItemTotals
+
+	for _, item := range *i {
+		if item.CoverageStatus.IsActive() {
+			itemTotals.CoverageAmount += item.CoverageAmount
+			itemTotals.AnnualPremium += item.CalculateAnnualPremium()
+		}
+	}
+
+	return itemTotals
+}
+
 func itemStatusTransitions() map[api.ItemCoverageStatus][]api.ItemCoverageStatus {
 	return map[api.ItemCoverageStatus][]api.ItemCoverageStatus{
 		api.ItemCoverageStatusDraft: {

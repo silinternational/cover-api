@@ -221,7 +221,7 @@ func (p *Policy) LoadEntityCode(tx *pop.Connection, reload bool) {
 	}
 }
 
-func (p *Policy) ConvertToAPI(tx *pop.Connection, hydrate bool) api.Policy {
+func (p *Policy) ConvertToAPI(tx *pop.Connection, hydrate, calcTotals bool) api.Policy {
 	p.LoadEntityCode(tx, true)
 	p.LoadMembers(tx, true)
 
@@ -239,11 +239,21 @@ func (p *Policy) ConvertToAPI(tx *pop.Connection, hydrate bool) api.Policy {
 		UpdatedAt:     p.UpdatedAt,
 	}
 
-	if hydrate {
+	if hydrate || calcTotals {
 		p.LoadClaims(tx, true)
+	}
+
+	if hydrate {
 		p.LoadDependents(tx, true)
 		apiPolicy.Claims = p.Claims.ConvertToAPI(tx)
 		apiPolicy.Dependents = p.Dependents.ConvertToAPI()
+	}
+
+	if calcTotals {
+		p.LoadItems(tx, true)
+
+		apiPolicy.Totals.Items = p.Items.CalcTotals()
+		apiPolicy.Totals.Claims = p.Claims.CalcTotals()
 	}
 
 	return apiPolicy
@@ -252,7 +262,7 @@ func (p *Policy) ConvertToAPI(tx *pop.Connection, hydrate bool) api.Policy {
 func (p *Policies) ConvertToAPI(tx *pop.Connection) api.Policies {
 	policies := make(api.Policies, len(*p))
 	for i, pp := range *p {
-		policies[i] = pp.ConvertToAPI(tx, false)
+		policies[i] = pp.ConvertToAPI(tx, false, false)
 	}
 
 	return policies

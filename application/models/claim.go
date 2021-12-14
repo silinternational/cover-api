@@ -650,6 +650,19 @@ func (c *Claims) ByStatus(tx *pop.Connection, statuses []api.ClaimStatus) error 
 	return appErrorFromDB(err, api.ErrorQueryFailure)
 }
 
+func (c *Claims) CalcTotals() api.ClaimTotals {
+	var claimTotals api.ClaimTotals
+
+	for _, claim := range *c {
+		if claim.Status.IsOpen() {
+			claimTotals.OpenClaims++
+		}
+		claimTotals.PayoutAmount += claim.TotalPayout
+	}
+
+	return claimTotals
+}
+
 func ConvertClaimCreateInput(input api.ClaimCreateInput) Claim {
 	return Claim{
 		IncidentDate:        input.IncidentDate,
