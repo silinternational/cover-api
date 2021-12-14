@@ -295,7 +295,7 @@ func scopeSearchPolicies(searchText string) pop.ScopeFunc {
 			"AND (CONCAT(users.first_name, ' ', users.last_name) ILIKE ? "+
 			"OR policies.cost_center ILIKE ? OR policies.household_id ILIKE ? "+
 			"OR policies.name ILIKE ?) "+
-			"where policies.id is not null)", searchText, searchText, searchText, searchText)
+			"WHERE policies.id IS NOT NULL)", searchText, searchText, searchText, searchText)
 	}
 }
 
