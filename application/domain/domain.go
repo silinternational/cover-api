@@ -139,6 +139,7 @@ var Env struct {
 	ApiBaseURL                 string `required:"true" split_words:"true"`
 	AccessTokenLifetimeSeconds int    `default:"1166400" split_words:"true"` // 13.5 days
 	AppName                    string `default:"Cover" split_words:"true"`
+	AppNameLong                string `default:"Cover by SIL" split_words:"true"`
 	ServerPort                 int    `default:"3000" split_words:"true"`
 
 	ListenerDelayMilliseconds int `default:"1000" split_words:"true"`
@@ -322,9 +323,9 @@ func RollbarMiddleware(next buffalo.Handler) buffalo.Handler {
 // EmailFromAddress combines a name with the configured from address for use in an email From header. If name is nil,
 // only the App Name will be used.
 func EmailFromAddress(name *string) string {
-	addr := Env.AppName + " <" + Env.EmailFromAddress + ">"
+	addr := Env.AppNameLong + " <" + Env.EmailFromAddress + ">"
 	if name != nil {
-		addr = *name + " via " + addr
+		return *name + " via " + addr
 	}
 	return addr
 }
