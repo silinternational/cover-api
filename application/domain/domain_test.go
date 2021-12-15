@@ -57,12 +57,12 @@ func (ts *TestSuite) TestEmailFromAddress() {
 		{
 			name: "name given",
 			arg:  &nickname,
-			want: fmt.Sprintf("nickname via %s <%s>", Env.AppName, Env.EmailFromAddress),
+			want: fmt.Sprintf("nickname via %s <%s>", Env.AppNameLong, Env.EmailFromAddress),
 		},
 		{
 			name: "no name given",
 			arg:  nil,
-			want: fmt.Sprintf("%s <%s>", Env.AppName, Env.EmailFromAddress),
+			want: fmt.Sprintf("%s <%s>", Env.AppNameLong, Env.EmailFromAddress),
 		},
 	}
 	for _, tt := range tests {
