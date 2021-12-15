@@ -374,7 +374,7 @@ func (i *Items) CalcTotals() api.ItemTotals {
 
 	for _, item := range *i {
 		if item.CoverageStatus.IsActive() {
-			itemTotals.CoverageAmount += item.CoverageAmount
+			itemTotals.CoverageAmount += api.Currency(item.CoverageAmount)
 			itemTotals.AnnualPremium += item.CalculateAnnualPremium()
 		}
 	}
