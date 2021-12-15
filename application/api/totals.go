@@ -10,7 +10,7 @@ type PolicyTotals struct {
 // ItemTotals contains totals calculated from all items
 type ItemTotals struct {
 	// coverage amount (0.01 USD)
-	CoverageAmount int `json:"coverage_amount"`
+	CoverageAmount Currency `json:"coverage_amount"`
 
 	// annual premium (0.01 USD)
 	AnnualPremium Currency `json:"annual_premium"`

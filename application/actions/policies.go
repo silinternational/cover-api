@@ -33,10 +33,6 @@ import (
 //   in: query
 //   required: false
 //   description: comma-separated list of search pairs like "field:text". Presently, only meta-field 'active' is supported
-// - name: totals
-//   in: query
-//   required: false
-//   description: calculate and return policy totals
 // responses:
 //   '200':
 //     description: all policies
@@ -101,7 +97,7 @@ func policiesListCustomer(c buffalo.Context) error {
 func policiesView(c buffalo.Context) error {
 	policy := getReferencedPolicyFromCtx(c)
 
-	return renderOk(c, policy.ConvertToAPI(models.Tx(c), true, true))
+	return renderOk(c, policy.ConvertToAPI(models.Tx(c), true))
 }
 
 // swagger:operation POST /policies Policies PoliciesCreateTeam
@@ -144,7 +140,7 @@ func policiesCreateTeam(c buffalo.Context) error {
 		return reportError(c, err)
 	}
 
-	return renderOk(c, policy.ConvertToAPI(tx, true, true))
+	return renderOk(c, policy.ConvertToAPI(tx, true))
 }
 
 // swagger:operation PUT /policies/{id} Policies PoliciesUpdate
@@ -202,7 +198,7 @@ func policiesUpdate(c buffalo.Context) error {
 		return reportError(c, err)
 	}
 
-	return renderOk(c, policy.ConvertToAPI(tx, true, true))
+	return renderOk(c, policy.ConvertToAPI(tx, true))
 }
 
 // swagger:operation GET /policies/{id}/members PolicyMembers PolicyMembersList
