@@ -27,7 +27,6 @@ var GitCommitHash string
 // call `app.Serve()`, unless you don't want to start your
 // application that is. :)
 func main() {
-
 	delay := time.Duration(time.Second * 10)
 
 	// Kick off first run of inactivating items between 1h11 and 3h27 from now
@@ -74,7 +73,7 @@ func getServer() (servers.Server, error) {
 		AwsRegion: domain.Env.AwsRegion,
 	}
 
-	if domain.Env.GoEnv != "prod" && domain.Env.GoEnv != "production" {
+	if !domain.IsProduction() {
 		certmagic.DefaultACME.CA = certmagic.LetsEncryptStagingCA
 	}
 

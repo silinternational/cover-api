@@ -57,12 +57,12 @@ func (ts *TestSuite) TestEmailFromAddress() {
 		{
 			name: "name given",
 			arg:  &nickname,
-			want: fmt.Sprintf("nickname via %s <%s>", Env.AppName, Env.EmailFromAddress),
+			want: fmt.Sprintf("nickname via %s <%s>", Env.AppNameLong, Env.EmailFromAddress),
 		},
 		{
 			name: "no name given",
 			arg:  nil,
-			want: fmt.Sprintf("%s <%s>", Env.AppName, Env.EmailFromAddress),
+			want: fmt.Sprintf("%s <%s>", Env.AppNameLong, Env.EmailFromAddress),
 		},
 	}
 	for _, tt := range tests {
@@ -328,6 +328,34 @@ func (ts *TestSuite) TestTimeBetween() {
 	for _, tt := range tests {
 		ts.T().Run(tt.name, func(t *testing.T) {
 			got := TimeBetween(tt.t1, tt.t2)
+			ts.Equal(tt.want, got)
+		})
+	}
+}
+
+func (ts *TestSuite) Test_IsProduction() {
+	tests := []struct {
+		env  string
+		want bool
+	}{
+		{
+			env:  "prod",
+			want: true,
+		},
+		{
+			env:  "production",
+			want: true,
+		},
+		{
+			env:  "dev",
+			want: false,
+		},
+	}
+	for _, tt := range tests {
+		ts.T().Run(tt.env, func(t *testing.T) {
+			Env.GoEnv = tt.env
+
+			got := IsProduction()
 			ts.Equal(tt.want, got)
 		})
 	}
