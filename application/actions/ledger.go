@@ -36,10 +36,9 @@ func ledgerList(c buffalo.Context) error {
 
 	tx := models.Tx(c)
 
-	now := time.Now().UTC()
-	firstDay := domain.BeginningOfLastMonth(now)
+	date := domain.BeginningOfDay(time.Now().UTC())
 	var le models.LedgerEntries
-	if err := le.AllForMonth(tx, firstDay); err != nil {
+	if err := le.AllNotEntered(tx, date); err != nil {
 		return err
 	}
 
@@ -47,8 +46,8 @@ func ledgerList(c buffalo.Context) error {
 		return c.Render(http.StatusNoContent, nil)
 	}
 
-	csvData := le.ToCsv(firstDay)
-	filename := fmt.Sprintf("batch_%s.csv", firstDay.Format("2006-01"))
+	csvData := le.ToCsv(date)
+	filename := fmt.Sprintf("cover_ledger_%s.csv", date.Format(domain.DateFormat))
 
 	return renderCsv(c, filename, csvData)
 }
@@ -77,9 +76,9 @@ func ledgerReconcile(c buffalo.Context) error {
 	tx := models.Tx(c)
 
 	now := time.Now().UTC()
-	firstDay := domain.BeginningOfLastMonth(now)
+	firstDay := domain.BeginningOfDay(now)
 	var le models.LedgerEntries
-	if err := le.AllForMonth(tx, firstDay); err != nil {
+	if err := le.AllNotEntered(tx, firstDay); err != nil {
 		return err
 	}
 
