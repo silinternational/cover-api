@@ -506,3 +506,10 @@ func TimeBetween(t1, t2 time.Time) string {
 
 	return fmt.Sprintf("%d %s ago", n, unit)
 }
+
+func IsProduction() bool {
+	if strings.HasPrefix(Env.GoEnv, "prod") {
+		return true
+	}
+	return false
+}

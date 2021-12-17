@@ -171,7 +171,7 @@ func SendQueuedNotifications(tx *pop.Connection) {
 		msg.Body = strings.Replace(n.Notification.Body,
 			Greetings_Placeholder, fmt.Sprintf("Greetings %s,", userName), 1)
 
-		if domain.Env.GoEnv != "production" {
+		if !domain.IsProduction() {
 			msg.ToEmail = domain.Env.SandboxEmailAddress
 		}
 		if err := notifications.Send(msg); err != nil {

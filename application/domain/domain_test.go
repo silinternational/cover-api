@@ -332,3 +332,31 @@ func (ts *TestSuite) TestTimeBetween() {
 		})
 	}
 }
+
+func (ts *TestSuite) Test_IsProduction() {
+	tests := []struct {
+		env  string
+		want bool
+	}{
+		{
+			env:  "prod",
+			want: true,
+		},
+		{
+			env:  "production",
+			want: true,
+		},
+		{
+			env:  "dev",
+			want: false,
+		},
+	}
+	for _, tt := range tests {
+		ts.T().Run(tt.env, func(t *testing.T) {
+			Env.GoEnv = tt.env
+
+			got := IsProduction()
+			ts.Equal(tt.want, got)
+		})
+	}
+}
