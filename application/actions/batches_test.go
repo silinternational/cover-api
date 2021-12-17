@@ -15,8 +15,8 @@ import (
 	"github.com/silinternational/cover-api/models"
 )
 
-func (as *ActionSuite) Test_BatchesLatest() {
-	f := as.createFixturesForBatches()
+func (as *ActionSuite) Test_LedgerLatest() {
+	f := as.createFixturesForLedger()
 	normalUser := f.Users[0]
 	stewardUser := models.CreateAdminUsers(as.DB)[models.AppRoleSteward]
 
@@ -49,7 +49,7 @@ func (as *ActionSuite) Test_BatchesLatest() {
 
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
-			req := as.JSON(batchesPath + "/latest")
+			req := as.JSON(ledgerPath)
 			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
 			res := req.Get()
 
@@ -70,8 +70,8 @@ func (as *ActionSuite) Test_BatchesLatest() {
 	}
 }
 
-func (as *ActionSuite) Test_BatchesApprove() {
-	f := as.createFixturesForBatches()
+func (as *ActionSuite) Test_LedgerApprove() {
+	f := as.createFixturesForLedger()
 	normalUser := f.Users[0]
 	stewardUser := models.CreateAdminUsers(as.DB)[models.AppRoleSteward]
 
@@ -104,7 +104,7 @@ func (as *ActionSuite) Test_BatchesApprove() {
 
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
-			req := as.JSON(batchesPath + "/approve")
+			req := as.JSON(ledgerPath)
 			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
 			res := req.Post(nil)
 
@@ -135,7 +135,7 @@ func (as *ActionSuite) Test_BatchesApprove() {
 	}
 }
 
-func (as *ActionSuite) Test_BatchesAnnual() {
+func (as *ActionSuite) Test_LedgerAnnual() {
 	year := time.Now().UTC().Year()
 
 	f := models.CreateItemFixtures(as.DB, models.FixturesConfig{ItemsPerPolicy: 3})
@@ -176,7 +176,7 @@ func (as *ActionSuite) Test_BatchesAnnual() {
 
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
-			req := as.JSON(batchesPath + "/annual")
+			req := as.JSON(ledgerPath + "/annual")
 			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
 			res := req.Get()
 
@@ -197,7 +197,7 @@ func (as *ActionSuite) Test_BatchesAnnual() {
 	}
 }
 
-func (as *ActionSuite) createFixturesForBatches() models.Fixtures {
+func (as *ActionSuite) createFixturesForLedger() models.Fixtures {
 	f := models.CreateItemFixtures(as.DB, models.FixturesConfig{ItemsPerPolicy: 2})
 
 	now := time.Now().UTC()

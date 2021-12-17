@@ -12,22 +12,22 @@ import (
 	"github.com/silinternational/cover-api/models"
 )
 
-// swagger:operation GET /batches/latest Batches BatchesLatest
+// swagger:operation GET /ledger Ledger LedgerList
 //
-// BatchesLatest
+// LedgerList
 //
-// return the latest batch of ledger entries
+// return the ledger entries not yet reconciled, up to the beginning of the current day (0:00 UTC)
 //
 // ---
 // responses:
 //   '200':
-//     description: the latest batch of ledger entries
+//     description: the ledger entries not yet reconciled, in CSV format suitable for use with Sage Accounting
 //     content:
 //       text/csv:
 //         schema:
 //           type: string
 //           format: text
-func batchesGetLatest(c buffalo.Context) error {
+func ledgerList(c buffalo.Context) error {
 	actor := models.CurrentUser(c)
 	if !actor.IsAdmin() {
 		err := fmt.Errorf("user not allowed to get monthly batch data")
@@ -53,12 +53,13 @@ func batchesGetLatest(c buffalo.Context) error {
 	return renderCsv(c, filename, csvData)
 }
 
-// swagger:operation POST /batches/approve Batches BatchesApprove
+// swagger:operation POST /ledger Ledger LedgerReconcile
 //
-// BatchesApprove
+// LedgerReconcile
 //
-// Mark the last batch as accepted. Call this only after the recent batch has
-// been fully loaded into the accounting record.
+// Mark ledger entries as reconciled as of today. Call this only after all transactions returned by
+// LedgerList have been fully loaded into the accounting record. Today's transactions
+// (entered after 0:00 UTC) are not marked as reconciled.
 //
 // ---
 // responses:
@@ -66,7 +67,7 @@ func batchesGetLatest(c buffalo.Context) error {
 //     description: batch approval confirmation details
 //     schema:
 //       "$ref": "#/definitions/BatchApproveResponse"
-func batchesApprove(c buffalo.Context) error {
+func ledgerReconcile(c buffalo.Context) error {
 	actor := models.CurrentUser(c)
 	if !actor.IsAdmin() {
 		err := fmt.Errorf("user not allowed to approve monthly batch data")
@@ -89,9 +90,9 @@ func batchesApprove(c buffalo.Context) error {
 	return renderOk(c, api.BatchApproveResponse{NumberOfRecordsApproved: len(le)})
 }
 
-// swagger:operation GET /batches/annual Batches BatchesAnnual
+// swagger:operation GET /ledger/annual Ledger LedgerAnnual
 //
-// BatchesAnnual
+// LedgerAnnual
 //
 // Get the billing detail for current year's policy renewals
 //
@@ -104,7 +105,7 @@ func batchesApprove(c buffalo.Context) error {
 //         schema:
 //           type: string
 //           format: text
-func batchesAnnual(c buffalo.Context) error {
+func ledgerAnnual(c buffalo.Context) error {
 	actor := models.CurrentUser(c)
 	if !actor.IsAdmin() {
 		err := fmt.Errorf("user not allowed to process annual batch data")

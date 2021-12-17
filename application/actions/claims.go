@@ -341,7 +341,7 @@ func claimsRequestReceipt(c buffalo.Context) error {
 	return c.Render(http.StatusOK, r.JSON(output))
 }
 
-// swagger:operation POST /claims/{id}/approve Claims ClaimsApprove
+// swagger:operation POST /claims/{id} Claims ClaimsApprove
 //
 // ClaimsApprove
 //
