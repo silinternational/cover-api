@@ -171,6 +171,9 @@ func SendQueuedNotifications(tx *pop.Connection) {
 		msg.Body = strings.Replace(n.Notification.Body,
 			Greetings_Placeholder, fmt.Sprintf("Greetings %s,", userName), 1)
 
+		if !domain.IsProduction() {
+			msg.ToEmail = domain.Env.SandboxEmailAddress
+		}
 		if err := notifications.Send(msg); err != nil {
 			domain.ErrLogger.Printf("error sending queued notification email, %s", err)
 			n.LastAttemptUTC = nulls.NewTime(time.Now().UTC())

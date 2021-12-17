@@ -206,6 +206,8 @@ var Env struct {
 	UserWelcomeEmailIntro       string `default:"" split_words:"true"`
 	UserWelcomeEmailPreviewText string `default:"" split_words:"true"`
 	UserWelcomeEmailEnding      string `default:"" split_words:"true"`
+
+	SandboxEmailAddress string `default:"" split_words:"true"`
 }
 
 func init() {
@@ -503,4 +505,11 @@ func TimeBetween(t1, t2 time.Time) string {
 	}
 
 	return fmt.Sprintf("%d %s ago", n, unit)
+}
+
+func IsProduction() bool {
+	if strings.HasPrefix(Env.GoEnv, "prod") {
+		return true
+	}
+	return false
 }
