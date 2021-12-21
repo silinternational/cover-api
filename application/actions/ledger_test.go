@@ -134,6 +134,10 @@ func (as *ActionSuite) Test_LedgerReconcile() {
 
 			as.Equal(tt.want, response.NumberOfRecordsApproved, "incorrect number of approved records")
 
+			if tt.want == 0 {
+				return
+			}
+
 			var le models.LedgerEntries
 			as.NoError(as.DB.Where("item_id = ?", f.Items[1].ID).All(&le))
 			as.Equal(1, len(le), "something is not right with the test setup")
