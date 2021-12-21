@@ -85,12 +85,9 @@ func (le *LedgerEntry) Update(tx *pop.Connection) error {
 	return update(tx, le)
 }
 
-// AllForMonth returns all the non-entered entries (date_entered is null) for the month.
-// The provided date must be the first day of the month.
-func (le *LedgerEntries) AllForMonth(tx *pop.Connection, firstDay time.Time) error {
-	lastDay := domain.EndOfMonth(firstDay)
-
-	err := tx.Where("date_submitted BETWEEN ? and ?", firstDay, lastDay).
+// AllNotEntered returns all the non-entered entries (date_entered is null) up to the given cutoff time.
+func (le *LedgerEntries) AllNotEntered(tx *pop.Connection, cutoff time.Time) error {
+	err := tx.Where("date_submitted < ? ", cutoff).
 		Where("date_entered IS NULL").All(le)
 
 	return appErrorFromDB(err, api.ErrorQueryFailure)
@@ -98,8 +95,8 @@ func (le *LedgerEntries) AllForMonth(tx *pop.Connection, firstDay time.Time) err
 
 type TransactionBlocks map[string]LedgerEntries // keyed by account
 
-func (le *LedgerEntries) ToCsv(batchDate time.Time) []byte {
-	sage := fin.NewBatch(fin.ProviderTypeSage, batchDate)
+func (le *LedgerEntries) ToCsv(date time.Time) []byte {
+	sage := fin.NewBatch(fin.ProviderTypeSage, date)
 
 	blocks := le.MakeBlocks()
 	for account, ledgerEntries := range blocks {
@@ -123,7 +120,7 @@ func (le *LedgerEntries) ToCsv(batchDate time.Time) []byte {
 			Amount:      balance,
 			Description: ledgerEntries[0].balanceDescription(),
 			Reference:   "",
-			Date:        batchDate,
+			Date:        date,
 		})
 	}
 

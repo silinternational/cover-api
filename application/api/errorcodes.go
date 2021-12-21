@@ -72,6 +72,9 @@ const (
 	ErrorInvalidCategory              = ErrorKey("ErrorInvalidCategory")
 	ErrorItemHasActiveClaim           = ErrorKey("ErrorItemHasActiveClaim")
 
+	// Ledger
+	ErrorItemInvalidEndDate = ErrorKey("ErrorItemInvalidEndDate")
+
 	// Policy
 	ErrorPolicyFromContext        = ErrorKey("ErrorPolicyFromContext")
 	ErrorPolicyNotFound           = ErrorKey("ErrorPolicyNotFound")
