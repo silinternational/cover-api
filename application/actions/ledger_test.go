@@ -70,8 +70,6 @@ func (as *ActionSuite) Test_LedgerList() {
 }
 
 func (as *ActionSuite) Test_LedgerReconcile() {
-	as.T().Skip() // this test is temporarily broken
-
 	f := as.createFixturesForLedger()
 	normalUser := f.Users[0]
 	stewardUser := models.CreateAdminUsers(as.DB)[models.AppRoleSteward]

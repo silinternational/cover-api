@@ -69,16 +69,16 @@ func ledgerList(c buffalo.Context) error {
 func ledgerReconcile(c buffalo.Context) error {
 	actor := models.CurrentUser(c)
 	if !actor.IsAdmin() {
-		err := fmt.Errorf("user not allowed to approve monthly batch data")
+		err := fmt.Errorf("user not allowed to reconcile ledger data")
 		return reportError(c, api.NewAppError(err, api.ErrorNotAuthorized, api.CategoryForbidden))
 	}
 
 	tx := models.Tx(c)
 
 	now := time.Now().UTC()
-	firstDay := domain.BeginningOfDay(now)
+	date := domain.BeginningOfDay(now)
 	var le models.LedgerEntries
-	if err := le.AllNotEntered(tx, firstDay); err != nil {
+	if err := le.AllNotEntered(tx, date); err != nil {
 		return err
 	}
 
