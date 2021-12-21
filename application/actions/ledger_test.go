@@ -11,6 +11,7 @@ import (
 	"github.com/gobuffalo/nulls"
 
 	"github.com/silinternational/cover-api/api"
+	"github.com/silinternational/cover-api/domain"
 	"github.com/silinternational/cover-api/models"
 )
 
@@ -77,6 +78,7 @@ func (as *ActionSuite) Test_LedgerReconcile() {
 	tests := []struct {
 		name       string
 		actor      models.User
+		date       string
 		want       int // approved records
 		wantStatus int
 		wantInBody []string
@@ -94,8 +96,16 @@ func (as *ActionSuite) Test_LedgerReconcile() {
 			wantInBody: []string{`"key":"` + api.ErrorNotAuthorized.String()},
 		},
 		{
+			name:       "normal user nothing reconciled",
+			actor:      stewardUser,
+			date:       time.Now().AddDate(0, -1, 0).Format(domain.DateFormat),
+			wantStatus: http.StatusOK,
+			want:       0,
+		},
+		{
 			name:       "normal user good results",
 			actor:      stewardUser,
+			date:       time.Now().Format(domain.DateFormat),
 			wantStatus: http.StatusOK,
 			want:       1,
 		},
@@ -105,7 +115,7 @@ func (as *ActionSuite) Test_LedgerReconcile() {
 		as.T().Run(tt.name, func(t *testing.T) {
 			req := as.JSON(ledgerPath)
 			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
-			res := req.Post(nil)
+			res := req.Post(api.LedgerReconcileInput{EndDate: tt.date})
 
 			body := res.Body.String()
 			as.Equal(tt.wantStatus, res.Code, "incorrect status code returned, body: %s", body)

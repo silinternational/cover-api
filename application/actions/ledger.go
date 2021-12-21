@@ -61,6 +61,13 @@ func ledgerList(c buffalo.Context) error {
 // (entered after 0:00 UTC) are not marked as reconciled.
 //
 // ---
+// parameters:
+//   - name: ledger reconcile input
+//     in: body
+//     description: ledger reconcile input
+//     required: true
+//     schema:
+//       "$ref": "#/definitions/LedgerReconcileInput"
 // responses:
 //   '200':
 //     description: batch approval confirmation details
@@ -73,10 +80,18 @@ func ledgerReconcile(c buffalo.Context) error {
 		return reportError(c, api.NewAppError(err, api.ErrorNotAuthorized, api.CategoryForbidden))
 	}
 
+	var input api.LedgerReconcileInput
+	if err := StrictBind(c, &input); err != nil {
+		return reportError(c, err)
+	}
+
 	tx := models.Tx(c)
 
-	now := time.Now().UTC()
-	date := domain.BeginningOfDay(now)
+	date, err := time.Parse(domain.DateFormat, input.EndDate)
+	if err != nil {
+		return reportError(c, api.NewAppError(err, api.ErrorItemInvalidEndDate, api.CategoryUser))
+	}
+
 	var le models.LedgerEntries
 	if err := le.AllNotEntered(tx, date); err != nil {
 		return err
