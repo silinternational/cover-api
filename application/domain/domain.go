@@ -458,8 +458,8 @@ func CalculateMonthlyRefundValue(value int, startDate time.Time) int {
 	return int(math.Round(float64(value*remainingMonths) / 12.0))
 }
 
-func BeginningOfLastMonth(date time.Time) time.Time {
-	return date.AddDate(0, -1, -date.Day()+1)
+func BeginningOfDay(date time.Time) time.Time {
+	return time.Date(date.Year(), date.Month(), date.Day(), 0, 0, 0, 0, time.UTC)
 }
 
 func EndOfMonth(date time.Time) time.Time {

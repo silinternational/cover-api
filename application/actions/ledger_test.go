@@ -15,8 +15,8 @@ import (
 	"github.com/silinternational/cover-api/models"
 )
 
-func (as *ActionSuite) Test_BatchesLatest() {
-	f := as.createFixturesForBatches()
+func (as *ActionSuite) Test_LedgerList() {
+	f := as.createFixturesForLedger()
 	normalUser := f.Users[0]
 	stewardUser := models.CreateAdminUsers(as.DB)[models.AppRoleSteward]
 
@@ -49,7 +49,7 @@ func (as *ActionSuite) Test_BatchesLatest() {
 
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
-			req := as.JSON(batchesPath + "/latest")
+			req := as.JSON(ledgerPath)
 			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
 			res := req.Get()
 
@@ -70,14 +70,15 @@ func (as *ActionSuite) Test_BatchesLatest() {
 	}
 }
 
-func (as *ActionSuite) Test_BatchesApprove() {
-	f := as.createFixturesForBatches()
+func (as *ActionSuite) Test_LedgerReconcile() {
+	f := as.createFixturesForLedger()
 	normalUser := f.Users[0]
 	stewardUser := models.CreateAdminUsers(as.DB)[models.AppRoleSteward]
 
 	tests := []struct {
 		name       string
 		actor      models.User
+		date       string
 		want       int // approved records
 		wantStatus int
 		wantInBody []string
@@ -95,8 +96,16 @@ func (as *ActionSuite) Test_BatchesApprove() {
 			wantInBody: []string{`"key":"` + api.ErrorNotAuthorized.String()},
 		},
 		{
+			name:       "normal user nothing reconciled",
+			actor:      stewardUser,
+			date:       time.Now().AddDate(0, -1, 0).Format(domain.DateFormat),
+			wantStatus: http.StatusOK,
+			want:       0,
+		},
+		{
 			name:       "normal user good results",
 			actor:      stewardUser,
+			date:       time.Now().Format(domain.DateFormat),
 			wantStatus: http.StatusOK,
 			want:       1,
 		},
@@ -104,9 +113,9 @@ func (as *ActionSuite) Test_BatchesApprove() {
 
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
-			req := as.JSON(batchesPath + "/approve")
+			req := as.JSON(ledgerPath)
 			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
-			res := req.Post(nil)
+			res := req.Post(api.LedgerReconcileInput{EndDate: tt.date})
 
 			body := res.Body.String()
 			as.Equal(tt.wantStatus, res.Code, "incorrect status code returned, body: %s", body)
@@ -125,6 +134,10 @@ func (as *ActionSuite) Test_BatchesApprove() {
 
 			as.Equal(tt.want, response.NumberOfRecordsApproved, "incorrect number of approved records")
 
+			if tt.want == 0 {
+				return
+			}
+
 			var le models.LedgerEntries
 			as.NoError(as.DB.Where("item_id = ?", f.Items[1].ID).All(&le))
 			as.Equal(1, len(le), "something is not right with the test setup")
@@ -135,7 +148,7 @@ func (as *ActionSuite) Test_BatchesApprove() {
 	}
 }
 
-func (as *ActionSuite) Test_BatchesAnnual() {
+func (as *ActionSuite) Test_LedgerAnnual() {
 	year := time.Now().UTC().Year()
 
 	f := models.CreateItemFixtures(as.DB, models.FixturesConfig{ItemsPerPolicy: 3})
@@ -176,7 +189,7 @@ func (as *ActionSuite) Test_BatchesAnnual() {
 
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
-			req := as.JSON(batchesPath + "/annual")
+			req := as.JSON(ledgerPath + "/annual")
 			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
 			res := req.Get()
 
@@ -197,13 +210,13 @@ func (as *ActionSuite) Test_BatchesAnnual() {
 	}
 }
 
-func (as *ActionSuite) createFixturesForBatches() models.Fixtures {
+func (as *ActionSuite) createFixturesForLedger() models.Fixtures {
 	f := models.CreateItemFixtures(as.DB, models.FixturesConfig{ItemsPerPolicy: 2})
 
 	now := time.Now().UTC()
-	lastMonth := domain.BeginningOfLastMonth(now)
+	yesterday := now.AddDate(0, 0, -1)
 
-	datesSubmitted := []time.Time{lastMonth, lastMonth}
+	datesSubmitted := []time.Time{yesterday, yesterday}
 	datesEntered := []nulls.Time{nulls.NewTime(now), {}}
 
 	for i := range f.Items {
