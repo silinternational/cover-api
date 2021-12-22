@@ -952,8 +952,7 @@ func (ms *ModelSuite) TestItem_CreateLedgerEntry() {
 	ms.Equal(item.PolicyID, le.PolicyID, "PolicyID is incorrect")
 	ms.Equal(item.ID, le.ItemID.UUID, "ItemID is incorrect")
 	ms.Equal(amount, le.Amount, "Amount is incorrect")
-	ms.Equal(user.FirstName, le.FirstName, "FirstName is incorrect")
-	ms.Equal(user.LastName, le.LastName, "LastName is incorrect")
+	ms.Equal(user.FirstName+" "+user.LastName, le.Name, "Name is incorrect")
 	ms.Equal(time.Now().UTC().Truncate(domain.DurationDay), le.DateSubmitted,
 		"ledger entry submitted date should be the current time")
 }
@@ -991,7 +990,6 @@ func (ms *ModelSuite) TestItem_GetAccountableMember() {
 	person = item1.GetAccountableMember(ms.DB)
 	ms.Equal(member0.FirstName, person.GetName().First, "first name is not correct")
 	ms.Equal(member0.LastName, person.GetName().Last, "last name is not correct")
-
 }
 
 func (ms *ModelSuite) Test_ItemsWithRecentStatusChanges() {
