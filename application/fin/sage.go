@@ -54,7 +54,7 @@ func (s *Sage) transactionRow(rowNumber int) []byte {
 		20*(rowNumber+1),
 		t.Account,
 		api.Currency(-t.Amount).String(),
-		t.Description,
+		fmt.Sprintf("%.60s", t.Description), // truncate to Sage limit of 60 characters
 		t.Reference,
 		t.Date.Format("20060102"),
 	)
