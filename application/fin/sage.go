@@ -27,7 +27,9 @@ type Sage struct {
 }
 
 func (s *Sage) AppendToBatch(t Transaction) {
-	s.Transactions = append(s.Transactions, t)
+	if t.Amount != 0 {
+		s.Transactions = append(s.Transactions, t)
+	}
 }
 
 func (s *Sage) BatchToCSV() []byte {
