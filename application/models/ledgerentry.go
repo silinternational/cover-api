@@ -190,7 +190,11 @@ func (le *LedgerEntry) transactionReference() string {
 	if le.PolicyType == api.PolicyTypeHousehold {
 		return fmt.Sprintf("MC %s", le.HouseholdID)
 	}
-	return le.CostCenter
+	if le.LegacyID.Valid {
+		// In the legacy data, the cost center column was prepended with the entity code and account number
+		return le.CostCenter
+	}
+	return fmt.Sprintf("%s %s%s", le.EntityCode, le.AccountNumber, le.CostCenter)
 }
 
 func (le *LedgerEntry) balanceDescription() string {
