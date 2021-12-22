@@ -179,7 +179,7 @@ func (le *LedgerEntry) transactionDescription() string {
 		description = le.FirstName + " " + le.LastName + " " + description
 	}
 
-	return fmt.Sprintf("%.60s", description) // truncate to Sage limit of 60 characters
+	return description
 }
 
 // Merge HouseholdID and CostCenter into one column
