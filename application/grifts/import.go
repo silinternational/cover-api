@@ -994,8 +994,7 @@ func importJournalEntries(tx *pop.Connection, entries []JournalEntry) {
 			CostCenter:       trim(e.AccCostCtr2),
 			EntityCode:       trim(e.Entity),
 			IncomeAccount:    incomeAccount(e.Entity),
-			FirstName:        trim(e.FirstName),
-			LastName:         trim(e.LastName),
+			Name:             trim(trim(e.FirstName) + " " + trim(e.LastName)),
 		}
 		l.CreatedAt = l.DateSubmitted
 

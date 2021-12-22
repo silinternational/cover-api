@@ -1,0 +1,2 @@
+rename_column("ledger_entries", "name", "last_name")
+add_column("ledger_entries", "first_name", "string", {"default": ""})

@@ -1,0 +1,7 @@
+sql(`
+	UPDATE ledger_entries
+	SET last_name = CONCAT(first_name,' ',last_name)
+	WHERE first_name != '' AND last_name != ''
+`)
+rename_column("ledger_entries", "last_name", "name")
+drop_column("ledger_entries", "first_name")

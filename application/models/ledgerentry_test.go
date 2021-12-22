@@ -73,8 +73,7 @@ func (ms *ModelSuite) TestLedgerEntries_ToCsv() {
 		EntityCode:       "EntityCode",
 		RiskCategoryName: "Mobile",
 		Type:             LedgerEntryTypeClaim,
-		FirstName:        "FirstName",
-		LastName:         "LastName",
+		Name:             "FirstName LastName",
 		Amount:           100,
 		DateSubmitted:    date,
 		AccountNumber:    "AccountNumber",
@@ -195,7 +194,8 @@ func (ms *ModelSuite) Test_NewLedgerEntry() {
 			ms.Equal(tt.policy.Type, le.PolicyType, "PolicyType is incorrect")
 			if tt.policy.Type == api.PolicyTypeTeam {
 				ms.Equal(tt.policy.Account, le.AccountNumber, "AccountNumber is incorrect")
-				ms.Equal(tt.policy.CostCenter+" / "+tt.policy.AccountDetail, le.CostCenter, "CostCenter is incorrect")
+				ms.Equal(tt.policy.CostCenter+accountSeparator+tt.policy.AccountDetail, le.CostCenter,
+					"CostCenter is incorrect")
 				ms.Equal(tt.policy.EntityCode.Code, le.EntityCode, "EntityCode is incorrect")
 			} else {
 				ms.Equal(tt.policy.HouseholdID.String, le.HouseholdID, "HouseholdID is incorrect")
