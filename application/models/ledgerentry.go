@@ -66,8 +66,7 @@ type LedgerEntry struct {
 	CostCenter       string          `db:"cost_center"`
 	AccountNumber    string          `db:"account_number"`
 	IncomeAccount    string          `db:"income_account"`
-	FirstName        string          `db:"first_name"`
-	LastName         string          `db:"last_name"`
+	Name             string          `db:"name"`
 	Amount           api.Currency    `db:"amount"`
 	DateSubmitted    time.Time       `db:"date_submitted"`
 	DateEntered      nulls.Time      `db:"date_entered"`
@@ -176,7 +175,7 @@ func (le *LedgerEntry) transactionDescription() string {
 
 	description := fmt.Sprintf("%s %s %s", le.RiskCategoryName, le.Type, dateString)
 	if le.PolicyType == api.PolicyTypeHousehold {
-		description = le.FirstName + " " + le.LastName + " " + description
+		description = le.Name + " " + description
 	}
 
 	return description
