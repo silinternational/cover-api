@@ -14,6 +14,8 @@ import (
 	"github.com/silinternational/cover-api/fin"
 )
 
+const accountSeparator = " / "
+
 type LedgerEntryType string
 
 func (t LedgerEntryType) IsClaim() bool {
@@ -169,17 +171,12 @@ func (le *LedgerEntry) Reconcile(ctx context.Context, now time.Time) error {
 	return nil
 }
 
-// TODO: make a better description format unless it has to be the same as before (which I doubt)
 func (le *LedgerEntry) transactionDescription() string {
-	dateString := le.DateSubmitted.Format("Jan 02, 2006")
+	dateString := le.DateSubmitted.Format("01-02-2006")
 
-	description := ""
+	description := fmt.Sprintf("%s %s %s", le.RiskCategoryName, le.Type, dateString)
 	if le.PolicyType == api.PolicyTypeHousehold {
-		description = fmt.Sprintf("%s,%s %s %s %s",
-			le.LastName, le.FirstName, le.RiskCategoryName, le.Type, dateString)
-	} else {
-		description = fmt.Sprintf("%s %s (%s) %s",
-			le.RiskCategoryName, le.Type, le.CostCenter, dateString)
+		description = le.FirstName + " " + le.LastName + " " + description
 	}
 
 	return fmt.Sprintf("%.60s", description) // truncate to Sage limit of 60 characters
@@ -214,7 +211,7 @@ func (le *LedgerEntry) balanceDescription() string {
 func NewLedgerEntry(policy Policy, item *Item, claim *Claim) LedgerEntry {
 	costCenter := ""
 	if policy.Type == api.PolicyTypeTeam {
-		costCenter = policy.CostCenter + " / " + policy.AccountDetail
+		costCenter = policy.CostCenter + accountSeparator + policy.AccountDetail
 	}
 	le := LedgerEntry{
 		PolicyID:      policy.ID,
