@@ -57,7 +57,22 @@ func (c *ClaimItem) Validate(tx *pop.Connection) (*validate.Errors, error) {
 	return validateModel(c), nil
 }
 
-// Create validates and stores the data as a new record in the database, assigning a new ID if needed.
+// CreateWithContext validates and stores the data as a new record in the database, assigning a new ID if needed.
+func (c *ClaimItem) CreateWithContext(ctx context.Context) error {
+	tx := Tx(ctx)
+
+	if err := c.Create(tx); err != nil {
+		return err
+	}
+
+	history := c.NewHistory(ctx, api.HistoryActionCreate, FieldUpdate{})
+	if err := history.Create(tx); err != nil {
+		return appErrorFromDB(err, api.ErrorCreateFailure)
+	}
+	return nil
+}
+
+// Create a ClaimItem but not a history record. Use CreateWithContext if history is needed.
 func (c *ClaimItem) Create(tx *pop.Connection) error {
 	return create(tx, c)
 }

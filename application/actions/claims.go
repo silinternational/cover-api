@@ -444,7 +444,7 @@ func claimsItemsCreate(c buffalo.Context) error {
 	}
 
 	tx := models.Tx(c)
-	claimItem, err := claim.AddItem(tx, input)
+	claimItem, err := claim.AddItem(c, input)
 	if err != nil {
 		return reportError(c, err)
 	}

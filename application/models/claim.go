@@ -129,6 +129,7 @@ func (c *Claim) CreateWithContext(ctx context.Context) error {
 	return nil
 }
 
+// Create a Claim but not a history record. Use CreateWithContext if history is needed.
 func (c *Claim) Create(tx *pop.Connection) error {
 	c.ReferenceNumber = uniqueClaimReferenceNumber(tx)
 	if _, ok := ValidClaimStatus[c.Status]; !ok {
@@ -335,7 +336,8 @@ func isClaimTransitionValid(status1, status2 api.ClaimStatus) (bool, error) {
 	return false, nil
 }
 
-func (c *Claim) AddItem(tx *pop.Connection, input api.ClaimItemCreateInput) (ClaimItem, error) {
+func (c *Claim) AddItem(ctx context.Context, input api.ClaimItemCreateInput) (ClaimItem, error) {
+	tx := Tx(ctx)
 	if c == nil {
 		panic("claim is nil in AddItem")
 	}
@@ -363,7 +365,7 @@ func (c *Claim) AddItem(tx *pop.Connection, input api.ClaimItemCreateInput) (Cla
 		return claimItem, err
 	}
 
-	if err := claimItem.Create(tx); err != nil {
+	if err = claimItem.CreateWithContext(ctx); err != nil {
 		return ClaimItem{}, err
 	}
 
