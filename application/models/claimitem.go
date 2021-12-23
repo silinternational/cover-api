@@ -79,6 +79,13 @@ func (c *ClaimItem) Update(ctx context.Context) error {
 		return err
 	}
 
+	for i := range updates {
+		history := c.NewHistory(ctx, api.HistoryActionUpdate, updates[i])
+		if err = history.Create(tx); err != nil {
+			return appErrorFromDB(err, api.ErrorCreateFailure)
+		}
+	}
+
 	if err = c.revertToDraftIfEdited(ctx, updates); err != nil {
 		return err
 	}
@@ -94,14 +101,7 @@ func (c *ClaimItem) getUpdates(ctx context.Context) ([]FieldUpdate, error) {
 		return []FieldUpdate{}, appErrorFromDB(err, api.ErrorQueryFailure)
 	}
 
-	updates := c.Compare(oldClaimItem)
-	for i := range updates {
-		history := c.NewHistory(ctx, api.HistoryActionUpdate, updates[i])
-		if err := history.Create(tx); err != nil {
-			return updates, appErrorFromDB(err, api.ErrorCreateFailure)
-		}
-	}
-	return updates, nil
+	return c.Compare(oldClaimItem), nil
 }
 
 // If a customer edits something other than ReceiptActual or ReplaceActual, it should take the claim off

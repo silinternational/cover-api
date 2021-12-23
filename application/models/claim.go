@@ -113,8 +113,22 @@ func (c *Claim) Validate(tx *pop.Connection) (*validate.Errors, error) {
 	return validateModel(c), nil
 }
 
-// Create stores the Claim data as a new record in the database.
+// CreateWithContext stores the Claim data as a new record in the database.
 // If its status is not valid, it is created in Draft status.
+func (c *Claim) CreateWithContext(ctx context.Context) error {
+	tx := Tx(ctx)
+
+	if err := c.Create(tx); err != nil {
+		return err
+	}
+
+	history := c.NewHistory(ctx, api.HistoryActionCreate, FieldUpdate{})
+	if err := history.Create(tx); err != nil {
+		return appErrorFromDB(err, api.ErrorCreateFailure)
+	}
+	return nil
+}
+
 func (c *Claim) Create(tx *pop.Connection) error {
 	c.ReferenceNumber = uniqueClaimReferenceNumber(tx)
 	if _, ok := ValidClaimStatus[c.Status]; !ok {

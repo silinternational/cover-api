@@ -495,7 +495,7 @@ func CreatePolicyUserInviteFixtures(tx *pop.Connection, n int) Fixtures {
 }
 
 // MustCreate saves a record to the database with validation. Panics if any error occurs.
-func MustCreate(tx *pop.Connection, f Createable) {
+func MustCreate(tx *pop.Connection, f Creatable) {
 	// Use `create` instead of `tx.Create` to check validation rules
 	err := f.Create(tx)
 	if err != nil {

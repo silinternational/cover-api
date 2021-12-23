@@ -193,7 +193,7 @@ func claimsCreate(c buffalo.Context) error {
 	}
 
 	tx := models.Tx(c)
-	dbClaim, err := policy.AddClaim(tx, input)
+	dbClaim, err := policy.AddClaim(c, input)
 	if err != nil {
 		return reportError(c, err)
 	}

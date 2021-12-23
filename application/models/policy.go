@@ -337,7 +337,7 @@ func (p *Policy) AddDependent(tx *pop.Connection, input api.PolicyDependentInput
 	return dependent, nil
 }
 
-func (p *Policy) AddClaim(tx *pop.Connection, input api.ClaimCreateInput) (Claim, error) {
+func (p *Policy) AddClaim(ctx context.Context, input api.ClaimCreateInput) (Claim, error) {
 	if p == nil {
 		return Claim{}, errors.New("policy is nil in AddClaim")
 	}
@@ -345,7 +345,7 @@ func (p *Policy) AddClaim(tx *pop.Connection, input api.ClaimCreateInput) (Claim
 	claim := ConvertClaimCreateInput(input)
 	claim.PolicyID = p.ID
 
-	if err := claim.Create(tx); err != nil {
+	if err := claim.CreateWithContext(ctx); err != nil {
 		return Claim{}, err
 	}
 
