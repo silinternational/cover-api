@@ -709,7 +709,6 @@ func (i *Item) inactivateEnded(ctx context.Context) error {
 			FieldName: FieldItemCoverageStatus,
 		})
 	history.ItemID = nulls.NewUUID(i.ID)
-	history.UserID = i.Policy.Members[0].ID
 	if err := history.Create(tx); err != nil {
 		return err
 	}

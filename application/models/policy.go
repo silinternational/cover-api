@@ -50,7 +50,22 @@ func (p *Policy) Validate(tx *pop.Connection) (*validate.Errors, error) {
 	return validateModel(p), nil
 }
 
-// Create stores the Policy data as a new record in the database.
+// CreateWithContext stores the Policy data as a new record in the database.
+func (p *Policy) CreateWithContext(ctx context.Context) error {
+	tx := Tx(ctx)
+
+	if err := p.Create(tx); err != nil {
+		return err
+	}
+
+	history := p.NewHistory(ctx, api.HistoryActionCreate, FieldUpdate{})
+	if err := history.Create(tx); err != nil {
+		return err
+	}
+	return nil
+}
+
+// Create a Policy but not a history record. Use CreateWithContext if history is needed.
 func (p *Policy) Create(tx *pop.Connection) error {
 	return create(tx, p)
 }
@@ -76,11 +91,14 @@ func (p *Policy) Update(ctx context.Context) error {
 
 // CreateTeam creates a new Team type policy for the user.
 //   The EntityCodeID, CostCenter and Account must have non-blank values
-func (p *Policy) CreateTeam(tx *pop.Connection, actor User) error {
+func (p *Policy) CreateTeam(ctx context.Context) error {
+	tx := Tx(ctx)
+	actor := CurrentUser(ctx)
+
 	p.Type = api.PolicyTypeTeam
 	p.Email = actor.EmailOfChoice()
 
-	if err := p.Create(tx); err != nil {
+	if err := p.CreateWithContext(ctx); err != nil {
 		return err
 	}
 

@@ -647,10 +647,7 @@ func (ms *ModelSuite) TestItem_InactivateApprovedButEnded() {
 	fixtures := CreateItemFixtures(ms.DB, fixConfig)
 	policy := fixtures.Policies[0]
 	policy.LoadItems(ms.DB, false)
-	user := User{}
 	items := policy.Items
-
-	ctx := CreateTestContext(user)
 
 	now := time.Now().UTC()
 	oldTime := now.Add(time.Hour * -25)
@@ -668,6 +665,7 @@ func (ms *ModelSuite) TestItem_InactivateApprovedButEnded() {
 	newDraftItem := UpdateItemStatus(ms.DB, items[3], api.ItemCoverageStatusDraft, "")
 
 	var i Items
+	ctx := CreateTestContext(fixtures.Users[0])
 	ms.NoError(i.InactivateApprovedButEnded(ctx))
 
 	ms.NoError(pastDue.FindByID(ms.DB, pastDue.ID), "error fetching pastDue item")
