@@ -38,9 +38,9 @@ type Policy struct {
 	CreatedAt     time.Time      `db:"created_at"`
 	UpdatedAt     time.Time      `db:"updated_at"`
 
-	Claims     Claims           `has_many:"claims" validate:"-"`
-	Dependents PolicyDependents `has_many:"policy_dependents" validate:"-"`
-	Items      Items            `has_many:"items" validate:"-"`
+	Claims     Claims           `has_many:"claims" validate:"-" order_by:"incident_date desc"`
+	Dependents PolicyDependents `has_many:"policy_dependents" validate:"-" order_by:"name"`
+	Items      Items            `has_many:"items" validate:"-" order_by:"coverage_status asc,updated_at desc"`
 	Members    Users            `many_to_many:"policy_users" validate:"-"`
 	EntityCode EntityCode       `belongs_to:"entity_codes" validate:"-"`
 }
