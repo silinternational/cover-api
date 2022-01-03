@@ -1216,7 +1216,7 @@ func (ms *ModelSuite) TestItem_ConvertToAPI() {
 func (ms *ModelSuite) TestItem_canBeUpdated() {
 	fixtures := CreateItemFixtures(ms.DB, FixturesConfig{ClaimsPerPolicy: 2, ClaimItemsPerClaim: 1})
 
-	// both claims are on Policy[0].Items[0] since ClaimItemsPerClaim = 1
+	// both claims are on Policies[0].Items[0] since ClaimItemsPerClaim = 1
 	safeItem := fixtures.Policies[0].Items[1]
 
 	unsafeClaim := UpdateClaimStatus(ms.DB, fixtures.Claims[1], api.ClaimStatusReview1, "some reason")
