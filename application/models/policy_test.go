@@ -641,7 +641,7 @@ func (ms *ModelSuite) TestPolicies_Query() {
 			var policies Policies
 
 			values, _ := url.ParseQuery(tt.query)
-			query := api.NewQuery(buffalo.ParamValues(values))
+			query := api.NewQueryParams(buffalo.ParamValues(values))
 
 			err := policies.Query(ms.DB, query)
 			ms.NoError(err)

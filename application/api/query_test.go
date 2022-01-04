@@ -44,7 +44,7 @@ func (ts *TestSuite) TestNewQuery() {
 		ts.T().Run(tt.name, func(t *testing.T) {
 			values, _ := url.ParseQuery(tt.qs)
 
-			got := NewQuery(buffalo.ParamValues(values))
+			got := NewQueryParams(buffalo.ParamValues(values))
 			ts.Equal(tt.wantLimit, got.Limit(), "limit is incorrect")
 			ts.Equal(tt.wantFilterActive, got.Filter("active"), "filter active is incorrect")
 		})
