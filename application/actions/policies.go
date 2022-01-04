@@ -128,7 +128,6 @@ func policiesCreateTeam(c buffalo.Context) error {
 	}
 
 	tx := models.Tx(c)
-	user := models.CurrentUser(c)
 
 	policy := models.Policy{
 		Name:          input.Name,
@@ -138,7 +137,7 @@ func policiesCreateTeam(c buffalo.Context) error {
 		EntityCodeID:  models.EntityCodeID(input.EntityCode),
 	}
 
-	if err := policy.CreateTeam(tx, user); err != nil {
+	if err := policy.CreateTeam(c); err != nil {
 		return reportError(c, err)
 	}
 

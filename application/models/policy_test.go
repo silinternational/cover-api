@@ -212,7 +212,8 @@ func (ms *ModelSuite) TestPolicy_CreateTeam() {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := tt.policy.CreateTeam(ms.DB, tt.user)
+			context := CreateTestContext(tt.user)
+			err := tt.policy.CreateTeam(context)
 			if tt.wantErr {
 				ms.Error(err)
 				return

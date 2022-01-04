@@ -113,8 +113,23 @@ func (c *Claim) Validate(tx *pop.Connection) (*validate.Errors, error) {
 	return validateModel(c), nil
 }
 
-// Create stores the Claim data as a new record in the database.
+// CreateWithContext stores the Claim data as a new record in the database.
 // If its status is not valid, it is created in Draft status.
+func (c *Claim) CreateWithContext(ctx context.Context) error {
+	tx := Tx(ctx)
+
+	if err := c.Create(tx); err != nil {
+		return err
+	}
+
+	history := c.NewHistory(ctx, api.HistoryActionCreate, FieldUpdate{})
+	if err := history.Create(tx); err != nil {
+		return appErrorFromDB(err, api.ErrorCreateFailure)
+	}
+	return nil
+}
+
+// Create a Claim but not a history record. Use CreateWithContext if history is needed.
 func (c *Claim) Create(tx *pop.Connection) error {
 	c.ReferenceNumber = uniqueClaimReferenceNumber(tx)
 	if _, ok := ValidClaimStatus[c.Status]; !ok {
@@ -321,7 +336,8 @@ func isClaimTransitionValid(status1, status2 api.ClaimStatus) (bool, error) {
 	return false, nil
 }
 
-func (c *Claim) AddItem(tx *pop.Connection, input api.ClaimItemCreateInput) (ClaimItem, error) {
+func (c *Claim) AddItem(ctx context.Context, input api.ClaimItemCreateInput) (ClaimItem, error) {
+	tx := Tx(ctx)
 	if c == nil {
 		panic("claim is nil in AddItem")
 	}
@@ -349,7 +365,7 @@ func (c *Claim) AddItem(tx *pop.Connection, input api.ClaimItemCreateInput) (Cla
 		return claimItem, err
 	}
 
-	if err := claimItem.Create(tx); err != nil {
+	if err = claimItem.CreateWithContext(ctx); err != nil {
 		return ClaimItem{}, err
 	}
 
