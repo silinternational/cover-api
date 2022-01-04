@@ -33,7 +33,7 @@ type ListResponse struct {
 
 // TODO: implement Meta type to provide pagination properties
 type Meta struct {
-	Paginator *pop.Paginator
+	*pop.Paginator
 }
 
 type ErrorKey string
