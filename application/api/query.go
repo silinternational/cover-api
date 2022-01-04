@@ -7,8 +7,8 @@ import (
 	"github.com/gobuffalo/buffalo"
 )
 
-// Query contains criteria to limit the results of List endpoints
-type Query struct {
+// QueryParams contains criteria to limit the results of List endpoints
+type QueryParams struct {
 	// filterKeys is a map of field name to filter text.
 	filterKeys map[string]string
 
@@ -17,34 +17,34 @@ type Query struct {
 
 	// recordLimit sets the number of records returned in a single page. Minimum is 1, maximum is 50
 	recordLimit int
+
+	// page sets the pagination slice for the query
+	page int
 }
 
-func (q Query) Limit() int {
-	l := q.recordLimit
-	if l < 1 {
-		l = 1
-	}
-	if l > 50 {
-		l = 50
-	}
+func (q QueryParams) Limit() int {
 	return q.recordLimit
 }
 
-func (q Query) Filter(key string) string {
+func (q QueryParams) Page() int {
+	return q.page
+}
+
+func (q QueryParams) Filter(key string) string {
 	return q.filterKeys[key]
 }
 
-func (q Query) Search() string {
+func (q QueryParams) Search() string {
 	return q.searchText
 }
 
-// NewQuery parses query string parameter values into valid query criteria.
+// NewQueryParams parses query string parameter values into valid query criteria.
 //
 // Example:
 //   "filter=name:John,description:MacBook" becomes Query{filterKeys:
 //   map[string]string{"name":"John","description":"MacBook"}}
-func NewQuery(values buffalo.ParamValues) Query {
-	q := Query{recordLimit: 10, filterKeys: map[string]string{}}
+func NewQueryParams(values buffalo.ParamValues) QueryParams {
+	q := QueryParams{recordLimit: 10, page: 1, filterKeys: map[string]string{}}
 
 	q.searchText = values.Get("search")
 
@@ -60,8 +60,15 @@ func NewQuery(values buffalo.ParamValues) Query {
 
 	if limit := values.Get("limit"); limit != "" {
 		i, err := strconv.Atoi(strings.TrimSpace(limit))
-		if err == nil {
+		if err == nil && i > 0 {
 			q.recordLimit = i
+		}
+	}
+
+	if page := values.Get("page"); page != "" {
+		i, err := strconv.Atoi(strings.TrimSpace(page))
+		if err == nil && i > 0 {
+			q.page = i
 		}
 	}
 

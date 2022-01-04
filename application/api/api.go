@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/gobuffalo/buffalo"
+	"github.com/gobuffalo/pop/v5"
 
 	"github.com/silinternational/cover-api/domain"
 )
@@ -31,7 +32,9 @@ type ListResponse struct {
 }
 
 // TODO: implement Meta type to provide pagination properties
-type Meta struct{}
+type Meta struct {
+	*pop.Paginator
+}
 
 type ErrorKey string
 
