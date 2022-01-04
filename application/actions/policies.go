@@ -57,15 +57,15 @@ func policiesListAdmin(c buffalo.Context) error {
 	tx := models.Tx(c)
 	var policies models.Policies
 
-	p := api.NewQueryParams(c.Params())
-	q, err := policies.Query(tx, p)
+	qp := api.NewQueryParams(c.Params())
+	p, err := policies.Query(tx, qp)
 	if err != nil {
 		return reportError(c, err)
 	}
 
 	response := api.ListResponse{
 		Data: policies.ConvertToAPI(tx),
-		Meta: api.Meta{Paginator: q.Paginator},
+		Meta: api.Meta{Paginator: p},
 	}
 
 	return renderOk(c, response)

@@ -23,21 +23,10 @@ type QueryParams struct {
 }
 
 func (q QueryParams) Limit() int {
-	l := q.recordLimit
-	if l < 1 {
-		l = 1
-	}
-	if l > 50 {
-		l = 50
-	}
 	return q.recordLimit
 }
 
 func (q QueryParams) Page() int {
-	p := q.page
-	if p < 1 {
-		p = 1
-	}
 	return q.page
 }
 
@@ -55,7 +44,7 @@ func (q QueryParams) Search() string {
 //   "filter=name:John,description:MacBook" becomes Query{filterKeys:
 //   map[string]string{"name":"John","description":"MacBook"}}
 func NewQueryParams(values buffalo.ParamValues) QueryParams {
-	q := QueryParams{recordLimit: 10, filterKeys: map[string]string{}}
+	q := QueryParams{recordLimit: 10, page: 1, filterKeys: map[string]string{}}
 
 	q.searchText = values.Get("search")
 
@@ -71,14 +60,14 @@ func NewQueryParams(values buffalo.ParamValues) QueryParams {
 
 	if limit := values.Get("limit"); limit != "" {
 		i, err := strconv.Atoi(strings.TrimSpace(limit))
-		if err == nil {
+		if err == nil && i > 0 {
 			q.recordLimit = i
 		}
 	}
 
 	if page := values.Get("page"); page != "" {
 		i, err := strconv.Atoi(strings.TrimSpace(page))
-		if err == nil {
+		if err == nil && i > 0 {
 			q.page = i
 		}
 	}

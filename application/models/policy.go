@@ -262,14 +262,10 @@ func (p *Policies) All(tx *pop.Connection) error {
 	return appErrorFromDB(tx.All(p), api.ErrorQueryFailure)
 }
 
-func (p *Policies) Query(tx *pop.Connection, params api.QueryParams) (*pop.Query, error) {
+func (p *Policies) Query(tx *pop.Connection, params api.QueryParams) (*pop.Paginator, error) {
 	q := tx.Order("updated_at DESC")
 
-	if params.Limit() > 0 && params.Page() > 0 {
-		q.Paginate(params.Page(), params.Limit())
-	} else if params.Limit() > 0 {
-		q.Limit(params.Limit())
-	}
+	q.Paginate(params.Page(), params.Limit())
 
 	if v := params.Search(); v != "" {
 		q.Scope(scopeSearchPolicies(v))
@@ -279,7 +275,7 @@ func (p *Policies) Query(tx *pop.Connection, params api.QueryParams) (*pop.Query
 		q.Scope(scopeFilterPoliciesByActive(v))
 	}
 
-	return q, appErrorFromDB(q.All(p), api.ErrorQueryFailure)
+	return q.Paginator, appErrorFromDB(q.All(p), api.ErrorQueryFailure)
 }
 
 func scopeSearchPolicies(searchText string) pop.ScopeFunc {

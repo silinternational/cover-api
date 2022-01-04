@@ -12,6 +12,7 @@ func (ts *TestSuite) TestNewQuery() {
 		name             string
 		qs               string
 		wantLimit        int
+		wantPage         int
 		wantFilterActive string
 		wantSearchText   string
 	}{
@@ -19,24 +20,42 @@ func (ts *TestSuite) TestNewQuery() {
 			name:             "default",
 			qs:               "",
 			wantLimit:        10,
+			wantPage:         1,
 			wantFilterActive: "",
 		},
 		{
 			name:             "limit and active:true",
 			qs:               "limit=2&filter=active:true",
 			wantLimit:        2,
+			wantPage:         1,
 			wantFilterActive: "true",
 		},
 		{
 			name:           "search",
 			qs:             "search=john",
 			wantLimit:      10,
+			wantPage:       1,
 			wantSearchText: "john",
+		},
+		{
+			name:           "search",
+			qs:             "page=5",
+			wantLimit:      10,
+			wantPage:       5,
+			wantSearchText: "",
+		},
+		{
+			name:           "search",
+			qs:             "page=-5",
+			wantLimit:      10,
+			wantPage:       1,
+			wantSearchText: "",
 		},
 		{
 			name:             "spaces",
 			qs:               "limit= 2 &filter= active : true ",
 			wantLimit:        2,
+			wantPage:         1,
 			wantFilterActive: "true",
 		},
 	}
@@ -46,6 +65,7 @@ func (ts *TestSuite) TestNewQuery() {
 
 			got := NewQueryParams(buffalo.ParamValues(values))
 			ts.Equal(tt.wantLimit, got.Limit(), "limit is incorrect")
+			ts.Equal(tt.wantPage, got.Page(), "page is incorrect")
 			ts.Equal(tt.wantFilterActive, got.Filter("active"), "filter active is incorrect")
 		})
 	}
