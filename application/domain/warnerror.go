@@ -1,15 +1,14 @@
 package domain
 
 import (
-	"context"
 	"encoding/json"
 
 	"github.com/gobuffalo/buffalo"
 	"github.com/rollbar/rollbar-go"
 )
 
-// Error log error and send to Rollbar
-func Error(c buffalo.Context, msg string, extras ...map[string]interface{}) {
+// LogErrorMessage logs a message and sends it to Rollbar
+func LogErrorMessage(c buffalo.Context, msg string, level string, extras ...map[string]interface{}) {
 	// Avoid panics running tests when c doesn't have the necessary nested methods
 	logger := c.Logger()
 	if logger == nil {
@@ -21,53 +20,9 @@ func Error(c buffalo.Context, msg string, extras ...map[string]interface{}) {
 		es = map[string]interface{}{}
 	}
 
-	rollbarMessage(c, rollbar.ERR, msg, es)
+	rollbarMessage(c, level, msg, es)
 
-	es["message"] = msg
-
-	encoder := jsonMin
-	if Env.GoEnv == "development" {
-		encoder = jsonIndented
-	}
-
-	j, err := encoder(&es)
-	if err != nil {
-		logger.Error("failed to json encode error message: %s", err)
-		return
-	}
-
-	logger.Error(string(j))
-}
-
-// Warn sends a message to Rollbar and to the local logger, including
-// any extras found in the context.
-func Warn(ctx context.Context, msg string) {
-	bc := getBuffaloContext(ctx)
-
-	extras := getExtras(bc)
-	extrasLock.RLock()
-	defer extrasLock.RUnlock()
-
-	rollbarMessage(bc, rollbar.WARN, msg, extras)
-
-	logger := bc.Logger()
-	if logger != nil {
-		logger.Warn(encodeLogMsg(msg, extras))
-	}
-}
-
-// Info sends a message to the local logger, including any extras found in the context.
-func Info(ctx context.Context, msg string) {
-	bc := getBuffaloContext(ctx)
-
-	extras := getExtras(bc)
-	extrasLock.RLock()
-	defer extrasLock.RUnlock()
-
-	logger := bc.Logger()
-	if logger != nil {
-		logger.Info(encodeLogMsg(msg, extras))
-	}
+	logger.Error(encodeLogMsg(msg, es))
 }
 
 func jsonMin(i interface{}) ([]byte, error) {
@@ -78,6 +33,7 @@ func jsonIndented(i interface{}) ([]byte, error) {
 	return json.MarshalIndent(i, "", "  ")
 }
 
+// encodeLogMsg adds the message as an "extra" and returns a json-encoded copy of the resulting extras map
 func encodeLogMsg(msg string, extras map[string]interface{}) string {
 	encoder := jsonMin
 	if Env.GoEnv == "development" {

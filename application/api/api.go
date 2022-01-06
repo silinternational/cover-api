@@ -171,27 +171,6 @@ func keyToReadableString(key string) string {
 	return strings.Join(newWords, " ")
 }
 
-// MergeExtras returns a single map with the all the key-values pairs of the input map
-//  Key-value pairs in later maps will overwrite matching ones from earlier maps
-func MergeExtras(extras []map[string]interface{}) map[string]interface{} {
-	allExtras := map[string]interface{}{}
-
-	// I didn't think I would need this, but without it at least one test was failing
-	// The code allowed a map[string]interface{} to get through (i.e. not in a slice)
-	// without the compiler complaining
-	if len(extras) == 1 {
-		return extras[0]
-	}
-
-	for _, e := range extras {
-		for k, v := range e {
-			allExtras[k] = v
-		}
-	}
-
-	return allExtras
-}
-
 // Currency is in US Dollars, specified as an integer representing cents ($0.01 USD is represented as 1 and $105.36 as 10536)
 // swagger:model
 type Currency int
