@@ -75,7 +75,7 @@ func inactivateItemsHandler(args worker.Args) error {
 
 	ctx := createJobContext()
 
-	domain.ErrLogger.Printf("starting inactivateItems job")
+	domain.Logger.Printf("starting inactivateItems job")
 	nw := time.Now().UTC()
 
 	var items models.Items
@@ -83,7 +83,7 @@ func inactivateItemsHandler(args worker.Args) error {
 		return err
 	}
 
-	domain.ErrLogger.Printf("completed inactivateItems job in %v seconds", time.Since(nw).Seconds())
+	domain.Logger.Printf("completed inactivateItems job in %v seconds", time.Since(nw).Seconds())
 	return nil
 }
 
