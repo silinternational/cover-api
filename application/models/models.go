@@ -114,7 +114,7 @@ type Authable interface {
 	IsActorAllowedTo(*pop.Connection, User, Permission, SubResource, *http.Request) bool
 }
 
-type Createable interface {
+type Creatable interface {
 	Create(*pop.Connection) error
 }
 
@@ -213,7 +213,6 @@ func getRandomToken() (string, error) {
 // CurrentUser retrieves the current user from the context.
 func CurrentUser(ctx context.Context) User {
 	user, _ := ctx.Value(domain.ContextKeyCurrentUser).(User)
-	domain.NewExtra(ctx, "user_id", user.ID)
 	return user
 }
 

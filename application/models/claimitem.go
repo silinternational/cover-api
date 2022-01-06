@@ -57,7 +57,22 @@ func (c *ClaimItem) Validate(tx *pop.Connection) (*validate.Errors, error) {
 	return validateModel(c), nil
 }
 
-// Create validates and stores the data as a new record in the database, assigning a new ID if needed.
+// CreateWithContext validates and stores the data as a new record in the database, assigning a new ID if needed.
+func (c *ClaimItem) CreateWithContext(ctx context.Context) error {
+	tx := Tx(ctx)
+
+	if err := c.Create(tx); err != nil {
+		return err
+	}
+
+	history := c.NewHistory(ctx, api.HistoryActionCreate, FieldUpdate{})
+	if err := history.Create(tx); err != nil {
+		return appErrorFromDB(err, api.ErrorCreateFailure)
+	}
+	return nil
+}
+
+// Create a ClaimItem but not a history record. Use CreateWithContext if history is needed.
 func (c *ClaimItem) Create(tx *pop.Connection) error {
 	return create(tx, c)
 }
@@ -79,6 +94,13 @@ func (c *ClaimItem) Update(ctx context.Context) error {
 		return err
 	}
 
+	for i := range updates {
+		history := c.NewHistory(ctx, api.HistoryActionUpdate, updates[i])
+		if err = history.Create(tx); err != nil {
+			return appErrorFromDB(err, api.ErrorCreateFailure)
+		}
+	}
+
 	if err = c.revertToDraftIfEdited(ctx, updates); err != nil {
 		return err
 	}
@@ -94,14 +116,7 @@ func (c *ClaimItem) getUpdates(ctx context.Context) ([]FieldUpdate, error) {
 		return []FieldUpdate{}, appErrorFromDB(err, api.ErrorQueryFailure)
 	}
 
-	updates := c.Compare(oldClaimItem)
-	for i := range updates {
-		history := c.NewHistory(ctx, api.HistoryActionUpdate, updates[i])
-		if err := history.Create(tx); err != nil {
-			return updates, appErrorFromDB(err, api.ErrorCreateFailure)
-		}
-	}
-	return updates, nil
+	return c.Compare(oldClaimItem), nil
 }
 
 // If a customer edits something other than ReceiptActual or ReplaceActual, it should take the claim off

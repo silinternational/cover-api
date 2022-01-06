@@ -212,7 +212,8 @@ func (ms *ModelSuite) TestPolicy_CreateTeam() {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := tt.policy.CreateTeam(ms.DB, tt.user)
+			context := CreateTestContext(tt.user)
+			err := tt.policy.CreateTeam(context)
 			if tt.wantErr {
 				ms.Error(err)
 				return
@@ -641,11 +642,13 @@ func (ms *ModelSuite) TestPolicies_Query() {
 			var policies Policies
 
 			values, _ := url.ParseQuery(tt.query)
-			query := api.NewQuery(buffalo.ParamValues(values))
+			query := api.NewQueryParams(buffalo.ParamValues(values))
 
-			err := policies.Query(ms.DB, query)
+			p, err := policies.Query(ms.DB, query)
 			ms.NoError(err)
 			ms.Equal(tt.wantNumberOfPolicies, len(policies), "got wrong number of policies")
+			ms.NotNil(p, "should be a value")
+			ms.Equal(p.Page, 1, "should default to page 1")
 		})
 	}
 }

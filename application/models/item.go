@@ -70,6 +70,20 @@ func (i *Item) Validate(tx *pop.Connection) (*validate.Errors, error) {
 	return validateModel(i), nil
 }
 
+func (i *Item) CreateWithContext(ctx context.Context) error {
+	tx := Tx(ctx)
+
+	if err := i.Create(tx); err != nil {
+		return err
+	}
+
+	history := i.NewHistory(ctx, api.HistoryActionCreate, FieldUpdate{})
+	if err := history.Create(tx); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (i *Item) Create(tx *pop.Connection) error {
 	if _, ok := ValidItemCoverageStatuses[i.CoverageStatus]; !ok {
 		i.CoverageStatus = api.ItemCoverageStatusDraft
@@ -100,11 +114,9 @@ func (i *Item) Update(ctx context.Context) error {
 		return api.NewAppError(err, api.ErrorItemHasActiveClaim, api.CategoryUser)
 	}
 
-	i.LoadPolicy(tx, false)
-
 	updates := i.Compare(oldItem)
 	for ii := range updates {
-		history := i.Policy.NewHistory(ctx, api.HistoryActionUpdate, updates[ii])
+		history := i.NewHistory(ctx, api.HistoryActionUpdate, updates[ii])
 		history.ItemID = nulls.NewUUID(i.ID)
 		if err := history.Create(tx); err != nil {
 			return err
@@ -699,9 +711,7 @@ func (i *Item) inactivateEnded(ctx context.Context) error {
 		return api.NewAppError(err, api.ErrorItemHasActiveClaim, api.CategoryUser)
 	}
 
-	i.LoadPolicyMembers(tx, false)
-
-	history := i.Policy.NewHistory(ctx,
+	history := i.NewHistory(ctx,
 		api.HistoryActionUpdate,
 		FieldUpdate{
 			OldValue:  string(i.CoverageStatus),
@@ -709,7 +719,6 @@ func (i *Item) inactivateEnded(ctx context.Context) error {
 			FieldName: FieldItemCoverageStatus,
 		})
 	history.ItemID = nulls.NewUUID(i.ID)
-	history.UserID = i.Policy.Members[0].ID
 	if err := history.Create(tx); err != nil {
 		return err
 	}
@@ -1050,4 +1059,16 @@ func ItemsWithRecentStatusChanges(tx *pop.Connection) (api.RecentItems, error) {
 	}
 
 	return items, nil
+}
+
+func (i *Item) NewHistory(ctx context.Context, action string, fieldUpdate FieldUpdate) PolicyHistory {
+	return PolicyHistory{
+		Action:    action,
+		PolicyID:  i.PolicyID,
+		ItemID:    nulls.NewUUID(i.ID),
+		UserID:    CurrentUser(ctx).ID,
+		FieldName: fieldUpdate.FieldName,
+		OldValue:  fmt.Sprintf("%s", fieldUpdate.OldValue),
+		NewValue:  fmt.Sprintf("%s", fieldUpdate.NewValue),
+	}
 }

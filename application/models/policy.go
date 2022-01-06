@@ -38,9 +38,9 @@ type Policy struct {
 	CreatedAt     time.Time      `db:"created_at"`
 	UpdatedAt     time.Time      `db:"updated_at"`
 
-	Claims     Claims           `has_many:"claims" validate:"-"`
-	Dependents PolicyDependents `has_many:"policy_dependents" validate:"-"`
-	Items      Items            `has_many:"items" validate:"-"`
+	Claims     Claims           `has_many:"claims" validate:"-" order_by:"incident_date desc"`
+	Dependents PolicyDependents `has_many:"policy_dependents" validate:"-" order_by:"name"`
+	Items      Items            `has_many:"items" validate:"-" order_by:"coverage_status asc,updated_at desc"`
 	Members    Users            `many_to_many:"policy_users" validate:"-"`
 	EntityCode EntityCode       `belongs_to:"entity_codes" validate:"-"`
 }
@@ -50,7 +50,22 @@ func (p *Policy) Validate(tx *pop.Connection) (*validate.Errors, error) {
 	return validateModel(p), nil
 }
 
-// Create stores the Policy data as a new record in the database.
+// CreateWithContext stores the Policy data as a new record in the database.
+func (p *Policy) CreateWithContext(ctx context.Context) error {
+	tx := Tx(ctx)
+
+	if err := p.Create(tx); err != nil {
+		return err
+	}
+
+	history := p.NewHistory(ctx, api.HistoryActionCreate, FieldUpdate{})
+	if err := history.Create(tx); err != nil {
+		return err
+	}
+	return nil
+}
+
+// Create a Policy but not a history record. Use CreateWithContext if history is needed.
 func (p *Policy) Create(tx *pop.Connection) error {
 	return create(tx, p)
 }
@@ -76,11 +91,14 @@ func (p *Policy) Update(ctx context.Context) error {
 
 // CreateTeam creates a new Team type policy for the user.
 //   The EntityCodeID, CostCenter and Account must have non-blank values
-func (p *Policy) CreateTeam(tx *pop.Connection, actor User) error {
+func (p *Policy) CreateTeam(ctx context.Context) error {
+	tx := Tx(ctx)
+	actor := CurrentUser(ctx)
+
 	p.Type = api.PolicyTypeTeam
 	p.Email = actor.EmailOfChoice()
 
-	if err := p.Create(tx); err != nil {
+	if err := p.CreateWithContext(ctx); err != nil {
 		return err
 	}
 
@@ -262,22 +280,20 @@ func (p *Policies) All(tx *pop.Connection) error {
 	return appErrorFromDB(tx.All(p), api.ErrorQueryFailure)
 }
 
-func (p *Policies) Query(tx *pop.Connection, query api.Query) error {
+func (p *Policies) Query(tx *pop.Connection, params api.QueryParams) (*pop.Paginator, error) {
 	q := tx.Order("updated_at DESC")
 
-	if query.Limit() > 0 {
-		q.Limit(query.Limit())
-	}
+	q.Paginate(params.Page(), params.Limit())
 
-	if v := query.Search(); v != "" {
+	if v := params.Search(); v != "" {
 		q.Scope(scopeSearchPolicies(v))
 	}
 
-	if v := query.Filter("active"); v != "" {
+	if v := params.Filter("active"); v != "" {
 		q.Scope(scopeFilterPoliciesByActive(v))
 	}
 
-	return appErrorFromDB(q.All(p), api.ErrorQueryFailure)
+	return q.Paginator, appErrorFromDB(q.All(p), api.ErrorQueryFailure)
 }
 
 func scopeSearchPolicies(searchText string) pop.ScopeFunc {
@@ -337,7 +353,7 @@ func (p *Policy) AddDependent(tx *pop.Connection, input api.PolicyDependentInput
 	return dependent, nil
 }
 
-func (p *Policy) AddClaim(tx *pop.Connection, input api.ClaimCreateInput) (Claim, error) {
+func (p *Policy) AddClaim(ctx context.Context, input api.ClaimCreateInput) (Claim, error) {
 	if p == nil {
 		return Claim{}, errors.New("policy is nil in AddClaim")
 	}
@@ -345,7 +361,7 @@ func (p *Policy) AddClaim(tx *pop.Connection, input api.ClaimCreateInput) (Claim
 	claim := ConvertClaimCreateInput(input)
 	claim.PolicyID = p.ID
 
-	if err := claim.Create(tx); err != nil {
+	if err := claim.CreateWithContext(ctx); err != nil {
 		return Claim{}, err
 	}
 
