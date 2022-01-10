@@ -10,6 +10,7 @@ import (
 	"github.com/gobuffalo/buffalo"
 	"github.com/gobuffalo/buffalo/render"
 	"github.com/gofrs/uuid"
+	"github.com/rollbar/rollbar-go"
 
 	"github.com/silinternational/cover-api/api"
 	"github.com/silinternational/cover-api/domain"
@@ -58,7 +59,13 @@ func reportError(c buffalo.Context, err error) error {
 	appErr.Extras["method"] = c.Request().Method
 	appErr.Extras["URI"] = c.Request().RequestURI
 	appErr.Extras["IP"] = c.Request().RemoteAddr
-	domain.Error(c, appErr.Error(), appErr.Extras)
+
+	level := rollbar.ERR
+	switch appErr.Category {
+	case api.CategoryUnauthorized, api.CategoryUser:
+		level = rollbar.WARN
+	}
+	domain.LogErrorMessage(c, appErr.Error(), level, appErr.Extras)
 
 	appErr.LoadTranslatedMessage(c)
 
