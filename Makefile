@@ -63,8 +63,3 @@ clean:
 	rm -f application/migrations/schema.sql
 
 fresh: clean dev
-
-import:
-	docker-compose kill db && docker-compose rm -f db && docker-compose up -d db
-	docker-compose exec buffalo bash -c "whenavail db 5432 10 buffalo pop migrate"
-	docker-compose exec buffalo grift db:import
