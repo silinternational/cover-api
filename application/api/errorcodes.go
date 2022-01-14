@@ -76,13 +76,14 @@ const (
 	ErrorItemInvalidEndDate = ErrorKey("ErrorItemInvalidEndDate")
 
 	// Policy
-	ErrorPolicyFromContext               = ErrorKey("ErrorPolicyFromContext")
-	ErrorPolicyNotFound                  = ErrorKey("ErrorPolicyNotFound")
-	ErrorPolicyLoadingItems              = ErrorKey("ErrorPolicyLoadingItems")
-	ErrorPolicyUpdateInvalidInput        = ErrorKey("ErrorPolicyUpdateInvalidInput")
-	ErrorPolicyInviteAlreadyHasHousehold = ErrorKey("ErrorPolicyInviteAlreadyHasHousehold")
-	ErrorPolicyUserInviteCode            = ErrorKey("ErrorPolicyUserInviteCode")
-	ErrorPolicyHasNoHouseholdID          = ErrorKey("ErrorPolicyHasNoHouseholdID")
+	ErrorPolicyFromContext                    = ErrorKey("ErrorPolicyFromContext")
+	ErrorPolicyNotFound                       = ErrorKey("ErrorPolicyNotFound")
+	ErrorPolicyLoadingItems                   = ErrorKey("ErrorPolicyLoadingItems")
+	ErrorPolicyUpdateInvalidInput             = ErrorKey("ErrorPolicyUpdateInvalidInput")
+	ErrorPolicyInviteAlreadyHasHousehold      = ErrorKey("ErrorPolicyInviteAlreadyHasHousehold")
+	ErrorPolicyUserInviteCode                 = ErrorKey("ErrorPolicyUserInviteCode")
+	ErrorPolicyUserInviteDifferentHouseholdID = ErrorKey("ErrorPolicyUserInviteDifferentHouseholdID")
+	ErrorPolicyHasNoHouseholdID               = ErrorKey("ErrorPolicyHasNoHouseholdID")
 
 	// PolicyDependent
 	ErrorPolicyDependentCreate = ErrorKey("ErrorPolicyDependentCreate")

@@ -129,6 +129,13 @@ func (i *PolicyUserInvite) Accept(tx *pop.Connection, code string, user User) er
 
 	i.LoadPolicy(tx, true)
 
+	if i.Policy.HouseholdID.Valid && user.StaffID.Valid {
+		householdID := GetHHID(user.StaffID.String)
+		if householdID != i.Policy.HouseholdID.String {
+			return api.NewAppError(err, api.ErrorPolicyUserInviteDifferentHouseholdID, api.CategoryUser)
+		}
+	}
+
 	policyUser := PolicyUser{
 		PolicyID: i.PolicyID,
 		UserID:   user.ID,
