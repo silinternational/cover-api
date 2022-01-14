@@ -486,13 +486,18 @@ func (as *ActionSuite) Test_PoliciesListMembers() {
 
 func (as *ActionSuite) Test_PoliciesInviteMember() {
 	fixConfig := models.FixturesConfig{
-		NumberOfPolicies: 2,
-		UsersPerPolicy:   1,
+		NumberOfEntityCodes: 2,
+		NumberOfPolicies:    2,
+		UsersPerPolicy:      1,
 	}
 
-	fixtures := models.CreatePolicyFixtures(as.DB, fixConfig)
-	policy0member0 := fixtures.Policies[0].Members[0]
-	policy1member0 := fixtures.Policies[1].Members[0]
+	teamPolicies := models.CreateTeamPolicyFixtures(as.DB, fixConfig).Policies
+	team0member0 := teamPolicies[0].Members[0]
+	team1member0 := teamPolicies[1].Members[0]
+
+	housePolicies := models.CreatePolicyFixtures(as.DB, fixConfig).Policies
+	house0member0 := housePolicies[0].Members[0]
+	house1member0 := housePolicies[1].Members[0]
 
 	tests := []struct {
 		name               string
@@ -504,27 +509,52 @@ func (as *ActionSuite) Test_PoliciesInviteMember() {
 		wantEventTriggered bool
 	}{
 		{
-			name:               "existing policy member, no event",
-			policyID:           fixtures.Policies[0].ID,
-			actor:              policy0member0,
-			inviteeEmail:       policy0member0.Email,
+			name:               "existing team policy member, no event",
+			policyID:           teamPolicies[0].ID,
+			actor:              team0member0,
+			inviteeEmail:       team0member0.Email,
 			wantStatus:         http.StatusNoContent,
 			wantEventTriggered: false,
 		},
 		{
-			name:               "existing user, not policy member, no event",
-			policyID:           fixtures.Policies[0].ID,
-			actor:              policy0member0,
-			inviteeEmail:       policy1member0.Email,
+			name:               "existing user for team policy, not policy member, no event",
+			policyID:           teamPolicies[0].ID,
+			actor:              team0member0,
+			inviteeEmail:       team1member0.Email,
 			wantStatus:         http.StatusNoContent,
 			wantEventTriggered: false,
 		},
 		{
-			name:               "new user",
-			policyID:           fixtures.Policies[0].ID,
-			actor:              policy1member0,
-			inviteeEmail:       "new-user-testing@invites-r-us.com",
-			inviteeName:        "New User",
+			name:               "new user for team policy",
+			policyID:           teamPolicies[0].ID,
+			actor:              team1member0,
+			inviteeEmail:       "new-team-user-testing@invites-r-us.com",
+			inviteeName:        "New TeamUser",
+			wantStatus:         http.StatusNoContent,
+			wantEventTriggered: true,
+		},
+		{
+			name:               "existing household policy member, no event",
+			policyID:           housePolicies[0].ID,
+			actor:              house0member0,
+			inviteeEmail:       house0member0.Email,
+			wantStatus:         http.StatusNoContent,
+			wantEventTriggered: false,
+		},
+		{
+			name:               "existing user for household policy, not policy member, no event",
+			policyID:           housePolicies[0].ID,
+			actor:              house0member0,
+			inviteeEmail:       house1member0.Email,
+			wantStatus:         http.StatusBadRequest,
+			wantEventTriggered: false,
+		},
+		{
+			name:               "new user for household policy",
+			policyID:           housePolicies[1].ID,
+			actor:              house1member0,
+			inviteeEmail:       "new-house-user-testing@invites-r-us.com",
+			inviteeName:        "New HouseUser",
 			wantStatus:         http.StatusNoContent,
 			wantEventTriggered: true,
 		},

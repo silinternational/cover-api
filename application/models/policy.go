@@ -453,3 +453,78 @@ func (p *Policy) calculateAnnualPremium(tx *pop.Connection) api.Currency {
 	}
 	return premium
 }
+
+func (p *Policy) NewHouseholdInvite(tx *pop.Connection, invite api.PolicyUserInviteCreate, cUser User) error {
+
+	var user User
+	if err := user.FindByEmail(tx, invite.Email); domain.IsOtherThanNoRows(err) {
+		return err
+	}
+
+	// if user doesn't yet exist, create an invite
+	if user.ID == uuid.Nil {
+		return p.createInvite(tx, invite, cUser)
+	}
+
+	// if user already exists, make sure they don't already have a household policy
+	user.LoadPolicies(tx, false)
+	for _, p := range user.Policies {
+		if p.HouseholdID.Valid {
+			err := errors.New("Invited User already has a household policy")
+			return api.NewAppError(err, api.ErrorPolicyInviteAlreadyHasHousehold, api.CategoryUser)
+		}
+	}
+
+	pUser := PolicyUser{
+		PolicyID: p.ID,
+		UserID:   user.ID,
+	}
+
+	if err := pUser.Create(tx); err != nil {
+		return appErrorFromDB(err, api.ErrorCreateFailure)
+	}
+	return nil
+}
+
+func (p *Policy) NewTeamInvite(tx *pop.Connection, invite api.PolicyUserInviteCreate, cUser User) error {
+
+	var user User
+	if err := user.FindByEmail(tx, invite.Email); domain.IsOtherThanNoRows(err) {
+		return err
+	}
+
+	// if user doesn't yet exist, create an invite
+	if user.ID == uuid.Nil {
+		return p.createInvite(tx, invite, cUser)
+	}
+
+	// if user already exists, just associate them with the Policy
+	pUser := PolicyUser{
+		PolicyID: p.ID,
+		UserID:   user.ID,
+	}
+
+	if err := pUser.Create(tx); err != nil {
+		return appErrorFromDB(err, api.ErrorCreateFailure)
+	}
+	return nil
+
+}
+
+func (p *Policy) createInvite(tx *pop.Connection, invite api.PolicyUserInviteCreate, cUser User) error {
+
+	// create invite
+	puInvite := PolicyUserInvite{
+		PolicyID:       p.ID,
+		Email:          invite.Email,
+		InviteeName:    invite.Name,
+		InviterName:    cUser.Name(),
+		InviterEmail:   cUser.Email,
+		InviterMessage: invite.InviterMessage,
+	}
+
+	if err := puInvite.Create(tx); err != nil {
+		return appErrorFromDB(err, api.ErrorCreateFailure)
+	}
+	return nil
+}
