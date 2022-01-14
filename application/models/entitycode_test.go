@@ -38,7 +38,6 @@ func (ms *ModelSuite) TestEntityCode_FindByCode() {
 			}
 			err := ec.FindByCode(ms.DB)
 			if tt.appError != nil {
-				// ms.Error(err, "test should have produced an error")
 				ms.EqualAppError(*tt.appError, err)
 				return
 			}
