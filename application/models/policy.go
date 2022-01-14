@@ -467,6 +467,7 @@ func (p *Policy) NewHouseholdInvite(tx *pop.Connection, invite api.PolicyUserInv
 	}
 
 	// if user already exists, make sure they don't already have a household policy
+	// note: this will almost surely be the case, because we create an initial policy for them.
 	user.LoadPolicies(tx, false)
 	for _, p := range user.Policies {
 		if p.HouseholdID.Valid {
