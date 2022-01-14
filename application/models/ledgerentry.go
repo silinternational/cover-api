@@ -198,10 +198,15 @@ func (le *LedgerEntry) balanceDescription() string {
 	if le.Type.IsClaim() {
 		premiumsOrClaims = "Claims"
 	}
+
 	entity := le.EntityCode
-	if le.PolicyType != api.PolicyTypeTeam {
-		entity = string(le.PolicyType)
+	e := EntityCode{Code: le.EntityCode}
+
+	// Don't need to use a transaction since entity codes shouldn't be changing during this operation.
+	if err := e.FindByCode(DB); err == nil && e.ParentEntity != "" {
+		entity = e.ParentEntity
 	}
+
 	return fmt.Sprintf("Total %s %s %s", entity, le.RiskCategoryName, premiumsOrClaims)
 }
 
