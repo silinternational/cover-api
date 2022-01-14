@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
@@ -400,4 +401,35 @@ func convertTimeToAPI(t nulls.Time) *time.Time {
 
 func GetV5UUID(seed string) uuid.UUID {
 	return uuid.NewV5(uuidNamespace, seed)
+}
+
+func GetHHID(staffID string) string {
+	if domain.Env.HouseholdIDLookupURL == "" {
+		return ""
+	}
+
+	req, err := http.NewRequest(http.MethodGet, domain.Env.HouseholdIDLookupURL+staffID, nil)
+	if err != nil {
+		domain.ErrLogger.Printf("HHID API error, %s", err)
+		return ""
+	}
+	req.SetBasicAuth(domain.Env.HouseholdIDLookupUsername, domain.Env.HouseholdIDLookupPassword)
+
+	client := &http.Client{Timeout: time.Second * 30}
+	response, err := client.Do(req)
+	if err != nil {
+		domain.ErrLogger.Printf("HHID API error, %s", err)
+		return ""
+	}
+	defer response.Body.Close()
+
+	dec := json.NewDecoder(response.Body)
+	var v struct {
+		ID string `json:"householdIdOut"`
+	}
+	if err = dec.Decode(&v); err != nil {
+		domain.ErrLogger.Printf("HHID API error decoding response, %s", err)
+		return ""
+	}
+	return v.ID
 }
