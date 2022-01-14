@@ -76,8 +76,8 @@ func (ms *ModelSuite) Test_CurrentUser() {
 func (ms *ModelSuite) EqualAppError(expected api.AppError, actual error) {
 	var appErr *api.AppError
 	ms.True(errors.As(actual, &appErr), "error does not contain an api.AppError")
-	ms.Equal(appErr.Key, expected.Key, "error key does not match")
-	ms.Equal(appErr.Category, expected.Category, "error category does not match")
+	ms.Equal(expected.Key, appErr.Key, "error key does not match")
+	ms.Equal(expected.Category, appErr.Category, "error category does not match")
 }
 
 func (ms *ModelSuite) EqualNullTime(expected nulls.Time, actual *time.Time, msgAndArgs ...interface{}) {
