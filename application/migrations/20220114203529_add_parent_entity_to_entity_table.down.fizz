@@ -1,0 +1,1 @@
+drop_column("entity_codes", "parent_entity")

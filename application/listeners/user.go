@@ -17,7 +17,7 @@ func userCreated(e events.Event) {
 
 	var householdID string
 	if user.StaffID.Valid {
-		householdID = GetHHID(user.StaffID.String)
+		householdID = models.GetHHID(user.StaffID.String)
 	}
 
 	if err := user.CreateInitialPolicy(nil, householdID); err != nil {

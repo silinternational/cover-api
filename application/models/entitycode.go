@@ -22,6 +22,7 @@ type EntityCode struct {
 	Name          string    `db:"name"`
 	Active        bool      `db:"active"`
 	IncomeAccount string    `db:"income_account"`
+	ParentEntity  string    `db:"parent_entity"`
 
 	CreatedAt time.Time `db:"created_at"`
 	UpdatedAt time.Time `db:"updated_at"`
@@ -30,6 +31,14 @@ type EntityCode struct {
 func (ec *EntityCode) Create(tx *pop.Connection) error {
 	ec.ID = GetV5UUID(ec.Code)
 	return create(tx, ec)
+}
+
+func (ec *EntityCode) FindByCode(tx *pop.Connection) error {
+	err := tx.Where("code = ?", ec.Code).First(ec)
+	if err != nil {
+		return appErrorFromDB(err, api.ErrorQueryFailure)
+	}
+	return nil
 }
 
 func EntityCodeID(code string) uuid.UUID {

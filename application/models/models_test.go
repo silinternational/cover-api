@@ -76,8 +76,8 @@ func (ms *ModelSuite) Test_CurrentUser() {
 func (ms *ModelSuite) EqualAppError(expected api.AppError, actual error) {
 	var appErr *api.AppError
 	ms.True(errors.As(actual, &appErr), "error does not contain an api.AppError")
-	ms.Equal(appErr.Key, expected.Key, "error key does not match")
-	ms.Equal(appErr.Category, expected.Category, "error category does not match")
+	ms.Equal(expected.Key, appErr.Key, "error key does not match")
+	ms.Equal(expected.Category, appErr.Category, "error category does not match")
 }
 
 func (ms *ModelSuite) EqualNullTime(expected nulls.Time, actual *time.Time, msgAndArgs ...interface{}) {
@@ -93,5 +93,34 @@ func (ms *ModelSuite) EqualNullUUID(expected nulls.UUID, actual *uuid.UUID, msgA
 		ms.False(expected.Valid, msgAndArgs...)
 	} else {
 		ms.Equal(expected, *actual, msgAndArgs...)
+	}
+}
+
+func (ms *ModelSuite) TestGetHHID() {
+	if domain.Env.HouseholdIDLookupURL == "" {
+		ms.T().Skip("skipping test because no HOUSEHOLD_ID_LOOKUP_URL was provided")
+	}
+
+	tests := []struct {
+		name    string
+		staffID string
+		want    string
+	}{
+		{
+			name:    "good",
+			staffID: "32329",
+			want:    "232329",
+		},
+		{
+			name:    "not found",
+			staffID: "9999999",
+			want:    "",
+		},
+	}
+	for _, tt := range tests {
+		ms.T().Run(tt.name, func(t *testing.T) {
+			got := GetHHID(tt.staffID)
+			ms.Equal(tt.want, got)
+		})
 	}
 }

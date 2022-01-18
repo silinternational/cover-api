@@ -113,7 +113,7 @@ func (ms *ModelSuite) TestLedgerEntries_ToCsv() {
 				),
 				fmt.Sprintf(`"2","000000","00001","0000000040","",0,"%s","",%s,"2","%s","",%s,"GL","JE"`,
 					entry.IncomeAccount+entry.RiskCategoryCC,
-					api.Currency(entry.Amount).String(),
+					entry.Amount.String(),
 					entry.balanceDescription(),
 					date.Format("20060102"),
 				),
@@ -149,6 +149,43 @@ func (ms *ModelSuite) TestLedgerEntries_MakeBlocks() {
 	ms.Equal(2, len(blocks["4020067890"]))
 	ms.Equal(policy2, blocks["4020067890"][0].PolicyID)
 	ms.Equal(policy3, blocks["4020067890"][1].PolicyID)
+}
+
+func (ms *ModelSuite) TestLedgerEntry_balanceDescription() {
+	parentEntity := CreateEntityFixture(ms.DB)
+	subEntity := CreateEntityFixture(ms.DB)
+	subEntity.ParentEntity = parentEntity.Code
+	ms.NoError(ms.DB.Update(&subEntity))
+
+	tests := []struct {
+		name  string
+		entry LedgerEntry
+		want  string
+	}{
+		{
+			name: "no parent entity",
+			entry: LedgerEntry{
+				EntityCode:       parentEntity.Code,
+				RiskCategoryName: "cat1",
+				Type:             LedgerEntryTypeClaimAdjustment,
+			},
+			want: fmt.Sprintf("Total %s cat1 Claims", parentEntity.Code),
+		},
+		{
+			name: "has parent entity",
+			entry: LedgerEntry{
+				EntityCode:       subEntity.Code,
+				RiskCategoryName: "cat2",
+				Type:             LedgerEntryTypeNewCoverage,
+			},
+			want: fmt.Sprintf("Total %s cat2 Premiums", parentEntity.Code),
+		},
+	}
+	for _, tt := range tests {
+		ms.T().Run(tt.name, func(t *testing.T) {
+			ms.Equal(tt.want, tt.entry.balanceDescription())
+		})
+	}
 }
 
 func (ms *ModelSuite) Test_NewLedgerEntry() {

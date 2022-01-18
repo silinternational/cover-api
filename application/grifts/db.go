@@ -3,6 +3,7 @@ package grifts
 import (
 	"errors"
 	"fmt"
+	"log"
 	"regexp"
 	"time"
 
@@ -480,4 +481,22 @@ func createLedgerEntryFixtures(tx *pop.Connection, items []*models.Item, claims 
 func approveClaim(tx *pop.Connection, claim *models.Claim) error {
 	claim.Status = api.ClaimStatusApproved
 	return tx.Update(claim)
+}
+
+func assignRiskCategoryCostCenters(tx *pop.Connection) {
+	mobile := models.RiskCategory{
+		ID:         models.RiskCategoryMobileID(),
+		CostCenter: "MCMC12",
+	}
+	if err := tx.UpdateColumns(&mobile, "cost_center"); err != nil {
+		log.Fatalf("failed to set cost_center on risk category, %s", err)
+	}
+
+	stationary := models.RiskCategory{
+		ID:         models.RiskCategoryStationaryID(),
+		CostCenter: "MPRO12",
+	}
+	if err := tx.UpdateColumns(&stationary, "cost_center"); err != nil {
+		log.Fatalf("failed to set cost_center on risk category, %s", err)
+	}
 }

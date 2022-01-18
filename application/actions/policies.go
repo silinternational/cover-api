@@ -5,7 +5,6 @@ import (
 
 	"github.com/gobuffalo/buffalo"
 	"github.com/gobuffalo/nulls"
-	"github.com/gofrs/uuid"
 
 	"github.com/silinternational/cover-api/api"
 	"github.com/silinternational/cover-api/domain"
@@ -269,34 +268,17 @@ func policiesInviteMember(c buffalo.Context) error {
 		return c.Render(http.StatusNoContent, nil)
 	}
 
-	// check if user already exists
-	var user models.User
-	if err := user.FindByEmail(tx, invite.Email); domain.IsOtherThanNoRows(err) {
-		return reportError(c, err)
-	}
-	if user.ID != uuid.Nil {
-		pUser := models.PolicyUser{
-			PolicyID: policy.ID,
-			UserID:   user.ID,
-		}
-		if err := pUser.Create(tx); err != nil {
-			return reportError(c, err)
-		}
-
-		return c.Render(http.StatusNoContent, nil)
-	}
-
-	// create invite
 	cUser := models.CurrentUser(c)
-	puInvite := models.PolicyUserInvite{
-		PolicyID:       policy.ID,
-		Email:          invite.Email,
-		InviteeName:    invite.Name,
-		InviterName:    cUser.Name(),
-		InviterEmail:   cUser.Email,
-		InviterMessage: invite.InviterMessage,
+
+	var err error
+
+	if policy.HouseholdID.Valid {
+		err = policy.NewHouseholdInvite(tx, invite, cUser)
+	} else {
+		err = policy.NewTeamInvite(tx, invite, cUser)
 	}
-	if err := puInvite.Create(tx); err != nil {
+
+	if err != nil {
 		return reportError(c, err)
 	}
 
