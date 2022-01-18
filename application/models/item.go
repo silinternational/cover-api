@@ -734,6 +734,11 @@ func (i *Item) inactivateEnded(ctx context.Context) error {
 func (i *Items) InactivateApprovedButEnded(ctx context.Context) error {
 	tx := Tx(ctx)
 
+	user := CurrentUser(ctx)
+	if user.ID == uuid.Nil {
+		return errors.New("InactivateApprovedButEnded must be given a context with a valid user")
+	}
+
 	endDate := time.Now().UTC().Format(domain.DateFormat)
 	if err := tx.Where(`coverage_status = ? AND coverage_end_date < ?`,
 		api.ItemCoverageStatusApproved, endDate).All(i); domain.IsOtherThanNoRows(err) {

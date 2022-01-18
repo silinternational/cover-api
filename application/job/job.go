@@ -52,6 +52,9 @@ func createJobContext() buffalo.Context {
 	defer client.Close()
 
 	ctx.Set(domain.ContextKeyRollbar, client)
+
+	user := models.GetDefaultSteward(models.DB)
+	ctx.Set(domain.ContextKeyCurrentUser, user)
 	return ctx
 }
 
