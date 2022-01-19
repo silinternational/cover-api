@@ -39,6 +39,9 @@ func createJobContext() buffalo.Context {
 		params: map[interface{}]interface{}{},
 	}
 
+	user := models.GetDefaultSteward(models.DB)
+	ctx.Set(domain.ContextKeyCurrentUser, user)
+
 	if domain.Env.RollbarToken == "" || domain.Env.GoEnv == "test" {
 		return ctx
 	}
