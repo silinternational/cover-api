@@ -32,6 +32,8 @@
 package actions
 
 import (
+	"net/http"
+
 	"github.com/gobuffalo/buffalo"
 	"github.com/gobuffalo/buffalo-pop/v2/pop/popmw"
 	"github.com/gobuffalo/envy"
@@ -95,7 +97,7 @@ func App() *buffalo.App {
 				}).Handler,
 			},
 			SessionName:  "_cover_api_session",
-			SessionStore: sessions.NewCookieStore([]byte(domain.Env.SessionSecret)),
+			SessionStore: cookieStore(),
 		})
 
 		var err error
@@ -217,4 +219,17 @@ func App() *buffalo.App {
 	listeners.RegisterListener()
 
 	return app
+}
+
+func cookieStore() sessions.Store {
+	sameSite := http.SameSiteNoneMode
+	if domain.Env.DisableTLS {
+		sameSite = http.SameSiteLaxMode
+	}
+
+	store := sessions.NewCookieStore([]byte(domain.Env.SessionSecret))
+	store.Options.SameSite = sameSite
+	store.Options.HttpOnly = true
+	store.Options.Secure = !domain.Env.DisableTLS
+	return store
 }

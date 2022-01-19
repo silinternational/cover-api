@@ -181,7 +181,7 @@ func authCallback(c buffalo.Context) error {
 		appError := api.AppError{
 			Key:        api.ErrorMissingSessionKey,
 			DebugMsg:   ClientIDSessionKey + " session entry is required to complete login",
-			HttpStatus: http.StatusFound,
+			HttpStatus: http.StatusBadRequest,
 		}
 		return reportErrorAndClearSession(c, &appError)
 	}
