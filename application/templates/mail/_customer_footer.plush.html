@@ -21,11 +21,17 @@
 			</tr>
 		</table>
 	</div>
-	<div style="background-color: #ebeef2; padding: 16px;">
-		<div style="font-size: 9px; margin-bottom: 8px;">
-			<%= appName %> is a service of SIL International.
+	<div style="background-color: #ebeef2; padding: 16px; font-size: 9px;">
+		<div style="margin-bottom: 8px;">
+			<span style="margin-right: 10px;">
+				<a href="<%= uiURL %>/home">Your Account</a>
+			</span>
 		</div>
-		<div style="font-size: 9px; margin-bottom: 8px;">
+		<div style="margin-bottom: 8px;">
+			<%= appName %> is a service of SIL International.<br>
+			SIL International, 7500 W Camp Wisdom Rd, Dallas, TX 75236, USA
+		</div>
+		<div style="margin-bottom: 8px">
 			<span style="margin-right: 10px;">
 				<a href="<%= uiURL %>/terms">Terms of Use</a>
 			</span> ·
@@ -34,7 +40,7 @@
 			</span>
 		</div>
 		<%= if ( policy.Name != "" ) { %>
-		<div style="font-size: 9px;">
+		<div>
 			You've received this email because you're a customer of the <%= policy.Name %> policy in <%= appName %>.
 		</div>
 		<% } %>
