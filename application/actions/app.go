@@ -222,19 +222,17 @@ func App() *buffalo.App {
 }
 
 func cookieStore() sessions.Store {
-	// Cookies will be sent in all contexts, i.e. in responses to both first-party and cross-origin requests.
-	// This appears to be required to work with Firefox default cookie blocking setting.
-	sameSite := http.SameSiteNoneMode
-	if domain.Env.DisableTLS {
-		// "None" mode cannot be used if "Secure" is false
-		sameSite = http.SameSiteLaxMode
-	}
-
 	store := sessions.NewCookieStore([]byte(domain.Env.SessionSecret))
-	store.Options.SameSite = sameSite
+
+	store.Options.SameSite = http.SameSiteDefaultMode
 	store.Options.HttpOnly = true
 
-	// "Secure" requires SSL/TLS
-	store.Options.Secure = !domain.Env.DisableTLS
+	if !domain.Env.DisableTLS {
+		// Cookies will be sent in all contexts, i.e. in responses to both first-party and cross-origin requests.
+		// This appears to be required to work with Firefox default cookie blocking setting.
+		store.Options.SameSite = http.SameSiteNoneMode
+		store.Options.Secure = true
+	}
+
 	return store
 }
