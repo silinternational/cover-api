@@ -3,6 +3,7 @@ package models
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"time"
 
 	"github.com/gobuffalo/nulls"
@@ -291,4 +292,36 @@ func (le *LedgerEntries) FindCurrentRenewals(tx *pop.Connection, year int) error
 		return api.NewAppError(err, api.ErrorQueryFailure, api.CategoryInternal)
 	}
 	return nil
+}
+
+func (le *LedgerEntries) ConvertToAPI(tx *pop.Connection) api.LedgerEntries {
+	claims := make(api.LedgerEntries, len(*le))
+	for i, cc := range *le {
+		claims[i] = cc.ConvertToAPI(tx)
+	}
+	return claims
+}
+
+func (le *LedgerEntry) ConvertToAPI(tx *pop.Connection) api.LedgerEntry {
+	return api.LedgerEntry{
+		ID:               le.ID,
+		PolicyID:         le.PolicyID,
+		ItemID:           le.ItemID,
+		ClaimID:          le.ClaimID,
+		EntityCode:       le.EntityCode,
+		RiskCategoryName: le.RiskCategoryName,
+		RiskCategoryCC:   le.RiskCategoryCC,
+		Type:             api.LedgerEntryType(le.Type),
+		PolicyType:       le.PolicyType,
+		HouseholdID:      le.HouseholdID,
+		CostCenter:       le.CostCenter,
+		AccountNumber:    le.AccountNumber,
+		IncomeAccount:    le.IncomeAccount,
+		Name:             le.Name,
+		Amount:           le.Amount,
+		DateSubmitted:    le.DateSubmitted,
+		DateEntered:      convertTimeToAPI(le.DateEntered),
+		CreatedAt:        le.CreatedAt,
+		UpdatedAt:        le.UpdatedAt,
+	}
 }
