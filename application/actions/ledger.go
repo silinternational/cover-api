@@ -28,12 +28,6 @@ import (
 //           type: string
 //           format: text
 func ledgerList(c buffalo.Context) error {
-	actor := models.CurrentUser(c)
-	if !actor.IsAdmin() {
-		err := fmt.Errorf("user not allowed to get monthly batch data")
-		return reportError(c, api.NewAppError(err, api.ErrorNotAuthorized, api.CategoryForbidden))
-	}
-
 	tx := models.Tx(c)
 
 	date := domain.BeginningOfDay(time.Now().UTC())
@@ -74,12 +68,6 @@ func ledgerList(c buffalo.Context) error {
 //     schema:
 //       "$ref": "#/definitions/BatchApproveResponse"
 func ledgerReconcile(c buffalo.Context) error {
-	actor := models.CurrentUser(c)
-	if !actor.IsAdmin() {
-		err := fmt.Errorf("user not allowed to reconcile ledger data")
-		return reportError(c, api.NewAppError(err, api.ErrorNotAuthorized, api.CategoryForbidden))
-	}
-
 	var input api.LedgerReconcileInput
 	if err := StrictBind(c, &input); err != nil {
 		return reportError(c, err)
@@ -104,11 +92,12 @@ func ledgerReconcile(c buffalo.Context) error {
 	return renderOk(c, api.BatchApproveResponse{NumberOfRecordsApproved: len(le)})
 }
 
-// swagger:operation GET /ledger/annual Ledger LedgerAnnual
+// swagger:operation GET /ledger/annual Ledger LedgerAnnualList
 //
-// LedgerAnnual
+// LedgerAnnualList
 //
-// Get the billing detail for current year's policy renewals
+// Get the billing detail for current year's policy renewals. Header `Accept` can be either
+// `application/json` or `text/csv`.
 //
 // ---
 // responses:
@@ -119,7 +108,47 @@ func ledgerReconcile(c buffalo.Context) error {
 //         schema:
 //           type: string
 //           format: text
-func ledgerAnnual(c buffalo.Context) error {
+func ledgerAnnualList(c buffalo.Context) error {
+	actor := models.CurrentUser(c)
+	if !actor.IsAdmin() {
+		err := fmt.Errorf("user not allowed to list annual batch data")
+		return reportError(c, api.NewAppError(err, api.ErrorNotAuthorized, api.CategoryForbidden))
+	}
+
+	tx := models.Tx(c)
+
+	currentYear := time.Now().UTC().Year()
+
+	var le models.LedgerEntries
+	if err := le.FindCurrentRenewals(tx, currentYear); err != nil {
+		return reportError(c, err)
+	}
+
+	if domain.IsStringInSlice("text/csv", c.Request().Header["Accept"]) {
+		if len(le) == 0 {
+			return c.Render(http.StatusNoContent, nil)
+		}
+
+		date := time.Date(currentYear, 1, 1, 0, 0, 0, 0, time.UTC)
+		csvData := le.ToCsv(date)
+		filename := fmt.Sprintf("renewal_%d.csv", currentYear)
+		return renderCsv(c, filename, csvData)
+	}
+
+	return renderOk(c, le.ConvertToAPI(tx))
+}
+
+// swagger:operation POST /ledger/annual Ledger LedgerAnnualProcess
+//
+// LedgerAnnualProcess
+//
+// Process billing for current year's policy renewals.
+//
+// ---
+// responses:
+//   '204':
+//     description: OK but no content in response
+func ledgerAnnualProcess(c buffalo.Context) error {
 	actor := models.CurrentUser(c)
 	if !actor.IsAdmin() {
 		err := fmt.Errorf("user not allowed to process annual batch data")
@@ -134,19 +163,7 @@ func ledgerAnnual(c buffalo.Context) error {
 		return reportError(c, err)
 	}
 
-	var le models.LedgerEntries
-	if err := le.FindCurrentRenewals(tx, currentYear); err != nil {
-		return reportError(c, err)
-	}
-
-	if len(le) == 0 {
-		return c.Render(http.StatusNoContent, nil)
-	}
-
-	date := time.Date(currentYear, 1, 1, 0, 0, 0, 0, time.UTC)
-	csvData := le.ToCsv(date)
-	filename := fmt.Sprintf("renewal_%d.csv", currentYear)
-	return renderCsv(c, filename, csvData)
+	return c.Render(http.StatusNoContent, nil)
 }
 
 func renderCsv(c buffalo.Context, filename string, csvData []byte) error {
