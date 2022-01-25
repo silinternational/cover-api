@@ -1,6 +1,7 @@
 package actions
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"time"
@@ -12,38 +13,75 @@ import (
 	"github.com/silinternational/cover-api/models"
 )
 
+const (
+	reportTypeParam   = "report-type"
+	reportTypeMonthly = "monthly"
+	reportTypeAnnual  = "annual"
+)
+
 // swagger:operation GET /ledger Ledger LedgerList
 //
 // LedgerList
 //
-// return the ledger entries not yet reconciled, up to the beginning of the current day (0:00 UTC)
+// Return the ledger entries as specified by the `report-type` paramater. If `text/csv` is specified in the `Accept`
+// header, the response will be in CSV format suitable for use with Sage Accounting
+//
+// ### Report types:
+// + `monthly` - Return all ledger entries not yet reconciled, up to the beginning of the current day (0:00 UTC).
+// + `annual` - Return the billing detail for current year's policy renewals.
 //
 // ---
+// parameters:
+// - name: report-type
+//   in: query
+//   required: true
+//   description: specifies the report type, which controls which ledger entries are returned
 // responses:
 //   '200':
-//     description: the ledger entries not yet reconciled, in CSV format suitable for use with Sage Accounting
-//     content:
-//       text/csv:
-//         schema:
-//           type: string
-//           format: text
+//     description: the ledger entries not yet reconciled
+//     schema:
+//       type: array
+//       items:
+//         "$ref": "#/definitions/LedgerEntry"
+// produces:
+//   - application/json
+//   - text/csv
 func ledgerList(c buffalo.Context) error {
 	tx := models.Tx(c)
 
-	date := domain.BeginningOfDay(time.Now().UTC())
 	var le models.LedgerEntries
-	if err := le.AllNotEntered(tx, date); err != nil {
-		return err
+	var date time.Time
+
+	reportType := c.Params().Get(reportTypeParam)
+	switch reportType {
+	case reportTypeMonthly:
+		date = domain.BeginningOfDay(time.Now().UTC())
+		if err := le.AllNotEntered(tx, date); err != nil {
+			return err
+		}
+
+	case reportTypeAnnual:
+		currentYear := time.Now().UTC().Year()
+		date = time.Date(currentYear, 1, 1, 0, 0, 0, 0, time.UTC)
+		if err := le.FindCurrentRenewals(tx, currentYear); err != nil {
+			return reportError(c, err)
+		}
+
+	default:
+		err := errors.New("invalid " + reportTypeParam)
+		return reportError(c, api.NewAppError(err, api.ErrorInvalidReportType, api.CategoryUser))
 	}
 
-	if len(le) == 0 {
-		return c.Render(http.StatusNoContent, nil)
+	if domain.IsStringInSlice("text/csv", c.Request().Header["Accept"]) {
+		if len(le) == 0 {
+			return c.Render(http.StatusNoContent, nil)
+		}
+
+		filename := fmt.Sprintf("cover_%s_%s.csv", reportType, date.Format(domain.DateFormat))
+		return renderCsv(c, filename, le.ToCsv(date))
 	}
 
-	csvData := le.ToCsv(date)
-	filename := fmt.Sprintf("cover_ledger_%s.csv", date.Format(domain.DateFormat))
-
-	return renderCsv(c, filename, csvData)
+	return renderOk(c, le.ConvertToAPI(tx))
 }
 
 // swagger:operation POST /ledger Ledger LedgerReconcile
@@ -90,52 +128,6 @@ func ledgerReconcile(c buffalo.Context) error {
 	}
 
 	return renderOk(c, api.BatchApproveResponse{NumberOfRecordsApproved: len(le)})
-}
-
-// swagger:operation GET /ledger/annual Ledger LedgerAnnualList
-//
-// LedgerAnnualList
-//
-// Get the billing detail for current year's policy renewals. Header `Accept` can be either
-// `application/json` or `text/csv`.
-//
-// ---
-// responses:
-//   '200':
-//     description: the current year policy renewal ledger entries
-//     content:
-//       text/csv:
-//         schema:
-//           type: string
-//           format: text
-func ledgerAnnualList(c buffalo.Context) error {
-	actor := models.CurrentUser(c)
-	if !actor.IsAdmin() {
-		err := fmt.Errorf("user not allowed to list annual batch data")
-		return reportError(c, api.NewAppError(err, api.ErrorNotAuthorized, api.CategoryForbidden))
-	}
-
-	tx := models.Tx(c)
-
-	currentYear := time.Now().UTC().Year()
-
-	var le models.LedgerEntries
-	if err := le.FindCurrentRenewals(tx, currentYear); err != nil {
-		return reportError(c, err)
-	}
-
-	if domain.IsStringInSlice("text/csv", c.Request().Header["Accept"]) {
-		if len(le) == 0 {
-			return c.Render(http.StatusNoContent, nil)
-		}
-
-		date := time.Date(currentYear, 1, 1, 0, 0, 0, 0, time.UTC)
-		csvData := le.ToCsv(date)
-		filename := fmt.Sprintf("renewal_%d.csv", currentYear)
-		return renderCsv(c, filename, csvData)
-	}
-
-	return renderOk(c, le.ConvertToAPI(tx))
 }
 
 // swagger:operation POST /ledger/annual Ledger LedgerAnnualProcess
