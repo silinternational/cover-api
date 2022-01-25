@@ -40,7 +40,7 @@ func (as *ActionSuite) Test_LedgerList() {
 			wantInBody: []string{`"key":"` + api.ErrorNotAuthorized.String()},
 		},
 		{
-			name:       "normal user good results",
+			name:       "steward user good results",
 			actor:      stewardUser,
 			wantStatus: http.StatusOK,
 			wantRows:   5, // 2 header rows, 1 summary row, 1 transaction row, 1 balance row
@@ -103,7 +103,7 @@ func (as *ActionSuite) Test_LedgerReconcile() {
 			want:       0,
 		},
 		{
-			name:       "normal user good results",
+			name:       "steward user good results",
 			actor:      stewardUser,
 			date:       time.Now().Format(domain.DateFormat),
 			wantStatus: http.StatusOK,
@@ -180,7 +180,7 @@ func (as *ActionSuite) Test_LedgerAnnual() {
 			wantInBody: []string{`"key":"` + api.ErrorNotAuthorized.String()},
 		},
 		{
-			name:       "normal user good results",
+			name:       "steward user good results",
 			actor:      stewardUser,
 			wantStatus: http.StatusOK,
 			wantRows:   5, // 2 header rows, 1 summary row, 1 transaction row, 1 balance row

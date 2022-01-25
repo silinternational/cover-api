@@ -76,6 +76,7 @@ const (
 	TypeClaimFile       = "claim-files"
 	TypeFile            = "files"
 	TypeItem            = "items"
+	TypeLedger          = "ledger"
 	TypePolicy          = "policies"
 	TypePolicyDependent = "policy-dependents"
 	TypePolicyUser      = "policy-users"

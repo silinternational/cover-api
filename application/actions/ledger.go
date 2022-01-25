@@ -28,12 +28,6 @@ import (
 //           type: string
 //           format: text
 func ledgerList(c buffalo.Context) error {
-	actor := models.CurrentUser(c)
-	if !actor.IsAdmin() {
-		err := fmt.Errorf("user not allowed to get monthly batch data")
-		return reportError(c, api.NewAppError(err, api.ErrorNotAuthorized, api.CategoryForbidden))
-	}
-
 	tx := models.Tx(c)
 
 	date := domain.BeginningOfDay(time.Now().UTC())
@@ -74,12 +68,6 @@ func ledgerList(c buffalo.Context) error {
 //     schema:
 //       "$ref": "#/definitions/BatchApproveResponse"
 func ledgerReconcile(c buffalo.Context) error {
-	actor := models.CurrentUser(c)
-	if !actor.IsAdmin() {
-		err := fmt.Errorf("user not allowed to reconcile ledger data")
-		return reportError(c, api.NewAppError(err, api.ErrorNotAuthorized, api.CategoryForbidden))
-	}
-
 	var input api.LedgerReconcileInput
 	if err := StrictBind(c, &input); err != nil {
 		return reportError(c, err)
