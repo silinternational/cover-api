@@ -100,7 +100,7 @@ func (as *ActionSuite) Test_LedgerList() {
 			} else {
 				var ledgerEntries api.LedgerEntries
 				as.NoError(json.Unmarshal([]byte(body), &ledgerEntries))
-				as.Equal(tt.wantRows, len(ledgerEntries))
+				as.Equal(tt.wantRows, len(ledgerEntries), "incorrect number of records in JSON")
 			}
 		})
 	}

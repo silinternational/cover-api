@@ -38,7 +38,7 @@ const (
 //   description: specifies the report type, which controls which ledger entries are returned
 // responses:
 //   '200':
-//     description: the ledger entries not yet reconciled
+//     description: the ledger entries requested
 //     schema:
 //       type: array
 //       items:
