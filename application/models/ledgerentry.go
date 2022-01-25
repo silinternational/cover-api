@@ -295,11 +295,11 @@ func (le *LedgerEntries) FindCurrentRenewals(tx *pop.Connection, year int) error
 }
 
 func (le *LedgerEntries) ConvertToAPI(tx *pop.Connection) api.LedgerEntries {
-	claims := make(api.LedgerEntries, len(*le))
-	for i, cc := range *le {
-		claims[i] = cc.ConvertToAPI(tx)
+	ledgerEntries := make(api.LedgerEntries, len(*le))
+	for i, l := range *le {
+		ledgerEntries[i] = l.ConvertToAPI(tx)
 	}
-	return claims
+	return ledgerEntries
 }
 
 func (le *LedgerEntry) ConvertToAPI(tx *pop.Connection) api.LedgerEntry {
