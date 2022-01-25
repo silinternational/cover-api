@@ -253,6 +253,7 @@ func ProcessAnnualCoverage(tx *pop.Connection, year int) error {
 	var items Items
 	if err := tx.Where("coverage_status = ?", api.ItemCoverageStatusApproved).
 		Where("paid_through_year < ?", year).
+		Eager("Policy", "Policy.EntityCode", "RiskCategory").
 		All(&items); err != nil {
 		return api.NewAppError(err, api.ErrorQueryFailure, api.CategoryInternal)
 	}
