@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
+	"strings"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -48,7 +49,7 @@ func getS3ConfigFromEnv() awsConfig {
 	}
 
 	// a non-empty endpoint means minIO is in use, which doesn't support the S3 object URL scheme
-	if domain.Env.AwsS3ACL != "public" || len(a.awsEndpoint) > 0 {
+	if !strings.HasPrefix(domain.Env.AwsS3ACL, "public") || len(a.awsEndpoint) > 0 {
 		a.getPresignedUrl = true
 	}
 	return a
