@@ -4,12 +4,11 @@ import (
 	"fmt"
 	"io/ioutil"
 
-	"github.com/silinternational/cover-api/api"
-	"github.com/silinternational/cover-api/domain"
-
 	"github.com/gobuffalo/buffalo"
 	"github.com/gobuffalo/buffalo/render"
 
+	"github.com/silinternational/cover-api/api"
+	"github.com/silinternational/cover-api/domain"
 	"github.com/silinternational/cover-api/models"
 )
 
@@ -69,7 +68,9 @@ func uploadHandler(c buffalo.Context) error {
 	if fErr := fileObject.Store(models.Tx(c)); fErr != nil {
 		return reportError(c, &api.AppError{
 			HttpStatus: fErr.HttpStatus,
-			Message:    fmt.Sprintf("error storing uploaded file ... %v", fErr.Message),
+			Key:        fErr.ErrorCode,
+			DebugMsg:   fErr.Message,
+			Message:    fmt.Sprintf("error storing uploaded file"),
 		})
 	}
 
