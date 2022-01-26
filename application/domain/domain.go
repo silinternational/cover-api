@@ -165,14 +165,18 @@ var Env struct {
 	SamlRequireEncryptedAssertion   bool   `default:"true" split_words:"true"`
 
 	AwsRegion          string `split_words:"true"`
-	AwsS3Endpoint      string `split_words:"true"`
-	AwsS3DisableSSL    bool   `split_words:"true"`
-	AwsS3Bucket        string `split_words:"true"`
 	AwsAccessKeyID     string `split_words:"true"`
 	AwsSecretAccessKey string `split_words:"true"`
-	EmailFromAddress   string `required:"true" split_words:"true"`
-	EmailService       string `default:"ses" split_words:"true"`
-	SupportEmail       string `default:"" split_words:"true"`
+
+	AwsS3Endpoint       string `split_words:"true"`
+	AwsS3DisableSSL     bool   `split_words:"true"`
+	AwsS3Bucket         string `split_words:"true"`
+	AwsS3ACL            string `default:"private" split_words:"true"`
+	AwsS3URLLifeMinutes int    `default:"10" split_words:"true"`
+
+	EmailFromAddress string `required:"true" split_words:"true"`
+	EmailService     string `default:"ses" split_words:"true"`
+	SupportEmail     string `default:"" split_words:"true"`
 
 	InviteLifetimeDays int `default:"14" split_words:"true"`
 	MaxFileDelete      int `default:"10" split_words:"true"`

@@ -52,8 +52,10 @@ type LedgerEntry struct {
 	CostCenter       string          `json:"cost_center"`
 	AccountNumber    string          `json:"account_number"`
 	IncomeAccount    string          `json:"income_account"`
-	Name             string          `json:"name"`
-	Amount           Currency        `json:"amount"`
+
+	// name of accountable person if available, otherwise the policy name
+	Name   string   `json:"name"`
+	Amount Currency `json:"amount"`
 
 	// date added to ledger
 	//

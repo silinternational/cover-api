@@ -104,7 +104,7 @@ func (f *File) Store(tx *pop.Connection) *FileUploadError {
 		e := FileUploadError{
 			HttpStatus: http.StatusInternalServerError,
 			ErrorCode:  api.ErrorUnableToStoreFile,
-			Message:    fmt.Sprintf("error %s storing file: %+v", err, f),
+			Message:    fmt.Sprintf("error storing file %s: %s", f.ID, err),
 		}
 		return &e
 	}

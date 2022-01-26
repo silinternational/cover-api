@@ -33,9 +33,6 @@ type awsConfig struct {
 	getPresignedUrl    bool
 }
 
-// presigned URL expiration
-const urlLifespan = 10 * time.Minute
-
 func getS3ConfigFromEnv() awsConfig {
 	var a awsConfig
 	a.awsAccessKeyID = domain.Env.AwsAccessKeyID
@@ -50,8 +47,8 @@ func getS3ConfigFromEnv() awsConfig {
 		a.awsSecretAccessKey = "abcd1234"
 	}
 
-	if len(a.awsEndpoint) > 0 {
-		// a non-empty endpoint means minIO is in use, which doesn't support the S3 object URL scheme
+	// a non-empty endpoint means minIO is in use, which doesn't support the S3 object URL scheme
+	if domain.Env.AwsS3ACL != "public" || len(a.awsEndpoint) > 0 {
 		a.getPresignedUrl = true
 	}
 	return a
@@ -84,6 +81,7 @@ func getObjectURL(config awsConfig, svc *s3.S3, key string) (ObjectUrl, error) {
 		Key:    aws.String(key),
 	})
 
+	urlLifespan := time.Duration(domain.Env.AwsS3URLLifeMinutes) * time.Minute
 	if newUrl, err := req.Presign(urlLifespan); err == nil {
 		objectUrl.Url = newUrl
 		// return a time slightly before the actual url expiration to account for delays
@@ -106,7 +104,7 @@ func StoreFile(key, contentType string, content []byte) (ObjectUrl, error) {
 
 	acl := ""
 	if !config.getPresignedUrl {
-		acl = "public-read"
+		acl = domain.Env.AwsS3ACL
 	}
 	if _, err := svc.PutObject(&s3.PutObjectInput{
 		Bucket:      aws.String(config.awsS3Bucket),
