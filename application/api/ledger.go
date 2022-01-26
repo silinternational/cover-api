@@ -20,6 +20,12 @@ type LedgerReconcileInput struct {
 }
 
 // swagger:model
+type LedgerReport struct {
+	File          File          `json:"file"`
+	LedgerEntries LedgerEntries `json:"ledger_entries"`
+}
+
+// swagger:model
 type LedgerEntries []LedgerEntry
 
 // swagger:model

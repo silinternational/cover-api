@@ -51,6 +51,8 @@ var AllowedFileUploadTypes = []string{
 	"image/png",
 	"image/webp",
 	"application/pdf",
+	"text/plain",
+	"text/csv",
 }
 
 // BuffaloContextType is a custom type used as a value key passed to context.WithValue as per the recommendations

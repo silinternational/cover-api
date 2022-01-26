@@ -83,23 +83,25 @@ func (f *File) Store(tx *pop.Connection) *FileUploadError {
 		return &e
 	}
 
-	contentType, err := validateContentType(f.Content)
-	if err != nil {
-		e := FileUploadError{
-			HttpStatus: http.StatusBadRequest,
-			ErrorCode:  api.ErrorStoreFileBadContentType,
-			Message:    err.Error(),
+	if f.ContentType == "" {
+		contentType, err := validateContentType(f.Content)
+		if err != nil {
+			e := FileUploadError{
+				HttpStatus: http.StatusBadRequest,
+				ErrorCode:  api.ErrorStoreFileBadContentType,
+				Message:    err.Error(),
+			}
+			return &e
 		}
-		return &e
+		f.ContentType = contentType
 	}
 
-	f.ContentType = contentType
 	f.removeMetadata()
 	f.changeFileExtension()
 
 	f.ID = domain.GetUUID()
 
-	url, err := storage.StoreFile(f.ID.String(), contentType, f.Content)
+	url, err := storage.StoreFile(f.ID.String(), f.ContentType, f.Content)
 	if err != nil {
 		e := FileUploadError{
 			HttpStatus: http.StatusInternalServerError,
