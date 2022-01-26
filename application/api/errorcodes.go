@@ -74,6 +74,7 @@ const (
 
 	// Ledger
 	ErrorItemInvalidEndDate = ErrorKey("ErrorItemInvalidEndDate")
+	ErrorInvalidReportType  = ErrorKey("ErrorInvalidReportType")
 
 	// Policy
 	ErrorPolicyFromContext                    = ErrorKey("ErrorPolicyFromContext")
