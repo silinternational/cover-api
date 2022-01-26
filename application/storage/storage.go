@@ -82,7 +82,7 @@ func getObjectURL(config awsConfig, svc *s3.S3, key string) (ObjectUrl, error) {
 		Key:    aws.String(key),
 	})
 
-	urlLifespan := time.Duration(domain.Env.AwsS3URLLifeMinutes) * time.Minute
+	urlLifespan := time.Duration(domain.Env.AwsS3UrlLifeMinutes) * time.Minute
 	if newUrl, err := req.Presign(urlLifespan); err == nil {
 		objectUrl.Url = newUrl
 		// return a time slightly before the actual url expiration to account for delays

@@ -172,7 +172,7 @@ var Env struct {
 	AwsS3DisableSSL     bool   `split_words:"true"`
 	AwsS3Bucket         string `split_words:"true"`
 	AwsS3ACL            string `default:"private" split_words:"true"`
-	AwsS3URLLifeMinutes int    `default:"10" split_words:"true"`
+	AwsS3UrlLifeMinutes int    `default:"10" split_words:"true"`
 
 	EmailFromAddress string `required:"true" split_words:"true"`
 	EmailService     string `default:"ses" split_words:"true"`
