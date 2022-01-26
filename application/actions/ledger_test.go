@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strings"
 	"testing"
 	"time"
 
@@ -21,13 +20,13 @@ func (as *ActionSuite) Test_LedgerList() {
 	stewardUser := models.CreateAdminUsers(as.DB)[models.AppRoleSteward]
 
 	tests := []struct {
-		name       string
-		actor      models.User
-		reportType string
-		format     string
-		wantRows   int // rows in CSV, including header rows
-		wantStatus int
-		wantInBody []string
+		name        string
+		actor       models.User
+		reportType  string
+		format      string
+		wantEntries int
+		wantStatus  int
+		wantInBody  []string
 	}{
 		{
 			name:       "unauthenticated",
@@ -51,28 +50,20 @@ func (as *ActionSuite) Test_LedgerList() {
 			wantInBody: []string{`"key":"` + api.ErrorInvalidReportType.String()},
 		},
 		{
-			name:       "monthly report",
-			actor:      stewardUser,
-			reportType: reportTypeMonthly,
-			format:     "text/csv",
-			wantStatus: http.StatusOK,
-			wantRows:   5, // 2 header rows, 1 summary row, 1 transaction row, 1 balance row
+			name:        "monthly report",
+			actor:       stewardUser,
+			reportType:  reportTypeMonthly,
+			format:      "text/csv",
+			wantStatus:  http.StatusOK,
+			wantEntries: 1,
 		},
 		{
-			name:       "annual report",
-			actor:      stewardUser,
-			reportType: reportTypeAnnual,
-			format:     "text/csv",
-			wantStatus: http.StatusOK,
-			wantRows:   5, // 2 header rows, 1 summary row, 1 transaction row, 1 balance row
-		},
-		{
-			name:       "annual report, json",
-			actor:      stewardUser,
-			reportType: reportTypeAnnual,
-			format:     "application/json",
-			wantStatus: http.StatusOK,
-			wantRows:   1,
+			name:        "annual report",
+			actor:       stewardUser,
+			reportType:  reportTypeAnnual,
+			format:      "text/csv",
+			wantStatus:  http.StatusOK,
+			wantEntries: 1,
 		},
 	}
 
@@ -94,14 +85,10 @@ func (as *ActionSuite) Test_LedgerList() {
 				return
 			}
 
-			if tt.format == "text/csv" {
-				rows := len(strings.Split(res.Body.String(), "\n")) - 1 // don't count empty row at end
-				as.Equal(tt.wantRows, rows, "incorrect count of CSV rows")
-			} else {
-				var ledgerEntries api.LedgerEntries
-				as.NoError(json.Unmarshal([]byte(body), &ledgerEntries))
-				as.Equal(tt.wantRows, len(ledgerEntries), "incorrect number of records in JSON")
-			}
+			var report api.LedgerReport
+			as.NoError(json.Unmarshal([]byte(body), &report))
+
+			as.Equal(tt.wantEntries, len(report.LedgerEntries), "incorrect number of records in JSON")
 		})
 	}
 }
