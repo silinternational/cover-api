@@ -23,8 +23,8 @@ const (
 //
 // LedgerList
 //
-// Return the ledger entries as specified by the `report-type` paramater. If `text/csv` is specified in the `Accept`
-// header, the response will be in CSV format suitable for use with Sage Accounting
+// Return the ledger entries as specified by the `report-type` paramater. The returned object contains a list of
+// LedgerEntries and a File containing a CSV file suitable for use with Sage Accounting.
 //
 // ### Report types:
 // + `monthly` - Return all ledger entries not yet reconciled, up to the beginning of the current day (0:00 UTC).
@@ -38,14 +38,11 @@ const (
 //   description: specifies the report type, which controls which ledger entries are returned
 // responses:
 //   '200':
-//     description: the ledger entries requested
+//     description: the requested LedgerReport
 //     schema:
 //       type: array
 //       items:
-//         "$ref": "#/definitions/LedgerEntry"
-// produces:
-//   - application/json
-//   - text/csv
+//         "$ref": "#/definitions/LedgerReport"
 func ledgerList(c buffalo.Context) error {
 	tx := models.Tx(c)
 
@@ -72,16 +69,30 @@ func ledgerList(c buffalo.Context) error {
 		return reportError(c, api.NewAppError(err, api.ErrorInvalidReportType, api.CategoryUser))
 	}
 
-	if domain.IsStringInSlice("text/csv", c.Request().Header["Accept"]) {
-		if len(le) == 0 {
-			return c.Render(http.StatusNoContent, nil)
+	var csvFile models.File
+	if len(le) > 0 {
+		csvFile.Name = fmt.Sprintf("cover_%s_%s.csv", reportType, date.Format(domain.DateFormat))
+		csvFile.Content = le.ToCsv(date)
+		csvFile.CreatedByID = models.CurrentUser(c).ID
+		csvFile.ContentType = "text/csv"
+		if fErr := csvFile.Store(tx); fErr != nil {
+			return reportError(c, &api.AppError{
+				Message:  fErr.Message,
+				DebugMsg: fErr.Error(),
+			})
 		}
-
-		filename := fmt.Sprintf("cover_%s_%s.csv", reportType, date.Format(domain.DateFormat))
-		return renderCsv(c, filename, le.ToCsv(date))
 	}
 
-	return renderOk(c, le.ConvertToAPI(tx))
+	// temporarily truncate the list to improve UI responsiveness
+	if len(le) > 100 {
+		le = le[0:100]
+	}
+
+	report := api.LedgerReport{
+		LedgerEntries: le.ConvertToAPI(tx),
+		File:          csvFile.ConvertToAPI(tx),
+	}
+	return renderOk(c, report)
 }
 
 // swagger:operation POST /ledger Ledger LedgerReconcile
