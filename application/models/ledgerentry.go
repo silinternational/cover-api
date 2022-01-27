@@ -210,17 +210,20 @@ func (le *LedgerEntry) transactionReference() string {
 }
 
 func (le *LedgerEntry) balanceDescription() string {
-	premiumsOrClaims := "Premiums"
-	if le.Type.IsClaim() {
-		premiumsOrClaims = "Claims"
-	}
-
 	entity := le.EntityCode
 	e := EntityCode{Code: le.EntityCode}
 
 	// Don't need to use a transaction since entity codes shouldn't be changing during this operation.
 	if err := e.FindByCode(DB); err == nil && e.ParentEntity != "" {
 		entity = e.ParentEntity
+	}
+
+	premiumsOrClaims := "Premiums"
+	if le.Type.IsClaim() {
+		premiumsOrClaims = "Claims"
+
+		// Claims transactions use the same account for all entities
+		entity = "all"
 	}
 
 	return fmt.Sprintf("Total %s %s %s", entity, le.RiskCategoryName, premiumsOrClaims)
