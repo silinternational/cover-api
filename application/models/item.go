@@ -946,7 +946,7 @@ func (i *Item) CreateLedgerEntry(tx *pop.Connection, entryType LedgerEntryType, 
 	}
 
 	if oldPaidYear != i.PaidThroughYear {
-		return update(tx, i)
+		return tx.UpdateColumns(i, "paid_through_year", "updated_at")
 	}
 
 	return nil

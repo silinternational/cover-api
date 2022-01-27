@@ -3,6 +3,7 @@ package models
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"time"
 
 	"github.com/gobuffalo/nulls"
@@ -76,6 +77,21 @@ type LedgerEntry struct {
 	UpdatedAt time.Time `db:"updated_at"`
 
 	Claim *Claim `belongs_to:"claims" validate:"-"`
+}
+
+func (le *LedgerEntry) GetID() uuid.UUID {
+	return le.ID
+}
+
+func (le *LedgerEntry) FindByID(tx *pop.Connection, id uuid.UUID) error {
+	return tx.Find(le, id)
+}
+
+func (le *LedgerEntry) IsActorAllowedTo(tx *pop.Connection, user User, perm Permission, sub SubResource, req *http.Request) bool {
+	if user.IsAdmin() {
+		return true
+	}
+	return false
 }
 
 func (le *LedgerEntry) Create(tx *pop.Connection) error {
@@ -253,6 +269,7 @@ func ProcessAnnualCoverage(tx *pop.Connection, year int) error {
 	var items Items
 	if err := tx.Where("coverage_status = ?", api.ItemCoverageStatusApproved).
 		Where("paid_through_year < ?", year).
+		Eager("Policy", "Policy.EntityCode", "RiskCategory").
 		All(&items); err != nil {
 		return api.NewAppError(err, api.ErrorQueryFailure, api.CategoryInternal)
 	}
@@ -275,4 +292,36 @@ func (le *LedgerEntries) FindCurrentRenewals(tx *pop.Connection, year int) error
 		return api.NewAppError(err, api.ErrorQueryFailure, api.CategoryInternal)
 	}
 	return nil
+}
+
+func (le *LedgerEntries) ConvertToAPI(tx *pop.Connection) api.LedgerEntries {
+	ledgerEntries := make(api.LedgerEntries, len(*le))
+	for i, l := range *le {
+		ledgerEntries[i] = l.ConvertToAPI(tx)
+	}
+	return ledgerEntries
+}
+
+func (le *LedgerEntry) ConvertToAPI(tx *pop.Connection) api.LedgerEntry {
+	return api.LedgerEntry{
+		ID:               le.ID,
+		PolicyID:         le.PolicyID,
+		ItemID:           le.ItemID,
+		ClaimID:          le.ClaimID,
+		EntityCode:       le.EntityCode,
+		RiskCategoryName: le.RiskCategoryName,
+		RiskCategoryCC:   le.RiskCategoryCC,
+		Type:             api.LedgerEntryType(le.Type),
+		PolicyType:       le.PolicyType,
+		HouseholdID:      le.HouseholdID,
+		CostCenter:       le.CostCenter,
+		AccountNumber:    le.AccountNumber,
+		IncomeAccount:    le.IncomeAccount,
+		Name:             le.Name,
+		Amount:           le.Amount,
+		DateSubmitted:    le.DateSubmitted,
+		DateEntered:      convertTimeToAPI(le.DateEntered),
+		CreatedAt:        le.CreatedAt,
+		UpdatedAt:        le.UpdatedAt,
+	}
 }

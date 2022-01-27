@@ -149,10 +149,11 @@ func App() *buffalo.App {
 
 		// accounting ledger
 		ledgerGroup := app.Group(ledgerPath)
-		ledgerGroup.Middleware.Skip(AuthZ, ledgerList, ledgerReconcile, ledgerAnnual) // AuthZ is implemented in the handler
+		// AuthZ is implemented in the handlers
+		ledgerGroup.Middleware.Skip(AuthZ, ledgerAnnualProcess)
 		ledgerGroup.GET("/", ledgerList)
 		ledgerGroup.POST("/", ledgerReconcile)
-		ledgerGroup.GET("/annual", ledgerAnnual)
+		ledgerGroup.POST("/annual", ledgerAnnualProcess)
 
 		stewardGroup := app.Group(stewardPath)
 		stewardGroup.Middleware.Skip(AuthZ, stewardListRecentObjects) // AuthZ is implemented in the handler

@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strings"
 	"testing"
 	"time"
 
@@ -21,36 +20,58 @@ func (as *ActionSuite) Test_LedgerList() {
 	stewardUser := models.CreateAdminUsers(as.DB)[models.AppRoleSteward]
 
 	tests := []struct {
-		name       string
-		actor      models.User
-		wantRows   int // rows in CSV, including header rows
-		wantStatus int
-		wantInBody []string
+		name        string
+		actor       models.User
+		reportType  string
+		format      string
+		wantEntries int
+		wantStatus  int
+		wantInBody  []string
 	}{
 		{
 			name:       "unauthenticated",
 			actor:      models.User{},
+			reportType: reportTypeMonthly,
 			wantStatus: http.StatusUnauthorized,
-			wantInBody: []string{api.ErrorNotAuthorized.String()},
+			wantInBody: []string{`"key":"` + api.ErrorNotAuthorized.String()},
 		},
 		{
 			name:       "insufficient privileges",
 			actor:      normalUser,
+			reportType: reportTypeMonthly,
 			wantStatus: http.StatusNotFound,
 			wantInBody: []string{`"key":"` + api.ErrorNotAuthorized.String()},
 		},
 		{
-			name:       "normal user good results",
+			name:       "invalid report type",
 			actor:      stewardUser,
-			wantStatus: http.StatusOK,
-			wantRows:   5, // 2 header rows, 1 summary row, 1 transaction row, 1 balance row
+			reportType: "not-a-real-report-type",
+			wantStatus: http.StatusBadRequest,
+			wantInBody: []string{`"key":"` + api.ErrorInvalidReportType.String()},
+		},
+		{
+			name:        "monthly report",
+			actor:       stewardUser,
+			reportType:  reportTypeMonthly,
+			format:      "text/csv",
+			wantStatus:  http.StatusOK,
+			wantEntries: 1,
+		},
+		{
+			name:        "annual report",
+			actor:       stewardUser,
+			reportType:  reportTypeAnnual,
+			format:      "text/csv",
+			wantStatus:  http.StatusOK,
+			wantEntries: 1,
 		},
 	}
 
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
-			req := as.JSON(ledgerPath)
+			req := as.JSON(fmt.Sprintf("%s?%s=%s", ledgerPath, reportTypeParam, tt.reportType))
 			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
+			req.Headers["Accept"] = tt.format
 			res := req.Get()
 
 			body := res.Body.String()
@@ -64,8 +85,10 @@ func (as *ActionSuite) Test_LedgerList() {
 				return
 			}
 
-			rows := len(strings.Split(res.Body.String(), "\n")) - 1 // don't count empty row at end
-			as.Equal(tt.wantRows, rows, "incorrect count of CSV rows")
+			var report api.LedgerReport
+			as.NoError(json.Unmarshal([]byte(body), &report))
+
+			as.Equal(tt.wantEntries, len(report.LedgerEntries), "incorrect number of records in JSON")
 		})
 	}
 }
@@ -103,7 +126,7 @@ func (as *ActionSuite) Test_LedgerReconcile() {
 			want:       0,
 		},
 		{
-			name:       "normal user good results",
+			name:       "steward user good results",
 			actor:      stewardUser,
 			date:       time.Now().Format(domain.DateFormat),
 			wantStatus: http.StatusOK,
@@ -148,7 +171,7 @@ func (as *ActionSuite) Test_LedgerReconcile() {
 	}
 }
 
-func (as *ActionSuite) Test_LedgerAnnual() {
+func (as *ActionSuite) Test_LedgerAnnualProcess() {
 	year := time.Now().UTC().Year()
 
 	f := models.CreateItemFixtures(as.DB, models.FixturesConfig{ItemsPerPolicy: 3})
@@ -163,7 +186,6 @@ func (as *ActionSuite) Test_LedgerAnnual() {
 	tests := []struct {
 		name       string
 		actor      models.User
-		wantRows   int // rows in CSV, including header rows
 		wantStatus int
 		wantInBody []string
 	}{
@@ -180,10 +202,9 @@ func (as *ActionSuite) Test_LedgerAnnual() {
 			wantInBody: []string{`"key":"` + api.ErrorNotAuthorized.String()},
 		},
 		{
-			name:       "normal user good results",
+			name:       "steward user good results",
 			actor:      stewardUser,
-			wantStatus: http.StatusOK,
-			wantRows:   5, // 2 header rows, 1 summary row, 1 transaction row, 1 balance row
+			wantStatus: http.StatusNoContent,
 		},
 	}
 
@@ -191,7 +212,7 @@ func (as *ActionSuite) Test_LedgerAnnual() {
 		as.T().Run(tt.name, func(t *testing.T) {
 			req := as.JSON(ledgerPath + "/annual")
 			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
-			res := req.Get()
+			res := req.Post(nil)
 
 			body := res.Body.String()
 			as.Equal(tt.wantStatus, res.Code, "incorrect status code returned, body: %s", body)
@@ -199,19 +220,12 @@ func (as *ActionSuite) Test_LedgerAnnual() {
 			for _, s := range tt.wantInBody {
 				as.Contains(body, s)
 			}
-
-			if res.Code != http.StatusOK {
-				return
-			}
-
-			rows := len(strings.Split(res.Body.String(), "\n")) - 1 // don't count empty row at end
-			as.Equal(tt.wantRows, rows, "incorrect count of CSV rows")
 		})
 	}
 }
 
 func (as *ActionSuite) createFixturesForLedger() models.Fixtures {
-	f := models.CreateItemFixtures(as.DB, models.FixturesConfig{ItemsPerPolicy: 2})
+	f := models.CreateItemFixtures(as.DB, models.FixturesConfig{ItemsPerPolicy: 3})
 
 	now := time.Now().UTC()
 	yesterday := now.AddDate(0, 0, -1)
@@ -219,7 +233,7 @@ func (as *ActionSuite) createFixturesForLedger() models.Fixtures {
 	datesSubmitted := []time.Time{yesterday, yesterday}
 	datesEntered := []nulls.Time{nulls.NewTime(now), {}}
 
-	for i := range f.Items {
+	for i := range datesSubmitted {
 		f.Items[i].LoadPolicy(as.DB, false)
 		f.Items[i].Policy.LoadMembers(as.DB, false)
 		user := f.Items[i].Policy.Members[0]
@@ -232,5 +246,9 @@ func (as *ActionSuite) createFixturesForLedger() models.Fixtures {
 		entry.DateEntered = datesEntered[i]
 		as.NoError(as.DB.Update(&entry))
 	}
+
+	// add an entry for the annual report
+	as.NoError(f.Items[2].CreateLedgerEntry(as.DB, models.LedgerEntryTypeCoverageRenewal, 1000))
+
 	return f
 }
