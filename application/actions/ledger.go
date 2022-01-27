@@ -23,7 +23,7 @@ const (
 //
 // LedgerList
 //
-// Return the ledger entries as specified by the `report-type` paramater. The returned object contains a list of
+// Return the ledger entries as specified by the `report-type` parameter. The returned object contains a list of
 // LedgerEntries and a File containing a CSV file suitable for use with Sage Accounting.
 //
 // ### Report types:
@@ -69,6 +69,10 @@ func ledgerList(c buffalo.Context) error {
 		return reportError(c, api.NewAppError(err, api.ErrorInvalidReportType, api.CategoryUser))
 	}
 
+	report := api.LedgerReport{
+		LedgerEntries: le.ConvertToAPI(tx),
+	}
+
 	var csvFile models.File
 	if len(le) > 0 {
 		csvFile.Name = fmt.Sprintf("cover_%s_%s.csv", reportType, date.Format(domain.DateFormat))
@@ -81,6 +85,7 @@ func ledgerList(c buffalo.Context) error {
 				DebugMsg: fErr.Error(),
 			})
 		}
+		report.File = csvFile.ConvertToAPI(tx)
 	}
 
 	// temporarily truncate the list to improve UI responsiveness
@@ -88,10 +93,6 @@ func ledgerList(c buffalo.Context) error {
 		le = le[0:100]
 	}
 
-	report := api.LedgerReport{
-		LedgerEntries: le.ConvertToAPI(tx),
-		File:          csvFile.ConvertToAPI(tx),
-	}
 	return renderOk(c, report)
 }
 
