@@ -25,12 +25,12 @@ var ValidPolicyTypes = map[api.PolicyType]struct{}{
 
 type Policy struct {
 	ID            uuid.UUID      `db:"id"`
-	Name          string         `db:"name" validate:"required_if=Type Team"`
+	Name          string         `db:"name" validate:"required"`
 	Type          api.PolicyType `db:"type" validate:"policyType"`
 	HouseholdID   nulls.String   `db:"household_id"` // validation is checked at the struct level
-	CostCenter    string         `db:"cost_center" validate:"required_if=Type Team"`
+	CostCenter    string         `db:"cost_center"`  // validation is checked at the struct level
 	AccountDetail string         `db:"account_detail"`
-	Account       string         `db:"account" validate:"required_if=Type Team"`
+	Account       string         `db:"account"`        // validation is checked at the struct level
 	EntityCodeID  uuid.UUID      `db:"entity_code_id"` // validation is checked at the struct level
 	Notes         string         `db:"notes"`
 	LegacyID      nulls.Int      `db:"legacy_id"`
@@ -459,7 +459,6 @@ func (p *Policy) calculateAnnualPremium(tx *pop.Connection) api.Currency {
 }
 
 func (p *Policy) NewHouseholdInvite(tx *pop.Connection, invite api.PolicyUserInviteCreate, cUser User) error {
-
 	var user User
 	if err := user.FindByEmail(tx, invite.Email); domain.IsOtherThanNoRows(err) {
 		return err
@@ -491,7 +490,6 @@ func (p *Policy) NewHouseholdInvite(tx *pop.Connection, invite api.PolicyUserInv
 }
 
 func (p *Policy) NewTeamInvite(tx *pop.Connection, invite api.PolicyUserInviteCreate, cUser User) error {
-
 	var user User
 	if err := user.FindByEmail(tx, invite.Email); domain.IsOtherThanNoRows(err) {
 		return err
@@ -512,11 +510,9 @@ func (p *Policy) NewTeamInvite(tx *pop.Connection, invite api.PolicyUserInviteCr
 		return appErrorFromDB(err, api.ErrorCreateFailure)
 	}
 	return nil
-
 }
 
 func (p *Policy) createInvite(tx *pop.Connection, invite api.PolicyUserInviteCreate, cUser User) error {
-
 	// create invite
 	puInvite := PolicyUserInvite{
 		PolicyID:       p.ID,
