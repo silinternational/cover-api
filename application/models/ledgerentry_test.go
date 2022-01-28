@@ -167,9 +167,9 @@ func (ms *ModelSuite) TestLedgerEntry_balanceDescription() {
 			entry: LedgerEntry{
 				EntityCode:       parentEntity.Code,
 				RiskCategoryName: "cat1",
-				Type:             LedgerEntryTypeClaimAdjustment,
+				Type:             LedgerEntryTypeNewCoverage,
 			},
-			want: fmt.Sprintf("Total %s cat1 Claims", parentEntity.Code),
+			want: fmt.Sprintf("Total %s cat1 Premiums", parentEntity.Code),
 		},
 		{
 			name: "has parent entity",
@@ -179,6 +179,15 @@ func (ms *ModelSuite) TestLedgerEntry_balanceDescription() {
 				Type:             LedgerEntryTypeNewCoverage,
 			},
 			want: fmt.Sprintf("Total %s cat2 Premiums", parentEntity.Code),
+		},
+		{
+			name: "claims",
+			entry: LedgerEntry{
+				EntityCode:       subEntity.Code,
+				RiskCategoryName: "cat2",
+				Type:             LedgerEntryTypeClaimAdjustment,
+			},
+			want: "Total all cat2 Claims",
 		},
 	}
 	for _, tt := range tests {
@@ -322,29 +331,4 @@ func (ms *ModelSuite) TestLedgerEntries_Reconcile() {
 			}
 		})
 	}
-}
-
-func (ms *ModelSuite) TestProcessAnnualCoverage() {
-	year := time.Now().UTC().Year()
-
-	f := CreateItemFixtures(ms.DB, FixturesConfig{ItemsPerPolicy: 3})
-
-	f.Items[0].PaidThroughYear = year
-	UpdateItemStatus(ms.DB, f.Items[0], api.ItemCoverageStatusApproved, "")
-	UpdateItemStatus(ms.DB, f.Items[1], api.ItemCoverageStatusApproved, "")
-
-	err := ProcessAnnualCoverage(ms.DB, year)
-	ms.NoError(err)
-
-	var l LedgerEntries
-	ms.NoError(l.FindCurrentRenewals(ms.DB, year))
-	ms.Equal(1, len(l))
-
-	// do it again to make sure it doesn't make double ledger entries
-	err = ProcessAnnualCoverage(ms.DB, year)
-	ms.NoError(err)
-
-	var l2 LedgerEntries
-	ms.NoError(l2.FindCurrentRenewals(ms.DB, year))
-	ms.Equal(1, len(l2))
 }

@@ -187,9 +187,7 @@ func (le *LedgerEntry) Reconcile(ctx context.Context, now time.Time) error {
 }
 
 func (le *LedgerEntry) transactionDescription() string {
-	dateString := le.DateSubmitted.Format("01-02-2006")
-
-	description := fmt.Sprintf("%s %s %s", le.RiskCategoryName, le.Type, dateString)
+	description := fmt.Sprintf("%s %s", le.RiskCategoryName, le.Type)
 	if le.PolicyType == api.PolicyTypeHousehold {
 		description = le.Name + " " + description
 	}
@@ -210,17 +208,20 @@ func (le *LedgerEntry) transactionReference() string {
 }
 
 func (le *LedgerEntry) balanceDescription() string {
-	premiumsOrClaims := "Premiums"
-	if le.Type.IsClaim() {
-		premiumsOrClaims = "Claims"
-	}
-
 	entity := le.EntityCode
 	e := EntityCode{Code: le.EntityCode}
 
 	// Don't need to use a transaction since entity codes shouldn't be changing during this operation.
 	if err := e.FindByCode(DB); err == nil && e.ParentEntity != "" {
 		entity = e.ParentEntity
+	}
+
+	premiumsOrClaims := "Premiums"
+	if le.Type.IsClaim() {
+		premiumsOrClaims = "Claims"
+
+		// Claims transactions use the same account for all entities
+		entity = "all"
 	}
 
 	return fmt.Sprintf("Total %s %s %s", entity, le.RiskCategoryName, premiumsOrClaims)
@@ -261,27 +262,6 @@ func (le *LedgerEntry) LoadClaim(tx *pop.Connection) {
 			panic("error loading ledger entry claim: " + err.Error())
 		}
 	}
-}
-
-// ProcessAnnualCoverage creates coverage renewal ledger entries for all items covered for the given year.
-// Does not create new records for items already processed.
-func ProcessAnnualCoverage(tx *pop.Connection, year int) error {
-	var items Items
-	if err := tx.Where("coverage_status = ?", api.ItemCoverageStatusApproved).
-		Where("paid_through_year < ?", year).
-		Eager("Policy", "Policy.EntityCode", "RiskCategory").
-		All(&items); err != nil {
-		return api.NewAppError(err, api.ErrorQueryFailure, api.CategoryInternal)
-	}
-
-	for _, item := range items {
-		err := item.CreateLedgerEntry(tx, LedgerEntryTypeCoverageRenewal, item.CalculateAnnualPremium())
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
 }
 
 // FindCurrentRenewals finds the coverage renewal ledger entries for the given year

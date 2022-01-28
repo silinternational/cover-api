@@ -3,6 +3,7 @@ package models
 import (
 	"net/url"
 	"testing"
+	"time"
 
 	"github.com/gobuffalo/buffalo"
 	"github.com/gobuffalo/nulls"
@@ -73,27 +74,14 @@ func (ms *ModelSuite) TestPolicy_Validate() {
 			errField: "Policy.HouseholdID",
 		},
 		{
-			name: "team type, should have cost center",
+			name: "team type, should have either account or cost center",
 			Policy: Policy{
 				Name:         "my policy",
 				Type:         api.PolicyTypeTeam,
-				Account:      "123456",
 				EntityCodeID: domain.GetUUID(),
 			},
 			wantErr:  true,
 			errField: "Policy.CostCenter",
-		},
-		{
-			name: "team type, should have account",
-			Policy: Policy{
-				Name:         "my policy",
-				Type:         api.PolicyTypeTeam,
-				HouseholdID:  nulls.NewString("abc123"),
-				CostCenter:   "abc123",
-				EntityCodeID: domain.GetUUID(),
-			},
-			wantErr:  true,
-			errField: "Policy.Account",
 		},
 		{
 			name: "incorrect entity code id",
@@ -166,9 +154,7 @@ func (ms *ModelSuite) TestPolicy_CreateTeam() {
 
 	missingCC := goodPolicy
 	missingCC.CostCenter = ""
-
-	missingAcc := goodPolicy
-	missingAcc.Account = ""
+	missingCC.Account = ""
 
 	missingEntCode := goodPolicy
 	missingEntCode.EntityCodeID = uuid.Nil
@@ -186,15 +172,9 @@ func (ms *ModelSuite) TestPolicy_CreateTeam() {
 			wantErr: true,
 		},
 		{
-			name:    "missing CostCenter",
+			name:    "missing CostCenter and Account",
 			user:    user,
 			policy:  missingCC,
-			wantErr: true,
-		},
-		{
-			name:    "missing Account",
-			user:    user,
-			policy:  missingAcc,
 			wantErr: true,
 		},
 		{
@@ -651,4 +631,33 @@ func (ms *ModelSuite) TestPolicies_Query() {
 			ms.Equal(p.Page, 1, "should default to page 1")
 		})
 	}
+}
+
+func (ms *ModelSuite) TestPolicy_ProcessAnnualCoverage() {
+	year := time.Now().UTC().Year()
+
+	f := CreateItemFixtures(ms.DB, FixturesConfig{ItemsPerPolicy: 5})
+
+	f.Items[0].PaidThroughYear = year
+	f.Items[2].RiskCategoryID = RiskCategoryMobileID()
+	for i := range f.Items {
+		UpdateItemStatus(ms.DB, f.Items[i], api.ItemCoverageStatusApproved, "")
+	}
+
+	err := f.Policies[0].ProcessAnnualCoverage(ms.DB, year)
+	ms.NoError(err)
+
+	var l LedgerEntries
+	ms.NoError(l.FindCurrentRenewals(ms.DB, year))
+
+	// should be one for each risk category
+	ms.Equal(2, len(l))
+
+	// do it again to make sure it doesn't make double ledger entries
+	err = f.Policies[0].ProcessAnnualCoverage(ms.DB, year)
+	ms.NoError(err)
+
+	var l2 LedgerEntries
+	ms.NoError(l2.FindCurrentRenewals(ms.DB, year))
+	ms.Equal(2, len(l2))
 }

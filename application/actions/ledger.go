@@ -23,7 +23,7 @@ const (
 //
 // LedgerList
 //
-// Return the ledger entries as specified by the `report-type` paramater. The returned object contains a list of
+// Return the ledger entries as specified by the `report-type` parameter. The returned object contains a list of
 // LedgerEntries and a File containing a CSV file suitable for use with Sage Accounting.
 //
 // ### Report types:
@@ -54,7 +54,7 @@ func ledgerList(c buffalo.Context) error {
 	case reportTypeMonthly:
 		date = domain.BeginningOfDay(time.Now().UTC())
 		if err := le.AllNotEntered(tx, date); err != nil {
-			return err
+			return reportError(c, err)
 		}
 
 	case reportTypeAnnual:
@@ -69,6 +69,10 @@ func ledgerList(c buffalo.Context) error {
 		return reportError(c, api.NewAppError(err, api.ErrorInvalidReportType, api.CategoryUser))
 	}
 
+	report := api.LedgerReport{
+		LedgerEntries: le.ConvertToAPI(tx),
+	}
+
 	var csvFile models.File
 	if len(le) > 0 {
 		csvFile.Name = fmt.Sprintf("cover_%s_%s.csv", reportType, date.Format(domain.DateFormat))
@@ -81,6 +85,7 @@ func ledgerList(c buffalo.Context) error {
 				DebugMsg: fErr.Error(),
 			})
 		}
+		report.File = csvFile.ConvertToAPI(tx)
 	}
 
 	// temporarily truncate the list to improve UI responsiveness
@@ -88,10 +93,6 @@ func ledgerList(c buffalo.Context) error {
 		le = le[0:100]
 	}
 
-	report := api.LedgerReport{
-		LedgerEntries: le.ConvertToAPI(tx),
-		File:          csvFile.ConvertToAPI(tx),
-	}
 	return renderOk(c, report)
 }
 
@@ -131,7 +132,7 @@ func ledgerReconcile(c buffalo.Context) error {
 
 	var le models.LedgerEntries
 	if err := le.AllNotEntered(tx, date); err != nil {
-		return err
+		return reportError(c, err)
 	}
 
 	if err := le.Reconcile(c); err != nil {
@@ -162,21 +163,13 @@ func ledgerAnnualProcess(c buffalo.Context) error {
 
 	currentYear := time.Now().UTC().Year()
 
-	if err := models.ProcessAnnualCoverage(tx, currentYear); err != nil {
+	var policies models.Policies
+	if err := policies.AllActive(tx); err != nil {
+		return reportError(c, err)
+	}
+	if err := policies.ProcessAnnualCoverage(tx, currentYear); err != nil {
 		return reportError(c, err)
 	}
 
 	return c.Render(http.StatusNoContent, nil)
-}
-
-func renderCsv(c buffalo.Context, filename string, csvData []byte) error {
-	response := c.Response()
-	response.Header().Set("Content-Type", "text/csv")
-	response.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; %s"`, filename))
-	_, err := response.Write(csvData)
-	if err != nil {
-		return err
-	}
-
-	return c.Render(http.StatusOK, nil)
 }

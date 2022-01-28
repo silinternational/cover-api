@@ -25,12 +25,12 @@ var ValidPolicyTypes = map[api.PolicyType]struct{}{
 
 type Policy struct {
 	ID            uuid.UUID      `db:"id"`
-	Name          string         `db:"name" validate:"required_if=Type Team"`
+	Name          string         `db:"name" validate:"required"`
 	Type          api.PolicyType `db:"type" validate:"policyType"`
 	HouseholdID   nulls.String   `db:"household_id"` // validation is checked at the struct level
-	CostCenter    string         `db:"cost_center" validate:"required_if=Type Team"`
+	CostCenter    string         `db:"cost_center"`  // validation is checked at the struct level
 	AccountDetail string         `db:"account_detail"`
-	Account       string         `db:"account" validate:"required_if=Type Team"`
+	Account       string         `db:"account"`        // validation is checked at the struct level
 	EntityCodeID  uuid.UUID      `db:"entity_code_id"` // validation is checked at the struct level
 	Notes         string         `db:"notes"`
 	LegacyID      nulls.Int      `db:"legacy_id"`
@@ -280,6 +280,10 @@ func (p *Policies) All(tx *pop.Connection) error {
 	return appErrorFromDB(tx.All(p), api.ErrorQueryFailure)
 }
 
+func (p *Policies) AllActive(tx *pop.Connection) error {
+	return appErrorFromDB(tx.Q().Scope(scopeFilterPoliciesByActive("true")).All(p), api.ErrorQueryFailure)
+}
+
 func (p *Policies) Query(tx *pop.Connection, params api.QueryParams) (*pop.Paginator, error) {
 	q := tx.Order("updated_at DESC")
 
@@ -455,7 +459,6 @@ func (p *Policy) calculateAnnualPremium(tx *pop.Connection) api.Currency {
 }
 
 func (p *Policy) NewHouseholdInvite(tx *pop.Connection, invite api.PolicyUserInviteCreate, cUser User) error {
-
 	var user User
 	if err := user.FindByEmail(tx, invite.Email); domain.IsOtherThanNoRows(err) {
 		return err
@@ -487,7 +490,6 @@ func (p *Policy) NewHouseholdInvite(tx *pop.Connection, invite api.PolicyUserInv
 }
 
 func (p *Policy) NewTeamInvite(tx *pop.Connection, invite api.PolicyUserInviteCreate, cUser User) error {
-
 	var user User
 	if err := user.FindByEmail(tx, invite.Email); domain.IsOtherThanNoRows(err) {
 		return err
@@ -508,11 +510,9 @@ func (p *Policy) NewTeamInvite(tx *pop.Connection, invite api.PolicyUserInviteCr
 		return appErrorFromDB(err, api.ErrorCreateFailure)
 	}
 	return nil
-
 }
 
 func (p *Policy) createInvite(tx *pop.Connection, invite api.PolicyUserInviteCreate, cUser User) error {
-
 	// create invite
 	puInvite := PolicyUserInvite{
 		PolicyID:       p.ID,
@@ -526,5 +526,66 @@ func (p *Policy) createInvite(tx *pop.Connection, invite api.PolicyUserInviteCre
 	if err := puInvite.Create(tx); err != nil {
 		return appErrorFromDB(err, api.ErrorCreateFailure)
 	}
+	return nil
+}
+
+// ProcessAnnualCoverage creates coverage renewal ledger entries for all items covered for the given year.
+// Does not create new records for items already processed.
+func (p *Policies) ProcessAnnualCoverage(tx *pop.Connection, year int) error {
+	for _, pp := range *p {
+		if err := pp.ProcessAnnualCoverage(tx, year); err != nil {
+			return fmt.Errorf("error processing annual coverage for policy %s: %w", pp.ID, err)
+		}
+	}
+	return nil
+}
+
+func (p *Policy) ProcessAnnualCoverage(tx *pop.Connection, year int) error {
+	var items Items
+	if err := tx.Where("coverage_status = ?", api.ItemCoverageStatusApproved).
+		Where("paid_through_year < ?", year).
+		Where("policy_id  = ?", p.ID).
+		All(&items); err != nil {
+		return appErrorFromDB(err, api.ErrorQueryFailure)
+	}
+
+	totalAnnualPremium := map[uuid.UUID]api.Currency{}
+	for i := range items {
+		items[i].PaidThroughYear = year
+		if err := tx.UpdateColumns(&items[i], "paid_through_year", "updated_at"); err != nil {
+			return fmt.Errorf("failed to update paid_through_year for item %s: %w", items[i].ID, err)
+		}
+		totalAnnualPremium[items[i].RiskCategoryID] += items[i].CalculateAnnualPremium()
+	}
+
+	for id, amount := range totalAnnualPremium {
+		err := p.CreateRenewalLedgerEntry(tx, id, amount)
+		if err != nil {
+			return api.NewAppError(err, api.ErrorCreateRenewalEntry, api.CategoryInternal)
+		}
+	}
+	return nil
+}
+
+func (p *Policy) CreateRenewalLedgerEntry(tx *pop.Connection, riskCategoryID uuid.UUID, amount api.Currency) error {
+	p.LoadEntityCode(tx, false)
+
+	var rc RiskCategory
+	if err := rc.FindByID(tx, riskCategoryID); err != nil {
+		return fmt.Errorf("failed to find risk category %s: %w", riskCategoryID, err)
+	}
+
+	le := NewLedgerEntry(*p, nil, nil)
+	le.Type = LedgerEntryTypeCoverageRenewal
+	le.Amount = amount
+	le.Name = p.Name
+	le.EntityCode = p.EntityCode.Code
+	le.RiskCategoryName = rc.Name
+	le.RiskCategoryCC = rc.CostCenter
+
+	if err := le.Create(tx); err != nil {
+		return fmt.Errorf("failed to create ledger entry for policy %s: %w", p.ID, err)
+	}
+
 	return nil
 }
