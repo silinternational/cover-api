@@ -163,7 +163,11 @@ func ledgerAnnualProcess(c buffalo.Context) error {
 
 	currentYear := time.Now().UTC().Year()
 
-	if err := models.ProcessAnnualCoverage(tx, currentYear); err != nil {
+	var policies models.Policies
+	if err := policies.AllActive(tx); err != nil {
+		return err
+	}
+	if err := policies.ProcessAnnualCoverage(tx, currentYear); err != nil {
 		return reportError(c, err)
 	}
 
