@@ -316,6 +316,7 @@ func (as *ActionSuite) Test_PoliciesUpdate() {
 			actor:  normalUser,
 			policy: fixtures.Policies[1],
 			update: api.PolicyUpdate{
+				Name:        fixtures.Policies[1].Name,
 				HouseholdID: &id1,
 			},
 			wantStatus: http.StatusOK,
@@ -326,6 +327,7 @@ func (as *ActionSuite) Test_PoliciesUpdate() {
 			actor:  normalUser,
 			policy: fixtures.Policies[0],
 			update: api.PolicyUpdate{
+				Name:        fixtures.Policies[1].Name,
 				HouseholdID: &id2,
 			},
 			wantStatus:    http.StatusNotFound,
@@ -336,6 +338,7 @@ func (as *ActionSuite) Test_PoliciesUpdate() {
 			actor:  appAdmin,
 			policy: fixtures.Policies[1],
 			update: api.PolicyUpdate{
+				Name:        fixtures.Policies[1].Name,
 				HouseholdID: &id3,
 			},
 			wantStatus: http.StatusOK,
