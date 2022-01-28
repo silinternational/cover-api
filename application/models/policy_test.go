@@ -3,6 +3,7 @@ package models
 import (
 	"net/url"
 	"testing"
+	"time"
 
 	"github.com/gobuffalo/buffalo"
 	"github.com/gobuffalo/nulls"
@@ -651,4 +652,33 @@ func (ms *ModelSuite) TestPolicies_Query() {
 			ms.Equal(p.Page, 1, "should default to page 1")
 		})
 	}
+}
+
+func (ms *ModelSuite) TestPolicy_ProcessAnnualCoverage() {
+	year := time.Now().UTC().Year()
+
+	f := CreateItemFixtures(ms.DB, FixturesConfig{ItemsPerPolicy: 5})
+
+	f.Items[0].PaidThroughYear = year
+	f.Items[2].RiskCategoryID = RiskCategoryMobileID()
+	for i := range f.Items {
+		UpdateItemStatus(ms.DB, f.Items[i], api.ItemCoverageStatusApproved, "")
+	}
+
+	err := f.Policies[0].ProcessAnnualCoverage(ms.DB, year)
+	ms.NoError(err)
+
+	var l LedgerEntries
+	ms.NoError(l.FindCurrentRenewals(ms.DB, year))
+
+	// should be one for each risk category
+	ms.Equal(2, len(l))
+
+	// do it again to make sure it doesn't make double ledger entries
+	err = f.Policies[0].ProcessAnnualCoverage(ms.DB, year)
+	ms.NoError(err)
+
+	var l2 LedgerEntries
+	ms.NoError(l2.FindCurrentRenewals(ms.DB, year))
+	ms.Equal(2, len(l2))
 }
