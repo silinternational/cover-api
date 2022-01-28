@@ -54,7 +54,7 @@ func ledgerList(c buffalo.Context) error {
 	case reportTypeMonthly:
 		date = domain.BeginningOfDay(time.Now().UTC())
 		if err := le.AllNotEntered(tx, date); err != nil {
-			return err
+			return reportError(c, err)
 		}
 
 	case reportTypeAnnual:
@@ -132,7 +132,7 @@ func ledgerReconcile(c buffalo.Context) error {
 
 	var le models.LedgerEntries
 	if err := le.AllNotEntered(tx, date); err != nil {
-		return err
+		return reportError(c, err)
 	}
 
 	if err := le.Reconcile(c); err != nil {
@@ -165,23 +165,11 @@ func ledgerAnnualProcess(c buffalo.Context) error {
 
 	var policies models.Policies
 	if err := policies.AllActive(tx); err != nil {
-		return err
+		return reportError(c, err)
 	}
 	if err := policies.ProcessAnnualCoverage(tx, currentYear); err != nil {
 		return reportError(c, err)
 	}
 
 	return c.Render(http.StatusNoContent, nil)
-}
-
-func renderCsv(c buffalo.Context, filename string, csvData []byte) error {
-	response := c.Response()
-	response.Header().Set("Content-Type", "text/csv")
-	response.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; %s"`, filename))
-	_, err := response.Write(csvData)
-	if err != nil {
-		return err
-	}
-
-	return c.Render(http.StatusOK, nil)
 }

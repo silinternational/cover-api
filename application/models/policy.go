@@ -550,7 +550,7 @@ func (p *Policy) ProcessAnnualCoverage(tx *pop.Connection, year int) error {
 		Where("paid_through_year < ?", year).
 		Where("policy_id  = ?", p.ID).
 		All(&items); err != nil {
-		return api.NewAppError(err, api.ErrorQueryFailure, api.CategoryInternal)
+		return appErrorFromDB(err, api.ErrorQueryFailure)
 	}
 
 	totalAnnualPremium := map[uuid.UUID]api.Currency{}
@@ -565,7 +565,7 @@ func (p *Policy) ProcessAnnualCoverage(tx *pop.Connection, year int) error {
 	for id, amount := range totalAnnualPremium {
 		err := p.CreateRenewalLedgerEntry(tx, id, amount)
 		if err != nil {
-			return err
+			return api.NewAppError(err, api.ErrorCreateRenewalEntry, api.CategoryInternal)
 		}
 	}
 	return nil
