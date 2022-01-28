@@ -550,12 +550,12 @@ func (p *Policy) ProcessAnnualCoverage(tx *pop.Connection, year int) error {
 	}
 
 	totalAnnualPremium := map[uuid.UUID]api.Currency{}
-	for _, item := range items {
-		item.PaidThroughYear = year
-		if err := tx.UpdateColumns(&item, "paid_through_year", "updated_at"); err != nil {
-			return fmt.Errorf("failed to update paid_through_year for item %s: %w", item.ID, err)
+	for i := range items {
+		items[i].PaidThroughYear = year
+		if err := tx.UpdateColumns(&items[i], "paid_through_year", "updated_at"); err != nil {
+			return fmt.Errorf("failed to update paid_through_year for item %s: %w", items[i].ID, err)
 		}
-		totalAnnualPremium[item.RiskCategoryID] += item.CalculateAnnualPremium()
+		totalAnnualPremium[items[i].RiskCategoryID] += items[i].CalculateAnnualPremium()
 	}
 
 	for id, amount := range totalAnnualPremium {
