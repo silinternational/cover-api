@@ -202,8 +202,11 @@ func policyStructLevelValidation(sl validator.StructLevel) {
 			sl.ReportError(policy.Account, "account", "Account", "account_not_permitted", "")
 		}
 	} else if policy.Type == api.PolicyTypeTeam {
-		if policy.CostCenter == "" && policy.AccountDetail == "" {
+		if policy.CostCenter == "" {
 			sl.ReportError(policy.CostCenter, "cost_center", "CostCenter", "cost_center_required", "")
+		}
+		if policy.Account == "" {
+			sl.ReportError(policy.Account, "account", "Account", "account_not_required", "")
 		}
 		if policy.HouseholdID.Valid {
 			sl.ReportError(policy.HouseholdID, "household_id", "HouseholdID", "household_id_not_permitted", "")

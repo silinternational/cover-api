@@ -74,14 +74,27 @@ func (ms *ModelSuite) TestPolicy_Validate() {
 			errField: "Policy.HouseholdID",
 		},
 		{
-			name: "team type, should have either account or cost center",
+			name: "team type, should have cost center",
 			Policy: Policy{
 				Name:         "my policy",
 				Type:         api.PolicyTypeTeam,
+				Account:      "123456",
 				EntityCodeID: domain.GetUUID(),
 			},
 			wantErr:  true,
 			errField: "Policy.CostCenter",
+		},
+		{
+			name: "team type, should have account",
+			Policy: Policy{
+				Name:         "my policy",
+				Type:         api.PolicyTypeTeam,
+				HouseholdID:  nulls.NewString("abc123"),
+				CostCenter:   "abc123",
+				EntityCodeID: domain.GetUUID(),
+			},
+			wantErr:  true,
+			errField: "Policy.Account",
 		},
 		{
 			name: "incorrect entity code id",
@@ -154,7 +167,9 @@ func (ms *ModelSuite) TestPolicy_CreateTeam() {
 
 	missingCC := goodPolicy
 	missingCC.CostCenter = ""
-	missingCC.Account = ""
+
+	missingAcc := goodPolicy
+	missingAcc.Account = ""
 
 	missingEntCode := goodPolicy
 	missingEntCode.EntityCodeID = uuid.Nil
@@ -172,9 +187,15 @@ func (ms *ModelSuite) TestPolicy_CreateTeam() {
 			wantErr: true,
 		},
 		{
-			name:    "missing CostCenter and Account",
+			name:    "missing CostCenter",
 			user:    user,
 			policy:  missingCC,
+			wantErr: true,
+		},
+		{
+			name:    "missing Account",
+			user:    user,
+			policy:  missingAcc,
 			wantErr: true,
 		},
 		{
