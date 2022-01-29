@@ -264,12 +264,12 @@ func (le *LedgerEntry) LoadClaim(tx *pop.Connection) {
 	}
 }
 
-// FindCurrentRenewals finds the coverage renewal ledger entries for the given year
-func (le *LedgerEntries) FindCurrentRenewals(tx *pop.Connection, year int) error {
+// FindRenewals finds the coverage renewal ledger entries for the given year
+func (le *LedgerEntries) FindRenewals(tx *pop.Connection, year int) error {
 	if err := tx.Where("type = ?", LedgerEntryTypeCoverageRenewal).
 		Where("EXTRACT(YEAR FROM date_submitted) = ?", year).
 		All(le); err != nil {
-		return api.NewAppError(err, api.ErrorQueryFailure, api.CategoryInternal)
+		return appErrorFromDB(err, api.ErrorQueryFailure)
 	}
 	return nil
 }
