@@ -12,7 +12,7 @@ import (
 	"github.com/silinternational/cover-api/models"
 )
 
-// swagger:operation GET /ledger-report LedgerReport LedgerReportList
+// swagger:operation GET /ledger-reports LedgerReport LedgerReportList
 //
 // LedgerReportList
 //
@@ -37,7 +37,7 @@ func ledgerReportList(c buffalo.Context) error {
 	return renderOk(c, list.ConvertToAPI(tx))
 }
 
-// swagger:operation GET /ledger-report/{id} LedgerReport LedgerReportView
+// swagger:operation GET /ledger-reports/{id} LedgerReport LedgerReportView
 //
 // LedgerReportView
 //
@@ -64,7 +64,7 @@ func ledgerReportView(c buffalo.Context) error {
 	return renderOk(c, ledgerReport.ConvertToAPI(tx))
 }
 
-// swagger:operation POST /ledger-report LedgerReport LedgerReportCreate
+// swagger:operation POST /ledger-reports LedgerReport LedgerReportCreate
 //
 // LedgerReportCreate
 //
@@ -119,7 +119,7 @@ func ledgerReportCreate(c buffalo.Context) error {
 	return renderOk(c, report.ConvertToAPI(tx))
 }
 
-// swagger:operation PUT /ledger-report LedgerReport LedgerReportReconcile
+// swagger:operation PUT /ledger-reports LedgerReport LedgerReportReconcile
 //
 // LedgerReportReconcile
 //
@@ -164,7 +164,7 @@ func ledgerReportReconcile(c buffalo.Context) error {
 	return renderOk(c, api.BatchApproveResponse{NumberOfRecordsApproved: len(le)})
 }
 
-// swagger:operation POST /ledger/annual Ledger LedgerAnnualProcess
+// swagger:operation POST /ledger-reports/annual Ledger LedgerAnnualProcess
 //
 // LedgerAnnualProcess
 //
