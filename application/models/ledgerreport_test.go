@@ -159,6 +159,12 @@ func (ms *ModelSuite) TestNewLedgerReport() {
 			wantErr:    &api.AppError{Key: api.ErrorNoLedgerEntries, Category: api.CategoryNotFound},
 		},
 		{
+			name:       "future date",
+			date:       time.Now().UTC().AddDate(0, 0, 1),
+			reportType: ReportTypeMonthly,
+			wantErr:    &api.AppError{Key: api.ErrorInvalidDate, Category: api.CategoryUser},
+		},
+		{
 			name:       "one entry",
 			date:       may,
 			reportType: ReportTypeMonthly,

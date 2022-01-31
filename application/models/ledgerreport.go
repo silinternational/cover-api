@@ -121,6 +121,11 @@ func NewLedgerReport(ctx context.Context, reportType string, date time.Time) (Le
 
 	report := LedgerReport{Type: reportType}
 
+	if date.After(time.Now().UTC()) {
+		err := errors.New("future date requested for ledger report: " + date.Format(domain.DateFormat))
+		return report, api.NewAppError(err, api.ErrorInvalidDate, api.CategoryUser)
+	}
+
 	var le LedgerEntries
 	switch reportType {
 	case ReportTypeMonthly:
