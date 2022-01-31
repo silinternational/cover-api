@@ -12,11 +12,6 @@ import (
 	"github.com/silinternational/cover-api/models"
 )
 
-const (
-	reportTypeMonthly = "monthly"
-	reportTypeAnnual  = "annual"
-)
-
 // swagger:operation GET /ledger-report LedgerReport LedgerReportList
 //
 // LedgerReportList
@@ -73,12 +68,12 @@ func ledgerReportView(c buffalo.Context) error {
 //
 // LedgerReportCreate
 //
-// Return the ledger entries as specified by the `report-type` parameter. The returned object contains a list of
-// LedgerEntries and a File containing a CSV file suitable for use with Sage Accounting.
+// Return the ledger entries as specified by the input object. The returned object contains a File object pointing to
+// a CSV file suitable for use with Sage Accounting.
 //
 // ### Report types:
-// + `monthly` - Return all ledger entries not yet reconciled, up to the beginning of the current day (0:00 UTC).
-// + `annual` - Return the billing detail for current year's policy renewals.
+// + `monthly` - Return all ledger entries not yet reconciled, up to the beginning of the given day (0:00 UTC).
+// + `annual` - Return the billing detail for given year's policy renewals.
 //
 // ---
 // parameters:
@@ -128,9 +123,8 @@ func ledgerReportCreate(c buffalo.Context) error {
 //
 // LedgerReportReconcile
 //
-// Mark ledger entries as reconciled as of today. Call this only after all transactions returned by
-// LedgerList have been fully loaded into the accounting record. Today's transactions
-// (entered after 0:00 UTC) are not marked as reconciled.
+// Mark ledger entries in the report reconciled as of today. Call this only after all transactions in the report
+// have been fully loaded into the accounting record.
 //
 // ---
 // parameters:
