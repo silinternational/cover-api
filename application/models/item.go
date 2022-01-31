@@ -927,7 +927,7 @@ func (i *Item) CreateLedgerEntry(tx *pop.Connection, entryType LedgerEntryType, 
 
 	le := NewLedgerEntry(i.Policy, i, nil)
 	le.Type = entryType
-	le.Amount = amount
+	le.Amount = -amount
 	le.Name = name.String()
 	if le.Name == "" {
 		le.Name = i.Policy.Name
