@@ -123,7 +123,7 @@ func (i *Item) Update(ctx context.Context) error {
 		}
 	}
 
-	if oldItem.CoverageAmount != i.CoverageAmount {
+	if oldItem.CoverageAmount != i.CoverageAmount && i.CoverageStatus == api.ItemCoverageStatusApproved {
 		amount := i.calculatePremiumChange(time.Now().UTC(), oldItem.CoverageAmount)
 		if err := i.CreateLedgerEntry(Tx(ctx), LedgerEntryTypeCoverageChange, amount); err != nil {
 			return err
@@ -927,7 +927,7 @@ func (i *Item) CreateLedgerEntry(tx *pop.Connection, entryType LedgerEntryType, 
 
 	le := NewLedgerEntry(i.Policy, i, nil)
 	le.Type = entryType
-	le.Amount = amount
+	le.Amount = -amount
 	le.Name = name.String()
 	if le.Name == "" {
 		le.Name = i.Policy.Name
