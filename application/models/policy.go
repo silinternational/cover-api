@@ -577,7 +577,7 @@ func (p *Policy) CreateRenewalLedgerEntry(tx *pop.Connection, riskCategoryID uui
 
 	le := NewLedgerEntry(*p, nil, nil)
 	le.Type = LedgerEntryTypeCoverageRenewal
-	le.Amount = amount
+	le.Amount = -amount
 	le.Name = p.Name
 	le.EntityCode = p.EntityCode.Code
 	le.RiskCategoryName = rc.Name

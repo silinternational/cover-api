@@ -883,7 +883,7 @@ func (c *Claim) CreateLedgerEntry(tx *pop.Connection) error {
 
 		le := NewLedgerEntry(c.Policy, &item, c)
 		le.Type = LedgerEntryTypeClaim
-		le.Amount = -c.TotalPayout
+		le.Amount = c.TotalPayout
 		le.Name = name.String()
 		if le.Name == "" {
 			le.Name = c.Policy.Name
