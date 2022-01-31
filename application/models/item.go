@@ -123,7 +123,7 @@ func (i *Item) Update(ctx context.Context) error {
 		}
 	}
 
-	if oldItem.CoverageAmount != i.CoverageAmount {
+	if oldItem.CoverageAmount != i.CoverageAmount && i.CoverageStatus == api.ItemCoverageStatusApproved {
 		amount := i.calculatePremiumChange(time.Now().UTC(), oldItem.CoverageAmount)
 		if err := i.CreateLedgerEntry(Tx(ctx), LedgerEntryTypeCoverageChange, amount); err != nil {
 			return err
