@@ -169,6 +169,12 @@ func (as *ActionSuite) Test_LedgerReportCreate() {
 			reportType: models.ReportTypeMonthly,
 			wantStatus: http.StatusOK,
 		},
+		{
+			name:       "annual report",
+			actor:      stewardUser,
+			reportType: models.ReportTypeAnnual,
+			wantStatus: http.StatusOK,
+		},
 	}
 
 	for _, tt := range tests {
