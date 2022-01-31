@@ -54,12 +54,12 @@ const idRegex = `/{id:[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[1-5][a-fA-F0-9]{3}-[8|9|aA|
 
 const (
 	stewardPath         = "/steward"
-	ledgerReportPath    = "/" + domain.TypeLedgerReport
 	claimsPath          = "/" + domain.TypeClaim
 	claimFilesPath      = "/" + domain.TypeClaimFile
 	claimItemsPath      = "/" + domain.TypeClaimItem
 	filesPath           = "/" + domain.TypeFile
 	itemsPath           = "/" + domain.TypeItem
+	ledgerReportPath    = "/" + domain.TypeLedgerReport
 	policiesPath        = "/" + domain.TypePolicy
 	policyDependentPath = "/" + domain.TypePolicyDependent
 )
