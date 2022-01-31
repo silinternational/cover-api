@@ -20,9 +20,16 @@ type LedgerReconcileInput struct {
 }
 
 // swagger:model
+type LedgerReports []LedgerReport
+
+// swagger:model
 type LedgerReport struct {
-	File          File          `json:"file"`
-	LedgerEntries LedgerEntries `json:"ledger_entries"`
+	ID        uuid.UUID `json:"id"`
+	File      File      `json:"file"`
+	Type      string    `json:"type"`
+	Date      time.Time `json:"date"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
 }
 
 // swagger:model
