@@ -3,7 +3,6 @@ package models
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"time"
 
 	"github.com/gobuffalo/nulls"
@@ -77,21 +76,6 @@ type LedgerEntry struct {
 	UpdatedAt time.Time `db:"updated_at"`
 
 	Claim *Claim `belongs_to:"claims" validate:"-"`
-}
-
-func (le *LedgerEntry) GetID() uuid.UUID {
-	return le.ID
-}
-
-func (le *LedgerEntry) FindByID(tx *pop.Connection, id uuid.UUID) error {
-	return tx.Find(le, id)
-}
-
-func (le *LedgerEntry) IsActorAllowedTo(tx *pop.Connection, user User, perm Permission, sub SubResource, req *http.Request) bool {
-	if user.IsAdmin() {
-		return true
-	}
-	return false
 }
 
 func (le *LedgerEntry) Create(tx *pop.Connection) error {
