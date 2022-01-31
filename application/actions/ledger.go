@@ -1,7 +1,6 @@
 package actions
 
 import (
-	"errors"
 	"fmt"
 	"net/http"
 	"time"
@@ -14,21 +13,41 @@ import (
 )
 
 const (
-	reportTypeParam   = "report-type"
 	reportTypeMonthly = "monthly"
 	reportTypeAnnual  = "annual"
 )
 
-// swagger:operation GET /ledger Ledger LedgerList
+// swagger:operation GET /ledger-report LedgerReport LedgerReportList
 //
-// LedgerList
+// LedgerReportList
 //
-// Return the ledger entries as specified by the `report-type` parameter. The returned object contains a list of
-// LedgerEntries and a File containing a CSV file suitable for use with Sage Accounting.
+// Return a list of ledger reports
 //
-// ### Report types:
-// + `monthly` - Return all ledger entries not yet reconciled, up to the beginning of the current day (0:00 UTC).
-// + `annual` - Return the billing detail for current year's policy renewals.
+// ---
+// responses:
+//   '200':
+//     description: LedgerReport list
+//     schema:
+//       type: array
+//       items:
+//         "$ref": "#/definitions/LedgerReport"
+func ledgerReportList(c buffalo.Context) error {
+	var list models.LedgerReports
+
+	tx := models.Tx(c)
+	if err := list.All(tx); err != nil {
+		return reportError(c, err)
+	}
+
+	return renderOk(c, list.ConvertToAPI(tx))
+}
+
+// swagger:operation GET /ledger-report/{id} LedgerReport LedgerReportView
+//
+// LedgerReportView
+//
+// Return the ledger report specified by `id`. The returned object contains metadata and a File object pointing to
+// a CSV file suitable for use with Sage Accounting.
 //
 // ---
 // parameters:
@@ -43,62 +62,71 @@ const (
 //       type: array
 //       items:
 //         "$ref": "#/definitions/LedgerReport"
-func ledgerList(c buffalo.Context) error {
+func ledgerReportView(c buffalo.Context) error {
 	tx := models.Tx(c)
 
-	var le models.LedgerEntries
-	var date time.Time
-
-	reportType := c.Params().Get(reportTypeParam)
-	switch reportType {
-	case reportTypeMonthly:
-		date = domain.BeginningOfDay(time.Now().UTC())
-		if err := le.AllNotEntered(tx, date); err != nil {
-			return reportError(c, err)
-		}
-
-	case reportTypeAnnual:
-		currentYear := time.Now().UTC().Year()
-		date = time.Date(currentYear, 1, 1, 0, 0, 0, 0, time.UTC)
-		if err := le.FindCurrentRenewals(tx, currentYear); err != nil {
-			return reportError(c, err)
-		}
-
-	default:
-		err := errors.New("invalid " + reportTypeParam)
-		return reportError(c, api.NewAppError(err, api.ErrorInvalidReportType, api.CategoryUser))
-	}
-
-	report := api.LedgerReport{
-		LedgerEntries: le.ConvertToAPI(tx),
-	}
-
-	var csvFile models.File
-	if len(le) > 0 {
-		csvFile.Name = fmt.Sprintf("cover_%s_%s.csv", reportType, date.Format(domain.DateFormat))
-		csvFile.Content = le.ToCsv(date)
-		csvFile.CreatedByID = models.CurrentUser(c).ID
-		csvFile.ContentType = "text/csv"
-		if fErr := csvFile.Store(tx); fErr != nil {
-			return reportError(c, &api.AppError{
-				Message:  fErr.Message,
-				DebugMsg: fErr.Error(),
-			})
-		}
-		report.File = csvFile.ConvertToAPI(tx)
-	}
-
-	// temporarily truncate the list to improve UI responsiveness
-	if len(le) > 100 {
-		le = le[0:100]
-	}
-
-	return renderOk(c, report)
+	ledgerReport := getReferencedLedgerReportFromCtx(c)
+	return renderOk(c, ledgerReport.ConvertToAPI(tx))
 }
 
-// swagger:operation POST /ledger Ledger LedgerReconcile
+// swagger:operation POST /ledger-report LedgerReport LedgerReportCreate
 //
-// LedgerReconcile
+// LedgerReportCreate
+//
+// Return the ledger entries as specified by the `report-type` parameter. The returned object contains a list of
+// LedgerEntries and a File containing a CSV file suitable for use with Sage Accounting.
+//
+// ### Report types:
+// + `monthly` - Return all ledger entries not yet reconciled, up to the beginning of the current day (0:00 UTC).
+// + `annual` - Return the billing detail for current year's policy renewals.
+//
+// ---
+// parameters:
+//   - name: id
+//     in: path
+//     required: true
+//     description: policy ID
+//   - name: claim input
+//     in: body
+//     description: claim create input object
+//     required: true
+//     schema:
+//       "$ref": "#/definitions/LedgerReportCreateInput"
+// responses:
+//   '200':
+//     description: the requested LedgerReport
+//     schema:
+//       type: array
+//       items:
+//         "$ref": "#/definitions/LedgerReport"
+func ledgerReportCreate(c buffalo.Context) error {
+	var input api.LedgerReportCreateInput
+	if err := StrictBind(c, &input); err != nil {
+		return reportError(c, err)
+	}
+
+	date, err := time.Parse(domain.DateFormat, input.Date)
+	if err != nil {
+		return reportError(c, api.NewAppError(err, api.ErrorInvalidDate, api.CategoryUser))
+	}
+
+	report, err := models.NewLedgerReport(c, input.Type, date)
+	if err != nil {
+		return reportError(c, err)
+	}
+
+	tx := models.Tx(c)
+
+	if err = report.Create(tx); err != nil {
+		return reportError(c, err)
+	}
+
+	return renderOk(c, report.ConvertToAPI(tx))
+}
+
+// swagger:operation PUT /ledger-report LedgerReport LedgerReportReconcile
+//
+// LedgerReportReconcile
 //
 // Mark ledger entries as reconciled as of today. Call this only after all transactions returned by
 // LedgerList have been fully loaded into the accounting record. Today's transactions
@@ -117,7 +145,7 @@ func ledgerList(c buffalo.Context) error {
 //     description: batch approval confirmation details
 //     schema:
 //       "$ref": "#/definitions/BatchApproveResponse"
-func ledgerReconcile(c buffalo.Context) error {
+func ledgerReportReconcile(c buffalo.Context) error {
 	var input api.LedgerReconcileInput
 	if err := StrictBind(c, &input); err != nil {
 		return reportError(c, err)
@@ -172,4 +200,12 @@ func ledgerAnnualProcess(c buffalo.Context) error {
 	}
 
 	return c.Render(http.StatusNoContent, nil)
+}
+
+func getReferencedLedgerReportFromCtx(c buffalo.Context) *models.LedgerReport {
+	lr, ok := c.Value(domain.TypeLedgerReport).(*models.LedgerReport)
+	if !ok {
+		panic("LedgerReport not found in context")
+	}
+	return lr
 }

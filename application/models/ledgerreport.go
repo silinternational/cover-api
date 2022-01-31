@@ -16,13 +16,13 @@ import (
 )
 
 const (
-	reportTypeMonthly = "monthly"
-	reportTypeAnnual  = "annual"
+	ReportTypeMonthly = "monthly"
+	ReportTypeAnnual  = "annual"
 )
 
 var ValidLedgerReportTypes = map[string]struct{}{
-	reportTypeMonthly: {},
-	reportTypeAnnual:  {},
+	ReportTypeMonthly: {},
+	ReportTypeAnnual:  {},
 }
 
 type LedgerReports []LedgerReport
@@ -123,12 +123,12 @@ func NewLedgerReport(ctx context.Context, reportType string, date time.Time) (Le
 
 	var le LedgerEntries
 	switch reportType {
-	case reportTypeMonthly:
+	case ReportTypeMonthly:
 		report.Date = domain.BeginningOfDay(date)
 		if err := le.AllNotEntered(tx, report.Date); err != nil {
 			return report, err
 		}
-	case reportTypeAnnual:
+	case ReportTypeAnnual:
 		year := date.Year()
 		report.Date = time.Date(year, 1, 1, 0, 0, 0, 0, time.UTC)
 		if err := le.FindRenewals(tx, year); err != nil {

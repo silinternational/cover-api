@@ -54,7 +54,7 @@ const idRegex = `/{id:[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[1-5][a-fA-F0-9]{3}-[8|9|aA|
 
 const (
 	stewardPath         = "/steward"
-	ledgerPath          = "/ledger"
+	ledgerReportPath    = "/" + domain.TypeLedgerReport
 	claimsPath          = "/" + domain.TypeClaim
 	claimFilesPath      = "/" + domain.TypeClaimFile
 	claimItemsPath      = "/" + domain.TypeClaimItem
@@ -148,12 +148,14 @@ func App() *buffalo.App {
 		auth.GET("/logout", authDestroy)
 
 		// accounting ledger
-		ledgerGroup := app.Group(ledgerPath)
+		ledgerReportGroup := app.Group(ledgerReportPath)
 		// AuthZ is implemented in the handlers
-		ledgerGroup.Middleware.Skip(AuthZ, ledgerAnnualProcess)
-		ledgerGroup.GET("/", ledgerList)
-		ledgerGroup.POST("/", ledgerReconcile)
-		ledgerGroup.POST("/annual", ledgerAnnualProcess)
+		ledgerReportGroup.Middleware.Skip(AuthZ, ledgerAnnualProcess)
+		ledgerReportGroup.GET("/", ledgerReportList)
+		ledgerReportGroup.GET(idRegex, ledgerReportView)
+		ledgerReportGroup.POST("/", ledgerReportCreate)
+		ledgerReportGroup.PUT("/", ledgerReportReconcile)
+		ledgerReportGroup.POST("/annual", ledgerAnnualProcess)
 
 		stewardGroup := app.Group(stewardPath)
 		stewardGroup.Middleware.Skip(AuthZ, stewardListRecentObjects) // AuthZ is implemented in the handler

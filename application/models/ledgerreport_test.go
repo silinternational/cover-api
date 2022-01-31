@@ -27,7 +27,7 @@ func (ms *ModelSuite) TestLedgerReport_Create() {
 		{
 			name: "validation error, missing filename",
 			ledgerReport: LedgerReport{
-				Type: reportTypeAnnual,
+				Type: ReportTypeAnnual,
 				Date: date1,
 				File: File{
 					ContentType: "text/csv",
@@ -41,7 +41,7 @@ func (ms *ModelSuite) TestLedgerReport_Create() {
 		{
 			name: "one LedgerEntry",
 			ledgerReport: LedgerReport{
-				Type: reportTypeAnnual,
+				Type: ReportTypeAnnual,
 				Date: date1,
 				File: File{
 					Name:        "report1.csv",
@@ -56,7 +56,7 @@ func (ms *ModelSuite) TestLedgerReport_Create() {
 		{
 			name: "two LedgerEntries",
 			ledgerReport: LedgerReport{
-				Type: reportTypeAnnual,
+				Type: ReportTypeAnnual,
 				Date: date2,
 				File: File{
 					Name:        "report2.csv",
@@ -102,7 +102,7 @@ func (ms *ModelSuite) TestLedgerReport_ConvertToAPI() {
 	c := &LedgerReport{
 		ID:        id,
 		FileID:    fileID,
-		Type:      reportTypeMonthly,
+		Type:      ReportTypeMonthly,
 		Date:      date,
 		CreatedAt: createdAt,
 		UpdatedAt: updatedAt,
@@ -155,15 +155,15 @@ func (ms *ModelSuite) TestNewLedgerReport() {
 		{
 			name:       "none found",
 			date:       april,
-			reportType: reportTypeMonthly,
+			reportType: ReportTypeMonthly,
 			wantErr:    &api.AppError{Key: api.ErrorNoLedgerEntries, Category: api.CategoryNotFound},
 		},
 		{
 			name:       "one entry",
 			date:       may,
-			reportType: reportTypeMonthly,
+			reportType: ReportTypeMonthly,
 			want: LedgerReport{
-				Type:          reportTypeMonthly,
+				Type:          ReportTypeMonthly,
 				Date:          may,
 				File:          File{},
 				LedgerEntries: nil,

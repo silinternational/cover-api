@@ -52,6 +52,7 @@ var AllowedFileUploadTypes = []string{
 	"image/webp",
 	"application/pdf",
 	"text/plain",
+	"text/plain; charset=utf-8",
 	"text/csv",
 }
 
@@ -78,7 +79,7 @@ const (
 	TypeClaimFile       = "claim-files"
 	TypeFile            = "files"
 	TypeItem            = "items"
-	TypeLedger          = "ledger"
+	TypeLedgerReport    = "ledger-reports"
 	TypePolicy          = "policies"
 	TypePolicyDependent = "policy-dependents"
 	TypePolicyUser      = "policy-users"

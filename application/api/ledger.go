@@ -33,6 +33,18 @@ type LedgerReport struct {
 }
 
 // swagger:model
+type LedgerReportCreateInput struct {
+	// Report types:
+	// + `monthly` - Return all ledger entries not yet reconciled, up to the beginning of the given date.
+	// + `annual` - Return the policy renewal entries for the year of the given date.
+	//
+	Type string `json:"type"`
+
+	// Report date, e.g. return the ledger entries prior to the given date. Details vary by the report type.
+	Date string `json:"date"`
+}
+
+// swagger:model
 type LedgerEntries []LedgerEntry
 
 // swagger:model
