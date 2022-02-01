@@ -149,7 +149,8 @@ func NewLedgerReport(ctx context.Context, reportType string, date time.Time) (Le
 		return LedgerReport{}, api.NewAppError(err, api.ErrorNoLedgerEntries, api.CategoryNotFound)
 	}
 
-	report.File.Name = fmt.Sprintf("cover_%s_%s.csv", reportType, report.Date.Format(domain.DateFormat))
+	report.File.Name = fmt.Sprintf("%s_%s_%s.csv",
+		domain.Env.AppName, reportType, report.Date.Format(domain.DateFormat))
 	report.File.Content = le.ToCsv(report.Date)
 	report.File.CreatedByID = CurrentUser(ctx).ID
 	report.File.ContentType = "text/csv"
