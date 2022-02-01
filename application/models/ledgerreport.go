@@ -16,8 +16,8 @@ import (
 )
 
 const (
-	ReportTypeMonthly = "monthly"
-	ReportTypeAnnual  = "annual"
+	ReportTypeMonthly = "Monthly"
+	ReportTypeAnnual  = "Annual"
 )
 
 var ValidLedgerReportTypes = map[string]struct{}{
