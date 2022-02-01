@@ -1,0 +1,19 @@
+create_table("ledger_reports") {
+	t.Column("id", "uuid", {primary: true})
+	t.Column("file_id", "uuid", {})
+	t.Column("type", "string", {})
+	t.Column("date", "date", {})
+	t.Timestamps()
+
+	t.ForeignKey("file_id", {"files": ["id"]}, {"on_delete": "restrict"})
+}
+
+create_table("ledger_report_entries") {
+	t.Column("id", "uuid", {primary: true})
+	t.Column("ledger_report_id", "uuid", {})
+	t.Column("ledger_entry_id", "uuid", {})
+	t.Timestamps()
+
+	t.ForeignKey("ledger_report_id", {"ledger_reports": ["id"]}, {"on_delete": "cascade"})
+	t.ForeignKey("ledger_entry_id", {"ledger_entries": ["id"]}, {"on_delete": "restrict"})
+}

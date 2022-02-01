@@ -648,7 +648,7 @@ func (ms *ModelSuite) TestPolicy_ProcessAnnualCoverage() {
 	ms.NoError(err)
 
 	var l LedgerEntries
-	ms.NoError(l.FindCurrentRenewals(ms.DB, year))
+	ms.NoError(l.FindRenewals(ms.DB, year))
 
 	// should be one for each risk category
 	ms.Equal(2, len(l))
@@ -658,6 +658,6 @@ func (ms *ModelSuite) TestPolicy_ProcessAnnualCoverage() {
 	ms.NoError(err)
 
 	var l2 LedgerEntries
-	ms.NoError(l2.FindCurrentRenewals(ms.DB, year))
+	ms.NoError(l2.FindRenewals(ms.DB, year))
 	ms.Equal(2, len(l2))
 }

@@ -3,6 +3,7 @@ package models
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"image"
 	"image/gif"
@@ -25,16 +26,6 @@ import (
 )
 
 const minimumFileLifespan = time.Minute * 5
-
-type FileUploadError struct {
-	HttpStatus int
-	ErrorCode  api.ErrorKey
-	Message    string
-}
-
-func (f *FileUploadError) Error() string {
-	return fmt.Sprintf("%d: %s ... %s", f.HttpStatus, f.ErrorCode, f.Message)
-}
 
 type File struct {
 	ID            uuid.UUID `db:"id"`
@@ -73,27 +64,22 @@ func (f *File) Validate(tx *pop.Connection) (*validate.Errors, error) {
 }
 
 // Store takes a byte slice and stores it into S3 and saves the metadata in the database file table.
-func (f *File) Store(tx *pop.Connection) *FileUploadError {
+func (f *File) Store(tx *pop.Connection) error {
 	if len(f.Content) > domain.MaxFileSize {
-		e := FileUploadError{
-			HttpStatus: http.StatusBadRequest,
-			ErrorCode:  api.ErrorStoreFileTooLarge,
-			Message:    fmt.Sprintf("file too large (%d bytes), max is %d bytes", len(f.Content), domain.MaxFileSize),
-		}
-		return &e
+		err := fmt.Errorf("file too large (%d bytes), max is %d bytes", len(f.Content), domain.MaxFileSize)
+		return api.NewAppError(err, api.ErrorStoreFileTooLarge, api.CategoryUser)
 	}
 
 	if f.ContentType == "" {
 		contentType, err := validateContentType(f.Content)
 		if err != nil {
-			e := FileUploadError{
-				HttpStatus: http.StatusBadRequest,
-				ErrorCode:  api.ErrorStoreFileBadContentType,
-				Message:    err.Error(),
-			}
-			return &e
+			return api.NewAppError(err, api.ErrorStoreFileBadContentType, api.CategoryUser)
 		}
 		f.ContentType = contentType
+	}
+
+	if f.Name == "" {
+		return api.NewAppError(errors.New("filename is missing"), api.ErrorFilenameRequired, api.CategoryUser)
 	}
 
 	f.removeMetadata()
@@ -103,24 +89,16 @@ func (f *File) Store(tx *pop.Connection) *FileUploadError {
 
 	url, err := storage.StoreFile(f.ID.String(), f.ContentType, f.Content)
 	if err != nil {
-		e := FileUploadError{
-			HttpStatus: http.StatusInternalServerError,
-			ErrorCode:  api.ErrorUnableToStoreFile,
-			Message:    fmt.Sprintf("error storing file %s: %s", f.ID, err),
-		}
-		return &e
+		err = fmt.Errorf("error storing file %s: %w", f.ID, err)
+		return api.NewAppError(err, api.ErrorUnableToStoreFile, api.CategoryInternal)
 	}
 
 	f.URL = url.Url
 	f.URLExpiration = url.Expiration
 	f.Size = len(f.Content)
 	if err = f.Create(tx); err != nil {
-		e := FileUploadError{
-			HttpStatus: http.StatusInternalServerError,
-			ErrorCode:  api.ErrorUnableToStoreFile,
-			Message:    fmt.Sprintf("error %s creating file: %+v", err, f),
-		}
-		return &e
+		err = fmt.Errorf("error creating file %s: %w", f.ID, err)
+		return api.NewAppError(err, api.ErrorUnableToStoreFile, api.CategoryInternal)
 	}
 
 	return nil

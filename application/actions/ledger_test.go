@@ -14,64 +14,104 @@ import (
 	"github.com/silinternational/cover-api/models"
 )
 
-func (as *ActionSuite) Test_LedgerList() {
+func (as *ActionSuite) Test_LedgerReportList() {
 	f := as.createFixturesForLedger()
 	normalUser := f.Users[0]
 	stewardUser := models.CreateAdminUsers(as.DB)[models.AppRoleSteward]
 
+	lr, err := models.NewLedgerReport(models.CreateTestContext(stewardUser), models.ReportTypeMonthly, time.Now())
+	as.NoError(err)
+	as.NoError(lr.Create(as.DB))
+
 	tests := []struct {
 		name        string
 		actor       models.User
-		reportType  string
-		format      string
-		wantEntries int
+		wantReports int
 		wantStatus  int
 		wantInBody  []string
 	}{
 		{
 			name:       "unauthenticated",
 			actor:      models.User{},
-			reportType: reportTypeMonthly,
 			wantStatus: http.StatusUnauthorized,
 			wantInBody: []string{`"key":"` + api.ErrorNotAuthorized.String()},
 		},
 		{
 			name:       "insufficient privileges",
 			actor:      normalUser,
-			reportType: reportTypeMonthly,
 			wantStatus: http.StatusNotFound,
 			wantInBody: []string{`"key":"` + api.ErrorNotAuthorized.String()},
 		},
 		{
-			name:       "invalid report type",
-			actor:      stewardUser,
-			reportType: "not-a-real-report-type",
-			wantStatus: http.StatusBadRequest,
-			wantInBody: []string{`"key":"` + api.ErrorInvalidReportType.String()},
-		},
-		{
-			name:        "monthly report",
+			name:        "ok",
 			actor:       stewardUser,
-			reportType:  reportTypeMonthly,
-			format:      "text/csv",
 			wantStatus:  http.StatusOK,
-			wantEntries: 1,
-		},
-		{
-			name:        "annual report",
-			actor:       stewardUser,
-			reportType:  reportTypeAnnual,
-			format:      "text/csv",
-			wantStatus:  http.StatusOK,
-			wantEntries: 1,
+			wantReports: 1,
 		},
 	}
 
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
-			req := as.JSON(fmt.Sprintf("%s?%s=%s", ledgerPath, reportTypeParam, tt.reportType))
+			req := as.JSON(ledgerReportPath)
 			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
-			req.Headers["Accept"] = tt.format
+			res := req.Get()
+
+			body := res.Body.String()
+			as.Equal(tt.wantStatus, res.Code, "incorrect status code returned, body: %s", body)
+
+			for _, s := range tt.wantInBody {
+				as.Contains(body, s)
+			}
+
+			if res.Code != http.StatusOK {
+				return
+			}
+
+			var reports []api.LedgerReport
+			as.NoError(json.Unmarshal([]byte(body), &reports))
+			as.Equal(tt.wantReports, len(reports))
+		})
+	}
+}
+
+func (as *ActionSuite) Test_LedgerReportView() {
+	f := as.createFixturesForLedger()
+	normalUser := f.Users[0]
+	stewardUser := models.CreateAdminUsers(as.DB)[models.AppRoleSteward]
+
+	lr, err := models.NewLedgerReport(models.CreateTestContext(stewardUser), models.ReportTypeMonthly, time.Now())
+	as.NoError(err)
+	as.NoError(lr.Create(as.DB))
+
+	tests := []struct {
+		name       string
+		actor      models.User
+		wantStatus int
+		wantInBody []string
+	}{
+		{
+			name:       "unauthenticated",
+			actor:      models.User{},
+			wantStatus: http.StatusUnauthorized,
+			wantInBody: []string{`"key":"` + api.ErrorNotAuthorized.String()},
+		},
+		{
+			name:       "insufficient privileges",
+			actor:      normalUser,
+			wantStatus: http.StatusNotFound,
+			wantInBody: []string{`"key":"` + api.ErrorNotAuthorized.String()},
+		},
+		{
+			name:       "ok",
+			actor:      stewardUser,
+			wantStatus: http.StatusOK,
+		},
+	}
+
+	for _, tt := range tests {
+		as.T().Run(tt.name, func(t *testing.T) {
+			req := as.JSON(fmt.Sprintf("%s/%s", ledgerReportPath, lr.ID))
+			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
 			res := req.Get()
 
 			body := res.Body.String()
@@ -87,8 +127,79 @@ func (as *ActionSuite) Test_LedgerList() {
 
 			var report api.LedgerReport
 			as.NoError(json.Unmarshal([]byte(body), &report))
+			as.Equal(lr.ID, report.ID)
+		})
+	}
+}
 
-			as.Equal(tt.wantEntries, len(report.LedgerEntries), "incorrect number of records in JSON")
+func (as *ActionSuite) Test_LedgerReportCreate() {
+	f := as.createFixturesForLedger()
+	normalUser := f.Users[0]
+	stewardUser := models.CreateAdminUsers(as.DB)[models.AppRoleSteward]
+
+	tests := []struct {
+		name       string
+		actor      models.User
+		reportType string
+		wantStatus int
+		wantInBody []string
+	}{
+		{
+			name:       "unauthenticated",
+			actor:      models.User{},
+			wantStatus: http.StatusUnauthorized,
+			wantInBody: []string{`"key":"` + api.ErrorNotAuthorized.String()},
+		},
+		{
+			name:       "insufficient privileges",
+			actor:      normalUser,
+			wantStatus: http.StatusNotFound,
+			wantInBody: []string{`"key":"` + api.ErrorNotAuthorized.String()},
+		},
+		{
+			name:       "invalid report type",
+			actor:      stewardUser,
+			reportType: "not-a-real-report-type",
+			wantStatus: http.StatusBadRequest,
+			wantInBody: []string{`"key":"` + api.ErrorInvalidReportType.String()},
+		},
+		{
+			name:       "monthly report",
+			actor:      stewardUser,
+			reportType: models.ReportTypeMonthly,
+			wantStatus: http.StatusOK,
+		},
+		{
+			name:       "annual report",
+			actor:      stewardUser,
+			reportType: models.ReportTypeAnnual,
+			wantStatus: http.StatusOK,
+		},
+	}
+
+	for _, tt := range tests {
+		as.T().Run(tt.name, func(t *testing.T) {
+			req := as.JSON(ledgerReportPath)
+			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
+			res := req.Post(api.LedgerReportCreateInput{
+				Type: tt.reportType,
+				Date: time.Now().UTC().Format(domain.DateFormat),
+			})
+
+			body := res.Body.String()
+			as.Equal(tt.wantStatus, res.Code, "incorrect status code returned, body: %s", body)
+
+			for _, s := range tt.wantInBody {
+				as.Contains(body, s)
+			}
+
+			if res.Code != http.StatusOK {
+				return
+			}
+
+			var report api.LedgerReport
+			as.NoError(json.Unmarshal([]byte(body), &report))
+			as.Equal(tt.reportType, report.Type)
 		})
 	}
 }
@@ -136,9 +247,9 @@ func (as *ActionSuite) Test_LedgerReconcile() {
 
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
-			req := as.JSON(ledgerPath)
+			req := as.JSON(ledgerReportPath)
 			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
-			res := req.Post(api.LedgerReconcileInput{EndDate: tt.date})
+			res := req.Put(api.LedgerReconcileInput{EndDate: tt.date})
 
 			body := res.Body.String()
 			as.Equal(tt.wantStatus, res.Code, "incorrect status code returned, body: %s", body)
@@ -210,7 +321,7 @@ func (as *ActionSuite) Test_LedgerAnnualProcess() {
 
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
-			req := as.JSON(ledgerPath + "/annual")
+			req := as.JSON(ledgerReportPath + "/annual")
 			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
 			res := req.Post(nil)
 
