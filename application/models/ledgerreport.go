@@ -140,7 +140,7 @@ func NewLedgerReport(ctx context.Context, reportType string, date time.Time) (Le
 			return report, err
 		}
 	default:
-		err := errors.New("invalid report type")
+		err := errors.New("invalid report type: " + reportType)
 		return report, api.NewAppError(err, api.ErrorInvalidReportType, api.CategoryUser)
 	}
 
