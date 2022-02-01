@@ -152,8 +152,9 @@ func migrateFilesHandler(args worker.Args) error {
 
 		if err = models.DB.Update(&files[i]); err != nil {
 			domain.Logger.Printf("file write error, key='%s': %s", file.ID, err)
+		} else {
+			domain.Logger.Printf("moved file '%s' to '%s'", oldPath, newPath)
 		}
-		domain.Logger.Printf("moved file '%s' to '%s'", oldPath, newPath)
 	}
 	return nil
 }
