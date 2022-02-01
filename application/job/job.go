@@ -1,6 +1,7 @@
 package job
 
 import (
+	"errors"
 	"time"
 
 	"github.com/gobuffalo/buffalo"
@@ -9,10 +10,12 @@ import (
 
 	"github.com/silinternational/cover-api/domain"
 	"github.com/silinternational/cover-api/models"
+	"github.com/silinternational/cover-api/storage"
 )
 
 const (
 	InactivateItems = "inactivate_items"
+	MigrateFiles    = "migrate_files"
 )
 
 var w worker.Worker
@@ -60,6 +63,7 @@ func createJobContext() buffalo.Context {
 
 var handlers = map[string]func(worker.Args) error{
 	InactivateItems: inactivateItemsHandler,
+	MigrateFiles:    migrateFilesHandler,
 }
 
 func init() {
@@ -111,4 +115,45 @@ func SubmitDelayed(handler string, delay time.Duration, args map[string]interfac
 		Handler: handler,
 	}
 	return w.PerformIn(job, delay)
+}
+
+func migrateFilesHandler(args worker.Args) error {
+	var files models.Files
+
+	if err := models.DB.All(&files); err != nil {
+		return errors.New("failed to query files for migration job: " + err.Error())
+	}
+
+	for _, file := range files {
+		oldPath := file.ID.String()
+		newPath := file.Path()
+
+		content, err := storage.GetFile(oldPath)
+		if err != nil {
+			domain.Logger.Printf("file read error, key='%s': %s\n", oldPath, err)
+			continue
+		}
+
+		// minio can't have a file and directory with the same name, so remove the old file first.
+		// On staging and prod, let's not chance it and keep the old file around for now.
+		if domain.Env.GoEnv == "development" {
+			if err = storage.RemoveFile(oldPath); err != nil {
+				domain.Logger.Printf("file remove error, key='%s': %s\n", oldPath, err)
+			}
+		}
+
+		var url storage.ObjectUrl
+		url, err = storage.StoreFile(newPath, file.ContentType, content)
+		if err != nil {
+			domain.Logger.Printf("file upload error, path='%s': %s", newPath, err)
+			continue
+		}
+		file.URL = url.Url
+
+		if err = models.DB.Update(&file); err != nil {
+			domain.Logger.Printf("file write error, key='%s': %s", file.ID, err)
+		}
+		domain.Logger.Printf("moved file '%s' to '%s'", oldPath, newPath)
+	}
+	return nil
 }

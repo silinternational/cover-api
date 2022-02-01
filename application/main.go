@@ -40,6 +40,12 @@ func main() {
 		os.Exit(1)
 	}
 
+	// temporary job to migrate S3 files to new path
+	if err := job.SubmitDelayed(job.MigrateFiles, delay+time.Second, map[string]interface{}{}); err != nil {
+		domain.ErrLogger.Printf("error initializing MigrateFiles job: " + err.Error())
+		os.Exit(1)
+	}
+
 	// init rollbar
 	rollbar.SetToken(domain.Env.RollbarToken)
 	rollbar.SetEnvironment(domain.Env.GoEnv)

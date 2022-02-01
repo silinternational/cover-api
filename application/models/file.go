@@ -87,7 +87,7 @@ func (f *File) Store(tx *pop.Connection) error {
 
 	f.ID = domain.GetUUID()
 
-	url, err := storage.StoreFile(f.ID.String(), f.ContentType, f.Content)
+	url, err := storage.StoreFile(f.Path(), f.ContentType, f.Content)
 	if err != nil {
 		err = fmt.Errorf("error storing file %s: %w", f.ID, err)
 		return api.NewAppError(err, api.ErrorUnableToStoreFile, api.CategoryInternal)
@@ -159,7 +159,7 @@ func (f *File) RefreshURL(tx *pop.Connection) error {
 		return nil
 	}
 
-	newURL, err := storage.GetFileURL(f.ID.String())
+	newURL, err := storage.GetFileURL(f.Path())
 	if err != nil {
 		return err
 	}
@@ -272,4 +272,9 @@ func (f *File) ConvertToAPI(tx *pop.Connection) api.File {
 		ContentType:   f.ContentType,
 		CreatedByID:   f.CreatedByID,
 	}
+}
+
+// Path combines the ID and the filename to make the complete file path
+func (f *File) Path() string {
+	return fmt.Sprintf("%s/%s", f.ID.String(), f.Name)
 }

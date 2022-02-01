@@ -6,6 +6,7 @@ import (
 	// see commented out code at the end of function "rawEmail")
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"net/url"
 	"strings"
 	"time"
@@ -123,6 +124,31 @@ func StoreFile(key, contentType string, content []byte) (ObjectUrl, error) {
 	}
 
 	return objectUrl, nil
+}
+
+// GetFile reads content from an AWS S3 bucket or compatible storage, depending on environment configuration.
+func GetFile(key string) ([]byte, error) {
+	config := getS3ConfigFromEnv()
+
+	svc, err := createS3Service(config)
+	if err != nil {
+		return nil, fmt.Errorf("error creating S3 service: %w", err)
+	}
+
+	output, err := svc.GetObject(&s3.GetObjectInput{
+		Bucket: aws.String(config.awsS3Bucket),
+		Key:    aws.String(key),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("error reading file from S3: %w", err)
+	}
+
+	content, err := ioutil.ReadAll(output.Body)
+	if err != nil {
+		return nil, fmt.Errorf("error copying content into byte array: %w", err)
+	}
+
+	return content, nil
 }
 
 // GetFileURL retrieves a URL from which a stored object can be loaded. The URL should not require external
