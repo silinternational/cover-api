@@ -124,7 +124,7 @@ func migrateFilesHandler(args worker.Args) error {
 		return errors.New("failed to query files for migration job: " + err.Error())
 	}
 
-	for i, file := range files {
+	for _, file := range files {
 		oldPath := file.ID.String()
 		newPath := file.Path()
 
@@ -150,7 +150,8 @@ func migrateFilesHandler(args worker.Args) error {
 		}
 		file.URL = url.Url
 
-		if err = models.DB.Update(&files[i]); err != nil {
+		f := file // a little workaround for gosec warning
+		if err = models.DB.Update(&f); err != nil {
 			domain.Logger.Printf("file write error, key='%s': %s", file.ID, err)
 		} else {
 			domain.Logger.Printf("moved file '%s' to '%s'", oldPath, newPath)
