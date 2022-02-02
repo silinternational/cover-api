@@ -91,23 +91,14 @@ func (lr *LedgerReport) IsActorAllowedTo(tx *pop.Connection, actor User, perm Pe
 // ConvertToAPI converts a LedgerReport to api.LedgerReport
 func (lr *LedgerReport) ConvertToAPI(tx *pop.Connection) api.LedgerReport {
 	lr.LoadFile(tx, false)
+	lr.LoadLedgerEntries(tx, false)
 
-	var le LedgerEntry
-	transactionCount, err := tx.Where("ledger_report_id = ?", lr.ID).
-		Join("ledger_report_entries", "ledger_entries.id = ledger_report_entries.ledger_entry_id").
-		Join("ledger_reports", "ledger_report_entries.ledger_report_id = ledger_reports.id").
-		Count(&le)
-	if err != nil {
-		panic(fmt.Sprintf("failed counting ledger entries on ledger report %s: %s", lr.ID, err))
-	}
-
-	unclearedCount, err := tx.Where("ledger_report_id = ?", lr.ID).
-		Where("ledger_entries.date_entered IS NULL").
-		Join("ledger_report_entries", "ledger_entries.id = ledger_report_entries.ledger_entry_id").
-		Join("ledger_reports", "ledger_report_entries.ledger_report_id = ledger_reports.id").
-		Count(&le)
-	if err != nil {
-		panic(fmt.Sprintf("failed counting uncleared ledger entries on ledger report %s: %s", lr.ID, err))
+	transactionCount := len(lr.LedgerEntries)
+	unclearedCount := 0
+	for _, e := range lr.LedgerEntries {
+		if !e.DateEntered.Valid {
+			unclearedCount++
+		}
 	}
 
 	return api.LedgerReport{
