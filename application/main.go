@@ -32,7 +32,7 @@ func main() {
 	// Kick off first run of inactivating items between 1h11 and 3h27 from now
 	if domain.Env.GoEnv != "development" {
 		randMins := time.Duration(domain.RandomInsecureIntInRange(71, 387))
-		delay = time.Duration(randMins * time.Minute)
+		delay = randMins * time.Minute
 	}
 
 	if err := job.SubmitDelayed(job.InactivateItems, delay, map[string]interface{}{}); err != nil {
@@ -41,7 +41,7 @@ func main() {
 	}
 
 	// temporary job to migrate S3 files to new path
-	if err := job.SubmitDelayed(job.MigrateFiles, delay+time.Second, map[string]interface{}{}); err != nil {
+	if err := job.SubmitDelayed(job.MigrateFiles, time.Minute, map[string]interface{}{}); err != nil {
 		domain.ErrLogger.Printf("error initializing MigrateFiles job: " + err.Error())
 		os.Exit(1)
 	}
