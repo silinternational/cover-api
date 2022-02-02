@@ -10,11 +10,6 @@ import (
 type LedgerEntryType string
 
 // swagger:model
-type LedgerReconcileInput struct {
-	EndDate string `json:"end_date"`
-}
-
-// swagger:model
 type LedgerReports []LedgerReport
 
 // swagger:model
