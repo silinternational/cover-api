@@ -90,8 +90,8 @@ func (lr *LedgerReport) IsActorAllowedTo(tx *pop.Connection, actor User, perm Pe
 
 // ConvertToAPI converts a LedgerReport to api.LedgerReport
 func (lr *LedgerReport) ConvertToAPI(tx *pop.Connection) api.LedgerReport {
-	lr.LoadFile(tx, true)
-	lr.LoadLedgerEntries(tx, true)
+	lr.LoadFile(tx, false)
+	lr.LoadLedgerEntries(tx, false)
 
 	transactionCount := len(lr.LedgerEntries)
 	unclearedCount := 0
@@ -179,9 +179,11 @@ func NewLedgerReport(ctx context.Context, reportType string, date time.Time) (Le
 }
 
 func (lr *LedgerReport) Reconcile(ctx context.Context) error {
-	lr.LoadLedgerEntries(Tx(ctx), false)
+	tx := Tx(ctx)
+	lr.LoadLedgerEntries(tx, false)
 	if err := lr.LedgerEntries.Reconcile(ctx); err != nil {
 		return api.NewAppError(err, api.ErrorReconcileError, api.CategoryInternal)
 	}
+	lr.LoadLedgerEntries(tx, true)
 	return nil
 }
