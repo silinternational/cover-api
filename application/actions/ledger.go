@@ -46,10 +46,10 @@ func ledgerReportList(c buffalo.Context) error {
 //
 // ---
 // parameters:
-// - name: report-type
-//   in: query
+// - name: id
+//   in: path
 //   required: true
-//   description: specifies the report type, which controls which ledger entries are returned
+//   description: specifies the ID of the report to view
 // responses:
 //   '200':
 //     description: the requested LedgerReport
@@ -124,10 +124,10 @@ func ledgerReportCreate(c buffalo.Context) error {
 //
 // ---
 // parameters:
-// - name: report-type
-//   in: query
+// - name: id
+//   in: path
 //   required: true
-//   description: specifies the report type, which controls which ledger entries are returned
+//   description: specifies the ID of the report to reconcile
 // responses:
 //   '200':
 //     description: the requested LedgerReport
