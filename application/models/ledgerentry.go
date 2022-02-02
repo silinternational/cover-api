@@ -252,6 +252,7 @@ func (le *LedgerEntry) LoadClaim(tx *pop.Connection) {
 func (le *LedgerEntries) FindRenewals(tx *pop.Connection, year int) error {
 	if err := tx.Where("type = ?", LedgerEntryTypeCoverageRenewal).
 		Where("EXTRACT(YEAR FROM date_submitted) = ?", year).
+		Where("date_entered IS NULL").
 		All(le); err != nil {
 		return appErrorFromDB(err, api.ErrorQueryFailure)
 	}
