@@ -92,13 +92,33 @@ func (lr *LedgerReport) IsActorAllowedTo(tx *pop.Connection, actor User, perm Pe
 func (lr *LedgerReport) ConvertToAPI(tx *pop.Connection) api.LedgerReport {
 	lr.LoadFile(tx, false)
 
+	var le LedgerEntry
+	transactionCount, err := tx.Where("ledger_report_id = ?", lr.ID).
+		Join("ledger_report_entries", "ledger_entries.id = ledger_report_entries.ledger_entry_id").
+		Join("ledger_reports", "ledger_report_entries.ledger_report_id = ledger_reports.id").
+		Count(&le)
+	if err != nil {
+		panic(fmt.Sprintf("failed counting ledger entries on ledger report %s: %s", lr.ID, err))
+	}
+
+	unclearedCount, err := tx.Where("ledger_report_id = ?", lr.ID).
+		Where("ledger_entries.date_entered IS NULL").
+		Join("ledger_report_entries", "ledger_entries.id = ledger_report_entries.ledger_entry_id").
+		Join("ledger_reports", "ledger_report_entries.ledger_report_id = ledger_reports.id").
+		Count(&le)
+	if err != nil {
+		panic(fmt.Sprintf("failed counting uncleared ledger entries on ledger report %s: %s", lr.ID, err))
+	}
+
 	return api.LedgerReport{
-		ID:        lr.ID,
-		File:      lr.File.ConvertToAPI(tx),
-		Type:      lr.Type,
-		Date:      lr.Date,
-		CreatedAt: lr.CreatedAt,
-		UpdatedAt: lr.UpdatedAt,
+		ID:               lr.ID,
+		File:             lr.File.ConvertToAPI(tx),
+		Type:             lr.Type,
+		Date:             lr.Date,
+		TransactionCount: transactionCount,
+		IsCleared:        unclearedCount == 0,
+		CreatedAt:        lr.CreatedAt,
+		UpdatedAt:        lr.UpdatedAt,
 	}
 }
 
@@ -107,11 +127,19 @@ func (lr *LedgerReport) ConvertToAPI(tx *pop.Connection) api.LedgerReport {
 func (lr *LedgerReport) LoadFile(tx *pop.Connection, reload bool) {
 	if lr.File.ID == uuid.Nil || reload {
 		if err := tx.Load(lr, "File"); err != nil {
-			panic("database error loading Claim.File, " + err.Error())
+			panic("database error loading LedgerReport.File, " + err.Error())
 		}
 	}
 	if err := lr.File.RefreshURL(tx); err != nil {
-		panic("failed to refresh Claim.File URL, " + err.Error())
+		panic("failed to refresh LedgerReport.File URL, " + err.Error())
+	}
+}
+
+func (lr *LedgerReport) LoadLedgerEntries(tx *pop.Connection, reload bool) {
+	if len(lr.LedgerEntries) == 0 || reload {
+		if err := tx.Load(lr, "LedgerEntries"); err != nil {
+			panic("database error loading LedgerReport.LedgerEntries, " + err.Error())
+		}
 	}
 }
 
@@ -157,4 +185,12 @@ func NewLedgerReport(ctx context.Context, reportType string, date time.Time) (Le
 	report.LedgerEntries = le
 
 	return report, nil
+}
+
+func (lr *LedgerReport) Reconcile(ctx context.Context) error {
+	lr.LoadLedgerEntries(Tx(ctx), false)
+	if err := lr.LedgerEntries.Reconcile(ctx); err != nil {
+		return api.NewAppError(err, api.ErrorReconcileError, api.CategoryInternal)
+	}
+	return nil
 }

@@ -204,10 +204,14 @@ func (as *ActionSuite) Test_LedgerReportCreate() {
 	}
 }
 
-func (as *ActionSuite) Test_LedgerReconcile() {
+func (as *ActionSuite) Test_LedgerReportReconcile() {
 	f := as.createFixturesForLedger()
 	normalUser := f.Users[0]
 	stewardUser := models.CreateAdminUsers(as.DB)[models.AppRoleSteward]
+
+	lr, err := models.NewLedgerReport(models.CreateTestContext(stewardUser), models.ReportTypeMonthly, time.Now())
+	as.NoError(err)
+	as.NoError(lr.Create(as.DB))
 
 	tests := []struct {
 		name       string
@@ -247,9 +251,9 @@ func (as *ActionSuite) Test_LedgerReconcile() {
 
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
-			req := as.JSON(ledgerReportPath)
+			req := as.JSON(fmt.Sprintf("%s/%s", ledgerReportPath, lr.ID))
 			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
-			res := req.Put(api.LedgerReconcileInput{EndDate: tt.date})
+			res := req.Put(nil)
 
 			body := res.Body.String()
 			as.Equal(tt.wantStatus, res.Code, "incorrect status code returned, body: %s", body)
@@ -262,15 +266,9 @@ func (as *ActionSuite) Test_LedgerReconcile() {
 				return
 			}
 
-			var response api.BatchApproveResponse
-			err := json.Unmarshal([]byte(body), &response)
-			as.NoError(err)
-
-			as.Equal(tt.want, response.NumberOfRecordsApproved, "incorrect number of approved records")
-
-			if tt.want == 0 {
-				return
-			}
+			var report api.LedgerReport
+			as.NoError(json.Unmarshal([]byte(body), &report))
+			as.Equal(lr.ID, report.ID)
 
 			var le models.LedgerEntries
 			as.NoError(as.DB.Where("item_id = ?", f.Items[1].ID).All(&le))

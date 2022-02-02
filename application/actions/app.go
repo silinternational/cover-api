@@ -154,7 +154,7 @@ func App() *buffalo.App {
 		ledgerReportGroup.GET("/", ledgerReportList)
 		ledgerReportGroup.GET(idRegex, ledgerReportView)
 		ledgerReportGroup.POST("/", ledgerReportCreate)
-		ledgerReportGroup.PUT("/", ledgerReportReconcile)
+		ledgerReportGroup.PUT(idRegex, ledgerReportReconcile)
 		ledgerReportGroup.POST("/annual", ledgerAnnualProcess)
 
 		stewardGroup := app.Group(stewardPath)
