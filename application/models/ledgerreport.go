@@ -90,8 +90,8 @@ func (lr *LedgerReport) IsActorAllowedTo(tx *pop.Connection, actor User, perm Pe
 
 // ConvertToAPI converts a LedgerReport to api.LedgerReport
 func (lr *LedgerReport) ConvertToAPI(tx *pop.Connection) api.LedgerReport {
-	lr.LoadFile(tx, false)
-	lr.LoadLedgerEntries(tx, false)
+	lr.LoadFile(tx, true)
+	lr.LoadLedgerEntries(tx, true)
 
 	transactionCount := len(lr.LedgerEntries)
 	unclearedCount := 0
