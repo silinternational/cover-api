@@ -42,6 +42,7 @@ type Fixtures struct {
 	Files
 	Items
 	ItemCategories
+	LedgerEntries
 	Policies
 	PolicyDependents
 	PolicyHistories
@@ -547,6 +548,19 @@ func CreatePolicyUserInviteFixtures(tx *pop.Connection, n int) Fixtures {
 	}
 }
 
+func CreateLedgerFixtures(tx *pop.Connection, config FixturesConfig) Fixtures {
+	f := CreateItemFixtures(tx, config)
+
+	user := f.Users[0]
+	ctx := CreateTestContext(user)
+	f.LedgerEntries = make(LedgerEntries, len(f.Items))
+	for i := range f.Items {
+		Must(f.Items[i].Approve(ctx, false))
+		Must(tx.Where("item_id = ?", f.Items[i].ID).First(&f.LedgerEntries[i]))
+	}
+	return f
+}
+
 // MustCreate saves a record to the database with validation. Panics if any error occurs.
 func MustCreate(tx *pop.Connection, f Creatable) {
 	// Use `create` instead of `tx.Create` to check validation rules
@@ -566,6 +580,10 @@ func randStr(n int) string {
 }
 
 func DestroyAll() {
+	// delete all LedgerReports
+	var ledgerReports LedgerReports
+	destroyTable(&ledgerReports)
+
 	// delete all Files and ClaimFiles
 	var files Files
 	destroyTable(&files)
@@ -839,4 +857,10 @@ func ConvertPolicyType(tx *pop.Connection, policy Policy) Policy {
 	}
 
 	return policy
+}
+
+func Must(err error) {
+	if err != nil {
+		panic(err.Error())
+	}
 }

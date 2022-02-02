@@ -52,6 +52,7 @@ const (
 
 	// File
 	ErrorFileAlreadyLinked       = ErrorKey("ErrorFileAlreadyLinked")
+	ErrorFilenameRequired        = ErrorKey("ErrorFilenameRequired")
 	ErrorReceivingFile           = ErrorKey("ErrorReceivingFile")
 	ErrorStoreFileBadContentType = ErrorKey("ErrorStoreFileBadContentType")
 	ErrorStoreFileTooLarge       = ErrorKey("ErrorStoreFileTooLarge")
@@ -73,9 +74,11 @@ const (
 	ErrorItemHasActiveClaim           = ErrorKey("ErrorItemHasActiveClaim")
 
 	// Ledger
-	ErrorItemInvalidEndDate = ErrorKey("ErrorItemInvalidEndDate")
-	ErrorInvalidReportType  = ErrorKey("ErrorInvalidReportType")
 	ErrorCreateRenewalEntry = ErrorKey("ErrorCreateRenewalEntry")
+	ErrorInvalidDate        = ErrorKey("ErrorInvalidDate")
+	ErrorInvalidReportType  = ErrorKey("ErrorInvalidReportType")
+	ErrorItemInvalidEndDate = ErrorKey("ErrorItemInvalidEndDate")
+	ErrorNoLedgerEntries    = ErrorKey("ErrorNoLedgerEntries")
 
 	// Policy
 	ErrorPolicyFromContext                    = ErrorKey("ErrorPolicyFromContext")

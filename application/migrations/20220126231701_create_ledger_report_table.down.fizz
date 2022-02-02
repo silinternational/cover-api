@@ -1,0 +1,2 @@
+drop_table("ledger_reports")
+drop_table("ledger_report_entries")

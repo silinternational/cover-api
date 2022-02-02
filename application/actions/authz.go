@@ -20,7 +20,7 @@ func AuthZ(next buffalo.Handler) buffalo.Handler {
 			domain.TypeClaimFile:       &models.ClaimFile{},
 			domain.TypeClaimItem:       &models.ClaimItem{},
 			domain.TypeItem:            &models.Item{},
-			domain.TypeLedger:          &models.LedgerEntry{},
+			domain.TypeLedgerReport:    &models.LedgerReport{},
 			domain.TypePolicy:          &models.Policy{},
 			domain.TypePolicyDependent: &models.PolicyDependent{},
 			domain.TypePolicyUser:      &models.PolicyUser{},

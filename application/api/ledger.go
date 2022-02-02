@@ -20,9 +20,28 @@ type LedgerReconcileInput struct {
 }
 
 // swagger:model
+type LedgerReports []LedgerReport
+
+// swagger:model
 type LedgerReport struct {
-	File          File          `json:"file"`
-	LedgerEntries LedgerEntries `json:"ledger_entries"`
+	ID        uuid.UUID `json:"id"`
+	File      File      `json:"file"`
+	Type      string    `json:"type"`
+	Date      time.Time `json:"date"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+}
+
+// swagger:model
+type LedgerReportCreateInput struct {
+	// Report types:
+	// + `monthly` - Return all ledger entries not yet reconciled, up to the beginning of the given date.
+	// + `annual` - Return the policy renewal entries for the year of the given date.
+	//
+	Type string `json:"type"`
+
+	// Report date, e.g. return the ledger entries prior to the given date. Details vary by the report type.
+	Date string `json:"date"`
 }
 
 // swagger:model
