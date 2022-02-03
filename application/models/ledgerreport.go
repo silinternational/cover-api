@@ -94,10 +94,11 @@ func (lr *LedgerReport) ConvertToAPI(tx *pop.Connection) api.LedgerReport {
 	lr.LoadLedgerEntries(tx, false)
 
 	transactionCount := len(lr.LedgerEntries)
-	unclearedCount := 0
+	isCleared := true
 	for _, e := range lr.LedgerEntries {
 		if !e.DateEntered.Valid {
-			unclearedCount++
+			isCleared = false
+			break
 		}
 	}
 
@@ -107,7 +108,7 @@ func (lr *LedgerReport) ConvertToAPI(tx *pop.Connection) api.LedgerReport {
 		Type:             lr.Type,
 		Date:             lr.Date,
 		TransactionCount: transactionCount,
-		IsCleared:        unclearedCount == 0,
+		IsCleared:        isCleared,
 		CreatedAt:        lr.CreatedAt,
 		UpdatedAt:        lr.UpdatedAt,
 	}
