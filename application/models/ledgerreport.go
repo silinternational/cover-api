@@ -31,7 +31,7 @@ func (lr *LedgerReports) All(tx *pop.Connection) error {
 	return appErrorFromDB(tx.All(lr), api.ErrorQueryFailure)
 }
 
-func (lr *LedgerReports) ConvertToAPI(tx *pop.Connection) interface{} {
+func (lr *LedgerReports) ConvertToAPI(tx *pop.Connection) api.LedgerReports {
 	ledgerReports := make(api.LedgerReports, len(*lr))
 	for i, l := range *lr {
 		ledgerReports[i] = l.ConvertToAPI(tx)
