@@ -10,26 +10,18 @@ import (
 type LedgerEntryType string
 
 // swagger:model
-type BatchApproveResponse struct {
-	NumberOfRecordsApproved int `json:"number_of_records_approved"`
-}
-
-// swagger:model
-type LedgerReconcileInput struct {
-	EndDate string `json:"end_date"`
-}
-
-// swagger:model
 type LedgerReports []LedgerReport
 
 // swagger:model
 type LedgerReport struct {
-	ID        uuid.UUID `json:"id"`
-	File      File      `json:"file"`
-	Type      string    `json:"type"`
-	Date      time.Time `json:"date"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+	ID               uuid.UUID `json:"id"`
+	File             File      `json:"file"`
+	Type             string    `json:"type"`
+	Date             time.Time `json:"date"`
+	TransactionCount int       `json:"transaction_count"`
+	IsCleared        bool      `json:"is_cleared"`
+	CreatedAt        time.Time `json:"created_at"`
+	UpdatedAt        time.Time `json:"updated_at"`
 }
 
 // swagger:model

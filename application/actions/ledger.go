@@ -46,10 +46,10 @@ func ledgerReportList(c buffalo.Context) error {
 //
 // ---
 // parameters:
-// - name: report-type
-//   in: query
+// - name: id
+//   in: path
 //   required: true
-//   description: specifies the report type, which controls which ledger entries are returned
+//   description: specifies the ID of the report to view
 // responses:
 //   '200':
 //     description: the requested LedgerReport
@@ -68,8 +68,8 @@ func ledgerReportView(c buffalo.Context) error {
 //
 // LedgerReportCreate
 //
-// Return the ledger entries as specified by the input object. The returned object contains a File object pointing to
-// a CSV file suitable for use with Sage Accounting.
+// Create and return a report on the ledger entries as specified by the input object. The returned object
+// contains metadata and a File object pointing to a CSV file suitable for use with Sage Accounting.
 //
 // ### Report types:
 // + `monthly` - Return all ledger entries not yet reconciled, up to the beginning of the given day (0:00 UTC).
@@ -77,13 +77,9 @@ func ledgerReportView(c buffalo.Context) error {
 //
 // ---
 // parameters:
-//   - name: id
-//     in: path
-//     required: true
-//     description: policy ID
-//   - name: claim input
+//   - name: input
 //     in: body
-//     description: claim create input object
+//     description: LedgerReportCreateInput object
 //     required: true
 //     schema:
 //       "$ref": "#/definitions/LedgerReportCreateInput"
@@ -119,7 +115,7 @@ func ledgerReportCreate(c buffalo.Context) error {
 	return renderOk(c, report.ConvertToAPI(tx))
 }
 
-// swagger:operation PUT /ledger-reports LedgerReport LedgerReportReconcile
+// swagger:operation PUT /ledger-reports/{id} LedgerReport LedgerReportReconcile
 //
 // LedgerReportReconcile
 //
@@ -128,40 +124,26 @@ func ledgerReportCreate(c buffalo.Context) error {
 //
 // ---
 // parameters:
-//   - name: ledger reconcile input
-//     in: body
-//     description: ledger reconcile input
-//     required: true
-//     schema:
-//       "$ref": "#/definitions/LedgerReconcileInput"
+// - name: id
+//   in: path
+//   required: true
+//   description: specifies the ID of the report to reconcile
 // responses:
 //   '200':
-//     description: batch approval confirmation details
+//     description: the requested LedgerReport
 //     schema:
-//       "$ref": "#/definitions/BatchApproveResponse"
+//       type: array
+//       items:
+//         "$ref": "#/definitions/LedgerReport"
 func ledgerReportReconcile(c buffalo.Context) error {
-	var input api.LedgerReconcileInput
-	if err := StrictBind(c, &input); err != nil {
-		return reportError(c, err)
-	}
-
 	tx := models.Tx(c)
 
-	date, err := time.Parse(domain.DateFormat, input.EndDate)
-	if err != nil {
-		return reportError(c, api.NewAppError(err, api.ErrorItemInvalidEndDate, api.CategoryUser))
-	}
-
-	var le models.LedgerEntries
-	if err := le.AllNotEntered(tx, date); err != nil {
+	ledgerReport := getReferencedLedgerReportFromCtx(c)
+	if err := ledgerReport.Reconcile(c); err != nil {
 		return reportError(c, err)
 	}
 
-	if err := le.Reconcile(c); err != nil {
-		return reportError(c, err)
-	}
-
-	return renderOk(c, api.BatchApproveResponse{NumberOfRecordsApproved: len(le)})
+	return renderOk(c, ledgerReport.ConvertToAPI(tx))
 }
 
 // swagger:operation POST /ledger-reports/annual Ledger LedgerAnnualProcess
