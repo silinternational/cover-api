@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"runtime"
 
 	"github.com/gobuffalo/buffalo"
 	"github.com/gobuffalo/buffalo/render"
@@ -52,7 +51,7 @@ func reportError(c buffalo.Context, err error) error {
 	}
 
 	appErr.Extras = domain.MergeExtras([]map[string]interface{}{getExtras(c), appErr.Extras})
-	appErr.Extras["function"] = GetFunctionName(2)
+	appErr.Extras["function"] = domain.GetFunctionName(2)
 	appErr.Extras["key"] = appErr.Key
 	appErr.Extras["status"] = appErr.HttpStatus
 	appErr.Extras["redirectURL"] = appErr.RedirectURL
@@ -114,18 +113,6 @@ func newExtra(c buffalo.Context, key string, e interface{}) {
 	extras := getExtras(c)
 	extras[key] = e
 	c.Set(domain.ContextKeyExtras, extras)
-}
-
-// GetFunctionName provides the filename, line number, and function name of the caller, skipping the top `skip`
-// functions on the stack.
-func GetFunctionName(skip int) string {
-	pc, file, line, ok := runtime.Caller(skip)
-	if !ok {
-		return "?"
-	}
-
-	fn := runtime.FuncForPC(pc)
-	return fmt.Sprintf("%s:%d %s", file, line, fn.Name())
 }
 
 func renderOk(c buffalo.Context, v interface{}) error {

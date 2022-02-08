@@ -20,13 +20,12 @@ func AuthN(next buffalo.Handler) buffalo.Handler {
 		}
 
 		var userAccessToken models.UserAccessToken
-		tx := models.Tx(c)
-		if err := userAccessToken.FindByBearerToken(tx, bearerToken); err != nil {
+		if err := userAccessToken.FindByBearerToken(models.DB, bearerToken); err != nil {
 			err := errors.New("invalid bearer token")
 			return reportError(c, api.NewAppError(err, api.ErrorNotAuthorized, api.CategoryUnauthorized))
 		}
 
-		isExpired, err := userAccessToken.DeleteIfExpired(tx)
+		isExpired, err := userAccessToken.DeleteIfExpired(models.DB)
 		if err != nil {
 			return reportError(c, err)
 		}
@@ -36,7 +35,7 @@ func AuthN(next buffalo.Handler) buffalo.Handler {
 			return reportError(c, api.NewAppError(err, api.ErrorNotAuthorized, api.CategoryUnauthorized))
 		}
 
-		user, err := userAccessToken.GetUser(tx)
+		user, err := userAccessToken.GetUser(models.DB)
 		if err != nil {
 			err = fmt.Errorf("error finding user by access token, %s", err.Error())
 			return reportError(c, err)
