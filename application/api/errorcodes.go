@@ -77,8 +77,8 @@ const (
 	ErrorCreateRenewalEntry = ErrorKey("ErrorCreateRenewalEntry")
 	ErrorInvalidDate        = ErrorKey("ErrorInvalidDate")
 	ErrorInvalidReportType  = ErrorKey("ErrorInvalidReportType")
-	ErrorItemInvalidEndDate = ErrorKey("ErrorItemInvalidEndDate")
 	ErrorNoLedgerEntries    = ErrorKey("ErrorNoLedgerEntries")
+	ErrorReconcileError     = ErrorKey("ErrorReconcileError")
 
 	// Policy
 	ErrorPolicyFromContext                    = ErrorKey("ErrorPolicyFromContext")
