@@ -81,8 +81,12 @@ func inactivateItemsHandler(args worker.Args) error {
 	domain.Logger.Printf("starting inactivateItems job")
 	nw := time.Now().UTC()
 
-	var items models.Items
-	if err := items.InactivateApprovedButEnded(ctx); err != nil {
+	err := models.DB.Transaction(func(tx *pop.Connection) error {
+		ctx.Set(domain.ContextKeyTx, tx)
+		var items models.Items
+		return items.InactivateApprovedButEnded(ctx)
+	})
+	if err != nil {
 		return err
 	}
 
