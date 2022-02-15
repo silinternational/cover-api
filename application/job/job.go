@@ -5,6 +5,7 @@ import (
 
 	"github.com/gobuffalo/buffalo"
 	"github.com/gobuffalo/buffalo/worker"
+	"github.com/gobuffalo/pop/v5"
 	"github.com/rollbar/rollbar-go"
 
 	"github.com/silinternational/cover-api/domain"
@@ -52,7 +53,11 @@ func createJobContext() buffalo.Context {
 		"",
 		"",
 		domain.Env.RollbarServerRoot)
-	defer client.Close()
+	defer func() {
+		if err := client.Close(); err != nil {
+			domain.ErrLogger.Printf("rollbar client.Close error: %s", err)
+		}
+	}()
 
 	ctx.Set(domain.ContextKeyRollbar, client)
 	return ctx
@@ -73,7 +78,7 @@ func init() {
 
 // inactivateItemsHandler is the Worker handler for inactivating items that
 // have a coverage end date in the past
-func inactivateItemsHandler(args worker.Args) error {
+func inactivateItemsHandler(_ worker.Args) error {
 	defer resubmitInactivateJob()
 
 	ctx := createJobContext()
@@ -94,9 +99,9 @@ func inactivateItemsHandler(args worker.Args) error {
 	return nil
 }
 
-func resubmitInactivateJob() error {
+func resubmitInactivateJob() {
 	// Run twice a day, in case it errors out
-	delay := time.Duration(time.Hour * 12)
+	delay := time.Hour * 12
 
 	// uncomment this in development, if you want it to run more often for debugging
 	// delay = time.Duration(time.Second * 10)
@@ -104,7 +109,7 @@ func resubmitInactivateJob() error {
 	if err := SubmitDelayed(InactivateItems, delay, map[string]interface{}{}); err != nil {
 		domain.ErrLogger.Printf("error resubmitting inactivateItemsHandler: " + err.Error())
 	}
-	return nil
+	return
 }
 
 // SubmitDelayed enqueues a new Worker job for the given handler. Arguments can be provided in `args`.
