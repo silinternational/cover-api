@@ -219,8 +219,9 @@ func CurrentUser(ctx context.Context) User {
 
 // Tx retrieves the database transaction from the context
 func Tx(ctx context.Context) *pop.Connection {
-	tx, ok := ctx.Value("tx").(*pop.Connection)
+	tx, ok := ctx.Value(domain.ContextKeyTx).(*pop.Connection)
 	if !ok {
+		domain.Logger.Print("no transaction found in context, called from: " + domain.GetFunctionName(2))
 		return DB
 	}
 	return tx

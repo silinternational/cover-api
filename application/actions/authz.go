@@ -46,14 +46,13 @@ func AuthZ(next buffalo.Handler) buffalo.Handler {
 			return reportError(c, fmt.Errorf("resource expected to be authable but isn't"))
 		}
 
-		tx := models.Tx(c)
-		if tx == nil {
+		if models.DB == nil {
 			err := fmt.Errorf("failed to intialize db connection")
 			return reportError(c, err)
 		}
 
 		if rID != uuid.Nil {
-			if err := resource.FindByID(tx, rID); err != nil {
+			if err := resource.FindByID(models.DB, rID); err != nil {
 				err = fmt.Errorf("failed to load resource: %s", err)
 				appErr := api.NewAppError(err, api.ErrorResourceNotFound, api.CategoryNotFound)
 				if domain.IsOtherThanNoRows(err) {
@@ -81,7 +80,7 @@ func AuthZ(next buffalo.Handler) buffalo.Handler {
 			p = models.PermissionDenied
 		}
 
-		if !resource.IsActorAllowedTo(tx, actor, p, models.SubResource(rSub), limitedRequest(c.Request())) {
+		if !resource.IsActorAllowedTo(models.DB, actor, p, models.SubResource(rSub), limitedRequest(c.Request())) {
 			err := fmt.Errorf("actor not allowed to perform that action on this resource")
 			return reportError(c, api.NewAppError(err, api.ErrorNotAuthorized, api.CategoryForbidden))
 		}
