@@ -24,12 +24,12 @@ type jobBuffaloContext struct {
 	params map[interface{}]interface{}
 }
 
-// Value returns the value associated with the given key in the test context
+// Value returns the value associated with the given key in the context
 func (j *jobBuffaloContext) Value(key interface{}) interface{} {
 	return j.params[key]
 }
 
-// Set sets the value to be associated with the given key in the test context
+// Set sets the value to be associated with the given key in the context. CAUTION: this is not thread-safe
 func (j *jobBuffaloContext) Set(key string, val interface{}) {
 	j.params[key] = val
 }
