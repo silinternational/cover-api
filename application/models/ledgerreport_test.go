@@ -30,7 +30,7 @@ func (ms *ModelSuite) TestLedgerReport_Create() {
 				Type: ReportTypeAnnual,
 				Date: date1,
 				File: File{
-					ContentType: "text/csv",
+					ContentType: domain.TextCSV,
 					CreatedByID: user.ID,
 					Content:     []byte("a,b\n1,2"),
 				},
@@ -45,7 +45,7 @@ func (ms *ModelSuite) TestLedgerReport_Create() {
 				Date: date1,
 				File: File{
 					Name:        "report1.csv",
-					ContentType: "text/csv",
+					ContentType: domain.TextCSV,
 					CreatedByID: user.ID,
 					Content:     []byte("a,b\n1,2"),
 				},
@@ -60,7 +60,7 @@ func (ms *ModelSuite) TestLedgerReport_Create() {
 				Date: date2,
 				File: File{
 					Name:        "report2.csv",
-					ContentType: "text/csv",
+					ContentType: domain.TextCSV,
 					CreatedByID: user.ID,
 					Content:     []byte("a,b\n1,2"),
 				},
@@ -189,9 +189,108 @@ func (ms *ModelSuite) TestNewLedgerReport() {
 
 			ms.Equal(tt.want.Type, got.Type, "incorrect report Type")
 			ms.Equal(tt.want.Date, got.Date, "incorrect report Date")
-			ms.Equal("text/csv", got.File.ContentType, "incorrect ContentType")
+			ms.Equal(domain.TextCSV, got.File.ContentType, "incorrect ContentType")
 			ms.Equal(user.ID, got.File.CreatedByID, "incorrect CreatedByID")
 			ms.Equal(1, len(got.LedgerEntries), "incorrect number of LedgerEntries")
+		})
+	}
+}
+
+func (ms *ModelSuite) TestNewPolicyLedgerReport() {
+	// create ledger entries for a different policy to ensure they're not included in the results
+	f0 := CreateLedgerFixtures(ms.DB, FixturesConfig{ItemsPerPolicy: 3})
+
+	f := CreateLedgerFixtures(ms.DB, FixturesConfig{ItemsPerPolicy: 3})
+	user := f.Users[0]
+	policy := f.Policies[0]
+	ctx := CreateTestContext(user)
+
+	january := time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC)
+	march := time.Date(2021, 3, 1, 0, 0, 0, 0, time.UTC)
+	april := time.Date(2021, 4, 1, 0, 0, 0, 0, time.UTC)
+	may := time.Date(2021, 5, 1, 0, 0, 0, 0, time.UTC)
+
+	datesSubmitted := []time.Time{january, march, april}
+	datesEntered := []nulls.Time{nulls.NewTime(march), nulls.NewTime(april), {}}
+	entries := f.LedgerEntries
+	others := f0.LedgerEntries // These should not get included in the results
+	for i := range entries {
+		entries[i].DateSubmitted = datesSubmitted[i]
+		entries[i].DateEntered = datesEntered[i]
+		Must(ms.DB.Update(&entries[i]))
+
+		others[i].DateSubmitted = datesSubmitted[i]
+		others[i].DateEntered = datesEntered[i]
+		Must(ms.DB.Update(&others[i]))
+	}
+
+	tests := []struct {
+		name       string
+		date       time.Time
+		reportType string
+		want       LedgerReport
+		wantCount  int
+		wantErr    *api.AppError
+	}{
+		{
+			name:       "invalid report type",
+			date:       may,
+			reportType: "invalid",
+			wantErr:    &api.AppError{Key: api.ErrorInvalidReportType, Category: api.CategoryUser},
+		},
+		{
+			name:       "none found",
+			date:       may,
+			reportType: ReportTypeMonthly,
+			wantErr:    &api.AppError{Key: api.ErrorNoLedgerEntries, Category: api.CategoryNotFound},
+		},
+		{
+			name:       "future month",
+			date:       time.Now().UTC().AddDate(0, 1, 0),
+			reportType: ReportTypeMonthly,
+			wantErr:    &api.AppError{Key: api.ErrorInvalidDate, Category: api.CategoryUser},
+		},
+		{
+			name:       "one monthly entry",
+			date:       april,
+			reportType: ReportTypeMonthly,
+			want: LedgerReport{
+				Type:          ReportTypeMonthly,
+				Date:          april,
+				File:          File{},
+				LedgerEntries: nil,
+			},
+			wantCount: 1,
+		},
+		{
+			name:       "two annual entries",
+			date:       may,
+			reportType: ReportTypeAnnual,
+			want: LedgerReport{
+				Type:          ReportTypeAnnual,
+				Date:          january,
+				File:          File{},
+				LedgerEntries: nil,
+			},
+			wantCount: 2,
+		},
+	}
+	for _, tt := range tests {
+		ms.T().Run(tt.name, func(t *testing.T) {
+			got, err := NewPolicyLedgerReport(ctx, policy, tt.reportType, int(tt.date.Month()), tt.date.Year())
+			if tt.wantErr != nil {
+				ms.Error(err, "test should have produced an error")
+				ms.EqualAppError(*tt.wantErr, err)
+				return
+			}
+
+			ms.NoError(err)
+
+			ms.Equal(tt.want.Type, got.Type, "incorrect report Type")
+			ms.Equal(tt.want.Date, got.Date, "incorrect report Date")
+			ms.Equal(domain.TextCSV, got.File.ContentType, "incorrect ContentType")
+			ms.Equal(user.ID, got.File.CreatedByID, "incorrect CreatedByID")
+			ms.Equal(tt.wantCount, len(got.LedgerEntries), "incorrect number of LedgerEntries")
 		})
 	}
 }

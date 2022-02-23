@@ -173,7 +173,65 @@ func NewLedgerReport(ctx context.Context, reportType string, date time.Time) (Le
 		domain.Env.AppName, reportType, report.Date.Format(domain.DateFormat))
 	report.File.Content = le.ToCsv(report.Date)
 	report.File.CreatedByID = CurrentUser(ctx).ID
-	report.File.ContentType = "text/csv"
+	report.File.ContentType = domain.TextCSV
+	report.LedgerEntries = le
+
+	return report, nil
+}
+
+// NewPolicyLedgerReport creates a new report for one policy by querying the database according
+//   to the requested report type
+func NewPolicyLedgerReport(ctx context.Context, policy Policy, reportType string, month, year int) (LedgerReport, error) {
+	tx := Tx(ctx)
+
+	now := time.Now().UTC()
+	nowYear := now.Year()
+	nowMonth := int(now.Month())
+
+	report := LedgerReport{Type: reportType}
+
+	if year > nowYear || (year == nowYear && month > nowMonth) {
+		err := fmt.Errorf("future date requested for ledger report. Month: %d, Year: %d.", month, year)
+		return report, api.NewAppError(err, api.ErrorInvalidDate, api.CategoryUser)
+	}
+
+	var le LedgerEntries
+	switch reportType {
+	case ReportTypeMonthly:
+		startDate := time.Date(year, time.Month(month), 1, 0, 0, 0, 0, time.UTC)
+		endDate := startDate.AddDate(0, 1, -1)
+		report.Date = startDate
+
+		err := tx.Where("policy_id = ?", policy.ID).
+			Where("date_entered >= ? AND date_entered <= ?", startDate, endDate).All(&le)
+		if domain.IsOtherThanNoRows(err) {
+			return report, api.NewAppError(err, api.ErrorUnknown, api.CategoryDatabase)
+		}
+	case ReportTypeAnnual:
+		startDate := time.Date(year, 1, 1, 0, 0, 0, 0, time.UTC)
+		endDate := startDate.AddDate(1, 0, -1)
+		report.Date = startDate
+
+		err := tx.Where("policy_id = ?", policy.ID).
+			Where("date_entered >= ? AND date_entered <= ?", startDate, endDate).All(&le)
+		if domain.IsOtherThanNoRows(err) {
+			return report, api.NewAppError(err, api.ErrorUnknown, api.CategoryDatabase)
+		}
+	default:
+		err := errors.New("invalid report type: " + reportType)
+		return report, api.NewAppError(err, api.ErrorInvalidReportType, api.CategoryUser)
+	}
+
+	if len(le) == 0 {
+		err := errors.New("no LedgerEntries found")
+		return LedgerReport{}, api.NewAppError(err, api.ErrorNoLedgerEntries, api.CategoryNotFound)
+	}
+
+	report.File.Name = fmt.Sprintf("%s_policy_%s_%s_%d-%d.csv",
+		domain.Env.AppName, policy.ID.String(), reportType, year, month)
+	report.File.Content = le.ToCsvForPolicy()
+	report.File.CreatedByID = CurrentUser(ctx).ID
+	report.File.ContentType = domain.TextCSV
 	report.LedgerEntries = le
 
 	return report, nil

@@ -65,6 +65,57 @@ func (ms *ModelSuite) TestLedgerEntries_AllForMonth() {
 	}
 }
 
+func (ms *ModelSuite) TestLedgerEntries_ToCsvForPolicy() {
+	date := time.Date(2021, 3, 1, 0, 0, 0, 0, time.UTC)
+
+	entry := LedgerEntry{
+		PolicyID:         domain.GetUUID(),
+		EntityCode:       "EntityCode",
+		RiskCategoryName: "Mobile",
+		Type:             LedgerEntryTypeClaim,
+		Name:             "FirstName LastName",
+		Amount:           100,
+		DateSubmitted:    date,
+		AccountNumber:    "AccountNumber",
+		IncomeAccount:    "12345",
+		HouseholdID:      "HouseholdID",
+		CostCenter:       "CostCenter",
+	}
+
+	tests := []struct {
+		name    string
+		entries LedgerEntries
+		want    []string
+	}{
+		{
+			name:    "no data",
+			entries: LedgerEntries{},
+			want:    []string{csvPolicyHeader},
+		},
+		{
+			name:    "1 entry",
+			entries: LedgerEntries{entry},
+			want: []string{
+				csvPolicyHeader,
+				fmt.Sprintf(`%s,"%s","%s",%s`,
+					entry.Amount.String(),
+					entry.transactionDescription(),
+					entry.transactionReference(),
+					date.Format(domain.DateFormat),
+				),
+			},
+		},
+	}
+	for _, tt := range tests {
+		ms.T().Run(tt.name, func(t *testing.T) {
+			got := tt.entries.ToCsvForPolicy()
+			for _, w := range tt.want {
+				ms.Contains(string(got), w)
+			}
+		})
+	}
+}
+
 func (ms *ModelSuite) TestLedgerEntries_ToCsv() {
 	date := time.Date(2021, 3, 1, 0, 0, 0, 0, time.UTC)
 
