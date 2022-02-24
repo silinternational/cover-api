@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/gofrs/uuid"
 
@@ -582,6 +583,88 @@ func (as *ActionSuite) Test_PoliciesInviteMember() {
 
 			as.Equal(tt.wantStatus, res.Code, "http status code not as expected")
 			as.Equal(tt.wantEventTriggered, createInviteEventDetected, "event detection not as expected")
+		})
+	}
+}
+
+func (as *ActionSuite) Test_PolicyLedgerReportCreate() {
+
+	f0 := models.CreatePolicyFixtures(as.DB, models.FixturesConfig{})
+	otherUser := f0.Users[0]
+
+	f := as.createFixturesForLedger()
+	policy := f.Policies[0]
+	normalUser := f.Users[0]
+	stewardUser := models.CreateAdminUsers(as.DB)[models.AppRoleSteward]
+
+	now := time.Now().UTC()
+	nowMonth := int(now.Month())
+	nowYear := now.Year()
+
+	tests := []struct {
+		name       string
+		actor      models.User
+		month      int
+		year       int
+		reportType string
+		wantStatus int
+		wantInBody []string
+	}{
+		{
+			name:       "unauthenticated",
+			actor:      models.User{},
+			wantStatus: http.StatusUnauthorized,
+			wantInBody: []string{`"key":"` + api.ErrorNotAuthorized.String()},
+		},
+		{
+			name:       "insufficient privileges",
+			actor:      otherUser,
+			wantStatus: http.StatusNotFound,
+			wantInBody: []string{`"key":"` + api.ErrorNotAuthorized.String()},
+		},
+		{
+			name:       "monthly report",
+			actor:      normalUser,
+			month:      nowMonth,
+			year:       nowYear,
+			reportType: models.ReportTypeMonthly,
+			wantStatus: http.StatusOK,
+		},
+		{
+			name:       "annual report",
+			actor:      stewardUser,
+			month:      0,
+			year:       nowYear,
+			reportType: models.ReportTypeAnnual,
+			wantStatus: http.StatusOK,
+		},
+	}
+
+	for _, tt := range tests {
+		as.T().Run(tt.name, func(t *testing.T) {
+			req := as.JSON("%s/%s/ledger-reports", policiesPath, policy.ID.String())
+			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
+			res := req.Post(api.PolicyLedgerReportCreateInput{
+				Month: tt.month,
+				Year:  tt.year,
+				Type:  tt.reportType,
+				//Date: time.Now().UTC().Format(domain.DateFormat),
+			})
+
+			body := res.Body.String()
+			as.Equal(tt.wantStatus, res.Code, "incorrect status code returned, body: %s", body)
+
+			for _, s := range tt.wantInBody {
+				as.Contains(body, s)
+			}
+
+			if res.Code != http.StatusOK {
+				return
+			}
+
+			var report api.LedgerReport
+			as.NoError(json.Unmarshal([]byte(body), &report))
+			as.Equal(tt.reportType, report.Type)
 		})
 	}
 }

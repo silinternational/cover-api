@@ -285,6 +285,53 @@ func policiesInviteMember(c buffalo.Context) error {
 	return c.Render(http.StatusNoContent, nil)
 }
 
+// swagger:operation POST /policies/{id}/ledger-reports PolicyLedgerReport PolicyLedgerReportCreate
+//
+// PolicyLedgerReportCreate
+//
+// Create and return a report on the ledger entries of a policy as specified by the input object.
+// The returned object contains metadata and a File object pointing to a CSV file.
+//
+// ---
+// parameters:
+//   - name: id
+//     in: path
+//     required: true
+//     description: policy ID
+//   - name: input
+//     in: body
+//     description: PolicyLedgerReportCreateInput object
+//     required: true
+//     schema:
+//       "$ref": "#/definitions/PolicyLedgerReportCreateInput"
+// responses:
+//   '200':
+//     description: the requested LedgerReport for the Policy
+//     schema:
+//       type: array
+//       items:
+//         "$ref": "#/definitions/LedgerReport"
+func policiesLedgerReportCreate(c buffalo.Context) error {
+	tx := models.Tx(c)
+	policy := getReferencedPolicyFromCtx(c)
+
+	var input api.PolicyLedgerReportCreateInput
+	if err := StrictBind(c, &input); err != nil {
+		return reportError(c, err)
+	}
+
+	report, err := models.NewPolicyLedgerReport(c, *policy, input.Type, input.Month, input.Year)
+	if err != nil {
+		return reportError(c, err)
+	}
+
+	if err = report.Create(tx); err != nil {
+		return reportError(c, err)
+	}
+
+	return renderOk(c, report.ConvertToAPI(tx))
+}
+
 // getReferencedPolicyFromCtx pulls the models.Policy resource from context that was put there
 // by the AuthZ middleware
 func getReferencedPolicyFromCtx(c buffalo.Context) *models.Policy {

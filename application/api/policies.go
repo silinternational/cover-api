@@ -110,3 +110,20 @@ type PolicyUpdate struct {
 	// Entity code for billing. Only required/allowed on Team type policies.
 	EntityCode string `json:"entity_code,omitempty"`
 }
+
+// swagger:model
+type PolicyLedgerReportCreateInput struct {
+	// Report types:
+	// + `monthly` - Return all ledger entries not yet reconciled, up to the beginning of the given date.
+	// + `annual` - Return the policy renewal entries for the year of the given date.
+	//
+	Type string `json:"type"`
+
+	// Report month, e.g. return the policy's ledger entries entered in that month and year.
+	//  The month and year (together) must not be in the future.
+	//  For annual reports only, the month may be 0.
+	Month int `json:"month"`
+
+	// Report year, e.g. return the policy's ledger entries entered in that year.
+	Year int `json:"year"`
+}
