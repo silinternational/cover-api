@@ -205,6 +205,9 @@ func (ms *ModelSuite) TestNewPolicyLedgerReport() {
 	policy := f.Policies[0]
 	ctx := CreateTestContext(user)
 
+	now := time.Now().UTC()
+	nextMonth := now.AddDate(0, 1, 0)
+
 	january := time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC)
 	march := time.Date(2021, 3, 1, 0, 0, 0, 0, time.UTC)
 	april := time.Date(2021, 4, 1, 0, 0, 0, 0, time.UTC)
@@ -227,6 +230,8 @@ func (ms *ModelSuite) TestNewPolicyLedgerReport() {
 	tests := []struct {
 		name       string
 		date       time.Time
+		month      int
+		year       int
 		reportType string
 		want       LedgerReport
 		wantCount  int
@@ -234,25 +239,50 @@ func (ms *ModelSuite) TestNewPolicyLedgerReport() {
 	}{
 		{
 			name:       "invalid report type",
-			date:       may,
+			month:      int(may.Month()),
+			year:       may.Year(),
 			reportType: "invalid",
 			wantErr:    &api.AppError{Key: api.ErrorInvalidReportType, Category: api.CategoryUser},
 		},
 		{
 			name:       "none found",
-			date:       may,
+			month:      int(may.Month()),
+			year:       may.Year(),
 			reportType: ReportTypeMonthly,
 			wantErr:    &api.AppError{Key: api.ErrorNoLedgerEntries, Category: api.CategoryNotFound},
 		},
 		{
-			name:       "future month",
-			date:       time.Now().UTC().AddDate(0, 1, 0),
+			name:       "invalid future month",
+			month:      int(nextMonth.Month()),
+			year:       nextMonth.Year(),
 			reportType: ReportTypeMonthly,
 			wantErr:    &api.AppError{Key: api.ErrorInvalidDate, Category: api.CategoryUser},
 		},
 		{
+			name:       "invalid report month",
+			month:      0,
+			year:       2020,
+			reportType: ReportTypeMonthly,
+			wantErr:    &api.AppError{Key: api.ErrorInvalidDate, Category: api.CategoryUser},
+		},
+		{
+			name:       "invalid future year",
+			month:      1,
+			year:       now.Year() + 1,
+			reportType: ReportTypeAnnual,
+			wantErr:    &api.AppError{Key: api.ErrorInvalidDate, Category: api.CategoryUser},
+		},
+		{
+			name:       "invalid report type",
+			month:      1,
+			year:       2020,
+			reportType: "not-a-real-report-type",
+			wantErr:    &api.AppError{Key: api.ErrorInvalidReportType, Category: api.CategoryUser},
+		},
+		{
 			name:       "one monthly entry",
-			date:       april,
+			month:      int(april.Month()),
+			year:       april.Year(),
 			reportType: ReportTypeMonthly,
 			want: LedgerReport{
 				Type:          ReportTypeMonthly,
@@ -264,7 +294,8 @@ func (ms *ModelSuite) TestNewPolicyLedgerReport() {
 		},
 		{
 			name:       "two annual entries",
-			date:       may,
+			month:      int(may.Month()),
+			year:       may.Year(),
 			reportType: ReportTypeAnnual,
 			want: LedgerReport{
 				Type:          ReportTypeAnnual,
@@ -277,7 +308,7 @@ func (ms *ModelSuite) TestNewPolicyLedgerReport() {
 	}
 	for _, tt := range tests {
 		ms.T().Run(tt.name, func(t *testing.T) {
-			got, err := NewPolicyLedgerReport(ctx, policy, tt.reportType, int(tt.date.Month()), tt.date.Year())
+			got, err := NewPolicyLedgerReport(ctx, policy, tt.reportType, tt.month, tt.year)
 			if tt.wantErr != nil {
 				ms.Error(err, "test should have produced an error")
 				ms.EqualAppError(*tt.wantErr, err)

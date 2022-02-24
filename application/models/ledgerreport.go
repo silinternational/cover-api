@@ -180,42 +180,29 @@ func NewLedgerReport(ctx context.Context, reportType string, date time.Time) (Le
 }
 
 // NewPolicyLedgerReport creates a new report for one policy by querying the database according
-//   to the requested report type
+//   to the requested report type and the month and year of the request
 func NewPolicyLedgerReport(ctx context.Context, policy Policy, reportType string, month, year int) (LedgerReport, error) {
 	tx := Tx(ctx)
 
 	now := time.Now().UTC()
 	nowYear := now.Year()
-	nowMonth := int(now.Month())
 
 	report := LedgerReport{Type: reportType}
 
-	if year > nowYear || (year == nowYear && month > nowMonth) {
-		err := fmt.Errorf("future date requested for ledger report. Month: %d, Year: %d.", month, year)
+	if year < 2000 || year > nowYear {
+		err := fmt.Errorf("invalid year requested: %d", year)
 		return report, api.NewAppError(err, api.ErrorInvalidDate, api.CategoryUser)
 	}
 
 	var le LedgerEntries
 	switch reportType {
 	case ReportTypeMonthly:
-		startDate := time.Date(year, time.Month(month), 1, 0, 0, 0, 0, time.UTC)
-		endDate := startDate.AddDate(0, 1, -1)
-		report.Date = startDate
-
-		err := tx.Where("policy_id = ?", policy.ID).
-			Where("date_entered >= ? AND date_entered <= ?", startDate, endDate).All(&le)
-		if domain.IsOtherThanNoRows(err) {
-			return report, api.NewAppError(err, api.ErrorUnknown, api.CategoryDatabase)
+		if err := newMonthlyPolicyLedgerReport(tx, &le, &report, policy, month, year); err != nil {
+			return report, err
 		}
 	case ReportTypeAnnual:
-		startDate := time.Date(year, 1, 1, 0, 0, 0, 0, time.UTC)
-		endDate := startDate.AddDate(1, 0, -1)
-		report.Date = startDate
-
-		err := tx.Where("policy_id = ?", policy.ID).
-			Where("date_entered >= ? AND date_entered <= ?", startDate, endDate).All(&le)
-		if domain.IsOtherThanNoRows(err) {
-			return report, api.NewAppError(err, api.ErrorUnknown, api.CategoryDatabase)
+		if err := newAnnualPolicyLedgerReport(tx, &le, &report, policy, year); err != nil {
+			return report, err
 		}
 	default:
 		err := errors.New("invalid report type: " + reportType)
@@ -235,6 +222,44 @@ func NewPolicyLedgerReport(ctx context.Context, policy Policy, reportType string
 	report.LedgerEntries = le
 
 	return report, nil
+}
+
+func newMonthlyPolicyLedgerReport(tx *pop.Connection, lEntries *LedgerEntries, lReport *LedgerReport, policy Policy, month, year int) error {
+	if month < 1 || month > 12 {
+		err := fmt.Errorf("invalid month requested: %d", month)
+		return api.NewAppError(err, api.ErrorInvalidDate, api.CategoryUser)
+	}
+
+	now := time.Now().UTC()
+	if year == now.Year() && month > int(now.Month()) {
+		err := fmt.Errorf("invalid future month requested. Month: %d, Year: %d", month, year)
+		return api.NewAppError(err, api.ErrorInvalidDate, api.CategoryUser)
+	}
+
+	startDate := time.Date(year, time.Month(month), 1, 0, 0, 0, 0, time.UTC)
+	endDate := startDate.AddDate(0, 1, -1)
+
+	err := tx.Where("policy_id = ?", policy.ID).
+		Where("date_entered >= ? AND date_entered <= ?", startDate, endDate).All(lEntries)
+
+	lReport.Date = startDate
+	if domain.IsOtherThanNoRows(err) {
+		return api.NewAppError(err, api.ErrorUnknown, api.CategoryDatabase)
+	}
+	return nil
+}
+
+func newAnnualPolicyLedgerReport(tx *pop.Connection, lEntries *LedgerEntries, lReport *LedgerReport, policy Policy, year int) error {
+	startDate := time.Date(year, 1, 1, 0, 0, 0, 0, time.UTC)
+	endDate := startDate.AddDate(1, 0, -1)
+	lReport.Date = startDate
+
+	err := tx.Where("policy_id = ?", policy.ID).
+		Where("date_entered >= ? AND date_entered <= ?", startDate, endDate).All(lEntries)
+	if domain.IsOtherThanNoRows(err) {
+		return api.NewAppError(err, api.ErrorUnknown, api.CategoryDatabase)
+	}
+	return nil
 }
 
 func (lr *LedgerReport) Reconcile(ctx context.Context) error {
