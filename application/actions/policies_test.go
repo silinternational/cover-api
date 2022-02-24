@@ -89,7 +89,7 @@ func (as *ActionSuite) Test_PoliciesList() {
 		as.T().Run(tt.name, func(t *testing.T) {
 			req := as.JSON("/policies" + tt.queryString)
 			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
-			req.Headers["content-type"] = "application/json"
+			req.Headers["content-type"] = domain.ContentJson
 			res := req.Get()
 
 			body := res.Body.String()
@@ -178,7 +178,7 @@ func (as *ActionSuite) Test_PoliciesView() {
 		as.T().Run(tt.name, func(t *testing.T) {
 			req := as.JSON("/policies/" + tt.policyID.String())
 			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
-			req.Headers["content-type"] = "application/json"
+			req.Headers["content-type"] = domain.ContentJson
 			res := req.Get()
 
 			body := res.Body.String()
@@ -256,7 +256,7 @@ func (as *ActionSuite) Test_PoliciesCreateTeam() {
 		as.T().Run(tt.name, func(t *testing.T) {
 			req := as.JSON("/policies")
 			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
-			req.Headers["content-type"] = "application/json"
+			req.Headers["content-type"] = domain.ContentJson
 			res := req.Post(tt.input)
 
 			body := res.Body.String()
@@ -351,7 +351,7 @@ func (as *ActionSuite) Test_PoliciesUpdate() {
 		as.T().Run(tt.name, func(t *testing.T) {
 			req := as.JSON("/policies/" + tt.policy.ID.String())
 			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
-			req.Headers["content-type"] = "application/json"
+			req.Headers["content-type"] = domain.ContentJson
 			res := req.Put(tt.update)
 
 			body := res.Body.String()
@@ -465,7 +465,7 @@ func (as *ActionSuite) Test_PoliciesListMembers() {
 		as.T().Run(tt.name, func(t *testing.T) {
 			req := as.JSON("/policies/" + tt.policyID + "/members")
 			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
-			req.Headers["content-type"] = "application/json"
+			req.Headers["content-type"] = domain.ContentJson
 			res := req.Get()
 
 			body := res.Body.String()
@@ -578,7 +578,7 @@ func (as *ActionSuite) Test_PoliciesInviteMember() {
 
 			req := as.JSON("/policies/" + tt.policyID.String() + "/members")
 			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
-			req.Headers["content-type"] = "application/json"
+			req.Headers["content-type"] = domain.ContentJson
 			res := req.Post(input)
 
 			as.Equal(tt.wantStatus, res.Code, "http status code not as expected")

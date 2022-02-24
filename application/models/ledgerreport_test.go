@@ -30,7 +30,7 @@ func (ms *ModelSuite) TestLedgerReport_Create() {
 				Type: ReportTypeAnnual,
 				Date: date1,
 				File: File{
-					ContentType: domain.TextCSV,
+					ContentType: domain.ContentCSV,
 					CreatedByID: user.ID,
 					Content:     []byte("a,b\n1,2"),
 				},
@@ -45,7 +45,7 @@ func (ms *ModelSuite) TestLedgerReport_Create() {
 				Date: date1,
 				File: File{
 					Name:        "report1.csv",
-					ContentType: domain.TextCSV,
+					ContentType: domain.ContentCSV,
 					CreatedByID: user.ID,
 					Content:     []byte("a,b\n1,2"),
 				},
@@ -60,7 +60,7 @@ func (ms *ModelSuite) TestLedgerReport_Create() {
 				Date: date2,
 				File: File{
 					Name:        "report2.csv",
-					ContentType: domain.TextCSV,
+					ContentType: domain.ContentCSV,
 					CreatedByID: user.ID,
 					Content:     []byte("a,b\n1,2"),
 				},
@@ -189,7 +189,7 @@ func (ms *ModelSuite) TestNewLedgerReport() {
 
 			ms.Equal(tt.want.Type, got.Type, "incorrect report Type")
 			ms.Equal(tt.want.Date, got.Date, "incorrect report Date")
-			ms.Equal(domain.TextCSV, got.File.ContentType, "incorrect ContentType")
+			ms.Equal(domain.ContentCSV, got.File.ContentType, "incorrect ContentType")
 			ms.Equal(user.ID, got.File.CreatedByID, "incorrect CreatedByID")
 			ms.Equal(1, len(got.LedgerEntries), "incorrect number of LedgerEntries")
 		})
@@ -319,7 +319,7 @@ func (ms *ModelSuite) TestNewPolicyLedgerReport() {
 
 			ms.Equal(tt.want.Type, got.Type, "incorrect report Type")
 			ms.Equal(tt.want.Date, got.Date, "incorrect report Date")
-			ms.Equal(domain.TextCSV, got.File.ContentType, "incorrect ContentType")
+			ms.Equal(domain.ContentCSV, got.File.ContentType, "incorrect ContentType")
 			ms.Equal(user.ID, got.File.CreatedByID, "incorrect CreatedByID")
 			ms.Equal(tt.wantCount, len(got.LedgerEntries), "incorrect number of LedgerEntries")
 		})

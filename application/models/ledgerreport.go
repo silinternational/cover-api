@@ -173,7 +173,7 @@ func NewLedgerReport(ctx context.Context, reportType string, date time.Time) (Le
 		domain.Env.AppName, reportType, report.Date.Format(domain.DateFormat))
 	report.File.Content = le.ToCsv(report.Date)
 	report.File.CreatedByID = CurrentUser(ctx).ID
-	report.File.ContentType = domain.TextCSV
+	report.File.ContentType = domain.ContentCSV
 	report.LedgerEntries = le
 
 	return report, nil
@@ -189,7 +189,7 @@ func NewPolicyLedgerReport(ctx context.Context, policy Policy, reportType string
 
 	report := LedgerReport{Type: reportType}
 
-	if year < 2000 || year > nowYear {
+	if year < 1971 || year > nowYear {
 		err := fmt.Errorf("invalid year requested: %d", year)
 		return report, api.NewAppError(err, api.ErrorInvalidDate, api.CategoryUser)
 	}
@@ -218,7 +218,7 @@ func NewPolicyLedgerReport(ctx context.Context, policy Policy, reportType string
 		domain.Env.AppName, policy.ID.String(), reportType, year, month)
 	report.File.Content = le.ToCsvForPolicy()
 	report.File.CreatedByID = CurrentUser(ctx).ID
-	report.File.ContentType = domain.TextCSV
+	report.File.ContentType = domain.ContentCSV
 	report.LedgerEntries = le
 
 	return report, nil

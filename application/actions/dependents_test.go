@@ -72,7 +72,7 @@ func (as *ActionSuite) Test_DependentsList() {
 		as.T().Run(tt.name, func(t *testing.T) {
 			req := as.JSON("/policies/" + tt.policy.ID.String() + "/dependents")
 			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
-			req.Headers["content-type"] = "application/json"
+			req.Headers["content-type"] = domain.ContentJson
 			res := req.Get()
 
 			body := res.Body.String()
@@ -214,7 +214,7 @@ func (as *ActionSuite) Test_DependentsCreate() {
 		as.T().Run(tt.name, func(t *testing.T) {
 			req := as.JSON("/policies/" + tt.policy.ID.String() + "/dependents")
 			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
-			req.Headers["content-type"] = "application/json"
+			req.Headers["content-type"] = domain.ContentJson
 			res := req.Post(tt.reqBody)
 
 			body := res.Body.String()
@@ -346,7 +346,7 @@ func (as *ActionSuite) Test_DependentsUpdate() {
 		as.T().Run(tt.name, func(t *testing.T) {
 			req := as.JSON("/%s/%s", domain.TypePolicyDependent, tt.oldDep.ID)
 			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
-			req.Headers["content-type"] = "application/json"
+			req.Headers["content-type"] = domain.ContentJson
 			res := req.Put(tt.input)
 
 			body := res.Body.String()
@@ -435,7 +435,7 @@ func (as *ActionSuite) Test_DependentsDelete() {
 		as.T().Run(tt.name, func(t *testing.T) {
 			req := as.JSON("/%s/%s", domain.TypePolicyDependent, tt.oldDep.ID)
 			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
-			req.Headers["content-type"] = "application/json"
+			req.Headers["content-type"] = domain.ContentJson
 			res := req.Delete()
 
 			body := res.Body.String()

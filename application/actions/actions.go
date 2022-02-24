@@ -19,7 +19,7 @@ var r *render.Engine
 
 func init() {
 	r = render.New(render.Options{
-		DefaultContentType: "application/json",
+		DefaultContentType: domain.ContentJson,
 	})
 
 	checkSamlConfig()

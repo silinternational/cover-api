@@ -101,7 +101,8 @@ const (
 	MaxFileSize = 1024 * 1024 * 10 // 10 Megabytes
 	Megabyte    = 1048576
 
-	TextCSV = "text/csv"
+	ContentCSV  = "text/csv"
+	ContentJson = "application/json"
 )
 
 // Event Kinds
