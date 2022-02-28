@@ -318,6 +318,7 @@ func (ms *ModelSuite) TestNewPolicyLedgerReport() {
 			ms.NoError(err)
 
 			ms.Equal(tt.want.Type, got.Type, "incorrect report Type")
+			ms.Equal(policy.ID, got.PolicyID.UUID, "incorrect report PolicyID")
 			ms.Equal(tt.want.Date, got.Date, "incorrect report Date")
 			ms.Equal(domain.ContentCSV, got.File.ContentType, "incorrect ContentType")
 			ms.Equal(user.ID, got.File.CreatedByID, "incorrect CreatedByID")

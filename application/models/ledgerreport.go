@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/gobuffalo/nulls"
 	"github.com/gobuffalo/pop/v5"
 	"github.com/gobuffalo/validate/v3"
 	"github.com/gofrs/uuid"
@@ -40,14 +41,16 @@ func (lr *LedgerReports) ConvertToAPI(tx *pop.Connection) api.LedgerReports {
 }
 
 type LedgerReport struct {
-	ID        uuid.UUID `db:"id"`
-	FileID    uuid.UUID `db:"file_id" validate:"required"`
-	Type      string    `db:"type"`
-	Date      time.Time `db:"date"`
-	CreatedAt time.Time `db:"created_at"`
-	UpdatedAt time.Time `db:"updated_at"`
+	ID        uuid.UUID  `db:"id"`
+	FileID    uuid.UUID  `db:"file_id" validate:"required"`
+	Type      string     `db:"type"`
+	Date      time.Time  `db:"date"`
+	PolicyID  nulls.UUID `db:"policy_id"`
+	CreatedAt time.Time  `db:"created_at"`
+	UpdatedAt time.Time  `db:"updated_at"`
 
 	File          File          `belongs_to:"files" validate:"-"`
+	Policy        Policy        `belongs_to:"policies" validate:"-"`
 	LedgerEntries LedgerEntries `many_to_many:"ledger_report_entries" validate:"-"`
 }
 
@@ -187,7 +190,7 @@ func NewPolicyLedgerReport(ctx context.Context, policy Policy, reportType string
 	now := time.Now().UTC()
 	nowYear := now.Year()
 
-	report := LedgerReport{Type: reportType}
+	report := LedgerReport{Type: reportType, PolicyID: nulls.NewUUID(policy.ID)}
 
 	if year < 1971 || year > nowYear {
 		err := fmt.Errorf("invalid year requested: %d", year)

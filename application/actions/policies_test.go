@@ -648,7 +648,6 @@ func (as *ActionSuite) Test_PolicyLedgerReportCreate() {
 				Month: tt.month,
 				Year:  tt.year,
 				Type:  tt.reportType,
-				//Date: time.Now().UTC().Format(domain.DateFormat),
 			})
 
 			body := res.Body.String()
