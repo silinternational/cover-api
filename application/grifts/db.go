@@ -445,6 +445,7 @@ func createLedgerEntryFixtures(tx *pop.Connection, items []*models.Item, claims 
 	if err := items[0].CreateLedgerEntry(tx, models.LedgerEntryTypeNewCoverage, 1021); err != nil {
 		return err
 	}
+
 	if err := items[2].CreateLedgerEntry(tx, models.LedgerEntryTypeCoverageChange, 519); err != nil {
 		return err
 	}
@@ -472,6 +473,18 @@ func createLedgerEntryFixtures(tx *pop.Connection, items []*models.Item, claims 
 		return err
 	}
 	if err := claims[4].CreateLedgerEntry(tx); err != nil {
+		return err
+	}
+
+	var lEntries models.LedgerEntries
+	if err := tx.All(&lEntries); err != nil {
+		return err
+	}
+
+	// Make one ledger entry already dealt with, in order to
+	// create ledger entry reports
+	lEntries[0].DateEntered = nulls.NewTime(time.Now().UTC())
+	if err := tx.Update(&lEntries[0]); err != nil {
 		return err
 	}
 
