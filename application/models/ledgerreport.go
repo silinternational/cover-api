@@ -83,11 +83,18 @@ func (lr *LedgerReport) FindByID(tx *pop.Connection, id uuid.UUID) error {
 	return tx.Find(lr, id)
 }
 
-// IsActorAllowedTo ensure the actor is either an admin, or a member of this policy to perform any permission
+// IsActorAllowedTo ensures the actor is either an admin or a member of
+//    the LedgerReport's policy (assuming it has one)
 func (lr *LedgerReport) IsActorAllowedTo(tx *pop.Connection, actor User, perm Permission, sub SubResource, r *http.Request) bool {
 	if actor.IsAdmin() {
 		return true
 	}
+
+	if lr.PolicyID.Valid {
+		lr.LoadPolicy(tx, false)
+		return lr.Policy.isMember(tx, actor.ID)
+	}
+
 	return false
 }
 
@@ -134,6 +141,15 @@ func (lr *LedgerReport) LoadLedgerEntries(tx *pop.Connection, reload bool) {
 	if len(lr.LedgerEntries) == 0 || reload {
 		if err := tx.Load(lr, "LedgerEntries"); err != nil {
 			panic("database error loading LedgerReport.LedgerEntries, " + err.Error())
+		}
+	}
+}
+
+// LoadPolicy hydrates the Policy property if necessary or if `reload` is true.
+func (lr *LedgerReport) LoadPolicy(tx *pop.Connection, reload bool) {
+	if lr.PolicyID.Valid && (lr.Policy.ID == uuid.Nil || reload) {
+		if err := tx.Load(lr, "Policy"); err != nil {
+			panic("database error loading LedgerReport.Policy, " + err.Error())
 		}
 	}
 }

@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/gobuffalo/nulls"
+	"github.com/gofrs/uuid"
 
 	"github.com/silinternational/cover-api/api"
 	"github.com/silinternational/cover-api/domain"
@@ -75,42 +76,69 @@ func (as *ActionSuite) Test_LedgerReportList() {
 }
 
 func (as *ActionSuite) Test_LedgerReportView() {
+	otherUser := models.CreateUserFixtures(as.DB, 1).Users[0]
+
 	f := as.createFixturesForLedger()
 	normalUser := f.Users[0]
 	stewardUser := models.CreateAdminUsers(as.DB)[models.AppRoleSteward]
+	policy := f.Policies[0]
 
-	lr, err := models.NewLedgerReport(models.CreateTestContext(stewardUser), models.ReportTypeMonthly, time.Now())
+	now := time.Now().UTC()
+
+	lr, err := models.NewLedgerReport(models.CreateTestContext(stewardUser), models.ReportTypeMonthly, now)
 	as.NoError(err)
 	as.NoError(lr.Create(as.DB))
+
+	policyReport, err := models.NewPolicyLedgerReport(models.CreateTestContext(normalUser),
+		policy, models.ReportTypeAnnual, 0, now.Year())
+	as.NoError(err)
+	as.NoError(policyReport.Create(as.DB))
 
 	tests := []struct {
 		name       string
 		actor      models.User
+		lrID       uuid.UUID
 		wantStatus int
 		wantInBody []string
 	}{
 		{
 			name:       "unauthenticated",
 			actor:      models.User{},
+			lrID:       lr.ID,
 			wantStatus: http.StatusUnauthorized,
 			wantInBody: []string{`"key":"` + api.ErrorNotAuthorized.String()},
 		},
 		{
-			name:       "insufficient privileges",
+			name:       "not admin",
 			actor:      normalUser,
+			lrID:       lr.ID,
 			wantStatus: http.StatusNotFound,
 			wantInBody: []string{`"key":"` + api.ErrorNotAuthorized.String()},
 		},
 		{
-			name:       "ok",
+			name:       "not policy member",
+			actor:      otherUser,
+			lrID:       policyReport.ID,
+			wantStatus: http.StatusNotFound,
+			wantInBody: []string{`"key":"` + api.ErrorNotAuthorized.String()},
+		},
+		{
+			name:       "ok normalUser's own",
+			actor:      normalUser,
+			lrID:       policyReport.ID,
+			wantStatus: http.StatusOK,
+		},
+		{
+			name:       "ok steward",
 			actor:      stewardUser,
+			lrID:       lr.ID,
 			wantStatus: http.StatusOK,
 		},
 	}
 
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
-			req := as.JSON(fmt.Sprintf("%s/%s", ledgerReportPath, lr.ID))
+			req := as.JSON(fmt.Sprintf("%s/%s", ledgerReportPath, tt.lrID))
 			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
 			res := req.Get()
 
@@ -127,7 +155,7 @@ func (as *ActionSuite) Test_LedgerReportView() {
 
 			var report api.LedgerReport
 			as.NoError(json.Unmarshal([]byte(body), &report))
-			as.Equal(lr.ID, report.ID)
+			as.Equal(tt.lrID, report.ID)
 		})
 	}
 }
