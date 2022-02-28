@@ -147,7 +147,7 @@ func (lr *LedgerReport) LoadLedgerEntries(tx *pop.Connection, reload bool) {
 
 // LoadPolicy hydrates the Policy property if necessary or if `reload` is true.
 func (lr *LedgerReport) LoadPolicy(tx *pop.Connection, reload bool) {
-	if lr.Policy.ID == uuid.Nil || reload {
+	if lr.PolicyID.Valid && (lr.Policy.ID == uuid.Nil || reload) {
 		if err := tx.Load(lr, "Policy"); err != nil {
 			panic("database error loading LedgerReport.Policy, " + err.Error())
 		}
