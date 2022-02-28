@@ -114,8 +114,8 @@ type PolicyUpdate struct {
 // swagger:model
 type PolicyLedgerReportCreateInput struct {
 	// Report types:
-	// + `monthly` - Return all ledger entries not yet reconciled, up to the beginning of the given date.
-	// + `annual` - Return the policy renewal entries for the year of the given date.
+	// + `Monthly` - Return all ledger entries not yet reconciled, up to the beginning of the given date.
+	// + `Annual` - Return the policy renewal entries for the year of the given date.
 	//
 	Type string `json:"type"`
 
