@@ -168,7 +168,7 @@ func (as *ActionSuite) Test_UsersMeUpdate() {
 		as.T().Run(tt.name, func(t *testing.T) {
 			req := as.JSON("/users/me")
 			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
-			req.Headers["content-type"] = "application/json"
+			req.Headers["content-type"] = domain.ContentJson
 			res := req.Put(tt.input)
 
 			body := res.Body.String()
@@ -259,7 +259,7 @@ func (as *ActionSuite) Test_UsersMeFilesAttach() {
 		as.T().Run(tt.name, func(t *testing.T) {
 			req := as.JSON("/users/me/files")
 			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
-			req.Headers["content-type"] = "application/json"
+			req.Headers["content-type"] = domain.ContentJson
 			res := req.Post(tt.input)
 
 			body := res.Body.String()

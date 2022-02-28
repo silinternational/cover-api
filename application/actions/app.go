@@ -121,7 +121,7 @@ func App() *buffalo.App {
 		app.Middleware.Skip(AuthZ, HomeHandler, statusHandler, uploadHandler)
 
 		// Set the request content type to JSON
-		app.Use(contenttype.Set("application/json"))
+		app.Use(contenttype.Set(domain.ContentJson))
 
 		// Wraps each request in a transaction.
 		app.Use(popmw.Transaction(models.DB))
@@ -217,6 +217,7 @@ func App() *buffalo.App {
 		policiesGroup.POST(idRegex+claimsPath, claimsCreate)
 		policiesGroup.GET(idRegex+"/members", policiesListMembers)
 		policiesGroup.POST(idRegex+"/members", policiesInviteMember)
+		policiesGroup.POST(idRegex+"/ledger-reports", policiesLedgerReportCreate)
 	}
 
 	listeners.RegisterListener()

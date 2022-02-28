@@ -89,16 +89,20 @@ const (
 const (
 	CurrencyFactor = 100
 	DateFormat     = "2006-01-02"
-	LocalizedDate  = "2 January 2006"
+
+	DurationDay  = time.Duration(time.Hour * 24)
+	DurationWeek = time.Duration(DurationDay * 7)
+
+	LocalizedDate = "2 January 2006"
 
 	// How many hours old an item can be until it's not allowed to be deleted
 	ItemDeleteCutOffHours = 72
 
 	MaxFileSize = 1024 * 1024 * 10 // 10 Megabytes
+	Megabyte    = 1048576
 
-	DurationDay  = time.Duration(time.Hour * 24)
-	DurationWeek = time.Duration(DurationDay * 7)
-	Megabyte     = 1048576
+	ContentCSV  = "text/csv"
+	ContentJson = "application/json"
 )
 
 // Event Kinds
