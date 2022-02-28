@@ -1244,3 +1244,57 @@ func (ms *ModelSuite) TestItem_canBeUpdated() {
 		})
 	}
 }
+
+func (ms *ModelSuite) TestItem_Update() {
+	// TODO: improve test coverage
+
+	f := CreateItemFixtures(ms.DB, FixturesConfig{ItemsPerPolicy: 3})
+
+	itemToDecreaseCoverage := UpdateItemStatus(ms.DB, f.Items[0], api.ItemCoverageStatusApproved, "test")
+	itemToDecreaseCoverage.CoverageAmount -= 1
+	itemToIncreaseCoverage := UpdateItemStatus(ms.DB, f.Items[1], api.ItemCoverageStatusPending, "test")
+	itemToIncreaseCoverage.CoverageAmount += 1
+	itemCannotIncreaseCoverage := UpdateItemStatus(ms.DB, f.Items[2], api.ItemCoverageStatusApproved, "test")
+	itemCannotIncreaseCoverage.CoverageAmount += 1
+
+	tests := []struct {
+		name     string
+		actor    User
+		item     Item
+		appError *api.AppError
+	}{
+		{
+			name:     "decrease coverage",
+			actor:    f.Users[0],
+			item:     itemToDecreaseCoverage,
+			appError: nil,
+		},
+		{
+			name:     "increase coverage",
+			actor:    f.Users[0],
+			item:     itemToIncreaseCoverage,
+			appError: nil,
+		},
+		{
+			name:     "cannot increase coverage",
+			actor:    f.Users[0],
+			item:     itemCannotIncreaseCoverage,
+			appError: &api.AppError{Key: api.ErrorItemCoverageAmountCannotIncrease, Category: api.CategoryUser},
+		},
+	}
+	for _, tt := range tests {
+		ms.T().Run(tt.name, func(t *testing.T) {
+			err := tt.item.Update(CreateTestContext(tt.actor))
+			if tt.appError != nil {
+				ms.Error(err, "test should have produced an error")
+				ms.EqualAppError(*tt.appError, err)
+				return
+			}
+			ms.NoError(err)
+
+			var dbItem Item
+			ms.NoError(ms.DB.Find(&dbItem, tt.item.ID))
+			ms.Equal(tt.item.CoverageAmount, dbItem.CoverageAmount, "CoverageAmount did not get updated")
+		})
+	}
+}

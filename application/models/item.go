@@ -123,11 +123,16 @@ func (i *Item) Update(ctx context.Context) error {
 		}
 	}
 
-	if oldItem.CoverageAmount != i.CoverageAmount && i.CoverageStatus == api.ItemCoverageStatusApproved &&
-		!i.CoverageEndDate.Valid {
-		amount := i.calculatePremiumChange(time.Now().UTC(), oldItem.CoverageAmount)
-		if err := i.CreateLedgerEntry(Tx(ctx), LedgerEntryTypeCoverageChange, amount); err != nil {
-			return err
+	if i.CoverageStatus == api.ItemCoverageStatusApproved {
+		if oldItem.CoverageAmount < i.CoverageAmount {
+			err := errors.New("item coverage amount cannot be increased")
+			return api.NewAppError(err, api.ErrorItemCoverageAmountCannotIncrease, api.CategoryUser)
+		}
+		if oldItem.CoverageAmount != i.CoverageAmount && !i.CoverageEndDate.Valid {
+			amount := i.calculatePremiumChange(time.Now().UTC(), oldItem.CoverageAmount)
+			if err := i.CreateLedgerEntry(Tx(ctx), LedgerEntryTypeCoverageChange, amount); err != nil {
+				return err
+			}
 		}
 	}
 

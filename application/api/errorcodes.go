@@ -65,13 +65,13 @@ const (
 	ErrorClaimMissingClaimItem = ErrorKey("ErrorClaimMissingClaimItem")
 
 	// Item
-	ErrorItemFromContext              = ErrorKey("ErrorItemFromContext")
-	ErrorItemNullAccountablePerson    = ErrorKey("ErrorItemNullAccountablePerson")
-	ErrorItemCoverageAmount           = ErrorKey("ErrorItemCoverageAmount")
-	ErrorItemInvalidCoverageStartDate = ErrorKey("ErrorItemInvalidCoverageStartDate")
-	ErrorItemInvalidCoverageEndDate   = ErrorKey("ErrorItemInvalidCoverageEndDate")
-	ErrorInvalidCategory              = ErrorKey("ErrorInvalidCategory")
-	ErrorItemHasActiveClaim           = ErrorKey("ErrorItemHasActiveClaim")
+	ErrorItemFromContext                  = ErrorKey("ErrorItemFromContext")
+	ErrorItemNullAccountablePerson        = ErrorKey("ErrorItemNullAccountablePerson")
+	ErrorItemCoverageAmountCannotIncrease = ErrorKey("ErrorItemCoverageAmountCannotIncrease")
+	ErrorItemInvalidCoverageStartDate     = ErrorKey("ErrorItemInvalidCoverageStartDate")
+	ErrorItemInvalidCoverageEndDate       = ErrorKey("ErrorItemInvalidCoverageEndDate")
+	ErrorInvalidCategory                  = ErrorKey("ErrorInvalidCategory")
+	ErrorItemHasActiveClaim               = ErrorKey("ErrorItemHasActiveClaim")
 
 	// Ledger
 	ErrorCreateRenewalEntry = ErrorKey("ErrorCreateRenewalEntry")
