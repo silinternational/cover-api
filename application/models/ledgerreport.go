@@ -235,7 +235,12 @@ func NewPolicyLedgerReport(ctx context.Context, policy Policy, reportType string
 
 	report.File.Name = fmt.Sprintf("%s_policy_%s_%s_%d-%d.csv",
 		domain.Env.AppName, policy.ID.String(), reportType, year, month)
-	report.File.Content = le.ToCsvForPolicy()
+
+	csvContent, err := le.ToCsvForPolicy()
+	if err != nil {
+		return LedgerReport{}, err
+	}
+	report.File.Content = csvContent
 	report.File.CreatedByID = CurrentUser(ctx).ID
 	report.File.ContentType = domain.ContentCSV
 	report.LedgerEntries = le

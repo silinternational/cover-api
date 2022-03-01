@@ -3,6 +3,8 @@ package models
 import (
 	"bytes"
 	"context"
+	"encoding/csv"
+	"errors"
 	"fmt"
 	"time"
 
@@ -16,7 +18,8 @@ import (
 )
 
 const accountSeparator = " / "
-const csvPolicyHeader = `"Amount","Description","Reference","Date Entered"` + "\n"
+
+var csvPolicyHeader = []string{"Amount", "Description", "Reference", "Date Entered"}
 
 type LedgerEntryType string
 
@@ -96,28 +99,39 @@ func (le *LedgerEntries) AllNotEntered(tx *pop.Connection, cutoff time.Time) err
 	return appErrorFromDB(err, api.ErrorQueryFailure)
 }
 
-func (le *LedgerEntries) ToCsvForPolicy() []byte {
-	rowTemplate := `%s,"%s","%s",%s` + "\n"
-
+func (le *LedgerEntries) ToCsvForPolicy() ([]byte, error) {
 	var buf bytes.Buffer
-	buf.Write([]byte(csvPolicyHeader))
+	writer := csv.NewWriter(&buf)
+
+	defer writer.Flush()
+
+	if err := writer.Write(csvPolicyHeader); err != nil {
+		return []byte{}, err
+	}
 
 	for _, l := range *le {
 		if l.Amount == 0 {
 			continue
 		}
-
-		nextRow := fmt.Sprintf(
-			rowTemplate,
+		nextRow := []string{
 			l.Amount.String(),
 			l.transactionDescription(),
 			l.transactionReference(),
 			l.DateSubmitted.Format(domain.DateFormat),
-		)
-		buf.Write([]byte(nextRow))
+		}
+
+		if err := writer.Write(nextRow); err != nil {
+			return []byte{}, errors.New("error adding to Ledger Entry csv output: " + err.Error())
+		}
 	}
 
-	return buf.Bytes()
+	writer.Flush()
+
+	if err := writer.Error(); err != nil {
+		return nil, errors.New("error closing Ledger Entry csv output: " + err.Error())
+	}
+
+	return buf.Bytes(), nil
 }
 
 type TransactionBlocks map[string]LedgerEntries // keyed by account

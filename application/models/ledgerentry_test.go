@@ -2,6 +2,7 @@ package models
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 	"time"
 
@@ -82,6 +83,9 @@ func (ms *ModelSuite) TestLedgerEntries_ToCsvForPolicy() {
 		CostCenter:       "CostCenter",
 	}
 
+	csvHeader := strings.Join(csvPolicyHeader, ",")
+	csvHeader = csvHeader + "\n"
+
 	tests := []struct {
 		name    string
 		entries LedgerEntries
@@ -90,14 +94,14 @@ func (ms *ModelSuite) TestLedgerEntries_ToCsvForPolicy() {
 		{
 			name:    "no data",
 			entries: LedgerEntries{},
-			want:    []string{csvPolicyHeader},
+			want:    []string{csvHeader},
 		},
 		{
 			name:    "1 entry",
 			entries: LedgerEntries{entry},
 			want: []string{
-				csvPolicyHeader,
-				fmt.Sprintf(`%s,"%s","%s",%s`,
+				csvHeader,
+				fmt.Sprintf(`%s,%s,%s,%s`,
 					entry.Amount.String(),
 					entry.transactionDescription(),
 					entry.transactionReference(),
@@ -108,7 +112,8 @@ func (ms *ModelSuite) TestLedgerEntries_ToCsvForPolicy() {
 	}
 	for _, tt := range tests {
 		ms.T().Run(tt.name, func(t *testing.T) {
-			got := tt.entries.ToCsvForPolicy()
+			got, err := tt.entries.ToCsvForPolicy()
+			ms.NoError(err)
 			for _, w := range tt.want {
 				ms.Contains(string(got), w)
 			}
