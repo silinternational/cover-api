@@ -16,7 +16,7 @@ import (
 )
 
 const accountSeparator = " / "
-const csvPolicyHeader = `"Amount","Description","Reference","Date Entered"`
+const csvPolicyHeader = `"Amount","Description","Reference","Date Entered"` + "\n"
 
 type LedgerEntryType string
 
