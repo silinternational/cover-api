@@ -258,10 +258,14 @@ func (p *Policy) ConvertToAPI(tx *pop.Connection, hydrate bool) api.Policy {
 	}
 
 	if hydrate {
+		p.LoadItems(tx, true)
 		p.LoadClaims(tx, true)
 		p.LoadDependents(tx, true)
 		apiPolicy.Claims = p.Claims.ConvertToAPI(tx)
 		apiPolicy.Dependents = p.Dependents.ConvertToAPI()
+
+		apiPolicy.Totals.Items = p.Items.CalcTotals()
+		apiPolicy.Totals.Claims = p.Claims.CalcTotals()
 	}
 
 	return apiPolicy

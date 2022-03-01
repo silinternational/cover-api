@@ -13,6 +13,10 @@ import (
 // swagger:model
 type ItemCoverageStatus string
 
+func (status ItemCoverageStatus) IsActive() bool {
+	return status == ItemCoverageStatusApproved
+}
+
 const (
 	ItemCoverageStatusDraft    = ItemCoverageStatus("Draft")
 	ItemCoverageStatusPending  = ItemCoverageStatus("Pending")

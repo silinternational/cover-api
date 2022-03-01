@@ -49,6 +49,14 @@ func (s ClaimStatus) WasReviewed() bool {
 	return false
 }
 
+func (s ClaimStatus) IsOpen() bool {
+	switch s {
+	case ClaimStatusDraft, ClaimStatusReview1, ClaimStatusReview2, ClaimStatusReview3, ClaimStatusRevision, ClaimStatusReceipt:
+		return true
+	}
+	return false
+}
+
 const (
 	ClaimIncidentTypeTheft           = ClaimIncidentType("Theft")
 	ClaimIncidentTypePhysicalDamage  = ClaimIncidentType("Physical damage")
