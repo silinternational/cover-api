@@ -2,6 +2,7 @@ package fin
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 	"time"
 
@@ -26,10 +27,10 @@ func TestSage_BatchToCSV(t *testing.T) {
 		Transactions:       []Transaction{transaction},
 	}
 
-	summaryRow := fmt.Sprintf(`"1","000000","00001","","GL","JE","%d","%02d",0,"%s","00",0,0,0,2`+"\n",
+	summaryRow := fmt.Sprintf(`1,000000,00001,,GL,JE,%d,%02d,0,%s,00,0,0,0,2`+"\n",
 		s.Year, s.Period, s.JournalDescription)
 
-	transactionRow := fmt.Sprintf(`"2","000000","00001","0000000020","",0,"%s","",%s,"2","%s","%s",%s,"GL","JE"`+"\n",
+	transactionRow := fmt.Sprintf(`2,000000,00001,0000000020,,0,%s,,%s,2,%s,%s,%s,GL,JE`+"\n",
 		transaction.Account,
 		api.Currency(transaction.Amount).String(),
 		transaction.Description,
@@ -37,9 +38,13 @@ func TestSage_BatchToCSV(t *testing.T) {
 		transaction.Date.Format("20060102"),
 	)
 
-	want := header1 + header2 + summaryRow + transactionRow
+	want := strings.Join(header1, ",") + "\n" +
+		strings.Join(header2, ",") + "\n" +
+		summaryRow +
+		transactionRow
 
-	got := s.BatchToCSV()
+	got, err := s.BatchToCSV()
+	require.NoError(t, err)
 
 	require.Equal(t, want, string(got))
 }

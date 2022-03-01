@@ -136,7 +136,7 @@ func (le *LedgerEntries) ToCsvForPolicy() ([]byte, error) {
 
 type TransactionBlocks map[string]LedgerEntries // keyed by account
 
-func (le *LedgerEntries) ToCsv(date time.Time) []byte {
+func (le *LedgerEntries) ToCsv(date time.Time) ([]byte, error) {
 	sage := fin.NewBatch(fin.ProviderTypeSage, date)
 
 	blocks := le.MakeBlocks()

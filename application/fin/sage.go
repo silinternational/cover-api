@@ -2,21 +2,18 @@ package fin
 
 import (
 	"bytes"
+	"encoding/csv"
+	"errors"
 	"fmt"
 
 	"github.com/silinternational/cover-api/api"
 )
 
-const (
-	header1 = `"RECTYPE","BATCHID","BTCHENTRY","ORIGCOMP","SRCELEDGER","SRCETYPE","FSCSYR","FSCSPERD","SWEDIT",` +
-		`"JRNLDESC","REVPERD","ERRBATCH","ERRENTRY","DETAILCNT","PROCESSCMD"` + "\n"
-	header2 = `"RECTYPE","BATCHNBR","JOURNALID","TRANSNBR","DESCOMP","ROUTE","ACCTID","COMPANYID","TRANSAMT",` +
-		`"SCURNDEC","TRANSDESC","TRANSREF","TRANSDATE","SRCELDGR","SRCETYPE",` + "\n"
-)
-
-const (
-	transactionRowTemplate = `"2","000000","00001","%010d","",0,"%s","",%s,"2","%s","%s",%s,"GL","JE"` + "\n"
-	summaryRowTemplate     = `"1","000000","00001","","GL","JE","%d","%02d",0,"%s","00",0,0,0,2` + "\n"
+var (
+	header1 = []string{"RECTYPE", "BATCHID", "BTCHENTRY", "ORIGCOMP", "SRCELEDGER", "SRCETYPE", "FSCSYR", "FSCSPERD", "SWEDIT",
+		"JRNLDESC", "REVPERD", "ERRBATCH", "ERRENTRY", "DETAILCNT", "PROCESSCMD"}
+	header2 = []string{"RECTYPE", "BATCHNBR", "JOURNALID", "TRANSNBR", "DESCOMP", "ROUTE", "ACCTID", "COMPANYID", "TRANSAMT",
+		"SCURNDEC", "TRANSDESC", "TRANSREF", "TRANSDATE", "SRCELDGR", "SRCETYPE"}
 )
 
 type Sage struct {
@@ -32,33 +29,73 @@ func (s *Sage) AppendToBatch(t Transaction) {
 	}
 }
 
-func (s *Sage) BatchToCSV() []byte {
+func (s *Sage) BatchToCSV() ([]byte, error) {
 	var buf bytes.Buffer
-	buf.Write([]byte(header1))
-	buf.Write([]byte(header2))
-	buf.Write(s.summaryRow())
-	for i := range s.Transactions {
-		buf.Write(s.transactionRow(i))
+	writer := csv.NewWriter(&buf)
+
+	defer writer.Flush()
+
+	for _, s := range [][]string{header1, header2, s.summaryRow()} {
+		if err := writer.Write(s); err != nil {
+			return []byte{}, err
+		}
 	}
 
-	return buf.Bytes()
+	for i := range s.Transactions {
+		if err := writer.Write(s.transactionRow(i)); err != nil {
+			return []byte{}, errors.New("error writing sage batch to csv: " + err.Error())
+		}
+	}
+
+	writer.Flush()
+
+	if err := writer.Error(); err != nil {
+		return nil, errors.New("error closing sage csv output: " + err.Error())
+	}
+
+	return buf.Bytes(), nil
 }
 
-func (s *Sage) summaryRow() []byte {
-	str := fmt.Sprintf(summaryRowTemplate, s.Year, s.Period, s.JournalDescription)
-	return []byte(str)
+func (s *Sage) summaryRow() []string {
+	// `"1","000000","00001","","GL","JE","%d","%02d",0,"%s","00",0,0,0,2`
+	return []string{
+		"1",
+		"000000",
+		"00001",
+		"",
+		"GL",
+		"JE",
+		fmt.Sprintf("%d", s.Year),
+		fmt.Sprintf("%02d", s.Period),
+		"0",
+		s.JournalDescription,
+		"00",
+		"0",
+		"0",
+		"0",
+		"2",
+	}
 }
 
-func (s *Sage) transactionRow(rowNumber int) []byte {
+func (s *Sage) transactionRow(rowNumber int) []string {
 	t := s.Transactions[rowNumber]
-	str := fmt.Sprintf(
-		transactionRowTemplate,
-		20*(rowNumber+1),
+
+	// `"2","000000","00001","%010d","",0,"%s","",%s,"2","%s","%s",%s,"GL","JE"`
+	return []string{
+		"2",
+		"000000",
+		"00001",
+		fmt.Sprintf("%010d", 20*(rowNumber+1)),
+		"",
+		"0",
 		t.Account,
+		"",
 		api.Currency(-t.Amount).String(),
-		fmt.Sprintf("%.60s", t.Description), // truncate to Sage limit of 60 characters
+		"2",
+		fmt.Sprintf("%.60s", t.Description),
 		t.Reference,
 		t.Date.Format("20060102"),
-	)
-	return []byte(str)
+		"GL",
+		"JE",
+	}
 }

@@ -190,7 +190,13 @@ func NewLedgerReport(ctx context.Context, reportType string, date time.Time) (Le
 
 	report.File.Name = fmt.Sprintf("%s_%s_%s.csv",
 		domain.Env.AppName, reportType, report.Date.Format(domain.DateFormat))
-	report.File.Content = le.ToCsv(report.Date)
+
+	content, err := le.ToCsv(report.Date)
+	if err != nil {
+		return LedgerReport{}, err
+	}
+
+	report.File.Content = content
 	report.File.CreatedByID = CurrentUser(ctx).ID
 	report.File.ContentType = domain.ContentCSV
 	report.LedgerEntries = le

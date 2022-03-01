@@ -160,14 +160,14 @@ func (ms *ModelSuite) TestLedgerEntries_ToCsv() {
 			batchDate: date,
 			want: []string{
 				summaryLine,
-				fmt.Sprintf(`"2","000000","00001","0000000020","",0,"%s","",%s,"2","%s","%s",%s,"GL","JE"`,
+				fmt.Sprintf(`2,000000,00001,0000000020,,0,%s,,%s,2,%s,%s,%s,GL,JE`,
 					domain.Env.ExpenseAccount,
 					api.Currency(-entry.Amount).String(),
 					entry.transactionDescription(),
 					entry.transactionReference(),
 					date.Format("20060102"),
 				),
-				fmt.Sprintf(`"2","000000","00001","0000000040","",0,"%s","",%s,"2","%s","",%s,"GL","JE"`,
+				fmt.Sprintf(`2,000000,00001,0000000040,,0,%s,,%s,2,%s,,%s,GL,JE`,
 					entry.IncomeAccount+entry.RiskCategoryCC,
 					entry.Amount.String(),
 					entry.balanceDescription(),
@@ -178,7 +178,8 @@ func (ms *ModelSuite) TestLedgerEntries_ToCsv() {
 	}
 	for _, tt := range tests {
 		ms.T().Run(tt.name, func(t *testing.T) {
-			got := tt.entries.ToCsv(tt.batchDate)
+			got, err := tt.entries.ToCsv(tt.batchDate)
+			ms.NoError(err)
 			for _, w := range tt.want {
 				ms.Contains(string(got), w)
 			}

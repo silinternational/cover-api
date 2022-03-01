@@ -19,7 +19,7 @@ type Transaction struct {
 
 type Provider interface {
 	AppendToBatch(Transaction)
-	BatchToCSV() []byte
+	BatchToCSV() ([]byte, error)
 }
 
 func NewBatch(providerType string, date time.Time) Provider {
