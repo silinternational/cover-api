@@ -1167,3 +1167,73 @@ func (as *ActionSuite) Test_ClaimsDeny() {
 		})
 	}
 }
+
+func (as *ActionSuite) Test_ClaimsRemove() {
+	fixConfig := models.FixturesConfig{
+		NumberOfPolicies:    2,
+		ItemsPerPolicy:      2,
+		UsersPerPolicy:      1,
+		DependentsPerPolicy: 0,
+		ClaimsPerPolicy:     4,
+		ClaimItemsPerClaim:  1,
+	}
+
+	fixtures := models.CreateItemFixtures(as.DB, fixConfig)
+	policy := fixtures.Policies[0]
+	policyCreator := policy.Members[0]
+	otherUser := fixtures.Policies[1].Members[0]
+
+	steward := models.CreateAdminUsers(as.DB)[models.AppRoleSteward]
+
+	draftClaim := policy.Claims[0]
+	approvedClaim := models.UpdateClaimStatus(as.DB, policy.Claims[3], api.ClaimStatusApproved, "")
+
+	approvedClaim.ReviewerID = nulls.NewUUID(steward.ID)
+	as.NoError(as.DB.Update(&approvedClaim), "error updating claim fixture")
+
+	tests := []struct {
+		name            string
+		actor           models.User
+		claim           models.Claim
+		wantStatus      int
+		wantClaimStatus api.ClaimStatus
+		wantInBody      []string
+	}{
+		{
+			name:       "other user",
+			actor:      otherUser,
+			claim:      draftClaim,
+			wantStatus: http.StatusNotFound,
+		},
+		{
+			name:       "bad start status",
+			actor:      steward,
+			claim:      approvedClaim,
+			wantStatus: http.StatusBadRequest,
+			wantInBody: []string{api.ErrorClaimStatus.String()},
+		},
+		{
+			name:       "good - deletable",
+			actor:      policyCreator,
+			claim:      draftClaim,
+			wantStatus: http.StatusNoContent,
+		},
+	}
+
+	for _, tt := range tests {
+		as.T().Run(tt.name, func(t *testing.T) {
+			req := as.JSON("/%s/%s",
+				domain.TypeClaim, tt.claim.ID.String())
+			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
+			req.Headers["content-type"] = domain.ContentJson
+			res := req.Delete()
+
+			body := res.Body.String()
+			as.Equal(tt.wantStatus, res.Code, "incorrect status code returned, body: %s", body)
+
+			if len(tt.wantInBody) > 0 {
+				as.verifyResponseData(tt.wantInBody, body, "")
+			}
+		})
+	}
+}

@@ -231,6 +231,32 @@ func claimsSubmit(c buffalo.Context) error {
 	return c.Render(http.StatusOK, r.JSON(output))
 }
 
+// swagger:operation POST /claims/{id} Claims ClaimsRemove
+//
+// ClaimsRemove
+//
+// Delete a claim and its claim items as long as it does not have a status of
+//   approved, denied or paid.
+//
+// ---
+// parameters:
+//   - name: id
+//     in: path
+//     required: true
+//     description: claim ID
+// responses:
+//   '204':
+//     description: OK but no content in response
+func claimsRemove(c buffalo.Context) error {
+	claim := getReferencedClaimFromCtx(c)
+
+	if err := claim.Delete(c); err != nil {
+		return reportError(c, err)
+	}
+
+	return c.Render(http.StatusNoContent, nil)
+}
+
 // swagger:operation POST /claims/{id}/revision Claims ClaimsRequestRevision
 //
 // ClaimsRequestRevision

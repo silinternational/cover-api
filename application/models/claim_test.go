@@ -577,6 +577,94 @@ func (ms *ModelSuite) TestClaim_Deny() {
 	}
 }
 
+func (ms *ModelSuite) TestClaim_Delete() {
+	t := ms.T()
+
+	fixConfig := FixturesConfig{
+		NumberOfPolicies:    2,
+		UsersPerPolicy:      2,
+		DependentsPerPolicy: 2,
+		ItemsPerPolicy:      4,
+		ClaimsPerPolicy:     5,
+		ClaimItemsPerClaim:  1,
+	}
+
+	fixtures := CreateItemFixtures(ms.DB, fixConfig)
+
+	admin := CreateAdminUsers(ms.DB)[AppRoleSteward]
+
+	policy := fixtures.Policies[0]
+	draftClaim := policy.Claims[0]
+	paidClaim := UpdateClaimStatus(ms.DB, policy.Claims[1], api.ClaimStatusPaid, "")
+	approvedClaim := UpdateClaimStatus(ms.DB, policy.Claims[2], api.ClaimStatusApproved, "")
+	review3Claim := UpdateClaimStatus(ms.DB, policy.Claims[3], api.ClaimStatusReview3, "")
+	emptyClaim := UpdateClaimStatus(ms.DB, policy.Claims[4], api.ClaimStatusReview1, "")
+
+	tempClaim := emptyClaim
+	tempClaim.LoadClaimItems(ms.DB, false)
+	ms.NoError(ms.DB.Destroy(&tempClaim.ClaimItems[0]),
+		"error trying to destroy ClaimItem fixture for test")
+
+	tests := []struct {
+		name            string
+		claim           Claim
+		wantErrContains string
+		wantErrKey      api.ErrorKey
+		wantErrCat      api.ErrorCategory
+		wantStatus      api.ClaimStatus
+	}{
+		{
+			name:            "bad status approved",
+			claim:           approvedClaim,
+			wantErrKey:      api.ErrorClaimStatus,
+			wantErrCat:      api.CategoryUser,
+			wantErrContains: "claim that has been approved, paid or denied may not be deleted",
+		},
+		{
+			name:            "bad status paid",
+			claim:           paidClaim,
+			wantErrKey:      api.ErrorClaimStatus,
+			wantErrCat:      api.CategoryUser,
+			wantErrContains: "claim that has been approved, paid or denied may not be deleted",
+		},
+		{
+			name:  "claim with no ClaimItem",
+			claim: emptyClaim,
+		},
+		{
+			name:  "good draft claim",
+			claim: draftClaim,
+		},
+		{
+			name:  "good review3 claim",
+			claim: review3Claim,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctx := CreateTestContext(admin)
+			got := tt.claim.Delete(ctx)
+
+			if tt.wantErrContains != "" {
+				ms.Error(got, " did not return expected error")
+				var appErr *api.AppError
+				ms.True(errors.As(got, &appErr), "returned an error that is not an AppError")
+				ms.Contains(got.Error(), tt.wantErrContains, "error message is not correct")
+				ms.Equal(appErr.Key, tt.wantErrKey, "error key is not correct")
+				ms.Equal(appErr.Category, tt.wantErrCat, "error category is not correct")
+				return
+			}
+			ms.NoError(got)
+
+			var claim Claim
+			err := claim.FindByID(ms.DB, tt.claim.ID)
+			ms.Error(err, "the claim should have been deleted")
+			ms.False(domain.IsOtherThanNoRows(err), "error deleting claim")
+		})
+	}
+}
+
 func (ms *ModelSuite) TestClaim_HasReceiptFile() {
 	db := ms.DB
 	config := FixturesConfig{
