@@ -231,7 +231,7 @@ func claimsSubmit(c buffalo.Context) error {
 	return c.Render(http.StatusOK, r.JSON(output))
 }
 
-// swagger:operation POST /claims/{id} Claims ClaimsRemove
+// swagger:operation DELETE /claims/{id} Claims ClaimsRemove
 //
 // ClaimsRemove
 //
