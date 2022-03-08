@@ -146,6 +146,9 @@ type Claim struct {
 	// message from a reviewer detailing the revisions needed
 	StatusReason string `json:"status_reason"`
 
+	// whether the claim can be removed/deleted
+	IsRemovable bool `json:"is_removable"`
+
 	// list of items included in claim
 	Items ClaimItems `json:"claim_items"`
 

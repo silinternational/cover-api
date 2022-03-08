@@ -215,6 +215,38 @@ func (c *Claim) UpdateByUser(ctx context.Context) error {
 	return c.Update(ctx)
 }
 
+// Delete ensures the claim does not have a status of approved, denied or paid and
+//   then deletes the claim's items and the claim itself.
+func (c *Claim) Delete(ctx context.Context) error {
+	tx := Tx(ctx)
+
+	var oldClaim Claim
+	if err := oldClaim.FindByID(tx, c.ID); err != nil {
+		return appErrorFromDB(err, api.ErrorQueryFailure)
+	}
+
+	if c.Status == api.ClaimStatusPaid ||
+		c.Status == api.ClaimStatusDenied ||
+		c.Status == api.ClaimStatusApproved {
+		err := errors.New("claim that has been approved, paid or denied may not be deleted")
+		appErr := api.NewAppError(err, api.ErrorClaimStatus, api.CategoryUser)
+		return appErr
+	}
+
+	c.LoadClaimItems(tx, false)
+	for i := range c.ClaimItems {
+		if err := tx.Destroy(&c.ClaimItems[i]); err != nil {
+			return appErrorFromDB(fmt.Errorf("error destroying claim item: %w", err), api.ErrorQueryFailure)
+		}
+	}
+
+	if err := tx.Destroy(c); err != nil {
+		return appErrorFromDB(fmt.Errorf("error destroying claim: %w", err), api.ErrorQueryFailure)
+	}
+
+	return nil
+}
+
 func (c *Claim) canUpdate(user User) bool {
 	if user.IsAdmin() {
 		return true
@@ -626,6 +658,12 @@ func (c *Claim) ConvertToAPI(tx *pop.Connection) api.Claim {
 	c.LoadClaimItems(tx, true)
 	c.LoadClaimFiles(tx, true)
 
+	isRemovable := true
+	switch c.Status {
+	case api.ClaimStatusApproved, api.ClaimStatusPaid, api.ClaimStatusDenied:
+		isRemovable = false
+	}
+
 	return api.Claim{
 		ID:                  c.ID,
 		PolicyID:            c.PolicyID,
@@ -640,6 +678,7 @@ func (c *Claim) ConvertToAPI(tx *pop.Connection) api.Claim {
 		PaymentDate:         convertTimeToAPI(c.PaymentDate),
 		TotalPayout:         c.TotalPayout,
 		StatusReason:        c.StatusReason,
+		IsRemovable:         isRemovable,
 		Items:               c.ClaimItems.ConvertToAPI(tx),
 		Files:               c.ClaimFiles.ConvertToAPI(tx),
 	}

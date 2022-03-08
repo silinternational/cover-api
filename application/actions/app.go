@@ -166,6 +166,7 @@ func App() *buffalo.App {
 		claimsGroup.GET("/", claimsList)
 		claimsGroup.GET(idRegex, claimsView)
 		claimsGroup.PUT(idRegex, claimsUpdate)
+		claimsGroup.DELETE(idRegex, claimsRemove)
 		claimsGroup.POST(idRegex+filesPath, claimFilesAttach)
 		claimsGroup.POST(idRegex+itemsPath, claimsItemsCreate)
 		claimsGroup.POST(idRegex+"/"+api.ResourceSubmit, claimsSubmit)
