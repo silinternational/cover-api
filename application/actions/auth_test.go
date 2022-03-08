@@ -17,7 +17,7 @@ func (as *ActionSuite) Test_AuthLogin_Invite() {
 
 	missingCode := "7cc06a0f-00a6-4b2d-9cd6-c0820ae46662"
 
-	invite := models.CreatePolicyUserInviteFixtures(db, 2).PolicyUserInvites[0]
+	invite := models.CreatePolicyUserInviteFixtures(db, models.Policies{}, 2).PolicyUserInvites[0]
 
 	tests := []struct {
 		name         string

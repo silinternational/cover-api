@@ -28,6 +28,7 @@ type FixturesConfig struct {
 	NumberOfPolicies    int
 	ItemsPerPolicy      int
 	ClaimsPerPolicy     int
+	InvitesPerPolicy    int
 	ClaimItemsPerClaim  int
 	ClaimFilesPerClaim  int
 	UsersPerPolicy      int
@@ -354,6 +355,7 @@ func CreatePolicyFixtures(tx *pop.Connection, config FixturesConfig) Fixtures {
 
 	var policyUsers PolicyUsers
 	var policyDependents PolicyDependents
+	var policyInvites PolicyUserInvites
 	var users Users
 
 	policies := make(Policies, config.NumberOfPolicies)
@@ -376,12 +378,19 @@ func CreatePolicyFixtures(tx *pop.Connection, config FixturesConfig) Fixtures {
 
 		policies[i].LoadDependents(tx, false)
 	}
+
+	if config.InvitesPerPolicy > 0 {
+		f := CreatePolicyUserInviteFixtures(tx, policies, config.InvitesPerPolicy)
+		policyInvites = f.PolicyUserInvites
+	}
+
 	return Fixtures{
-		EntityCodes:      entCodes,
-		Policies:         policies,
-		PolicyDependents: policyDependents,
-		PolicyUsers:      policyUsers,
-		Users:            users,
+		EntityCodes:       entCodes,
+		Policies:          policies,
+		PolicyDependents:  policyDependents,
+		PolicyUserInvites: policyInvites,
+		PolicyUsers:       policyUsers,
+		Users:             users,
 	}
 }
 
@@ -523,27 +532,34 @@ func CreateRiskCategories(tx *pop.Connection) {
 
 // CreatePolicyUserInviteFixtures generates any number of policies with one
 //  primary member and one policy user invite records
-func CreatePolicyUserInviteFixtures(tx *pop.Connection, n int) Fixtures {
-	config := FixturesConfig{
-		NumberOfPolicies: n,
+func CreatePolicyUserInviteFixtures(tx *pop.Connection, policies Policies, n int) Fixtures {
+	if len(policies) == 0 {
+		config := FixturesConfig{
+			NumberOfPolicies: n,
+		}
+		fixtures := CreatePolicyFixtures(tx, config)
+		policies = fixtures.Policies
 	}
-	fixtures := CreatePolicyFixtures(tx, config)
-	policies := fixtures.Policies
 
-	invites := make(PolicyUserInvites, n)
-	for i := range invites {
-		member := policies[i].Members[0]
-		invites[i].PolicyID = policies[i].ID
-		invites[i].InviteeName = fmt.Sprintf("Invitee Name%d", i)
-		invites[i].InviterName = member.Name()
-		invites[i].InviterEmail = member.EmailOfChoice()
-		invites[i].InviterMessage = fmt.Sprintf("message_%d", i)
-		invites[i].Email = fmt.Sprintf("invitee_%d@example.org", i)
-		MustCreate(tx, &invites[i])
+	count := len(policies) * n
+
+	invites := make(PolicyUserInvites, count)
+	for i := range policies {
+		for j := 0; j < n; j++ {
+			invNum := i*n + j
+			member := policies[i].Members[0]
+			invites[invNum].PolicyID = policies[i].ID
+			invites[invNum].InviteeName = fmt.Sprintf("Invitee Name%d", invNum)
+			invites[invNum].InviterName = member.Name()
+			invites[invNum].InviterEmail = member.EmailOfChoice()
+			invites[invNum].InviterMessage = fmt.Sprintf("message_%d", invNum)
+			invites[invNum].Email = fmt.Sprintf("invitee_%d@example.org", invNum)
+			MustCreate(tx, &invites[invNum])
+		}
 	}
 
 	return Fixtures{
-		Policies:          fixtures.Policies,
+		Policies:          policies,
 		PolicyUserInvites: invites,
 	}
 }
