@@ -38,11 +38,12 @@ type Policy struct {
 	CreatedAt     time.Time      `db:"created_at"`
 	UpdatedAt     time.Time      `db:"updated_at"`
 
-	Claims     Claims           `has_many:"claims" validate:"-" order_by:"incident_date desc"`
-	Dependents PolicyDependents `has_many:"policy_dependents" validate:"-" order_by:"name"`
-	Items      Items            `has_many:"items" validate:"-" order_by:"coverage_status asc,updated_at desc"`
-	Members    Users            `many_to_many:"policy_users" validate:"-"`
-	EntityCode EntityCode       `belongs_to:"entity_codes" validate:"-"`
+	Claims     Claims            `has_many:"claims" validate:"-" order_by:"incident_date desc"`
+	Dependents PolicyDependents  `has_many:"policy_dependents" validate:"-" order_by:"name"`
+	Invites    PolicyUserInvites `has_many:"policy_user_invites" validate:"-" order_by:"invitee_name"`
+	Items      Items             `has_many:"items" validate:"-" order_by:"coverage_status asc,updated_at desc"`
+	Members    Users             `many_to_many:"policy_users" validate:"-"`
+	EntityCode EntityCode        `belongs_to:"entity_codes" validate:"-"`
 }
 
 // Validate gets run every time you call a "pop.Validate*" (pop.ValidateAndSave, pop.ValidateAndCreate, pop.ValidateAndUpdate) method.
@@ -212,6 +213,15 @@ func (p *Policy) LoadDependents(tx *pop.Connection, reload bool) {
 	}
 }
 
+// LoadInvites - a simple wrapper method for loading policy user invites on the struct
+func (p *Policy) LoadInvites(tx *pop.Connection, reload bool) {
+	if len(p.Invites) == 0 || reload {
+		if err := tx.Load(p, "Invites"); err != nil {
+			panic("database error loading Policy.Invites, " + err.Error())
+		}
+	}
+}
+
 // LoadItems - a simple wrapper method for loading items on the struct
 func (p *Policy) LoadItems(tx *pop.Connection, reload bool) {
 	if len(p.Items) == 0 || reload {
@@ -260,8 +270,10 @@ func (p *Policy) ConvertToAPI(tx *pop.Connection, hydrate bool) api.Policy {
 	if hydrate {
 		p.LoadClaims(tx, true)
 		p.LoadDependents(tx, true)
+		p.LoadInvites(tx, true)
 		apiPolicy.Claims = p.Claims.ConvertToAPI(tx)
 		apiPolicy.Dependents = p.Dependents.ConvertToAPI()
+		apiPolicy.Invites = p.Invites.ConvertToAPI()
 	}
 
 	return apiPolicy
