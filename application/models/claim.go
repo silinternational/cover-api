@@ -234,8 +234,8 @@ func (c *Claim) Delete(ctx context.Context) error {
 	}
 
 	c.LoadClaimItems(tx, false)
-	for _, ci := range c.ClaimItems {
-		if err := tx.Destroy(&ci); err != nil {
+	for i := range c.ClaimItems {
+		if err := tx.Destroy(&c.ClaimItems[i]); err != nil {
 			return appErrorFromDB(fmt.Errorf("error destroying claim item: %w", err), api.ErrorQueryFailure)
 		}
 	}
