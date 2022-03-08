@@ -13,7 +13,7 @@ func (ts *TestSuite) Test_PolicyUserInviteQueueMessage() {
 
 	models.CreateAdminUsers(db)
 
-	f := models.CreatePolicyUserInviteFixtures(db, 2)
+	f := models.CreatePolicyUserInviteFixtures(db, models.Policies{}, 2)
 
 	policy := f.Policies[0]
 	member := policy.Members[0]

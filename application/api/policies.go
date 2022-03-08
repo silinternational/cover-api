@@ -66,6 +66,9 @@ type Policy struct {
 	// List of dependents on policy
 	Dependents PolicyDependents `json:"dependents"`
 
+	// List of invites for this policy
+	Invites PolicyUserInvites `json:"invites"`
+
 	// List of claims on policy
 	Claims Claims `json:"claims"`
 }
