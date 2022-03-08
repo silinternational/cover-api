@@ -658,6 +658,12 @@ func (c *Claim) ConvertToAPI(tx *pop.Connection) api.Claim {
 	c.LoadClaimItems(tx, true)
 	c.LoadClaimFiles(tx, true)
 
+	isRemovable := true
+	switch c.Status {
+	case api.ClaimStatusApproved, api.ClaimStatusPaid, api.ClaimStatusDenied:
+		isRemovable = false
+	}
+
 	return api.Claim{
 		ID:                  c.ID,
 		PolicyID:            c.PolicyID,
@@ -672,6 +678,7 @@ func (c *Claim) ConvertToAPI(tx *pop.Connection) api.Claim {
 		PaymentDate:         convertTimeToAPI(c.PaymentDate),
 		TotalPayout:         c.TotalPayout,
 		StatusReason:        c.StatusReason,
+		IsRemovable:         isRemovable,
 		Items:               c.ClaimItems.ConvertToAPI(tx),
 		Files:               c.ClaimFiles.ConvertToAPI(tx),
 	}

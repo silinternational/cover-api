@@ -861,6 +861,7 @@ func (ms *ModelSuite) TestClaim_ConvertToAPI() {
 	ms.EqualNullTime(claim.PaymentDate, got.PaymentDate, "PaymentDate is not correct")
 	ms.Equal(claim.TotalPayout, got.TotalPayout, "TotalPayout is not correct")
 	ms.Equal(claim.StatusReason, got.StatusReason, "StatusReason is not correct")
+	ms.True(got.IsRemovable, "IsRemovable is not correct")
 
 	ms.Greater(len(claim.ClaimItems), 0, "test should be revised, fixture has no ClaimItems")
 	ms.Len(got.Items, len(claim.ClaimItems), "Items is not correct length")
