@@ -279,7 +279,7 @@ func (as *ActionSuite) Test_UsersMeFilesAttach() {
 	}
 }
 
-func (as *ActionSuite) Test_UsersMeFilesDetach() {
+func (as *ActionSuite) Test_UsersMeFilesDelete() {
 	fixConfig := models.FixturesConfig{
 		NumberOfPolicies: 2,
 		UsersPerPolicy:   1,

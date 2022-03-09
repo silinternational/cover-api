@@ -151,9 +151,9 @@ func usersMeFilesAttach(c buffalo.Context) error {
 	return renderUser(c, user)
 }
 
-// swagger:operation DELETE /users/me/files Users UsersMeFileDetach
+// swagger:operation DELETE /users/me/files Users UsersMeFileDelete
 //
-// UsersMeFileDetach
+// UsersMeFileDelete
 //
 // detach the Photo File from the current user and remove it from S3
 //
@@ -162,11 +162,11 @@ func usersMeFilesAttach(c buffalo.Context) error {
 // responses:
 //   '204':
 //     description: OK but no content in response
-func usersMeFilesDetach(c buffalo.Context) error {
+func usersMeFilesDelete(c buffalo.Context) error {
 	tx := models.Tx(c)
 
 	user := models.CurrentUser(c)
-	if err := user.DetachPhotoFile(tx); err != nil {
+	if err := user.DeletePhotoFile(tx); err != nil {
 		return reportError(c, err)
 	}
 
