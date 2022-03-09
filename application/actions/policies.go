@@ -263,11 +263,6 @@ func policiesInviteMember(c buffalo.Context) error {
 		return reportError(c, err)
 	}
 
-	// make sure user is not already a member of this policy
-	if policy.MemberHasEmail(tx, invite.Email) {
-		return c.Render(http.StatusNoContent, nil)
-	}
-
 	cUser := models.CurrentUser(c)
 
 	var err error
@@ -275,6 +270,11 @@ func policiesInviteMember(c buffalo.Context) error {
 	if policy.HouseholdID.Valid {
 		err = policy.NewHouseholdInvite(tx, invite, cUser)
 	} else {
+		// make sure user is not already a member of this policy
+		if policy.MemberHasEmail(tx, invite.Email) {
+			return c.Render(http.StatusNoContent, nil)
+		}
+		
 		err = policy.NewTeamInvite(tx, invite, cUser)
 	}
 
