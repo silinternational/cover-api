@@ -155,7 +155,7 @@ func usersMeFilesAttach(c buffalo.Context) error {
 //
 // UsersMeFileDetach
 //
-// detach the Photo File from the current user and allow it to be deleted by a scheduled task
+// detach the Photo File from the current user and remove it from S3
 //
 // ---
 // parameters:

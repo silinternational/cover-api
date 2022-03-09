@@ -17,6 +17,7 @@ import (
 	"github.com/silinternational/cover-api/api"
 	"github.com/silinternational/cover-api/auth"
 	"github.com/silinternational/cover-api/domain"
+	"github.com/silinternational/cover-api/storage"
 )
 
 type UserAppRole string
@@ -405,7 +406,7 @@ func (u *User) AttachPhotoFile(tx *pop.Connection, fileID uuid.UUID) error {
 	return nil
 }
 
-// DetachPhotoFile unlinks the user's profile photo file
+// DetachPhotoFile deletes the user's profile photo file
 func (u *User) DetachPhotoFile(tx *pop.Connection) error {
 	if !u.PhotoFileID.Valid {
 		domain.Logger.Printf("user %v has no PhotoFileID to detach", u.ID)
@@ -420,9 +421,14 @@ func (u *User) DetachPhotoFile(tx *pop.Connection) error {
 		)
 	}
 
-	if err := f.ClearLinked(tx); err != nil {
+	if err := storage.RemoveFile(f.ID.String()); err != nil {
+		domain.ErrLogger.Printf("error removing from S3, id='%s', %s", f.ID.String(), err)
+	}
+
+	if err := tx.Destroy(&f); err != nil {
+		domain.ErrLogger.Printf("file %d destroy error, %s", f.ID, err)
 		return appErrorFromDB(
-			errors.New("error clearing link of user's photo file "+err.Error()),
+			fmt.Errorf("file %d destroy error, %s", f.ID, err),
 			api.ErrorUpdateFailure,
 		)
 	}
