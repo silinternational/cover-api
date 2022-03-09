@@ -422,7 +422,7 @@ func (u *User) DetachPhotoFile(tx *pop.Connection) error {
 	}
 
 	if err := storage.RemoveFile(f.ID.String()); err != nil {
-		domain.ErrLogger.Printf("error removing from S3, id='%s', %s", f.ID.String(), err)
+		domain.ErrLogger.Printf("error removing file from S3, id='%s', %s", f.ID.String(), err)
 	}
 
 	if err := tx.Destroy(&f); err != nil {
