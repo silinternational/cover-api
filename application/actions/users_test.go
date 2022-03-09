@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/gobuffalo/nulls"
 	"github.com/gofrs/uuid"
 
 	"github.com/silinternational/cover-api/api"
@@ -274,6 +275,44 @@ func (as *ActionSuite) Test_UsersMeFilesAttach() {
 			var file models.File
 			as.NoError(as.DB.Where("id = ?", tt.input.FileID).First(&file),
 				"new File not found in database")
+		})
+	}
+}
+
+func (as *ActionSuite) Test_UsersMeFilesDetach() {
+	fixConfig := models.FixturesConfig{
+		NumberOfPolicies: 2,
+		UsersPerPolicy:   1,
+	}
+
+	f := models.CreateItemFixtures(as.DB, fixConfig)
+	currentUser := f.Policies[0].Members[0]
+
+	ff := models.CreateFileFixtures(as.DB, 2, currentUser.ID)
+	linkedFile := ff.Files[0]
+	as.NoError(linkedFile.SetLinked(as.DB))
+	currentUser.PhotoFileID = nulls.NewUUID(linkedFile.ID)
+	as.NoError(currentUser.Update(as.DB))
+
+	tests := []struct {
+		name string
+	}{
+		{
+			name: "ok - file already linked to the user",
+		},
+		{
+			name: "no file still linked to user",
+		},
+	}
+	for _, tt := range tests {
+		as.T().Run(tt.name, func(t *testing.T) {
+			req := as.JSON("/users/me/files")
+			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", currentUser.Email)
+			req.Headers["content-type"] = domain.ContentJson
+			res := req.Delete()
+
+			body := res.Body.String()
+			as.Equal(http.StatusNoContent, res.Code, "incorrect status code returned, body: %s", body)
 		})
 	}
 }

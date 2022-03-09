@@ -405,6 +405,32 @@ func (u *User) AttachPhotoFile(tx *pop.Connection, fileID uuid.UUID) error {
 	return nil
 }
 
+// DetachPhotoFile unlinks the user's profile photo file
+func (u *User) DetachPhotoFile(tx *pop.Connection) error {
+	if !u.PhotoFileID.Valid {
+		domain.Logger.Printf("user %v has no PhotoFileID to detach", u.ID)
+		return nil
+	}
+
+	var f File
+	if err := tx.Find(&f, u.PhotoFileID.UUID); err != nil {
+		return appErrorFromDB(
+			errors.New("error finding user's photo file "+err.Error()),
+			api.ErrorResourceNotFound,
+		)
+	}
+
+	if err := f.ClearLinked(tx); err != nil {
+		return appErrorFromDB(
+			errors.New("error clearing link of user's photo file "+err.Error()),
+			api.ErrorUpdateFailure,
+		)
+	}
+
+	u.PhotoFileID = nulls.UUID{}
+	return u.Update(tx)
+}
+
 // LoadPhotoFile - a simple wrapper method for loading members on the struct
 func (u *User) LoadPhotoFile(tx *pop.Connection) {
 	if !u.PhotoFileID.Valid {

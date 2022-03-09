@@ -1,7 +1,10 @@
 package actions
 
 import (
+	"net/http"
+
 	"github.com/gobuffalo/buffalo"
+	"github.com/gobuffalo/nulls"
 
 	"github.com/silinternational/cover-api/api"
 	"github.com/silinternational/cover-api/domain"
@@ -146,6 +149,31 @@ func usersMeFilesAttach(c buffalo.Context) error {
 	}
 
 	return renderUser(c, user)
+}
+
+// swagger:operation DELETE /users/me/files Users UsersMeFileDetach
+//
+// UsersMeFileDetach
+//
+// detach the Photo File from the current user and allow it to be deleted by a scheduled task
+//
+// ---
+// parameters:
+// responses:
+//   '204':
+//     description: OK but no content in response
+func usersMeFilesDetach(c buffalo.Context) error {
+	tx := models.Tx(c)
+
+	user := models.CurrentUser(c)
+	if err := user.DetachPhotoFile(tx); err != nil {
+		return reportError(c, err)
+	}
+
+	user.PhotoFileID = nulls.UUID{}
+	user.Update(tx)
+
+	return c.Render(http.StatusNoContent, nil)
 }
 
 func renderUser(c buffalo.Context, user models.User) error {
