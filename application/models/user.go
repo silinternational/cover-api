@@ -409,7 +409,7 @@ func (u *User) AttachPhotoFile(tx *pop.Connection, fileID uuid.UUID) error {
 // DeletePhotoFile deletes the user's profile photo file
 func (u *User) DeletePhotoFile(tx *pop.Connection) error {
 	if !u.PhotoFileID.Valid {
-		domain.Logger.Printf("user %v has no PhotoFileID to detach", u.ID)
+		domain.Logger.Printf("user %v has no PhotoFileID to delete", u.ID)
 		return nil
 	}
 
