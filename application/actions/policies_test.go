@@ -542,7 +542,7 @@ func (as *ActionSuite) Test_PoliciesInviteMember() {
 			policyID:           housePolicies[0].ID,
 			actor:              house0member0,
 			inviteeEmail:       house0member0.Email,
-			wantStatus:         http.StatusNoContent,
+			wantStatus:         http.StatusBadRequest,
 			wantEventTriggered: false,
 		},
 		{
