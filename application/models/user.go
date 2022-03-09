@@ -426,7 +426,6 @@ func (u *User) DeletePhotoFile(tx *pop.Connection) error {
 	}
 
 	if err := tx.Destroy(&f); err != nil {
-		domain.ErrLogger.Printf("file %d destroy error, %s", f.ID, err)
 		return appErrorFromDB(
 			fmt.Errorf("file %d destroy error, %s", f.ID, err),
 			api.ErrorUpdateFailure,
