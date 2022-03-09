@@ -225,9 +225,7 @@ func (c *Claim) Delete(ctx context.Context) error {
 		return appErrorFromDB(err, api.ErrorQueryFailure)
 	}
 
-	if c.Status == api.ClaimStatusPaid ||
-		c.Status == api.ClaimStatusDenied ||
-		c.Status == api.ClaimStatusApproved {
+	if !c.IsRemovable() {
 		err := errors.New("claim that has been approved, paid or denied may not be deleted")
 		appErr := api.NewAppError(err, api.ErrorClaimStatus, api.CategoryUser)
 		return appErr
@@ -245,6 +243,16 @@ func (c *Claim) Delete(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+// IsRemovable determines whether the claim may be deleted
+//  It may not be if its status is approved, paid or denied.
+func (c *Claim) IsRemovable() bool {
+	switch c.Status {
+	case api.ClaimStatusApproved, api.ClaimStatusPaid, api.ClaimStatusDenied:
+		return false
+	}
+	return true
 }
 
 func (c *Claim) canUpdate(user User) bool {
@@ -658,12 +666,6 @@ func (c *Claim) ConvertToAPI(tx *pop.Connection) api.Claim {
 	c.LoadClaimItems(tx, true)
 	c.LoadClaimFiles(tx, true)
 
-	isRemovable := true
-	switch c.Status {
-	case api.ClaimStatusApproved, api.ClaimStatusPaid, api.ClaimStatusDenied:
-		isRemovable = false
-	}
-
 	return api.Claim{
 		ID:                  c.ID,
 		PolicyID:            c.PolicyID,
@@ -678,7 +680,7 @@ func (c *Claim) ConvertToAPI(tx *pop.Connection) api.Claim {
 		PaymentDate:         convertTimeToAPI(c.PaymentDate),
 		TotalPayout:         c.TotalPayout,
 		StatusReason:        c.StatusReason,
-		IsRemovable:         isRemovable,
+		IsRemovable:         c.IsRemovable(),
 		Items:               c.ClaimItems.ConvertToAPI(tx),
 		Files:               c.ClaimFiles.ConvertToAPI(tx),
 	}
