@@ -274,7 +274,7 @@ func policiesInviteMember(c buffalo.Context) error {
 		if policy.MemberHasEmail(tx, invite.Email) {
 			return c.Render(http.StatusNoContent, nil)
 		}
-		
+
 		err = policy.NewTeamInvite(tx, invite, cUser)
 	}
 
@@ -323,6 +323,10 @@ func policiesLedgerReportCreate(c buffalo.Context) error {
 	report, err := models.NewPolicyLedgerReport(c, *policy, input.Type, input.Month, input.Year)
 	if err != nil {
 		return reportError(c, err)
+	}
+
+	if len(report.LedgerEntries) == 0 {
+		return c.Render(http.StatusNoContent, nil)
 	}
 
 	if err = report.Create(tx); err != nil {

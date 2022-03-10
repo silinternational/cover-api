@@ -199,7 +199,8 @@ func NewLedgerReport(ctx context.Context, reportType string, date time.Time) (Le
 }
 
 // NewPolicyLedgerReport creates a new report for one policy by querying the database according
-//   to the requested report type and the month and year of the request
+//   to the requested report type and the month and year of the request.
+//   If no ledger entries are found, it returns an empty LedgerReport.
 func NewPolicyLedgerReport(ctx context.Context, policy Policy, reportType string, month, year int) (LedgerReport, error) {
 	tx := Tx(ctx)
 
@@ -229,8 +230,7 @@ func NewPolicyLedgerReport(ctx context.Context, policy Policy, reportType string
 	}
 
 	if len(le) == 0 {
-		err := errors.New("no LedgerEntries found")
-		return LedgerReport{}, api.NewAppError(err, api.ErrorNoLedgerEntries, api.CategoryNotFound)
+		return LedgerReport{}, nil
 	}
 
 	report.File.Name = fmt.Sprintf("%s_policy_%s_%s_%d-%d.csv",

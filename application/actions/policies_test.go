@@ -638,6 +638,14 @@ func (as *ActionSuite) Test_PolicyLedgerReportCreate() {
 			reportType: models.ReportTypeAnnual,
 			wantStatus: http.StatusOK,
 		},
+		{
+			name:       "no ledger entries",
+			actor:      normalUser,
+			month:      nowMonth,
+			year:       1972,
+			reportType: models.ReportTypeMonthly,
+			wantStatus: http.StatusNoContent,
+		},
 	}
 
 	for _, tt := range tests {
