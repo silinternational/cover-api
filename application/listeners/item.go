@@ -26,6 +26,7 @@ func itemSubmitted(e events.Event) {
 
 	models.DB.Transaction(func(tx *pop.Connection) error {
 		messages.ItemSubmittedQueueMessage(tx, item)
+		messages.ItemPendingQueueMessage(tx, item)
 		return nil
 	})
 }
