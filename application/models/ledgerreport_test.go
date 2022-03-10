@@ -245,13 +245,6 @@ func (ms *ModelSuite) TestNewPolicyLedgerReport() {
 			wantErr:    &api.AppError{Key: api.ErrorInvalidReportType, Category: api.CategoryUser},
 		},
 		{
-			name:       "none found",
-			month:      int(may.Month()),
-			year:       may.Year(),
-			reportType: ReportTypeMonthly,
-			wantErr:    &api.AppError{Key: api.ErrorNoLedgerEntries, Category: api.CategoryNotFound},
-		},
-		{
 			name:       "invalid future month",
 			month:      int(nextMonth.Month()),
 			year:       nextMonth.Year(),
@@ -305,6 +298,14 @@ func (ms *ModelSuite) TestNewPolicyLedgerReport() {
 			},
 			wantCount: 2,
 		},
+		{
+			name:       "none found",
+			month:      int(may.Month()),
+			year:       may.Year(),
+			reportType: ReportTypeMonthly,
+			want:       LedgerReport{},
+			wantCount:  0,
+		},
 	}
 	for _, tt := range tests {
 		ms.T().Run(tt.name, func(t *testing.T) {
@@ -316,13 +317,18 @@ func (ms *ModelSuite) TestNewPolicyLedgerReport() {
 			}
 
 			ms.NoError(err)
+			ms.Equal(tt.wantCount, len(got.LedgerEntries), "incorrect number of LedgerEntries")
+
+			if tt.wantCount == 0 {
+				ms.Equal(uuid.Nil, got.PolicyID.UUID, "incorrect report PolicyID")
+				return
+			}
 
 			ms.Equal(tt.want.Type, got.Type, "incorrect report Type")
 			ms.Equal(policy.ID, got.PolicyID.UUID, "incorrect report PolicyID")
 			ms.Equal(tt.want.Date, got.Date, "incorrect report Date")
 			ms.Equal(domain.ContentCSV, got.File.ContentType, "incorrect ContentType")
 			ms.Equal(user.ID, got.File.CreatedByID, "incorrect CreatedByID")
-			ms.Equal(tt.wantCount, len(got.LedgerEntries), "incorrect number of LedgerEntries")
 		})
 	}
 }
