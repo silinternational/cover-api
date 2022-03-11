@@ -29,6 +29,7 @@ const (
 	MessageTemplateClaimApprovedMember    = "claim_approved_member"
 	MessageTemplateClaimDeniedMember      = "claim_denied_member"
 
+	MessageTemplateItemPendingMember  = "item_pending_member"
 	MessageTemplateItemPendingSteward = "item_pending_steward"
 	MessageTemplateItemApprovedMember = "item_approved_member"
 	MessageTemplateItemAutoSteward    = "item_auto_approved_steward"

@@ -291,6 +291,8 @@ func policiesInviteMember(c buffalo.Context) error {
 //
 // Create and return a report on the ledger entries of a policy as specified by the input object.
 // The returned object contains metadata and a File object pointing to a CSV file.
+// If no ledger entries are found with a `date_entered` value that matches the requested
+//  Type, Year and (if applicable) Month, then a 204 is returned.
 //
 // ---
 // parameters:

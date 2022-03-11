@@ -1,0 +1,51 @@
+<div>
+	<%= partial("body_header", {
+		previewText: "No action needed. Dear "+personFirstName+", You've applied to cover "
+			+item.Name+". You'll have to wait a bit for the steward (me, "+
+			supportFirstName+") to approve coverage.",
+		title: "New Coverage",
+	}) %>
+
+
+	<div style="max-width: 80ch;">
+		<p>
+			Dear <%= personFirstName %>,
+		</p>
+		<p>
+			You've applied to cover <%= item.Name %>. You'll have to wait a bit for the steward
+			(me, <%= supportFirstName %>) to approve coverage.  If and when I approve it, the
+			coverage will start on <%= coverageStartDate %>, and we'll charge you the premium,
+			which is prorated for the remainder of the year.
+		</p>
+		<p>
+			&mdash;<%= supportFirstName %>
+		</p>
+
+		<%= partial("alert", {
+			alert: "Awaiting item coverage review",
+			alert_description: "No action needed",
+			alert_icon: "clock"
+		}) %>
+
+		<%= partial("item_card", {
+			item: item,
+			coverageAmount: coverageAmount,
+			premium: annualPremium,
+			coverageStartDate: "",
+			accountablePerson: accountablePerson,
+			householdID: policy.HouseholdID,
+			itemURL: itemURL,
+			buttonLabel: "View Item in " + appName
+		})%>
+		</p>
+	</div>
+
+	<%= partial("customer_footer", {
+		supportEmail: supportEmail,
+		supportName: supportName,
+		appName: appName,
+		policy: policy,
+		uiURL: uiURL,
+	}) %>
+
+</div>
