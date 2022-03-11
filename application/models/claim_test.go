@@ -2,6 +2,7 @@ package models
 
 import (
 	"errors"
+	"fmt"
 	"testing"
 	"time"
 
@@ -1175,6 +1176,130 @@ func (ms *ModelSuite) TestClaim_Create() {
 				return
 			}
 			ms.NoError(err)
+		})
+	}
+}
+
+func (ms *ModelSuite) TestClaim_UpdateByUser() {
+	t := ms.T()
+
+	fixConfig := FixturesConfig{
+		NumberOfPolicies:    2,
+		UsersPerPolicy:      2,
+		DependentsPerPolicy: 2,
+		ItemsPerPolicy:      4,
+		ClaimsPerPolicy:     6,
+		ClaimItemsPerClaim:  1,
+	}
+
+	fixtures := CreateItemFixtures(ms.DB, fixConfig)
+	policy := fixtures.Policies[0]
+	approvedClaim := UpdateClaimStatus(ms.DB, policy.Claims[0], api.ClaimStatusApproved, "")
+	review3Claim := UpdateClaimStatus(ms.DB, policy.Claims[1], api.ClaimStatusReview1, "")
+	review2Claim := UpdateClaimStatus(ms.DB, policy.Claims[2], api.ClaimStatusReview3, "")
+	review1Claim := UpdateClaimStatus(ms.DB, policy.Claims[3], api.ClaimStatusReview3, "")
+	revisionClaim := UpdateClaimStatus(ms.DB, policy.Claims[4], api.ClaimStatusRevision, "")
+	draftClaim := policy.Claims[5]
+
+	// Update the description and then check against the original
+	review3Desc := review3Claim.IncidentDescription
+	review2Desc := review2Claim.IncidentDescription
+	review1Desc := review1Claim.IncidentDescription
+	revisionDesc := revisionClaim.IncidentDescription
+	draftDesc := draftClaim.IncidentDescription
+
+	suffix := "<<<<"
+
+	review3Claim.IncidentDescription += suffix
+	review2Claim.IncidentDescription += suffix
+	review1Claim.IncidentDescription += suffix
+	revisionClaim.IncidentDescription += suffix
+	draftClaim.IncidentDescription += suffix
+
+	actor := fixtures.Users[0]
+	revisionClaim.StatusReason = "just for testing"
+	revisionClaim.ReviewerID = nulls.NewUUID(actor.ID)
+	revisionClaim.ReviewDate = nulls.NewTime(time.Now().UTC())
+	draftMessage := fmt.Sprintf("Returned to draft by %s %s", actor.FirstName, actor.LastName)
+
+	tests := []struct {
+		name             string
+		claim            Claim
+		wantErrContains  string
+		wantErrKey       api.ErrorKey
+		wantErrCat       api.ErrorCategory
+		wantStatus       api.ClaimStatus
+		wantStatusChange string
+		wantDesc         string
+	}{
+		{
+			name:            "bad start status",
+			claim:           approvedClaim,
+			wantErrKey:      api.ErrorClaimStatus,
+			wantErrCat:      api.CategoryUser,
+			wantErrContains: "user may not edit a claim that is too far along in the review process",
+		},
+		{
+			name:             "from draft to draft",
+			claim:            draftClaim,
+			wantStatus:       api.ClaimStatusDraft,
+			wantStatusChange: "",
+			wantDesc:         draftDesc + suffix,
+		},
+		{
+			name:             "from revision to revision",
+			claim:            revisionClaim,
+			wantStatus:       api.ClaimStatusRevision,
+			wantStatusChange: "",
+			wantDesc:         revisionDesc + suffix,
+		},
+		{
+			name:             "from review1 to draft",
+			claim:            review1Claim,
+			wantStatus:       api.ClaimStatusDraft,
+			wantStatusChange: draftMessage,
+			wantDesc:         review1Desc + suffix,
+		},
+		{
+			name:             "from review2 to draft",
+			claim:            review2Claim,
+			wantStatus:       api.ClaimStatusDraft,
+			wantStatusChange: draftMessage,
+			wantDesc:         review2Desc + suffix,
+		},
+		{
+			name:             "from review3 to draft",
+			claim:            review3Claim,
+			wantStatus:       api.ClaimStatusDraft,
+			wantStatusChange: draftMessage,
+			wantDesc:         review3Desc + suffix,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			const message = "change all the things"
+			ctx := CreateTestContext(actor)
+			ctx.Set(domain.ContextKeyTx, ms.DB)
+			got := tt.claim.UpdateByUser(ctx)
+
+			if tt.wantErrContains != "" {
+				ms.Error(got, " did not return expected error")
+				var appErr *api.AppError
+				ms.True(errors.As(got, &appErr), "returned an error that is not an AppError")
+				ms.Contains(got.Error(), tt.wantErrContains, "error message is not correct")
+				ms.Equal(tt.wantErrKey, appErr.Key, "error key is not correct")
+				ms.Equal(tt.wantErrCat, appErr.Category, "error category is not correct")
+				return
+			}
+			ms.NoError(got)
+
+			var newClaim Claim
+			ms.NoError(newClaim.FindByID(ms.DB, tt.claim.ID), "error fetching claim from db")
+
+			ms.Equal(tt.wantStatus, newClaim.Status, "incorrect status")
+			ms.Equal(tt.wantStatusChange, newClaim.StatusChange, "incorrect status change value")
+			ms.Equal(tt.wantDesc, newClaim.IncidentDescription, "incorrect claim incident description")
 		})
 	}
 }

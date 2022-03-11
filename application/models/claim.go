@@ -194,7 +194,8 @@ func (c *Claim) UpdateByUser(ctx context.Context) error {
 
 	// If the user edits something, it should take it off of the steward's list of things to review and
 	//  also force the user to resubmit it.
-	if c.Status == api.ClaimStatusReview1 {
+	switch c.Status {
+	case api.ClaimStatusReview1, api.ClaimStatusReview2, api.ClaimStatusReview3:
 		c.Status = api.ClaimStatusDraft
 		c.StatusChange = ClaimStatusChangeReturnedToDraft + user.Name()
 	}
