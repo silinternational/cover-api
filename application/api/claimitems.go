@@ -27,11 +27,11 @@ const (
 var PayoutOptionDescriptions = map[PayoutOption]string{
 	PayoutOptionRepair: fmt.Sprintf("Payout is the item's covered value, the repair cost, or %s of the "+
 		"item's fair market value, whichever is less, minus a %s deductible",
-		domain.Env.RepairThresholdString, domain.Env.DeductibleString),
+		domain.Env.RepairThresholdString, domain.Env.DeductibleMinimumString),
 	PayoutOptionReplacement: fmt.Sprintf("Payout is the item's covered value or the replacement cost, "+
-		"whichever is less, minus a %s deductible.", domain.Env.DeductibleString),
+		"whichever is less, minus a %s deductible.", domain.Env.DeductibleMinimumString),
 	PayoutOptionFMV: fmt.Sprintf("Payout is the item's fair market value minus a %s deductible.",
-		domain.Env.DeductibleString),
+		domain.Env.DeductibleMinimumString),
 	PayoutOptionFixedFraction: "Payout is a fixed portion of the item's covered value.",
 }
 
