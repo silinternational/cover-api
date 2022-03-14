@@ -83,11 +83,15 @@ func (s *Strikes) RecentForClaim(tx *pop.Connection, claim *Claim) error {
 
 	yearBefore := cutOff.AddDate(-1, 0, 0)
 
+	// To avoid unnecessary testing errors
+	claimDate := claim.CreatedAt.Add(time.Minute)
+
 	claim.LoadPolicy(tx, false)
 
 	//  only get the strikes that are newer than a year before the claim's IncidentDate
-	if err := tx.Where("policy_id = ? AND created_at > ?",
-		claim.PolicyID, yearBefore).All(s); err != nil {
+	//   and (just to be careful) older than the claim itself
+	if err := tx.Where("policy_id = ? AND created_at > ? AND created_at < ?",
+		claim.PolicyID, yearBefore, claimDate).All(s); err != nil {
 	}
 
 	return nil
