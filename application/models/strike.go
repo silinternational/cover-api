@@ -12,6 +12,8 @@ import (
 	"github.com/silinternational/cover-api/api"
 )
 
+var earlyTime = time.Date(1, 0, 0, 0, 0, 0, 0, time.UTC)
+
 // Items is a slice of Item objects
 type Strikes []Strike
 
@@ -71,4 +73,22 @@ func (s *Strikes) ConvertToAPI(tx *pop.Connection) api.Strikes {
 	}
 
 	return apiStrikes
+}
+
+func (s *Strikes) RecentForClaim(tx *pop.Connection, claim *Claim) error {
+	cutOff := claim.IncidentDate
+	if claim.IncidentDate.Before(earlyTime) {
+		cutOff = claim.CreatedAt
+	}
+
+	yearBefore := cutOff.AddDate(-1, 0, 0)
+
+	claim.LoadPolicy(tx, false)
+
+	//  only get the strikes that are newer than a year before the claim's IncidentDate
+	if err := tx.Where("policy_id = ? AND created_at > ?",
+		claim.PolicyID, yearBefore).All(s); err != nil {
+	}
+
+	return nil
 }
