@@ -25,10 +25,7 @@ func (ms *ModelSuite) TestStrikes_RecentForClaim() {
 		{Description: "For Policy with one strike", PolicyID: policyOneStrike.ID},
 		{Description: "For Policy with two strikes - A", PolicyID: policyTwoStrikes.ID},
 		{Description: "For Policy with two strikes - B", PolicyID: policyTwoStrikes.ID},
-		{
-			Description: "For Policy has old strike - A",
-			PolicyID:    policyHasOldStrike.ID,
-		},
+		{Description: "For Policy has old strike - A", PolicyID: policyHasOldStrike.ID},
 		{Description: "For Policy has old strike - B", PolicyID: policyHasOldStrike.ID},
 	}
 	ms.NoError(ms.DB.Create(&strikes), "error creating strikes fixtures")

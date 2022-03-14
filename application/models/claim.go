@@ -1007,3 +1007,22 @@ func (c *Claim) calculatePayout(ctx context.Context) error {
 	c.TotalPayout = payout
 	return nil
 }
+
+func (c *Claim) Deductible(tx *pop.Connection) float64 {
+	var strikes Strikes
+	err := strikes.RecentForClaim(tx, c)
+
+	if domain.IsOtherThanNoRows(err) {
+		msg := fmt.Sprintf("error retrieving recent strikes for claim %s: %s", c.ID.String(), err)
+		domain.ErrLogger.Printf(msg)
+		return domain.Env.Deductible
+	}
+
+	extra := domain.Env.DeductibleIncrease * float64(len(strikes))
+
+	d := domain.Env.Deductible + extra
+	if d >= domain.Env.DeductibleMaximum {
+		return domain.Env.DeductibleMaximum
+	}
+	return d
+}
