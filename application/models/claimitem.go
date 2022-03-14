@@ -423,11 +423,13 @@ func (c *ClaimItem) NewHistory(ctx context.Context, action string, fieldUpdate F
 }
 
 func (c *ClaimItem) updatePayoutAmount(ctx context.Context) error {
-	c.LoadItem(Tx(ctx), false)
+	tx := Tx(ctx)
+	c.LoadItem(tx, false)
+	c.LoadClaim(tx, false)
 
 	coverageAmount := c.Item.CoverageAmount
 
-	deductible := domain.Env.Deductible
+	deductible := c.Claim.Deductible(tx)
 	maxValue := 0.0
 	switch c.PayoutOption {
 	case api.PayoutOptionRepair:
