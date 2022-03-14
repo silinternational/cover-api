@@ -1,0 +1,8 @@
+create_table("strikes") {
+	t.Column("id", "uuid", {primary: true})
+	t.Column("description", "string", {})
+	t.Column("policy_id", "uuid", {"null": true})
+	t.Timestamps()
+
+	t.ForeignKey("policy_id", {"policies": ["id"]}, {"on_delete": "cascade"})
+}
