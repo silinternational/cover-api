@@ -1324,8 +1324,6 @@ func (ms *ModelSuite) TestClaim_Deductible() {
 	policyThreeStrikes := fixtures.Policies[3]
 	policyHasOldStrikePlusOne := fixtures.Policies[4]
 
-	oldDate := policyHasOldStrikePlusOne.Claims[0].IncidentDate.AddDate(-2, 0, 0)
-
 	strikes := Strikes{
 		{Description: "For Policy with one strike", PolicyID: policyOneStrike.ID},
 		{Description: "For Policy with two strikes - A", PolicyID: policyTwoStrikes.ID},
@@ -1338,11 +1336,21 @@ func (ms *ModelSuite) TestClaim_Deductible() {
 	}
 	ms.NoError(ms.DB.Create(&strikes), "error creating strikes fixtures")
 
-	oldStrike := strikes[6]
+	// Base strike dates on their related claim IncidentDate (db.Create would just overwrite this value)
+	strikes[0].CreatedAt = policyOneStrike.Claims[0].IncidentDate.AddDate(0, 0, -1)
+	strikes[1].CreatedAt = policyTwoStrikes.Claims[0].IncidentDate.AddDate(0, 0, -1)
+	strikes[2].CreatedAt = policyTwoStrikes.Claims[0].IncidentDate.AddDate(0, 0, -1)
+	strikes[3].CreatedAt = policyThreeStrikes.Claims[0].IncidentDate.AddDate(0, 0, -1)
+	strikes[4].CreatedAt = policyThreeStrikes.Claims[0].IncidentDate.AddDate(0, 0, -1)
+	strikes[5].CreatedAt = policyThreeStrikes.Claims[0].IncidentDate.AddDate(0, 0, -1)
+	strikes[6].CreatedAt = policyHasOldStrikePlusOne.Claims[0].IncidentDate.AddDate(-2, 0, 0)
+	strikes[7].CreatedAt = policyHasOldStrikePlusOne.Claims[0].IncidentDate.AddDate(0, 0, -1)
 
-	// Merely calling the db.Update function doesn't overwrite the created_at value
-	q := ms.DB.RawQuery("Update strikes SET created_at = ? WHERE id = ?", oldDate, oldStrike.ID)
-	ms.NoError(q.Exec(), "error updating old strike fixture")
+	for i := range strikes {
+		q := ms.DB.RawQuery("Update strikes SET created_at = ? WHERE id = ?",
+			strikes[i].CreatedAt, strikes[i].ID)
+		ms.NoError(q.Exec(), "error updating strike fixture %d", i)
+	}
 
 	tests := []struct {
 		name  string

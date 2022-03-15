@@ -480,7 +480,9 @@ func EndOfMonth(date time.Time) time.Time {
 	return date.AddDate(0, 1, -date.Day())
 }
 
-func DeductibleString(d float64) string {
+// Returns a float as "dd%" (rounded and with no decimal places)
+// Note: this won't look right if the input is greater than 1
+func PercentString(d float64) string {
 	return fmt.Sprintf("%.2g%%", d*100)
 }
 

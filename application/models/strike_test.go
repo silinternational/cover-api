@@ -2,9 +2,10 @@ package models
 
 import (
 	"testing"
+	"time"
 )
 
-func (ms *ModelSuite) TestStrikes_RecentForClaim() {
+func (ms *ModelSuite) TestStrikes_RecentForPolicy() {
 	t := ms.T()
 
 	fixConfig := FixturesConfig{
@@ -36,29 +37,30 @@ func (ms *ModelSuite) TestStrikes_RecentForClaim() {
 	q := ms.DB.RawQuery("Update strikes SET created_at = ? WHERE id = ?", oldDate, oldStrike.ID)
 	ms.NoError(q.Exec(), "error updating old strike fixture")
 
+	cutOff := time.Now().UTC()
 	tests := []struct {
 		name    string
-		claim   Claim
+		policy  Policy
 		wantIDs []string
 	}{
 		{
 			name:    "no strikes",
-			claim:   policyNoStrikes.Claims[0],
+			policy:  policyNoStrikes,
 			wantIDs: []string{},
 		},
 		{
 			name:    "has one strike",
-			claim:   policyOneStrike.Claims[0],
+			policy:  policyOneStrike,
 			wantIDs: []string{strikes[0].ID.String()},
 		},
 		{
 			name:    "has two strikes",
-			claim:   policyTwoStrikes.Claims[0],
+			policy:  policyTwoStrikes,
 			wantIDs: []string{strikes[1].ID.String(), strikes[2].ID.String()},
 		},
 		{
 			name:    "has old strike",
-			claim:   policyHasOldStrike.Claims[0],
+			policy:  policyHasOldStrike,
 			wantIDs: []string{strikes[4].ID.String()},
 		},
 	}
@@ -67,7 +69,7 @@ func (ms *ModelSuite) TestStrikes_RecentForClaim() {
 		t.Run(tt.name, func(t *testing.T) {
 			var got Strikes
 
-			err := got.RecentForClaim(ms.DB, &tt.claim)
+			err := got.RecentForPolicy(ms.DB, tt.policy.ID, cutOff)
 			ms.NoError(err)
 
 			ms.Len(got, len(tt.wantIDs), "incorrect number of strikes")
