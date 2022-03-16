@@ -1324,33 +1324,21 @@ func (ms *ModelSuite) TestClaim_Deductible() {
 	policyThreeStrikes := fixtures.Policies[3]
 	policyHasOldStrikePlusOne := fixtures.Policies[4]
 
-	strikes := Strikes{
-		{Description: "For Policy with one strike", PolicyID: policyOneStrike.ID},
-		{Description: "For Policy with two strikes - A", PolicyID: policyTwoStrikes.ID},
-		{Description: "For Policy with two strikes - B", PolicyID: policyTwoStrikes.ID},
-		{Description: "For Policy with three strikes - A", PolicyID: policyThreeStrikes.ID},
-		{Description: "For Policy with three strikes - B", PolicyID: policyThreeStrikes.ID},
-		{Description: "For Policy with three strikes - C", PolicyID: policyThreeStrikes.ID},
-		{Description: "For Policy has old strike - A", PolicyID: policyHasOldStrikePlusOne.ID},
-		{Description: "For Policy has old strike - B", PolicyID: policyHasOldStrikePlusOne.ID},
-	}
-	ms.NoError(ms.DB.Create(&strikes), "error creating strikes fixtures")
+	dayBefore1 := policyOneStrike.Claims[0].IncidentDate.AddDate(0, 0, -1)
+	dayBefore2 := policyTwoStrikes.Claims[0].IncidentDate.AddDate(0, 0, -1)
+	dayBefore3 := policyThreeStrikes.Claims[0].IncidentDate.AddDate(0, 0, -1)
+	yearsBeforeOld4 := policyHasOldStrikePlusOne.Claims[0].IncidentDate.AddDate(-2, 0, 0)
+	dayBeforeOld4 := policyHasOldStrikePlusOne.Claims[0].IncidentDate.AddDate(0, 0, -1)
 
-	// Base strike dates on their related claim IncidentDate (db.Create would just overwrite this value)
-	strikes[0].CreatedAt = policyOneStrike.Claims[0].IncidentDate.AddDate(0, 0, -1)
-	strikes[1].CreatedAt = policyTwoStrikes.Claims[0].IncidentDate.AddDate(0, 0, -1)
-	strikes[2].CreatedAt = policyTwoStrikes.Claims[0].IncidentDate.AddDate(0, 0, -1)
-	strikes[3].CreatedAt = policyThreeStrikes.Claims[0].IncidentDate.AddDate(0, 0, -1)
-	strikes[4].CreatedAt = policyThreeStrikes.Claims[0].IncidentDate.AddDate(0, 0, -1)
-	strikes[5].CreatedAt = policyThreeStrikes.Claims[0].IncidentDate.AddDate(0, 0, -1)
-	strikes[6].CreatedAt = policyHasOldStrikePlusOne.Claims[0].IncidentDate.AddDate(-2, 0, 0)
-	strikes[7].CreatedAt = policyHasOldStrikePlusOne.Claims[0].IncidentDate.AddDate(0, 0, -1)
-
-	for i := range strikes {
-		q := ms.DB.RawQuery("Update strikes SET created_at = ? WHERE id = ?",
-			strikes[i].CreatedAt, strikes[i].ID)
-		ms.NoError(q.Exec(), "error updating strike fixture %d", i)
+	strikeDates := [][]*time.Time{
+		{},                                 // Policy with no strikes
+		[]*time.Time{&dayBefore1},          // Policy with one strike
+		{&dayBefore2, &dayBefore2},         // Policy with two strikes
+		{&dayBefore3, &dayBefore3},         // Policy with three strikes
+		{&yearsBeforeOld4, &dayBeforeOld4}, // Policy with an old strike and a normal strike
 	}
+
+	_ = CreateStrikeFixtures(ms.DB, fixtures.Policies, strikeDates)
 
 	tests := []struct {
 		name  string
