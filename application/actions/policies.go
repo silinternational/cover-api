@@ -268,7 +268,7 @@ func policiesInviteMember(c buffalo.Context) error {
 
 	var err error
 
-	if policy.HouseholdID.Valid {
+	if policy.Type == api.PolicyTypeHousehold {
 		err = policy.NewHouseholdInvite(tx, invite, cUser)
 	} else {
 		// make sure user is not already a member of this policy
