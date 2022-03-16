@@ -2,6 +2,7 @@ package actions
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/gobuffalo/buffalo"
 	"github.com/gobuffalo/nulls"
@@ -336,6 +337,60 @@ func policiesLedgerReportCreate(c buffalo.Context) error {
 	}
 
 	return renderOk(c, report.ConvertToAPI(tx))
+}
+
+// swagger:operation POST /policies/{id}/strikes PolicyStrike PolicyStrikeCreate
+//
+// PolicyStrikeCreate
+//
+// Create a strike on the policy and return its recent strikes
+//
+// ---
+// parameters:
+//   - name: id
+//     in: path
+//     required: true
+//     description: policy ID
+//   - name: input
+//     in: body
+//     description: StrikeInput object
+//     required: true
+//     schema:
+//       "$ref": "#/definitions/StrikeInput"
+// responses:
+//   '200':
+//     description: the Strikes for the Policy that are still in force
+//     schema:
+//       type: array
+//       items:
+//         "$ref": "#/definitions/Strike"
+func policiesStrikeCreate(c buffalo.Context) error {
+	tx := models.Tx(c)
+	policy := getReferencedPolicyFromCtx(c)
+
+	var input api.StrikeInput
+	if err := StrictBind(c, &input); err != nil {
+		return reportError(c, err)
+	}
+
+	strike := models.Strike{
+		Description: input.Description,
+		PolicyID:    policy.ID,
+	}
+
+	if err := strike.Create(tx); err != nil {
+		return reportError(c, err)
+	}
+
+	// Just to be extra careful add a few minutes
+	soon := time.Now().UTC().Add(time.Minute * 3)
+
+	var strikes models.Strikes
+	if err := strikes.RecentForPolicy(tx, policy.ID, soon); err != nil {
+		reportError(c, err)
+	}
+
+	return renderOk(c, strikes.ConvertToAPI(tx))
 }
 
 // getReferencedPolicyFromCtx pulls the models.Policy resource from context that was put there

@@ -34,9 +34,11 @@ func (s *Strike) Create(tx *pop.Connection) error {
 }
 
 func (s *Strike) Update(ctx context.Context) error {
-	tx := Tx(ctx)
+	return update(Tx(ctx), s)
+}
 
-	return update(tx, s)
+func (s *Strike) Destroy(tx *pop.Connection) error {
+	return destroy(tx, s)
 }
 
 func (s *Strike) GetID() uuid.UUID {

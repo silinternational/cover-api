@@ -83,6 +83,7 @@ const (
 	TypePolicy          = "policies"
 	TypePolicyDependent = "policy-dependents"
 	TypePolicyUser      = "policy-users"
+	TypeStrike          = "strikes"
 	TypeUser            = "users"
 )
 

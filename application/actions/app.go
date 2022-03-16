@@ -62,6 +62,7 @@ const (
 	ledgerReportPath    = "/" + domain.TypeLedgerReport
 	policiesPath        = "/" + domain.TypePolicy
 	policyDependentPath = "/" + domain.TypePolicyDependent
+	strikesPath         = "/" + domain.TypeStrike
 )
 
 // ENV is used to help switch settings based on where the
@@ -220,6 +221,12 @@ func App() *buffalo.App {
 		policiesGroup.GET(idRegex+"/members", policiesListMembers)
 		policiesGroup.POST(idRegex+"/members", policiesInviteMember)
 		policiesGroup.POST(idRegex+"/ledger-reports", policiesLedgerReportCreate)
+		policiesGroup.POST(idRegex+"/"+api.ResourceStrikes, policiesStrikeCreate)
+
+		// strikes
+		strikesGroup := app.Group(strikesPath)
+		strikesGroup.PUT(idRegex, strikesUpdate)
+		strikesGroup.DELETE(idRegex, strikesDelete)
 	}
 
 	listeners.RegisterListener()
