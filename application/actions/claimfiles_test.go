@@ -88,7 +88,7 @@ func (as *ActionSuite) Test_ClaimFilesAttach() {
 			req := as.JSON("/%s/%s/%s",
 				domain.TypeClaim, claimID.String(), domain.TypeFile)
 			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
-			req.Headers["content-type"] = "application/json"
+			req.Headers["content-type"] = domain.ContentJson
 			res := req.Post(tt.request)
 
 			body := res.Body.String()
@@ -162,7 +162,7 @@ func (as *ActionSuite) Test_ClaimFilesDelete() {
 		as.T().Run(tt.name, func(t *testing.T) {
 			req := as.JSON("/%s/%s", domain.TypeClaimFile, tt.id.String())
 			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
-			req.Headers["content-type"] = "application/json"
+			req.Headers["content-type"] = domain.ContentJson
 			res := req.Delete()
 
 			body := res.Body.String()

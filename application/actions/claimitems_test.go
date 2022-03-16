@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/silinternational/cover-api/api"
+	"github.com/silinternational/cover-api/domain"
 	"github.com/silinternational/cover-api/models"
 )
 
@@ -118,7 +119,7 @@ func (as *ActionSuite) Test_ClaimItemsUpdate() {
 		as.T().Run(tt.name, func(t *testing.T) {
 			req := as.JSON(claimItemsPath + "/" + tt.claimItem.ID.String())
 			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
-			req.Headers["content-type"] = "application/json"
+			req.Headers["content-type"] = domain.ContentJson
 			res := req.Put(tt.input)
 
 			body := res.Body.String()

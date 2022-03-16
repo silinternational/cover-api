@@ -42,7 +42,7 @@ func (ts *TestSuite) Test_itemSubmitted() {
 				Kind:    domain.EventApiItemSubmitted,
 				Payload: newTestPayload(submittedItem.ID, &testEmailer),
 			},
-			wantCount: 1,
+			wantCount: 3, // the steward and two policy members
 		},
 	}
 

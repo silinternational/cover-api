@@ -19,7 +19,7 @@ func registerCustomErrorHandler(app *buffalo.App) {
 func customErrorHandler(status int, origErr error, c buffalo.Context) error {
 	c.Logger().Error(origErr)
 	c.Response().WriteHeader(status)
-	c.Response().Header().Set("content-type", "application/json")
+	c.Response().Header().Set("content-type", domain.ContentJson)
 
 	if domain.Env.GoEnv == "development" {
 		debug.PrintStack()

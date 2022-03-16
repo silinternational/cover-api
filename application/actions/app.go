@@ -121,7 +121,7 @@ func App() *buffalo.App {
 		app.Middleware.Skip(AuthZ, HomeHandler, statusHandler, uploadHandler)
 
 		// Set the request content type to JSON
-		app.Use(contenttype.Set("application/json"))
+		app.Use(contenttype.Set(domain.ContentJson))
 
 		// Wraps each request in a transaction.
 		app.Use(popmw.Transaction(models.DB))
@@ -134,10 +134,11 @@ func App() *buffalo.App {
 		// users
 		usersGroup := app.Group("/" + domain.TypeUser)
 		usersGroup.GET("/", usersList)
-		usersGroup.Middleware.Skip(AuthZ, usersMe, usersMeUpdate, usersMeFilesAttach)
+		usersGroup.Middleware.Skip(AuthZ, usersMe, usersMeUpdate, usersMeFilesAttach, usersMeFilesDelete)
 		usersGroup.GET("/me", usersMe)
 		usersGroup.PUT("/me", usersMeUpdate)
 		usersGroup.POST("/me/files", usersMeFilesAttach)
+		usersGroup.DELETE("/me/files", usersMeFilesDelete)
 		usersGroup.GET(idRegex, usersView)
 
 		auth := app.Group("/auth")
@@ -166,6 +167,7 @@ func App() *buffalo.App {
 		claimsGroup.GET("/", claimsList)
 		claimsGroup.GET(idRegex, claimsView)
 		claimsGroup.PUT(idRegex, claimsUpdate)
+		claimsGroup.DELETE(idRegex, claimsRemove)
 		claimsGroup.POST(idRegex+filesPath, claimFilesAttach)
 		claimsGroup.POST(idRegex+itemsPath, claimsItemsCreate)
 		claimsGroup.POST(idRegex+"/"+api.ResourceSubmit, claimsSubmit)
@@ -217,6 +219,7 @@ func App() *buffalo.App {
 		policiesGroup.POST(idRegex+claimsPath, claimsCreate)
 		policiesGroup.GET(idRegex+"/members", policiesListMembers)
 		policiesGroup.POST(idRegex+"/members", policiesInviteMember)
+		policiesGroup.POST(idRegex+"/ledger-reports", policiesLedgerReportCreate)
 	}
 
 	listeners.RegisterListener()

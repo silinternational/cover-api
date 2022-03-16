@@ -2,6 +2,7 @@ package models
 
 import (
 	"errors"
+	"fmt"
 	"testing"
 	"time"
 
@@ -577,6 +578,94 @@ func (ms *ModelSuite) TestClaim_Deny() {
 	}
 }
 
+func (ms *ModelSuite) TestClaim_Delete() {
+	t := ms.T()
+
+	fixConfig := FixturesConfig{
+		NumberOfPolicies:    2,
+		UsersPerPolicy:      2,
+		DependentsPerPolicy: 2,
+		ItemsPerPolicy:      4,
+		ClaimsPerPolicy:     5,
+		ClaimItemsPerClaim:  1,
+	}
+
+	fixtures := CreateItemFixtures(ms.DB, fixConfig)
+
+	admin := CreateAdminUsers(ms.DB)[AppRoleSteward]
+
+	policy := fixtures.Policies[0]
+	draftClaim := policy.Claims[0]
+	paidClaim := UpdateClaimStatus(ms.DB, policy.Claims[1], api.ClaimStatusPaid, "")
+	approvedClaim := UpdateClaimStatus(ms.DB, policy.Claims[2], api.ClaimStatusApproved, "")
+	review3Claim := UpdateClaimStatus(ms.DB, policy.Claims[3], api.ClaimStatusReview3, "")
+	emptyClaim := UpdateClaimStatus(ms.DB, policy.Claims[4], api.ClaimStatusReview1, "")
+
+	tempClaim := emptyClaim
+	tempClaim.LoadClaimItems(ms.DB, false)
+	ms.NoError(ms.DB.Destroy(&tempClaim.ClaimItems[0]),
+		"error trying to destroy ClaimItem fixture for test")
+
+	tests := []struct {
+		name            string
+		claim           Claim
+		wantErrContains string
+		wantErrKey      api.ErrorKey
+		wantErrCat      api.ErrorCategory
+		wantStatus      api.ClaimStatus
+	}{
+		{
+			name:            "bad status approved",
+			claim:           approvedClaim,
+			wantErrKey:      api.ErrorClaimStatus,
+			wantErrCat:      api.CategoryUser,
+			wantErrContains: "claim that has been approved, paid or denied may not be deleted",
+		},
+		{
+			name:            "bad status paid",
+			claim:           paidClaim,
+			wantErrKey:      api.ErrorClaimStatus,
+			wantErrCat:      api.CategoryUser,
+			wantErrContains: "claim that has been approved, paid or denied may not be deleted",
+		},
+		{
+			name:  "claim with no ClaimItem",
+			claim: emptyClaim,
+		},
+		{
+			name:  "good draft claim",
+			claim: draftClaim,
+		},
+		{
+			name:  "good review3 claim",
+			claim: review3Claim,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctx := CreateTestContext(admin)
+			got := tt.claim.Delete(ctx)
+
+			if tt.wantErrContains != "" {
+				ms.Error(got, " did not return expected error")
+				var appErr *api.AppError
+				ms.True(errors.As(got, &appErr), "returned an error that is not an AppError")
+				ms.Contains(got.Error(), tt.wantErrContains, "error message is not correct")
+				ms.Equal(appErr.Key, tt.wantErrKey, "error key is not correct")
+				ms.Equal(appErr.Category, tt.wantErrCat, "error category is not correct")
+				return
+			}
+			ms.NoError(got)
+
+			var claim Claim
+			err := claim.FindByID(ms.DB, tt.claim.ID)
+			ms.Error(err, "the claim should have been deleted")
+			ms.False(domain.IsOtherThanNoRows(err), "error deleting claim")
+		})
+	}
+}
+
 func (ms *ModelSuite) TestClaim_HasReceiptFile() {
 	db := ms.DB
 	config := FixturesConfig{
@@ -773,6 +862,7 @@ func (ms *ModelSuite) TestClaim_ConvertToAPI() {
 	ms.EqualNullTime(claim.PaymentDate, got.PaymentDate, "PaymentDate is not correct")
 	ms.Equal(claim.TotalPayout, got.TotalPayout, "TotalPayout is not correct")
 	ms.Equal(claim.StatusReason, got.StatusReason, "StatusReason is not correct")
+	ms.True(got.IsRemovable, "IsRemovable is not correct")
 
 	ms.Greater(len(claim.ClaimItems), 0, "test should be revised, fixture has no ClaimItems")
 	ms.Len(got.Items, len(claim.ClaimItems), "Items is not correct length")
@@ -1086,6 +1176,219 @@ func (ms *ModelSuite) TestClaim_Create() {
 				return
 			}
 			ms.NoError(err)
+		})
+	}
+}
+
+func (ms *ModelSuite) TestClaim_UpdateByUser() {
+	t := ms.T()
+
+	fixConfig := FixturesConfig{
+		NumberOfPolicies:    2,
+		UsersPerPolicy:      2,
+		DependentsPerPolicy: 2,
+		ItemsPerPolicy:      4,
+		ClaimsPerPolicy:     6,
+		ClaimItemsPerClaim:  1,
+	}
+
+	fixtures := CreateItemFixtures(ms.DB, fixConfig)
+	policy := fixtures.Policies[0]
+	approvedClaim := UpdateClaimStatus(ms.DB, policy.Claims[0], api.ClaimStatusApproved, "")
+	review3Claim := UpdateClaimStatus(ms.DB, policy.Claims[1], api.ClaimStatusReview1, "")
+	review2Claim := UpdateClaimStatus(ms.DB, policy.Claims[2], api.ClaimStatusReview3, "")
+	review1Claim := UpdateClaimStatus(ms.DB, policy.Claims[3], api.ClaimStatusReview3, "")
+	revisionClaim := UpdateClaimStatus(ms.DB, policy.Claims[4], api.ClaimStatusRevision, "")
+	draftClaim := policy.Claims[5]
+
+	// Update the description and then check against the original
+	review3Desc := review3Claim.IncidentDescription
+	review2Desc := review2Claim.IncidentDescription
+	review1Desc := review1Claim.IncidentDescription
+	revisionDesc := revisionClaim.IncidentDescription
+	draftDesc := draftClaim.IncidentDescription
+
+	suffix := "<<<<"
+
+	review3Claim.IncidentDescription += suffix
+	review2Claim.IncidentDescription += suffix
+	review1Claim.IncidentDescription += suffix
+	revisionClaim.IncidentDescription += suffix
+	draftClaim.IncidentDescription += suffix
+
+	actor := fixtures.Users[0]
+	revisionClaim.StatusReason = "just for testing"
+	revisionClaim.ReviewerID = nulls.NewUUID(actor.ID)
+	revisionClaim.ReviewDate = nulls.NewTime(time.Now().UTC())
+	draftMessage := fmt.Sprintf("Returned to draft by %s %s", actor.FirstName, actor.LastName)
+
+	tests := []struct {
+		name             string
+		claim            Claim
+		wantErrContains  string
+		wantErrKey       api.ErrorKey
+		wantErrCat       api.ErrorCategory
+		wantStatus       api.ClaimStatus
+		wantStatusChange string
+		wantDesc         string
+	}{
+		{
+			name:            "bad start status",
+			claim:           approvedClaim,
+			wantErrKey:      api.ErrorClaimStatus,
+			wantErrCat:      api.CategoryUser,
+			wantErrContains: "user may not edit a claim that is too far along in the review process",
+		},
+		{
+			name:             "from draft to draft",
+			claim:            draftClaim,
+			wantStatus:       api.ClaimStatusDraft,
+			wantStatusChange: "",
+			wantDesc:         draftDesc + suffix,
+		},
+		{
+			name:             "from revision to revision",
+			claim:            revisionClaim,
+			wantStatus:       api.ClaimStatusRevision,
+			wantStatusChange: "",
+			wantDesc:         revisionDesc + suffix,
+		},
+		{
+			name:             "from review1 to draft",
+			claim:            review1Claim,
+			wantStatus:       api.ClaimStatusDraft,
+			wantStatusChange: draftMessage,
+			wantDesc:         review1Desc + suffix,
+		},
+		{
+			name:             "from review2 to draft",
+			claim:            review2Claim,
+			wantStatus:       api.ClaimStatusDraft,
+			wantStatusChange: draftMessage,
+			wantDesc:         review2Desc + suffix,
+		},
+		{
+			name:             "from review3 to draft",
+			claim:            review3Claim,
+			wantStatus:       api.ClaimStatusDraft,
+			wantStatusChange: draftMessage,
+			wantDesc:         review3Desc + suffix,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			const message = "change all the things"
+			ctx := CreateTestContext(actor)
+			ctx.Set(domain.ContextKeyTx, ms.DB)
+			got := tt.claim.UpdateByUser(ctx)
+
+			if tt.wantErrContains != "" {
+				ms.Error(got, " did not return expected error")
+				var appErr *api.AppError
+				ms.True(errors.As(got, &appErr), "returned an error that is not an AppError")
+				ms.Contains(got.Error(), tt.wantErrContains, "error message is not correct")
+				ms.Equal(tt.wantErrKey, appErr.Key, "error key is not correct")
+				ms.Equal(tt.wantErrCat, appErr.Category, "error category is not correct")
+				return
+			}
+			ms.NoError(got)
+
+			var newClaim Claim
+			ms.NoError(newClaim.FindByID(ms.DB, tt.claim.ID), "error fetching claim from db")
+
+			ms.Equal(tt.wantStatus, newClaim.Status, "incorrect status")
+			ms.Equal(tt.wantStatusChange, newClaim.StatusChange, "incorrect status change value")
+			ms.Equal(tt.wantDesc, newClaim.IncidentDescription, "incorrect claim incident description")
+		})
+	}
+}
+
+func (ms *ModelSuite) TestClaim_Deductible() {
+	t := ms.T()
+
+	domain.Env.Deductible = .05
+	domain.Env.DeductibleMaximum = .45
+	domain.Env.DeductibleIncrease = .2
+
+	fixConfig := FixturesConfig{
+		NumberOfPolicies: 5,
+		ClaimsPerPolicy:  1,
+	}
+
+	fixtures := CreateItemFixtures(ms.DB, fixConfig)
+
+	policyNoStrikes := fixtures.Policies[0]
+	policyOneStrike := fixtures.Policies[1]
+	policyTwoStrikes := fixtures.Policies[2]
+	policyThreeStrikes := fixtures.Policies[3]
+	policyHasOldStrikePlusOne := fixtures.Policies[4]
+
+	strikes := Strikes{
+		{Description: "For Policy with one strike", PolicyID: policyOneStrike.ID},
+		{Description: "For Policy with two strikes - A", PolicyID: policyTwoStrikes.ID},
+		{Description: "For Policy with two strikes - B", PolicyID: policyTwoStrikes.ID},
+		{Description: "For Policy with three strikes - A", PolicyID: policyThreeStrikes.ID},
+		{Description: "For Policy with three strikes - B", PolicyID: policyThreeStrikes.ID},
+		{Description: "For Policy with three strikes - C", PolicyID: policyThreeStrikes.ID},
+		{Description: "For Policy has old strike - A", PolicyID: policyHasOldStrikePlusOne.ID},
+		{Description: "For Policy has old strike - B", PolicyID: policyHasOldStrikePlusOne.ID},
+	}
+	ms.NoError(ms.DB.Create(&strikes), "error creating strikes fixtures")
+
+	// Base strike dates on their related claim IncidentDate (db.Create would just overwrite this value)
+	strikes[0].CreatedAt = policyOneStrike.Claims[0].IncidentDate.AddDate(0, 0, -1)
+	strikes[1].CreatedAt = policyTwoStrikes.Claims[0].IncidentDate.AddDate(0, 0, -1)
+	strikes[2].CreatedAt = policyTwoStrikes.Claims[0].IncidentDate.AddDate(0, 0, -1)
+	strikes[3].CreatedAt = policyThreeStrikes.Claims[0].IncidentDate.AddDate(0, 0, -1)
+	strikes[4].CreatedAt = policyThreeStrikes.Claims[0].IncidentDate.AddDate(0, 0, -1)
+	strikes[5].CreatedAt = policyThreeStrikes.Claims[0].IncidentDate.AddDate(0, 0, -1)
+	strikes[6].CreatedAt = policyHasOldStrikePlusOne.Claims[0].IncidentDate.AddDate(-2, 0, 0)
+	strikes[7].CreatedAt = policyHasOldStrikePlusOne.Claims[0].IncidentDate.AddDate(0, 0, -1)
+
+	for i := range strikes {
+		q := ms.DB.RawQuery("Update strikes SET created_at = ? WHERE id = ?",
+			strikes[i].CreatedAt, strikes[i].ID)
+		ms.NoError(q.Exec(), "error updating strike fixture %d", i)
+	}
+
+	tests := []struct {
+		name  string
+		claim Claim
+		want  float64
+	}{
+		{
+			name:  "no strikes",
+			claim: policyNoStrikes.Claims[0],
+			want:  domain.Env.Deductible,
+		},
+		{
+			name:  "has one strike",
+			claim: policyOneStrike.Claims[0],
+			want:  domain.Env.Deductible + domain.Env.DeductibleIncrease,
+		},
+		{
+			name:  "has two strikes",
+			claim: policyTwoStrikes.Claims[0],
+			want:  domain.Env.Deductible + 2.0*domain.Env.DeductibleIncrease,
+		},
+		{
+			name:  "has three strikes",
+			claim: policyThreeStrikes.Claims[0],
+			want:  domain.Env.Deductible + 2.0*domain.Env.DeductibleIncrease,
+		},
+		{
+			name:  "has one strike plus an old one",
+			claim: policyHasOldStrikePlusOne.Claims[0],
+			want:  domain.Env.Deductible + domain.Env.DeductibleIncrease,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := tt.claim.Deductible(ms.DB)
+
+			ms.Equal(tt.want, got, "incorrect results")
 		})
 	}
 }

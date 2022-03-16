@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/gofrs/uuid"
 
@@ -88,7 +89,7 @@ func (as *ActionSuite) Test_PoliciesList() {
 		as.T().Run(tt.name, func(t *testing.T) {
 			req := as.JSON("/policies" + tt.queryString)
 			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
-			req.Headers["content-type"] = "application/json"
+			req.Headers["content-type"] = domain.ContentJson
 			res := req.Get()
 
 			body := res.Body.String()
@@ -177,7 +178,7 @@ func (as *ActionSuite) Test_PoliciesView() {
 		as.T().Run(tt.name, func(t *testing.T) {
 			req := as.JSON("/policies/" + tt.policyID.String())
 			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
-			req.Headers["content-type"] = "application/json"
+			req.Headers["content-type"] = domain.ContentJson
 			res := req.Get()
 
 			body := res.Body.String()
@@ -255,7 +256,7 @@ func (as *ActionSuite) Test_PoliciesCreateTeam() {
 		as.T().Run(tt.name, func(t *testing.T) {
 			req := as.JSON("/policies")
 			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
-			req.Headers["content-type"] = "application/json"
+			req.Headers["content-type"] = domain.ContentJson
 			res := req.Post(tt.input)
 
 			body := res.Body.String()
@@ -350,7 +351,7 @@ func (as *ActionSuite) Test_PoliciesUpdate() {
 		as.T().Run(tt.name, func(t *testing.T) {
 			req := as.JSON("/policies/" + tt.policy.ID.String())
 			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
-			req.Headers["content-type"] = "application/json"
+			req.Headers["content-type"] = domain.ContentJson
 			res := req.Put(tt.update)
 
 			body := res.Body.String()
@@ -464,7 +465,7 @@ func (as *ActionSuite) Test_PoliciesListMembers() {
 		as.T().Run(tt.name, func(t *testing.T) {
 			req := as.JSON("/policies/" + tt.policyID + "/members")
 			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
-			req.Headers["content-type"] = "application/json"
+			req.Headers["content-type"] = domain.ContentJson
 			res := req.Get()
 
 			body := res.Body.String()
@@ -541,7 +542,7 @@ func (as *ActionSuite) Test_PoliciesInviteMember() {
 			policyID:           housePolicies[0].ID,
 			actor:              house0member0,
 			inviteeEmail:       house0member0.Email,
-			wantStatus:         http.StatusNoContent,
+			wantStatus:         http.StatusBadRequest,
 			wantEventTriggered: false,
 		},
 		{
@@ -577,11 +578,100 @@ func (as *ActionSuite) Test_PoliciesInviteMember() {
 
 			req := as.JSON("/policies/" + tt.policyID.String() + "/members")
 			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
-			req.Headers["content-type"] = "application/json"
+			req.Headers["content-type"] = domain.ContentJson
 			res := req.Post(input)
 
 			as.Equal(tt.wantStatus, res.Code, "http status code not as expected")
 			as.Equal(tt.wantEventTriggered, createInviteEventDetected, "event detection not as expected")
+		})
+	}
+}
+
+func (as *ActionSuite) Test_PolicyLedgerReportCreate() {
+
+	f0 := models.CreatePolicyFixtures(as.DB, models.FixturesConfig{})
+	otherUser := f0.Users[0]
+
+	f := as.createFixturesForLedger()
+	policy := f.Policies[0]
+	normalUser := f.Users[0]
+	stewardUser := models.CreateAdminUsers(as.DB)[models.AppRoleSteward]
+
+	now := time.Now().UTC()
+	nowMonth := int(now.Month())
+	nowYear := now.Year()
+
+	tests := []struct {
+		name       string
+		actor      models.User
+		month      int
+		year       int
+		reportType string
+		wantStatus int
+		wantInBody []string
+	}{
+		{
+			name:       "unauthenticated",
+			actor:      models.User{},
+			wantStatus: http.StatusUnauthorized,
+			wantInBody: []string{`"key":"` + api.ErrorNotAuthorized.String()},
+		},
+		{
+			name:       "insufficient privileges",
+			actor:      otherUser,
+			wantStatus: http.StatusNotFound,
+			wantInBody: []string{`"key":"` + api.ErrorNotAuthorized.String()},
+		},
+		{
+			name:       "monthly report",
+			actor:      normalUser,
+			month:      nowMonth,
+			year:       nowYear,
+			reportType: models.ReportTypeMonthly,
+			wantStatus: http.StatusOK,
+		},
+		{
+			name:       "annual report",
+			actor:      stewardUser,
+			month:      0,
+			year:       nowYear,
+			reportType: models.ReportTypeAnnual,
+			wantStatus: http.StatusOK,
+		},
+		{
+			name:       "no ledger entries",
+			actor:      normalUser,
+			month:      nowMonth,
+			year:       1972,
+			reportType: models.ReportTypeMonthly,
+			wantStatus: http.StatusNoContent,
+		},
+	}
+
+	for _, tt := range tests {
+		as.T().Run(tt.name, func(t *testing.T) {
+			req := as.JSON("%s/%s/ledger-reports", policiesPath, policy.ID.String())
+			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
+			res := req.Post(api.PolicyLedgerReportCreateInput{
+				Month: tt.month,
+				Year:  tt.year,
+				Type:  tt.reportType,
+			})
+
+			body := res.Body.String()
+			as.Equal(tt.wantStatus, res.Code, "incorrect status code returned, body: %s", body)
+
+			for _, s := range tt.wantInBody {
+				as.Contains(body, s)
+			}
+
+			if res.Code != http.StatusOK {
+				return
+			}
+
+			var report api.LedgerReport
+			as.NoError(json.Unmarshal([]byte(body), &report))
+			as.Equal(tt.reportType, report.Type)
 		})
 	}
 }

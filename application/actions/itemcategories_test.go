@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/silinternational/cover-api/api"
+	"github.com/silinternational/cover-api/domain"
 	"github.com/silinternational/cover-api/models"
 )
 
@@ -45,7 +46,7 @@ func (as *ActionSuite) Test_ItemCategoriesList() {
 
 	req := as.JSON("/config/item-categories")
 	req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", fixtures.Policies[0].Members[0].Email)
-	req.Headers["content-type"] = "application/json"
+	req.Headers["content-type"] = domain.ContentJson
 	res := req.Get()
 
 	body := res.Body.String()

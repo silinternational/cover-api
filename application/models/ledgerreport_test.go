@@ -30,7 +30,7 @@ func (ms *ModelSuite) TestLedgerReport_Create() {
 				Type: ReportTypeAnnual,
 				Date: date1,
 				File: File{
-					ContentType: "text/csv",
+					ContentType: domain.ContentCSV,
 					CreatedByID: user.ID,
 					Content:     []byte("a,b\n1,2"),
 				},
@@ -45,7 +45,7 @@ func (ms *ModelSuite) TestLedgerReport_Create() {
 				Date: date1,
 				File: File{
 					Name:        "report1.csv",
-					ContentType: "text/csv",
+					ContentType: domain.ContentCSV,
 					CreatedByID: user.ID,
 					Content:     []byte("a,b\n1,2"),
 				},
@@ -60,7 +60,7 @@ func (ms *ModelSuite) TestLedgerReport_Create() {
 				Date: date2,
 				File: File{
 					Name:        "report2.csv",
-					ContentType: "text/csv",
+					ContentType: domain.ContentCSV,
 					CreatedByID: user.ID,
 					Content:     []byte("a,b\n1,2"),
 				},
@@ -189,9 +189,146 @@ func (ms *ModelSuite) TestNewLedgerReport() {
 
 			ms.Equal(tt.want.Type, got.Type, "incorrect report Type")
 			ms.Equal(tt.want.Date, got.Date, "incorrect report Date")
-			ms.Equal("text/csv", got.File.ContentType, "incorrect ContentType")
+			ms.Equal(domain.ContentCSV, got.File.ContentType, "incorrect ContentType")
 			ms.Equal(user.ID, got.File.CreatedByID, "incorrect CreatedByID")
 			ms.Equal(1, len(got.LedgerEntries), "incorrect number of LedgerEntries")
+		})
+	}
+}
+
+func (ms *ModelSuite) TestNewPolicyLedgerReport() {
+	// create ledger entries for a different policy to ensure they're not included in the results
+	f0 := CreateLedgerFixtures(ms.DB, FixturesConfig{ItemsPerPolicy: 3})
+
+	f := CreateLedgerFixtures(ms.DB, FixturesConfig{ItemsPerPolicy: 3})
+	user := f.Users[0]
+	policy := f.Policies[0]
+	ctx := CreateTestContext(user)
+
+	now := time.Now().UTC()
+	nextMonth := now.AddDate(0, 1, 0)
+
+	january := time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC)
+	march := time.Date(2021, 3, 1, 0, 0, 0, 0, time.UTC)
+	april := time.Date(2021, 4, 1, 0, 0, 0, 0, time.UTC)
+	may := time.Date(2021, 5, 1, 0, 0, 0, 0, time.UTC)
+
+	datesSubmitted := []time.Time{january, march, april}
+	datesEntered := []nulls.Time{nulls.NewTime(march), nulls.NewTime(april), {}}
+	entries := f.LedgerEntries
+	others := f0.LedgerEntries // These should not get included in the results
+	for i := range entries {
+		entries[i].DateSubmitted = datesSubmitted[i]
+		entries[i].DateEntered = datesEntered[i]
+		Must(ms.DB.Update(&entries[i]))
+
+		others[i].DateSubmitted = datesSubmitted[i]
+		others[i].DateEntered = datesEntered[i]
+		Must(ms.DB.Update(&others[i]))
+	}
+
+	tests := []struct {
+		name       string
+		date       time.Time
+		month      int
+		year       int
+		reportType string
+		want       LedgerReport
+		wantCount  int
+		wantErr    *api.AppError
+	}{
+		{
+			name:       "invalid report type",
+			month:      int(may.Month()),
+			year:       may.Year(),
+			reportType: "invalid",
+			wantErr:    &api.AppError{Key: api.ErrorInvalidReportType, Category: api.CategoryUser},
+		},
+		{
+			name:       "invalid future month",
+			month:      int(nextMonth.Month()),
+			year:       nextMonth.Year(),
+			reportType: ReportTypeMonthly,
+			wantErr:    &api.AppError{Key: api.ErrorInvalidDate, Category: api.CategoryUser},
+		},
+		{
+			name:       "invalid report month",
+			month:      0,
+			year:       2020,
+			reportType: ReportTypeMonthly,
+			wantErr:    &api.AppError{Key: api.ErrorInvalidDate, Category: api.CategoryUser},
+		},
+		{
+			name:       "invalid future year",
+			month:      1,
+			year:       now.Year() + 1,
+			reportType: ReportTypeAnnual,
+			wantErr:    &api.AppError{Key: api.ErrorInvalidDate, Category: api.CategoryUser},
+		},
+		{
+			name:       "invalid report type",
+			month:      1,
+			year:       2020,
+			reportType: "not-a-real-report-type",
+			wantErr:    &api.AppError{Key: api.ErrorInvalidReportType, Category: api.CategoryUser},
+		},
+		{
+			name:       "one monthly entry",
+			month:      int(april.Month()),
+			year:       april.Year(),
+			reportType: ReportTypeMonthly,
+			want: LedgerReport{
+				Type:          ReportTypeMonthly,
+				Date:          april,
+				File:          File{},
+				LedgerEntries: nil,
+			},
+			wantCount: 1,
+		},
+		{
+			name:       "two annual entries",
+			month:      int(may.Month()),
+			year:       may.Year(),
+			reportType: ReportTypeAnnual,
+			want: LedgerReport{
+				Type:          ReportTypeAnnual,
+				Date:          january,
+				File:          File{},
+				LedgerEntries: nil,
+			},
+			wantCount: 2,
+		},
+		{
+			name:       "none found",
+			month:      int(may.Month()),
+			year:       may.Year(),
+			reportType: ReportTypeMonthly,
+			want:       LedgerReport{},
+			wantCount:  0,
+		},
+	}
+	for _, tt := range tests {
+		ms.T().Run(tt.name, func(t *testing.T) {
+			got, err := NewPolicyLedgerReport(ctx, policy, tt.reportType, tt.month, tt.year)
+			if tt.wantErr != nil {
+				ms.Error(err, "test should have produced an error")
+				ms.EqualAppError(*tt.wantErr, err)
+				return
+			}
+
+			ms.NoError(err)
+			ms.Equal(tt.wantCount, len(got.LedgerEntries), "incorrect number of LedgerEntries")
+
+			if tt.wantCount == 0 {
+				ms.Equal(uuid.Nil, got.PolicyID.UUID, "incorrect report PolicyID")
+				return
+			}
+
+			ms.Equal(tt.want.Type, got.Type, "incorrect report Type")
+			ms.Equal(policy.ID, got.PolicyID.UUID, "incorrect report PolicyID")
+			ms.Equal(tt.want.Date, got.Date, "incorrect report Date")
+			ms.Equal(domain.ContentCSV, got.File.ContentType, "incorrect ContentType")
+			ms.Equal(user.ID, got.File.CreatedByID, "incorrect CreatedByID")
 		})
 	}
 }

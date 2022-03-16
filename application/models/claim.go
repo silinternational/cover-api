@@ -194,7 +194,8 @@ func (c *Claim) UpdateByUser(ctx context.Context) error {
 
 	// If the user edits something, it should take it off of the steward's list of things to review and
 	//  also force the user to resubmit it.
-	if c.Status == api.ClaimStatusReview1 {
+	switch c.Status {
+	case api.ClaimStatusReview1, api.ClaimStatusReview2, api.ClaimStatusReview3:
 		c.Status = api.ClaimStatusDraft
 		c.StatusChange = ClaimStatusChangeReturnedToDraft + user.Name()
 	}
@@ -213,6 +214,46 @@ func (c *Claim) UpdateByUser(ctx context.Context) error {
 	}
 
 	return c.Update(ctx)
+}
+
+// Delete ensures the claim does not have a status of approved, denied or paid and
+//   then deletes the claim's items and the claim itself.
+func (c *Claim) Delete(ctx context.Context) error {
+	tx := Tx(ctx)
+
+	var oldClaim Claim
+	if err := oldClaim.FindByID(tx, c.ID); err != nil {
+		return appErrorFromDB(err, api.ErrorQueryFailure)
+	}
+
+	if !c.IsRemovable() {
+		err := errors.New("claim that has been approved, paid or denied may not be deleted")
+		appErr := api.NewAppError(err, api.ErrorClaimStatus, api.CategoryUser)
+		return appErr
+	}
+
+	c.LoadClaimItems(tx, false)
+	for i := range c.ClaimItems {
+		if err := tx.Destroy(&c.ClaimItems[i]); err != nil {
+			return appErrorFromDB(fmt.Errorf("error destroying claim item: %w", err), api.ErrorQueryFailure)
+		}
+	}
+
+	if err := tx.Destroy(c); err != nil {
+		return appErrorFromDB(fmt.Errorf("error destroying claim: %w", err), api.ErrorQueryFailure)
+	}
+
+	return nil
+}
+
+// IsRemovable determines whether the claim may be deleted
+//  It may not be if its status is approved, paid or denied.
+func (c *Claim) IsRemovable() bool {
+	switch c.Status {
+	case api.ClaimStatusApproved, api.ClaimStatusPaid, api.ClaimStatusDenied:
+		return false
+	}
+	return true
 }
 
 func (c *Claim) canUpdate(user User) bool {
@@ -640,6 +681,7 @@ func (c *Claim) ConvertToAPI(tx *pop.Connection) api.Claim {
 		PaymentDate:         convertTimeToAPI(c.PaymentDate),
 		TotalPayout:         c.TotalPayout,
 		StatusReason:        c.StatusReason,
+		IsRemovable:         c.IsRemovable(),
 		Items:               c.ClaimItems.ConvertToAPI(tx),
 		Files:               c.ClaimFiles.ConvertToAPI(tx),
 	}
@@ -964,4 +1006,29 @@ func (c *Claim) calculatePayout(ctx context.Context) error {
 	}
 	c.TotalPayout = payout
 	return nil
+}
+
+func (c *Claim) Deductible(tx *pop.Connection) float64 {
+	cutOff := c.IncidentDate
+	if c.IncidentDate.IsZero() {
+		cutOff = c.CreatedAt
+	}
+
+	c.LoadPolicy(tx, false)
+	var strikes Strikes
+	err := strikes.RecentForPolicy(tx, c.PolicyID, cutOff)
+
+	if domain.IsOtherThanNoRows(err) {
+		msg := fmt.Sprintf("error retrieving recent strikes for claim %s: %s", c.ID.String(), err)
+		domain.ErrLogger.Printf(msg)
+		return domain.Env.Deductible
+	}
+
+	extra := domain.Env.DeductibleIncrease * float64(len(strikes))
+
+	d := domain.Env.Deductible + extra
+	if d >= domain.Env.DeductibleMaximum {
+		return domain.Env.DeductibleMaximum
+	}
+	return d
 }

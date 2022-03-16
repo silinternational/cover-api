@@ -1,6 +1,7 @@
 package models
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"time"
@@ -15,6 +16,7 @@ import (
 )
 
 const accountSeparator = " / "
+const csvPolicyHeader = `"Amount","Description","Reference","Date Entered"` + "\n"
 
 type LedgerEntryType string
 
@@ -92,6 +94,30 @@ func (le *LedgerEntries) AllNotEntered(tx *pop.Connection, cutoff time.Time) err
 		Where("date_entered IS NULL").All(le)
 
 	return appErrorFromDB(err, api.ErrorQueryFailure)
+}
+
+func (le *LedgerEntries) ToCsvForPolicy() []byte {
+	rowTemplate := `%s,"%s","%s",%s` + "\n"
+
+	var buf bytes.Buffer
+	buf.Write([]byte(csvPolicyHeader))
+
+	for _, l := range *le {
+		if l.Amount == 0 {
+			continue
+		}
+
+		nextRow := fmt.Sprintf(
+			rowTemplate,
+			l.Amount.String(),
+			l.transactionDescription(),
+			l.transactionReference(),
+			l.DateSubmitted.Format(domain.DateFormat),
+		)
+		buf.Write([]byte(nextRow))
+	}
+
+	return buf.Bytes()
 }
 
 type TransactionBlocks map[string]LedgerEntries // keyed by account

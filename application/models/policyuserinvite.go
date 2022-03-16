@@ -167,3 +167,20 @@ func (i *PolicyUserInvite) DestroyIfExpired(tx *pop.Connection) error {
 		api.CategoryForbidden,
 	)
 }
+
+func (i *PolicyUserInvite) ConvertToAPI() api.PolicyUserInvite {
+
+	return api.PolicyUserInvite{
+		Email:       i.Email,
+		Name:        i.InviteeName,
+		EmailSentAt: convertTimeToAPI(i.EmailSentAt),
+	}
+}
+
+func (i *PolicyUserInvites) ConvertToAPI() api.PolicyUserInvites {
+	invites := make(api.PolicyUserInvites, len(*i))
+	for i, ii := range *i {
+		invites[i] = ii.ConvertToAPI()
+	}
+	return invites
+}

@@ -28,6 +28,27 @@ func itemApprovedQueueMsg(tx *pop.Connection, item models.Item) {
 	}
 }
 
+func itemPendingQueueMsg(tx *pop.Connection, item models.Item) {
+	data := newEmailMessageData()
+	data.addItemData(tx, item)
+
+	notn := models.Notification{
+		ItemID:        nulls.NewUUID(item.ID),
+		Body:          data.renderHTML(MessageTemplateItemPendingMember),
+		Subject:       "Coverage Submitted",
+		InappText:     "Coverage Submitted",
+		Event:         "Item Pending Notification",
+		EventCategory: EventCategoryItem,
+	}
+	if err := notn.Create(tx); err != nil {
+		panic("error creating new Notification: " + err.Error())
+	}
+
+	for _, m := range item.Policy.Members {
+		notn.CreateNotificationUserForUser(tx, m)
+	}
+}
+
 func itemAutoApprovedQueueMessage(tx *pop.Connection, item models.Item, member models.User) {
 	data := newEmailMessageData()
 	data.addItemData(tx, item)
@@ -113,6 +134,13 @@ func ItemAutoApprovedQueueMessage(tx *pop.Connection, item models.Item) {
 func ItemApprovedQueueMessage(tx *pop.Connection, item models.Item) {
 	item.LoadPolicyMembers(tx, false)
 	itemApprovedQueueMsg(tx, item)
+}
+
+// ItemPendingQueueMessage queues messages to an item's members to
+//  notify them that coverage on their item is pending approval
+func ItemPendingQueueMessage(tx *pop.Connection, item models.Item) {
+	item.LoadPolicyMembers(tx, false)
+	itemPendingQueueMsg(tx, item)
 }
 
 // ItemDeniedQueueMessage queues messages to an item's members to

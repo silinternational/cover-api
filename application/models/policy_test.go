@@ -233,6 +233,14 @@ func (ms *ModelSuite) TestPolicy_LoadDependents() {
 	ms.Len(policy.Dependents, 1)
 }
 
+func (ms *ModelSuite) TestPolicy_LoadInvites() {
+	f := CreatePolicyFixtures(ms.DB, FixturesConfig{InvitesPerPolicy: 2})
+	policy := f.Policies[0]
+
+	policy.LoadInvites(ms.DB, false)
+	ms.Len(policy.Invites, 2)
+}
+
 func (ms *ModelSuite) TestPolicy_itemCoverageTotals() {
 	fixConfig := FixturesConfig{
 		NumberOfPolicies:    2,
@@ -494,7 +502,14 @@ func (ms *ModelSuite) TestPolicy_calculateAnnualPremium() {
 }
 
 func (ms *ModelSuite) TestPolicy_ConvertToAPI() {
-	policy := CreateItemFixtures(ms.DB, FixturesConfig{DependentsPerPolicy: 1, ClaimsPerPolicy: 1}).Policies[0]
+	fConfig := FixturesConfig{
+		DependentsPerPolicy: 1,
+		ClaimsPerPolicy:     1,
+		InvitesPerPolicy:    2,
+	}
+	f := CreateItemFixtures(ms.DB, fConfig)
+
+	policy := f.Policies[0]
 	policy = ConvertPolicyType(ms.DB, policy)
 
 	got := policy.ConvertToAPI(ms.DB, false)
@@ -511,17 +526,21 @@ func (ms *ModelSuite) TestPolicy_ConvertToAPI() {
 	ms.Equal(policy.UpdatedAt, got.UpdatedAt, "UpdatedAt is not correct")
 	ms.Equal(0, len(got.Dependents), "Dependents should not be hydrated")
 	ms.Equal(0, len(got.Claims), "Claims should not be hydrated")
+	ms.Equal(0, len(got.Invites), "Invites should not be hydrated")
 
 	ms.Greater(len(got.Members), 0, "test should be revised, fixture has no Members")
 	ms.Len(got.Members, len(got.Members), "Members is not correct length")
 
 	got = policy.ConvertToAPI(ms.DB, true)
 
-	ms.Greater(len(got.Dependents), 0, "test should be revised, fixture has no Dependents")
-	ms.Len(got.Dependents, len(got.Dependents), "Files is not correct length")
+	ms.Greater(len(f.PolicyDependents), 0, "test should be revised, fixture has no Dependents")
+	ms.Len(got.Dependents, len(f.PolicyDependents), "Files is not correct length")
 
-	ms.Greater(len(got.Claims), 0, "test should be revised, fixture has no Claims")
-	ms.Len(got.Claims, len(got.Claims), "Claims is not correct length")
+	ms.Greater(len(f.Claims), 0, "test should be revised, fixture has no Claims")
+	ms.Len(got.Claims, len(f.Claims), "Claims is not correct length")
+
+	ms.Greater(len(f.PolicyUserInvites), 0, "test should be revised, fixture has no Invites")
+	ms.Len(got.Invites, len(f.PolicyUserInvites), "Invites is not correct length")
 }
 
 func (ms *ModelSuite) TestPolicies_Query() {

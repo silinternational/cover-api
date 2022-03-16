@@ -74,7 +74,7 @@ func (as *ActionSuite) Test_ClaimsList() {
 		as.T().Run(tt.name, func(t *testing.T) {
 			req := as.JSON("/claims" + tt.queryString)
 			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
-			req.Headers["content-type"] = "application/json"
+			req.Headers["content-type"] = domain.ContentJson
 			res := req.Get()
 
 			body := res.Body.String()
@@ -151,7 +151,7 @@ func (as *ActionSuite) Test_PoliciesClaimsList() {
 			url := fmt.Sprintf("%s/%s%s", policiesPath, policy.ID, claimsPath)
 			req := as.JSON(url)
 			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
-			req.Headers["content-type"] = "application/json"
+			req.Headers["content-type"] = domain.ContentJson
 			res := req.Get()
 
 			body := res.Body.String()
@@ -233,7 +233,7 @@ func (as *ActionSuite) Test_ClaimsView() {
 		as.T().Run(tt.name, func(t *testing.T) {
 			req := as.JSON("/claims/" + tt.claim.ID.String())
 			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
-			req.Headers["content-type"] = "application/json"
+			req.Headers["content-type"] = domain.ContentJson
 			res := req.Get()
 
 			body := res.Body.String()
@@ -346,7 +346,7 @@ func (as *ActionSuite) Test_ClaimsUpdate() {
 		as.T().Run(tt.name, func(t *testing.T) {
 			req := as.JSON("/claims/" + tt.claim.ID.String())
 			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
-			req.Headers["content-type"] = "application/json"
+			req.Headers["content-type"] = domain.ContentJson
 			res := req.Put(tt.input)
 
 			body := res.Body.String()
@@ -458,7 +458,7 @@ func (as *ActionSuite) Test_ClaimsCreate() {
 		as.T().Run(tt.name, func(t *testing.T) {
 			req := as.JSON(fmt.Sprintf("/policies/%s/claims", tt.policy.ID))
 			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
-			req.Headers["content-type"] = "application/json"
+			req.Headers["content-type"] = domain.ContentJson
 			res := req.Post(tt.input)
 
 			body := res.Body.String()
@@ -574,7 +574,7 @@ func (as *ActionSuite) Test_ClaimsItemsCreate() {
 		as.T().Run(tt.name, func(t *testing.T) {
 			req := as.JSON(fmt.Sprintf("/%s/%s/%s", domain.TypeClaim, tt.claim.ID, domain.TypeItem))
 			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
-			req.Headers["content-type"] = "application/json"
+			req.Headers["content-type"] = domain.ContentJson
 
 			res := req.Post(tt.input)
 
@@ -661,7 +661,7 @@ func (as *ActionSuite) Test_ClaimsSubmit() {
 		as.T().Run(tt.name, func(t *testing.T) {
 			req := as.JSON("/%s/%s/%s", domain.TypeClaim, tt.oldClaim.ID.String(), api.ResourceSubmit)
 			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
-			req.Headers["content-type"] = "application/json"
+			req.Headers["content-type"] = domain.ContentJson
 			res := req.Post(nil)
 
 			body := res.Body.String()
@@ -739,7 +739,7 @@ func (as *ActionSuite) Test_ClaimsRequestRevision() {
 			req := as.JSON("/%s/%s/%s",
 				domain.TypeClaim, tt.oldClaim.ID.String(), api.ResourceRevision)
 			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
-			req.Headers["content-type"] = "application/json"
+			req.Headers["content-type"] = domain.ContentJson
 			const message = "change all of it"
 			res := req.Post(api.ClaimStatusInput{StatusReason: message})
 
@@ -819,7 +819,7 @@ func (as *ActionSuite) Test_ClaimsPreapprove() {
 			req := as.JSON("/%s/%s/%s",
 				domain.TypeClaim, tt.oldClaim.ID.String(), api.ResourcePreapprove)
 			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
-			req.Headers["content-type"] = "application/json"
+			req.Headers["content-type"] = domain.ContentJson
 			res := req.Post(nil)
 
 			body := res.Body.String()
@@ -901,7 +901,7 @@ func (as *ActionSuite) Test_ClaimsReceipt() {
 			req := as.JSON("/%s/%s/%s",
 				domain.TypeClaim, tt.oldClaim.ID.String(), api.ResourceReceipt)
 			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
-			req.Headers["content-type"] = "application/json"
+			req.Headers["content-type"] = domain.ContentJson
 			res := req.Post(api.ClaimStatusInput{StatusReason: tt.reason})
 
 			body := res.Body.String()
@@ -1035,7 +1035,7 @@ func (as *ActionSuite) Test_ClaimsApprove() {
 			req := as.JSON("/%s/%s/%s",
 				domain.TypeClaim, tt.oldClaim.ID.String(), api.ResourceApprove)
 			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
-			req.Headers["content-type"] = "application/json"
+			req.Headers["content-type"] = domain.ContentJson
 			res := req.Post(nil)
 
 			body := res.Body.String()
@@ -1145,7 +1145,7 @@ func (as *ActionSuite) Test_ClaimsDeny() {
 			req := as.JSON("/%s/%s/%s",
 				domain.TypeClaim, tt.oldClaim.ID.String(), api.ResourceDeny)
 			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
-			req.Headers["content-type"] = "application/json"
+			req.Headers["content-type"] = domain.ContentJson
 			const message = "change all of it"
 			res := req.Post(api.ClaimStatusInput{StatusReason: message})
 
@@ -1164,6 +1164,76 @@ func (as *ActionSuite) Test_ClaimsDeny() {
 
 			as.Equal(api.ClaimStatusDenied, claim.Status, "incorrect status after submission")
 			as.Equal(message, claim.StatusReason, "incorrect status reason")
+		})
+	}
+}
+
+func (as *ActionSuite) Test_ClaimsRemove() {
+	fixConfig := models.FixturesConfig{
+		NumberOfPolicies:    2,
+		ItemsPerPolicy:      2,
+		UsersPerPolicy:      1,
+		DependentsPerPolicy: 0,
+		ClaimsPerPolicy:     4,
+		ClaimItemsPerClaim:  1,
+	}
+
+	fixtures := models.CreateItemFixtures(as.DB, fixConfig)
+	policy := fixtures.Policies[0]
+	policyCreator := policy.Members[0]
+	otherUser := fixtures.Policies[1].Members[0]
+
+	steward := models.CreateAdminUsers(as.DB)[models.AppRoleSteward]
+
+	draftClaim := policy.Claims[0]
+	approvedClaim := models.UpdateClaimStatus(as.DB, policy.Claims[3], api.ClaimStatusApproved, "")
+
+	approvedClaim.ReviewerID = nulls.NewUUID(steward.ID)
+	as.NoError(as.DB.Update(&approvedClaim), "error updating claim fixture")
+
+	tests := []struct {
+		name            string
+		actor           models.User
+		claim           models.Claim
+		wantStatus      int
+		wantClaimStatus api.ClaimStatus
+		wantInBody      []string
+	}{
+		{
+			name:       "other user",
+			actor:      otherUser,
+			claim:      draftClaim,
+			wantStatus: http.StatusNotFound,
+		},
+		{
+			name:       "bad start status",
+			actor:      steward,
+			claim:      approvedClaim,
+			wantStatus: http.StatusBadRequest,
+			wantInBody: []string{api.ErrorClaimStatus.String()},
+		},
+		{
+			name:       "good - deletable",
+			actor:      policyCreator,
+			claim:      draftClaim,
+			wantStatus: http.StatusNoContent,
+		},
+	}
+
+	for _, tt := range tests {
+		as.T().Run(tt.name, func(t *testing.T) {
+			req := as.JSON("/%s/%s",
+				domain.TypeClaim, tt.claim.ID.String())
+			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
+			req.Headers["content-type"] = domain.ContentJson
+			res := req.Delete()
+
+			body := res.Body.String()
+			as.Equal(tt.wantStatus, res.Code, "incorrect status code returned, body: %s", body)
+
+			if len(tt.wantInBody) > 0 {
+				as.verifyResponseData(tt.wantInBody, body, "")
+			}
 		})
 	}
 }
