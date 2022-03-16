@@ -675,3 +675,70 @@ func (as *ActionSuite) Test_PolicyLedgerReportCreate() {
 		})
 	}
 }
+
+func (as *ActionSuite) Test_PolicyStrikesCreate() {
+
+	f := models.CreatePolicyFixtures(as.DB, models.FixturesConfig{NumberOfPolicies: 2})
+	policyOneStrike := f.Policies[0]
+	policyNoStrikes := f.Policies[1]
+	normalUser := f.Users[0]
+	stewardUser := models.CreateAdminUsers(as.DB)[models.AppRoleSteward]
+
+	strikes := models.CreateStrikeFixtures(as.DB, f.Policies, [][]*time.Time{{nil}})
+
+	tests := []struct {
+		name       string
+		actor      models.User
+		policy     models.Policy
+		wantStatus int
+		wantInBody []string
+	}{
+		{
+			name:       "unauthenticated",
+			actor:      models.User{},
+			policy:     policyOneStrike,
+			wantStatus: http.StatusUnauthorized,
+			wantInBody: []string{`"key":"` + api.ErrorNotAuthorized.String()},
+		},
+		{
+			name:       "insufficient privileges",
+			actor:      normalUser,
+			policy:     policyOneStrike,
+			wantStatus: http.StatusNotFound,
+			wantInBody: []string{`"key":"` + api.ErrorNotAuthorized.String()},
+		},
+		{
+			name:       "single strike",
+			actor:      stewardUser,
+			policy:     policyNoStrikes,
+			wantStatus: http.StatusOK,
+			wantInBody: []string{`"description":"New Strike`},
+		},
+		{
+			name:       "with old strike",
+			actor:      stewardUser,
+			policy:     policyOneStrike,
+			wantStatus: http.StatusOK,
+			wantInBody: []string{
+				`"description":"` + strikes[0].Description,
+				`"description":"New Strike`,
+				`"policy_id":"` + policyOneStrike.ID.String(),
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		as.T().Run(tt.name, func(t *testing.T) {
+			req := as.JSON("%s/%s/%s", policiesPath, tt.policy.ID.String(), api.ResourceStrikes)
+			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
+			res := req.Post(api.StrikeInput{Description: "New Strike"})
+
+			body := res.Body.String()
+			as.Equal(tt.wantStatus, res.Code, "incorrect status code returned, body: %s", body)
+
+			for _, s := range tt.wantInBody {
+				as.Contains(body, s)
+			}
+		})
+	}
+}
