@@ -20,6 +20,7 @@ const (
 	ResourceApprove    = "approve"
 	ResourceDeny       = "deny"
 	ResourceRecent     = "recent"
+	ResourceStrikes    = "strikes"
 )
 
 // swagger:model

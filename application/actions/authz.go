@@ -24,6 +24,7 @@ func AuthZ(next buffalo.Handler) buffalo.Handler {
 			domain.TypePolicy:          &models.Policy{},
 			domain.TypePolicyDependent: &models.PolicyDependent{},
 			domain.TypePolicyUser:      &models.PolicyUser{},
+			domain.TypeStrike:          &models.Strike{},
 			domain.TypeUser:            &models.User{},
 		}
 

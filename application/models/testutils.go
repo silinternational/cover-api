@@ -7,6 +7,7 @@ package models
 
 import (
 	"fmt"
+	"log"
 	"math/rand"
 	"time"
 
@@ -873,6 +874,34 @@ func ConvertPolicyType(tx *pop.Connection, policy Policy) Policy {
 	}
 
 	return policy
+}
+
+// CreateStrikeFixtures generates any number of strike records per policy provided
+func CreateStrikeFixtures(tx *pop.Connection, policies Policies, dates [][]*time.Time) Strikes {
+
+	if len(dates) > len(policies) {
+		log.Panicf("Not enough policies (%d) for the dates provided (%d)", len(policies), len(dates))
+	}
+
+	strikes := Strikes{}
+
+	for i := range dates {
+		for j := range dates[i] {
+			strike := Strike{
+				Description: fmt.Sprintf("Strike %d for Policy %d", j, i),
+				PolicyID:    policies[i].ID,
+			}
+			MustCreate(tx, &strike)
+
+			if dates[i][j] != nil {
+				// Merely calling the db.Update function doesn't overwrite the created_at value
+				q := tx.RawQuery("Update strikes SET created_at = ? WHERE id = ?", dates[i][j], strike.ID)
+				Must(q.Exec())
+			}
+			strikes = append(strikes, strike)
+		}
+	}
+	return strikes
 }
 
 func Must(err error) {

@@ -21,21 +21,14 @@ func (ms *ModelSuite) TestStrikes_RecentForPolicy() {
 	policyHasOldStrike := fixtures.Policies[3]
 
 	oldDate := policyHasOldStrike.Claims[0].IncidentDate.AddDate(-2, 0, 0)
-
-	strikes := Strikes{
-		{Description: "For Policy with one strike", PolicyID: policyOneStrike.ID},
-		{Description: "For Policy with two strikes - A", PolicyID: policyTwoStrikes.ID},
-		{Description: "For Policy with two strikes - B", PolicyID: policyTwoStrikes.ID},
-		{Description: "For Policy has old strike - A", PolicyID: policyHasOldStrike.ID},
-		{Description: "For Policy has old strike - B", PolicyID: policyHasOldStrike.ID},
+	strikeDates := [][]*time.Time{
+		{},                // Policy with no strikes
+		[]*time.Time{nil}, // Policy with one strike
+		{nil, nil},        // Policy with two strikes
+		{&oldDate, nil},   // Policy with an old strike and a new strike
 	}
-	ms.NoError(ms.DB.Create(&strikes), "error creating strikes fixtures")
 
-	oldStrike := strikes[3]
-
-	// Merely calling the db.Update function doesn't overwrite the created_at value
-	q := ms.DB.RawQuery("Update strikes SET created_at = ? WHERE id = ?", oldDate, oldStrike.ID)
-	ms.NoError(q.Exec(), "error updating old strike fixture")
+	strikes := CreateStrikeFixtures(ms.DB, fixtures.Policies, strikeDates)
 
 	cutOff := time.Now().UTC()
 	tests := []struct {
