@@ -71,6 +71,9 @@ type Policy struct {
 
 	// List of claims on policy
 	Claims Claims `json:"claims"`
+
+	// List of strikes on policy
+	Strikes Strikes `json:"strikes"`
 }
 
 // PolicyCreate represents payload for creating a policy
