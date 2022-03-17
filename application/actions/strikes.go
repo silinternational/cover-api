@@ -76,7 +76,7 @@ func strikesDelete(c buffalo.Context) error {
 	return c.Render(http.StatusNoContent, nil)
 }
 
-// getReferencedItemFromCtx pulls the models.Item resource from context that was put there
+// getReferencedStrikeFromCtx pulls the models.Strike resource from context that was put there
 // by the AuthZ middleware
 func getReferencedStrikeFromCtx(c buffalo.Context) *models.Strike {
 	strike, ok := c.Value(domain.TypeStrike).(*models.Strike)
