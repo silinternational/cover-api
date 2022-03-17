@@ -285,6 +285,14 @@ func (p *Policy) ConvertToAPI(tx *pop.Connection, hydrate bool) api.Policy {
 		apiPolicy.Invites = p.Invites.ConvertToAPI()
 	}
 
+	var strikes Strikes
+	if err := strikes.RecentForPolicy(tx, p.ID, time.Now().UTC()); domain.IsOtherThanNoRows(err) {
+		msg := fmt.Sprintf("error retrieving recent strikes for policy %s: %s", p.ID.String(), err)
+		domain.ErrLogger.Printf(msg)
+		return apiPolicy
+	}
+
+	apiPolicy.Strikes = strikes.ConvertToAPI(tx)
 	return apiPolicy
 }
 
