@@ -80,11 +80,7 @@ type LedgerEntry struct {
 	Claim *Claim `belongs_to:"claims" validate:"-"`
 }
 
-// Create does nothing if the ledger entry amount is zero
 func (le *LedgerEntry) Create(tx *pop.Connection) error {
-	if le.Amount == 0 {
-		return nil
-	}
 	return create(tx, le)
 }
 

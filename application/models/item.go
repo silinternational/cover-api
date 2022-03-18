@@ -924,11 +924,14 @@ func (i *Item) SetAccountablePerson(tx *pop.Connection, id uuid.UUID) error {
 	return api.NewAppError(errors.New("accountable person ID not found"), api.ErrorNoRows, api.CategoryUser)
 }
 
-// CreateLedgerEntry does nothing if the amount is zero
+// CreateLedgerEntry creates a charge of at least $1
 func (i *Item) CreateLedgerEntry(tx *pop.Connection, entryType LedgerEntryType, amount api.Currency) error {
-	if amount == 0 {
-		return nil
+	if entryType == LedgerEntryTypeCoverageRefund && amount > -100 {
+		amount = 0
+	} else if amount < 100 { // Charge at least $1
+		amount = 100
 	}
+
 	i.LoadPolicy(tx, false)
 	i.LoadRiskCategory(tx, false)
 	i.Policy.LoadEntityCode(tx, false)
