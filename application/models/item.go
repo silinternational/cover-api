@@ -926,7 +926,9 @@ func (i *Item) SetAccountablePerson(tx *pop.Connection, id uuid.UUID) error {
 
 // CreateLedgerEntry creates a charge of at least $1
 func (i *Item) CreateLedgerEntry(tx *pop.Connection, entryType LedgerEntryType, amount api.Currency) error {
-	if amount < 100 { // Charge at least $1
+	if entryType == LedgerEntryTypeCoverageRefund && amount > -100 {
+		amount = 0
+	} else if amount < 100 { // Charge at least $1
 		amount = 100
 	}
 
