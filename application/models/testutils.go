@@ -224,9 +224,12 @@ func createClaimFixture(tx *pop.Connection, policy Policy, config FixturesConfig
 	}
 	MustCreate(tx, &claim)
 
+	totalPayout := 0
+
 	claim.ClaimItems = make(ClaimItems, config.ClaimItemsPerClaim)
 	for i := range claim.ClaimItems {
 		item := policy.Items[i]
+		nextPayout := 85 * domain.CurrencyFactor
 		claim.ClaimItems[i] = ClaimItem{
 			ID:              uuid.UUID{},
 			ClaimID:         claim.ID,
@@ -237,14 +240,18 @@ func createClaimFixture(tx *pop.Connection, policy Policy, config FixturesConfig
 			ReplaceEstimate: 100 * domain.CurrencyFactor,
 			ReplaceActual:   85 * domain.CurrencyFactor,
 			PayoutOption:    api.PayoutOptionRepair,
-			PayoutAmount:    85 * domain.CurrencyFactor,
+			PayoutAmount:    api.Currency(nextPayout),
 			FMV:             130 * domain.CurrencyFactor,
 			City:            randStr(10),
 			State:           randStr(2),
 			Country:         randStr(10),
 		}
 		MustCreate(tx, &claim.ClaimItems[i])
+		totalPayout += nextPayout
 	}
+
+	claim.TotalPayout = api.Currency(totalPayout)
+	Must(tx.Update(&claim))
 
 	policyCopy := policy
 	policyCopy.LoadMembers(tx, false)

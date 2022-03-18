@@ -907,9 +907,14 @@ func ClaimsWithRecentStatusChanges(tx *pop.Connection) (api.RecentClaims, error)
 	return claims, nil
 }
 
+// CreateLedgerEntry does nothing if the TotalPayout is zero
 func (c *Claim) CreateLedgerEntry(tx *pop.Connection) error {
 	if c.Status != api.ClaimStatusApproved {
 		return errors.New("cannot pay out a claim that is not approved")
+	}
+
+	if c.TotalPayout == 0 {
+		return nil
 	}
 
 	c.LoadClaimItems(tx, false)

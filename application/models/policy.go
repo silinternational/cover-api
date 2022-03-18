@@ -596,7 +596,11 @@ func (p *Policy) ProcessAnnualCoverage(tx *pop.Connection, year int) error {
 	return nil
 }
 
+// CreateRenewalLedgerEntry does nothing if the amount is zero
 func (p *Policy) CreateRenewalLedgerEntry(tx *pop.Connection, riskCategoryID uuid.UUID, amount api.Currency) error {
+	if amount == 0 {
+		return nil
+	}
 	p.LoadEntityCode(tx, false)
 
 	var rc RiskCategory
