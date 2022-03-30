@@ -332,3 +332,60 @@ func (ms *ModelSuite) TestNewPolicyLedgerReport() {
 		})
 	}
 }
+
+func (ms *ModelSuite) TestLedgerReport_AllNonPolicy() {
+	f := CreateLedgerFixtures(ms.DB, FixturesConfig{ItemsPerPolicy: 3})
+	leFixtures := f.LedgerEntries
+	user := f.Users[0]
+	policy := f.Policies[0]
+	now := time.Now().UTC()
+
+	ff := CreateFileFixtures(ms.DB, 3, user.ID)
+
+	reports := LedgerReports{
+		LedgerReport{ // No policy_id
+			Type:          ReportTypeAnnual,
+			Date:          now,
+			FileID:        ff.Files[0].ID,
+			LedgerEntries: LedgerEntries{leFixtures[0]},
+		},
+		{ // Has a policy_id
+			Type:          ReportTypeMonthly,
+			Date:          now,
+			FileID:        ff.Files[1].ID,
+			LedgerEntries: LedgerEntries{leFixtures[0]},
+			PolicyID:      nulls.NewUUID(policy.ID),
+		},
+		{ // No policy_id
+			Type:          ReportTypeAnnual,
+			Date:          now,
+			FileID:        ff.Files[2].ID,
+			LedgerEntries: LedgerEntries{leFixtures[0]},
+		},
+	}
+	for i := range reports {
+		ms.NoError(ms.DB.Create(&reports[i]), "error creating LedgerReport fixtures")
+	}
+
+	tests := []struct {
+		name string
+		want LedgerReports
+	}{
+		{
+			name: "two reports",
+			want: LedgerReports{reports[0], reports[2]},
+		},
+	}
+	for _, tt := range tests {
+		ms.T().Run(tt.name, func(t *testing.T) {
+			var got LedgerReports
+			ms.NoError(got.AllNonPolicy(ms.DB))
+			ms.Len(got, len(tt.want), "incorrect number of LedgerReports")
+
+			for i, w := range tt.want {
+				ms.Equal(w.FileID, got[i].FileID, "incorrect report FileID")
+				ms.False(got[i].PolicyID.Valid, "incorrect null policy_id")
+			}
+		})
+	}
+}
