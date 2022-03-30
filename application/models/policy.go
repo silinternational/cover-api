@@ -296,6 +296,22 @@ func (p *Policy) ConvertToAPI(tx *pop.Connection, hydrate bool) api.Policy {
 	return apiPolicy
 }
 
+func (p *Policy) ConvertToAPIWithLedgerReports(tx *pop.Connection, hydrate bool) api.Policy {
+	apiPolicy := p.ConvertToAPI(tx, hydrate)
+	var reports LedgerReports
+	if err := reports.AllForPolicy(tx, p.ID); domain.IsOtherThanNoRows(err) {
+		msg := fmt.Sprintf("error retrieving ledger reports for policy %s: %s", p.ID.String(), err)
+		domain.ErrLogger.Printf(msg)
+		return apiPolicy
+	}
+
+	if len(reports) > 0 {
+		apiReports := reports.ConvertToAPI(tx)
+		apiPolicy.LedgerReports = apiReports
+	}
+	return apiPolicy
+}
+
 func (p *Policies) ConvertToAPI(tx *pop.Connection) api.Policies {
 	policies := make(api.Policies, len(*p))
 	for i, pp := range *p {
