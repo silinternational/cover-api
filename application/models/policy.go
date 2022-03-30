@@ -277,12 +277,7 @@ func (p *Policy) ConvertToAPI(tx *pop.Connection, hydrate bool) api.Policy {
 	}
 
 	if hydrate {
-		p.LoadClaims(tx, true)
-		p.LoadDependents(tx, true)
-		p.LoadInvites(tx, true)
-		apiPolicy.Claims = p.Claims.ConvertToAPI(tx)
-		apiPolicy.Dependents = p.Dependents.ConvertToAPI()
-		apiPolicy.Invites = p.Invites.ConvertToAPI()
+		p.hydrateAPiPolicy(tx, &apiPolicy)
 	}
 
 	var strikes Strikes
@@ -296,20 +291,23 @@ func (p *Policy) ConvertToAPI(tx *pop.Connection, hydrate bool) api.Policy {
 	return apiPolicy
 }
 
-func (p *Policy) ConvertToAPIWithLedgerReports(tx *pop.Connection, hydrate bool) api.Policy {
-	apiPolicy := p.ConvertToAPI(tx, hydrate)
+func (p *Policy) hydrateAPiPolicy(tx *pop.Connection, apiPolicy *api.Policy) {
+	p.LoadClaims(tx, true)
+	p.LoadDependents(tx, true)
+	p.LoadInvites(tx, true)
+	apiPolicy.Claims = p.Claims.ConvertToAPI(tx)
+	apiPolicy.Dependents = p.Dependents.ConvertToAPI()
+	apiPolicy.Invites = p.Invites.ConvertToAPI()
+
 	var reports LedgerReports
 	if err := reports.AllForPolicy(tx, p.ID); domain.IsOtherThanNoRows(err) {
-		msg := fmt.Sprintf("error retrieving ledger reports for policy %s: %s", p.ID.String(), err)
+		msg := fmt.Sprintf("error retrieving recent strikes for policy %s: %s", p.ID.String(), err)
 		domain.ErrLogger.Printf(msg)
-		return apiPolicy
+		return
 	}
-
 	if len(reports) > 0 {
-		apiReports := reports.ConvertToAPI(tx)
-		apiPolicy.LedgerReports = apiReports
+		apiPolicy.LedgerReports = reports.ConvertToAPI(tx)
 	}
-	return apiPolicy
 }
 
 func (p *Policies) ConvertToAPI(tx *pop.Connection) api.Policies {
