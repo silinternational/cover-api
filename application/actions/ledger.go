@@ -16,7 +16,7 @@ import (
 //
 // LedgerReportList
 //
-// Return a list of ledger reports
+// Return a list of ledger reports that are not associated with a policy
 //
 // ---
 // responses:
