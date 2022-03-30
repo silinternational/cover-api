@@ -149,25 +149,25 @@ func (as *ActionSuite) Test_PoliciesView() {
 		models.LedgerReport{ // No policy_id
 			Type:          models.ReportTypeAnnual,
 			Date:          now,
-			FileID:        ff.Files[0].ID,
+			File:          ff.Files[0],
 			LedgerEntries: models.LedgerEntries{ledgerEntry},
 		},
 		{ // For policy with two ledger reports
 			Type:          models.ReportTypeMonthly,
 			Date:          now,
-			FileID:        ff.Files[1].ID,
+			File:          ff.Files[1],
 			LedgerEntries: models.LedgerEntries{ledgerEntry},
 			PolicyID:      nulls.NewUUID(policy0.ID),
 		},
 		{ // For policy with two ledger reports
 			Type:          models.ReportTypeAnnual,
 			Date:          now,
-			FileID:        ff.Files[2].ID,
+			File:          ff.Files[2],
 			LedgerEntries: models.LedgerEntries{ledgerEntry},
 			PolicyID:      nulls.NewUUID(policy0.ID),
 		},
 	}
-	models.MustCreate(as.DB, reports)
+	models.CreateLedgerReportFixtures(as.DB, &reports)
 
 	tests := []struct {
 		name          string

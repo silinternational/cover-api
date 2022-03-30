@@ -99,7 +99,7 @@ func policiesListCustomer(c buffalo.Context) error {
 func policiesView(c buffalo.Context) error {
 	policy := getReferencedPolicyFromCtx(c)
 
-	return renderOk(c, policy.ConvertToAPIWithLedgerReports(models.Tx(c), true))
+	return renderOk(c, policy.ConvertToAPI(models.Tx(c), true))
 }
 
 // swagger:operation POST /policies Policies PoliciesCreateTeam

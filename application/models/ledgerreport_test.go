@@ -346,24 +346,25 @@ func (ms *ModelSuite) TestLedgerReport_AllNonPolicy() {
 		LedgerReport{ // No policy_id
 			Type:          ReportTypeAnnual,
 			Date:          now,
-			FileID:        ff.Files[0].ID,
+			File:          ff.Files[0],
 			LedgerEntries: LedgerEntries{leFixtures[0]},
 		},
 		{ // Has a policy_id
 			Type:          ReportTypeMonthly,
 			Date:          now,
-			FileID:        ff.Files[1].ID,
+			File:          ff.Files[1],
 			LedgerEntries: LedgerEntries{leFixtures[0]},
 			PolicyID:      nulls.NewUUID(policy.ID),
 		},
 		{ // No policy_id
 			Type:          ReportTypeAnnual,
 			Date:          now,
-			FileID:        ff.Files[2].ID,
+			File:          ff.Files[2],
 			LedgerEntries: LedgerEntries{leFixtures[0]},
 		},
 	}
-	MustCreate(ms.DB, reports)
+
+	CreateLedgerReportFixtures(ms.DB, &reports)
 
 	tests := []struct {
 		name string
@@ -403,32 +404,32 @@ func (ms *ModelSuite) TestLedgerReport_AllForPolicy() {
 		LedgerReport{ // No policy_id
 			Type:          ReportTypeAnnual,
 			Date:          now,
-			FileID:        ff.Files[0].ID,
+			File:          ff.Files[0],
 			LedgerEntries: LedgerEntries{leFixtures[0]},
 		},
 		{ // For policy with one ledger report
 			Type:          ReportTypeAnnual,
 			Date:          now,
-			FileID:        ff.Files[1].ID,
+			File:          ff.Files[1],
 			LedgerEntries: LedgerEntries{leFixtures[0]},
 			PolicyID:      nulls.NewUUID(policy1.ID),
 		},
 		{ // For policy with two ledger reports
 			Type:          ReportTypeMonthly,
 			Date:          now,
-			FileID:        ff.Files[2].ID,
+			File:          ff.Files[2],
 			LedgerEntries: LedgerEntries{leFixtures[0]},
 			PolicyID:      nulls.NewUUID(policy2.ID),
 		},
 		{ // For policy with two ledger reports
 			Type:          ReportTypeMonthly,
 			Date:          now,
-			FileID:        ff.Files[3].ID,
+			File:          ff.Files[3],
 			LedgerEntries: LedgerEntries{leFixtures[0]},
 			PolicyID:      nulls.NewUUID(policy2.ID),
 		},
 	}
-	MustCreate(ms.DB, reports)
+	CreateLedgerReportFixtures(ms.DB, &reports)
 
 	tests := []struct {
 		name   string
