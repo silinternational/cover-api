@@ -28,8 +28,9 @@ var ValidLedgerReportTypes = map[string]struct{}{
 
 type LedgerReports []LedgerReport
 
-func (lr *LedgerReports) All(tx *pop.Connection) error {
-	return appErrorFromDB(tx.All(lr), api.ErrorQueryFailure)
+// AllNonPolicy returns all the LedgerReports which have a null policy_id
+func (lr *LedgerReports) AllNonPolicy(tx *pop.Connection) error {
+	return appErrorFromDB(tx.Where("policy_id IS NULL").All(lr), api.ErrorQueryFailure)
 }
 
 func (lr *LedgerReports) ConvertToAPI(tx *pop.Connection) api.LedgerReports {

@@ -30,7 +30,7 @@ func ledgerReportList(c buffalo.Context) error {
 	var list models.LedgerReports
 
 	tx := models.Tx(c)
-	if err := list.All(tx); err != nil {
+	if err := list.AllNonPolicy(tx); err != nil {
 		return reportError(c, err)
 	}
 
