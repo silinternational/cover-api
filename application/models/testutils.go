@@ -585,6 +585,12 @@ func CreateLedgerFixtures(tx *pop.Connection, config FixturesConfig) Fixtures {
 	return f
 }
 
+func CreateLedgerReportFixtures(tx *pop.Connection, reports *LedgerReports) {
+	for i := range *reports {
+		MustCreate(tx, &(*reports)[i])
+	}
+}
+
 // MustCreate saves a record to the database with validation. Panics if any error occurs.
 func MustCreate(tx *pop.Connection, f Creatable) {
 	// Use `create` instead of `tx.Create` to check validation rules

@@ -33,6 +33,11 @@ func (lr *LedgerReports) AllNonPolicy(tx *pop.Connection) error {
 	return appErrorFromDB(tx.Where("policy_id IS NULL").All(lr), api.ErrorQueryFailure)
 }
 
+// AllForPolicy returns all the LedgerReports which have a matching policy_id
+func (lr *LedgerReports) AllForPolicy(tx *pop.Connection, policyID uuid.UUID) error {
+	return appErrorFromDB(tx.Where("policy_id = ?", policyID).All(lr), api.ErrorQueryFailure)
+}
+
 func (lr *LedgerReports) ConvertToAPI(tx *pop.Connection) api.LedgerReports {
 	ledgerReports := make(api.LedgerReports, len(*lr))
 	for i, l := range *lr {

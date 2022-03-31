@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/gobuffalo/nulls"
 	"github.com/gofrs/uuid"
 
 	"github.com/silinternational/cover-api/api"
@@ -126,51 +127,89 @@ func (as *ActionSuite) Test_PoliciesView() {
 		DependentsPerPolicy: 0,
 	}
 
-	fixtures := models.CreatePolicyFixtures(as.DB, fixConfig)
+	pf := models.CreatePolicyFixtures(as.DB, fixConfig)
 
-	for _, p := range fixtures.Policies {
+	for _, p := range pf.Policies {
 		p.LoadMembers(as.DB, false)
 		p.LoadDependents(as.DB, false)
 	}
 
+	policy0 := pf.Policies[0]
+	policyMember := policy0.Members[0]
+
+	policy1 := pf.Policies[1]
 	appAdmin := models.CreateAdminUsers(as.DB)[models.AppRoleSteward]
+
+	fle := models.CreateLedgerFixtures(as.DB, models.FixturesConfig{ItemsPerPolicy: 2})
+	ledgerEntry := fle.LedgerEntries[0]
+	ff := models.CreateFileFixtures(as.DB, 3, policyMember.ID)
+	now := time.Now()
+
+	reports := models.LedgerReports{
+		models.LedgerReport{ // No policy_id
+			Type:          models.ReportTypeAnnual,
+			Date:          now,
+			File:          ff.Files[0],
+			LedgerEntries: models.LedgerEntries{ledgerEntry},
+		},
+		{ // For policy with two ledger reports
+			Type:          models.ReportTypeMonthly,
+			Date:          now,
+			File:          ff.Files[1],
+			LedgerEntries: models.LedgerEntries{ledgerEntry},
+			PolicyID:      nulls.NewUUID(policy0.ID),
+		},
+		{ // For policy with two ledger reports
+			Type:          models.ReportTypeAnnual,
+			Date:          now,
+			File:          ff.Files[2],
+			LedgerEntries: models.LedgerEntries{ledgerEntry},
+			PolicyID:      nulls.NewUUID(policy0.ID),
+		},
+	}
+	models.CreateLedgerReportFixtures(as.DB, &reports)
 
 	tests := []struct {
 		name          string
 		actor         models.User
 		policyID      uuid.UUID
 		wantStatus    int
-		wantInBody    string
+		wantInBody    []string
 		notWantInBody string
 	}{
 		{
 			name:          "unauthenticated",
 			actor:         models.User{},
-			policyID:      fixtures.Policies[1].ID,
+			policyID:      policy1.ID,
 			wantStatus:    http.StatusUnauthorized,
-			notWantInBody: fixtures.Policies[0].ID.String(),
+			notWantInBody: pf.Policies[0].ID.String(),
 		},
 		{
 			name:          "non-policy user",
-			actor:         fixtures.Policies[1].Members[0],
-			policyID:      fixtures.Policies[0].ID,
+			actor:         policy1.Members[0],
+			policyID:      policy0.ID,
 			wantStatus:    http.StatusNotFound,
-			notWantInBody: fixtures.Policies[0].ID.String(),
+			notWantInBody: policy0.ID.String(),
 		},
 		{
 			name:       "policy user",
-			actor:      fixtures.Policies[0].Members[0],
-			policyID:   fixtures.Policies[0].ID,
+			actor:      policyMember,
+			policyID:   policy0.ID,
 			wantStatus: http.StatusOK,
-			wantInBody: fixtures.Policies[0].ID.String(),
+			wantInBody: []string{
+				policy0.ID.String(),
+				`ledger_reports":[{"id":"` + reports[1].ID.String(),
+				reports[1].FileID.String(),
+				reports[2].FileID.String(),
+			},
 		},
 		{
 			name:          "admin",
 			actor:         appAdmin,
-			policyID:      fixtures.Policies[1].ID,
+			policyID:      policy1.ID,
 			wantStatus:    http.StatusOK,
-			wantInBody:    fixtures.Policies[1].ID.String(),
-			notWantInBody: "",
+			wantInBody:    []string{policy1.ID.String()},
+			notWantInBody: reports[1].FileID.String(),
 		},
 	}
 
@@ -183,8 +222,8 @@ func (as *ActionSuite) Test_PoliciesView() {
 
 			body := res.Body.String()
 			as.Equal(tt.wantStatus, res.Code, "incorrect status code returned, body: %s", body)
-			if tt.wantInBody != "" {
-				as.Contains(body, tt.wantInBody)
+			for _, w := range tt.wantInBody {
+				as.Contains(body, w, "string is missing from body")
 			}
 			if tt.notWantInBody != "" {
 				as.NotContains(body, tt.notWantInBody)
