@@ -38,6 +38,9 @@ func (ts *TestSuite) Test_PolicyUserInviteQueueMessage() {
 		t.Run(tt.name, func(t *testing.T) {
 			PolicyUserInviteQueueMessage(db, invite0)
 			validateNotificationUsers(ts, db, tt)
+
+			ts.NoError(invite0.FindByID(db, invite0.ID), "could not retrieve invite from db")
+			ts.Equal(1, invite0.EmailSendCount, "incorrect EmailSendCount")
 		})
 	}
 }
