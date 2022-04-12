@@ -39,4 +39,12 @@ func PolicyUserInviteQueueMessage(tx *pop.Connection, invite models.PolicyUserIn
 	}
 
 	notn.CreateNotificationUser(tx, nulls.UUID{}, invite.Email, invite.InviteeName)
+
+	// This won't know that the email was sent, but it's close enough, since
+	// the Notification sender doesn't have access to the invite
+	invite.EmailSendCount = invite.EmailSendCount + 1
+	if err := tx.UpdateColumns(&invite, "email_send_count"); err != nil {
+		panic("error updating EmailSendCount on Policy User Invite: " + err.Error())
+	}
+
 }
