@@ -27,6 +27,7 @@ app:
     EMAIL_FROM_ADDRESS: no_reply@example.com
     EMAIL_SERVICE: dummy
     SUPPORT_URL: https://help.example.com
+    FAQ_URL: https://help.example.com/faq
     SAML_SP_ENTITY_ID: http://example.local:3000
     SAML_AUDIENCE_URI: http://example.local:3000
     SAML_IDP_ENTITY_ID: our.idp.net

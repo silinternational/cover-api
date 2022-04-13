@@ -190,6 +190,7 @@ func (ts *TestSuite) Test_ItemDeniedQueueMessage() {
 				deniedItem.Name,
 				deniedItem.StatusReason,
 				fmt.Sprintf(`href="%s"`, domain.Env.SupportURL),
+				fmt.Sprintf(`href="%s"`, domain.Env.FaqURL),
 			},
 		},
 	}

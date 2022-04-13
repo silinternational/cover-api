@@ -186,6 +186,7 @@ var Env struct {
 	EmailService     string `default:"ses" split_words:"true"`
 	SupportEmail     string `default:"" split_words:"true"`
 	SupportURL       string `default:"" split_words:"true"`
+	FaqURL           string `default:"" split_words:"true"`
 
 	InviteLifetimeDays int `default:"14" split_words:"true"`
 	MaxFileDelete      int `default:"10" split_words:"true"`
