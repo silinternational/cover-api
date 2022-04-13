@@ -62,6 +62,7 @@ func newEmailMessageData() MessageData {
 	m["appName"] = domain.Env.AppName
 	m["premiumPercentage"] = fmt.Sprintf("%.2g%%", domain.Env.PremiumFactor*100)
 	m["supportURL"] = domain.Env.SupportURL
+	m["faqURL"] = domain.Env.FaqURL
 
 	return m
 }

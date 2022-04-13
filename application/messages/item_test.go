@@ -179,6 +179,9 @@ func (ts *TestSuite) Test_ItemDeniedQueueMessage() {
 	deniedItem := f.Items[0]
 	models.UpdateItemStatus(db, deniedItem, api.ItemCoverageStatusDenied, "this will never fly")
 
+	domain.Env.SupportURL = "https://example.com/support"
+	domain.Env.FaqURL = "https://example.com/faq"
+
 	tests := []testData{
 		{
 			name:                  "coverage denied",
@@ -190,6 +193,7 @@ func (ts *TestSuite) Test_ItemDeniedQueueMessage() {
 				deniedItem.Name,
 				deniedItem.StatusReason,
 				fmt.Sprintf(`href="%s"`, domain.Env.SupportURL),
+				fmt.Sprintf(`href="%s"`, domain.Env.FaqURL),
 			},
 		},
 	}
