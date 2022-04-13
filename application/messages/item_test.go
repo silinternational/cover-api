@@ -1,6 +1,7 @@
 package messages
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/silinternational/cover-api/api"
@@ -188,6 +189,7 @@ func (ts *TestSuite) Test_ItemDeniedQueueMessage() {
 				domain.Env.UIURL,
 				deniedItem.Name,
 				deniedItem.StatusReason,
+				fmt.Sprintf(`href="%s"`, domain.Env.SupportURL),
 			},
 		},
 	}
