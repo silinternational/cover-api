@@ -1038,6 +1038,9 @@ func (c *Claim) Deductible(tx *pop.Connection) float64 {
 	return d
 }
 
+// StopItemCoverage sets the claim's items' statuses to `Inactive` and creates refund
+//   ledger entries for them.
+// Returns an error if the claim's status or item's coverage status is not `Approved`
 func (c *Claim) StopItemCoverage(tx *pop.Connection) error {
 	if c.Status != api.ClaimStatusApproved {
 		return errors.New("cannot auto-stop coverage on an item the claim of which is not approved")
