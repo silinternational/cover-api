@@ -1380,3 +1380,59 @@ func (ms *ModelSuite) TestClaim_Deductible() {
 		})
 	}
 }
+
+func (ms *ModelSuite) TestClaim_StopItemCoverage() {
+	t := ms.T()
+
+	fixConfig := FixturesConfig{
+		ItemsPerPolicy:     2,
+		ClaimsPerPolicy:    2,
+		ClaimItemsPerClaim: 1,
+	}
+
+	fixtures := CreateItemFixtures(ms.DB, fixConfig)
+	policy := fixtures.Policies[0]
+	approvedClaim := UpdateClaimStatus(ms.DB, policy.Claims[0], api.ClaimStatusApproved, "")
+	review3Claim := UpdateClaimStatus(ms.DB, policy.Claims[1], api.ClaimStatusReview3, "")
+
+	CreateAdminUsers(ms.DB)
+
+	approvedClaim.LoadClaimItems(ms.DB, false)
+	UpdateItemStatus(ms.DB, approvedClaim.ClaimItems[0].Item, api.ItemCoverageStatusApproved, "")
+
+	tests := []struct {
+		name             string
+		claim            Claim
+		wantErrContains  string
+		wantStatusChange string
+	}{
+		{
+			name:            "bad start status",
+			claim:           review3Claim,
+			wantErrContains: "cannot auto-stop coverage on an item the claim of which is not approved",
+		},
+		{
+			name:            "good",
+			claim:           approvedClaim,
+			wantErrContains: "",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+
+			got := tt.claim.StopItemCoverage(ms.DB)
+
+			if tt.wantErrContains != "" {
+				ms.Error(got, " did not return expected error")
+				ms.Contains(got.Error(), tt.wantErrContains, "error message is not correct")
+				return
+			}
+			ms.NoError(got)
+
+			ms.NoError(tt.claim.FindByID(ms.DB, tt.claim.ID), "failed to retrieve test claim from db")
+			tt.claim.LoadClaimItems(ms.DB, true)
+			ms.Equal(api.ItemCoverageStatusInactive, tt.claim.ClaimItems[0].Item.CoverageStatus)
+		})
+	}
+}

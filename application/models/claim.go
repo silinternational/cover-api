@@ -1037,3 +1037,31 @@ func (c *Claim) Deductible(tx *pop.Connection) float64 {
 	}
 	return d
 }
+
+func (c *Claim) StopItemCoverage(tx *pop.Connection) error {
+	if c.Status != api.ClaimStatusApproved {
+		return errors.New("cannot auto-stop coverage on an item the claim of which is not approved")
+	}
+
+	c.LoadClaimItems(tx, true)
+	cancelledCoverage := false
+
+	for i := range c.ClaimItems {
+		ci := c.ClaimItems[i]
+		if ci.PayoutOption == api.PayoutOptionReplacement {
+			continue
+		}
+
+		reason := "replacement claim approved on item"
+		if err := ci.Item.cancelCoverageAfterClaim(tx, reason); err != nil {
+			return err
+		}
+		cancelledCoverage = true
+	}
+
+	if !cancelledCoverage {
+		return errors.New("no item coverage was cancelled for approved claim")
+	}
+
+	return nil
+}

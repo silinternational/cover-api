@@ -243,6 +243,8 @@ func (ts *TestSuite) Test_claimApproved() {
 	f := getClaimFixtures(db)
 
 	approvedClaim := models.UpdateClaimStatus(db, f.Claims[0], api.ClaimStatusApproved, "")
+	approvedClaim.LoadClaimItems(db, true)
+	models.UpdateItemStatus(db, approvedClaim.ClaimItems[0].Item, api.ItemCoverageStatusApproved, "testing")
 
 	testEmailer := notifications.DummyEmailService{}
 
@@ -267,6 +269,10 @@ func (ts *TestSuite) Test_claimApproved() {
 			var nus models.NotificationUsers
 			ts.NoError(db.All(&nus), "error fetching NotificationUsers from db")
 			ts.Equal(2, len(nus), "incorrect number of NotificationUsers queued")
+
+			approvedClaim.LoadClaimItems(db, true)
+			ts.Equal(api.ItemCoverageStatusInactive, approvedClaim.ClaimItems[0].Item.CoverageStatus, ""+
+				"incorrect Item CoverageStatus")
 		})
 	}
 }
