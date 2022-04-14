@@ -1298,3 +1298,69 @@ func (ms *ModelSuite) TestItem_Update() {
 		})
 	}
 }
+
+func (ms *ModelSuite) TestItem_cancelCoverageAfterClaim() {
+
+	f := CreateItemFixtures(ms.DB, FixturesConfig{ItemsPerPolicy: 3})
+
+	itemApproved := UpdateItemStatus(ms.DB, f.Items[0], api.ItemCoverageStatusApproved, "test")
+	itemPending := UpdateItemStatus(ms.DB, f.Items[1], api.ItemCoverageStatusPending, "test")
+
+	adminUsers := CreateAdminUsers(ms.DB)
+	steward := adminUsers[AppRoleSteward]
+
+	now := time.Now().UTC()
+	reason := "test claim approved"
+
+	tests := []struct {
+		name            string
+		item            Item
+		wantErrContains string
+	}{
+		{
+			name:            "fail pending item",
+			item:            itemPending,
+			wantErrContains: "cannot cancel coverage on an item which is not approved",
+		},
+		{
+			name:            "good approved item",
+			item:            itemApproved,
+			wantErrContains: "",
+		},
+	}
+	for _, tt := range tests {
+		ms.T().Run(tt.name, func(t *testing.T) {
+			got := tt.item.cancelCoverageAfterClaim(ms.DB, reason)
+			if tt.wantErrContains != "" {
+				ms.Error(got, "expected an error but didn't get one")
+				ms.Contains(got.Error(), tt.wantErrContains, "incorrect error")
+				return
+			}
+			ms.NoError(got)
+
+			var dbItem Item
+			ms.NoError(ms.DB.Find(&dbItem, tt.item.ID))
+			ms.Equal(tt.item.CoverageStatus, api.ItemCoverageStatusInactive, "incorrect CoverageStatus")
+
+			var le LedgerEntry
+			ms.NoError(ms.DB.Where("item_id = ?", tt.item.ID).First(&le))
+
+			ms.Equal(LedgerEntryTypeCoverageRefund, le.Type, "LedgerEntry Type is incorrect")
+			ms.Equal(tt.item.PolicyID, le.PolicyID, "LedgerEntry PolicyID is incorrect")
+			ms.Equal(tt.item.ID, le.ItemID.UUID, "LedgerEntry ItemID is incorrect")
+
+			var history PolicyHistory
+			ms.NoError(ms.DB.Where("item_id = ?", tt.item.ID).First(&history))
+			ms.Equal(steward.ID, history.UserID, "History UserID is incorrect")
+			ms.Equal(FieldItemCoverageStatus, history.FieldName, "History FieldName is incorrect")
+			ms.Equal(api.HistoryActionUpdate, history.Action, "History Action is incorrect")
+
+			ms.NoError(tt.item.FindByID(ms.DB, tt.item.ID), "failed retrieving item from db")
+			ms.Equal(api.ItemCoverageStatusInactive, tt.item.CoverageStatus, "Item CoverageStatus is incorrect")
+			ms.WithinDuration(now, tt.item.CoverageEndDate.Time, time.Hour*24, "Item CoverageEndDate is incorrect")
+			ms.Equal(ItemStatusChangeInactivated, tt.item.StatusChange, "Item StatusChange is incorrect")
+			ms.Equal(reason, tt.item.StatusReason, "Item StatusReason is incorrect")
+
+		})
+	}
+}

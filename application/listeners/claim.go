@@ -7,6 +7,7 @@ import (
 	"github.com/gobuffalo/pop/v5"
 
 	"github.com/silinternational/cover-api/api"
+	"github.com/silinternational/cover-api/domain"
 	"github.com/silinternational/cover-api/messages"
 	"github.com/silinternational/cover-api/models"
 )
@@ -112,6 +113,13 @@ func claimApproved(e events.Event) {
 	if err := findObject(e.Payload, &claim, e.Kind); err != nil {
 		return
 	}
+
+	models.DB.Transaction(func(tx *pop.Connection) error {
+		if err := claim.StopItemCoverage(tx); err != nil {
+			domain.ErrLogger.Printf("error ending coverage in claimApproved for claim %s: %s", claim.ID.String(), err)
+		}
+		return nil
+	})
 
 	models.DB.Transaction(func(tx *pop.Connection) error {
 		messages.ClaimApprovedQueueMessage(tx, claim)

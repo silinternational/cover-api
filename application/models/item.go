@@ -360,6 +360,46 @@ func (i *Item) ScheduleInactivation(ctx context.Context, t time.Time) error {
 	return i.Update(ctx)
 }
 
+// cancelCoverageAfterClaim sets the item's CoverageEndDate to the current time and creates a corresponding
+//  credit ledger entry
+func (i *Item) cancelCoverageAfterClaim(tx *pop.Connection, reason string) error {
+
+	if i.CoverageStatus != api.ItemCoverageStatusApproved {
+		return errors.New("cannot cancel coverage on an item which is not approved")
+	}
+
+	history := PolicyHistory{
+		Action:    api.HistoryActionUpdate,
+		PolicyID:  i.PolicyID,
+		ItemID:    nulls.NewUUID(i.ID),
+		UserID:    GetDefaultSteward(tx).ID,
+		FieldName: FieldItemCoverageStatus,
+		OldValue:  string(api.ItemCoverageStatusApproved),
+		NewValue:  string(api.ItemCoverageStatusInactive),
+	}
+
+	if err := history.Create(tx); err != nil {
+		return err
+	}
+
+	now := time.Now().UTC()
+	amount := i.calculatePremiumChange(now, i.CoverageAmount)
+	if err := i.CreateLedgerEntry(tx, LedgerEntryTypeCoverageRefund, amount); err != nil {
+		return err
+	}
+
+	if reason == "" {
+		reason = "coverage cancelled"
+	}
+
+	i.CoverageEndDate = nulls.NewTime(now)
+	i.CoverageStatus = api.ItemCoverageStatusInactive
+	i.StatusChange = ItemStatusChangeInactivated
+	i.StatusReason = reason
+
+	return tx.Update(i)
+}
+
 func (i *Item) Inactivate(ctx context.Context) error {
 	i.CoverageStatus = api.ItemCoverageStatusInactive
 	return i.Update(ctx)
