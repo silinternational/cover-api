@@ -1047,11 +1047,9 @@ func (c *Claim) StopItemCoverage(tx *pop.Connection) error {
 	}
 
 	c.LoadClaimItems(tx, true)
-	cancelledCoverage := false
 
-	for i := range c.ClaimItems {
-		ci := c.ClaimItems[i]
-		if ci.PayoutOption == api.PayoutOptionReplacement {
+	for _, ci := range c.ClaimItems {
+		if ci.PayoutOption == api.PayoutOptionRepair {
 			continue
 		}
 
@@ -1059,11 +1057,6 @@ func (c *Claim) StopItemCoverage(tx *pop.Connection) error {
 		if err := ci.Item.cancelCoverageAfterClaim(tx, reason); err != nil {
 			return err
 		}
-		cancelledCoverage = true
-	}
-
-	if !cancelledCoverage {
-		return errors.New("no item coverage was cancelled for approved claim")
 	}
 
 	return nil
