@@ -360,7 +360,7 @@ func (i *Item) ScheduleInactivation(ctx context.Context, t time.Time) error {
 	return i.Update(ctx)
 }
 
-// cancelCoverageAfterClaim sets the item's CoverageEndDate and creates a corresponding
+// cancelCoverageAfterClaim sets the item's CoverageEndDate to the current time and creates a corresponding
 //  credit ledger entry
 func (i *Item) cancelCoverageAfterClaim(tx *pop.Connection, reason string) error {
 

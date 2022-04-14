@@ -1386,25 +1386,37 @@ func (ms *ModelSuite) TestClaim_StopItemCoverage() {
 
 	fixConfig := FixturesConfig{
 		ItemsPerPolicy:     2,
-		ClaimsPerPolicy:    2,
-		ClaimItemsPerClaim: 1,
+		ClaimsPerPolicy:    3,
+		ClaimItemsPerClaim: 2,
 	}
 
 	fixtures := CreateItemFixtures(ms.DB, fixConfig)
 	policy := fixtures.Policies[0]
-	approvedClaim := UpdateClaimStatus(ms.DB, policy.Claims[0], api.ClaimStatusApproved, "")
-	review3Claim := UpdateClaimStatus(ms.DB, policy.Claims[1], api.ClaimStatusReview3, "")
+	approvedClaimRepair := UpdateClaimStatus(ms.DB, policy.Claims[0], api.ClaimStatusApproved, "")
+	approvedClaimReplace := UpdateClaimStatus(ms.DB, policy.Claims[1], api.ClaimStatusApproved, "")
+	review3Claim := UpdateClaimStatus(ms.DB, policy.Claims[2], api.ClaimStatusReview3, "")
 
 	CreateAdminUsers(ms.DB)
 
-	approvedClaim.LoadClaimItems(ms.DB, false)
-	UpdateItemStatus(ms.DB, approvedClaim.ClaimItems[0].Item, api.ItemCoverageStatusApproved, "")
+	// Update the PayoutOption of the first claimItem to Replacement
+	approvedClaimReplace.LoadClaimItems(ms.DB, false)
+	claimItem := approvedClaimReplace.ClaimItems[0]
+	claimItem.PayoutOption = api.PayoutOptionReplacement
+	ms.NoError(ms.DB.Update(&claimItem), "error updating claimItem fixture")
+
+	// Make the initial CoverageStatus on the items are Approved
+	UpdateItemStatus(ms.DB, approvedClaimReplace.ClaimItems[0].Item, api.ItemCoverageStatusApproved, "")
+	UpdateItemStatus(ms.DB, approvedClaimReplace.ClaimItems[1].Item, api.ItemCoverageStatusApproved, "")
+
+	approvedClaimRepair.LoadClaimItems(ms.DB, false)
+	UpdateItemStatus(ms.DB, approvedClaimRepair.ClaimItems[0].Item, api.ItemCoverageStatusApproved, "")
+	UpdateItemStatus(ms.DB, approvedClaimRepair.ClaimItems[1].Item, api.ItemCoverageStatusApproved, "")
 
 	tests := []struct {
 		name             string
 		claim            Claim
 		wantErrContains  string
-		wantStatusChange string
+		wantItemStatuses []api.ItemCoverageStatus
 	}{
 		{
 			name:            "bad start status",
@@ -1412,15 +1424,27 @@ func (ms *ModelSuite) TestClaim_StopItemCoverage() {
 			wantErrContains: "cannot auto-stop coverage on an item the claim of which is not approved",
 		},
 		{
-			name:            "good",
-			claim:           approvedClaim,
+			name:            "ignore repair claims",
+			claim:           approvedClaimRepair,
 			wantErrContains: "",
+			wantItemStatuses: []api.ItemCoverageStatus{
+				api.ItemCoverageStatusApproved,
+				api.ItemCoverageStatusApproved,
+			},
+		},
+		{
+			name:            "good replacement claim",
+			claim:           approvedClaimReplace,
+			wantErrContains: "",
+			wantItemStatuses: []api.ItemCoverageStatus{
+				api.ItemCoverageStatusInactive,
+				api.ItemCoverageStatusApproved,
+			},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-
 			got := tt.claim.StopItemCoverage(ms.DB)
 
 			if tt.wantErrContains != "" {
@@ -1432,7 +1456,12 @@ func (ms *ModelSuite) TestClaim_StopItemCoverage() {
 
 			ms.NoError(tt.claim.FindByID(ms.DB, tt.claim.ID), "failed to retrieve test claim from db")
 			tt.claim.LoadClaimItems(ms.DB, true)
-			ms.Equal(api.ItemCoverageStatusInactive, tt.claim.ClaimItems[0].Item.CoverageStatus)
+
+			ms.Len(tt.claim.ClaimItems, len(tt.wantItemStatuses), "incorrect number of expected item statuses")
+
+			for i, w := range tt.wantItemStatuses {
+				ms.Equal(w, tt.claim.ClaimItems[i].Item.CoverageStatus)
+			}
 		})
 	}
 }
