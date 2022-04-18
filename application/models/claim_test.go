@@ -1413,10 +1413,11 @@ func (ms *ModelSuite) TestClaim_StopItemCoverage() {
 	UpdateItemStatus(ms.DB, approvedClaimRepair.ClaimItems[1].Item, api.ItemCoverageStatusApproved, "")
 
 	tests := []struct {
-		name             string
-		claim            Claim
-		wantErrContains  string
-		wantItemStatuses []api.ItemCoverageStatus
+		name                string
+		claim               Claim
+		wantErrContains     string
+		wantItemStatuses    []api.ItemCoverageStatus
+		wantStoppedCoverage bool
 	}{
 		{
 			name:            "bad start status",
@@ -1431,6 +1432,7 @@ func (ms *ModelSuite) TestClaim_StopItemCoverage() {
 				api.ItemCoverageStatusApproved,
 				api.ItemCoverageStatusApproved,
 			},
+			wantStoppedCoverage: false,
 		},
 		{
 			name:            "good replacement claim",
@@ -1440,22 +1442,25 @@ func (ms *ModelSuite) TestClaim_StopItemCoverage() {
 				api.ItemCoverageStatusInactive,
 				api.ItemCoverageStatusApproved,
 			},
+			wantStoppedCoverage: true,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := tt.claim.StopItemCoverage(ms.DB)
+			got, gotErr := tt.claim.StopItemCoverage(ms.DB)
 
 			if tt.wantErrContains != "" {
-				ms.Error(got, " did not return expected error")
-				ms.Contains(got.Error(), tt.wantErrContains, "error message is not correct")
+				ms.Error(gotErr, " did not return expected error")
+				ms.Contains(gotErr.Error(), tt.wantErrContains, "error message is not correct")
 				return
 			}
-			ms.NoError(got)
+			ms.NoError(gotErr)
 
 			ms.NoError(tt.claim.FindByID(ms.DB, tt.claim.ID), "failed to retrieve test claim from db")
 			tt.claim.LoadClaimItems(ms.DB, true)
+
+			ms.Equal(got, tt.wantStoppedCoverage, "incorrect stoppedCoverage boolean")
 
 			ms.Len(tt.claim.ClaimItems, len(tt.wantItemStatuses), "incorrect number of expected item statuses")
 
@@ -1526,14 +1531,14 @@ func (ms *ModelSuite) TestClaim_DraftReplacmentItems() {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := tt.claim.DraftReplacmentItems(ms.DB)
+			got, gotErr := tt.claim.DraftReplacmentItems(ms.DB)
 
 			if tt.wantErrContains != "" {
-				ms.Error(got, " did not return expected error")
-				ms.Contains(got.Error(), tt.wantErrContains, "error message is not correct")
+				ms.Error(gotErr, " did not return expected error")
+				ms.Contains(gotErr.Error(), tt.wantErrContains, "error message is not correct")
 				return
 			}
-			ms.NoError(got)
+			ms.NoError(gotErr)
 
 			ms.NoError(tt.claim.FindByID(ms.DB, tt.claim.ID), "failed to retrieve test claim from db")
 			tt.claim.LoadClaimItems(ms.DB, true)
@@ -1542,10 +1547,12 @@ func (ms *ModelSuite) TestClaim_DraftReplacmentItems() {
 			ms.NoError(ms.DB.All(&items), "error reloading items after test")
 
 			if !tt.wantReplacement {
+				ms.Len(got, 0, "incorrect number of items created")
 				ms.Len(items, itemCount, "incorrect number of items in database (no replacement)")
 				return
 			}
 
+			ms.Len(got, 1, "incorrect number of items created")
 			ms.Len(items, itemCount+1, "incorrect number of items in database after replacement")
 
 			var item Item

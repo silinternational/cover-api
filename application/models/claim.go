@@ -1041,12 +1041,13 @@ func (c *Claim) Deductible(tx *pop.Connection) float64 {
 // StopItemCoverage sets the claim's items' statuses to `Inactive` and creates refund
 //   ledger entries for them.
 // Returns an error if the claim's status or item's coverage status is not `Approved`
-func (c *Claim) StopItemCoverage(tx *pop.Connection) error {
+func (c *Claim) StopItemCoverage(tx *pop.Connection) (bool, error) {
 	if c.Status != api.ClaimStatusApproved {
-		return errors.New("cannot auto-stop coverage on an item the claim of which is not approved")
+		return false, errors.New("cannot auto-stop coverage on an item the claim of which is not approved")
 	}
 
 	c.LoadClaimItems(tx, true)
+	stoppedCoverage := false
 
 	for _, ci := range c.ClaimItems {
 		if ci.PayoutOption == api.PayoutOptionRepair {
@@ -1055,21 +1056,25 @@ func (c *Claim) StopItemCoverage(tx *pop.Connection) error {
 
 		reason := "replacement claim approved on item"
 		if err := ci.Item.cancelCoverageAfterClaim(tx, reason); err != nil {
-			return err
+			return false, err
+		} else {
+			stoppedCoverage = true
 		}
 	}
 
-	return nil
+	return stoppedCoverage, nil
 }
 
 // DraftReplacmentItems creates a new draft Item for each claim item that has a
 //   payout option of Replacement
-func (c *Claim) DraftReplacmentItems(tx *pop.Connection) error {
+func (c *Claim) DraftReplacmentItems(tx *pop.Connection) (Items, error) {
 	if c.Status != api.ClaimStatusApproved {
-		return errors.New("cannot create a replacement draft item for a claim that is not approved")
+		return Items{}, errors.New("cannot create a replacement draft item for a claim that is not approved")
 	}
 
 	c.LoadClaimItems(tx, true)
+
+	items := Items{}
 
 	for _, ci := range c.ClaimItems {
 		if ci.PayoutOption != api.PayoutOptionReplacement {
@@ -1105,9 +1110,10 @@ func (c *Claim) DraftReplacmentItems(tx *pop.Connection) error {
 		}
 
 		if err := newItem.Create(tx); err != nil {
-			return fmt.Errorf("error creating replacement item from claim item %s: %s", ci.ID.String(), err)
+			return Items{}, fmt.Errorf("error creating replacement item from claim item %s: %s", ci.ID.String(), err)
 		}
+		items = append(items, newItem)
 	}
 
-	return nil
+	return items, nil
 }
