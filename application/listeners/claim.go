@@ -114,10 +114,15 @@ func claimApproved(e events.Event) {
 		return
 	}
 
+	coverageStopped := false
+
 	models.DB.Transaction(func(tx *pop.Connection) error {
 		if err := claim.StopItemCoverage(tx); err != nil {
 			domain.ErrLogger.Printf("error ending coverage in claimApproved for claim %s: %s", claim.ID.String(), err)
+		} else {
+			coverageStopped = true
 		}
+
 		return nil
 	})
 
@@ -126,12 +131,14 @@ func claimApproved(e events.Event) {
 		return nil
 	})
 
-	models.DB.Transaction(func(tx *pop.Connection) error {
-		if err := claim.DraftReplacmentItems(tx); err != nil {
-			domain.ErrLogger.Printf("error creating draft replacements item in claimApproved for claim %s: %s", claim.ID.String(), err)
-		}
-		return nil
-	})
+	if coverageStopped {
+		models.DB.Transaction(func(tx *pop.Connection) error {
+			if err := claim.DraftReplacmentItems(tx); err != nil {
+				domain.ErrLogger.Printf("error creating draft replacements item in claimApproved for claim %s: %s", claim.ID.String(), err)
+			}
+			return nil
+		})
+	}
 }
 
 func claimDenied(e events.Event) {
