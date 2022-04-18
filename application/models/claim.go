@@ -1061,3 +1061,53 @@ func (c *Claim) StopItemCoverage(tx *pop.Connection) error {
 
 	return nil
 }
+
+// DraftReplacmentItems creates a new draft Item for each claim item that has a
+//   payout option of Replacement
+func (c *Claim) DraftReplacmentItems(tx *pop.Connection) error {
+	if c.Status != api.ClaimStatusApproved {
+		return errors.New("cannot create a replacement draft item for a claim that is not approved")
+	}
+
+	c.LoadClaimItems(tx, true)
+
+	for _, ci := range c.ClaimItems {
+		if ci.PayoutOption != api.PayoutOptionReplacement {
+			continue
+		}
+
+		replCost := ci.ReplaceActual
+		if replCost == 0 {
+			replCost = ci.ReplaceEstimate
+		}
+
+		startDate := time.Now().UTC()
+		if ci.Item.CoverageEndDate.Valid {
+			startDate = ci.Item.CoverageEndDate.Time
+		}
+
+		newItem := Item{
+			Name:              ci.Item.Name,
+			CategoryID:        ci.Item.CategoryID,
+			RiskCategoryID:    ci.Item.RiskCategoryID,
+			InStorage:         false,
+			Country:           ci.Item.Country,
+			Description:       "",
+			PolicyID:          ci.Item.PolicyID,
+			PolicyDependentID: ci.Item.PolicyDependentID,
+			PolicyUserID:      ci.Item.PolicyUserID,
+			Make:              "",
+			Model:             "",
+			SerialNumber:      "",
+			CoverageStartDate: startDate,
+			CoverageAmount:    int(replCost),
+			CoverageStatus:    api.ItemCoverageStatusDraft,
+		}
+
+		if err := newItem.Create(tx); err != nil {
+			return fmt.Errorf("error creating replacement item from claim item %s: %s", ci.ID.String(), err)
+		}
+	}
+
+	return nil
+}

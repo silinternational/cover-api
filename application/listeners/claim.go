@@ -125,6 +125,13 @@ func claimApproved(e events.Event) {
 		messages.ClaimApprovedQueueMessage(tx, claim)
 		return nil
 	})
+
+	models.DB.Transaction(func(tx *pop.Connection) error {
+		if err := claim.DraftReplacmentItems(tx); err != nil {
+			domain.ErrLogger.Printf("error creating draft replacements item in claimApproved for claim %s: %s", claim.ID.String(), err)
+		}
+		return nil
+	})
 }
 
 func claimDenied(e events.Event) {
