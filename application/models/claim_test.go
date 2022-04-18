@@ -1416,7 +1416,7 @@ func (ms *ModelSuite) TestClaim_StopItemCoverage() {
 		name                string
 		claim               Claim
 		wantErrContains     string
-		wantItemStatuses    []api.ItemCoverageStatus
+		wantInactiveCount   int
 		wantStoppedCoverage bool
 	}{
 		{
@@ -1425,23 +1425,17 @@ func (ms *ModelSuite) TestClaim_StopItemCoverage() {
 			wantErrContains: "cannot auto-stop coverage on an item the claim of which is not approved",
 		},
 		{
-			name:            "ignore repair claims",
-			claim:           approvedClaimRepair,
-			wantErrContains: "",
-			wantItemStatuses: []api.ItemCoverageStatus{
-				api.ItemCoverageStatusApproved,
-				api.ItemCoverageStatusApproved,
-			},
+			name:                "ignore repair claims",
+			claim:               approvedClaimRepair,
+			wantErrContains:     "",
+			wantInactiveCount:   0,
 			wantStoppedCoverage: false,
 		},
 		{
-			name:            "good replacement claim",
-			claim:           approvedClaimReplace,
-			wantErrContains: "",
-			wantItemStatuses: []api.ItemCoverageStatus{
-				api.ItemCoverageStatusInactive,
-				api.ItemCoverageStatusApproved,
-			},
+			name:                "good replacement claim",
+			claim:               approvedClaimReplace,
+			wantErrContains:     "",
+			wantInactiveCount:   1,
 			wantStoppedCoverage: true,
 		},
 	}
@@ -1462,11 +1456,14 @@ func (ms *ModelSuite) TestClaim_StopItemCoverage() {
 
 			ms.Equal(got, tt.wantStoppedCoverage, "incorrect stoppedCoverage boolean")
 
-			ms.Len(tt.claim.ClaimItems, len(tt.wantItemStatuses), "incorrect number of expected item statuses")
-
-			for i, w := range tt.wantItemStatuses {
-				ms.Equal(w, tt.claim.ClaimItems[i].Item.CoverageStatus)
+			inactiveCount := 0
+			for _, c := range tt.claim.ClaimItems {
+				if c.Item.CoverageStatus == api.ItemCoverageStatusInactive {
+					inactiveCount += 1
+				}
 			}
+
+			ms.Equal(tt.wantInactiveCount, inactiveCount, "incorrect number of Inactive items")
 		})
 	}
 }
