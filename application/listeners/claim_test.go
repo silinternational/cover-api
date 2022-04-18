@@ -242,6 +242,10 @@ func (ts *TestSuite) Test_claimApproved() {
 
 	f := getClaimFixtures(db)
 
+	var startItems models.Items
+	itemCount, err := db.Count(&startItems)
+	ts.NoError(err, "error getting initial count of db Items")
+
 	approvedClaim := models.UpdateClaimStatus(db, f.Claims[0], api.ClaimStatusApproved, "")
 	approvedClaim.LoadClaimItems(db, true)
 	models.UpdateItemStatus(db, approvedClaim.ClaimItems[0].Item, api.ItemCoverageStatusApproved, "testing")
@@ -277,6 +281,9 @@ func (ts *TestSuite) Test_claimApproved() {
 			approvedClaim.LoadClaimItems(db, true)
 			ts.Equal(api.ItemCoverageStatusInactive, approvedClaim.ClaimItems[0].Item.CoverageStatus,
 				"incorrect Item CoverageStatus")
+			var allItems models.Items
+			ts.NoError(db.All(&allItems), "error retrieving all items after test")
+			ts.Len(allItems, itemCount+1, "incorrect number of items in db")
 		})
 	}
 }
