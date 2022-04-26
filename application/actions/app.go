@@ -220,6 +220,7 @@ func App() *buffalo.App {
 		policiesGroup.POST(idRegex+claimsPath, claimsCreate)
 		policiesGroup.GET(idRegex+"/members", policiesListMembers)
 		policiesGroup.POST(idRegex+"/members", policiesInviteMember)
+		policiesGroup.DELETE(idRegex+"/members/"+idRegex, policiesMembersDelete)
 		policiesGroup.POST(idRegex+"/ledger-reports", policiesLedgerReportCreate)
 		policiesGroup.POST(idRegex+"/"+api.ResourceStrikes, policiesStrikeCreate)
 
