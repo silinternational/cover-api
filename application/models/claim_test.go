@@ -1413,10 +1413,10 @@ func (ms *ModelSuite) TestClaim_StopItemCoverage() {
 	UpdateItemStatus(ms.DB, approvedClaimRepair.ClaimItems[1].Item, api.ItemCoverageStatusApproved, "")
 
 	tests := []struct {
-		name             string
-		claim            Claim
-		wantErrContains  string
-		wantItemStatuses []api.ItemCoverageStatus
+		name            string
+		claim           Claim
+		wantErrContains string
+		wantStatusMap   map[string]api.ItemCoverageStatus
 	}{
 		{
 			name:            "bad start status",
@@ -1427,18 +1427,18 @@ func (ms *ModelSuite) TestClaim_StopItemCoverage() {
 			name:            "ignore repair claims",
 			claim:           approvedClaimRepair,
 			wantErrContains: "",
-			wantItemStatuses: []api.ItemCoverageStatus{
-				api.ItemCoverageStatusApproved,
-				api.ItemCoverageStatusApproved,
+			wantStatusMap: map[string]api.ItemCoverageStatus{
+				approvedClaimRepair.ClaimItems[0].ID.String(): api.ItemCoverageStatusApproved,
+				approvedClaimRepair.ClaimItems[1].ID.String(): api.ItemCoverageStatusApproved,
 			},
 		},
 		{
 			name:            "good replacement claim",
 			claim:           approvedClaimReplace,
 			wantErrContains: "",
-			wantItemStatuses: []api.ItemCoverageStatus{
-				api.ItemCoverageStatusInactive,
-				api.ItemCoverageStatusApproved,
+			wantStatusMap: map[string]api.ItemCoverageStatus{
+				approvedClaimReplace.ClaimItems[0].ID.String(): api.ItemCoverageStatusInactive,
+				approvedClaimReplace.ClaimItems[1].ID.String(): api.ItemCoverageStatusApproved,
 			},
 		},
 	}
@@ -1457,11 +1457,13 @@ func (ms *ModelSuite) TestClaim_StopItemCoverage() {
 			ms.NoError(tt.claim.FindByID(ms.DB, tt.claim.ID), "failed to retrieve test claim from db")
 			tt.claim.LoadClaimItems(ms.DB, true)
 
-			ms.Len(tt.claim.ClaimItems, len(tt.wantItemStatuses), "incorrect number of expected item statuses")
-
-			for i, w := range tt.wantItemStatuses {
-				ms.Equal(w, tt.claim.ClaimItems[i].Item.CoverageStatus)
+			// Using a map to avoid random ordering issues
+			gotStatusMap := map[string]api.ItemCoverageStatus{}
+			for _, ci := range tt.claim.ClaimItems {
+				gotStatusMap[ci.ID.String()] = ci.Item.CoverageStatus
 			}
+
+			ms.Equal(tt.wantStatusMap, gotStatusMap, "incorrect Item Coverage Stautes")
 		})
 	}
 }
