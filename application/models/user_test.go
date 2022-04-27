@@ -302,8 +302,8 @@ func (ms *ModelSuite) TestConvertToPolicyMember() {
 		Country:       randStr(10),
 		LastLoginUTC:  time.Now(),
 	}
-
-	got := user.ConvertToPolicyMember()
+	polUserID := domain.GetUUID()
+	got := user.ConvertToPolicyMember(polUserID)
 
 	ms.Equal(user.ID, got.ID, "ID is not correct")
 	ms.Equal(user.FirstName, got.FirstName, "FirstName is not correct")
@@ -312,4 +312,5 @@ func (ms *ModelSuite) TestConvertToPolicyMember() {
 	ms.Equal(user.EmailOverride, got.EmailOverride, "EmailOverride is not correct")
 	ms.Equal(user.LastLoginUTC, got.LastLoginUTC, "LastLoginUTC is not correct")
 	ms.Equal(user.Country, got.Country, "Country is not correct")
+	ms.Equal(polUserID, got.PolicyUserID, "PolicyUserID is not correct")
 }

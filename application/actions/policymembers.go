@@ -1,13 +1,12 @@
 package actions
 
 import (
-	"errors"
 	"net/http"
 
 	"github.com/gobuffalo/buffalo"
-	"github.com/gofrs/uuid"
 
 	"github.com/silinternational/cover-api/api"
+	"github.com/silinternational/cover-api/domain"
 	"github.com/silinternational/cover-api/models"
 )
 
@@ -34,9 +33,9 @@ func policiesListMembers(c buffalo.Context) error {
 	tx := models.Tx(c)
 	policy := getReferencedPolicyFromCtx(c)
 
-	policy.LoadMembers(tx, false)
+	polUserIDs := policy.GetPolicyUserIDs(tx, false)
 
-	return renderOk(c, policy.Members.ConvertToPolicyMembers())
+	return renderOk(c, policy.Members.ConvertToPolicyMembers(polUserIDs))
 }
 
 // swagger:operation POST /policies/{id}/members PolicyMembers PolicyMembersInvite
@@ -116,25 +115,7 @@ func policiesInviteMember(c buffalo.Context) error {
 //   '204':
 //     description: OK but no content in response
 func policiesMembersDelete(c buffalo.Context) error {
-	tx := models.Tx(c)
-	path := c.Request().URL.Path
-	pathParts := getPathParts(path)
-	partsCount := len(pathParts)
-
-	if partsCount != 4 {
-		err := api.NewAppError(errors.New("Bad url path: "+path), api.ErrorValidation, api.CategoryUser)
-		return reportError(c, err)
-	}
-
-	policy := getReferencedPolicyFromCtx(c)
-
-	userID := uuid.FromStringOrNil(pathParts[3])
-
-	var policyUser models.PolicyUser
-	if err := policyUser.FindByPolicyAndUserIDs(tx, policy.ID, userID); err != nil {
-		err := api.NewAppError(err, api.ErrorResourceNotFound, api.CategoryUser)
-		return reportError(c, err)
-	}
+	policyUser := getReferencedPolicyMemberFromCtx(c)
 
 	if err := policyUser.Delete(c); err != nil {
 		return reportError(c, err)
@@ -142,4 +123,14 @@ func policiesMembersDelete(c buffalo.Context) error {
 
 	return c.Render(http.StatusNoContent, nil)
 
+}
+
+// getReferencedPolicyMemberFromCtx pulls the models.PolicyUser resource from context that was put there
+// by the AuthZ middleware
+func getReferencedPolicyMemberFromCtx(c buffalo.Context) *models.PolicyUser {
+	policyUser, ok := c.Value(domain.TypePolicyMember).(*models.PolicyUser)
+	if !ok {
+		panic("policy user not found in context")
+	}
+	return policyUser
 }

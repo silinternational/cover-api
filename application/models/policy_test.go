@@ -225,6 +225,13 @@ func (ms *ModelSuite) TestPolicy_LoadMembers() {
 	ms.Len(policy.Members, 1)
 }
 
+func (ms *ModelSuite) TestPolicy_GetPolicyUserIDs() {
+	f := CreatePolicyFixtures(ms.DB, FixturesConfig{UsersPerPolicy: 2})
+	policy := f.Policies[0]
+	got := policy.GetPolicyUserIDs(ms.DB, true)
+	ms.Len(got, 2, "incorrect number of PolicyUserIDs")
+}
+
 func (ms *ModelSuite) TestPolicy_LoadDependents() {
 	f := CreatePolicyFixtures(ms.DB, FixturesConfig{DependentsPerPolicy: 1})
 	policy := f.Policies[0]

@@ -259,7 +259,7 @@ func (u *User) GetName() Name {
 	}
 }
 
-func (u *User) ConvertToPolicyMember() api.PolicyMember {
+func (u *User) ConvertToPolicyMember(polUserID uuid.UUID) api.PolicyMember {
 	return api.PolicyMember{
 		ID:            u.ID,
 		FirstName:     u.FirstName,
@@ -268,13 +268,19 @@ func (u *User) ConvertToPolicyMember() api.PolicyMember {
 		EmailOverride: u.EmailOverride,
 		LastLoginUTC:  u.LastLoginUTC,
 		Country:       u.GetLocation().Country,
+		PolicyUserID:  polUserID,
 	}
 }
 
-func (u *Users) ConvertToPolicyMembers() api.PolicyMembers {
-	members := make(api.PolicyMembers, len(*u))
+func (u *Users) ConvertToPolicyMembers(polUserIDs []uuid.UUID) api.PolicyMembers {
+	userCount := len(*u)
+	puCount := len(polUserIDs)
+	if puCount != userCount {
+		panic(fmt.Sprintf("number of polUserIDs: %d must match number of users: %d", puCount, userCount))
+	}
+	members := make(api.PolicyMembers, userCount)
 	for i, uu := range *u {
-		members[i] = uu.ConvertToPolicyMember()
+		members[i] = uu.ConvertToPolicyMember(polUserIDs[i])
 	}
 
 	return members

@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/gobuffalo/buffalo/genny/build/_fixtures/coke/models"
 	"github.com/gobuffalo/nulls"
 	"github.com/gobuffalo/pop/v5"
 	"github.com/gobuffalo/validate/v3"
@@ -77,12 +76,6 @@ func (p *PolicyUser) FindByPolicyAndUserIDs(tx *pop.Connection, policyID, userID
 //  replaces the PolicyUser on all related items
 func (p *PolicyUser) Delete(ctx context.Context) error {
 	tx := Tx(ctx)
-	actor := CurrentUser(ctx)
-
-	if !p.IsActorAllowedTo(models.DB, actor, PermissionDelete, "", nil) {
-		err := fmt.Errorf("actor not allowed to delete policy user: %s", p.ID.String())
-		return api.NewAppError(err, api.ErrorNotAuthorized, api.CategoryForbidden)
-	}
 
 	var pUsers PolicyUsers
 	if err := tx.Where("policy_id = ?", p.PolicyID).All(&pUsers); domain.IsOtherThanNoRows(err) {
