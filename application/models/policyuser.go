@@ -72,8 +72,8 @@ func (p *PolicyUser) FindByPolicyAndUserIDs(tx *pop.Connection, policyID, userID
 	return tx.Where(`policy_id = ? AND user_id = ?`, policyID, userID).First(p)
 }
 
-// DeletePolicyUser ensures there is an additional PolicyUser for the related policy and
-//  replaces the PolicyUser on all related items
+// Delete ensures there is an additional PolicyUser for the related policy and
+//  null out the PolicyUserID on all related items
 func (p *PolicyUser) Delete(ctx context.Context) error {
 	tx := Tx(ctx)
 

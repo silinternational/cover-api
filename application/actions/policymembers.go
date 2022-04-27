@@ -94,23 +94,19 @@ func policiesInviteMember(c buffalo.Context) error {
 	return c.Render(http.StatusNoContent, nil)
 }
 
-// swagger:operation DELETE /policies/{id}/members/{user-id} PolicyMembers PolicyMembersDelete
+// swagger:operation DELETE /policy-members/{id} PolicyMembers PolicyMembersDelete
 //
 // PolicyMembersDelete
 //
 // Delete a policy user as long as the related policy has another user. Also,
-//   switch the accountable person on all related items to a different policy member
+//   null out the PolicyUserID on related items
 //
 // ---
 // parameters:
 //   - name: id
 //     in: path
 //     required: true
-//     description: policy ID
-//   - name: user-id
-//     in: path
-//     required: true
-//     description: user ID of policy member to be deleted
+//     description: policy-member ID
 // responses:
 //   '204':
 //     description: OK but no content in response
