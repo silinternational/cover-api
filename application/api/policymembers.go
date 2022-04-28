@@ -36,7 +36,7 @@ type PolicyMember struct {
 	// a country
 	Country string `json:"country,omitempty"`
 
-	// unique ID
+	// ID of the PolicyUser object that is related to this policy and user
 	//
 	// swagger:strfmt uuid4
 	PolicyUserID uuid.UUID `json:"policy_user_id"`
