@@ -62,6 +62,7 @@ const (
 	ledgerReportPath    = "/" + domain.TypeLedgerReport
 	policiesPath        = "/" + domain.TypePolicy
 	policyDependentPath = "/" + domain.TypePolicyDependent
+	policyMemberPath    = "/" + domain.TypePolicyMember
 	strikesPath         = "/" + domain.TypeStrike
 )
 
@@ -222,6 +223,10 @@ func App() *buffalo.App {
 		policiesGroup.POST(idRegex+"/members", policiesInviteMember)
 		policiesGroup.POST(idRegex+"/ledger-reports", policiesLedgerReportCreate)
 		policiesGroup.POST(idRegex+"/"+api.ResourceStrikes, policiesStrikeCreate)
+
+		// policy-members
+		policyMembersGroup := app.Group(policyMemberPath)
+		policyMembersGroup.DELETE(idRegex, policiesMembersDelete)
 
 		// strikes
 		strikesGroup := app.Group(strikesPath)

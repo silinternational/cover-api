@@ -82,7 +82,7 @@ const (
 	TypeLedgerReport    = "ledger-reports"
 	TypePolicy          = "policies"
 	TypePolicyDependent = "policy-dependents"
-	TypePolicyUser      = "policy-users"
+	TypePolicyMember    = "policy-members"
 	TypeStrike          = "strikes"
 	TypeUser            = "users"
 )

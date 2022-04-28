@@ -249,6 +249,21 @@ func (p *Policy) LoadMembers(tx *pop.Connection, reload bool) {
 	}
 }
 
+// GetPolicyUserIDs loads the members of the Policy and also returns a list of the corresponding
+//  PolicyUser IDs
+func (p *Policy) GetPolicyUserIDs(tx *pop.Connection, reload bool) []uuid.UUID {
+	p.LoadMembers(tx, reload)
+	puIDS := make([]uuid.UUID, len(p.Members))
+	for i, m := range p.Members {
+		var polUser PolicyUser
+		if err := tx.Where("policy_id = ? AND user_id = ?", p.ID, m.ID).First(&polUser); err != nil {
+			panic("database error finding policy user for policy, " + err.Error())
+		}
+		puIDS[i] = polUser.ID
+	}
+	return puIDS
+}
+
 // LoadEntityCode - a simple wrapper method for loading the entity code on the struct
 func (p *Policy) LoadEntityCode(tx *pop.Connection, reload bool) {
 	if p.EntityCode.ID == uuid.Nil || reload {
@@ -260,7 +275,7 @@ func (p *Policy) LoadEntityCode(tx *pop.Connection, reload bool) {
 
 func (p *Policy) ConvertToAPI(tx *pop.Connection, hydrate bool) api.Policy {
 	p.LoadEntityCode(tx, true)
-	p.LoadMembers(tx, true)
+	polUserIDs := p.GetPolicyUserIDs(tx, true)
 
 	apiPolicy := api.Policy{
 		ID:            p.ID,
@@ -271,7 +286,7 @@ func (p *Policy) ConvertToAPI(tx *pop.Connection, hydrate bool) api.Policy {
 		Account:       p.Account,
 		AccountDetail: p.AccountDetail,
 		EntityCode:    p.EntityCode.ConvertToAPI(tx),
-		Members:       p.Members.ConvertToPolicyMembers(),
+		Members:       p.Members.ConvertToPolicyMembers(polUserIDs),
 		CreatedAt:     p.CreatedAt,
 		UpdatedAt:     p.UpdatedAt,
 	}
