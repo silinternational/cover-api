@@ -1,35 +1,67 @@
 
-<div style="margin:16px 0px; padding:8px; border-radius: 8px; background: #EBEEF2;">
+<%
+  let bgColor = "#EEEEEE"
+  let alertColor = "#333333"
+  let alertSrc = ""
+  let alertAlt = ""
+
+  if ( alert_icon == "beach_access" ) {
+  	let bgColor = "#EBFFF7"
+  	let alertColor = "#028353"
+  	let alertSrc = "beach_access"
+  	let alertAlt = "Umbrella"
+  } else if ( alert_icon == "check" ) {
+  	let bgColor = "#EBFFF7"
+  	let alertColor = "#028353"
+  	let alertSrc = "check"
+  	let alertAlt = "Check"
+  } else if ( alert_icon == "clock" ) {
+  	let bgColor = "#EBEEF2"
+  	let alertColor = "#394452"
+  	let alertSrc = "clock"
+  	let alertAlt = "Clock"
+  } else if ( alert_icon == "clipboard" ) {
+  	let bgColor = "#EEF2FA"
+  	let alertColor = "#2E5AAC"
+  	let alertSrc = "clipboard"
+  	let alertAlt = "Clipboard"
+  } else if ( alert_icon == "do_not_enter" ) {
+  	let bgColor = "#FEEFEF"
+  	let alertColor = "#DA1414"
+  	let alertSrc = "do_not_enter"
+  	let alertAlt = "Stop"
+  } else if ( alert_icon == "dollar" ) {
+  	let bgColor = "#EBFFF7"
+  	let alertColor = "#028353"
+  	let alertSrc = "dollar"
+  	let alertAlt = "Dollar"
+  } else if ( alert_icon == "error" ) {
+  	let bgColor = "#FFF4EC"
+  	let alertColor = "#B95000"
+  	let alertSrc = "error"
+  	let alertAlt = "Error"
+  } else if ( alert_icon == "new" ) {
+  	let bgColor = "#EEF2FA"
+  	let alertColor = "#2E5AAC"
+  	let alertSrc = "new"
+  	let alertAlt = "New"
+  }
+%>
+
+
+<div style="margin:16px 0px; padding:8px; border-radius: 8px; background: <%= bgColor %>;">
 	<table>
 		<tr>
 			<td rowspan="2"><div style="width:30px;">
-				<%= if ( alert_icon == "beach_access" ) { %>
-				 <img src="cid:beach_access" alt="Umbrella" style="width:100%;"/>
-				<% } else if ( alert_icon == "check" ) { %>
-				 <img src="cid:check" alt="Check" style="width:100%;"/>
-				<% } else if ( alert_icon == "clock" ) { %>
-				 <img src="cid:clock" alt="Clock" style="width:100%;"/>
-				<% } else if ( alert_icon == "clipboard" ) { %>
-				 <img src="cid:clipboard" alt="Clipboard" style="width:100%;"/>
-				<% } else if ( alert_icon == "do_not_enter" ) { %>
-				 <img src="cid:do_not_enter" alt="Stop" style="width:100%;"/>
-				<% } else if ( alert_icon == "dollar" ) { %>
-				 <img src="cid:dollar" alt="Dollar" style="width:100%;"/>
-				<% } else if ( alert_icon == "error" ) { %>
-				 <img src="cid:error" alt="Error" style="width:100%;"/>
-				<% } else if ( alert_icon == "new" ) { %>
-				 <img src="cid:new" alt="New" style="width:100%;"/>
-				<% } else {
-					alert_icon
-				} %>
-				</div></td>
-			<th style="text-align: left;"><%= alert %></th>
+				<img src="cid:<%= alertSrc %>" alt="<%= alertAlt %>" style="width:100%;"/>
+			</div></td>
+			<th style="text-align: left; color: <%= alertColor %>"><%= alert %></th>
 		</tr>
 		<%= if ( alert_description != "" ) { %>
 		 <tr>
-			<td>
+			<td><span style="color: <%= alertColor %>;">
 				<%= alert_description %>
-			</td>
+			</span></td>
 		 </tr>
 		<% } %>
 	</table>
