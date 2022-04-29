@@ -1,52 +1,56 @@
 
 <%
+
+	let alertIcons = {
+		beach_access: true,
+		check: true,
+		clock: true,
+		clipboard: true,
+		do_not_enter: true,
+		dollar: true,
+		error: true,
+		new: true,
+	}
+
 	let alertStyles = {
     	beach_access: {
   			bgColor: "#EBFFF7",
   			alertColor: "#028353",
-  			alertSrc: "beach_access",
   			alertAlt: "Umbrella",
     	},
   		check: {
   			bgColor: "#EBFFF7",
   			alertColor: "#028353",
-  			alertSrc: "check",
   			alertAlt: "Check",
   		},
 		clock: {
   			bgColor:  "#EBEEF2",
   			alertColor:  "#394452",
-  			alertSrc:  "clock",
   			alertAlt:  "Clock",
   		},
 		clipboard: {
   			bgColor: "#EEF2FA",
   			alertColor: "#2E5AAC",
-  			alertSrc:  "clipboard",
   			alertAlt:  "Clipboard",
   		},
 		do_not_enter: {
   			bgColor: "#FEEFEF",
   			alertColor: "#DA1414",
-  			alertSrc: "do_not_enter",
   			alertAlt: "Stop",
   		},
 		dollar: {
   			bgColor: "#EBFFF7",
   			alertColor: "#028353",
-  			alertSrc: "dollar",
   			alertAlt: "Dollar",
   		},
 		error: {
   			bgColor: "#FFF4EC",
   			alertColor: "#B95000",
-  			alertSrc: "error",
   			alertAlt: "Error",
   		},
 		new: {
   			bgColor: "#EEF2FA",
   			alertColor: "#2E5AAC",
-  			alertSrc: "new",
   			alertAlt: "New",
 		},
     }
@@ -56,15 +60,16 @@
 	let alertSrc = ""
 	let alertAlt = ""
 
+	let validStyle = alertIcons[alert_icon]
 	let styles = alertStyles[alert_icon]
-	if (styles != null) {
+	if (validStyle) {
 		bgColor = styles["bgColor"]
 		alertColor = styles["alertColor"]
-		alertSrc = styles["alertSrc"]
+		alertSrc = alert_icon
 		alertAlt = styles["alertAlt"]
 	}
-%>
 
+%>
 
 <div style="margin:16px 0px; padding:8px; border-radius: 8px; background: <%= bgColor %>;">
 	<table>
