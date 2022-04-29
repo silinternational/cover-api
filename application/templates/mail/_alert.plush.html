@@ -1,17 +1,6 @@
 
 <%
 
-	let alertIcons = {
-		beach_access: true,
-		check: true,
-		clock: true,
-		clipboard: true,
-		do_not_enter: true,
-		dollar: true,
-		error: true,
-		new: true,
-	}
-
 	let alertStyles = {
     	beach_access: {
   			bgColor: "#EBFFF7",
@@ -60,9 +49,8 @@
 	let alertSrc = ""
 	let alertAlt = ""
 
-	let validStyle = alertIcons[alert_icon]
 	let styles = alertStyles[alert_icon]
-	if (validStyle) {
+	if (styles) {
 		bgColor = styles["bgColor"]
 		alertColor = styles["alertColor"]
 		alertSrc = alert_icon
