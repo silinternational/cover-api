@@ -907,9 +907,14 @@ func ClaimsWithRecentStatusChanges(tx *pop.Connection) (api.RecentClaims, error)
 	return claims, nil
 }
 
+// CreateLedgerEntry does nothing if the TotalPayout is zero
 func (c *Claim) CreateLedgerEntry(tx *pop.Connection) error {
 	if c.Status != api.ClaimStatusApproved {
 		return errors.New("cannot pay out a claim that is not approved")
+	}
+
+	if c.TotalPayout == 0 {
+		return nil
 	}
 
 	c.LoadClaimItems(tx, false)
@@ -1031,4 +1036,28 @@ func (c *Claim) Deductible(tx *pop.Connection) float64 {
 		return domain.Env.DeductibleMaximum
 	}
 	return d
+}
+
+// StopItemCoverage sets the claim's items' statuses to `Inactive` and creates refund
+//   ledger entries for them.
+// Returns an error if the claim's status or item's coverage status is not `Approved`
+func (c *Claim) StopItemCoverage(tx *pop.Connection) error {
+	if c.Status != api.ClaimStatusApproved {
+		return errors.New("cannot auto-stop coverage on an item the claim of which is not approved")
+	}
+
+	c.LoadClaimItems(tx, true)
+
+	for _, ci := range c.ClaimItems {
+		if ci.PayoutOption == api.PayoutOptionRepair {
+			continue
+		}
+
+		reason := "replacement claim approved on item"
+		if err := ci.Item.cancelCoverageAfterClaim(tx, reason); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

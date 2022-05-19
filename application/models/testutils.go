@@ -7,6 +7,7 @@ package models
 
 import (
 	"fmt"
+	"log"
 	"math/rand"
 	"time"
 
@@ -223,9 +224,12 @@ func createClaimFixture(tx *pop.Connection, policy Policy, config FixturesConfig
 	}
 	MustCreate(tx, &claim)
 
+	totalPayout := 0
+
 	claim.ClaimItems = make(ClaimItems, config.ClaimItemsPerClaim)
 	for i := range claim.ClaimItems {
 		item := policy.Items[i]
+		nextPayout := 85 * domain.CurrencyFactor
 		claim.ClaimItems[i] = ClaimItem{
 			ID:              uuid.UUID{},
 			ClaimID:         claim.ID,
@@ -236,14 +240,18 @@ func createClaimFixture(tx *pop.Connection, policy Policy, config FixturesConfig
 			ReplaceEstimate: 100 * domain.CurrencyFactor,
 			ReplaceActual:   85 * domain.CurrencyFactor,
 			PayoutOption:    api.PayoutOptionRepair,
-			PayoutAmount:    85 * domain.CurrencyFactor,
+			PayoutAmount:    api.Currency(nextPayout),
 			FMV:             130 * domain.CurrencyFactor,
 			City:            randStr(10),
 			State:           randStr(2),
 			Country:         randStr(10),
 		}
 		MustCreate(tx, &claim.ClaimItems[i])
+		totalPayout += nextPayout
 	}
+
+	claim.TotalPayout = api.Currency(totalPayout)
+	Must(tx.Update(&claim))
 
 	policyCopy := policy
 	policyCopy.LoadMembers(tx, false)
@@ -577,6 +585,12 @@ func CreateLedgerFixtures(tx *pop.Connection, config FixturesConfig) Fixtures {
 	return f
 }
 
+func CreateLedgerReportFixtures(tx *pop.Connection, reports *LedgerReports) {
+	for i := range *reports {
+		MustCreate(tx, &(*reports)[i])
+	}
+}
+
 // MustCreate saves a record to the database with validation. Panics if any error occurs.
 func MustCreate(tx *pop.Connection, f Creatable) {
 	// Use `create` instead of `tx.Create` to check validation rules
@@ -873,6 +887,34 @@ func ConvertPolicyType(tx *pop.Connection, policy Policy) Policy {
 	}
 
 	return policy
+}
+
+// CreateStrikeFixtures generates any number of strike records per policy provided
+func CreateStrikeFixtures(tx *pop.Connection, policies Policies, dates [][]*time.Time) Strikes {
+
+	if len(dates) > len(policies) {
+		log.Panicf("Not enough policies (%d) for the dates provided (%d)", len(policies), len(dates))
+	}
+
+	strikes := Strikes{}
+
+	for i := range dates {
+		for j := range dates[i] {
+			strike := Strike{
+				Description: fmt.Sprintf("Strike %d for Policy %d", j, i),
+				PolicyID:    policies[i].ID,
+			}
+			MustCreate(tx, &strike)
+
+			if dates[i][j] != nil {
+				// Merely calling the db.Update function doesn't overwrite the created_at value
+				q := tx.RawQuery("Update strikes SET created_at = ? WHERE id = ?", dates[i][j], strike.ID)
+				Must(q.Exec())
+			}
+			strikes = append(strikes, strike)
+		}
+	}
+	return strikes
 }
 
 func Must(err error) {

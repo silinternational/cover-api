@@ -82,7 +82,8 @@ const (
 	TypeLedgerReport    = "ledger-reports"
 	TypePolicy          = "policies"
 	TypePolicyDependent = "policy-dependents"
-	TypePolicyUser      = "policy-users"
+	TypePolicyMember    = "policy-members"
+	TypeStrike          = "strikes"
 	TypeUser            = "users"
 )
 
@@ -184,6 +185,8 @@ var Env struct {
 	EmailFromAddress string `required:"true" split_words:"true"`
 	EmailService     string `default:"ses" split_words:"true"`
 	SupportEmail     string `default:"" split_words:"true"`
+	SupportURL       string `default:"" split_words:"true"`
+	FaqURL           string `default:"" split_words:"true"`
 
 	InviteLifetimeDays int `default:"14" split_words:"true"`
 	MaxFileDelete      int `default:"10" split_words:"true"`
@@ -202,6 +205,7 @@ var Env struct {
 	DeductibleIncrease      float64 `default:"0.2"` // Additional deductible per strike
 	DeductibleMaximum       float64 `default:"0.45"`
 	EvacuationDeductible    float64 `default:"0.333333333" split_words:"true"`
+	StrikeLifetimeMonths    int     `default:"24" split_words:"true"`
 
 	FiscalStartMonth   int    `default:"1" split_words:"true"`
 	ExpenseAccount     string `required:"true" split_words:"true"`
@@ -247,6 +251,11 @@ func readEnv() {
 	Env.PremiumMinimum *= CurrencyFactor
 	Env.RepairThresholdString = fmt.Sprintf("%.2g%%", Env.RepairThreshold*100)
 	Env.DeductibleMinimumString = fmt.Sprintf("%.2g%%", Env.Deductible*100)
+
+	//  Set an arbitrary but reasonable minimum lifetime for policy strikes
+	if Env.StrikeLifetimeMonths < 2 {
+		Env.StrikeLifetimeMonths = 2
+	}
 
 	// Doing this separately to avoid needing two environment variables for the same thing
 	Env.GoEnv = envy.Get("GO_ENV", "development")

@@ -121,12 +121,21 @@ func (p *Policy) FindByID(tx *pop.Connection, id uuid.UUID) error {
 
 // IsActorAllowedTo ensure the actor is either an admin, or a member of this policy to perform any permission
 func (p *Policy) IsActorAllowedTo(tx *pop.Connection, actor User, perm Permission, sub SubResource, r *http.Request) bool {
-	if actor.IsAdmin() || perm == PermissionList {
+	if actor.IsAdmin() {
 		return true
 	}
 
-	if perm == PermissionCreate && sub == "" {
+	if sub == api.ResourceStrikes {
+		return false
+	}
+
+	switch perm {
+	case PermissionList:
 		return true
+	case PermissionCreate:
+		if sub == "" {
+			return true
+		}
 	}
 
 	return p.isMember(tx, actor.ID)
@@ -240,6 +249,21 @@ func (p *Policy) LoadMembers(tx *pop.Connection, reload bool) {
 	}
 }
 
+// GetPolicyUserIDs loads the members of the Policy and also returns a list of the corresponding
+//  PolicyUser IDs
+func (p *Policy) GetPolicyUserIDs(tx *pop.Connection, reload bool) []uuid.UUID {
+	p.LoadMembers(tx, reload)
+	puIDS := make([]uuid.UUID, len(p.Members))
+	for i, m := range p.Members {
+		var polUser PolicyUser
+		if err := tx.Where("policy_id = ? AND user_id = ?", p.ID, m.ID).First(&polUser); err != nil {
+			panic("database error finding policy user for policy, " + err.Error())
+		}
+		puIDS[i] = polUser.ID
+	}
+	return puIDS
+}
+
 // LoadEntityCode - a simple wrapper method for loading the entity code on the struct
 func (p *Policy) LoadEntityCode(tx *pop.Connection, reload bool) {
 	if p.EntityCode.ID == uuid.Nil || reload {
@@ -251,7 +275,7 @@ func (p *Policy) LoadEntityCode(tx *pop.Connection, reload bool) {
 
 func (p *Policy) ConvertToAPI(tx *pop.Connection, hydrate bool) api.Policy {
 	p.LoadEntityCode(tx, true)
-	p.LoadMembers(tx, true)
+	polUserIDs := p.GetPolicyUserIDs(tx, true)
 
 	apiPolicy := api.Policy{
 		ID:            p.ID,
@@ -262,21 +286,44 @@ func (p *Policy) ConvertToAPI(tx *pop.Connection, hydrate bool) api.Policy {
 		Account:       p.Account,
 		AccountDetail: p.AccountDetail,
 		EntityCode:    p.EntityCode.ConvertToAPI(tx),
-		Members:       p.Members.ConvertToPolicyMembers(),
+		Members:       p.Members.ConvertToPolicyMembers(polUserIDs),
 		CreatedAt:     p.CreatedAt,
 		UpdatedAt:     p.UpdatedAt,
 	}
 
 	if hydrate {
-		p.LoadClaims(tx, true)
-		p.LoadDependents(tx, true)
-		p.LoadInvites(tx, true)
-		apiPolicy.Claims = p.Claims.ConvertToAPI(tx)
-		apiPolicy.Dependents = p.Dependents.ConvertToAPI()
-		apiPolicy.Invites = p.Invites.ConvertToAPI()
+		p.hydrateApiPolicy(tx, &apiPolicy)
 	}
 
 	return apiPolicy
+}
+
+func (p *Policy) hydrateApiPolicy(tx *pop.Connection, apiPolicy *api.Policy) {
+	p.LoadClaims(tx, true)
+	p.LoadDependents(tx, true)
+	p.LoadInvites(tx, true)
+	apiPolicy.Claims = p.Claims.ConvertToAPI(tx)
+	apiPolicy.Dependents = p.Dependents.ConvertToAPI()
+	apiPolicy.Invites = p.Invites.ConvertToAPI()
+
+	var reports LedgerReports
+	if err := reports.AllForPolicy(tx, p.ID); domain.IsOtherThanNoRows(err) {
+		msg := fmt.Sprintf("error retrieving ledger reports for policy %s: %s", p.ID.String(), err)
+		domain.ErrLogger.Printf(msg)
+		return
+	}
+	if len(reports) > 0 {
+		apiPolicy.LedgerReports = reports.ConvertToAPI(tx)
+	}
+
+	var strikes Strikes
+	if err := strikes.RecentForPolicy(tx, p.ID, time.Now().UTC()); domain.IsOtherThanNoRows(err) {
+		msg := fmt.Sprintf("error retrieving recent strikes for policy %s: %s", p.ID.String(), err)
+		domain.ErrLogger.Printf(msg)
+		return
+	}
+
+	apiPolicy.Strikes = strikes.ConvertToAPI(tx)
 }
 
 func (p *Policies) ConvertToAPI(tx *pop.Connection) api.Policies {
@@ -579,7 +626,11 @@ func (p *Policy) ProcessAnnualCoverage(tx *pop.Connection, year int) error {
 	return nil
 }
 
+// CreateRenewalLedgerEntry creates a minimum charge of $1
 func (p *Policy) CreateRenewalLedgerEntry(tx *pop.Connection, riskCategoryID uuid.UUID, amount api.Currency) error {
+	if amount < 100 {
+		amount = 100
+	}
 	p.LoadEntityCode(tx, false)
 
 	var rc RiskCategory

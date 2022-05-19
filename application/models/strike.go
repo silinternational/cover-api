@@ -10,6 +10,7 @@ import (
 	"github.com/gofrs/uuid"
 
 	"github.com/silinternational/cover-api/api"
+	"github.com/silinternational/cover-api/domain"
 )
 
 // Items is a slice of Item objects
@@ -34,9 +35,11 @@ func (s *Strike) Create(tx *pop.Connection) error {
 }
 
 func (s *Strike) Update(ctx context.Context) error {
-	tx := Tx(ctx)
+	return update(Tx(ctx), s)
+}
 
-	return update(tx, s)
+func (s *Strike) Destroy(tx *pop.Connection) error {
+	return destroy(tx, s)
 }
 
 func (s *Strike) GetID() uuid.UUID {
@@ -76,7 +79,7 @@ func (s *Strikes) ConvertToAPI(tx *pop.Connection) api.Strikes {
 // RecentForPolicy gets the strikes that have a matching policy_id and are newer than a year
 // before the cutOff date and no more recent than the cutOff date
 func (s *Strikes) RecentForPolicy(tx *pop.Connection, policyID uuid.UUID, cutOff time.Time) error {
-	yearBefore := cutOff.AddDate(-1, 0, 0)
+	yearBefore := cutOff.AddDate(0, -domain.Env.StrikeLifetimeMonths, 0)
 
 	if err := tx.Where("policy_id = ? AND created_at > ? AND created_at < ?",
 		policyID, yearBefore, cutOff).All(s); err != nil {

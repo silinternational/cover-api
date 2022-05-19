@@ -360,6 +360,46 @@ func (i *Item) ScheduleInactivation(ctx context.Context, t time.Time) error {
 	return i.Update(ctx)
 }
 
+// cancelCoverageAfterClaim sets the item's CoverageEndDate to the current time and creates a corresponding
+//  credit ledger entry
+func (i *Item) cancelCoverageAfterClaim(tx *pop.Connection, reason string) error {
+
+	if i.CoverageStatus != api.ItemCoverageStatusApproved {
+		return errors.New("cannot cancel coverage on an item which is not approved")
+	}
+
+	history := PolicyHistory{
+		Action:    api.HistoryActionUpdate,
+		PolicyID:  i.PolicyID,
+		ItemID:    nulls.NewUUID(i.ID),
+		UserID:    GetDefaultSteward(tx).ID,
+		FieldName: FieldItemCoverageStatus,
+		OldValue:  string(api.ItemCoverageStatusApproved),
+		NewValue:  string(api.ItemCoverageStatusInactive),
+	}
+
+	if err := history.Create(tx); err != nil {
+		return err
+	}
+
+	now := time.Now().UTC()
+	amount := i.calculatePremiumChange(now, i.CoverageAmount)
+	if err := i.CreateLedgerEntry(tx, LedgerEntryTypeCoverageRefund, amount); err != nil {
+		return err
+	}
+
+	if reason == "" {
+		reason = "coverage cancelled"
+	}
+
+	i.CoverageEndDate = nulls.NewTime(now)
+	i.CoverageStatus = api.ItemCoverageStatusInactive
+	i.StatusChange = ItemStatusChangeInactivated
+	i.StatusReason = reason
+
+	return tx.Update(i)
+}
+
 func (i *Item) Inactivate(ctx context.Context) error {
 	i.CoverageStatus = api.ItemCoverageStatusInactive
 	return i.Update(ctx)
@@ -924,7 +964,14 @@ func (i *Item) SetAccountablePerson(tx *pop.Connection, id uuid.UUID) error {
 	return api.NewAppError(errors.New("accountable person ID not found"), api.ErrorNoRows, api.CategoryUser)
 }
 
+// CreateLedgerEntry creates a charge of at least $1
 func (i *Item) CreateLedgerEntry(tx *pop.Connection, entryType LedgerEntryType, amount api.Currency) error {
+	if entryType == LedgerEntryTypeCoverageRefund && amount > -100 {
+		amount = 0
+	} else if amount < 100 { // Charge at least $1
+		amount = 100
+	}
+
 	i.LoadPolicy(tx, false)
 	i.LoadRiskCategory(tx, false)
 	i.Policy.LoadEntityCode(tx, false)

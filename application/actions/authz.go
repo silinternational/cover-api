@@ -23,7 +23,8 @@ func AuthZ(next buffalo.Handler) buffalo.Handler {
 			domain.TypeLedgerReport:    &models.LedgerReport{},
 			domain.TypePolicy:          &models.Policy{},
 			domain.TypePolicyDependent: &models.PolicyDependent{},
-			domain.TypePolicyUser:      &models.PolicyUser{},
+			domain.TypePolicyMember:    &models.PolicyUser{},
+			domain.TypeStrike:          &models.Strike{},
 			domain.TypeUser:            &models.User{},
 		}
 
@@ -119,9 +120,7 @@ func getResourceIDSubresource(path string) (string, uuid.UUID, string, int) {
 		return resource, id, sub, partsCount
 	}
 
-	cleanPath := strings.TrimPrefix(path, "/")
-	cleanPath = strings.TrimSuffix(cleanPath, "/")
-	pathParts := strings.Split(cleanPath, "/")
+	pathParts := getPathParts(path)
 	partsCount = len(pathParts)
 
 	if partsCount == 0 {
@@ -139,4 +138,17 @@ func getResourceIDSubresource(path string) (string, uuid.UUID, string, int) {
 	}
 
 	return resource, id, sub, partsCount
+}
+
+func getPathParts(path string) []string {
+
+	if path == "" {
+		return []string{}
+	}
+
+	cleanPath := strings.TrimPrefix(path, "/")
+	cleanPath = strings.TrimSuffix(cleanPath, "/")
+	pathParts := strings.Split(cleanPath, "/")
+
+	return pathParts
 }

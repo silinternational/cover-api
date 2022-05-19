@@ -225,6 +225,20 @@ func (ms *ModelSuite) TestPolicy_LoadMembers() {
 	ms.Len(policy.Members, 1)
 }
 
+func (ms *ModelSuite) TestPolicy_GetPolicyUserIDs() {
+	f := CreatePolicyFixtures(ms.DB, FixturesConfig{UsersPerPolicy: 2})
+	policy := f.Policies[0]
+	got := policy.GetPolicyUserIDs(ms.DB, true)
+	ms.Len(got, 2, "incorrect number of PolicyUserIDs")
+
+	var polUsers PolicyUsers
+	ms.NoError(ms.DB.Where("policy_id = ?", policy.ID).All(&polUsers),
+		"error fetching PolicyUsers to verify")
+
+	ms.Equal(polUsers[0].ID, got[0], "incorrect first PolicyUser ID")
+	ms.Equal(polUsers[1].ID, got[1], "incorrect second PolicyUser ID")
+}
+
 func (ms *ModelSuite) TestPolicy_LoadDependents() {
 	f := CreatePolicyFixtures(ms.DB, FixturesConfig{DependentsPerPolicy: 1})
 	policy := f.Policies[0]

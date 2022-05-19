@@ -1324,33 +1324,21 @@ func (ms *ModelSuite) TestClaim_Deductible() {
 	policyThreeStrikes := fixtures.Policies[3]
 	policyHasOldStrikePlusOne := fixtures.Policies[4]
 
-	strikes := Strikes{
-		{Description: "For Policy with one strike", PolicyID: policyOneStrike.ID},
-		{Description: "For Policy with two strikes - A", PolicyID: policyTwoStrikes.ID},
-		{Description: "For Policy with two strikes - B", PolicyID: policyTwoStrikes.ID},
-		{Description: "For Policy with three strikes - A", PolicyID: policyThreeStrikes.ID},
-		{Description: "For Policy with three strikes - B", PolicyID: policyThreeStrikes.ID},
-		{Description: "For Policy with three strikes - C", PolicyID: policyThreeStrikes.ID},
-		{Description: "For Policy has old strike - A", PolicyID: policyHasOldStrikePlusOne.ID},
-		{Description: "For Policy has old strike - B", PolicyID: policyHasOldStrikePlusOne.ID},
-	}
-	ms.NoError(ms.DB.Create(&strikes), "error creating strikes fixtures")
+	dayBefore1 := policyOneStrike.Claims[0].IncidentDate.AddDate(0, 0, -1)
+	dayBefore2 := policyTwoStrikes.Claims[0].IncidentDate.AddDate(0, 0, -1)
+	dayBefore3 := policyThreeStrikes.Claims[0].IncidentDate.AddDate(0, 0, -1)
+	yearsBeforeOld4 := policyHasOldStrikePlusOne.Claims[0].IncidentDate.AddDate(-2, 0, 0)
+	dayBeforeOld4 := policyHasOldStrikePlusOne.Claims[0].IncidentDate.AddDate(0, 0, -1)
 
-	// Base strike dates on their related claim IncidentDate (db.Create would just overwrite this value)
-	strikes[0].CreatedAt = policyOneStrike.Claims[0].IncidentDate.AddDate(0, 0, -1)
-	strikes[1].CreatedAt = policyTwoStrikes.Claims[0].IncidentDate.AddDate(0, 0, -1)
-	strikes[2].CreatedAt = policyTwoStrikes.Claims[0].IncidentDate.AddDate(0, 0, -1)
-	strikes[3].CreatedAt = policyThreeStrikes.Claims[0].IncidentDate.AddDate(0, 0, -1)
-	strikes[4].CreatedAt = policyThreeStrikes.Claims[0].IncidentDate.AddDate(0, 0, -1)
-	strikes[5].CreatedAt = policyThreeStrikes.Claims[0].IncidentDate.AddDate(0, 0, -1)
-	strikes[6].CreatedAt = policyHasOldStrikePlusOne.Claims[0].IncidentDate.AddDate(-2, 0, 0)
-	strikes[7].CreatedAt = policyHasOldStrikePlusOne.Claims[0].IncidentDate.AddDate(0, 0, -1)
-
-	for i := range strikes {
-		q := ms.DB.RawQuery("Update strikes SET created_at = ? WHERE id = ?",
-			strikes[i].CreatedAt, strikes[i].ID)
-		ms.NoError(q.Exec(), "error updating strike fixture %d", i)
+	strikeDates := [][]*time.Time{
+		{},                                 // Policy with no strikes
+		[]*time.Time{&dayBefore1},          // Policy with one strike
+		{&dayBefore2, &dayBefore2},         // Policy with two strikes
+		{&dayBefore3, &dayBefore3},         // Policy with three strikes
+		{&yearsBeforeOld4, &dayBeforeOld4}, // Policy with an old strike and a normal strike
 	}
+
+	_ = CreateStrikeFixtures(ms.DB, fixtures.Policies, strikeDates)
 
 	tests := []struct {
 		name  string
@@ -1389,6 +1377,93 @@ func (ms *ModelSuite) TestClaim_Deductible() {
 			got := tt.claim.Deductible(ms.DB)
 
 			ms.Equal(tt.want, got, "incorrect results")
+		})
+	}
+}
+
+func (ms *ModelSuite) TestClaim_StopItemCoverage() {
+	t := ms.T()
+
+	fixConfig := FixturesConfig{
+		ItemsPerPolicy:     2,
+		ClaimsPerPolicy:    3,
+		ClaimItemsPerClaim: 2,
+	}
+
+	fixtures := CreateItemFixtures(ms.DB, fixConfig)
+	policy := fixtures.Policies[0]
+	approvedClaimRepair := UpdateClaimStatus(ms.DB, policy.Claims[0], api.ClaimStatusApproved, "")
+	approvedClaimReplace := UpdateClaimStatus(ms.DB, policy.Claims[1], api.ClaimStatusApproved, "")
+	review3Claim := UpdateClaimStatus(ms.DB, policy.Claims[2], api.ClaimStatusReview3, "")
+
+	CreateAdminUsers(ms.DB)
+
+	// Update the PayoutOption of the first claimItem to Replacement
+	approvedClaimReplace.LoadClaimItems(ms.DB, false)
+	claimItem := approvedClaimReplace.ClaimItems[0]
+	claimItem.PayoutOption = api.PayoutOptionReplacement
+	ms.NoError(ms.DB.Update(&claimItem), "error updating claimItem fixture")
+
+	// Make the initial CoverageStatus on the items are Approved
+	UpdateItemStatus(ms.DB, approvedClaimReplace.ClaimItems[0].Item, api.ItemCoverageStatusApproved, "")
+	UpdateItemStatus(ms.DB, approvedClaimReplace.ClaimItems[1].Item, api.ItemCoverageStatusApproved, "")
+
+	approvedClaimRepair.LoadClaimItems(ms.DB, false)
+	UpdateItemStatus(ms.DB, approvedClaimRepair.ClaimItems[0].Item, api.ItemCoverageStatusApproved, "")
+	UpdateItemStatus(ms.DB, approvedClaimRepair.ClaimItems[1].Item, api.ItemCoverageStatusApproved, "")
+
+	tests := []struct {
+		name            string
+		claim           Claim
+		wantErrContains string
+		wantStatusMap   map[string]api.ItemCoverageStatus
+	}{
+		{
+			name:            "bad start status",
+			claim:           review3Claim,
+			wantErrContains: "cannot auto-stop coverage on an item the claim of which is not approved",
+		},
+		{
+			name:            "ignore repair claims",
+			claim:           approvedClaimRepair,
+			wantErrContains: "",
+			wantStatusMap: map[string]api.ItemCoverageStatus{
+				approvedClaimRepair.ClaimItems[0].ID.String(): api.ItemCoverageStatusApproved,
+				approvedClaimRepair.ClaimItems[1].ID.String(): api.ItemCoverageStatusApproved,
+			},
+		},
+		{
+			name:            "good replacement claim",
+			claim:           approvedClaimReplace,
+			wantErrContains: "",
+			wantStatusMap: map[string]api.ItemCoverageStatus{
+				approvedClaimReplace.ClaimItems[0].ID.String(): api.ItemCoverageStatusInactive,
+				approvedClaimReplace.ClaimItems[1].ID.String(): api.ItemCoverageStatusApproved,
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := tt.claim.StopItemCoverage(ms.DB)
+
+			if tt.wantErrContains != "" {
+				ms.Error(got, " did not return expected error")
+				ms.Contains(got.Error(), tt.wantErrContains, "error message is not correct")
+				return
+			}
+			ms.NoError(got)
+
+			ms.NoError(tt.claim.FindByID(ms.DB, tt.claim.ID), "failed to retrieve test claim from db")
+			tt.claim.LoadClaimItems(ms.DB, true)
+
+			// Using a map to avoid random ordering issues
+			gotStatusMap := map[string]api.ItemCoverageStatus{}
+			for _, ci := range tt.claim.ClaimItems {
+				gotStatusMap[ci.ID.String()] = ci.Item.CoverageStatus
+			}
+
+			ms.Equal(tt.wantStatusMap, gotStatusMap, "incorrect Item Coverage Stautes")
 		})
 	}
 }

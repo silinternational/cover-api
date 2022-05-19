@@ -1,35 +1,77 @@
 
-<div style="margin:16px 0px; padding:8px; border-radius: 8px; background: #EBEEF2;">
+<%
+
+	let alertStyles = {
+    	beach_access: {
+  			bgColor: "#EBFFF7",
+  			alertColor: "#028353",
+  			alertAlt: "Umbrella",
+    	},
+  		check: {
+  			bgColor: "#EBFFF7",
+  			alertColor: "#028353",
+  			alertAlt: "Check",
+  		},
+		clock: {
+  			bgColor:  "#EBEEF2",
+  			alertColor:  "#394452",
+  			alertAlt:  "Clock",
+  		},
+		clipboard: {
+  			bgColor: "#EEF2FA",
+  			alertColor: "#2E5AAC",
+  			alertAlt:  "Clipboard",
+  		},
+		do_not_enter: {
+  			bgColor: "#FEEFEF",
+  			alertColor: "#DA1414",
+  			alertAlt: "Stop",
+  		},
+		dollar: {
+  			bgColor: "#EBFFF7",
+  			alertColor: "#028353",
+  			alertAlt: "Dollar",
+  		},
+		error: {
+  			bgColor: "#FFF4EC",
+  			alertColor: "#B95000",
+  			alertAlt: "Error",
+  		},
+		new: {
+  			bgColor: "#EEF2FA",
+  			alertColor: "#2E5AAC",
+  			alertAlt: "New",
+		},
+    }
+
+	let bgColor = "#EEEEEE"
+	let alertColor = "#222222"
+	let alertSrc = ""
+	let alertAlt = ""
+
+	let styles = alertStyles[alert_icon]
+	if (styles) {
+		bgColor = styles["bgColor"]
+		alertColor = styles["alertColor"]
+		alertSrc = alert_icon
+		alertAlt = styles["alertAlt"]
+	}
+
+%>
+
+<div style="margin:16px 0px; padding:8px; border-radius: 8px; background: <%= bgColor %>;">
 	<table>
 		<tr>
 			<td rowspan="2"><div style="width:30px;">
-				<%= if ( alert_icon == "beach_access" ) { %>
-				 <img src="cid:beach_access" alt="Umbrella" style="width:100%;"/>
-				<% } else if ( alert_icon == "check" ) { %>
-				 <img src="cid:check" alt="Check" style="width:100%;"/>
-				<% } else if ( alert_icon == "clock" ) { %>
-				 <img src="cid:clock" alt="Clock" style="width:100%;"/>
-				<% } else if ( alert_icon == "clipboard" ) { %>
-				 <img src="cid:clipboard" alt="Clipboard" style="width:100%;"/>
-				<% } else if ( alert_icon == "do_not_enter" ) { %>
-				 <img src="cid:do_not_enter" alt="Stop" style="width:100%;"/>
-				<% } else if ( alert_icon == "dollar" ) { %>
-				 <img src="cid:dollar" alt="Dollar" style="width:100%;"/>
-				<% } else if ( alert_icon == "error" ) { %>
-				 <img src="cid:error" alt="Error" style="width:100%;"/>
-				<% } else if ( alert_icon == "new" ) { %>
-				 <img src="cid:new" alt="New" style="width:100%;"/>
-				<% } else {
-					alert_icon
-				} %>
-				</div></td>
-			<th style="text-align: left;"><%= alert %></th>
+				<img src="cid:<%= alertSrc %>" alt="<%= alertAlt %>" style="width:100%;"/>
+			</div></td>
+			<th style="text-align: left; color: <%= alertColor %>"><%= alert %></th>
 		</tr>
 		<%= if ( alert_description != "" ) { %>
 		 <tr>
-			<td>
+			<td><span style="color: <%= alertColor %>;">
 				<%= alert_description %>
-			</td>
+			</span></td>
 		 </tr>
 		<% } %>
 	</table>

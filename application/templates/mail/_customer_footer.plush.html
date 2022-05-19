@@ -32,7 +32,17 @@
 			SIL International, 7500 W Camp Wisdom Rd, Dallas, TX 75236, USA
 		</div>
 		<div style="margin-bottom: 8px">
+			<%= if ( supportURL != "" ) { %>
 			<span style="margin-right: 10px;">
+				<a href="<%= supportURL %>">Support</a>
+			</span> ·
+			<% } %>
+			<%= if ( faqURL != "" ) { %>
+			<span style="margin-left: 10px;margin-right: 10px;">
+				<a href="<%= faqURL %>">Frequently Asked Questions</a>
+			</span> ·
+			<% } %>
+			<span style="margin-left: 10px;margin-right: 10px;">
 				<a href="<%= uiURL %>/terms">Terms of Use</a>
 			</span> ·
 			<span style="margin-left: 10px;">

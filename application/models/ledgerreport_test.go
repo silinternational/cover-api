@@ -332,3 +332,136 @@ func (ms *ModelSuite) TestNewPolicyLedgerReport() {
 		})
 	}
 }
+
+func (ms *ModelSuite) TestLedgerReport_AllNonPolicy() {
+	f := CreateLedgerFixtures(ms.DB, FixturesConfig{ItemsPerPolicy: 3})
+	leFixtures := f.LedgerEntries
+	user := f.Users[0]
+	policy := f.Policies[0]
+	now := time.Now().UTC()
+
+	ff := CreateFileFixtures(ms.DB, 3, user.ID)
+
+	reports := LedgerReports{
+		LedgerReport{ // No policy_id
+			Type:          ReportTypeAnnual,
+			Date:          now,
+			File:          ff.Files[0],
+			LedgerEntries: LedgerEntries{leFixtures[0]},
+		},
+		{ // Has a policy_id
+			Type:          ReportTypeMonthly,
+			Date:          now,
+			File:          ff.Files[1],
+			LedgerEntries: LedgerEntries{leFixtures[0]},
+			PolicyID:      nulls.NewUUID(policy.ID),
+		},
+		{ // No policy_id
+			Type:          ReportTypeAnnual,
+			Date:          now,
+			File:          ff.Files[2],
+			LedgerEntries: LedgerEntries{leFixtures[0]},
+		},
+	}
+
+	CreateLedgerReportFixtures(ms.DB, &reports)
+
+	tests := []struct {
+		name string
+		want LedgerReports
+	}{
+		{
+			name: "two reports",
+			want: LedgerReports{reports[0], reports[2]},
+		},
+	}
+	for _, tt := range tests {
+		ms.T().Run(tt.name, func(t *testing.T) {
+			var got LedgerReports
+			ms.NoError(got.AllNonPolicy(ms.DB))
+			ms.Len(got, len(tt.want), "incorrect number of LedgerReports")
+
+			for i, w := range tt.want {
+				ms.Equal(w.FileID, got[i].FileID, "incorrect report FileID")
+				ms.False(got[i].PolicyID.Valid, "incorrect null policy_id")
+			}
+		})
+	}
+}
+
+func (ms *ModelSuite) TestLedgerReport_AllForPolicy() {
+	f := CreateLedgerFixtures(ms.DB, FixturesConfig{NumberOfPolicies: 3, ItemsPerPolicy: 3})
+	leFixtures := f.LedgerEntries
+	user := f.Users[0]
+	policy0 := f.Policies[0] // index will correspond to number of associated ledger reports
+	policy1 := f.Policies[1]
+	policy2 := f.Policies[2]
+	now := time.Now().UTC()
+
+	ff := CreateFileFixtures(ms.DB, 4, user.ID)
+
+	reports := LedgerReports{
+		LedgerReport{ // No policy_id
+			Type:          ReportTypeAnnual,
+			Date:          now,
+			File:          ff.Files[0],
+			LedgerEntries: LedgerEntries{leFixtures[0]},
+		},
+		{ // For policy with one ledger report
+			Type:          ReportTypeAnnual,
+			Date:          now,
+			File:          ff.Files[1],
+			LedgerEntries: LedgerEntries{leFixtures[0]},
+			PolicyID:      nulls.NewUUID(policy1.ID),
+		},
+		{ // For policy with two ledger reports
+			Type:          ReportTypeMonthly,
+			Date:          now,
+			File:          ff.Files[2],
+			LedgerEntries: LedgerEntries{leFixtures[0]},
+			PolicyID:      nulls.NewUUID(policy2.ID),
+		},
+		{ // For policy with two ledger reports
+			Type:          ReportTypeMonthly,
+			Date:          now,
+			File:          ff.Files[3],
+			LedgerEntries: LedgerEntries{leFixtures[0]},
+			PolicyID:      nulls.NewUUID(policy2.ID),
+		},
+	}
+	CreateLedgerReportFixtures(ms.DB, &reports)
+
+	tests := []struct {
+		name   string
+		policy Policy
+		want   LedgerReports
+	}{
+		{
+			name:   "no reports",
+			policy: policy0,
+			want:   LedgerReports{},
+		},
+		{
+			name:   "one report",
+			policy: policy1,
+			want:   LedgerReports{reports[1]},
+		},
+		{
+			name:   "two reports",
+			policy: policy2,
+			want:   LedgerReports{reports[2], reports[3]},
+		},
+	}
+	for _, tt := range tests {
+		ms.T().Run(tt.name, func(t *testing.T) {
+			var got LedgerReports
+			ms.NoError(got.AllForPolicy(ms.DB, tt.policy.ID))
+			ms.Len(got, len(tt.want), "incorrect number of LedgerReports")
+
+			for i, w := range tt.want {
+				ms.Equal(w.FileID, got[i].FileID, "incorrect report FileID")
+				ms.Equal(tt.policy.ID, got[i].PolicyID.UUID, "incorrect policy_id")
+			}
+		})
+	}
+}

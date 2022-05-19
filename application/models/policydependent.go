@@ -80,7 +80,7 @@ func (p *PolicyDependent) RelatedItemNames(tx *pop.Connection) []string {
 func (p *PolicyDependent) RelatedItems(tx *pop.Connection) Items {
 	var items Items
 	if err := tx.Where("policy_dependent_id = ?", p.ID).All(&items); err != nil {
-		panic(fmt.Sprintf("error counting items with policy_dependent_id %s, %s", p.ID, err))
+		panic(fmt.Sprintf("error fetching items with policy_dependent_id %s, %s", p.ID, err))
 	}
 
 	return items

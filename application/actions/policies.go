@@ -2,6 +2,7 @@ package actions
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/gobuffalo/buffalo"
 	"github.com/gobuffalo/nulls"
@@ -201,90 +202,6 @@ func policiesUpdate(c buffalo.Context) error {
 	return renderOk(c, policy.ConvertToAPI(tx, true))
 }
 
-// swagger:operation GET /policies/{id}/members PolicyMembers PolicyMembersList
-//
-// PolicyMembersList
-//
-// gets the data for all the members of a Policy
-//
-// ---
-// parameters:
-//   - name: id
-//     in: path
-//     required: true
-//     description: policy ID
-// responses:
-//   '200':
-//     description: all policy members
-//     schema:
-//       type: array
-//       items:
-//         "$ref": "#/definitions/PolicyMember"
-func policiesListMembers(c buffalo.Context) error {
-	tx := models.Tx(c)
-	policy := getReferencedPolicyFromCtx(c)
-
-	policy.LoadMembers(tx, false)
-
-	return renderOk(c, policy.Members.ConvertToPolicyMembers())
-}
-
-// swagger:operation POST /policies/{id}/members PolicyMembers PolicyMembersInvite
-//
-// PolicyMembersInvite
-//
-// invite new user to co-manage policy
-//
-// ---
-// parameters:
-//   - name: id
-//     in: path
-//     required: true
-//     description: policy ID
-//   - name: policy member invite input
-//     in: body
-//     description: policy user invite input object
-//     required: true
-//     schema:
-//       "$ref": "#/definitions/PolicyUserInviteCreate"
-// responses:
-//   '204':
-//     description: success, no content
-//   '400':
-//	   description: bad request, check the error and fix your code
-func policiesInviteMember(c buffalo.Context) error {
-	tx := models.Tx(c)
-	policy := getReferencedPolicyFromCtx(c)
-
-	policy.LoadMembers(tx, false)
-
-	var invite api.PolicyUserInviteCreate
-	if err := StrictBind(c, &invite); err != nil {
-		return reportError(c, err)
-	}
-
-	cUser := models.CurrentUser(c)
-
-	var err error
-
-	if policy.HouseholdID.Valid {
-		err = policy.NewHouseholdInvite(tx, invite, cUser)
-	} else {
-		// make sure user is not already a member of this policy
-		if policy.MemberHasEmail(tx, invite.Email) {
-			return c.Render(http.StatusNoContent, nil)
-		}
-
-		err = policy.NewTeamInvite(tx, invite, cUser)
-	}
-
-	if err != nil {
-		return reportError(c, err)
-	}
-
-	return c.Render(http.StatusNoContent, nil)
-}
-
 // swagger:operation POST /policies/{id}/ledger-reports PolicyLedgerReport PolicyLedgerReportCreate
 //
 // PolicyLedgerReportCreate
@@ -336,6 +253,60 @@ func policiesLedgerReportCreate(c buffalo.Context) error {
 	}
 
 	return renderOk(c, report.ConvertToAPI(tx))
+}
+
+// swagger:operation POST /policies/{id}/strikes PolicyStrike PolicyStrikeCreate
+//
+// PolicyStrikeCreate
+//
+// Create a strike on the policy and return its recent strikes
+//
+// ---
+// parameters:
+//   - name: id
+//     in: path
+//     required: true
+//     description: policy ID
+//   - name: input
+//     in: body
+//     description: StrikeInput object
+//     required: true
+//     schema:
+//       "$ref": "#/definitions/StrikeInput"
+// responses:
+//   '200':
+//     description: the Strikes for the Policy that are still in force
+//     schema:
+//       type: array
+//       items:
+//         "$ref": "#/definitions/Strike"
+func policiesStrikeCreate(c buffalo.Context) error {
+	tx := models.Tx(c)
+	policy := getReferencedPolicyFromCtx(c)
+
+	var input api.StrikeInput
+	if err := StrictBind(c, &input); err != nil {
+		return reportError(c, err)
+	}
+
+	strike := models.Strike{
+		Description: input.Description,
+		PolicyID:    policy.ID,
+	}
+
+	if err := strike.Create(tx); err != nil {
+		return reportError(c, err)
+	}
+
+	// Just to be extra careful add a few minutes
+	soon := time.Now().UTC().Add(time.Minute * 3)
+
+	var strikes models.Strikes
+	if err := strikes.RecentForPolicy(tx, policy.ID, soon); err != nil {
+		reportError(c, err)
+	}
+
+	return renderOk(c, strikes.ConvertToAPI(tx))
 }
 
 // getReferencedPolicyFromCtx pulls the models.Policy resource from context that was put there

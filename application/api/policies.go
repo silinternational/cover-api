@@ -71,6 +71,12 @@ type Policy struct {
 
 	// List of claims on policy
 	Claims Claims `json:"claims"`
+
+	// List of strikes on policy
+	Strikes Strikes `json:"strikes"`
+
+	// List of LedgerReports -- only available on PoliciesView
+	LedgerReports LedgerReports `json:"ledger_reports"`
 }
 
 // PolicyCreate represents payload for creating a policy
