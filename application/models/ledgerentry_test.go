@@ -99,8 +99,9 @@ func (ms *ModelSuite) TestLedgerEntries_ToCsvForPolicy() {
 				csvPolicyHeader,
 				fmt.Sprintf(`%s,"%s","%s",%s`,
 					entry.Amount.String(),
-					entry.transactionDescription(),
-					entry.transactionReference(),
+					fmt.Sprintf("%s %s", entry.Type, entry.Name),
+					fmt.Sprintf("%s %s%s / %s",
+						entry.EntityCode, entry.AccountNumber, entry.CostCenter, entry.Name),
 					date.Format(domain.DateFormat),
 				),
 			},
@@ -108,7 +109,7 @@ func (ms *ModelSuite) TestLedgerEntries_ToCsvForPolicy() {
 	}
 	for _, tt := range tests {
 		ms.T().Run(tt.name, func(t *testing.T) {
-			got := tt.entries.ToCsvForPolicy()
+			got := tt.entries.ToCsvForPolicy(ms.DB)
 			for _, w := range tt.want {
 				ms.Contains(string(got), w)
 			}
@@ -158,8 +159,9 @@ func (ms *ModelSuite) TestLedgerEntries_ToCsv() {
 				fmt.Sprintf(`"2","000000","00001","0000000020","",0,"%s","",%s,"2","%s","%s",%s,"GL","JE"`,
 					domain.Env.ExpenseAccount,
 					api.Currency(-entry.Amount).String(),
-					entry.transactionDescription(),
-					entry.transactionReference(),
+					fmt.Sprintf("%s %s", entry.Type, entry.Name),
+					fmt.Sprintf("%s %s%s / %s",
+						entry.EntityCode, entry.AccountNumber, entry.CostCenter, entry.Name),
 					date.Format("20060102"),
 				),
 				fmt.Sprintf(`"2","000000","00001","0000000040","",0,"%s","",%s,"2","%s","",%s,"GL","JE"`,
@@ -173,7 +175,7 @@ func (ms *ModelSuite) TestLedgerEntries_ToCsv() {
 	}
 	for _, tt := range tests {
 		ms.T().Run(tt.name, func(t *testing.T) {
-			got := tt.entries.ToCsv(tt.batchDate)
+			got := tt.entries.ToCsv(ms.DB, tt.batchDate)
 			for _, w := range tt.want {
 				ms.Contains(string(got), w)
 			}
@@ -311,6 +313,122 @@ func (ms *ModelSuite) Test_NewLedgerEntry() {
 			} else {
 				ms.Equal(tt.claim.ID, le.ClaimID.UUID, "ClaimID is incorrect")
 			}
+		})
+	}
+}
+
+func (ms *ModelSuite) TestLedgerEntry_transactionDescription() {
+	f := CreateItemFixtures(ms.DB, FixturesConfig{NumberOfPolicies: 2, ClaimsPerPolicy: 1, UsersPerPolicy: 2})
+	hhPolicy := f.Policies[0]
+	hhPolicyItem := hhPolicy.Items[0]
+	hhPolicy.LoadMembers(ms.DB, false)
+
+	// Give the household item an accountable person
+	hhAccPerson := hhPolicy.Members[1]
+	ms.NoError(hhPolicyItem.SetAccountablePerson(ms.DB, hhAccPerson.ID))
+	ms.NoError(ms.DB.Update(&hhPolicyItem), "error updating household policy item for test")
+
+	hhPolicyClaim := f.Policies[0].Claims[0]
+	ms.False(uuid.Nil == hhPolicyClaim.ID, "householdPolicyClaim is not hydrated")
+
+	teamPolicy := ConvertPolicyType(ms.DB, f.Policies[1])
+	teamPolicyItem := teamPolicy.Items[0]
+	teamPolicy.LoadMembers(ms.DB, false)
+
+	// Give the team item an accountable person
+	teamAccPerson := teamPolicy.Members[1]
+	ms.NoError(teamPolicyItem.SetAccountablePerson(ms.DB, teamPolicy.Members[1].ID))
+	ms.NoError(ms.DB.Update(&teamPolicyItem), "error updating team policy item for test")
+
+	// Create new Ledger Entries for each policy
+	hhEntry := NewLedgerEntry(hhPolicy, &hhPolicyItem, nil)
+	hhEntry.Type = LedgerEntryTypeNewCoverage
+	hhEntry.Name = hhPolicyItem.Name
+
+	teamEntry := NewLedgerEntry(teamPolicy, &teamPolicyItem, nil)
+	teamEntry.Type = LedgerEntryTypeCoverageRenewal
+	teamEntry.Name = teamPolicyItem.Name
+
+	tests := []struct {
+		name  string
+		entry LedgerEntry
+		want  string
+	}{
+		{
+			name:  "household policy item",
+			entry: hhEntry,
+			want:  fmt.Sprintf("%s %s", hhEntry.Type, hhEntry.Name),
+		},
+		{
+			name:  "team policy item",
+			entry: teamEntry,
+			want:  fmt.Sprintf("%s %s (%s)", teamEntry.Type, teamEntry.Name, teamAccPerson.GetName()),
+		},
+	}
+	for _, tt := range tests {
+		ms.T().Run(tt.name, func(t *testing.T) {
+			got := tt.entry.transactionDescription(ms.DB)
+
+			ms.Equal(tt.want, got)
+		})
+	}
+}
+
+func (ms *ModelSuite) TestLedgerEntry_transactionReference() {
+	f := CreateItemFixtures(ms.DB, FixturesConfig{NumberOfPolicies: 2, ClaimsPerPolicy: 1, UsersPerPolicy: 2})
+	hhPolicy := f.Policies[0]
+	hhPolicyItem := hhPolicy.Items[0]
+	hhPolicy.LoadMembers(ms.DB, false)
+
+	// Give the household item an accountable person
+	hhAccPerson := hhPolicy.Members[1]
+	ms.NoError(hhPolicyItem.SetAccountablePerson(ms.DB, hhAccPerson.ID))
+	ms.NoError(ms.DB.Update(&hhPolicyItem), "error updating household policy item for test")
+
+	hhPolicyClaim := f.Policies[0].Claims[0]
+	ms.False(uuid.Nil == hhPolicyClaim.ID, "householdPolicyClaim is not hydrated")
+
+	teamPolicy := ConvertPolicyType(ms.DB, f.Policies[1])
+	teamPolicyItem := teamPolicy.Items[0]
+	teamPolicy.LoadMembers(ms.DB, false)
+
+	// Give the team item an accountable person
+	ms.NoError(teamPolicyItem.SetAccountablePerson(ms.DB, teamPolicy.Members[1].ID))
+	ms.NoError(ms.DB.Update(&teamPolicyItem), "error updating team policy item for test")
+
+	// Create new Ledger Entries for each policy
+	hhEntry := NewLedgerEntry(hhPolicy, &hhPolicyItem, nil)
+	hhEntry.Type = LedgerEntryTypeNewCoverage
+	hhEntry.Name = hhPolicyItem.Name
+
+	teamEntry := NewLedgerEntry(teamPolicy, &teamPolicyItem, nil)
+	teamEntry.Type = LedgerEntryTypeCoverageRenewal
+	teamEntry.Name = teamPolicyItem.Name
+	teamEntry.AccountNumber = "TAcc"
+	teamEntry.CostCenter = "TCC"
+
+	tests := []struct {
+		name  string
+		entry LedgerEntry
+		want  string
+	}{
+		{
+			name:  "household policy item",
+			entry: hhEntry,
+			want:  fmt.Sprintf("MC %s / %s", hhEntry.HouseholdID, hhAccPerson.GetName()),
+		},
+		{
+			name:  "team policy item",
+			entry: teamEntry,
+			want: fmt.Sprintf("%s %s%s / %s",
+				teamEntry.EntityCode, teamEntry.AccountNumber, teamEntry.CostCenter, teamEntry.Name),
+		},
+	}
+	for _, tt := range tests {
+		ms.T().Run(tt.name, func(t *testing.T) {
+			got := tt.entry.transactionReference(ms.DB)
+
+			ms.Equal(tt.want, got)
 		})
 	}
 }

@@ -196,7 +196,7 @@ func NewLedgerReport(ctx context.Context, reportType string, date time.Time) (Le
 
 	report.File.Name = fmt.Sprintf("%s_%s_%s.csv",
 		domain.Env.AppName, reportType, report.Date.Format(domain.DateFormat))
-	report.File.Content = le.ToCsv(report.Date)
+	report.File.Content = le.ToCsv(tx, report.Date)
 	report.File.CreatedByID = CurrentUser(ctx).ID
 	report.File.ContentType = domain.ContentCSV
 	report.LedgerEntries = le
@@ -241,7 +241,7 @@ func NewPolicyLedgerReport(ctx context.Context, policy Policy, reportType string
 
 	report.File.Name = fmt.Sprintf("%s_policy_%s_%s_%d-%d.csv",
 		domain.Env.AppName, policy.ID.String(), reportType, year, month)
-	report.File.Content = le.ToCsvForPolicy()
+	report.File.Content = le.ToCsvForPolicy(tx)
 	report.File.CreatedByID = CurrentUser(ctx).ID
 	report.File.ContentType = domain.ContentCSV
 	report.LedgerEntries = le

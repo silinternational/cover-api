@@ -78,6 +78,7 @@ type LedgerEntry struct {
 	UpdatedAt time.Time `db:"updated_at"`
 
 	Claim *Claim `belongs_to:"claims" validate:"-"`
+	Item  *Item  `belongs_to:"items" validate:"-"`
 }
 
 func (le *LedgerEntry) Create(tx *pop.Connection) error {
@@ -96,7 +97,7 @@ func (le *LedgerEntries) AllNotEntered(tx *pop.Connection, cutoff time.Time) err
 	return appErrorFromDB(err, api.ErrorQueryFailure)
 }
 
-func (le *LedgerEntries) ToCsvForPolicy() []byte {
+func (le *LedgerEntries) ToCsvForPolicy(tx *pop.Connection) []byte {
 	rowTemplate := `%s,"%s","%s",%s` + "\n"
 
 	var buf bytes.Buffer
@@ -110,8 +111,8 @@ func (le *LedgerEntries) ToCsvForPolicy() []byte {
 		nextRow := fmt.Sprintf(
 			rowTemplate,
 			l.Amount.String(),
-			l.transactionDescription(),
-			l.transactionReference(),
+			l.transactionDescription(tx),
+			l.transactionReference(tx),
 			l.DateSubmitted.Format(domain.DateFormat),
 		)
 		buf.Write([]byte(nextRow))
@@ -122,7 +123,7 @@ func (le *LedgerEntries) ToCsvForPolicy() []byte {
 
 type TransactionBlocks map[string]LedgerEntries // keyed by account
 
-func (le *LedgerEntries) ToCsv(date time.Time) []byte {
+func (le *LedgerEntries) ToCsv(tx *pop.Connection, date time.Time) []byte {
 	sage := fin.NewBatch(fin.ProviderTypeSage, date)
 
 	blocks := le.MakeBlocks()
@@ -135,8 +136,8 @@ func (le *LedgerEntries) ToCsv(date time.Time) []byte {
 			sage.AppendToBatch(fin.Transaction{
 				Account:     domain.Env.ExpenseAccount,
 				Amount:      int(l.Amount),
-				Description: l.transactionDescription(),
-				Reference:   l.transactionReference(),
+				Description: l.transactionDescription(tx),
+				Reference:   l.transactionReference(tx),
 				Date:        l.DateSubmitted,
 			})
 
@@ -196,25 +197,49 @@ func (le *LedgerEntry) Reconcile(ctx context.Context, now time.Time) error {
 	return nil
 }
 
-func (le *LedgerEntry) transactionDescription() string {
-	description := fmt.Sprintf("%s %s", le.RiskCategoryName, le.Type)
+// For household-type entries this returns `<entry.Type> <entry.Name>`.
+// For other entries this returns `<entry.Type> <entry.Name> (<accountable person name>)`,
+//   not including `<` and `>`
+func (le *LedgerEntry) transactionDescription(tx *pop.Connection) string {
+	description := fmt.Sprintf(`%s %s`, le.Type, le.Name)
 	if le.PolicyType == api.PolicyTypeHousehold {
-		description = le.Name + " " + description
+		return description
+	}
+	le.LoadItem(tx)
+	if le.Item == nil {
+		return description
+	}
+
+	accName := le.Item.GetAccountablePersonName(tx).String()
+	if accName != "" {
+		description += fmt.Sprintf(" (%s)", accName)
 	}
 
 	return description
 }
 
-// Merge HouseholdID and CostCenter into one column
-func (le *LedgerEntry) transactionReference() string {
+// For household-type entries this returns `MC <entry.HouseholdID> / <accountable person name>`
+// For other entries this returns `<entry.EntityCode> <entry.AccountNumber><entry.CostCenter> / <entry.Name>`,
+//   not including `<` and `>`.
+func (le *LedgerEntry) transactionReference(tx *pop.Connection) string {
 	if le.PolicyType == api.PolicyTypeHousehold {
-		return fmt.Sprintf("MC %s", le.HouseholdID)
+		ref := fmt.Sprintf("MC %s", le.HouseholdID)
+		le.LoadItem(tx)
+		if le.Item == nil {
+			return ref
+		}
+		accName := le.Item.GetAccountablePersonName(tx).String()
+		if accName == "" {
+			return ref
+		}
+
+		return fmt.Sprintf("%s / %s", ref, accName)
 	}
 	if le.LegacyID.Valid {
 		// In the legacy data, the cost center column was prepended with the entity code and account number
 		return le.CostCenter
 	}
-	return fmt.Sprintf("%s %s%s", le.EntityCode, le.AccountNumber, le.CostCenter)
+	return fmt.Sprintf("%s %s%s / %s", le.EntityCode, le.AccountNumber, le.CostCenter, le.Name)
 }
 
 func (le *LedgerEntry) balanceDescription() string {
@@ -270,6 +295,15 @@ func (le *LedgerEntry) LoadClaim(tx *pop.Connection) {
 	if le.ClaimID.Valid {
 		if err := tx.Load(le, "Claim"); err != nil {
 			panic("error loading ledger entry claim: " + err.Error())
+		}
+	}
+}
+
+// LoadItem - a simple wrapper method for loading the item
+func (le *LedgerEntry) LoadItem(tx *pop.Connection) {
+	if le.ItemID.Valid && le.Item == nil {
+		if err := tx.Load(le, "Item"); err != nil {
+			panic("error loading ledger entry item: " + err.Error())
 		}
 	}
 }
