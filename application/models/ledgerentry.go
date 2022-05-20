@@ -51,6 +51,34 @@ var ValidLedgerEntryTypes = map[LedgerEntryType]struct{}{
 	LedgerEntryTypeLegacy20:         {},
 }
 
+func (t LedgerEntryType) Description(claimType string, amount api.Currency) string {
+	switch t {
+	case LedgerEntryTypeNewCoverage:
+		return "Coverage premium: Add"
+	case LedgerEntryTypeCoverageRenewal:
+		return "Coverage premium: Renew"
+	case LedgerEntryTypeCoverageRefund:
+		return "Coverage reimbursement: Remove"
+	case LedgerEntryTypeCoverageChange, LedgerEntryTypePolicyAdjustment:
+		if amount < 0 {
+			return "Coverage reimbursement: Reduce"
+		}
+		return "Coverage premium: Increase"
+	case LedgerEntryTypeClaim, LedgerEntryTypeClaimAdjustment:
+		switch claimType {
+		case FieldClaimItemFMV:
+			return "Claim payout: Fair Market Value"
+		case FieldClaimItemReplaceActual:
+			return "Claim payout: Replace"
+		case FieldClaimItemRepairActual:
+			return "Claim payout: Repair"
+		default:
+			return "Claim transaction"
+		}
+	}
+	return "unknown transaction type"
+}
+
 type LedgerEntries []LedgerEntry
 
 type LedgerEntry struct {
@@ -69,6 +97,7 @@ type LedgerEntry struct {
 	AccountNumber    string          `db:"account_number"`
 	IncomeAccount    string          `db:"income_account"`
 	Name             string          `db:"name"`
+	Reference        string          `db:"reference"`
 	Amount           api.Currency    `db:"amount"`
 	DateSubmitted    time.Time       `db:"date_submitted"`
 	DateEntered      nulls.Time      `db:"date_entered"`
@@ -97,7 +126,7 @@ func (le *LedgerEntries) AllNotEntered(tx *pop.Connection, cutoff time.Time) err
 	return appErrorFromDB(err, api.ErrorQueryFailure)
 }
 
-func (le *LedgerEntries) ToCsvForPolicy(tx *pop.Connection) []byte {
+func (le *LedgerEntries) ToCsvForPolicy() []byte {
 	rowTemplate := `%s,"%s","%s",%s` + "\n"
 
 	var buf bytes.Buffer
@@ -111,8 +140,8 @@ func (le *LedgerEntries) ToCsvForPolicy(tx *pop.Connection) []byte {
 		nextRow := fmt.Sprintf(
 			rowTemplate,
 			l.Amount.String(),
-			l.transactionDescription(tx),
-			l.transactionReference(tx),
+			l.Name,
+			l.Reference,
 			l.DateSubmitted.Format(domain.DateFormat),
 		)
 		buf.Write([]byte(nextRow))
@@ -123,7 +152,7 @@ func (le *LedgerEntries) ToCsvForPolicy(tx *pop.Connection) []byte {
 
 type TransactionBlocks map[string]LedgerEntries // keyed by account
 
-func (le *LedgerEntries) ToCsv(tx *pop.Connection, date time.Time) []byte {
+func (le *LedgerEntries) ToCsv(date time.Time) []byte {
 	sage := fin.NewBatch(fin.ProviderTypeSage, date)
 
 	blocks := le.MakeBlocks()
@@ -136,8 +165,8 @@ func (le *LedgerEntries) ToCsv(tx *pop.Connection, date time.Time) []byte {
 			sage.AppendToBatch(fin.Transaction{
 				Account:     domain.Env.ExpenseAccount,
 				Amount:      int(l.Amount),
-				Description: l.transactionDescription(tx),
-				Reference:   l.transactionReference(tx),
+				Description: l.Name,
+				Reference:   l.Reference,
 				Date:        l.DateSubmitted,
 			})
 
@@ -197,49 +226,74 @@ func (le *LedgerEntry) Reconcile(ctx context.Context, now time.Time) error {
 	return nil
 }
 
-// For household-type entries this returns `<entry.Type> <entry.Name>`.
-// For other entries this returns `<entry.Type> <entry.Name> (<accountable person name>)`,
+// _onlyCreateDescription should only be called when creating a ledgerEntry (not for subsequent usage)
+// For household-type entries this returns `<entry.Type.Description> · <Policy.Name>`.
+// For other entries this returns `<entry.Type.Description> · <Policy.Name> (<accountable person name>)`,
 //   not including `<` and `>`
-func (le *LedgerEntry) transactionDescription(tx *pop.Connection) string {
-	description := fmt.Sprintf(`%s %s`, le.Type, le.Name)
-	if le.PolicyType == api.PolicyTypeHousehold {
-		return description
+func (le *LedgerEntry) _onlyCreateDescription(tx *pop.Connection, amount api.Currency) string {
+	if le.Name != "" {
+		return le.Name
 	}
+
+	description := le.Type.Description("", amount)
+
 	le.LoadItem(tx)
 	if le.Item == nil {
 		return description
 	}
 
-	accName := le.Item.GetAccountablePersonName(tx).String()
-	if accName != "" {
-		description += fmt.Sprintf(" (%s)", accName)
+	le.Item.LoadPolicy(tx, false)
+
+	description = fmt.Sprintf(`%s · %s`, description, le.Item.Policy.Name)
+
+	if le.PolicyType == api.PolicyTypeHousehold {
+		return description
 	}
 
-	return description
+	// For non-household policies
+	person := le.Item.GetAccountablePersonName(tx).String()
+	if person == "" {
+		return description
+	}
+
+	return fmt.Sprintf(`%s (%s)`, description, person)
 }
 
+// _onlyCreateReference should only be called when creating a ledgerEntry (not for subsequent usage)
 // For household-type entries this returns `MC <entry.HouseholdID> / <accountable person name>`
-// For other entries this returns `<entry.EntityCode> <entry.AccountNumber><entry.CostCenter> / <entry.Name>`,
+// For other entries this returns `<entry.EntityCode> <entry.AccountNumber><entry.CostCenter> / <Policy.Name>`,
 //   not including `<` and `>`.
-func (le *LedgerEntry) transactionReference(tx *pop.Connection) string {
+func (le *LedgerEntry) _onlyCreateReference(tx *pop.Connection) string {
+	if le.Reference != "" {
+		return le.Reference
+	}
+
+	le.LoadItem(tx)
+
+	// For household policies
 	if le.PolicyType == api.PolicyTypeHousehold {
 		ref := fmt.Sprintf("MC %s", le.HouseholdID)
-		le.LoadItem(tx)
+
 		if le.Item == nil {
 			return ref
 		}
-		accName := le.Item.GetAccountablePersonName(tx).String()
-		if accName == "" {
+		person := le.Item.GetAccountablePersonName(tx).String()
+		if person == "" {
 			return ref
 		}
 
-		return fmt.Sprintf("%s / %s", ref, accName)
+		return fmt.Sprintf("%s / %s", ref, person)
 	}
-	if le.LegacyID.Valid {
-		// In the legacy data, the cost center column was prepended with the entity code and account number
-		return le.CostCenter
+
+	// For non-household policies
+	if le.Item == nil {
+		return fmt.Sprintf("%s %s%s", le.EntityCode, le.AccountNumber, le.CostCenter)
 	}
-	return fmt.Sprintf("%s %s%s / %s", le.EntityCode, le.AccountNumber, le.CostCenter, le.Name)
+
+	le.Item.LoadPolicy(tx, false)
+	return fmt.Sprintf("%s %s%s / %s",
+		le.EntityCode, le.AccountNumber, le.CostCenter, le.Item.Policy.Name)
+
 }
 
 func (le *LedgerEntry) balanceDescription() string {

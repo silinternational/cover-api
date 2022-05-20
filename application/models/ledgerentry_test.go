@@ -109,7 +109,7 @@ func (ms *ModelSuite) TestLedgerEntries_ToCsvForPolicy() {
 	}
 	for _, tt := range tests {
 		ms.T().Run(tt.name, func(t *testing.T) {
-			got := tt.entries.ToCsvForPolicy(ms.DB)
+			got := tt.entries.ToCsvForPolicy()
 			for _, w := range tt.want {
 				ms.Contains(string(got), w)
 			}
@@ -175,7 +175,7 @@ func (ms *ModelSuite) TestLedgerEntries_ToCsv() {
 	}
 	for _, tt := range tests {
 		ms.T().Run(tt.name, func(t *testing.T) {
-			got := tt.entries.ToCsv(ms.DB, tt.batchDate)
+			got := tt.entries.ToCsv(tt.batchDate)
 			for _, w := range tt.want {
 				ms.Contains(string(got), w)
 			}
@@ -317,7 +317,7 @@ func (ms *ModelSuite) Test_NewLedgerEntry() {
 	}
 }
 
-func (ms *ModelSuite) TestLedgerEntry_transactionDescription() {
+func (ms *ModelSuite) TestLedgerEntry_onlyCreateDescription() {
 	f := CreateItemFixtures(ms.DB, FixturesConfig{NumberOfPolicies: 2, ClaimsPerPolicy: 1, UsersPerPolicy: 2})
 	hhPolicy := f.Policies[0]
 	hhPolicyItem := hhPolicy.Items[0]
@@ -367,14 +367,14 @@ func (ms *ModelSuite) TestLedgerEntry_transactionDescription() {
 	}
 	for _, tt := range tests {
 		ms.T().Run(tt.name, func(t *testing.T) {
-			got := tt.entry.transactionDescription(ms.DB)
+			got := tt.entry._onlyCreateDescription(ms.DB, api.Currency(1))
 
 			ms.Equal(tt.want, got)
 		})
 	}
 }
 
-func (ms *ModelSuite) TestLedgerEntry_transactionReference() {
+func (ms *ModelSuite) TestLedgerEntry_onlyCreateReference() {
 	f := CreateItemFixtures(ms.DB, FixturesConfig{NumberOfPolicies: 2, ClaimsPerPolicy: 1, UsersPerPolicy: 2})
 	hhPolicy := f.Policies[0]
 	hhPolicyItem := hhPolicy.Items[0]
@@ -421,12 +421,12 @@ func (ms *ModelSuite) TestLedgerEntry_transactionReference() {
 			name:  "team policy item",
 			entry: teamEntry,
 			want: fmt.Sprintf("%s %s%s / %s",
-				teamEntry.EntityCode, teamEntry.AccountNumber, teamEntry.CostCenter, teamEntry.Name),
+				teamEntry.EntityCode, teamEntry.AccountNumber, teamEntry.CostCenter, teamPolicy.Name),
 		},
 	}
 	for _, tt := range tests {
 		ms.T().Run(tt.name, func(t *testing.T) {
-			got := tt.entry.transactionReference(ms.DB)
+			got := tt.entry._onlyCreateReference(ms.DB)
 
 			ms.Equal(tt.want, got)
 		})

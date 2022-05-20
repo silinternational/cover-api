@@ -868,6 +868,7 @@ func (i *Item) calculateCancellationCredit(t time.Time) api.Currency {
 func (i *Item) calculatePremiumChange(t time.Time, oldCoverageAmount int) api.Currency {
 	oldItem := Item{CoverageAmount: oldCoverageAmount}
 
+	// These will be positive numbers
 	oldPremium := oldItem.CalculateAnnualPremium()
 	credit := domain.CalculatePartialYearValue(int(oldPremium), t)
 
@@ -976,15 +977,11 @@ func (i *Item) CreateLedgerEntry(tx *pop.Connection, entryType LedgerEntryType, 
 	i.LoadRiskCategory(tx, false)
 	i.Policy.LoadEntityCode(tx, false)
 
-	name := i.GetAccountablePersonName(tx)
-
 	le := NewLedgerEntry(i.Policy, i, nil)
 	le.Type = entryType
 	le.Amount = -amount
-	le.Name = name.String()
-	if le.Name == "" {
-		le.Name = i.Policy.Name
-	}
+	le.Name = le._onlyCreateDescription(tx, amount)
+	le.Reference = le._onlyCreateReference(tx)
 
 	if err := le.Create(tx); err != nil {
 		return err
