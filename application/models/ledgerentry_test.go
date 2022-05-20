@@ -343,11 +343,9 @@ func (ms *ModelSuite) TestLedgerEntry_onlyCreateDescription() {
 	// Create new Ledger Entries for each policy
 	hhEntry := NewLedgerEntry(hhPolicy, &hhPolicyItem, nil)
 	hhEntry.Type = LedgerEntryTypeNewCoverage
-	hhEntry.Name = hhPolicyItem.Name
 
 	teamEntry := NewLedgerEntry(teamPolicy, &teamPolicyItem, nil)
 	teamEntry.Type = LedgerEntryTypeCoverageRenewal
-	teamEntry.Name = teamPolicyItem.Name
 
 	tests := []struct {
 		name  string
@@ -357,12 +355,12 @@ func (ms *ModelSuite) TestLedgerEntry_onlyCreateDescription() {
 		{
 			name:  "household policy item",
 			entry: hhEntry,
-			want:  fmt.Sprintf("%s %s", hhEntry.Type, hhEntry.Name),
+			want:  fmt.Sprintf("%s · %s", `Coverage premium: Add`, hhPolicy.Name),
 		},
 		{
 			name:  "team policy item",
 			entry: teamEntry,
-			want:  fmt.Sprintf("%s %s (%s)", teamEntry.Type, teamEntry.Name, teamAccPerson.GetName()),
+			want:  fmt.Sprintf("%s · %s (%s)", `Coverage premium: Renew`, teamPolicy.Name, teamAccPerson.GetName()),
 		},
 	}
 	for _, tt := range tests {
