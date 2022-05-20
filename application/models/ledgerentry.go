@@ -51,7 +51,7 @@ var ValidLedgerEntryTypes = map[LedgerEntryType]struct{}{
 	LedgerEntryTypeLegacy20:         {},
 }
 
-func (t LedgerEntryType) Description(claimType string, amount api.Currency) string {
+func (t LedgerEntryType) Description(claimPayoutType string, amount api.Currency) string {
 	switch t {
 	case LedgerEntryTypeNewCoverage:
 		return "Coverage premium: Add"
@@ -65,7 +65,7 @@ func (t LedgerEntryType) Description(claimType string, amount api.Currency) stri
 		}
 		return "Coverage premium: Increase"
 	case LedgerEntryTypeClaim, LedgerEntryTypeClaimAdjustment:
-		switch claimType {
+		switch claimPayoutType {
 		case FieldClaimItemFMV:
 			return "Claim payout: Fair Market Value"
 		case FieldClaimItemReplaceActual:
@@ -226,32 +226,31 @@ func (le *LedgerEntry) Reconcile(ctx context.Context, now time.Time) error {
 	return nil
 }
 
-// _onlyCreateDescription should only be called when creating a ledgerEntry (not for subsequent usage)
+// _onlyCreateName should only be called when creating a ledgerEntry (not for subsequent usage)
 // For household-type entries this returns `<entry.Type.Description> · <Policy.Name>`.
 // For other entries this returns `<entry.Type.Description> · <Policy.Name> (<accountable person name>)`,
 //   not including `<` and `>`
-func (le *LedgerEntry) _onlyCreateDescription(tx *pop.Connection, amount api.Currency) string {
+func (le *LedgerEntry) _onlyCreateName(tx *pop.Connection, item *Item, claimPayoutType string, amount api.Currency) string {
 	if le.Name != "" {
 		return le.Name
 	}
 
-	description := le.Type.Description("", amount)
+	description := le.Type.Description(claimPayoutType, amount)
 
-	le.LoadItem(tx)
-	if le.Item == nil {
+	if item == nil {
 		return description
 	}
 
-	le.Item.LoadPolicy(tx, false)
+	item.LoadPolicy(tx, false)
 
-	description = fmt.Sprintf(`%s · %s`, description, le.Item.Policy.Name)
+	description = fmt.Sprintf(`%s · %s`, description, item.Policy.Name)
 
 	if le.PolicyType == api.PolicyTypeHousehold {
 		return description
 	}
 
 	// For non-household policies
-	person := le.Item.GetAccountablePersonName(tx).String()
+	person := item.GetAccountablePersonName(tx).String()
 	if person == "" {
 		return description
 	}
@@ -263,21 +262,19 @@ func (le *LedgerEntry) _onlyCreateDescription(tx *pop.Connection, amount api.Cur
 // For household-type entries this returns `MC <entry.HouseholdID> / <accountable person name>`
 // For other entries this returns `<entry.EntityCode> <entry.AccountNumber><entry.CostCenter> / <Policy.Name>`,
 //   not including `<` and `>`.
-func (le *LedgerEntry) _onlyCreateReference(tx *pop.Connection) string {
+func (le *LedgerEntry) _onlyCreateReference(tx *pop.Connection, item *Item) string {
 	if le.Reference != "" {
 		return le.Reference
 	}
-
-	le.LoadItem(tx)
 
 	// For household policies
 	if le.PolicyType == api.PolicyTypeHousehold {
 		ref := fmt.Sprintf("MC %s", le.HouseholdID)
 
-		if le.Item == nil {
+		if item == nil {
 			return ref
 		}
-		person := le.Item.GetAccountablePersonName(tx).String()
+		person := item.GetAccountablePersonName(tx).String()
 		if person == "" {
 			return ref
 		}
@@ -286,14 +283,13 @@ func (le *LedgerEntry) _onlyCreateReference(tx *pop.Connection) string {
 	}
 
 	// For non-household policies
-	if le.Item == nil {
+	if item == nil {
 		return fmt.Sprintf("%s %s%s", le.EntityCode, le.AccountNumber, le.CostCenter)
 	}
 
-	le.Item.LoadPolicy(tx, false)
+	item.LoadPolicy(tx, false)
 	return fmt.Sprintf("%s %s%s / %s",
-		le.EntityCode, le.AccountNumber, le.CostCenter, le.Item.Policy.Name)
-
+		le.EntityCode, le.AccountNumber, le.CostCenter, item.Policy.Name)
 }
 
 func (le *LedgerEntry) balanceDescription() string {

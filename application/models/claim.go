@@ -926,15 +926,12 @@ func (c *Claim) CreateLedgerEntry(tx *pop.Connection) error {
 		item := c.ClaimItems[i].Item
 		item.LoadRiskCategory(tx, false)
 
-		name := item.GetAccountablePersonName(tx)
-
 		le := NewLedgerEntry(c.Policy, &item, c)
 		le.Type = LedgerEntryTypeClaim
 		le.Amount = c.TotalPayout
-		le.Name = name.String()
-		if le.Name == "" {
-			le.Name = c.Policy.Name
-		}
+		le.Name = le._onlyCreateName(tx, &item, string(c.ClaimItems[i].PayoutOption), c.TotalPayout)
+		le.Reference = le._onlyCreateReference(tx, &item)
+
 		le.RiskCategoryName = item.RiskCategory.Name
 		le.RiskCategoryCC = item.RiskCategory.CostCenter
 		le.IncomeAccount = domain.Env.ClaimIncomeAccount

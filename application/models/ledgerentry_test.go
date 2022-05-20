@@ -73,7 +73,8 @@ func (ms *ModelSuite) TestLedgerEntries_ToCsvForPolicy() {
 		EntityCode:       "EntityCode",
 		RiskCategoryName: "Mobile",
 		Type:             LedgerEntryTypeClaim,
-		Name:             "FirstName LastName",
+		Name:             "LedgerEntry1",
+		Reference:        "LedgerReference1",
 		Amount:           100,
 		DateSubmitted:    date,
 		AccountNumber:    "AccountNumber",
@@ -99,9 +100,8 @@ func (ms *ModelSuite) TestLedgerEntries_ToCsvForPolicy() {
 				csvPolicyHeader,
 				fmt.Sprintf(`%s,"%s","%s",%s`,
 					entry.Amount.String(),
-					fmt.Sprintf("%s %s", entry.Type, entry.Name),
-					fmt.Sprintf("%s %s%s / %s",
-						entry.EntityCode, entry.AccountNumber, entry.CostCenter, entry.Name),
+					entry.Name,
+					entry.Reference,
 					date.Format(domain.DateFormat),
 				),
 			},
@@ -125,7 +125,8 @@ func (ms *ModelSuite) TestLedgerEntries_ToCsv() {
 		EntityCode:       "EntityCode",
 		RiskCategoryName: "Mobile",
 		Type:             LedgerEntryTypeClaim,
-		Name:             "FirstName LastName",
+		Name:             "LedgerEntry1",
+		Reference:        "LedgerReference1",
 		Amount:           100,
 		DateSubmitted:    date,
 		AccountNumber:    "AccountNumber",
@@ -159,9 +160,8 @@ func (ms *ModelSuite) TestLedgerEntries_ToCsv() {
 				fmt.Sprintf(`"2","000000","00001","0000000020","",0,"%s","",%s,"2","%s","%s",%s,"GL","JE"`,
 					domain.Env.ExpenseAccount,
 					api.Currency(-entry.Amount).String(),
-					fmt.Sprintf("%s %s", entry.Type, entry.Name),
-					fmt.Sprintf("%s %s%s / %s",
-						entry.EntityCode, entry.AccountNumber, entry.CostCenter, entry.Name),
+					entry.Name,
+					entry.Reference,
 					date.Format("20060102"),
 				),
 				fmt.Sprintf(`"2","000000","00001","0000000040","",0,"%s","",%s,"2","%s","",%s,"GL","JE"`,
@@ -317,7 +317,7 @@ func (ms *ModelSuite) Test_NewLedgerEntry() {
 	}
 }
 
-func (ms *ModelSuite) TestLedgerEntry_onlyCreateDescription() {
+func (ms *ModelSuite) TestLedgerEntry_onlyCreateName() {
 	f := CreateItemFixtures(ms.DB, FixturesConfig{NumberOfPolicies: 2, ClaimsPerPolicy: 1, UsersPerPolicy: 2})
 	hhPolicy := f.Policies[0]
 	hhPolicyItem := hhPolicy.Items[0]
@@ -350,22 +350,25 @@ func (ms *ModelSuite) TestLedgerEntry_onlyCreateDescription() {
 	tests := []struct {
 		name  string
 		entry LedgerEntry
+		item  Item
 		want  string
 	}{
 		{
 			name:  "household policy item",
 			entry: hhEntry,
+			item:  hhPolicyItem,
 			want:  fmt.Sprintf("%s · %s", `Coverage premium: Add`, hhPolicy.Name),
 		},
 		{
 			name:  "team policy item",
 			entry: teamEntry,
+			item:  teamPolicyItem,
 			want:  fmt.Sprintf("%s · %s (%s)", `Coverage premium: Renew`, teamPolicy.Name, teamAccPerson.GetName()),
 		},
 	}
 	for _, tt := range tests {
 		ms.T().Run(tt.name, func(t *testing.T) {
-			got := tt.entry._onlyCreateDescription(ms.DB, api.Currency(1))
+			got := tt.entry._onlyCreateName(ms.DB, &tt.item, "", api.Currency(1))
 
 			ms.Equal(tt.want, got)
 		})
@@ -408,23 +411,26 @@ func (ms *ModelSuite) TestLedgerEntry_onlyCreateReference() {
 	tests := []struct {
 		name  string
 		entry LedgerEntry
+		item  Item
 		want  string
 	}{
 		{
 			name:  "household policy item",
 			entry: hhEntry,
+			item:  hhPolicyItem,
 			want:  fmt.Sprintf("MC %s / %s", hhEntry.HouseholdID, hhAccPerson.GetName()),
 		},
 		{
 			name:  "team policy item",
 			entry: teamEntry,
+			item:  teamPolicyItem,
 			want: fmt.Sprintf("%s %s%s / %s",
 				teamEntry.EntityCode, teamEntry.AccountNumber, teamEntry.CostCenter, teamPolicy.Name),
 		},
 	}
 	for _, tt := range tests {
 		ms.T().Run(tt.name, func(t *testing.T) {
-			got := tt.entry._onlyCreateReference(ms.DB)
+			got := tt.entry._onlyCreateReference(ms.DB, &tt.item)
 
 			ms.Equal(tt.want, got)
 		})
