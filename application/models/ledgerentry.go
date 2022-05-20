@@ -349,15 +349,6 @@ func (le *LedgerEntry) LoadClaim(tx *pop.Connection) {
 	}
 }
 
-// LoadItem - a simple wrapper method for loading the item
-func (le *LedgerEntry) LoadItem(tx *pop.Connection) {
-	if le.ItemID.Valid && le.Item == nil {
-		if err := tx.Load(le, "Item"); err != nil {
-			panic("error loading ledger entry item: " + err.Error())
-		}
-	}
-}
-
 // FindRenewals finds the coverage renewal ledger entries for the given year
 func (le *LedgerEntries) FindRenewals(tx *pop.Connection, year int) error {
 	if err := tx.Where("type = ?", LedgerEntryTypeCoverageRenewal).
