@@ -1,0 +1,2 @@
+add_column("ledger_entries", "description", "string", {"default": ""})
+add_column("ledger_entries", "reference", "string", {"default": ""})
