@@ -73,7 +73,7 @@ func (ms *ModelSuite) TestLedgerEntries_ToCsvForPolicy() {
 		EntityCode:       "EntityCode",
 		RiskCategoryName: "Mobile",
 		Type:             LedgerEntryTypeClaim,
-		Name:             "LedgerEntry1",
+		Description:      "LedgerEntry1",
 		Reference:        "LedgerReference1",
 		Amount:           100,
 		DateSubmitted:    date,
@@ -100,7 +100,7 @@ func (ms *ModelSuite) TestLedgerEntries_ToCsvForPolicy() {
 				csvPolicyHeader,
 				fmt.Sprintf(`%s,"%s","%s",%s`,
 					entry.Amount.String(),
-					entry.Name,
+					entry.Description,
 					entry.Reference,
 					date.Format(domain.DateFormat),
 				),
@@ -125,7 +125,7 @@ func (ms *ModelSuite) TestLedgerEntries_ToCsv() {
 		EntityCode:       "EntityCode",
 		RiskCategoryName: "Mobile",
 		Type:             LedgerEntryTypeClaim,
-		Name:             "LedgerEntry1",
+		Description:      "LedgerEntry1",
 		Reference:        "LedgerReference1",
 		Amount:           100,
 		DateSubmitted:    date,
@@ -160,7 +160,7 @@ func (ms *ModelSuite) TestLedgerEntries_ToCsv() {
 				fmt.Sprintf(`"2","000000","00001","0000000020","",0,"%s","",%s,"2","%s","%s",%s,"GL","JE"`,
 					domain.Env.ExpenseAccount,
 					api.Currency(-entry.Amount).String(),
-					entry.Name,
+					entry.Description,
 					entry.Reference,
 					date.Format("20060102"),
 				),
@@ -317,7 +317,7 @@ func (ms *ModelSuite) Test_NewLedgerEntry() {
 	}
 }
 
-func (ms *ModelSuite) TestLedgerEntry_onlyCreateName() {
+func (ms *ModelSuite) TestLedgerEntry_getDescription() {
 	f := CreateItemFixtures(ms.DB, FixturesConfig{NumberOfPolicies: 2, ClaimsPerPolicy: 1, UsersPerPolicy: 2})
 	hhPolicy := f.Policies[0]
 	hhPolicyItem := hhPolicy.Items[0]
@@ -368,14 +368,14 @@ func (ms *ModelSuite) TestLedgerEntry_onlyCreateName() {
 	}
 	for _, tt := range tests {
 		ms.T().Run(tt.name, func(t *testing.T) {
-			got := tt.entry._onlyCreateName(ms.DB, &tt.item, "", api.Currency(1))
+			got := tt.entry.getDescription(ms.DB, &tt.item, "", api.Currency(1))
 
 			ms.Equal(tt.want, got)
 		})
 	}
 }
 
-func (ms *ModelSuite) TestLedgerEntry_onlyCreateReference() {
+func (ms *ModelSuite) TestLedgerEntry_getReference() {
 	f := CreateItemFixtures(ms.DB, FixturesConfig{NumberOfPolicies: 2, ClaimsPerPolicy: 1, UsersPerPolicy: 2})
 	hhPolicy := f.Policies[0]
 	hhPolicyItem := hhPolicy.Items[0]
@@ -400,11 +400,11 @@ func (ms *ModelSuite) TestLedgerEntry_onlyCreateReference() {
 	// Create new Ledger Entries for each policy
 	hhEntry := NewLedgerEntry(hhPolicy, &hhPolicyItem, nil)
 	hhEntry.Type = LedgerEntryTypeNewCoverage
-	hhEntry.Name = hhPolicyItem.Name
+	hhEntry.Description = hhPolicyItem.Name
 
 	teamEntry := NewLedgerEntry(teamPolicy, &teamPolicyItem, nil)
 	teamEntry.Type = LedgerEntryTypeCoverageRenewal
-	teamEntry.Name = teamPolicyItem.Name
+	teamEntry.Description = teamPolicyItem.Name
 	teamEntry.AccountNumber = "TAcc"
 	teamEntry.CostCenter = "TCC"
 
@@ -430,7 +430,7 @@ func (ms *ModelSuite) TestLedgerEntry_onlyCreateReference() {
 	}
 	for _, tt := range tests {
 		ms.T().Run(tt.name, func(t *testing.T) {
-			got := tt.entry._onlyCreateReference(ms.DB, &tt.item)
+			got := tt.entry.getReference(ms.DB, &tt.item)
 
 			ms.Equal(tt.want, got)
 		})

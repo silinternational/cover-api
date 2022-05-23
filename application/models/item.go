@@ -980,8 +980,8 @@ func (i *Item) CreateLedgerEntry(tx *pop.Connection, entryType LedgerEntryType, 
 	le := NewLedgerEntry(i.Policy, i, nil)
 	le.Type = entryType
 	le.Amount = -amount
-	le.Name = le._onlyCreateName(tx, i, "", amount)
-	le.Reference = le._onlyCreateReference(tx, i)
+	le.Description = le.getDescription(tx, i, "", amount)
+	le.Reference = le.getReference(tx, i)
 
 	if err := le.Create(tx); err != nil {
 		return err
@@ -1024,9 +1024,7 @@ func (i *Item) GetAccountablePersonLocation(tx *pop.Connection) Location {
 // GetAccountablePerson gets the accountable person as a Person interface
 func (i *Item) GetAccountablePerson(tx *pop.Connection) Person {
 	var person Person
-	if i == nil {
-		return person
-	}
+
 	if i.PolicyUserID.Valid {
 		var user User
 		if err := user.FindByID(tx, i.PolicyUserID.UUID); err != nil {

@@ -929,8 +929,8 @@ func (c *Claim) CreateLedgerEntry(tx *pop.Connection) error {
 		le := NewLedgerEntry(c.Policy, &item, c)
 		le.Type = LedgerEntryTypeClaim
 		le.Amount = c.TotalPayout
-		le.Name = le._onlyCreateName(tx, &item, string(c.ClaimItems[i].PayoutOption), c.TotalPayout)
-		le.Reference = le._onlyCreateReference(tx, &item)
+		le.Description = le.getDescription(tx, &item, string(c.ClaimItems[i].PayoutOption), c.TotalPayout)
+		le.Reference = le.getReference(tx, &item)
 
 		le.RiskCategoryName = item.RiskCategory.Name
 		le.RiskCategoryCC = item.RiskCategory.CostCenter

@@ -97,6 +97,7 @@ type LedgerEntry struct {
 	AccountNumber    string          `db:"account_number"`
 	IncomeAccount    string          `db:"income_account"`
 	Name             string          `db:"name"`
+	Description      string          `db:"description"`
 	Reference        string          `db:"reference"`
 	Amount           api.Currency    `db:"amount"`
 	DateSubmitted    time.Time       `db:"date_submitted"`
@@ -140,7 +141,7 @@ func (le *LedgerEntries) ToCsvForPolicy() []byte {
 		nextRow := fmt.Sprintf(
 			rowTemplate,
 			l.Amount.String(),
-			l.Name,
+			l.Description,
 			l.Reference,
 			l.DateSubmitted.Format(domain.DateFormat),
 		)
@@ -165,7 +166,7 @@ func (le *LedgerEntries) ToCsv(date time.Time) []byte {
 			sage.AppendToBatch(fin.Transaction{
 				Account:     domain.Env.ExpenseAccount,
 				Amount:      int(l.Amount),
-				Description: l.Name,
+				Description: l.Description,
 				Reference:   l.Reference,
 				Date:        l.DateSubmitted,
 			})
@@ -226,13 +227,13 @@ func (le *LedgerEntry) Reconcile(ctx context.Context, now time.Time) error {
 	return nil
 }
 
-// _onlyCreateName should only be called when creating a ledgerEntry (not for subsequent usage)
+// getDescription should only be called when creating a ledgerEntry (not for subsequent usage)
 // For household-type entries this returns `<entry.Type.Description> · <Policy.Name>`.
 // For other entries this returns `<entry.Type.Description> · <Policy.Name> (<accountable person name>)`,
 //   not including `<` and `>`
-func (le *LedgerEntry) _onlyCreateName(tx *pop.Connection, item *Item, claimPayoutType string, amount api.Currency) string {
-	if le.Name != "" {
-		return le.Name
+func (le *LedgerEntry) getDescription(tx *pop.Connection, item *Item, claimPayoutType string, amount api.Currency) string {
+	if le.Description != "" {
+		return le.Description
 	}
 
 	description := le.Type.Description(claimPayoutType, amount)
@@ -258,11 +259,11 @@ func (le *LedgerEntry) _onlyCreateName(tx *pop.Connection, item *Item, claimPayo
 	return fmt.Sprintf(`%s (%s)`, description, person)
 }
 
-// _onlyCreateReference should only be called when creating a ledgerEntry (not for subsequent usage)
+// getReference should only be called when creating a ledgerEntry (not for subsequent usage)
 // For household-type entries this returns `MC <entry.HouseholdID> / <accountable person name>`
 // For other entries this returns `<entry.EntityCode> <entry.AccountNumber><entry.CostCenter> / <Policy.Name>`,
 //   not including `<` and `>`.
-func (le *LedgerEntry) _onlyCreateReference(tx *pop.Connection, item *Item) string {
+func (le *LedgerEntry) getReference(tx *pop.Connection, item *Item) string {
 	if le.Reference != "" {
 		return le.Reference
 	}
@@ -383,7 +384,7 @@ func (le *LedgerEntry) ConvertToAPI(tx *pop.Connection) api.LedgerEntry {
 		CostCenter:       le.CostCenter,
 		AccountNumber:    le.AccountNumber,
 		IncomeAccount:    le.IncomeAccount,
-		Name:             le.Name,
+		Name:             le.Description,
 		Amount:           le.Amount,
 		DateSubmitted:    le.DateSubmitted,
 		DateEntered:      convertTimeToAPI(le.DateEntered),
