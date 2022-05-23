@@ -227,14 +227,14 @@ func (ms *ModelSuite) TestPolicy_LoadMembers() {
 }
 
 func idsInOrder(id1, id2 uuid.UUID) string {
-	tmplt := `%s||%s`
+	const template = `%s||%s`
 	id1S := id1.String()
 	id2S := id2.String()
 	if id1S <= id2S {
-		return fmt.Sprintf(tmplt, id1S, id2S)
+		return fmt.Sprintf(template, id1S, id2S)
 	}
 
-	return fmt.Sprintf(tmplt, id2S, id1S)
+	return fmt.Sprintf(template, id2S, id1S)
 
 }
 
