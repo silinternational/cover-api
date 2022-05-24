@@ -357,13 +357,13 @@ func (ms *ModelSuite) TestLedgerEntry_getDescription() {
 			name:  "household policy item",
 			entry: hhEntry,
 			item:  hhPolicyItem,
-			want:  fmt.Sprintf("%s · %s", `Coverage premium: Add`, hhPolicy.Name),
+			want:  fmt.Sprintf("%s / %s", `Coverage premium: Add`, hhPolicy.Name),
 		},
 		{
 			name:  "team policy item",
 			entry: teamEntry,
 			item:  teamPolicyItem,
-			want:  fmt.Sprintf("%s · %s (%s)", `Coverage reimbursement: Remove`, teamPolicy.Name, teamAccPerson.GetName()),
+			want:  fmt.Sprintf("%s / %s (%s)", `Coverage reimbursement: Remove`, teamPolicy.Name, teamAccPerson.GetName()),
 		},
 	}
 	for _, tt := range tests {

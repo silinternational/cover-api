@@ -228,8 +228,8 @@ func (le *LedgerEntry) Reconcile(ctx context.Context, now time.Time) error {
 }
 
 // getDescription should only be called when creating a ledgerEntry (not for subsequent usage)
-// For household-type entries this returns `<entry.Type.Description> · <Policy.Name>`.
-// For other entries this returns `<entry.Type.Description> · <Policy.Name> (<accountable person name>)`,
+// For household-type entries this returns `<entry.Type.Description> / <Policy.Name>`.
+// For other entries this returns `<entry.Type.Description> / <Policy.Name> (<accountable person name>)`,
 //   not including `<` and `>`
 func (le *LedgerEntry) getDescription(tx *pop.Connection, item *Item, claimPayoutType string, amount api.Currency) string {
 	if le.Description != "" {
@@ -244,7 +244,7 @@ func (le *LedgerEntry) getDescription(tx *pop.Connection, item *Item, claimPayou
 
 	item.LoadPolicy(tx, false)
 
-	description = fmt.Sprintf(`%s · %s`, description, item.Policy.Name)
+	description = fmt.Sprintf(`%s / %s`, description, item.Policy.Name)
 
 	if le.PolicyType == api.PolicyTypeHousehold {
 		return description

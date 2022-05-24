@@ -1077,8 +1077,8 @@ func (ms *ModelSuite) TestClaim_CreateLedgerEntry() {
 	ms.Equal(claim.ID, le.ClaimID.UUID, "ClaimID is incorrect")
 	ms.Equal(api.Currency(12345), le.Amount, "Amount is incorrect")
 
-	// `Claim transaction · XNnXtoquYXs8C2FoM0XG`
-	wantDescription := fmt.Sprintf("%s · %s", le.Type.Description("", api.Currency(1)), policy.Name)
+	// `Claim transaction / XNnXtoquYXs8C2FoM0XG`
+	wantDescription := fmt.Sprintf("%s / %s", le.Type.Description("", api.Currency(1)), policy.Name)
 
 	ms.Equal(wantDescription, le.Description, "Description is incorrect")
 }

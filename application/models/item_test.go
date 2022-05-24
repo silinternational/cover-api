@@ -952,7 +952,7 @@ func (ms *ModelSuite) TestItem_CreateLedgerEntry() {
 	ms.Equal(item.ID, le.ItemID.UUID, "ItemID is incorrect")
 	ms.Equal(amount, -le.Amount, "Amount is incorrect")
 
-	wantDescription := fmt.Sprintf("%s · %s", le.Type.Description("", api.Currency(1)), policy.Name)
+	wantDescription := fmt.Sprintf("%s / %s", le.Type.Description("", api.Currency(1)), policy.Name)
 	ms.Equal(wantDescription, le.Description, "Description is incorrect")
 	ms.Equal(time.Now().UTC().Truncate(domain.DurationDay), le.DateSubmitted,
 		"ledger entry submitted date should be the current time")
