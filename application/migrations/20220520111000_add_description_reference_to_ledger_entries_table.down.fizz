@@ -1,2 +1,0 @@
-drop_column("ledger_entries", "description")
-drop_column("ledger_entries", "reference")
