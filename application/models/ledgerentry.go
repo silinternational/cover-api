@@ -60,7 +60,7 @@ func (t LedgerEntryType) Description(claimPayoutOption string, amount api.Curren
 	case LedgerEntryTypeCoverageRefund:
 		return "Coverage reimbursement: Remove"
 	case LedgerEntryTypeCoverageChange, LedgerEntryTypePolicyAdjustment:
-		if amount < 0 {
+		if amount >= 0 { // reimbursements/reductions are positive and charges are negative
 			return "Coverage reimbursement: Reduce"
 		}
 		return "Coverage premium: Increase"
@@ -232,12 +232,7 @@ func (le *LedgerEntry) Reconcile(ctx context.Context, now time.Time) error {
 // For other entries this returns `<entry.Type.Description> / <Policy.Name> (<accountable person name>)`,
 //   not including `<` and `>`
 func (le *LedgerEntry) getDescription() string {
-	amount := le.Amount
-	if amount < 0 {
-		amount = -amount
-	}
-
-	description := le.Type.Description(le.ClaimPayoutOption, amount)
+	description := le.Type.Description(le.ClaimPayoutOption, le.Amount)
 
 	if le.PolicyName == "" {
 		return description
