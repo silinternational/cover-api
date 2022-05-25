@@ -977,11 +977,9 @@ func (i *Item) CreateLedgerEntry(tx *pop.Connection, entryType LedgerEntryType, 
 	i.LoadRiskCategory(tx, false)
 	i.Policy.LoadEntityCode(tx, false)
 
-	le := NewLedgerEntry(i.Policy, i, nil)
+	le := NewLedgerEntry(tx, i.Policy, i, nil)
 	le.Type = entryType
 	le.Amount = -amount
-	le.Description = le.getDescription(tx, i, "", amount)
-	le.Reference = le.getReference(tx, i)
 
 	if err := le.Create(tx); err != nil {
 		return err

@@ -1051,11 +1051,14 @@ func (ms *ModelSuite) TestClaim_CreateLedgerEntry() {
 	f := CreateItemFixtures(ms.DB, FixturesConfig{ClaimsPerPolicy: 1, ClaimItemsPerClaim: 1})
 	policy := f.Policies[0]
 	item := f.Claims[0].ClaimItems[0].Item
+	payoutOption := string(f.Claims[0].ClaimItems[0].PayoutOption)
 
 	user := f.Users[0]
 	ctx := CreateTestContext(user)
 	ms.NoError(item.SetAccountablePerson(ms.DB, user.ID))
 	ms.NoError(item.Update(ctx))
+
+	accPerson := item.GetAccountablePersonName(ms.DB).String()
 
 	var claim Claim
 	ms.NoError(ms.DB.Find(&claim, f.Claims[0].ID))
@@ -1076,11 +1079,9 @@ func (ms *ModelSuite) TestClaim_CreateLedgerEntry() {
 	ms.Equal(item.ID, le.ItemID.UUID, "ItemID is incorrect")
 	ms.Equal(claim.ID, le.ClaimID.UUID, "ClaimID is incorrect")
 	ms.Equal(api.Currency(12345), le.Amount, "Amount is incorrect")
-
-	// `Claim transaction / XNnXtoquYXs8C2FoM0XG`
-	wantDescription := fmt.Sprintf("%s / %s", le.Type.Description("", api.Currency(1)), policy.Name)
-
-	ms.Equal(wantDescription, le.Description, "Description is incorrect")
+	ms.Equal(accPerson, le.Name, "Name is incorrect")
+	ms.Equal(policy.Name, le.PolicyName, "PolicyName is incorrect")
+	ms.Equal(payoutOption, le.ClaimPayoutOption, "ClaimPayoutOption is incorrect")
 }
 
 func (ms *ModelSuite) TestClaims_ByStatus() {

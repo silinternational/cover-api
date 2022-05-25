@@ -1,2 +1,19 @@
 add_column("ledger_entries", "policy_name", "string", {"default": ""})
-add_column("ledger_entries", "claim_payout_type", "string", {"default": ""})
+add_column("ledger_entries", "claim_payout_option", "string", {"default": ""})
+
+sql(`
+  UPDATE ledger_entries
+  SET policy_name = policies.name
+  FROM policies
+  WHERE policies.id = ledger_entries.policy_id
+`)
+
+sql(`
+  WITH options AS (
+    SELECT payout_option, claim_id FROM claim_items
+  )
+  UPDATE ledger_entries
+  SET claim_payout_option = options.payout_option
+  FROM options
+  WHERE options.claim_id = ledger_entries.claim_id
+`)

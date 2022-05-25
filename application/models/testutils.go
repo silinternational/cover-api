@@ -210,6 +210,10 @@ func UpdateClaimItems(tx *pop.Connection, claim Claim, params UpdateClaimItemsPa
 // createClaimFixture generates a Claim, a number of ClaimItems, and a number of ClaimFiles
 // Uses FixturesConfig fields: ClaimItemsPerClaim, ClaimFilesPerClaim
 func createClaimFixture(tx *pop.Connection, policy Policy, config FixturesConfig) Claim {
+	if config.ClaimItemsPerClaim < 1 {
+		config.ClaimItemsPerClaim = 1
+	}
+
 	if len(policy.Items) < config.ClaimItemsPerClaim {
 		panic(fmt.Sprintf("policy fixture must have at least %d items, it only has %d",
 			config.ClaimItemsPerClaim, len(policy.Items)))

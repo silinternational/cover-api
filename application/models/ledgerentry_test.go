@@ -73,8 +73,8 @@ func (ms *ModelSuite) TestLedgerEntries_ToCsvForPolicy() {
 		EntityCode:       "EntityCode",
 		RiskCategoryName: "Mobile",
 		Type:             LedgerEntryTypeClaim,
-		Description:      "LedgerEntry1",
-		Reference:        "LedgerReference1",
+		Name:             "MyColleague",
+		PolicyName:       "OurPolicy",
 		Amount:           100,
 		DateSubmitted:    date,
 		AccountNumber:    "AccountNumber",
@@ -100,8 +100,8 @@ func (ms *ModelSuite) TestLedgerEntries_ToCsvForPolicy() {
 				csvPolicyHeader,
 				fmt.Sprintf(`%s,"%s","%s",%s`,
 					entry.Amount.String(),
-					entry.Description,
-					entry.Reference,
+					entry.getDescription(),
+					entry.getReference(),
 					date.Format(domain.DateFormat),
 				),
 			},
@@ -125,8 +125,8 @@ func (ms *ModelSuite) TestLedgerEntries_ToCsv() {
 		EntityCode:       "EntityCode",
 		RiskCategoryName: "Mobile",
 		Type:             LedgerEntryTypeClaim,
-		Description:      "LedgerEntry1",
-		Reference:        "LedgerReference1",
+		Name:             "MyColleague",
+		PolicyName:       "OurPolicy",
 		Amount:           100,
 		DateSubmitted:    date,
 		AccountNumber:    "AccountNumber",
@@ -160,8 +160,8 @@ func (ms *ModelSuite) TestLedgerEntries_ToCsv() {
 				fmt.Sprintf(`"2","000000","00001","0000000020","",0,"%s","",%s,"2","%s","%s",%s,"GL","JE"`,
 					domain.Env.ExpenseAccount,
 					api.Currency(-entry.Amount).String(),
-					entry.Description,
-					entry.Reference,
+					entry.getDescription(),
+					entry.getReference(),
 					date.Format("20060102"),
 				),
 				fmt.Sprintf(`"2","000000","00001","0000000040","",0,"%s","",%s,"2","%s","",%s,"GL","JE"`,
@@ -255,24 +255,29 @@ func (ms *ModelSuite) Test_NewLedgerEntry() {
 	householdPolicy := f.Policies[0]
 	householdPolicyItem := householdPolicy.Items[0]
 	ms.NoError(householdPolicyItem.SetAccountablePerson(ms.DB, f.Users[0].ID))
+	ms.NoError(ms.DB.Update(&householdPolicyItem), "error updating householdPolicyItem for test")
+
 	householdPolicyClaim := f.Policies[0].Claims[0]
 	ms.False(uuid.Nil == householdPolicyClaim.ID, "householdPolicyClaim is not hydrated")
+	householdPolicyClaim.LoadClaimItems(ms.DB, true)
 
 	teamPolicy := ConvertPolicyType(ms.DB, f.Policies[1])
 	teamPolicyItem := teamPolicy.Items[0]
 	ms.NoError(teamPolicyItem.SetAccountablePerson(ms.DB, f.Users[1].ID))
 
 	tests := []struct {
-		name   string
-		policy Policy
-		item   *Item
-		claim  *Claim
+		name      string
+		policy    Policy
+		item      *Item
+		claim     *Claim
+		claimItem *ClaimItem
 	}{
 		{
-			name:   "household policy item with claim",
-			policy: householdPolicy,
-			item:   &householdPolicyItem,
-			claim:  &householdPolicyClaim,
+			name:      "household policy item with claim",
+			policy:    householdPolicy,
+			item:      &householdPolicyItem,
+			claim:     &householdPolicyClaim,
+			claimItem: &householdPolicyClaim.ClaimItems[0],
 		},
 		{
 			name:   "team policy item no claim",
@@ -286,7 +291,7 @@ func (ms *ModelSuite) Test_NewLedgerEntry() {
 	}
 	for _, tt := range tests {
 		ms.T().Run(tt.name, func(t *testing.T) {
-			le := NewLedgerEntry(tt.policy, tt.item, tt.claim)
+			le := NewLedgerEntry(ms.DB, tt.policy, tt.item, tt.claim)
 
 			ms.Equal(tt.policy.ID, le.PolicyID, "PolicyID is incorrect")
 			ms.WithinDuration(time.Now().UTC(), le.DateSubmitted, time.Minute, "DateSubmitted is incorrect")
@@ -306,12 +311,17 @@ func (ms *ModelSuite) Test_NewLedgerEntry() {
 				ms.Equal(tt.item.RiskCategory.Name, le.RiskCategoryName, "RiskCategoryName is incorrect")
 				ms.Equal(tt.item.RiskCategory.CostCenter, le.RiskCategoryCC, "RiskCategoryCC is incorrect")
 				ms.Equal(tt.item.ID, le.ItemID.UUID, "ItemID is incorrect")
+
+				accPerson := tt.item.GetAccountablePersonName(ms.DB).String()
+				ms.Equal(accPerson, le.Name, "Name is incorrect")
+				ms.Equal(tt.policy.Name, le.PolicyName, "PolicyName is incorrect")
 			}
 
 			if tt.claim == nil {
 				ms.False(le.ClaimID.Valid, "ClaimID is not nil")
 			} else {
 				ms.Equal(tt.claim.ID, le.ClaimID.UUID, "ClaimID is incorrect")
+				ms.Equal(string(tt.claimItem.PayoutOption), le.ClaimPayoutOption, "ClaimPayoutOption is incorrect")
 			}
 		})
 	}
@@ -341,10 +351,10 @@ func (ms *ModelSuite) TestLedgerEntry_getDescription() {
 	ms.NoError(ms.DB.Update(&teamPolicyItem), "error updating team policy item for test")
 
 	// Create new Ledger Entries for each policy
-	hhEntry := NewLedgerEntry(hhPolicy, &hhPolicyItem, nil)
+	hhEntry := NewLedgerEntry(ms.DB, hhPolicy, &hhPolicyItem, nil)
 	hhEntry.Type = LedgerEntryTypeNewCoverage
 
-	teamEntry := NewLedgerEntry(teamPolicy, &teamPolicyItem, nil)
+	teamEntry := NewLedgerEntry(ms.DB, teamPolicy, &teamPolicyItem, nil)
 	teamEntry.Type = LedgerEntryTypeCoverageRefund
 
 	tests := []struct {
@@ -368,7 +378,8 @@ func (ms *ModelSuite) TestLedgerEntry_getDescription() {
 	}
 	for _, tt := range tests {
 		ms.T().Run(tt.name, func(t *testing.T) {
-			got := tt.entry.getDescription(ms.DB, &tt.item, "", api.Currency(1))
+			//got := tt.entry.getDescription(ms.DB, &tt.item, "", api.Currency(1))
+			got := tt.entry.getDescription()
 
 			ms.Equal(tt.want, got)
 		})
@@ -398,13 +409,11 @@ func (ms *ModelSuite) TestLedgerEntry_getReference() {
 	ms.NoError(ms.DB.Update(&teamPolicyItem), "error updating team policy item for test")
 
 	// Create new Ledger Entries for each policy
-	hhEntry := NewLedgerEntry(hhPolicy, &hhPolicyItem, nil)
+	hhEntry := NewLedgerEntry(ms.DB, hhPolicy, &hhPolicyItem, nil)
 	hhEntry.Type = LedgerEntryTypeNewCoverage
-	hhEntry.Description = hhPolicyItem.Name
 
-	teamEntry := NewLedgerEntry(teamPolicy, &teamPolicyItem, nil)
+	teamEntry := NewLedgerEntry(ms.DB, teamPolicy, &teamPolicyItem, nil)
 	teamEntry.Type = LedgerEntryTypeCoverageRenewal
-	teamEntry.Description = teamPolicyItem.Name
 	teamEntry.AccountNumber = "TAcc"
 	teamEntry.CostCenter = "TCC"
 
@@ -430,7 +439,7 @@ func (ms *ModelSuite) TestLedgerEntry_getReference() {
 	}
 	for _, tt := range tests {
 		ms.T().Run(tt.name, func(t *testing.T) {
-			got := tt.entry.getReference(ms.DB, &tt.item)
+			got := tt.entry.getReference()
 
 			ms.Equal(tt.want, got)
 		})
