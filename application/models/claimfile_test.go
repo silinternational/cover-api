@@ -20,7 +20,7 @@ func (ms *ModelSuite) TestNewClaimFile() {
 
 func (ms *ModelSuite) TestClaimFile_Create() {
 	db := ms.DB
-	policy := CreatePolicyFixtures(db, FixturesConfig{NumberOfPolicies: 1}).Policies[0]
+	policy := CreateItemFixtures(db, FixturesConfig{}).Policies[0]
 	claim := createClaimFixture(db, policy, FixturesConfig{})
 
 	files := CreateFileFixtures(db, 3, CreateAdminUsers(db)[AppRoleSteward].ID).Files

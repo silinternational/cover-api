@@ -51,33 +51,64 @@ var ValidLedgerEntryTypes = map[LedgerEntryType]struct{}{
 	LedgerEntryTypeLegacy20:         {},
 }
 
+func (t LedgerEntryType) Description(claimPayoutOption string, amount api.Currency) string {
+	switch t {
+	case LedgerEntryTypeNewCoverage:
+		return "Coverage premium: Add"
+	case LedgerEntryTypeCoverageRenewal:
+		return "Coverage premium: Renew"
+	case LedgerEntryTypeCoverageRefund:
+		return "Coverage reimbursement: Remove"
+	case LedgerEntryTypeCoverageChange, LedgerEntryTypePolicyAdjustment:
+		if amount >= 0 { // reimbursements/reductions are positive and charges are negative
+			return "Coverage reimbursement: Reduce"
+		}
+		return "Coverage premium: Increase"
+	case LedgerEntryTypeClaim, LedgerEntryTypeClaimAdjustment:
+		switch claimPayoutOption {
+		case FieldClaimItemFMV:
+			return "Claim payout: Fair Market Value"
+		case FieldClaimItemReplaceActual:
+			return "Claim payout: Replace"
+		case FieldClaimItemRepairActual:
+			return "Claim payout: Repair"
+		default:
+			return "Claim transaction"
+		}
+	}
+	return "unknown transaction type"
+}
+
 type LedgerEntries []LedgerEntry
 
 type LedgerEntry struct {
 	ID uuid.UUID `db:"id"`
 
-	PolicyID         uuid.UUID       `db:"policy_id"`
-	ItemID           nulls.UUID      `db:"item_id"`
-	ClaimID          nulls.UUID      `db:"claim_id"`
-	EntityCode       string          `db:"entity_code"`
-	RiskCategoryName string          `db:"risk_category_name"`
-	RiskCategoryCC   string          `db:"risk_category_cc"` // Risk Category Cost Center
-	Type             LedgerEntryType `db:"type" validate:"ledgerEntryType"`
-	PolicyType       api.PolicyType  `db:"policy_type" validate:"policyType"`
-	HouseholdID      string          `db:"household_id"`
-	CostCenter       string          `db:"cost_center"`
-	AccountNumber    string          `db:"account_number"`
-	IncomeAccount    string          `db:"income_account"`
-	Name             string          `db:"name"`
-	Amount           api.Currency    `db:"amount"`
-	DateSubmitted    time.Time       `db:"date_submitted"`
-	DateEntered      nulls.Time      `db:"date_entered"`
-	LegacyID         nulls.Int       `db:"legacy_id"`
+	PolicyID          uuid.UUID       `db:"policy_id"`
+	ItemID            nulls.UUID      `db:"item_id"`
+	ClaimID           nulls.UUID      `db:"claim_id"`
+	EntityCode        string          `db:"entity_code"`
+	RiskCategoryName  string          `db:"risk_category_name"`
+	RiskCategoryCC    string          `db:"risk_category_cc"` // Risk Category Cost Center
+	Type              LedgerEntryType `db:"type" validate:"ledgerEntryType"`
+	PolicyType        api.PolicyType  `db:"policy_type" validate:"policyType"`
+	HouseholdID       string          `db:"household_id"`
+	CostCenter        string          `db:"cost_center"`
+	AccountNumber     string          `db:"account_number"`
+	IncomeAccount     string          `db:"income_account"`
+	Name              string          `db:"name"` // This will normally be the name of the assigned_to person
+	PolicyName        string          `db:"policy_name"`
+	ClaimPayoutOption string          `db:"claim_payout_option"`
+	Amount            api.Currency    `db:"amount"`
+	DateSubmitted     time.Time       `db:"date_submitted"`
+	DateEntered       nulls.Time      `db:"date_entered"`
+	LegacyID          nulls.Int       `db:"legacy_id"`
 
 	CreatedAt time.Time `db:"created_at"`
 	UpdatedAt time.Time `db:"updated_at"`
 
 	Claim *Claim `belongs_to:"claims" validate:"-"`
+	Item  *Item  `belongs_to:"items" validate:"-"`
 }
 
 func (le *LedgerEntry) Create(tx *pop.Connection) error {
@@ -110,8 +141,8 @@ func (le *LedgerEntries) ToCsvForPolicy() []byte {
 		nextRow := fmt.Sprintf(
 			rowTemplate,
 			l.Amount.String(),
-			l.transactionDescription(),
-			l.transactionReference(),
+			l.getDescription(),
+			l.getReference(),
 			l.DateSubmitted.Format(domain.DateFormat),
 		)
 		buf.Write([]byte(nextRow))
@@ -135,8 +166,8 @@ func (le *LedgerEntries) ToCsv(date time.Time) []byte {
 			sage.AppendToBatch(fin.Transaction{
 				Account:     domain.Env.ExpenseAccount,
 				Amount:      int(l.Amount),
-				Description: l.transactionDescription(),
-				Reference:   l.transactionReference(),
+				Description: l.getDescription(),
+				Reference:   l.getReference(),
 				Date:        l.DateSubmitted,
 			})
 
@@ -196,25 +227,54 @@ func (le *LedgerEntry) Reconcile(ctx context.Context, now time.Time) error {
 	return nil
 }
 
-func (le *LedgerEntry) transactionDescription() string {
-	description := fmt.Sprintf("%s %s", le.RiskCategoryName, le.Type)
-	if le.PolicyType == api.PolicyTypeHousehold {
-		description = le.Name + " " + description
+// getDescription returns text that is base on other fields of the LedgerEntry
+// For household-type entries this returns `<entry.Type.Description> / <Policy.Name>`.
+// For other entries this returns `<entry.Type.Description> / <Policy.Name> (<accountable person name>)`,
+//   not including `<` and `>`
+func (le *LedgerEntry) getDescription() string {
+	description := le.Type.Description(le.ClaimPayoutOption, le.Amount)
+
+	if le.PolicyName == "" {
+		return description
 	}
 
-	return description
+	description = fmt.Sprintf(`%s / %s`, description, le.PolicyName)
+
+	if le.PolicyType == api.PolicyTypeHousehold {
+		return description
+	}
+
+	// For non-household policies
+	if le.Name == "" {
+		return description
+	}
+
+	return fmt.Sprintf(`%s (%s)`, description, le.Name)
 }
 
-// Merge HouseholdID and CostCenter into one column
-func (le *LedgerEntry) transactionReference() string {
+// getReference returns text that is base on other fields of the LedgerEntry
+// For household-type entries this returns `MC <entry.HouseholdID> / <accountable person name>`
+// For other entries this returns `<entry.EntityCode> <entry.AccountNumber><entry.CostCenter> / <Policy.Name>`,
+//   not including `<` and `>`.
+func (le *LedgerEntry) getReference() string {
+	// For household policies
 	if le.PolicyType == api.PolicyTypeHousehold {
-		return fmt.Sprintf("MC %s", le.HouseholdID)
+		ref := fmt.Sprintf("MC %s", le.HouseholdID)
+
+		if le.Name == "" {
+			return ref
+		}
+
+		return fmt.Sprintf("%s / %s", ref, le.Name)
 	}
-	if le.LegacyID.Valid {
-		// In the legacy data, the cost center column was prepended with the entity code and account number
-		return le.CostCenter
+
+	// For non-household policies
+	if le.PolicyName == "" {
+		return fmt.Sprintf("%s %s%s", le.EntityCode, le.AccountNumber, le.CostCenter)
 	}
-	return fmt.Sprintf("%s %s%s", le.EntityCode, le.AccountNumber, le.CostCenter)
+
+	return fmt.Sprintf("%s %s%s / %s",
+		le.EntityCode, le.AccountNumber, le.CostCenter, le.PolicyName)
 }
 
 func (le *LedgerEntry) balanceDescription() string {
@@ -239,7 +299,7 @@ func (le *LedgerEntry) balanceDescription() string {
 
 // NewLedgerEntry creates a basic LedgerEntry with common fields completed.
 // Requires pre-hydration of policy.EntityCode. If item is not nil, item.RiskCategory must be hydrated.
-func NewLedgerEntry(policy Policy, item *Item, claim *Claim) LedgerEntry {
+func NewLedgerEntry(accPersonName string, policy Policy, item *Item, claim *Claim) LedgerEntry {
 	costCenter := ""
 	if policy.Type == api.PolicyTypeTeam {
 		costCenter = policy.CostCenter + accountSeparator + policy.AccountDetail
@@ -253,6 +313,8 @@ func NewLedgerEntry(policy Policy, item *Item, claim *Claim) LedgerEntry {
 		IncomeAccount: policy.EntityCode.IncomeAccount,
 		CostCenter:    costCenter,
 		HouseholdID:   policy.HouseholdID.String,
+		Name:          accPersonName,
+		PolicyName:    policy.Name,
 	}
 	if item != nil {
 		le.ItemID = nulls.NewUUID(item.ID)
@@ -260,6 +322,7 @@ func NewLedgerEntry(policy Policy, item *Item, claim *Claim) LedgerEntry {
 		le.RiskCategoryCC = item.RiskCategory.CostCenter
 	}
 	if claim != nil {
+		le.ClaimPayoutOption = string(claim.ClaimItems[0].PayoutOption)
 		le.ClaimID = nulls.NewUUID(claim.ID)
 	}
 	return le
@@ -309,6 +372,7 @@ func (le *LedgerEntry) ConvertToAPI(tx *pop.Connection) api.LedgerEntry {
 		AccountNumber:    le.AccountNumber,
 		IncomeAccount:    le.IncomeAccount,
 		Name:             le.Name,
+		PolicyName:       le.PolicyName,
 		Amount:           le.Amount,
 		DateSubmitted:    le.DateSubmitted,
 		DateEntered:      convertTimeToAPI(le.DateEntered),

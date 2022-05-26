@@ -638,10 +638,9 @@ func (p *Policy) CreateRenewalLedgerEntry(tx *pop.Connection, riskCategoryID uui
 		return fmt.Errorf("failed to find risk category %s: %w", riskCategoryID, err)
 	}
 
-	le := NewLedgerEntry(*p, nil, nil)
+	le := NewLedgerEntry("", *p, nil, nil)
 	le.Type = LedgerEntryTypeCoverageRenewal
 	le.Amount = -amount
-	le.Name = p.Name
 	le.EntityCode = p.EntityCode.Code
 	le.RiskCategoryName = rc.Name
 	le.RiskCategoryCC = rc.CostCenter

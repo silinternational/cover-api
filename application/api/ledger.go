@@ -70,8 +70,11 @@ type LedgerEntry struct {
 	AccountNumber    string          `json:"account_number"`
 	IncomeAccount    string          `json:"income_account"`
 
-	// name of accountable person if available, otherwise the policy name
-	Name   string   `json:"name"`
+	// name of accountable person if available
+	Name string `json:"name"`
+
+	PolicyName string `json:"policy_name"`
+
 	Amount Currency `json:"amount"`
 
 	// date added to ledger
