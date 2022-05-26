@@ -291,7 +291,10 @@ func (ms *ModelSuite) Test_NewLedgerEntry() {
 	}
 	for _, tt := range tests {
 		ms.T().Run(tt.name, func(t *testing.T) {
-			le := NewLedgerEntry(ms.DB, tt.policy, tt.item, tt.claim)
+			accPersonName := "John Doe"
+			le := NewLedgerEntry(accPersonName, tt.policy, tt.item, tt.claim)
+
+			ms.Equal(accPersonName, le.Name, "Name is incorrect")
 
 			ms.Equal(tt.policy.ID, le.PolicyID, "PolicyID is incorrect")
 			ms.WithinDuration(time.Now().UTC(), le.DateSubmitted, time.Minute, "DateSubmitted is incorrect")
@@ -311,9 +314,6 @@ func (ms *ModelSuite) Test_NewLedgerEntry() {
 				ms.Equal(tt.item.RiskCategory.Name, le.RiskCategoryName, "RiskCategoryName is incorrect")
 				ms.Equal(tt.item.RiskCategory.CostCenter, le.RiskCategoryCC, "RiskCategoryCC is incorrect")
 				ms.Equal(tt.item.ID, le.ItemID.UUID, "ItemID is incorrect")
-
-				accPerson := tt.item.GetAccountablePersonName(ms.DB).String()
-				ms.Equal(accPerson, le.Name, "Name is incorrect")
 				ms.Equal(tt.policy.Name, le.PolicyName, "PolicyName is incorrect")
 			}
 
@@ -351,10 +351,12 @@ func (ms *ModelSuite) TestLedgerEntry_getDescription() {
 	ms.NoError(ms.DB.Update(&teamPolicyItem), "error updating team policy item for test")
 
 	// Create new Ledger Entries for each policy
-	hhEntry := NewLedgerEntry(ms.DB, hhPolicy, &hhPolicyItem, nil)
+	hhAccPersName := hhAccPerson.GetName().String()
+	hhEntry := NewLedgerEntry(hhAccPersName, hhPolicy, &hhPolicyItem, nil)
 	hhEntry.Type = LedgerEntryTypeNewCoverage
 
-	teamEntry := NewLedgerEntry(ms.DB, teamPolicy, &teamPolicyItem, nil)
+	teamAccPersName := teamAccPerson.GetName().String()
+	teamEntry := NewLedgerEntry(teamAccPersName, teamPolicy, &teamPolicyItem, nil)
 	teamEntry.Type = LedgerEntryTypeCoverageRefund
 
 	tests := []struct {
@@ -373,12 +375,11 @@ func (ms *ModelSuite) TestLedgerEntry_getDescription() {
 			name:  "team policy item",
 			entry: teamEntry,
 			item:  teamPolicyItem,
-			want:  fmt.Sprintf("%s / %s (%s)", `Coverage reimbursement: Remove`, teamPolicy.Name, teamAccPerson.GetName()),
+			want:  fmt.Sprintf("%s / %s (%s)", `Coverage reimbursement: Remove`, teamPolicy.Name, teamAccPersName),
 		},
 	}
 	for _, tt := range tests {
 		ms.T().Run(tt.name, func(t *testing.T) {
-			//got := tt.entry.getDescription(ms.DB, &tt.item, "", api.Currency(1))
 			got := tt.entry.getDescription()
 
 			ms.Equal(tt.want, got)
@@ -394,6 +395,7 @@ func (ms *ModelSuite) TestLedgerEntry_getReference() {
 
 	// Give the household item an accountable person
 	hhAccPerson := hhPolicy.Members[1]
+	hhAccPersonName := hhAccPerson.GetName().String()
 	ms.NoError(hhPolicyItem.SetAccountablePerson(ms.DB, hhAccPerson.ID))
 	ms.NoError(ms.DB.Update(&hhPolicyItem), "error updating household policy item for test")
 
@@ -409,10 +411,10 @@ func (ms *ModelSuite) TestLedgerEntry_getReference() {
 	ms.NoError(ms.DB.Update(&teamPolicyItem), "error updating team policy item for test")
 
 	// Create new Ledger Entries for each policy
-	hhEntry := NewLedgerEntry(ms.DB, hhPolicy, &hhPolicyItem, nil)
+	hhEntry := NewLedgerEntry(hhAccPersonName, hhPolicy, &hhPolicyItem, nil)
 	hhEntry.Type = LedgerEntryTypeNewCoverage
 
-	teamEntry := NewLedgerEntry(ms.DB, teamPolicy, &teamPolicyItem, nil)
+	teamEntry := NewLedgerEntry("", teamPolicy, &teamPolicyItem, nil)
 	teamEntry.Type = LedgerEntryTypeCoverageRenewal
 	teamEntry.AccountNumber = "TAcc"
 	teamEntry.CostCenter = "TCC"
@@ -427,7 +429,7 @@ func (ms *ModelSuite) TestLedgerEntry_getReference() {
 			name:  "household policy item",
 			entry: hhEntry,
 			item:  hhPolicyItem,
-			want:  fmt.Sprintf("MC %s / %s", hhEntry.HouseholdID, hhAccPerson.GetName()),
+			want:  fmt.Sprintf("MC %s / %s", hhEntry.HouseholdID, hhAccPersonName),
 		},
 		{
 			name:  "team policy item",

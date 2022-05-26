@@ -976,8 +976,9 @@ func (i *Item) CreateLedgerEntry(tx *pop.Connection, entryType LedgerEntryType, 
 	i.LoadPolicy(tx, false)
 	i.LoadRiskCategory(tx, false)
 	i.Policy.LoadEntityCode(tx, false)
+	name := i.GetAccountablePersonName(tx).String()
 
-	le := NewLedgerEntry(tx, i.Policy, i, nil)
+	le := NewLedgerEntry(name, i.Policy, i, nil)
 	le.Type = entryType
 	le.Amount = -amount
 

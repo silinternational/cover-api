@@ -299,7 +299,7 @@ func (le *LedgerEntry) balanceDescription() string {
 
 // NewLedgerEntry creates a basic LedgerEntry with common fields completed.
 // Requires pre-hydration of policy.EntityCode. If item is not nil, item.RiskCategory must be hydrated.
-func NewLedgerEntry(tx *pop.Connection, policy Policy, item *Item, claim *Claim) LedgerEntry {
+func NewLedgerEntry(accPersonName string, policy Policy, item *Item, claim *Claim) LedgerEntry {
 	costCenter := ""
 	if policy.Type == api.PolicyTypeTeam {
 		costCenter = policy.CostCenter + accountSeparator + policy.AccountDetail
@@ -313,21 +313,15 @@ func NewLedgerEntry(tx *pop.Connection, policy Policy, item *Item, claim *Claim)
 		IncomeAccount: policy.EntityCode.IncomeAccount,
 		CostCenter:    costCenter,
 		HouseholdID:   policy.HouseholdID.String,
+		Name:          accPersonName,
 		PolicyName:    policy.Name,
 	}
 	if item != nil {
 		le.ItemID = nulls.NewUUID(item.ID)
 		le.RiskCategoryName = item.RiskCategory.Name
 		le.RiskCategoryCC = item.RiskCategory.CostCenter
-		le.Name = item.GetAccountablePersonName(tx).String()
 	}
 	if claim != nil {
-		if le.Name == "" {
-			claim.LoadClaimItems(tx, true)
-			claim.ClaimItems[0].LoadItem(tx, true)
-			cItem := claim.ClaimItems[0].Item
-			le.Name = cItem.GetAccountablePersonName(tx).String()
-		}
 		le.ClaimPayoutOption = string(claim.ClaimItems[0].PayoutOption)
 		le.ClaimID = nulls.NewUUID(claim.ID)
 	}
