@@ -19,6 +19,7 @@ import (
 const (
 	ReportTypeMonthly = "Monthly"
 	ReportTypeAnnual  = "Annual"
+	MinimumYear       = 1971
 )
 
 var ValidLedgerReportTypes = map[string]struct{}{
@@ -210,23 +211,21 @@ func NewLedgerReport(ctx context.Context, reportType string, date time.Time) (Le
 func NewPolicyLedgerReport(ctx context.Context, policy Policy, reportType string, month, year int) (LedgerReport, error) {
 	tx := Tx(ctx)
 
-	now := time.Now().UTC()
-	nowYear := now.Year()
-
 	report := LedgerReport{Type: reportType, PolicyID: nulls.NewUUID(policy.ID)}
-
-	if year < 1971 || year > nowYear {
-		err := fmt.Errorf("invalid year requested: %d", year)
-		return report, api.NewAppError(err, api.ErrorInvalidDate, api.CategoryUser)
-	}
 
 	var le LedgerEntries
 	switch reportType {
 	case ReportTypeMonthly:
+		if err := validateMonthYearForReport(month, year); err != nil {
+			return LedgerReport{}, err
+		}
 		if err := newMonthlyPolicyLedgerReport(tx, &le, &report, policy, month, year); err != nil {
 			return report, err
 		}
 	case ReportTypeAnnual:
+		if err := validateYearForReport(year); err != nil {
+			return LedgerReport{}, err
+		}
 		if err := newAnnualPolicyLedgerReport(tx, &le, &report, policy, year); err != nil {
 			return report, err
 		}
@@ -250,15 +249,8 @@ func NewPolicyLedgerReport(ctx context.Context, policy Policy, reportType string
 }
 
 func newMonthlyPolicyLedgerReport(tx *pop.Connection, lEntries *LedgerEntries, lReport *LedgerReport, policy Policy, month, year int) error {
-	if month < 1 || month > 12 {
-		err := fmt.Errorf("invalid month requested: %d", month)
-		return api.NewAppError(err, api.ErrorInvalidDate, api.CategoryUser)
-	}
-
-	now := time.Now().UTC()
-	if year == now.Year() && month > int(now.Month()) {
-		err := fmt.Errorf("invalid future month requested. Month: %d, Year: %d", month, year)
-		return api.NewAppError(err, api.ErrorInvalidDate, api.CategoryUser)
+	if err := validateMonthYearForReport(month, year); err != nil {
+		return err
 	}
 
 	startDate := time.Date(year, time.Month(month), 1, 0, 0, 0, 0, time.UTC)
@@ -274,6 +266,34 @@ func newMonthlyPolicyLedgerReport(tx *pop.Connection, lEntries *LedgerEntries, l
 	return nil
 }
 
+func validateMonthYearForReport(month, year int) error {
+	if err := validateYearForReport(year); err != nil {
+		return err
+	}
+
+	if month < 1 || month > 12 {
+		err := fmt.Errorf("invalid month requested: %d", month)
+		return api.NewAppError(err, api.ErrorInvalidDate, api.CategoryUser)
+	}
+
+	now := time.Now().UTC()
+	if year == now.Year() && month > int(now.Month()) {
+		err := fmt.Errorf("invalid future month requested. Month: %d, Year: %d", month, year)
+		return api.NewAppError(err, api.ErrorInvalidDate, api.CategoryUser)
+	}
+	return nil
+}
+
+func validateYearForReport(year int) error {
+	now := time.Now().UTC()
+	nowYear := now.Year()
+	if year < MinimumYear || year > nowYear {
+		err := fmt.Errorf("invalid year requested: %d", year)
+		return api.NewAppError(err, api.ErrorInvalidDate, api.CategoryUser)
+	}
+	return nil
+}
+
 func newAnnualPolicyLedgerReport(tx *pop.Connection, lEntries *LedgerEntries, lReport *LedgerReport, policy Policy, year int) error {
 	startDate := time.Date(year, 1, 1, 0, 0, 0, 0, time.UTC)
 	endDate := startDate.AddDate(1, 0, -1)
@@ -285,6 +305,55 @@ func newAnnualPolicyLedgerReport(tx *pop.Connection, lEntries *LedgerEntries, lR
 		return api.NewAppError(err, api.ErrorUnknown, api.CategoryDatabase)
 	}
 	return nil
+}
+
+func PolicyLedgerTable(c context.Context, policy Policy, month, year int) (api.LedgerTable, error) {
+	tx := Tx(c)
+
+	if err := validateMonthYearForReport(month, year); err != nil {
+		return api.LedgerTable{}, err
+	}
+
+	var ledgerEntries LedgerEntries
+	startDate := time.Date(year, time.Month(month), 1, 0, 0, 0, 0, time.UTC)
+	endDate := startDate.AddDate(0, 1, -1)
+
+	q := "policy_id = ? AND date_entered >= ? AND date_entered <= ?"
+	if err := tx.Where(q, policy.ID, startDate, endDate).All(&ledgerEntries); err != nil {
+		if domain.IsOtherThanNoRows(err) {
+			return api.LedgerTable{}, api.NewAppError(err, api.ErrorUnknown, api.CategoryDatabase)
+		}
+		return api.LedgerTable{}, nil
+	}
+
+	lTable := api.LedgerTable{
+		PremiumTotal:  policy.calculateAnnualPremium(tx),
+		PremiumRate:   domain.Env.PremiumFactor,
+		CoverageValue: policy.currentCoverage(tx),
+		Entries:       make([]api.LedgerTableEntry, len(ledgerEntries)),
+	}
+
+	payoutTotal := api.Currency(0)
+	netTransactions := api.Currency(0)
+
+	for i, le := range ledgerEntries {
+		lTable.Entries[i].ItemName = le.getItemName(tx)
+		lTable.Entries[i].Type = le.Type.Description(le.ClaimPayoutOption, le.Amount)
+		lTable.Entries[i].Value = le.Amount
+		lTable.Entries[i].Date = le.DateEntered.Time
+		lTable.Entries[i].AssignedTo = le.Name
+		lTable.Entries[i].Location = le.getItemLocation(tx)
+		// TODO Add statuses
+		netTransactions += le.Amount
+		if le.Amount > 0 { // reimbursements/reductions are positive and charges are negative
+			payoutTotal += le.Amount
+		}
+	}
+
+	lTable.PayoutTotal = payoutTotal
+	lTable.NetTransactions = netTransactions
+
+	return lTable, nil
 }
 
 func (lr *LedgerReport) Reconcile(ctx context.Context) error {

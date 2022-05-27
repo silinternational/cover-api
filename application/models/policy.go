@@ -517,6 +517,18 @@ func (p *Policy) calculateAnnualPremium(tx *pop.Connection) api.Currency {
 	return premium
 }
 
+func (p *Policy) currentCoverage(tx *pop.Connection) api.Currency {
+	p.LoadItems(tx, false)
+	var coverage int
+	for _, item := range p.Items {
+		if item.CoverageStatus == ItemStatusChangeApproved {
+			coverage += item.CoverageAmount
+		}
+	}
+
+	return api.Currency(coverage)
+}
+
 func (p *Policy) NewHouseholdInvite(tx *pop.Connection, invite api.PolicyUserInviteCreate, cUser User) error {
 	var user User
 	if err := user.FindByEmail(tx, invite.Email); domain.IsOtherThanNoRows(err) {

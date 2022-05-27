@@ -1,7 +1,9 @@
 package actions
 
 import (
+	"fmt"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/gobuffalo/buffalo"
@@ -10,6 +12,14 @@ import (
 	"github.com/silinternational/cover-api/api"
 	"github.com/silinternational/cover-api/domain"
 	"github.com/silinternational/cover-api/models"
+)
+
+const (
+	// http param for month (number)
+	MonthParam = "month"
+
+	// http param for year
+	YearParam = "year"
 )
 
 // swagger:operation GET /policies Policies PoliciesList
@@ -253,6 +263,73 @@ func policiesLedgerReportCreate(c buffalo.Context) error {
 	}
 
 	return renderOk(c, report.ConvertToAPI(tx))
+}
+
+// swagger:operation GET /policies/{id}/ledger-reports PolicyLedgerReport PolicyLedgerTableView
+//
+// PolicyLedgerTableView
+//
+// Return data regarding the ledger entries of a policy for a particular month.
+// If no ledger entries are found with a `date_entered` value that matches the requested
+//  Year and Month, then a 204 is returned.
+//
+// ---
+// parameters:
+//   - name: id
+//     in: path
+//     required: true
+//     description: policy ID
+//   - name: month
+//     in: query
+//     required: true
+//     description: the month (number) within which the ledger entries were entered into the accounting system
+//   - name: year
+//     in: query
+//     required: true
+//     description: the year within which the ledger entries were entered into the accounting system
+// responses:
+//   '200':
+//     description: the requested LedgerTable for the Policy
+//     schema:
+//       type: array
+//       items:
+//         "$ref": "#/definitions/LedgerTable"
+func policiesLedgerTableView(c buffalo.Context) error {
+	policy := getReferencedPolicyFromCtx(c)
+
+	m := c.Param(MonthParam)
+	month, err := strconv.Atoi(m)
+	if err != nil {
+		appErr := api.AppError{
+			HttpStatus: http.StatusBadRequest,
+			Key:        api.ErrorInvalidDate,
+			Message:    fmt.Sprintf("%s, %s, must be a number", MonthParam, m),
+		}
+		return reportError(c, &appErr)
+	}
+
+	y := c.Param(YearParam)
+	year, err := strconv.Atoi(y)
+	if err != nil {
+		appErr := api.AppError{
+			HttpStatus: http.StatusBadRequest,
+			Key:        api.ErrorInvalidDate,
+			Message:    fmt.Sprintf("%s, %s, must be a number", YearParam, y),
+		}
+		return reportError(c, &appErr)
+	}
+
+	table, err := models.PolicyLedgerTable(c, *policy, month, year)
+	if err != nil {
+		return reportError(c, err)
+	}
+
+	//if len(table.LedgerEntries) == 0 {
+	//	return c.Render(http.StatusNoContent, nil)
+	//}
+
+	//return renderOk(c, table.ConvertToAPI(tx))
+	return renderOk(c, table)
 }
 
 // swagger:operation POST /policies/{id}/strikes PolicyStrike PolicyStrikeCreate
