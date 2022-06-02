@@ -324,11 +324,6 @@ func policiesLedgerTableView(c buffalo.Context) error {
 		return reportError(c, err)
 	}
 
-	//if len(table.LedgerEntries) == 0 {
-	//	return c.Render(http.StatusNoContent, nil)
-	//}
-
-	//return renderOk(c, table.ConvertToAPI(tx))
 	return renderOk(c, table)
 }
 

@@ -343,7 +343,8 @@ func PolicyLedgerTable(c context.Context, policy Policy, month, year int) (api.L
 		lTable.Entries[i].Date = le.DateEntered.Time
 		lTable.Entries[i].AssignedTo = le.Name
 		lTable.Entries[i].Location = le.getItemLocation(tx)
-		// TODO Add statuses
+		lTable.Entries[i].StatusBefore = le.StatusBefore
+		lTable.Entries[i].StatusAfter = le.StatusAfter
 		netTransactions += le.Amount
 		if le.Amount > 0 { // reimbursements/reductions are positive and charges are negative
 			payoutTotal += le.Amount
