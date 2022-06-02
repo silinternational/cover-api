@@ -483,15 +483,23 @@ func (ms *ModelSuite) TestPolicyLedgerTable() {
 	datesEntered := []nulls.Time{nulls.NewTime(april), nulls.NewTime(april), {}}
 	entries := f.LedgerEntries
 	others := f0.LedgerEntries // These should not get included in the results
+	netTransactionsApril := api.Currency(0)
+
 	for i := range entries {
 		entries[i].DateSubmitted = datesSubmitted[i]
 		entries[i].DateEntered = datesEntered[i]
 		Must(ms.DB.Update(&entries[i]))
 
+		if datesEntered[i].Time.Month() == april.Month() {
+			netTransactionsApril += entries[i].Amount
+		}
+
 		others[i].DateSubmitted = datesSubmitted[i]
 		others[i].DateEntered = datesEntered[i]
 		Must(ms.DB.Update(&others[i]))
 	}
+
+	ms.NotEqualf(netTransactionsApril, 0, "bad netTransactions for tests")
 
 	tests := []struct {
 		name      string
@@ -525,9 +533,10 @@ func (ms *ModelSuite) TestPolicyLedgerTable() {
 			month: int(april.Month()),
 			year:  april.Year(),
 			want: &api.LedgerTable{
-				PayoutTotal:  0,
-				PremiumTotal: premiumTotal,
-				PremiumRate:  domain.Env.PremiumFactor,
+				PayoutTotal:     0,
+				PremiumTotal:    premiumTotal,
+				PremiumRate:     domain.Env.PremiumFactor,
+				NetTransactions: netTransactionsApril,
 			},
 			wantCount: 2,
 		},
@@ -538,6 +547,7 @@ func (ms *ModelSuite) TestPolicyLedgerTable() {
 			wantCount: 0,
 		},
 	}
+
 	for _, tt := range tests {
 		ms.T().Run(tt.name, func(t *testing.T) {
 			got, err := PolicyLedgerTable(ctx, policy, tt.month, tt.year)
@@ -556,6 +566,7 @@ func (ms *ModelSuite) TestPolicyLedgerTable() {
 			ms.Equal(tt.want.PayoutTotal, got.PayoutTotal, "incorrect PayoutTotal")
 			ms.Equal(tt.want.PremiumTotal, got.PremiumTotal, "incorrect PremiumTotal")
 			ms.Equal(tt.want.PremiumRate, got.PremiumRate, "incorrect PremiumRate")
+			ms.Equal(tt.want.NetTransactions, got.NetTransactions, "incorrect NetTransactions")
 		})
 	}
 }
