@@ -98,6 +98,8 @@ type LedgerEntry struct {
 	IncomeAccount     string          `db:"income_account"`
 	Name              string          `db:"name"` // This will normally be the name of the assigned_to person
 	PolicyName        string          `db:"policy_name"`
+	StatusBefore      string          `db:"status_before"`
+	StatusAfter       string          `db:"status_after"`
 	ClaimPayoutOption string          `db:"claim_payout_option"`
 	Amount            api.Currency    `db:"amount"`         // reimbursements/reductions are positive and charges are negative
 	DateSubmitted     time.Time       `db:"date_submitted"` // date added to ledger

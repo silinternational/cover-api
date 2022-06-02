@@ -384,8 +384,10 @@ func (as *ActionSuite) createFixturesForLedger() models.Fixtures {
 		as.NoError(as.DB.Update(&entry))
 	}
 
+	statusAfter := string(f.Items[2].CoverageStatus)
+
 	// add an entry for the annual report
-	as.NoError(f.Items[2].CreateLedgerEntry(as.DB, models.LedgerEntryTypeCoverageRenewal, 1000))
+	as.NoError(f.Items[2].CreateLedgerEntry(as.DB, models.LedgerEntryTypeCoverageRenewal, 1000, "", statusAfter))
 
 	return f
 }

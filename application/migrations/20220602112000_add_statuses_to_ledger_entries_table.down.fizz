@@ -1,0 +1,3 @@
+drop_column("ledger_entries", "status_before")
+drop_column("ledger_entries", "status_after")
+
