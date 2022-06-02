@@ -708,3 +708,19 @@ func (ms *ModelSuite) TestPolicy_ProcessAnnualCoverage() {
 	ms.NoError(l2.FindRenewals(ms.DB, year))
 	ms.Equal(2, len(l2))
 }
+
+func (ms *ModelSuite) TestPolicy_currentCoverage() {
+	f := CreateItemFixtures(ms.DB, FixturesConfig{ItemsPerPolicy: 5})
+	policy := f.Policies[0]
+	totalCoverage := 0
+	for i := range f.Items {
+		UpdateItemStatus(ms.DB, f.Items[i], api.ItemCoverageStatusApproved, "")
+		totalCoverage += f.Items[i].CoverageAmount
+	}
+	ms.Greaterf(totalCoverage, 0, "total coverage did not get calculated properly for test")
+
+	policy.LoadItems(ms.DB, true)
+
+	coverage := policy.currentCoverage(ms.DB)
+	ms.Equal(api.Currency(totalCoverage), coverage, "incorrect Coverage for Policy")
+}

@@ -521,7 +521,7 @@ func (p *Policy) currentCoverage(tx *pop.Connection) api.Currency {
 	p.LoadItems(tx, false)
 	var coverage int
 	for _, item := range p.Items {
-		if item.CoverageStatus == ItemStatusChangeApproved {
+		if item.CoverageStatus == api.ItemCoverageStatusApproved {
 			coverage += item.CoverageAmount
 		}
 	}

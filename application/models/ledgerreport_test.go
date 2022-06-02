@@ -498,7 +498,7 @@ func (ms *ModelSuite) TestPolicyLedgerTable() {
 		date      time.Time
 		month     int
 		year      int
-		want      api.LedgerTable
+		want      *api.LedgerTable
 		wantCount int
 		wantErr   *api.AppError
 	}{
@@ -524,19 +524,17 @@ func (ms *ModelSuite) TestPolicyLedgerTable() {
 			name:  "two entries",
 			month: int(april.Month()),
 			year:  april.Year(),
-			//want: LedgerReport{
-			//	Type:          ReportTypeMonthly,
-			//	Date:          april,
-			//	File:          File{},
-			//	LedgerEntries: nil,
-			//},
+			want: &api.LedgerTable{
+				PayoutTotal:  0,
+				PremiumTotal: premiumTotal,
+				PremiumRate:  domain.Env.PremiumFactor,
+			},
 			wantCount: 2,
 		},
 		{
 			name:      "none found",
 			month:     int(may.Month()),
 			year:      may.Year(),
-			want:      api.LedgerTable{},
 			wantCount: 0,
 		},
 	}
@@ -552,7 +550,12 @@ func (ms *ModelSuite) TestPolicyLedgerTable() {
 			ms.NoError(err)
 			ms.Equal(tt.wantCount, len(got.Entries), "incorrect number of LedgerEntries")
 
-			ms.Equal(premiumTotal, got.PremiumTotal, "incorrect PremiumTotal")
+			if tt.want == nil {
+				return
+			}
+			ms.Equal(tt.want.PayoutTotal, got.PayoutTotal, "incorrect PayoutTotal")
+			ms.Equal(tt.want.PremiumTotal, got.PremiumTotal, "incorrect PremiumTotal")
+			ms.Equal(tt.want.PremiumRate, got.PremiumRate, "incorrect PremiumRate")
 		})
 	}
 }
