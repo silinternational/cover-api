@@ -941,8 +941,7 @@ func (ms *ModelSuite) TestItem_CreateLedgerEntry() {
 	ms.NoError(item.Update(ctx))
 
 	amount := item.CalculateProratedPremium(time.Now().UTC())
-	statusAfter := string(item.CoverageStatus)
-	ms.NoError(item.CreateLedgerEntry(ms.DB, LedgerEntryTypeNewCoverage, amount, "", statusAfter))
+	ms.NoError(item.CreateLedgerEntry(ms.DB, LedgerEntryTypeNewCoverage, amount))
 
 	var le LedgerEntry
 	ms.NoError(ms.DB.Where("item_id = ?", item.ID).First(&le))
@@ -956,8 +955,6 @@ func (ms *ModelSuite) TestItem_CreateLedgerEntry() {
 	ms.Equal(wantDescription, le.getDescription(), "Description is incorrect")
 	ms.Equal(time.Now().UTC().Truncate(domain.DurationDay), le.DateSubmitted,
 		"ledger entry submitted date should be the current time")
-	ms.Equal("", le.StatusBefore, "StatusBefore is incorrect")
-	ms.Equal(statusAfter, le.StatusAfter, "StatusAfter is incorrect")
 }
 
 func (ms *ModelSuite) TestItem_GetAccountablePersonName() {

@@ -1,3 +1,0 @@
-add_column("ledger_entries", "status_before", "string", {"default": ""})
-add_column("ledger_entries", "status_after", "string", {"default": ""})
-

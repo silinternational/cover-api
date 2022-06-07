@@ -1063,15 +1063,13 @@ func (ms *ModelSuite) TestClaim_CreateLedgerEntry() {
 	var claim Claim
 	ms.NoError(ms.DB.Find(&claim, f.Claims[0].ID))
 
-	ms.Error(claim.CreateLedgerEntry(ms.DB, string(api.ClaimStatusDraft), ""), "expected an error, claim isn't approved yet")
+	ms.Error(claim.CreateLedgerEntry(ms.DB), "expected an error, claim isn't approved yet")
 
 	claim.Status = api.ClaimStatusApproved
 	claim.TotalPayout = 12345
 	ms.NoError(ms.DB.Update(&claim), "unable to update claim test fixture")
 
-	statusBefore := string(api.ClaimStatusDraft)
-	statusAfter := string(claim.Status)
-	ms.NoError(claim.CreateLedgerEntry(ms.DB, statusBefore, statusAfter), "claim is approved now, it shouldn't be a problem")
+	ms.NoError(claim.CreateLedgerEntry(ms.DB), "claim is approved now, it shouldn't be a problem")
 
 	var le LedgerEntry
 	ms.NoError(ms.DB.Where("claim_id = ?", claim.ID).First(&le))
@@ -1084,8 +1082,6 @@ func (ms *ModelSuite) TestClaim_CreateLedgerEntry() {
 	ms.Equal(accPerson, le.Name, "Name is incorrect")
 	ms.Equal(policy.Name, le.PolicyName, "PolicyName is incorrect")
 	ms.Equal(payoutOption, le.ClaimPayoutOption, "ClaimPayoutOption is incorrect")
-	ms.Equal(statusBefore, le.StatusBefore, "StatusBefore is incorrect")
-	ms.Equal(statusAfter, le.StatusAfter, "StatusAfter is incorrect")
 	ms.Equal(accPerson, le.Name, "Name is incorrect")
 }
 

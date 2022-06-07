@@ -130,9 +130,7 @@ func (i *Item) Update(ctx context.Context) error {
 		}
 		if oldItem.CoverageAmount != i.CoverageAmount && !i.CoverageEndDate.Valid {
 			amount := i.calculatePremiumChange(time.Now().UTC(), oldItem.CoverageAmount)
-			statusBefore := string(oldItem.CoverageStatus)
-			statusAfter := string(i.CoverageStatus)
-			if err := i.CreateLedgerEntry(Tx(ctx), LedgerEntryTypeCoverageChange, amount, statusBefore, statusAfter); err != nil {
+			if err := i.CreateLedgerEntry(Tx(ctx), LedgerEntryTypeCoverageChange, amount); err != nil {
 				return err
 			}
 		}
@@ -285,9 +283,6 @@ func (i *Item) FindByID(tx *pop.Connection, id uuid.UUID) error {
 //  If the item's status is Denied or Inactive, it does nothing.
 //  Otherwise, it changes its status to Inactive.
 func (i *Item) SafeDeleteOrInactivate(ctx context.Context) error {
-	statusBefore := string(i.CoverageStatus)
-	statusAfter := string(api.ItemCoverageStatusInactive)
-
 	now := time.Now().UTC()
 	switch i.CoverageStatus {
 	case api.ItemCoverageStatusInactive, api.ItemCoverageStatusDenied:
@@ -302,7 +297,7 @@ func (i *Item) SafeDeleteOrInactivate(ctx context.Context) error {
 			return nil
 		}
 
-		return i.CreateLedgerEntry(Tx(ctx), LedgerEntryTypeCoverageRefund, i.calculateCancellationCredit(now), statusBefore, statusAfter)
+		return i.CreateLedgerEntry(Tx(ctx), LedgerEntryTypeCoverageRefund, i.calculateCancellationCredit(now))
 
 	case api.ItemCoverageStatusDraft, api.ItemCoverageStatusRevision, api.ItemCoverageStatusPending:
 		tx := Tx(ctx)
@@ -389,9 +384,7 @@ func (i *Item) cancelCoverageAfterClaim(tx *pop.Connection, reason string) error
 
 	now := time.Now().UTC()
 	amount := i.calculatePremiumChange(now, i.CoverageAmount)
-	statusBefore := string(i.CoverageStatus)
-	statusAfter := string(api.ItemCoverageStatusInactive)
-	if err := i.CreateLedgerEntry(tx, LedgerEntryTypeCoverageRefund, amount, statusBefore, statusAfter); err != nil {
+	if err := i.CreateLedgerEntry(tx, LedgerEntryTypeCoverageRefund, amount); err != nil {
 		return err
 	}
 
@@ -628,7 +621,6 @@ func (i *Item) AutoApprove(ctx context.Context) error {
 // Only emits an event for an email notification if requested.
 // (No need to emit it following an auto-approval which has already emitted and event.)
 func (i *Item) Approve(ctx context.Context, doEmitEvent bool) error {
-	statusBefore := string(i.CoverageStatus)
 	i.CoverageStatus = api.ItemCoverageStatusApproved
 
 	if i.StatusChange != ItemStatusChangeAutoApproved {
@@ -650,8 +642,7 @@ func (i *Item) Approve(ctx context.Context, doEmitEvent bool) error {
 	}
 
 	amount := i.CalculateProratedPremium(time.Now().UTC())
-	statusAfter := string(i.CoverageStatus)
-	return i.CreateLedgerEntry(Tx(ctx), LedgerEntryTypeNewCoverage, amount, statusBefore, statusAfter)
+	return i.CreateLedgerEntry(Tx(ctx), LedgerEntryTypeNewCoverage, amount)
 }
 
 // Deny takes the item from Pending coverage status to Denied.
@@ -976,7 +967,7 @@ func (i *Item) SetAccountablePerson(tx *pop.Connection, id uuid.UUID) error {
 
 // CreateLedgerEntry creates a charge of at least $1
 func (i *Item) CreateLedgerEntry(
-	tx *pop.Connection, entryType LedgerEntryType, amount api.Currency, statusBefore, statusAfter string) error {
+	tx *pop.Connection, entryType LedgerEntryType, amount api.Currency) error {
 	if entryType == LedgerEntryTypeCoverageRefund && amount > -100 {
 		amount = 0
 	} else if amount < 100 { // Charge at least $1
@@ -991,8 +982,6 @@ func (i *Item) CreateLedgerEntry(
 	le := NewLedgerEntry(name, i.Policy, i, nil)
 	le.Type = entryType
 	le.Amount = -amount
-	le.StatusBefore = statusBefore
-	le.StatusAfter = statusAfter
 
 	if err := le.Create(tx); err != nil {
 		return err

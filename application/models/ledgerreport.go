@@ -338,14 +338,34 @@ func PolicyLedgerTable(c context.Context, policy Policy, month, year int) (api.L
 	netTransactions := api.Currency(0)
 
 	for i, le := range ledgerEntries {
+
+		var statusBefore, statusAfter string
+
+		switch le.Type {
+		case LedgerEntryTypeClaim, LedgerEntryTypeClaimAdjustment:
+			statusBefore = string(api.ClaimStatusReview3)
+			statusAfter = string(api.ClaimStatusApproved)
+		case LedgerEntryTypeNewCoverage:
+			statusBefore = string(api.ItemCoverageStatusPending)
+			statusAfter = string(api.ItemCoverageStatusApproved)
+		case LedgerEntryTypePolicyAdjustment:
+			statusAfter = api.PolicyStatusActive
+		case LedgerEntryTypeCoverageRefund:
+			statusBefore = string(api.ItemCoverageStatusApproved)
+			statusAfter = string(api.ItemCoverageStatusInactive)
+		case LedgerEntryTypeCoverageChange, LedgerEntryTypeCoverageRenewal:
+			statusBefore = string(api.ItemCoverageStatusApproved)
+			statusAfter = string(api.ItemCoverageStatusApproved)
+		}
+
 		lTable.Entries[i].ItemName = le.getItemName(tx)
 		lTable.Entries[i].Type = le.Type.Description(le.ClaimPayoutOption, le.Amount)
 		lTable.Entries[i].Value = le.Amount
 		lTable.Entries[i].Date = le.DateEntered.Time
 		lTable.Entries[i].AssignedTo = le.Name
 		lTable.Entries[i].Location = le.getItemLocation(tx)
-		lTable.Entries[i].StatusBefore = le.StatusBefore
-		lTable.Entries[i].StatusAfter = le.StatusAfter
+		lTable.Entries[i].StatusBefore = statusBefore
+		lTable.Entries[i].StatusAfter = statusAfter
 		netTransactions += le.Amount
 		if le.Amount > 0 { // reimbursements/reductions are positive and charges are negative
 			payoutTotal += le.Amount

@@ -441,22 +441,20 @@ func createClaimFixtures(tx *pop.Connection, fixPolicies []*models.Policy, items
 }
 
 func createLedgerEntryFixtures(tx *pop.Connection, items []*models.Item, claims []*models.Claim) error {
-	statusDraft := string(api.ItemCoverageStatusDraft)
-	statusApproved := string(api.ItemCoverageStatusApproved)
 	// Two entries for Team Policies
-	if err := items[0].CreateLedgerEntry(tx, models.LedgerEntryTypeNewCoverage, 1021, statusDraft, statusApproved); err != nil {
+	if err := items[0].CreateLedgerEntry(tx, models.LedgerEntryTypeNewCoverage, 1021); err != nil {
 		return err
 	}
 
-	if err := items[2].CreateLedgerEntry(tx, models.LedgerEntryTypeCoverageChange, 519, "", ""); err != nil {
+	if err := items[2].CreateLedgerEntry(tx, models.LedgerEntryTypeCoverageChange, 519); err != nil {
 		return err
 	}
 
 	// Two entries for Household Policies
-	if err := items[4].CreateLedgerEntry(tx, models.LedgerEntryTypeNewCoverage, 9876, statusDraft, statusApproved); err != nil {
+	if err := items[4].CreateLedgerEntry(tx, models.LedgerEntryTypeNewCoverage, 9876); err != nil {
 		return err
 	}
-	if err := items[5].CreateLedgerEntry(tx, models.LedgerEntryTypeCoverageChange, 1234, statusApproved, statusApproved); err != nil {
+	if err := items[5].CreateLedgerEntry(tx, models.LedgerEntryTypeCoverageChange, 1234); err != nil {
 		return err
 	}
 
@@ -465,7 +463,7 @@ func createLedgerEntryFixtures(tx *pop.Connection, items []*models.Item, claims 
 	if err := approveClaim(tx, claims[0]); err != nil {
 		return err
 	}
-	if err := claims[0].CreateLedgerEntry(tx, string(api.ClaimStatusDraft), string(claims[0].Status)); err != nil {
+	if err := claims[0].CreateLedgerEntry(tx); err != nil {
 		return err
 	}
 
@@ -474,7 +472,7 @@ func createLedgerEntryFixtures(tx *pop.Connection, items []*models.Item, claims 
 	if err := approveClaim(tx, claims[4]); err != nil {
 		return err
 	}
-	if err := claims[4].CreateLedgerEntry(tx, string(api.ClaimStatusDraft), string(claims[0].Status)); err != nil {
+	if err := claims[4].CreateLedgerEntry(tx); err != nil {
 		return err
 	}
 

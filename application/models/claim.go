@@ -534,8 +534,6 @@ func (c *Claim) Approve(ctx context.Context) error {
 
 	user := CurrentUser(ctx)
 
-	oldStatus := string(c.Status)
-
 	switch c.Status {
 	case api.ClaimStatusReview1:
 		c.LoadClaimItems(Tx(ctx), false)
@@ -581,7 +579,7 @@ func (c *Claim) Approve(ctx context.Context) error {
 	emitEvent(e)
 
 	if c.Status == api.ClaimStatusApproved {
-		return c.CreateLedgerEntry(Tx(ctx), oldStatus, string(c.Status))
+		return c.CreateLedgerEntry(Tx(ctx))
 	}
 	return nil
 }
@@ -910,7 +908,7 @@ func ClaimsWithRecentStatusChanges(tx *pop.Connection) (api.RecentClaims, error)
 }
 
 // CreateLedgerEntry does nothing if the TotalPayout is zero
-func (c *Claim) CreateLedgerEntry(tx *pop.Connection, statusBefore, statusAfter string) error {
+func (c *Claim) CreateLedgerEntry(tx *pop.Connection) error {
 	if c.Status != api.ClaimStatusApproved {
 		return errors.New("cannot pay out a claim that is not approved")
 	}
@@ -936,9 +934,6 @@ func (c *Claim) CreateLedgerEntry(tx *pop.Connection, statusBefore, statusAfter 
 		le.RiskCategoryName = item.RiskCategory.Name
 		le.RiskCategoryCC = item.RiskCategory.CostCenter
 		le.IncomeAccount = domain.Env.ClaimIncomeAccount
-
-		le.StatusBefore = statusBefore
-		le.StatusAfter = statusAfter
 
 		if err := le.Create(tx); err != nil {
 			return err
