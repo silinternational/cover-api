@@ -501,14 +501,16 @@ func (ms *ModelSuite) TestPolicyLedgerTable() {
 
 	ms.NotEqualf(netTransactionsApril, 0, "bad netTransactions for tests")
 
+	type statuses struct{ statusBefore, statusAfter string }
+
 	tests := []struct {
-		name      string
-		date      time.Time
-		month     int
-		year      int
-		want      *api.LedgerTable
-		wantCount int
-		wantErr   *api.AppError
+		name         string
+		date         time.Time
+		month        int
+		year         int
+		want         *api.LedgerTable
+		wantStatuses []statuses
+		wantErr      *api.AppError
 	}{
 		{
 			name:    "invalid future month",
@@ -538,13 +540,16 @@ func (ms *ModelSuite) TestPolicyLedgerTable() {
 				PremiumRate:     domain.Env.PremiumFactor,
 				NetTransactions: netTransactionsApril,
 			},
-			wantCount: 2,
+			wantStatuses: []statuses{
+				{statusBefore: string(api.ItemCoverageStatusPending), statusAfter: string(api.ItemCoverageStatusApproved)},
+				{statusBefore: string(api.ItemCoverageStatusPending), statusAfter: string(api.ItemCoverageStatusApproved)},
+			},
 		},
 		{
-			name:      "none found",
-			month:     int(may.Month()),
-			year:      may.Year(),
-			wantCount: 0,
+			name:         "none found",
+			month:        int(may.Month()),
+			year:         may.Year(),
+			wantStatuses: []statuses{},
 		},
 	}
 
@@ -558,15 +563,21 @@ func (ms *ModelSuite) TestPolicyLedgerTable() {
 			}
 
 			ms.NoError(err)
-			ms.Equal(tt.wantCount, len(got.Entries), "incorrect number of LedgerEntries")
+			ms.Len(got.Entries, len(tt.wantStatuses), "incorrect number of LedgerEntries")
 
 			if tt.want == nil {
 				return
 			}
+
 			ms.Equal(tt.want.PayoutTotal, got.PayoutTotal, "incorrect PayoutTotal")
 			ms.Equal(tt.want.PremiumTotal, got.PremiumTotal, "incorrect PremiumTotal")
 			ms.Equal(tt.want.PremiumRate, got.PremiumRate, "incorrect PremiumRate")
 			ms.Equal(tt.want.NetTransactions, got.NetTransactions, "incorrect NetTransactions")
+
+			for i, e := range got.Entries {
+				ms.Equal(tt.wantStatuses[i].statusBefore, e.StatusBefore, "incorrect statusBefore")
+				ms.Equal(tt.wantStatuses[i].statusAfter, e.StatusAfter, "incorrect statusAfter")
+			}
 		})
 	}
 }
