@@ -291,9 +291,7 @@ func policiesLedgerReportCreate(c buffalo.Context) error {
 //   '200':
 //     description: the requested LedgerTable for the Policy
 //     schema:
-//       type: array
-//       items:
-//         "$ref": "#/definitions/LedgerTable"
+//       "$ref": "#/definitions/LedgerTable"
 func policiesLedgerTableView(c buffalo.Context) error {
 	policy := getReferencedPolicyFromCtx(c)
 
