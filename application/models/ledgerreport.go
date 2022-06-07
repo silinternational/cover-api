@@ -318,7 +318,7 @@ func PolicyLedgerTable(c context.Context, policy Policy, month, year int) (api.L
 	startDate := time.Date(year, time.Month(month), 1, 0, 0, 0, 0, time.UTC)
 	endDate := startDate.AddDate(0, 1, -1)
 
-	q := "policy_id = ? AND date_entered >= ? AND date_entered <= ?"
+	const q = "policy_id = ? AND date_entered BETWEEN ? AND ?"
 	if err := tx.Where(q, policy.ID, startDate, endDate).All(&ledgerEntries); err != nil {
 		if domain.IsOtherThanNoRows(err) {
 			return api.LedgerTable{}, api.NewAppError(err, api.ErrorUnknown, api.CategoryDatabase)
@@ -330,7 +330,7 @@ func PolicyLedgerTable(c context.Context, policy Policy, month, year int) (api.L
 	lTable := api.LedgerTable{
 		PremiumTotal:  policy.calculateAnnualPremium(tx),
 		PremiumRate:   domain.Env.PremiumFactor,
-		CoverageValue: policy.currentCoverage(tx),
+		CoverageValue: policy.currentCoverageTotal(tx),
 		Entries:       make([]api.LedgerTableEntry, len(ledgerEntries)),
 	}
 

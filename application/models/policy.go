@@ -517,7 +517,7 @@ func (p *Policy) calculateAnnualPremium(tx *pop.Connection) api.Currency {
 	return premium
 }
 
-func (p *Policy) currentCoverage(tx *pop.Connection) api.Currency {
+func (p *Policy) currentCoverageTotal(tx *pop.Connection) api.Currency {
 	p.LoadItems(tx, false)
 	var coverage int
 	for _, item := range p.Items {

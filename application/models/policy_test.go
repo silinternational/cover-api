@@ -721,6 +721,6 @@ func (ms *ModelSuite) TestPolicy_currentCoverage() {
 
 	policy.LoadItems(ms.DB, true)
 
-	coverage := policy.currentCoverage(ms.DB)
+	coverage := policy.currentCoverageTotal(ms.DB)
 	ms.Equal(api.Currency(totalCoverage), coverage, "incorrect Coverage for Policy")
 }
