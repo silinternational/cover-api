@@ -778,6 +778,7 @@ func (as *ActionSuite) Test_PolicyLedgerReportView() {
 			month:      nowMonth,
 			year:       1972,
 			wantStatus: http.StatusOK,
+			wantInBody: []string{`"entries":[]`},
 		},
 	}
 
