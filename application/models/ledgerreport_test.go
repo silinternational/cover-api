@@ -539,6 +539,8 @@ func (ms *ModelSuite) TestPolicyLedgerTable() {
 				PremiumTotal:    premiumTotal,
 				PremiumRate:     domain.Env.PremiumFactor,
 				NetTransactions: netTransactionsApril,
+				ReportMonth:     int(april.Month()),
+				ReportYear:      april.Year(),
 			},
 			wantStatuses: []statuses{
 				{statusBefore: string(api.ItemCoverageStatusPending), statusAfter: string(api.ItemCoverageStatusApproved)},
@@ -573,6 +575,8 @@ func (ms *ModelSuite) TestPolicyLedgerTable() {
 			ms.Equal(tt.want.PremiumTotal, got.PremiumTotal, "incorrect PremiumTotal")
 			ms.Equal(tt.want.PremiumRate, got.PremiumRate, "incorrect PremiumRate")
 			ms.Equal(tt.want.NetTransactions, got.NetTransactions, "incorrect NetTransactions")
+			ms.Equal(tt.want.ReportMonth, got.ReportMonth, "incorrect ReportMonth")
+			ms.Equal(tt.want.ReportYear, got.ReportYear, "incorrect ReportYear")
 
 			for i, e := range got.Entries {
 				ms.Equal(tt.wantStatuses[i].statusBefore, e.StatusBefore, "incorrect statusBefore")

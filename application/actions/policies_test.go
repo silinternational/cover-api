@@ -715,6 +715,97 @@ func (as *ActionSuite) Test_PolicyLedgerReportCreate() {
 	}
 }
 
+func (as *ActionSuite) Test_PolicyLedgerReportView() {
+
+	f0 := models.CreatePolicyFixtures(as.DB, models.FixturesConfig{})
+	otherUser := f0.Users[0]
+
+	f := as.createFixturesForLedger()
+	policy := f.Policies[0]
+	normalUser := f.Users[0]
+	stewardUser := models.CreateAdminUsers(as.DB)[models.AppRoleSteward]
+
+	now := time.Now().UTC()
+	nowMonth := int(now.Month())
+	nowYear := now.Year()
+
+	tests := []struct {
+		name       string
+		actor      models.User
+		month      int
+		year       int
+		wantStatus int
+		wantInBody []string
+	}{
+		{
+			name:       "unauthenticated",
+			actor:      models.User{},
+			wantStatus: http.StatusUnauthorized,
+			wantInBody: []string{`"key":"` + api.ErrorNotAuthorized.String()},
+		},
+		{
+			name:       "insufficient privileges",
+			actor:      otherUser,
+			wantStatus: http.StatusNotFound,
+			wantInBody: []string{`"key":"` + api.ErrorNotAuthorized.String()},
+		},
+		{
+			name:       "invalid month",
+			actor:      normalUser,
+			month:      20,
+			year:       nowYear,
+			wantStatus: http.StatusBadRequest,
+			wantInBody: []string{`"key":"` + api.ErrorInvalidDate.String()},
+		},
+		{
+			name:       "future date",
+			actor:      normalUser,
+			month:      nowMonth,
+			year:       nowYear + 10,
+			wantStatus: http.StatusBadRequest,
+			wantInBody: []string{`"key":"` + api.ErrorInvalidDate.String()},
+		},
+		{
+			name:       "valid dates",
+			actor:      normalUser,
+			month:      nowMonth,
+			year:       nowYear,
+			wantStatus: http.StatusOK,
+		},
+		{
+			name:       "no ledger entries",
+			actor:      stewardUser,
+			month:      nowMonth,
+			year:       1972,
+			wantStatus: http.StatusOK,
+		},
+	}
+
+	for _, tt := range tests {
+		as.T().Run(tt.name, func(t *testing.T) {
+			req := as.JSON("%s/%s/ledger-reports?month=%d&year=%d", policiesPath, policy.ID.String(), tt.month, tt.year)
+			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
+			res := req.Get()
+
+			body := res.Body.String()
+			as.Equal(tt.wantStatus, res.Code, "incorrect status code returned, body: %s", body)
+
+			for _, s := range tt.wantInBody {
+				as.Contains(body, s)
+			}
+
+			if res.Code != http.StatusOK {
+				return
+			}
+
+			var table api.LedgerTable
+			as.NoError(json.Unmarshal([]byte(body), &table))
+			as.Equal(tt.month, table.ReportMonth, "incorrect ReportMonth")
+			as.Equal(tt.year, table.ReportYear, "incorrect ReportYear")
+		})
+	}
+}
+
 func (as *ActionSuite) Test_PolicyStrikesCreate() {
 
 	f := models.CreatePolicyFixtures(as.DB, models.FixturesConfig{NumberOfPolicies: 2})

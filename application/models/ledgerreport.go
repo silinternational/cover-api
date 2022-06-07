@@ -331,6 +331,8 @@ func PolicyLedgerTable(c context.Context, policy Policy, month, year int) (api.L
 		PremiumTotal:  policy.calculateAnnualPremium(tx),
 		PremiumRate:   domain.Env.PremiumFactor,
 		CoverageValue: policy.currentCoverageTotal(tx),
+		ReportMonth:   month,
+		ReportYear:    year,
 		Entries:       make([]api.LedgerTableEntry, len(ledgerEntries)),
 	}
 

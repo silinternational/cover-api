@@ -44,6 +44,8 @@ type LedgerTable struct {
 	PremiumTotal    Currency  `json:"premium_total"`
 	PayoutTotal     Currency  `json:"payout_total"`
 	NetTransactions Currency  `json:"net_transactions"`
+	ReportMonth     int       `json:"report_month"`
+	ReportYear      int       `json:"report_year"`
 
 	Entries []LedgerTableEntry `json:"entries"`
 }
