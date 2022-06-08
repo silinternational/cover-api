@@ -99,9 +99,9 @@ type LedgerEntry struct {
 	Name              string          `db:"name"` // This will normally be the name of the assigned_to person
 	PolicyName        string          `db:"policy_name"`
 	ClaimPayoutOption string          `db:"claim_payout_option"`
-	Amount            api.Currency    `db:"amount"`
-	DateSubmitted     time.Time       `db:"date_submitted"`
-	DateEntered       nulls.Time      `db:"date_entered"`
+	Amount            api.Currency    `db:"amount"`         // reimbursements/reductions are positive and charges are negative
+	DateSubmitted     time.Time       `db:"date_submitted"` // date added to ledger
+	DateEntered       nulls.Time      `db:"date_entered"`   // date entered into accounting system
 	LegacyID          nulls.Int       `db:"legacy_id"`
 
 	CreatedAt time.Time `db:"created_at"`
@@ -275,6 +275,44 @@ func (le *LedgerEntry) getReference() string {
 
 	return fmt.Sprintf("%s %s%s / %s",
 		le.EntityCode, le.AccountNumber, le.CostCenter, le.PolicyName)
+}
+
+func (le *LedgerEntry) getItemName(tx *pop.Connection) string {
+
+	if le.Item != nil {
+		return le.Item.Name
+	}
+	if le.Claim == nil {
+		return ""
+	}
+	le.Claim.LoadClaimItems(tx, false)
+	if len(le.Claim.ClaimItems) < 1 {
+		return ""
+	}
+
+	cItem := le.Claim.ClaimItems[0]
+	cItem.LoadItem(tx, false)
+	return cItem.Item.Name
+}
+
+func (le *LedgerEntry) getItemLocation(tx *pop.Connection) string {
+
+	if le.Item != nil {
+		loctn := le.Item.GetAccountablePersonLocation(tx)
+		return loctn.Country
+	}
+	if le.Claim == nil {
+		return ""
+	}
+	le.Claim.LoadClaimItems(tx, false)
+	if len(le.Claim.ClaimItems) < 1 {
+		return ""
+	}
+
+	cItem := le.Claim.ClaimItems[0]
+	cItem.LoadItem(tx, false)
+	loctn := cItem.Item.GetAccountablePersonLocation(tx)
+	return loctn.Country
 }
 
 func (le *LedgerEntry) balanceDescription() string {

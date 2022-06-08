@@ -941,7 +941,6 @@ func (ms *ModelSuite) TestItem_CreateLedgerEntry() {
 	ms.NoError(item.Update(ctx))
 
 	amount := item.CalculateProratedPremium(time.Now().UTC())
-
 	ms.NoError(item.CreateLedgerEntry(ms.DB, LedgerEntryTypeNewCoverage, amount))
 
 	var le LedgerEntry

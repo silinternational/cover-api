@@ -1082,6 +1082,7 @@ func (ms *ModelSuite) TestClaim_CreateLedgerEntry() {
 	ms.Equal(accPerson, le.Name, "Name is incorrect")
 	ms.Equal(policy.Name, le.PolicyName, "PolicyName is incorrect")
 	ms.Equal(payoutOption, le.ClaimPayoutOption, "ClaimPayoutOption is incorrect")
+	ms.Equal(accPerson, le.Name, "Name is incorrect")
 }
 
 func (ms *ModelSuite) TestClaims_ByStatus() {

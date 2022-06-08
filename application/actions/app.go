@@ -223,6 +223,7 @@ func App() *buffalo.App {
 		policiesGroup.GET(idRegex+"/members", policiesListMembers)
 		policiesGroup.POST(idRegex+"/members", policiesInviteMember)
 		policiesGroup.POST(idRegex+"/ledger-reports", policiesLedgerReportCreate)
+		policiesGroup.GET(idRegex+"/ledger-reports", policiesLedgerTableView)
 		policiesGroup.POST(idRegex+"/"+api.ResourceStrikes, policiesStrikeCreate)
 
 		// policy-members
