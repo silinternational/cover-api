@@ -280,7 +280,7 @@ func (le *LedgerEntry) getReference() string {
 }
 
 func (le *LedgerEntry) getItemName(tx *pop.Connection) string {
-	le.LoadItem(tx)
+	le.LoadItem(tx, false)
 	if le.Item != nil {
 		return le.Item.Name
 	}
@@ -379,8 +379,8 @@ func (le *LedgerEntry) LoadClaim(tx *pop.Connection) {
 }
 
 // LoadItem - a simple wrapper method for loading the item
-func (le *LedgerEntry) LoadItem(tx *pop.Connection) {
-	if le.Item == nil {
+func (le *LedgerEntry) LoadItem(tx *pop.Connection, reload bool) {
+	if le.Item == nil || reload {
 		if err := tx.Load(le, "Item"); err != nil {
 			panic("error loading ledger entry item: " + err.Error())
 		}
