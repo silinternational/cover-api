@@ -15,8 +15,10 @@ import (
 	"github.com/silinternational/cover-api/fin"
 )
 
-const accountSeparator = " / "
-const csvPolicyHeader = `"Amount","Description","Reference","Date Entered"` + "\n"
+const (
+	accountSeparator = " / "
+	csvPolicyHeader  = `"Amount","Description","Reference","Date Entered"` + "\n"
+)
 
 type LedgerEntryType string
 
@@ -278,10 +280,12 @@ func (le *LedgerEntry) getReference() string {
 }
 
 func (le *LedgerEntry) getItemName(tx *pop.Connection) string {
-
+	le.LoadItem(tx, false)
 	if le.Item != nil {
 		return le.Item.Name
 	}
+
+	le.LoadClaim(tx)
 	if le.Claim == nil {
 		return ""
 	}
@@ -296,7 +300,6 @@ func (le *LedgerEntry) getItemName(tx *pop.Connection) string {
 }
 
 func (le *LedgerEntry) getItemLocation(tx *pop.Connection) string {
-
 	if le.Item != nil {
 		loctn := le.Item.GetAccountablePersonLocation(tx)
 		return loctn.Country
@@ -371,6 +374,15 @@ func (le *LedgerEntry) LoadClaim(tx *pop.Connection) {
 	if le.ClaimID.Valid {
 		if err := tx.Load(le, "Claim"); err != nil {
 			panic("error loading ledger entry claim: " + err.Error())
+		}
+	}
+}
+
+// LoadItem - a simple wrapper method for loading the item
+func (le *LedgerEntry) LoadItem(tx *pop.Connection, reload bool) {
+	if le.Item == nil || reload {
+		if err := tx.Load(le, "Item"); err != nil {
+			panic("error loading ledger entry item: " + err.Error())
 		}
 	}
 }
