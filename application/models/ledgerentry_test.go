@@ -387,6 +387,64 @@ func (ms *ModelSuite) TestLedgerEntry_getDescription() {
 	}
 }
 
+func (ms *ModelSuite) TestLedgerEntry_getItemName() {
+	f := CreateItemFixtures(ms.DB, FixturesConfig{NumberOfPolicies: 2, ClaimsPerPolicy: 1, UsersPerPolicy: 2})
+	hhPolicy := f.Policies[0]
+	hhPolicyItem := hhPolicy.Items[0]
+	hhPolicy.LoadMembers(ms.DB, false)
+
+	// Give the household item an accountable person
+	hhAccPerson := hhPolicy.Members[1]
+	ms.NoError(hhPolicyItem.SetAccountablePerson(ms.DB, hhAccPerson.ID))
+	ms.NoError(ms.DB.Update(&hhPolicyItem), "error updating household policy item for test")
+
+	hhPolicyClaim := f.Policies[0].Claims[0]
+	ms.False(uuid.Nil == hhPolicyClaim.ID, "householdPolicyClaim is not hydrated")
+
+	teamPolicy := ConvertPolicyType(ms.DB, f.Policies[1])
+	teamPolicyItem := teamPolicy.Items[0]
+	teamPolicy.LoadMembers(ms.DB, false)
+
+	// Give the team item an accountable person
+	teamAccPerson := teamPolicy.Members[1]
+	ms.NoError(teamPolicyItem.SetAccountablePerson(ms.DB, teamPolicy.Members[1].ID))
+	ms.NoError(ms.DB.Update(&teamPolicyItem), "error updating team policy item for test")
+
+	// Create new Ledger Entries for each policy
+	hhAccPersName := hhAccPerson.GetName().String()
+	hhEntry := NewLedgerEntry(hhAccPersName, hhPolicy, &hhPolicyItem, nil)
+	hhEntry.Type = LedgerEntryTypeNewCoverage
+
+	teamAccPersName := teamAccPerson.GetName().String()
+	teamEntry := NewLedgerEntry(teamAccPersName, teamPolicy, &teamPolicyItem, nil)
+	teamEntry.Type = LedgerEntryTypeCoverageRefund
+
+	tests := []struct {
+		name  string
+		entry LedgerEntry
+		item  Item
+		want  string
+	}{
+		{
+			name:  "household policy item",
+			entry: hhEntry,
+			want:  hhPolicyItem.Name,
+		},
+		{
+			name:  "team policy item",
+			entry: teamEntry,
+			want:  teamPolicyItem.Name,
+		},
+	}
+	for _, tt := range tests {
+		ms.T().Run(tt.name, func(t *testing.T) {
+			got := tt.entry.getItemName(ms.DB)
+
+			ms.Equal(tt.item.Name, got)
+		})
+	}
+}
+
 func (ms *ModelSuite) TestLedgerEntry_getReference() {
 	f := CreateItemFixtures(ms.DB, FixturesConfig{NumberOfPolicies: 2, ClaimsPerPolicy: 1, UsersPerPolicy: 2})
 	hhPolicy := f.Policies[0]
