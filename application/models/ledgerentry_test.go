@@ -422,7 +422,6 @@ func (ms *ModelSuite) TestLedgerEntry_getItemName() {
 	tests := []struct {
 		name  string
 		entry LedgerEntry
-		item  Item
 		want  string
 	}{
 		{
@@ -440,7 +439,7 @@ func (ms *ModelSuite) TestLedgerEntry_getItemName() {
 		ms.T().Run(tt.name, func(t *testing.T) {
 			got := tt.entry.getItemName(ms.DB)
 
-			ms.Equal(tt.item.Name, got)
+			ms.Equal(tt.want, got)
 		})
 	}
 }
