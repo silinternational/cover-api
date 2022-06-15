@@ -92,7 +92,7 @@ func getServer() (servers.Server, error) {
 		return servers.New(), fmt.Errorf("failed to get TLS config: %s", err.Error())
 	}
 
-	return servers.WrapListener(&http.Server{}, listener), nil
+	return servers.WrapListener(&http.Server{ReadHeaderTimeout: time.Second * 15}, listener), nil
 }
 
 /*
