@@ -266,13 +266,6 @@ func (ms *ModelSuite) TestNewPolicyLedgerReport() {
 			wantErr:    &api.AppError{Key: api.ErrorInvalidDate, Category: api.CategoryUser},
 		},
 		{
-			name:       "invalid report type",
-			month:      1,
-			year:       2020,
-			reportType: "not-a-real-report-type",
-			wantErr:    &api.AppError{Key: api.ErrorInvalidReportType, Category: api.CategoryUser},
-		},
-		{
 			name:       "one monthly entry",
 			month:      int(april.Month()),
 			year:       april.Year(),
@@ -461,6 +454,133 @@ func (ms *ModelSuite) TestLedgerReport_AllForPolicy() {
 			for i, w := range tt.want {
 				ms.Equal(w.FileID, got[i].FileID, "incorrect report FileID")
 				ms.Equal(tt.policy.ID, got[i].PolicyID.UUID, "incorrect policy_id")
+			}
+		})
+	}
+}
+
+func (ms *ModelSuite) TestPolicyLedgerTable() {
+	// create ledger entries for a different policy to ensure they're not included in the results
+	f0 := CreateLedgerFixtures(ms.DB, FixturesConfig{ItemsPerPolicy: 3})
+
+	f := CreateLedgerFixtures(ms.DB, FixturesConfig{ItemsPerPolicy: 3})
+	user := f.Users[0]
+	policy := f.Policies[0]
+	premiumTotal := policy.calculateAnnualPremium(ms.DB)
+	ms.Greaterf(int(premiumTotal), 0, "bad premiumTotal for test")
+
+	ctx := CreateTestContext(user)
+
+	now := time.Now().UTC()
+	nextMonth := now.AddDate(0, 1, 0)
+
+	january := time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC)
+	march := time.Date(2021, 3, 1, 0, 0, 0, 0, time.UTC)
+	april := time.Date(2021, 4, 1, 0, 0, 0, 0, time.UTC)
+	may := time.Date(2021, 5, 1, 0, 0, 0, 0, time.UTC)
+
+	datesSubmitted := []time.Time{january, march, april}
+	datesEntered := []nulls.Time{nulls.NewTime(april), nulls.NewTime(april), {}}
+	entries := f.LedgerEntries
+	others := f0.LedgerEntries // These should not get included in the results
+	netTransactionsApril := api.Currency(0)
+
+	for i := range entries {
+		entries[i].DateSubmitted = datesSubmitted[i]
+		entries[i].DateEntered = datesEntered[i]
+		Must(ms.DB.Update(&entries[i]))
+
+		if datesEntered[i].Time.Month() == april.Month() {
+			netTransactionsApril += entries[i].Amount
+		}
+
+		others[i].DateSubmitted = datesSubmitted[i]
+		others[i].DateEntered = datesEntered[i]
+		Must(ms.DB.Update(&others[i]))
+	}
+
+	ms.NotEqualf(netTransactionsApril, 0, "bad netTransactions for tests")
+
+	type statuses struct{ statusBefore, statusAfter string }
+
+	tests := []struct {
+		name         string
+		date         time.Time
+		month        int
+		year         int
+		want         *api.LedgerTable
+		wantStatuses []statuses
+		wantErr      *api.AppError
+	}{
+		{
+			name:    "invalid future month",
+			month:   int(nextMonth.Month()),
+			year:    nextMonth.Year(),
+			wantErr: &api.AppError{Key: api.ErrorInvalidDate, Category: api.CategoryUser},
+		},
+		{
+			name:    "invalid report month",
+			month:   0,
+			year:    2020,
+			wantErr: &api.AppError{Key: api.ErrorInvalidDate, Category: api.CategoryUser},
+		},
+		{
+			name:    "invalid future year",
+			month:   1,
+			year:    now.Year() + 1,
+			wantErr: &api.AppError{Key: api.ErrorInvalidDate, Category: api.CategoryUser},
+		},
+		{
+			name:  "two entries",
+			month: int(april.Month()),
+			year:  april.Year(),
+			want: &api.LedgerTable{
+				PayoutTotal:     0,
+				PremiumTotal:    premiumTotal,
+				PremiumRate:     domain.Env.PremiumFactor,
+				NetTransactions: netTransactionsApril,
+				ReportMonth:     int(april.Month()),
+				ReportYear:      april.Year(),
+			},
+			wantStatuses: []statuses{
+				{statusBefore: string(api.ItemCoverageStatusPending), statusAfter: string(api.ItemCoverageStatusApproved)},
+				{statusBefore: string(api.ItemCoverageStatusPending), statusAfter: string(api.ItemCoverageStatusApproved)},
+			},
+		},
+		{
+			name:         "none found",
+			month:        int(may.Month()),
+			year:         may.Year(),
+			wantStatuses: []statuses{},
+		},
+	}
+
+	for _, tt := range tests {
+		ms.T().Run(tt.name, func(t *testing.T) {
+			got, err := PolicyLedgerTable(ctx, policy, tt.month, tt.year)
+			if tt.wantErr != nil {
+				ms.Error(err, "test should have produced an error")
+				ms.EqualAppError(*tt.wantErr, err)
+				return
+			}
+
+			ms.NoError(err)
+			ms.Len(got.Entries, len(tt.wantStatuses), "incorrect number of LedgerEntries")
+
+			if tt.want == nil {
+				return
+			}
+
+			ms.Equal(tt.want.PayoutTotal, got.PayoutTotal, "incorrect PayoutTotal")
+			ms.Equal(tt.want.PremiumTotal, got.PremiumTotal, "incorrect PremiumTotal")
+			ms.Equal(tt.want.PremiumRate, got.PremiumRate, "incorrect PremiumRate")
+			ms.Equal(tt.want.NetTransactions, got.NetTransactions, "incorrect NetTransactions")
+			ms.Equal(tt.want.ReportMonth, got.ReportMonth, "incorrect ReportMonth")
+			ms.Equal(tt.want.ReportYear, got.ReportYear, "incorrect ReportYear")
+
+			for i, e := range got.Entries {
+				ms.Equal(tt.wantStatuses[i].statusBefore, e.StatusBefore, "incorrect statusBefore")
+				ms.Equal(tt.wantStatuses[i].statusAfter, e.StatusAfter, "incorrect statusAfter")
 			}
 		})
 	}

@@ -1,7 +1,6 @@
 package domain
 
 import (
-	"context"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -55,13 +54,6 @@ var AllowedFileUploadTypes = []string{
 	"text/plain; charset=utf-8",
 	"text/csv",
 }
-
-// BuffaloContextType is a custom type used as a value key passed to context.WithValue as per the recommendations
-// in the function docs for that function: https://golang.org/pkg/context/#WithValue
-type BuffaloContextType string
-
-// BuffaloContext is the key for the call to context.WithValue in gqlHandler
-const BuffaloContext = BuffaloContextType("BuffaloContext")
 
 // Context keys
 const (
@@ -131,16 +123,6 @@ const (
 
 // redirect url for after logout
 var LogoutRedirectURL = "missing.ui.url/logged-out"
-
-func getBuffaloContext(ctx context.Context) buffalo.Context {
-	bc, ok := ctx.Value(BuffaloContext).(buffalo.Context)
-	if ok {
-		return bc
-	}
-
-	// Doesn't have a BuffaloContext value, so it must be the actual BuffaloContext
-	return ctx.(buffalo.Context)
-}
 
 // Env Holds the values of environment variables
 var Env struct {
@@ -295,8 +277,7 @@ func (e *ErrLogProxy) InitRollbar() {
 }
 
 // NewExtra Sets a new key-value pair in the `extras` entry of the context
-func NewExtra(ctx context.Context, key string, e interface{}) {
-	c := getBuffaloContext(ctx)
+func NewExtra(c buffalo.Context, key string, e interface{}) {
 	extras := getExtras(c)
 
 	extrasLock.Lock()

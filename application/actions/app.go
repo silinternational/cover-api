@@ -54,6 +54,7 @@ const idRegex = `/{id:[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[1-5][a-fA-F0-9]{3}-[8|9|aA|
 
 const (
 	stewardPath         = "/steward"
+	usersPath           = "/" + domain.TypeUser
 	claimsPath          = "/" + domain.TypeClaim
 	claimFilesPath      = "/" + domain.TypeClaimFile
 	claimItemsPath      = "/" + domain.TypeClaimItem
@@ -134,7 +135,7 @@ func App() *buffalo.App {
 		app.POST("/upload", uploadHandler)
 
 		// users
-		usersGroup := app.Group("/" + domain.TypeUser)
+		usersGroup := app.Group(usersPath)
 		usersGroup.GET("/", usersList)
 		usersGroup.Middleware.Skip(AuthZ, usersMe, usersMeUpdate, usersMeFilesAttach, usersMeFilesDelete)
 		usersGroup.GET("/me", usersMe)
@@ -222,6 +223,7 @@ func App() *buffalo.App {
 		policiesGroup.GET(idRegex+"/members", policiesListMembers)
 		policiesGroup.POST(idRegex+"/members", policiesInviteMember)
 		policiesGroup.POST(idRegex+"/ledger-reports", policiesLedgerReportCreate)
+		policiesGroup.GET(idRegex+"/ledger-reports", policiesLedgerTableView)
 		policiesGroup.POST(idRegex+"/"+api.ResourceStrikes, policiesStrikeCreate)
 
 		// policy-members

@@ -1,0 +1,2 @@
+drop_column("ledger_entries", "policy_name")
+drop_column("ledger_entries", "claim_payout_option")

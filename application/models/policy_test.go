@@ -1,6 +1,7 @@
 package models
 
 import (
+	"fmt"
 	"net/url"
 	"testing"
 	"time"
@@ -225,6 +226,18 @@ func (ms *ModelSuite) TestPolicy_LoadMembers() {
 	ms.Len(policy.Members, 1)
 }
 
+func idsInOrder(id1, id2 uuid.UUID) string {
+	const template = `%s||%s`
+	id1S := id1.String()
+	id2S := id2.String()
+	if id1S <= id2S {
+		return fmt.Sprintf(template, id1S, id2S)
+	}
+
+	return fmt.Sprintf(template, id2S, id1S)
+
+}
+
 func (ms *ModelSuite) TestPolicy_GetPolicyUserIDs() {
 	f := CreatePolicyFixtures(ms.DB, FixturesConfig{UsersPerPolicy: 2})
 	policy := f.Policies[0]
@@ -235,8 +248,9 @@ func (ms *ModelSuite) TestPolicy_GetPolicyUserIDs() {
 	ms.NoError(ms.DB.Where("policy_id = ?", policy.ID).All(&polUsers),
 		"error fetching PolicyUsers to verify")
 
-	ms.Equal(polUsers[0].ID, got[0], "incorrect first PolicyUser ID")
-	ms.Equal(polUsers[1].ID, got[1], "incorrect second PolicyUser ID")
+	wantIDs := idsInOrder(polUsers[0].ID, polUsers[1].ID)
+	gotIDs := idsInOrder(got[0], got[1])
+	ms.Equal(wantIDs, gotIDs, "incorrect PolicyUser ID(s)")
 }
 
 func (ms *ModelSuite) TestPolicy_LoadDependents() {
@@ -693,4 +707,20 @@ func (ms *ModelSuite) TestPolicy_ProcessAnnualCoverage() {
 	var l2 LedgerEntries
 	ms.NoError(l2.FindRenewals(ms.DB, year))
 	ms.Equal(2, len(l2))
+}
+
+func (ms *ModelSuite) TestPolicy_currentCoverage() {
+	f := CreateItemFixtures(ms.DB, FixturesConfig{ItemsPerPolicy: 5})
+	policy := f.Policies[0]
+	totalCoverage := 0
+	for i := range f.Items {
+		UpdateItemStatus(ms.DB, f.Items[i], api.ItemCoverageStatusApproved, "")
+		totalCoverage += f.Items[i].CoverageAmount
+	}
+	ms.Greaterf(totalCoverage, 0, "total coverage did not get calculated properly for test")
+
+	policy.LoadItems(ms.DB, true)
+
+	coverage := policy.currentCoverageTotal(ms.DB)
+	ms.Equal(api.Currency(totalCoverage), coverage, "incorrect Coverage for Policy")
 }

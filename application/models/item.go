@@ -868,6 +868,7 @@ func (i *Item) calculateCancellationCredit(t time.Time) api.Currency {
 func (i *Item) calculatePremiumChange(t time.Time, oldCoverageAmount int) api.Currency {
 	oldItem := Item{CoverageAmount: oldCoverageAmount}
 
+	// These will be positive numbers
 	oldPremium := oldItem.CalculateAnnualPremium()
 	credit := domain.CalculatePartialYearValue(int(oldPremium), t)
 
@@ -965,7 +966,8 @@ func (i *Item) SetAccountablePerson(tx *pop.Connection, id uuid.UUID) error {
 }
 
 // CreateLedgerEntry creates a charge of at least $1
-func (i *Item) CreateLedgerEntry(tx *pop.Connection, entryType LedgerEntryType, amount api.Currency) error {
+func (i *Item) CreateLedgerEntry(
+	tx *pop.Connection, entryType LedgerEntryType, amount api.Currency) error {
 	if entryType == LedgerEntryTypeCoverageRefund && amount > -100 {
 		amount = 0
 	} else if amount < 100 { // Charge at least $1
@@ -975,16 +977,11 @@ func (i *Item) CreateLedgerEntry(tx *pop.Connection, entryType LedgerEntryType, 
 	i.LoadPolicy(tx, false)
 	i.LoadRiskCategory(tx, false)
 	i.Policy.LoadEntityCode(tx, false)
+	name := i.GetAccountablePersonName(tx).String()
 
-	name := i.GetAccountablePersonName(tx)
-
-	le := NewLedgerEntry(i.Policy, i, nil)
+	le := NewLedgerEntry(name, i.Policy, i, nil)
 	le.Type = entryType
 	le.Amount = -amount
-	le.Name = name.String()
-	if le.Name == "" {
-		le.Name = i.Policy.Name
-	}
 
 	if err := le.Create(tx); err != nil {
 		return err
@@ -1027,6 +1024,7 @@ func (i *Item) GetAccountablePersonLocation(tx *pop.Connection) Location {
 // GetAccountablePerson gets the accountable person as a Person interface
 func (i *Item) GetAccountablePerson(tx *pop.Connection) Person {
 	var person Person
+
 	if i.PolicyUserID.Valid {
 		var user User
 		if err := user.FindByID(tx, i.PolicyUserID.UUID); err != nil {

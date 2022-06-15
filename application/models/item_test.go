@@ -931,6 +931,7 @@ func (ms *ModelSuite) TestItem_calculatePremiumChange() {
 
 func (ms *ModelSuite) TestItem_CreateLedgerEntry() {
 	f := CreateItemFixtures(ms.DB, FixturesConfig{})
+	policy := f.Policies[0]
 	item := f.Items[0]
 
 	user := f.Users[0]
@@ -940,7 +941,6 @@ func (ms *ModelSuite) TestItem_CreateLedgerEntry() {
 	ms.NoError(item.Update(ctx))
 
 	amount := item.CalculateProratedPremium(time.Now().UTC())
-
 	ms.NoError(item.CreateLedgerEntry(ms.DB, LedgerEntryTypeNewCoverage, amount))
 
 	var le LedgerEntry
@@ -950,7 +950,9 @@ func (ms *ModelSuite) TestItem_CreateLedgerEntry() {
 	ms.Equal(item.PolicyID, le.PolicyID, "PolicyID is incorrect")
 	ms.Equal(item.ID, le.ItemID.UUID, "ItemID is incorrect")
 	ms.Equal(amount, -le.Amount, "Amount is incorrect")
-	ms.Equal(user.FirstName+" "+user.LastName, le.Name, "Name is incorrect")
+
+	wantDescription := fmt.Sprintf("%s / %s", le.Type.Description("", api.Currency(1)), policy.Name)
+	ms.Equal(wantDescription, le.getDescription(), "Description is incorrect")
 	ms.Equal(time.Now().UTC().Truncate(domain.DurationDay), le.DateSubmitted,
 		"ledger entry submitted date should be the current time")
 }

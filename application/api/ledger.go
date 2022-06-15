@@ -37,6 +37,32 @@ type LedgerReportCreateInput struct {
 }
 
 // swagger:model
+type LedgerTable struct {
+	LastChanged     time.Time `json:"last_changed"`
+	CoverageValue   Currency  `json:"coverage_value"`
+	PremiumRate     float64   `json:"premium_rate"`
+	PremiumTotal    Currency  `json:"premium_total"`
+	PayoutTotal     Currency  `json:"payout_total"`
+	NetTransactions Currency  `json:"net_transactions"`
+	ReportMonth     int       `json:"report_month"`
+	ReportYear      int       `json:"report_year"`
+
+	Entries []LedgerTableEntry `json:"entries"`
+}
+
+// swagger:model
+type LedgerTableEntry struct {
+	ItemName     string    `json:"item_name"`
+	StatusBefore string    `json:"status_before"`
+	StatusAfter  string    `json:"status_after"`
+	Type         string    `json:"type"`
+	Value        Currency  `json:"value"`
+	Date         time.Time `json:"date"`
+	AssignedTo   string    `json:"assigned_to"`
+	Location     string    `json:"location"`
+}
+
+// swagger:model
 type LedgerEntries []LedgerEntry
 
 // swagger:model
@@ -70,8 +96,11 @@ type LedgerEntry struct {
 	AccountNumber    string          `json:"account_number"`
 	IncomeAccount    string          `json:"income_account"`
 
-	// name of accountable person if available, otherwise the policy name
-	Name   string   `json:"name"`
+	// name of accountable person if available
+	Name string `json:"name"`
+
+	PolicyName string `json:"policy_name"`
+
 	Amount Currency `json:"amount"`
 
 	// date added to ledger
