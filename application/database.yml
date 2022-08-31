@@ -12,5 +12,5 @@ test:
 staging:
   url: {{envOr "DATABASE_URL" "postgres://cover:cover@127.0.0.1:5432/cover_staging?sslmode=disable"}}
 
-prod:
+production:
   url: {{envOr "DATABASE_URL" "postgres://cover:cover@127.0.0.1:5432/cover_production?sslmode=disable"}}

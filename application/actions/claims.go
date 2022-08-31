@@ -67,7 +67,7 @@ func claimsListAdmin(c buffalo.Context, statuses []api.ClaimStatus) error {
 func claimsListCustomer(c buffalo.Context) error {
 	tx := models.Tx(c)
 	currentUser := models.CurrentUser(c)
-	claims := currentUser.MyClaims(models.Tx(c))
+	claims := currentUser.MyClaims(tx)
 	return renderOk(c, claims.ConvertToAPI(tx))
 }
 
