@@ -573,3 +573,69 @@ func (ms *ModelSuite) TestLedgerEntries_Reconcile() {
 		})
 	}
 }
+
+func (ms *ModelSuite) Test_AdjustLedgerAmount() {
+	tests := []struct {
+		name       string
+		entryType  LedgerEntryType
+		amount     api.Currency
+		wantAmount api.Currency
+	}{
+		{
+			name:       "new coverage, over $1",
+			entryType:  LedgerEntryTypeNewCoverage,
+			amount:     500,
+			wantAmount: 500,
+		},
+		{
+			name:       "new coverage, under $1",
+			entryType:  LedgerEntryTypeNewCoverage,
+			amount:     50,
+			wantAmount: 100,
+		},
+		{
+			name:       "refund, over $1",
+			entryType:  LedgerEntryTypeCoverageRefund,
+			amount:     -500,
+			wantAmount: -500,
+		},
+		{
+			name:       "refund, under $1",
+			entryType:  LedgerEntryTypeCoverageRefund,
+			amount:     -50,
+			wantAmount: -0,
+		},
+		{
+			name:       "coverage change, positive, over $1",
+			entryType:  LedgerEntryTypeCoverageChange,
+			amount:     600,
+			wantAmount: 600,
+		},
+		{
+			name:       "coverage change, positive, under $1",
+			entryType:  LedgerEntryTypeCoverageChange,
+			amount:     50,
+			wantAmount: 100,
+		},
+		{
+			name:       "coverage change, negative, over $1",
+			entryType:  LedgerEntryTypeCoverageChange,
+			amount:     -700,
+			wantAmount: -700,
+		},
+		{
+			name:       "coverage change, negative, under $1",
+			entryType:  LedgerEntryTypeCoverageChange,
+			amount:     -30,
+			wantAmount: -0,
+		},
+	}
+	for _, tt := range tests {
+		ms.T().Run(tt.name, func(t *testing.T) {
+			got, err := adjustLedgerAmount(tt.amount, tt.entryType)
+			ms.NoError(err)
+
+			ms.Equal(tt.wantAmount, got, "adjustment is incorrect")
+		})
+	}
+}
