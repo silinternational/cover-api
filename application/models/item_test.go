@@ -930,31 +930,72 @@ func (ms *ModelSuite) TestItem_calculatePremiumChange() {
 }
 
 func (ms *ModelSuite) TestItem_CreateLedgerEntry() {
-	f := CreateItemFixtures(ms.DB, FixturesConfig{})
-	policy := f.Policies[0]
-	item := f.Items[0]
+	// create a separate item for each test, to make it easy to find the right entry
+	f := CreateItemFixtures(ms.DB, FixturesConfig{ItemsPerPolicy: 3})
 
 	user := f.Users[0]
 	ctx := CreateTestContext(user)
 
-	ms.NoError(item.SetAccountablePerson(ms.DB, f.Users[0].ID))
-	ms.NoError(item.Update(ctx))
+	for _, item := range f.Items {
+		ms.NoError(item.SetAccountablePerson(ms.DB, f.Users[0].ID))
+		ms.NoError(item.Update(ctx))
+	}
 
-	amount := item.CalculateProratedPremium(time.Now().UTC())
-	ms.NoError(item.CreateLedgerEntry(ms.DB, LedgerEntryTypeNewCoverage, amount))
+	tests := []struct {
+		name       string
+		item       Item
+		entryType  LedgerEntryType
+		amount     api.Currency
+		wantAmount api.Currency
+	}{
+		{
+			name:       "new coverage, over $1",
+			item:       f.Items[0],
+			entryType:  LedgerEntryTypeNewCoverage,
+			amount:     500,
+			wantAmount: -500,
+		},
+		{
+			name:       "refund, under $1",
+			item:       f.Items[1],
+			entryType:  LedgerEntryTypeCoverageRefund,
+			amount:     -50,
+			wantAmount: 0,
+		},
+		{
+			name:       "renewal, over $1",
+			item:       f.Items[2],
+			entryType:  LedgerEntryTypeCoverageRenewal,
+			amount:     300,
+			wantAmount: -300,
+		},
+	}
+	for _, tt := range tests {
+		ms.T().Run(tt.name, func(t *testing.T) {
+			err := tt.item.CreateLedgerEntry(ms.DB, tt.entryType, tt.amount)
+			ms.NoError(err)
 
-	var le LedgerEntry
-	ms.NoError(ms.DB.Where("item_id = ?", item.ID).First(&le))
+			var le LedgerEntry
+			ms.NoError(ms.DB.Where("item_id = ?", tt.item.ID).First(&le))
 
-	ms.Equal(LedgerEntryTypeNewCoverage, le.Type, "Type is incorrect")
-	ms.Equal(item.PolicyID, le.PolicyID, "PolicyID is incorrect")
-	ms.Equal(item.ID, le.ItemID.UUID, "ItemID is incorrect")
-	ms.Equal(amount, -le.Amount, "Amount is incorrect")
+			ms.Equal(tt.entryType, le.Type, "Type is incorrect")
+			ms.Equal(tt.item.PolicyID, le.PolicyID, "PolicyID is incorrect")
+			ms.Equal(tt.item.ID, le.ItemID.UUID, "ItemID is incorrect")
+			ms.Equal(tt.wantAmount, le.Amount, "Amount is incorrect")
+			ms.Equal(tt.item.GetAccountablePersonName(ms.DB).String(), le.Name, "Name is incorrect")
 
-	wantDescription := fmt.Sprintf("%s / %s", le.Type.Description("", api.Currency(1)), policy.Name)
-	ms.Equal(wantDescription, le.getDescription(), "Description is incorrect")
-	ms.Equal(time.Now().UTC().Truncate(domain.DurationDay), le.DateSubmitted,
-		"ledger entry submitted date should be the current time")
+			ms.Equal(time.Now().UTC().Truncate(domain.DurationDay), le.DateSubmitted,
+				"ledger entry submitted date should be the current time")
+
+			var updatedItem Item
+			ms.NoError(ms.DB.Find(&updatedItem, tt.item.ID))
+			wantPaidThroughYear := 0
+			if le.Type == LedgerEntryTypeNewCoverage || le.Type == LedgerEntryTypeCoverageRenewal {
+				wantPaidThroughYear = le.DateSubmitted.Year()
+			}
+			ms.Equal(wantPaidThroughYear, updatedItem.PaidThroughYear, "Item.PaidThroughYear is incorrect")
+		})
+	}
 }
 
 func (ms *ModelSuite) TestItem_GetAccountablePersonName() {
@@ -1302,7 +1343,6 @@ func (ms *ModelSuite) TestItem_Update() {
 }
 
 func (ms *ModelSuite) TestItem_cancelCoverageAfterClaim() {
-
 	f := CreateItemFixtures(ms.DB, FixturesConfig{ItemsPerPolicy: 3})
 
 	itemApproved := UpdateItemStatus(ms.DB, f.Items[0], api.ItemCoverageStatusApproved, "test")
@@ -1362,7 +1402,6 @@ func (ms *ModelSuite) TestItem_cancelCoverageAfterClaim() {
 			ms.WithinDuration(now, tt.item.CoverageEndDate.Time, time.Hour*24, "Item CoverageEndDate is incorrect")
 			ms.Equal(ItemStatusChangeInactivated, tt.item.StatusChange, "Item StatusChange is incorrect")
 			ms.Equal(reason, tt.item.StatusReason, "Item StatusReason is incorrect")
-
 		})
 	}
 }
