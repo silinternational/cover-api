@@ -917,6 +917,11 @@ func (c *Claim) CreateLedgerEntry(tx *pop.Connection) error {
 		return nil
 	}
 
+	adjustedAmount, err := adjustLedgerAmount(c.TotalPayout, LedgerEntryTypeClaim)
+	if err != nil {
+		return err
+	}
+
 	c.LoadClaimItems(tx, false)
 	c.LoadPolicy(tx, false)
 	c.Policy.LoadEntityCode(tx, false)
@@ -929,7 +934,7 @@ func (c *Claim) CreateLedgerEntry(tx *pop.Connection) error {
 
 		le := NewLedgerEntry(name, c.Policy, &item, c)
 		le.Type = LedgerEntryTypeClaim
-		le.Amount = c.TotalPayout
+		le.Amount = adjustedAmount
 
 		le.RiskCategoryName = item.RiskCategory.Name
 		le.RiskCategoryCC = item.RiskCategory.CostCenter

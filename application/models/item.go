@@ -363,7 +363,6 @@ func (i *Item) ScheduleInactivation(ctx context.Context, t time.Time) error {
 // cancelCoverageAfterClaim sets the item's CoverageEndDate to the current time and creates a corresponding
 //  credit ledger entry
 func (i *Item) cancelCoverageAfterClaim(tx *pop.Connection, reason string) error {
-
 	if i.CoverageStatus != api.ItemCoverageStatusApproved {
 		return errors.New("cannot cancel coverage on an item which is not approved")
 	}
@@ -966,12 +965,10 @@ func (i *Item) SetAccountablePerson(tx *pop.Connection, id uuid.UUID) error {
 }
 
 // CreateLedgerEntry creates a charge of at least $1
-func (i *Item) CreateLedgerEntry(
-	tx *pop.Connection, entryType LedgerEntryType, amount api.Currency) error {
-	if entryType == LedgerEntryTypeCoverageRefund && amount > -100 {
-		amount = 0
-	} else if amount < 100 { // Charge at least $1
-		amount = 100
+func (i *Item) CreateLedgerEntry(tx *pop.Connection, entryType LedgerEntryType, amount api.Currency) error {
+	adjustedAmount, err := adjustLedgerAmount(amount, entryType)
+	if err != nil {
+		return err
 	}
 
 	i.LoadPolicy(tx, false)
@@ -981,7 +978,7 @@ func (i *Item) CreateLedgerEntry(
 
 	le := NewLedgerEntry(name, i.Policy, i, nil)
 	le.Type = entryType
-	le.Amount = -amount
+	le.Amount = -adjustedAmount
 
 	if err := le.Create(tx); err != nil {
 		return err

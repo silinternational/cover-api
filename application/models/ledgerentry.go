@@ -430,3 +430,36 @@ func (le *LedgerEntry) ConvertToAPI(tx *pop.Connection) api.LedgerEntry {
 		UpdatedAt:        le.UpdatedAt,
 	}
 }
+
+func adjustLedgerAmount(amount api.Currency, entryType LedgerEntryType) (api.Currency, error) {
+	const minimumAmount = 100
+
+	adjusted := amount
+	switch entryType {
+	case LedgerEntryTypeCoverageRefund:
+		if amount > 0 {
+			return adjusted, fmt.Errorf("invalid amount for refund, should not be positive: %d", amount)
+		}
+		if amount > -minimumAmount {
+			adjusted = 0 // don't refund less than $1
+		}
+	case LedgerEntryTypeNewCoverage, LedgerEntryTypeCoverageRenewal:
+		if amount < 0 {
+			return adjusted, fmt.Errorf("invalid amount for payment, should not be negative: %d", amount)
+		}
+		if amount < minimumAmount {
+			adjusted = minimumAmount // Charge at least $1
+		}
+	case LedgerEntryTypeCoverageChange:
+		if amount > -minimumAmount && amount < 0 {
+			adjusted = 0 // don't refund less than $1
+		} else if amount > 0 && amount < minimumAmount {
+			adjusted = minimumAmount // Charge at least $1
+		}
+	case LedgerEntryTypeClaim, LedgerEntryTypeClaimAdjustment:
+		// no adjustments on claims
+	default:
+		return adjusted, fmt.Errorf("invalid LedgerEntryType specified in adjustLedgerAmount: %s", entryType)
+	}
+	return adjusted, nil
+}
