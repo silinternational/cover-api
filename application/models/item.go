@@ -129,7 +129,7 @@ func (i *Item) Update(ctx context.Context) error {
 			return api.NewAppError(err, api.ErrorItemCoverageAmountCannotIncrease, api.CategoryUser)
 		}
 		if oldItem.CoverageAmount != i.CoverageAmount && !i.CoverageEndDate.Valid {
-			amount := i.calculatePremiumChange(time.Now().UTC(), oldItem.CoverageAmount)
+			amount := i.calculatePremiumChange(time.Now().UTC(), oldItem.CalculateAnnualPremium(), i.CalculateAnnualPremium())
 			if err := i.CreateLedgerEntry(Tx(ctx), LedgerEntryTypeCoverageChange, amount); err != nil {
 				return err
 			}
@@ -382,7 +382,8 @@ func (i *Item) cancelCoverageAfterClaim(tx *pop.Connection, reason string) error
 	}
 
 	now := time.Now().UTC()
-	amount := i.calculatePremiumChange(now, i.CoverageAmount)
+
+	amount := i.calculatePremiumChange(now, i.CalculateAnnualPremium(), 0)
 	if err := i.CreateLedgerEntry(tx, LedgerEntryTypeCoverageRefund, amount); err != nil {
 		return err
 	}
@@ -839,39 +840,22 @@ func (i *Item) calculateCancellationCredit(t time.Time) api.Currency {
 		return 0
 	}
 
-	var premium int
+	premium := int(i.CalculateAnnualPremium())
 
 	// If the coverage was from a previous year and today is still in January,
 	//   give a full year's refund.
 	if i.shouldGiveFullYearRefund(t) {
-		premium = int(i.CalculateAnnualPremium())
 		return api.Currency(-1 * premium)
 	}
 
 	// Otherwise, give credit for the following calendar months
-
-	// Coverage started previous year, but it is now later than January.
-	// So, a full year's premium would have been charged.
-	if i.CoverageStartDate.Year() < t.Year() {
-		premium = int(i.CalculateAnnualPremium())
-
-		// Coverage started this year, so a partial year's premium would have been charged.
-	} else {
-		premium = int(i.CalculateProratedPremium(i.CoverageStartDate))
-	}
-
 	credit := domain.CalculateMonthlyRefundValue(premium, t)
 	return api.Currency(-1 * credit)
 }
 
-func (i *Item) calculatePremiumChange(t time.Time, oldCoverageAmount int) api.Currency {
-	oldItem := Item{CoverageAmount: oldCoverageAmount}
-
+func (i *Item) calculatePremiumChange(t time.Time, oldPremium, newPremium api.Currency) api.Currency {
 	// These will be positive numbers
-	oldPremium := oldItem.CalculateAnnualPremium()
 	credit := domain.CalculatePartialYearValue(int(oldPremium), t)
-
-	newPremium := i.CalculateAnnualPremium()
 	charge := domain.CalculatePartialYearValue(int(newPremium), t)
 
 	return api.Currency(charge - credit)
