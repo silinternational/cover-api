@@ -835,39 +835,37 @@ func (ms *ModelSuite) TestItem_calculateCancellationCredit() {
 	}{
 		{
 			name:              "Now January and created last year",
-			coverage:          6000, //  6000 * 0.02 == 120 ,
+			coverage:          600000, //  600,000 * 0.02 == 12,000 ,
 			coverageStartDate: time.Date(2018, 12, 1, 1, 1, 1, 1, time.UTC),
 			testTime:          midJanuary,
-			want:              -120,
+			want:              -12000,
 		},
 		{
 			name: "Now January and created same year",
-			//  219000 * 0.02 / 365 (days in the year) = 12 per day
-			//  Prorated Premium = 361 * 12 = 4332  (starting Jan 5)
-			//  Monthly premium = 4332 / 12 = 361
-			//  11 months credit = 3971
-			coverage:          219000,
+			//  Premium = 600,000 * 0.02 = 12,000
+			//  Monthly premium = 12,000 / 12 = 1,000
+			//  11 months credit = 11,000
+			coverage:          600000,
 			coverageStartDate: time.Date(2019, 1, 5, 1, 1, 1, 1, time.UTC),
 			testTime:          midJanuary,
-			want:              -3971,
+			want:              -11000,
 		},
 		{
 			name: "Now February same year",
-			//  219000 * 0.02 / 365 (days in the year) = 12 per day
-			//  Prorated Premium = 355 * 12 = 4260   (starting Jan 11)
-			//  Monthly premium = 4260 / 12 = 355
-			//  10 months credit = 3550
-			coverage:          219000,
+			//  Premium = 600,000 * 0.02 = 12,000
+			//  Monthly premium = 12,000 / 12 = 1,000
+			//  10 months credit = 10,000
+			coverage:          600000,
 			coverageStartDate: midJanuary,
 			testTime:          time.Date(2019, 2, 1, 1, 1, 1, 1, time.UTC),
-			want:              -3550,
+			want:              -10000,
 		},
 		{
 			name:              "November Round Up", // one month's credit
-			coverage:          218900,              // slightly lower than previous test case
+			coverage:          599990,              // slightly lower than previous test case (then one month's credit)
 			coverageStartDate: midJanuary,
 			testTime:          time.Date(2019, 11, 1, 1, 1, 1, 1, time.UTC),
-			want:              -355,
+			want:              -1000,
 		},
 		{
 			name:              "Now December same year",
@@ -890,40 +888,38 @@ func (ms *ModelSuite) TestItem_calculateCancellationCredit() {
 }
 
 func (ms *ModelSuite) TestItem_calculatePremiumChange() {
-	domain.Env.PremiumFactor = 0.02
-
 	// 10 days remaining in the year
 	now := time.Date(1999, 12, 22, 0, 0, 0, 0, time.UTC)
 
 	tests := []struct {
-		name        string
-		coverage    int
-		oldCoverage int
-		want        int
+		name       string
+		newPremium api.Currency
+		oldPremium api.Currency
+		want       int
 	}{
 		{
-			name:        "no change",
-			coverage:    200000,
-			oldCoverage: 200000,
-			want:        0,
+			name:       "no change",
+			newPremium: 200000,
+			oldPremium: 200000,
+			want:       0,
 		},
 		{
-			name:        "increased",
-			coverage:    730000,
-			oldCoverage: 365000,
-			want:        200,
+			name:       "increased",
+			newPremium: 730000,
+			oldPremium: 365000, // difference of 1,000 per day
+			want:       10000,  // times 10 days
 		},
 		{
-			name:        "decreased",
-			coverage:    365000,
-			oldCoverage: 730000,
-			want:        -200,
+			name:       "decreased",
+			newPremium: 365000,
+			oldPremium: 730000,
+			want:       -10000,
 		},
 	}
 	for _, tt := range tests {
 		ms.T().Run(tt.name, func(t *testing.T) {
-			item := Item{CoverageAmount: tt.coverage}
-			got := item.calculatePremiumChange(now, tt.oldCoverage)
+			item := Item{}
+			got := item.calculatePremiumChange(now, tt.oldPremium, tt.newPremium)
 			ms.Equal(api.Currency(tt.want), got)
 		})
 	}
