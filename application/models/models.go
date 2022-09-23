@@ -274,7 +274,7 @@ func appErrorFromDB(err error, defaultKey api.ErrorKey) error {
 
 	var pgError *pgconn.PgError
 	if errors.As(err, &pgError) {
-		appErr.Err = fmt.Errorf("%w Detail: %s", pgError, pgError.Detail)
+		appErr.Err = fmt.Errorf("%w Detail: %s", appErr, pgError.Detail)
 
 		switch pgError.Code {
 		case pgerrcode.ForeignKeyViolation:
