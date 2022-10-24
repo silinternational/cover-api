@@ -285,7 +285,7 @@ func (p *Policy) ConvertToAPI(tx *pop.Connection, hydrate bool) api.Policy {
 		CostCenter:    p.CostCenter,
 		Account:       p.Account,
 		AccountDetail: p.AccountDetail,
-		EntityCode:    p.EntityCode.ConvertToAPI(tx),
+		EntityCode:    p.EntityCode.ConvertToAPI(tx, false),
 		Members:       p.Members.ConvertToPolicyMembers(polUserIDs),
 		CreatedAt:     p.CreatedAt,
 		UpdatedAt:     p.UpdatedAt,
