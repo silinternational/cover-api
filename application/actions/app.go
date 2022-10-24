@@ -62,6 +62,7 @@ const (
 	ledgerReportPath    = "/" + domain.TypeLedgerReport
 	policiesPath        = "/" + domain.TypePolicy
 	policyDependentPath = "/" + domain.TypePolicyDependent
+	entityCodesPath     = "/" + domain.TypeEntityCode
 	policyMemberPath    = "/" + domain.TypePolicyMember
 	strikesPath         = "/" + domain.TypeStrike
 )
@@ -186,12 +187,18 @@ func App() *buffalo.App {
 		configGroup.GET("/countries", countries)
 		configGroup.GET("/claim-incident-types", claimIncidentTypes)
 		configGroup.GET("/item-categories", itemCategoriesList)
-		configGroup.GET("/entity-codes", entityCodesList)
+		configGroup.GET("/entity-codes", entityCodesList) // DEPRECATED, use GET /entity-codes
 
 		// dependent
 		depsGroup := app.Group(policyDependentPath)
 		depsGroup.PUT(idRegex, dependentsUpdate)
 		depsGroup.DELETE(idRegex, dependentsDelete)
+
+		// entity codes
+		entityCodesGroup := app.Group(entityCodesPath)
+		entityCodesGroup.GET("", entityCodesList)
+		entityCodesGroup.PUT(idRegex, entityCodesUpdate)
+		entityCodesGroup.GET(idRegex, entityCodesView)
 
 		// item
 		itemsGroup := app.Group(itemsPath)

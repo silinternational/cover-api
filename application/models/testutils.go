@@ -1,3 +1,4 @@
+//go:build development
 // +build development
 
 // This build tag ensures that this file will not be included unless
@@ -657,6 +658,10 @@ func DestroyAll() {
 	// delete all Invites
 	var invites PolicyUserInvites
 	destroyTable(&invites)
+
+	// delete all EntityCodes
+	var entityCodes EntityCodes
+	destroyTable(&entityCodes)
 }
 
 func destroyTable(i interface{}) {
@@ -895,7 +900,6 @@ func ConvertPolicyType(tx *pop.Connection, policy Policy) Policy {
 
 // CreateStrikeFixtures generates any number of strike records per policy provided
 func CreateStrikeFixtures(tx *pop.Connection, policies Policies, dates [][]*time.Time) Strikes {
-
 	if len(dates) > len(policies) {
 		log.Panicf("Not enough policies (%d) for the dates provided (%d)", len(policies), len(dates))
 	}

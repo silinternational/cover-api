@@ -105,3 +105,9 @@ func newSessionStore() sessions.Store {
 		sessions: map[string]*sessions.Session{},
 	}
 }
+
+func (as *ActionSuite) decodeBody(body []byte, v interface{}) error {
+	decoder := json.NewDecoder(bytes.NewReader(body))
+	decoder.DisallowUnknownFields()
+	return decoder.Decode(v)
+}

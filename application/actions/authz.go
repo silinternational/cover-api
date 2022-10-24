@@ -19,6 +19,7 @@ func AuthZ(next buffalo.Handler) buffalo.Handler {
 			domain.TypeClaim:           &models.Claim{},
 			domain.TypeClaimFile:       &models.ClaimFile{},
 			domain.TypeClaimItem:       &models.ClaimItem{},
+			domain.TypeEntityCode:      &models.EntityCode{},
 			domain.TypeItem:            &models.Item{},
 			domain.TypeLedgerReport:    &models.LedgerReport{},
 			domain.TypePolicy:          &models.Policy{},
@@ -141,7 +142,6 @@ func getResourceIDSubresource(path string) (string, uuid.UUID, string, int) {
 }
 
 func getPathParts(path string) []string {
-
 	if path == "" {
 		return []string{}
 	}
