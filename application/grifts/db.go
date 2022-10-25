@@ -175,19 +175,37 @@ func createUserFixtures(tx *pop.Connection) ([]*models.User, error) {
 
 func createEntityCodes(tx *pop.Connection) ([]models.EntityCode, error) {
 	ec1 := models.EntityCode{
-		Active: true,
-		Code:   "XYZ",
-		Name:   "XYZ entity code",
+		Active:        true,
+		Code:          "XYZ",
+		Name:          "XYZ entity code",
+		IncomeAccount: "12345",
+		ParentEntity:  "ABC",
 	}
 	if err := ec1.Create(tx); err != nil {
 		return []models.EntityCode{}, err
 	}
 	ec2 := models.EntityCode{
-		Active: true,
-		Code:   "ABC",
-		Name:   "ABC entity code",
+		Active:        true,
+		Code:          "ABC",
+		Name:          "ABC entity code",
+		IncomeAccount: "7890a",
+		ParentEntity:  "",
 	}
-	return []models.EntityCode{ec1, ec2}, ec2.Create(tx)
+	if err := ec2.Create(tx); err != nil {
+		return []models.EntityCode{}, err
+	}
+	ec3 := models.EntityCode{
+		Active:        false,
+		Code:          "OLD",
+		Name:          "old entity code",
+		IncomeAccount: "00000",
+		ParentEntity:  "",
+	}
+	if err := ec3.Create(tx); err != nil {
+		return []models.EntityCode{}, err
+	}
+
+	return []models.EntityCode{ec1, ec2, ec3}, nil
 }
 
 func createPolicyFixtures(tx *pop.Connection, fixUsers []*models.User, entityCodes models.EntityCodes) ([]*models.Policy, error) {
