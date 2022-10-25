@@ -1,7 +1,6 @@
 package models
 
 import (
-	"fmt"
 	"net/http"
 	"time"
 
@@ -88,7 +87,7 @@ func (ec *EntityCode) ConvertToAPI(tx *pop.Connection, admin bool) api.EntityCod
 	code := api.EntityCode{
 		ID:   ec.ID,
 		Code: ec.Code,
-		Name: fmt.Sprintf("%s - %s", ec.Code, ec.Name),
+		Name: ec.Name,
 	}
 	if admin {
 		code.IncomeAccount = &ec.IncomeAccount

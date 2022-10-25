@@ -20,7 +20,7 @@ import (
 //     schema:
 //       type: array
 //       items:
-//         "$ref": "#/definitions/EntityCodes"
+//         "$ref": "#/definitions/EntityCode"
 func entityCodesList(c buffalo.Context) error {
 	tx := models.Tx(c)
 	actor := models.CurrentUser(c)
