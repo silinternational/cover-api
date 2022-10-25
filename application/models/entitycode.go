@@ -90,9 +90,8 @@ func (ec *EntityCode) ConvertToAPI(tx *pop.Connection, admin bool) api.EntityCod
 		Name: ec.Name,
 	}
 	if admin {
-		code.IncomeAccount = &ec.IncomeAccount
-		code.Active = &ec.Active
-		code.ParentEntity = &ec.ParentEntity
+		incomeAccount, active, parentEntity := ec.IncomeAccount, ec.Active, ec.ParentEntity
+		code.IncomeAccount, code.Active, code.ParentEntity = &incomeAccount, &active, &parentEntity
 	}
 	return code
 }
