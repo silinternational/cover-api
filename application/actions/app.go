@@ -187,7 +187,6 @@ func App() *buffalo.App {
 		configGroup.GET("/countries", countries)
 		configGroup.GET("/claim-incident-types", claimIncidentTypes)
 		configGroup.GET("/item-categories", itemCategoriesList)
-		configGroup.GET("/entity-codes", entityCodesList) // DEPRECATED, use GET /entity-codes
 
 		// dependent
 		depsGroup := app.Group(policyDependentPath)
