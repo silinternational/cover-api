@@ -14,7 +14,6 @@ const (
 
 	ErrorCreateFailure            = ErrorKey("ErrorCreateFailure")
 	ErrorDestroyFailure           = ErrorKey("ErrorDestroyFailure")
-	ErrorGenericInternalServer    = ErrorKey("ErrorGenericInternalServer")
 	ErrorFailedToConvertToAPIType = ErrorKey("ErrorFailedToConvertToAPIType")
 	ErrorForeignKeyViolation      = ErrorKey("ErrorForeignKeyViolation")
 	ErrorInvalidRequestBody       = ErrorKey("ErrorInvalidRequestBody")
@@ -30,7 +29,18 @@ const (
 	ErrorUpdateFailure            = ErrorKey("ErrorUpdateFailure")
 	ErrorValidation               = ErrorKey("ErrorValidation")
 
+	// HTTP error types
+
+	ErrorGenericInternalServer = ErrorKey("ErrorGenericInternalServer")
+	ErrorBadRequest            = ErrorKey("ErrorBadRequest")
+	ErrorNotAuthenticated      = ErrorKey("ErrorNotAuthenticated")
+	ErrorRouteNotFound         = ErrorKey("ErrorRouteNotFound")
+	ErrorMethodNotAllowed      = ErrorKey("ErrorMethodNotAllowed")
+	ErrorConflict              = ErrorKey("ErrorConflict")
+	ErrorUnprocessableEntity   = ErrorKey("ErrorUnprocessableEntity")
+
 	// Authentication
+
 	ErrorAuthProvidersCallback    = ErrorKey("ErrorAuthProvidersCallback")
 	ErrorAuthProvidersLogout      = ErrorKey("ErrorAuthProvidersLogout")
 	ErrorCreatingAccessToken      = ErrorKey("ErrorCreatingAccessToken")

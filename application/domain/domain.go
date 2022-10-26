@@ -69,6 +69,7 @@ const (
 	TypeClaim           = "claims"
 	TypeClaimItem       = "claim-items"
 	TypeClaimFile       = "claim-files"
+	TypeEntityCode      = "entity-codes"
 	TypeFile            = "files"
 	TypeItem            = "items"
 	TypeLedgerReport    = "ledger-reports"

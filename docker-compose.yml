@@ -81,6 +81,9 @@ services:
     image: postgres:11.6
     volumes:
       - ./db-init.sh:/docker-entrypoint-initdb.d/db-init.sh
+    ports:
+      # expose the database port so testing can run locally, e.g. in Goland
+      - "5432:5432"
     environment:
       POSTGRES_USER: cover
       POSTGRES_PASSWORD: cover
@@ -103,7 +106,9 @@ services:
       - ./test.env
 
   swagger:
-    image: quay.io/goswagger/swagger:latest
+    build:
+      context: ./application
+      dockerfile: Dockerfile-api-docs
     ports:
       - "8082:8082"
     volumes:

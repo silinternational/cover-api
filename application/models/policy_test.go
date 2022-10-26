@@ -235,7 +235,6 @@ func idsInOrder(id1, id2 uuid.UUID) string {
 	}
 
 	return fmt.Sprintf(template, id2S, id1S)
-
 }
 
 func (ms *ModelSuite) TestPolicy_GetPolicyUserIDs() {
@@ -549,7 +548,7 @@ func (ms *ModelSuite) TestPolicy_ConvertToAPI() {
 	ms.Equal(policy.CostCenter, got.CostCenter, "CostCenter is not correct")
 	ms.Equal(policy.Account, got.Account, "Account is not correct")
 	ms.Equal(policy.AccountDetail, got.AccountDetail, "AccountDetail is not correct")
-	ms.Equal(policy.EntityCode.ConvertToAPI(ms.DB), got.EntityCode, "EntityCode is not correct")
+	ms.Equal(policy.EntityCode.ConvertToAPI(ms.DB, false), got.EntityCode, "EntityCode is not correct")
 	ms.Equal(policy.CreatedAt, got.CreatedAt, "CreatedAt is not correct")
 	ms.Equal(policy.UpdatedAt, got.UpdatedAt, "UpdatedAt is not correct")
 	ms.Equal(0, len(got.Dependents), "Dependents should not be hydrated")

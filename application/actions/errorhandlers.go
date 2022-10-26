@@ -12,8 +12,19 @@ import (
 	"github.com/silinternational/cover-api/domain"
 )
 
+var httpErrorCodes = map[int]api.ErrorKey{
+	http.StatusBadRequest:          api.ErrorBadRequest,
+	http.StatusUnauthorized:        api.ErrorNotAuthenticated,
+	http.StatusNotFound:            api.ErrorRouteNotFound,
+	http.StatusMethodNotAllowed:    api.ErrorMethodNotAllowed,
+	http.StatusConflict:            api.ErrorConflict,
+	http.StatusUnprocessableEntity: api.ErrorUnprocessableEntity,
+}
+
 func registerCustomErrorHandler(app *buffalo.App) {
-	app.ErrorHandlers[http.StatusInternalServerError] = customErrorHandler
+	for i := 400; i < 600; i++ {
+		app.ErrorHandlers[i] = customErrorHandler
+	}
 }
 
 func customErrorHandler(status int, origErr error, c buffalo.Context) error {
@@ -27,10 +38,16 @@ func customErrorHandler(status int, origErr error, c buffalo.Context) error {
 
 	appError := api.AppError{
 		HttpStatus: status,
-		Key:        api.ErrorGenericInternalServer,
+		Key:        getErrorCodeFromStatus(status),
 		DebugMsg:   fmt.Sprintf("(%T) %s", origErr, origErr),
-		Message:    "An internal system error has occurred",
 	}
 	err := json.NewEncoder(c.Response()).Encode(&appError)
 	return err
+}
+
+func getErrorCodeFromStatus(status int) api.ErrorKey {
+	if s, ok := httpErrorCodes[status]; ok {
+		return s
+	}
+	return api.ErrorGenericInternalServer
 }

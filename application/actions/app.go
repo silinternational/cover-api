@@ -36,7 +36,6 @@ import (
 
 	"github.com/gobuffalo/buffalo"
 	"github.com/gobuffalo/buffalo-pop/v2/pop/popmw"
-	"github.com/gobuffalo/envy"
 	contenttype "github.com/gobuffalo/mw-contenttype"
 	i18n "github.com/gobuffalo/mw-i18n"
 	paramlogger "github.com/gobuffalo/mw-paramlogger"
@@ -63,16 +62,12 @@ const (
 	ledgerReportPath    = "/" + domain.TypeLedgerReport
 	policiesPath        = "/" + domain.TypePolicy
 	policyDependentPath = "/" + domain.TypePolicyDependent
+	entityCodesPath     = "/" + domain.TypeEntityCode
 	policyMemberPath    = "/" + domain.TypePolicyMember
 	strikesPath         = "/" + domain.TypeStrike
 )
 
-// ENV is used to help switch settings based on where the
-// application is being run. Default is "development".
-var (
-	ENV = envy.Get("GO_ENV", "development")
-	app *buffalo.App
-)
+var app *buffalo.App
 
 // App is where all routes and middleware for buffalo
 // should be defined. This is the nerve center of your
@@ -192,12 +187,17 @@ func App() *buffalo.App {
 		configGroup.GET("/countries", countries)
 		configGroup.GET("/claim-incident-types", claimIncidentTypes)
 		configGroup.GET("/item-categories", itemCategoriesList)
-		configGroup.GET("/entity-codes", entityCodesList)
 
 		// dependent
 		depsGroup := app.Group(policyDependentPath)
 		depsGroup.PUT(idRegex, dependentsUpdate)
 		depsGroup.DELETE(idRegex, dependentsDelete)
+
+		// entity codes
+		entityCodesGroup := app.Group(entityCodesPath)
+		entityCodesGroup.GET("", entityCodesList)
+		entityCodesGroup.PUT(idRegex, entityCodesUpdate)
+		entityCodesGroup.GET(idRegex, entityCodesView)
 
 		// item
 		itemsGroup := app.Group(itemsPath)
