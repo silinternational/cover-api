@@ -113,6 +113,10 @@ func (lr *LedgerReport) ConvertToAPI(tx *pop.Connection) api.LedgerReport {
 	transactionCount := len(lr.LedgerEntries)
 	isCleared := true
 	for _, e := range lr.LedgerEntries {
+		if e.Amount == 0 {
+			// TODO: consider whether we should even store ledger entries with a zero amount
+			transactionCount--
+		}
 		if !e.DateEntered.Valid {
 			isCleared = false
 			break
