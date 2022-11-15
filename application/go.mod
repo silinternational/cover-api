@@ -35,7 +35,7 @@ require (
 	github.com/rollbar/rollbar-go v1.4.1
 	github.com/rs/cors v1.8.0
 	github.com/russellhaering/gosaml2 v0.6.1-0.20210916051624-757d23f1bc28
-	github.com/russellhaering/goxmldsig v1.1.1
+	github.com/russellhaering/goxmldsig v1.2.0
 	github.com/silinternational/certmagic-storage-dynamodb v0.0.0-20200613203057-b8a4f076ab49
 	github.com/ssor/bom v0.0.0-20170718123548-6386211fdfcf // indirect
 	github.com/stretchr/testify v1.7.0
