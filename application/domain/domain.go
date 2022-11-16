@@ -37,9 +37,6 @@ var (
 // T is the Buffalo i18n translator
 var T *mwi18n.Translator
 
-// Assets is a packr box with asset files such as images
-var Assets *packr.Box
-
 var extrasLock = sync.RWMutex{}
 
 var AllowedFileUploadTypes = []string{
@@ -215,7 +212,6 @@ func init() {
 	Logger.SetOutput(os.Stdout)
 	ErrLogger.SetOutput(os.Stderr)
 	ErrLogger.InitRollbar()
-	Assets = packr.New("Assets", "../assets")
 	AuthCallbackURL = Env.ApiBaseURL + "/auth/callback"
 
 	LogoutRedirectURL = Env.UIURL + "/logged-out"
