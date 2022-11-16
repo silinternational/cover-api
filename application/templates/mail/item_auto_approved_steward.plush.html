@@ -1,16 +1,16 @@
 <div>
-	<%= partial("body_header", {
+	<%= partial("mail/body_header", {
 		previewText: "",
 		title: "New Item Auto-Approved",
 	}) %>
 
-	<%= partial("alert", {
+	<%= partial("mail/alert", {
 		alert: "Item auto-approved",
 		alert_description: "No action required. Coverage is now active.",
 		alert_icon: "beach_access",
 	}) %>
 
-	<%= partial("item_card", {
+	<%= partial("mail/item_card", {
 		item: item,
 		coverageAmount: coverageAmount,
 		premium: annualPremium,

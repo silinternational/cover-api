@@ -2,12 +2,13 @@ package notifications
 
 import (
 	"github.com/gobuffalo/buffalo/render"
+	"github.com/silinternational/cover-api/templates"
 )
 
 var EmailRenderer = render.New(render.Options{
-	HTMLLayout:   "layout.plush.html",
-	TemplatesBox: packr.New("app:mailers:templates", "../templates/mail"),
-	Helpers:      render.Helpers{},
+	HTMLLayout:  "mail/layout.plush.html",
+	TemplatesFS: templates.FS(),
+	Helpers:     render.Helpers{},
 })
 
 type EmailService interface {

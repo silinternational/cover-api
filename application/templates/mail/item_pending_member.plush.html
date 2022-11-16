@@ -1,5 +1,5 @@
 <div>
-	<%= partial("body_header", {
+	<%= partial("mail/body_header", {
 		previewText: "No action needed. Dear "+personFirstName+", You've applied to cover "
 			+item.Name+". You'll have to wait a bit for the steward (me, "+
 			supportFirstName+") to approve coverage.",
@@ -21,13 +21,13 @@
 			&mdash;<%= supportFirstName %>
 		</p>
 
-		<%= partial("alert", {
+		<%= partial("mail/alert", {
 			alert: "Awaiting item coverage review",
 			alert_description: "No action needed",
 			alert_icon: "clock"
 		}) %>
 
-		<%= partial("item_card", {
+		<%= partial("mail/item_card", {
 			item: item,
 			coverageAmount: coverageAmount,
 			premium: annualPremium,
@@ -40,7 +40,7 @@
 		</p>
 	</div>
 
-	<%= partial("customer_footer", {
+	<%= partial("mail/customer_footer", {
 		supportEmail: supportEmail,
 		supportName: supportName,
 		appName: appName,

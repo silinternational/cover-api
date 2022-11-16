@@ -18,6 +18,8 @@ import (
 
 const Greetings_Placeholder = "[Greetings]"
 
+const mailTemplatePath = "mail/"
+
 //  Email templates
 const (
 	MessageTemplateClaimReview1Steward    = "claim_review1_steward"
@@ -136,7 +138,7 @@ func (m MessageData) addStewardData(tx *pop.Connection) {
 func (m MessageData) renderHTML(template string) string {
 	bodyBuf := &bytes.Buffer{}
 	data := render.Data(m)
-	if err := notifications.EmailRenderer.HTML(template).Render(bodyBuf, data); err != nil {
+	if err := notifications.EmailRenderer.HTML(mailTemplatePath+template).Render(bodyBuf, data); err != nil {
 		panic("error rendering message body - " + err.Error())
 	}
 	return bodyBuf.String()

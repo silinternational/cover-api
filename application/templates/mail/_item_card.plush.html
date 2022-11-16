@@ -30,7 +30,7 @@
 	 <div style="padding: 1em 0;"><%= item.Description %></div>
 	<% } %>
 
-	<%= partial("category", {
+	<%= partial("mail/category", {
 			name: item.Category.Name,
 			helpText: item.Category.HelpText
 		}
@@ -38,7 +38,7 @@
 </div>
 
 <div style="padding: 16px;">
-	<%= partial("button", {
+	<%= partial("mail/button", {
 		url: itemURL,
 		label: buttonLabel}
 	) %>
