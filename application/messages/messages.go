@@ -8,7 +8,7 @@ import (
 
 	"github.com/gobuffalo/buffalo/render"
 	"github.com/gobuffalo/nulls"
-	"github.com/gobuffalo/pop/v5"
+	"github.com/gobuffalo/pop/v6"
 
 	"github.com/silinternational/cover-api/api"
 	"github.com/silinternational/cover-api/domain"
@@ -17,6 +17,8 @@ import (
 )
 
 const Greetings_Placeholder = "[Greetings]"
+
+const mailTemplatePath = "mail/"
 
 //  Email templates
 const (
@@ -90,6 +92,7 @@ func (m MessageData) addClaimData(tx *pop.Connection, claim models.Claim) {
 	m["payoutOptionLower"] = strings.ToLower(string(claim.ClaimItems[0].PayoutOption))
 	m["totalPayout"] = "$" + claim.TotalPayout.String()
 	m["submitted"] = domain.TimeBetween(time.Now().UTC(), claim.SubmittedAt(tx))
+	m["statusReason"] = claim.StatusReason
 }
 
 func (m MessageData) addItemData(tx *pop.Connection, item models.Item) {
@@ -136,7 +139,7 @@ func (m MessageData) addStewardData(tx *pop.Connection) {
 func (m MessageData) renderHTML(template string) string {
 	bodyBuf := &bytes.Buffer{}
 	data := render.Data(m)
-	if err := notifications.EmailRenderer.HTML(template).Render(bodyBuf, data); err != nil {
+	if err := notifications.EmailRenderer.HTML(mailTemplatePath+template).Render(bodyBuf, data); err != nil {
 		panic("error rendering message body - " + err.Error())
 	}
 	return bodyBuf.String()

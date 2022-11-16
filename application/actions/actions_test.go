@@ -13,7 +13,7 @@ import (
 
 	"github.com/gobuffalo/buffalo"
 	"github.com/gobuffalo/httptest"
-	"github.com/gobuffalo/pop/v5"
+	"github.com/gobuffalo/pop/v6"
 	"github.com/gorilla/sessions"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"

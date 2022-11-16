@@ -17,8 +17,7 @@ import (
 
 	"github.com/gobuffalo/buffalo"
 	"github.com/gobuffalo/envy"
-	mwi18n "github.com/gobuffalo/mw-i18n"
-	"github.com/gobuffalo/packr/v2"
+	mwi18n "github.com/gobuffalo/mw-i18n/v2"
 	"github.com/gofrs/uuid"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/rollbar/rollbar-go"
@@ -37,9 +36,6 @@ var (
 
 // T is the Buffalo i18n translator
 var T *mwi18n.Translator
-
-// Assets is a packr box with asset files such as images
-var Assets *packr.Box
 
 var extrasLock = sync.RWMutex{}
 
@@ -216,7 +212,6 @@ func init() {
 	Logger.SetOutput(os.Stdout)
 	ErrLogger.SetOutput(os.Stderr)
 	ErrLogger.InitRollbar()
-	Assets = packr.New("Assets", "../assets")
 	AuthCallbackURL = Env.ApiBaseURL + "/auth/callback"
 
 	LogoutRedirectURL = Env.UIURL + "/logged-out"

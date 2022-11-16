@@ -1,5 +1,5 @@
 <div>
-	<%= partial("body_header", {
+	<%= partial("mail/body_header", {
 		previewText: personFirstName + ", Thank you for reporting your claim.  We hope to make this process as simple as possible for you.",
 		title: "Claim Needs Changes",
 	}) %>
@@ -23,20 +23,20 @@
 		</p>
 	</div>
 
-	<%= partial("alert", {
+	<%= partial("mail/alert", {
 		alert: "Needs changes",
 		alert_description: "",
 		alert_icon: "error",
 	}) %>
 
-	<%= partial("claim_card", {
+	<%= partial("mail/claim_card", {
 		claim: claim,
 		incidentDate: incidentDate,
 		incidentType: incidentType,
 	}) %>
 
 	<div style="padding: 16px;">
-		<%= partial("button", {
+		<%= partial("mail/button", {
 		url: claimURL,
 		label: "Open in " + appName,
 		}) %>
@@ -48,7 +48,7 @@
 		ITEM DETAILS
 	</div>
 
-	<%= partial("item_card", {
+	<%= partial("mail/item_card", {
 		item: item,
 		coverageAmount: coverageAmount,
 		premium: annualPremium,
@@ -59,7 +59,7 @@
 		buttonLabel: "Open Item in " + appName
 	}) %>
 
-	<%= partial("customer_footer", {
+	<%= partial("mail/customer_footer", {
 		supportEmail: supportEmail,
 		supportName: supportName,
 		appName: appName,

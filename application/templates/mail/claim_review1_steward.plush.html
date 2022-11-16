@@ -1,16 +1,16 @@
 <div>
-	<%= partial("body_header", {
+	<%= partial("mail/body_header", {
 		previewText: "",
 		title: "New Claim",
 	}) %>
 
-	<%= partial("alert", {
+	<%= partial("mail/alert", {
 		alert: "Needs claim review",
 		alert_description: "",
 		alert_icon: "clipboard",
 	}) %>
 
-	<%= partial("claim_card", {
+	<%= partial("mail/claim_card", {
 		claim: claim,
 		incidentDate: incidentDate,
 		incidentType: incidentType,
@@ -18,7 +18,7 @@
 	}) %>
 
 	<div style="padding: 16px;">
-		<%= partial("button", {
+		<%= partial("mail/button", {
 			url: claimURL,
 			label: "Open Claim in " + appName,
 		}) %>
@@ -30,7 +30,7 @@
 		ITEM DETAILS
 	</div>
 
-	<%= partial("item_card", {
+	<%= partial("mail/item_card", {
 		item: item,
 		coverageAmount: coverageAmount,
 		premium: annualPremium,

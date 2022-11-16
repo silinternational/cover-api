@@ -77,10 +77,10 @@ Buffalo's conventions, however there are several additional folders for other bi
    `domain` package helps avoid circular dependencies so for example both `actions` and `models` packages can include
    `domain` for shared types, constants, etc.
    
- - `grifts/` - "Grifts" are a feature of Buffalo and they serve as commands or tasks that can be run from the command
-   line and have access to all the core application components. For example the `grifts/db.go` file is used to seed 
-   the database for development. Grifts can be run by running `grift db:seed`, where `db:seed` can be replaced by a 
-   different grift command as needed.
+ - `grifts/` - "Tasks" or "Grifts" are a feature of Buffalo and they serve as commands or tasks that can be run from the
+   command line and have access to all the core application components. For example the `grifts/db.go` file is used to
+   seed the database for development. Grifts can be run by running `buffalo task db:seed`, where `db:seed` can be
+   replaced by a different grift task as needed.
    
  - `migrations/` - All database tables, schemas, indexes, foreign keys, etc. are created, altered, and dropped through 
    migrations. Migrations are a `buffalo/pop` ORM feature for scripting database changes and tracking applied changes.

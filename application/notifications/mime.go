@@ -2,12 +2,14 @@ package notifications
 
 import (
 	"bytes"
+	"embed"
 	"encoding/base64"
 	"fmt"
 	"mime/multipart"
 	"net/textproto"
 	"strings"
 
+	"github.com/silinternational/cover-api/public"
 	"jaytaylor.com/html2text"
 
 	"github.com/silinternational/cover-api/domain"
@@ -129,8 +131,9 @@ func findImagesInBody(body string) map[string]string {
 }
 
 func attachImages(relatedWriter *multipart.Writer, b *bytes.Buffer, images map[string]string) {
-	for cid, filename := range images {
+	efs := public.EFS()
 
+	for cid, filename := range images {
 		_, err := relatedWriter.CreatePart(textproto.MIMEHeader{
 			"Content-Type":              {"image/png"},
 			"Content-Disposition":       {"inline"},
@@ -141,18 +144,30 @@ func attachImages(relatedWriter *multipart.Writer, b *bytes.Buffer, images map[s
 			domain.ErrLogger.Printf("failed to create MIME image part for %s, %s", cid, err)
 			break
 		}
-		f, err := domain.Assets.Find(filename)
-		if err != nil {
-			domain.ErrLogger.Printf("failed to read %s file, %s", cid, err)
-		}
-		encoder := base64.NewEncoder(base64.StdEncoding, b)
-		_, err = encoder.Write(f)
-		if err != nil {
-			domain.ErrLogger.Printf("failed to write %s to email, %s", cid, err)
-		}
-		err = encoder.Close()
-		if err != nil {
-			domain.ErrLogger.Printf("failed to close %s base64 encoder, %s", cid, err)
+
+		if err := encodeFile(&efs, filename, b); err != nil {
+			domain.ErrLogger.Printf(err.Error())
 		}
 	}
+}
+
+// encodeFile reads a file from an embedded file system, base64 encodes it, and streams into a bytes.Buffer
+func encodeFile(fs *embed.FS, filename string, buffer *bytes.Buffer) error {
+	file, err := fs.ReadFile(filename)
+	if err != nil {
+		return fmt.Errorf("failed to read %s file, %w", filename, err)
+	}
+
+	encoder := base64.NewEncoder(base64.StdEncoding, buffer)
+	_, err = encoder.Write(file)
+	if err != nil {
+		return fmt.Errorf("failed to encode file %s, %w", filename, err)
+	}
+
+	err = encoder.Close()
+	if err != nil {
+		return fmt.Errorf("failed to close %s base64 encoder, %w", filename, err)
+	}
+
+	return nil
 }

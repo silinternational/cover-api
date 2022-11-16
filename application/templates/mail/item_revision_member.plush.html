@@ -1,6 +1,6 @@
 
 <div>
-	<%= partial("body_header", {
+	<%= partial("mail/body_header", {
 		previewText: "Dear "+personFirstName+", You recently requested coverage on "+
 			item.Name+", but I need to clarify a few things on your request.",
 		title: "Coverage Application Needs Changes",
@@ -24,13 +24,13 @@
 		</p>
 	</div>
 
-	<%= partial("alert", {
+	<%= partial("mail/alert", {
 		alert: "Needs changes",
 		alert_description: "",
 		alert_icon: "error"
 	}) %>
 
-	<%= partial("item_card", {
+	<%= partial("mail/item_card", {
 		item: item,
 		coverageAmount: coverageAmount,
 		premium: annualPremium,
@@ -41,7 +41,7 @@
 		buttonLabel: "Change Item in " + appName
 	}) %>
 
-	<%= partial("customer_footer", {
+	<%= partial("mail/customer_footer", {
 		supportEmail: supportEmail,
 		supportName: supportName,
 		appName: appName,
