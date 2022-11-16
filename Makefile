@@ -4,7 +4,7 @@ migrate: db
 	docker-compose run --rm buffalo whenavail db 5432 10 buffalo-pop pop migrate up
 
 grifts: db
-	docker-compose run --rm buffalo /bin/bash -c "grift db:seed && grift minio:seed"
+	docker-compose run --rm buffalo /bin/bash -c "buffalo task db:seed && buffalo task minio:seed"
 
 migratestatus: db
 	docker-compose run buffalo buffalo-pop pop migrate status
@@ -53,7 +53,7 @@ test: testdb minio
 	docker-compose run --rm test whenavail testdb 5432 10 buffalo test
 
 testenv: rmtestdb migratetestdb
-	@echo "\n\nIf minio hasn't been initialized, run grift minio:seed\n"
+	@echo "\n\nIf minio hasn't been initialized, run buffalo task minio:seed\n"
 	docker-compose run --rm test bash
 
 killbuffalo:
