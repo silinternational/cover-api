@@ -17,8 +17,7 @@ import (
 
 	"github.com/gobuffalo/buffalo"
 	"github.com/gobuffalo/envy"
-	mwi18n "github.com/gobuffalo/mw-i18n"
-	"github.com/gobuffalo/packr/v2"
+	mwi18n "github.com/gobuffalo/mw-i18n/v2"
 	"github.com/gofrs/uuid"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/rollbar/rollbar-go"

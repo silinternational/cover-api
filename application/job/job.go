@@ -5,7 +5,7 @@ import (
 
 	"github.com/gobuffalo/buffalo"
 	"github.com/gobuffalo/buffalo/worker"
-	"github.com/gobuffalo/pop/v5"
+	"github.com/gobuffalo/pop/v6"
 	"github.com/rollbar/rollbar-go"
 
 	"github.com/silinternational/cover-api/domain"

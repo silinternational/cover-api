@@ -10,7 +10,7 @@ import (
 	"github.com/gobuffalo/buffalo"
 	"github.com/gobuffalo/events"
 	"github.com/gobuffalo/nulls"
-	"github.com/gobuffalo/pop/v5"
+	"github.com/gobuffalo/pop/v6"
 	"github.com/gobuffalo/validate/v3"
 	"github.com/gofrs/uuid"
 

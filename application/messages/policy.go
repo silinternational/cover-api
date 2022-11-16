@@ -5,7 +5,7 @@ import (
 	"html/template"
 
 	"github.com/gobuffalo/nulls"
-	"github.com/gobuffalo/pop/v5"
+	"github.com/gobuffalo/pop/v6"
 
 	"github.com/silinternational/cover-api/domain"
 	"github.com/silinternational/cover-api/models"

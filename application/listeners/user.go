@@ -2,7 +2,7 @@ package listeners
 
 import (
 	"github.com/gobuffalo/events"
-	"github.com/gobuffalo/pop/v5"
+	"github.com/gobuffalo/pop/v6"
 
 	"github.com/silinternational/cover-api/domain"
 	"github.com/silinternational/cover-api/messages"

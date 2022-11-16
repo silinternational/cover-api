@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/gobuffalo/events"
-	"github.com/gobuffalo/pop/v5"
+	"github.com/gobuffalo/pop/v6"
 	"github.com/gofrs/uuid"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"

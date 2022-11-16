@@ -2,7 +2,6 @@ package notifications
 
 import (
 	"github.com/gobuffalo/buffalo/render"
-	"github.com/gobuffalo/packr/v2"
 )
 
 var EmailRenderer = render.New(render.Options{
