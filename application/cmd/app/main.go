@@ -1,17 +1,14 @@
 package main
 
 import (
+	"crypto/tls"
 	"fmt"
 	"net/http"
 	"os"
 	"time"
 
-	"github.com/caddyserver/certmagic"
 	"github.com/gobuffalo/buffalo/servers"
-	"github.com/libdns/cloudflare"
 	"github.com/rollbar/rollbar-go"
-
-	dynamodbstore "github.com/silinternational/certmagic-storage-dynamodb"
 
 	"github.com/silinternational/cover-api/actions"
 	"github.com/silinternational/cover-api/domain"
@@ -64,35 +61,43 @@ func main() {
 }
 
 func getServer() (servers.Server, error) {
+	const (
+		certFile = "cert.pem"
+		keyFile  = "key.pem"
+	)
+
 	if domain.Env.DisableTLS {
 		return servers.New(), nil
 	}
 
-	certmagic.Default.Storage = &dynamodbstore.Storage{
-		Table:     domain.Env.DynamoDBTable,
-		AwsRegion: domain.Env.AwsRegion,
-	}
-
-	if !domain.IsProduction() {
-		certmagic.DefaultACME.CA = certmagic.LetsEncryptStagingCA
-	}
-
-	certmagic.DefaultACME.Email = domain.Env.SupportEmail
-	certmagic.DefaultACME.Agreed = true
-	certmagic.HTTPSPort = domain.Env.ServerPort
-	certmagic.Default.DefaultServerName = domain.Env.CertDomainName
-	certmagic.DefaultACME.DNS01Solver = &certmagic.DNS01Solver{
-		DNSProvider: &cloudflare.Provider{
-			APIToken: domain.Env.CloudflareToken,
-		},
-	}
-
-	listener, err := certmagic.Listen([]string{domain.Env.CertDomainName})
+	err := generateCert(certFile, keyFile)
 	if err != nil {
-		return servers.New(), fmt.Errorf("failed to get TLS config: %s", err.Error())
+		return nil, fmt.Errorf("generate cert: %w", err)
+	}
+
+	cfg, err := tlsConfig(certFile, keyFile)
+	if err != nil {
+		return servers.New(), fmt.Errorf("get TLS config: %w", err)
+	}
+	listener, err := tls.Listen("tcp", fmt.Sprintf(":%d", domain.Env.Port), cfg)
+	if err != nil {
+		return servers.New(), fmt.Errorf("get TLS listener: %w", err)
 	}
 
 	return servers.WrapListener(&http.Server{ReadHeaderTimeout: time.Second * 15}, listener), nil
+}
+
+func tlsConfig(certFile, keyFile string) (*tls.Config, error) {
+	cert, err := tls.LoadX509KeyPair(certFile, keyFile)
+	if err != nil {
+		return nil, fmt.Errorf("load cert/key files: %w", err)
+	}
+
+	config := tls.Config{
+		Certificates: []tls.Certificate{cert},
+		MinVersion:   tls.VersionTLS12,
+	}
+	return &config, nil
 }
 
 /*

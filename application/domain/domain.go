@@ -128,7 +128,7 @@ var Env struct {
 	AccessTokenLifetimeSeconds int    `default:"1166400" split_words:"true"` // 13.5 days
 	AppName                    string `default:"Cover" split_words:"true"`
 	AppNameLong                string `default:"Cover by SIL" split_words:"true"`
-	ServerPort                 int    `default:"3000" split_words:"true"`
+	Port                       int    `default:"3000"`
 
 	ListenerDelayMilliseconds int `default:"1000" split_words:"true"`
 	ListenerMaxRetries        int `default:"10" split_words:"true"`
