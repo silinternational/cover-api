@@ -1,7 +1,7 @@
 package grifts
 
 import (
-	"github.com/markbates/grift/grift"
+	"github.com/gobuffalo/grift/grift"
 	"github.com/silinternational/cover-api/storage"
 )
 

@@ -1,4 +1,4 @@
-FROM gobuffalo/buffalo:v0.16.26
+FROM gobuffalo/buffalo:v0.18.8
 
 # Set file permissions so non-root user can access them -- necessary if USER user is enabled below
 # RUN chmod -R o=,g=rwX $GOPATH/pkg

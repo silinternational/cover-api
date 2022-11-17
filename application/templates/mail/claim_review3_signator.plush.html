@@ -1,16 +1,16 @@
 <div>
-	<%= partial("body_header", {
+	<%= partial("mail/body_header", {
 		previewText: "",
 		title: "Final Approval for Claim Payout",
 	}) %>
 
-	<%= partial("alert", {
+	<%= partial("mail/alert", {
 		alert: "Needs final claim review",
 		alert_description: "First payout approval by " + firstReviewer,
 		alert_icon: "clipboard",
 	}) %>
 
-	<%= partial("claim_card", {
+	<%= partial("mail/claim_card", {
 		claim: claim,
 		incidentDate: incidentDate,
 		incidentType: incidentType,
@@ -18,7 +18,7 @@
 	}) %>
 
 	<div style="padding: 16px;">
-		<%= partial("button", {
+		<%= partial("mail/button", {
 			url: claimURL,
 			label: "Open in " + appName,
 		}) %>
@@ -30,7 +30,7 @@
 		ITEM DETAILS
 	</div>
 
-	<%= partial("item_card", {
+	<%= partial("mail/item_card", {
 		item: item,
 		coverageAmount: coverageAmount,
 		premium: annualPremium,

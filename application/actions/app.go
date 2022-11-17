@@ -35,17 +35,17 @@ import (
 	"net/http"
 
 	"github.com/gobuffalo/buffalo"
-	"github.com/gobuffalo/buffalo-pop/v2/pop/popmw"
+	"github.com/gobuffalo/buffalo-pop/v3/pop/popmw"
 	contenttype "github.com/gobuffalo/mw-contenttype"
-	i18n "github.com/gobuffalo/mw-i18n"
+	"github.com/gobuffalo/mw-i18n/v2"
 	paramlogger "github.com/gobuffalo/mw-paramlogger"
-	"github.com/gobuffalo/packr/v2"
 	"github.com/gorilla/sessions"
 	"github.com/rs/cors"
 
 	"github.com/silinternational/cover-api/api"
 	"github.com/silinternational/cover-api/domain"
 	"github.com/silinternational/cover-api/listeners"
+	"github.com/silinternational/cover-api/locales"
 	"github.com/silinternational/cover-api/models"
 )
 
@@ -99,7 +99,7 @@ func App() *buffalo.App {
 		})
 
 		var err error
-		domain.T, err = i18n.New(packr.New("locales", "../locales"), "en")
+		domain.T, err = i18n.New(locales.FS(), "en")
 		if err != nil {
 			_ = app.Stop(err)
 		}

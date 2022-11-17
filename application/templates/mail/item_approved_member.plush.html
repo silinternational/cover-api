@@ -1,6 +1,6 @@
 
 <div>
-	<%= partial("body_header", {
+	<%= partial("mail/body_header", {
 			previewText: "No action needed. Coverage is now active. Dear "+personFirstName+", "+item.Name+" has been approved for coverage.",
 			title: "Coverage Approved",
 	}) %>
@@ -18,13 +18,13 @@
 		</p>
 	</div>
 
-	<%= partial("alert", {
+	<%= partial("mail/alert", {
 		alert: "Coverage approved",
 		alert_description: "No action needed. Coverage is now active. ",
 		alert_icon: "beach_access",
 	}) %>
 
-	<%= partial("item_card", {
+	<%= partial("mail/item_card", {
 		item: item,
 		coverageAmount: coverageAmount,
 		premium: annualPremium,
@@ -35,7 +35,7 @@
 		buttonLabel: "Open Item in " + appName
 	}) %>
 
-	<%= partial("customer_footer", {
+	<%= partial("mail/customer_footer", {
 		supportEmail: supportEmail,
 		supportName: supportName,
 		appName: appName,

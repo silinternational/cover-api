@@ -1,5 +1,5 @@
 <div>
-	<%= partial("body_header", {
+	<%= partial("mail/body_header", {
 		previewText: previewText,
 		title: "Welcome",
 	}) %>
@@ -19,7 +19,7 @@
 	or concerns with your policy.  <%= emailEnding %>
 		</p>
 
-		<%= partial("button", {
+		<%= partial("mail/button", {
 			url: uiURL,
 			label: "Open " + appName }
 		) %>
@@ -33,7 +33,7 @@
 		</p>
 	</div>
 
-	<%= partial("customer_footer", {
+	<%= partial("mail/customer_footer", {
 		supportEmail: supportEmail,
 		supportName: supportName,
 		appName: appName,

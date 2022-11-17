@@ -1,13 +1,19 @@
 # This is a multi-stage Dockerfile and requires >= Docker 17.05
 # https://docs.docker.com/engine/userguide/eng-image/multistage-build/
-FROM gobuffalo/buffalo:v0.16.26 as builder
+FROM gobuffalo/buffalo:v0.18.8 as builder
 
 WORKDIR /src
 
+ENV GOPROXY http://proxy.golang.org
+
+# Copy the Go Modules manifests
+COPY go.mod go.mod
+COPY go.sum go.sum
+# cache deps before building and copying source so that we don't need to re-download as much
+# and so that source changes don't invalidate our downloaded layer
+RUN go mod download
+
 ADD . .
-RUN go get ./...
-#RUN export GIT_COMMIT=$(git rev-list -1 HEAD) && \
-#    buffalo build --ldflags "-X main.GitCommitHash=$GIT_COMMIT" --static -o /bin/app
 RUN buffalo build --static -o /bin/app
 
 FROM alpine

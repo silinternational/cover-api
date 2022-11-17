@@ -15,7 +15,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gobuffalo/pop/v5"
+	"github.com/gobuffalo/pop/v6"
 	"github.com/gobuffalo/validate/v3"
 	"github.com/gofrs/uuid"
 	_ "golang.org/x/image/webp" // enable decoding of WEBP images

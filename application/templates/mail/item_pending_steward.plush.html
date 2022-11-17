@@ -1,16 +1,16 @@
 <div>
-	<%= partial("body_header", {
+	<%= partial("mail/body_header", {
 		previewText: "",
 		title: "New Item Coverage Application",
 	}) %>
 
-	<%= partial("alert", {
+	<%= partial("mail/alert", {
 		alert: "Needs item coverage review",
 		alert_description: "",
 		alert_icon: "new"}
 	) %>
 
-	<%= partial("item_card", {
+	<%= partial("mail/item_card", {
 		item: item,
 		coverageAmount: coverageAmount,
 		premium: annualPremium,

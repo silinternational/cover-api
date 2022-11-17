@@ -1,5 +1,5 @@
 <div>
-	<%= partial("body_header", {
+	<%= partial("mail/body_header", {
 		previewText: "Dear " + inviteeName + ", " + inviterName + " has invited you to join their insurance policy " +
 			policy.Name + ", on " + appName + " by SIL.",
 		title: "Welcome",
@@ -16,7 +16,7 @@
 			invite others, and file claims.
 		</p>
 
-		<%= partial("button", {
+		<%= partial("mail/button", {
 			url: acceptURL,
 			label: "Accept Invitation in " + appName,
 		}) %>
