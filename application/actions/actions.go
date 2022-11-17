@@ -28,7 +28,7 @@ func init() {
 // StrictBind hydrates a struct with values from a POST
 // REMEMBER the request body must have *exported* fields.
 //  Otherwise, this will give an empty result without an error.
-func StrictBind(c buffalo.Context, dest interface{}) error {
+func StrictBind(c buffalo.Context, dest any) error {
 	dec := json.NewDecoder(c.Request().Body)
 	dec.DisallowUnknownFields()
 	if err := dec.Decode(dest); err != nil {
@@ -47,10 +47,10 @@ func reportError(c buffalo.Context, err error) error {
 	appErr.SetHttpStatusFromCategory()
 
 	if appErr.Extras == nil {
-		appErr.Extras = map[string]interface{}{}
+		appErr.Extras = map[string]any{}
 	}
 
-	appErr.Extras = domain.MergeExtras([]map[string]interface{}{getExtras(c), appErr.Extras})
+	appErr.Extras = domain.MergeExtras([]map[string]any{getExtras(c), appErr.Extras})
 	appErr.Extras["function"] = domain.GetFunctionName(2)
 	appErr.Extras["key"] = appErr.Key
 	appErr.Extras["status"] = appErr.HttpStatus
@@ -74,7 +74,7 @@ func reportError(c buffalo.Context, err error) error {
 			appErr.DebugMsg = appErr.Err.Error()
 		}
 	} else {
-		appErr.Extras = map[string]interface{}{}
+		appErr.Extras = map[string]any{}
 	}
 
 	if appErr.HttpStatus >= 300 && appErr.HttpStatus <= 399 {
@@ -101,21 +101,21 @@ func appErrorFromErr(err error) *api.AppError {
 	}
 }
 
-func getExtras(c buffalo.Context) map[string]interface{} {
-	extras, _ := c.Value(domain.ContextKeyExtras).(map[string]interface{})
+func getExtras(c buffalo.Context) map[string]any {
+	extras, _ := c.Value(domain.ContextKeyExtras).(map[string]any)
 	if extras == nil {
-		extras = map[string]interface{}{}
+		extras = map[string]any{}
 	}
 	return extras
 }
 
-func newExtra(c buffalo.Context, key string, e interface{}) {
+func newExtra(c buffalo.Context, key string, e any) {
 	extras := getExtras(c)
 	extras[key] = e
 	c.Set(domain.ContextKeyExtras, extras)
 }
 
-func renderOk(c buffalo.Context, v interface{}) error {
+func renderOk(c buffalo.Context, v any) error {
 	return c.Render(http.StatusOK, r.JSON(v))
 }
 

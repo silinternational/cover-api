@@ -35,7 +35,7 @@ func main() {
 		delay = randMins * time.Minute
 	}
 
-	if err := job.SubmitDelayed(job.InactivateItems, delay, map[string]interface{}{}); err != nil {
+	if err := job.SubmitDelayed(job.InactivateItems, delay, map[string]any{}); err != nil {
 		domain.ErrLogger.Printf("error initializing InactivateItems job: " + err.Error())
 		os.Exit(1)
 	}

@@ -197,7 +197,7 @@ func getRsaPrivateKey(privateKey, publicCert string) (*rsa.PrivateKey, error) {
 	}
 
 	var err error
-	var parsedKey interface{}
+	var parsedKey any
 	if parsedKey, err = x509.ParsePKCS8PrivateKey(privPem.Bytes); err != nil {
 		if parsedKey, err = x509.ParsePKCS1PrivateKey(privPem.Bytes); err != nil {
 			return rsaKey, fmt.Errorf("unable to parse RSA private key: %s", err)

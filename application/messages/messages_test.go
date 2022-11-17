@@ -39,7 +39,7 @@ func Test_TestSuite(t *testing.T) {
 
 type testData struct {
 	name                  string
-	wantToEmails          []interface{}
+	wantToEmails          []any
 	wantSubjectContains   string
 	wantInappTextContains string
 	wantBodyContains      []string
@@ -108,20 +108,20 @@ func (ts *TestSuite) Test_SendQueuedNotifications() {
 	alreadySentTime := time.Now().UTC().Add(-1 * domain.DurationWeek).Truncate(time.Second)
 
 	notnFixtures := []notnFixture{
-		notnFixture{
+		{
 			name:      "AlreadySent",
 			sendAfter: time.Now().UTC().Add(-1 * domain.DurationWeek * 2),
 			sentAt:    nulls.NewTime(alreadySentTime),
 		},
-		notnFixture{
+		{
 			name:      "ToSend",
 			sendAfter: time.Now().UTC().Add(-1 * domain.DurationWeek),
 		},
-		notnFixture{
+		{
 			name:      "NotReady",
 			sendAfter: time.Now().UTC().Add(domain.DurationWeek),
 		},
-		notnFixture{
+		{
 			name:      "EmailError",
 			sendAfter: time.Now().UTC().Add(-1 * domain.DurationWeek),
 		},
@@ -159,7 +159,7 @@ func (ts *TestSuite) Test_SendQueuedNotifications() {
 	tests := []testData{
 		{
 			name:                "send one email",
-			wantToEmails:        []interface{}{user.EmailOfChoice()},
+			wantToEmails:        []any{user.EmailOfChoice()},
 			wantSubjectContains: "ToSend",
 			wantBodyContains:    []string{"Body of ToSend"},
 			// TODO test whether the username is in the greeting

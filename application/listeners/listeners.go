@@ -89,7 +89,7 @@ func getID(p events.Payload) (uuid.UUID, error) {
 	}
 }
 
-func findObject(payload events.Payload, object interface{}, listenerName string) error {
+func findObject(payload events.Payload, object any, listenerName string) error {
 	id, err := getID(payload)
 	if err != nil {
 		err := errors.New("Failed to get object ID from event payload: " + err.Error())

@@ -227,7 +227,7 @@ func Tx(ctx context.Context) *pop.Connection {
 	return tx
 }
 
-func fieldByName(i interface{}, name ...string) reflect.Value {
+func fieldByName(i any, name ...string) reflect.Value {
 	if len(name) < 1 {
 		return reflect.Value{}
 	}
@@ -238,7 +238,7 @@ func fieldByName(i interface{}, name ...string) reflect.Value {
 	return f
 }
 
-func create(tx *pop.Connection, m interface{}) error {
+func create(tx *pop.Connection, m any) error {
 	uuidField := fieldByName(m, "ID")
 	if uuidField.IsValid() && uuidField.Interface().(uuid.UUID).Version() == 0 {
 		uuidField.Set(reflect.ValueOf(domain.GetUUID()))
@@ -289,12 +289,12 @@ func appErrorFromDB(err error, defaultKey api.ErrorKey) error {
 	return appErr
 }
 
-func find(tx *pop.Connection, m interface{}, id uuid.UUID) error {
+func find(tx *pop.Connection, m any, id uuid.UUID) error {
 	err := tx.Find(m, id)
 	return appErrorFromDB(err, api.ErrorQueryFailure)
 }
 
-func save(tx *pop.Connection, m interface{}) error {
+func save(tx *pop.Connection, m any) error {
 	uuidField := fieldByName(m, "ID")
 	if uuidField.IsValid() && uuidField.Interface().(uuid.UUID).Version() == 0 {
 		uuidField.Set(reflect.ValueOf(domain.GetUUID()))
@@ -316,7 +316,7 @@ func save(tx *pop.Connection, m interface{}) error {
 	return nil
 }
 
-func update(tx *pop.Connection, m interface{}) error {
+func update(tx *pop.Connection, m any) error {
 	valErrs, err := tx.ValidateAndUpdate(m)
 	if err != nil {
 		return appErrorFromDB(err, api.ErrorUpdateFailure)
@@ -332,12 +332,12 @@ func update(tx *pop.Connection, m interface{}) error {
 	return nil
 }
 
-func destroy(tx *pop.Connection, m interface{}) error {
+func destroy(tx *pop.Connection, m any) error {
 	err := tx.Destroy(m)
 	return appErrorFromDB(err, api.ErrorDestroyFailure)
 }
 
-// This can include an event payload, which is a map[string]interface{}
+// This can include an event payload, which is a map[string]any
 func emitEvent(e events.Event) {
 	if err := events.Emit(e); err != nil {
 		domain.ErrLogger.Printf("error emitting event %s ... %v", e.Kind, err)

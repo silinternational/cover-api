@@ -36,7 +36,7 @@ func (ts *TestSuite) Test_ItemSubmittedQueueMessage() {
 		{
 			data: testData{
 				name:                  "just submitted, not approved",
-				wantToEmails:          []interface{}{steward0.EmailOfChoice(), steward1.EmailOfChoice()},
+				wantToEmails:          []any{steward0.EmailOfChoice(), steward1.EmailOfChoice()},
 				wantSubjectContains:   "Item Needs Review " + f.Items[0].Name,
 				wantInappTextContains: "A new policy item is waiting for your approval",
 				wantBodyContains: []string{
@@ -88,7 +88,7 @@ func (ts *TestSuite) Test_ItemAutoApprovedQueueMessage() {
 		{
 			data: testData{
 				name:                  "auto approved - stewards",
-				wantToEmails:          []interface{}{steward0.EmailOfChoice(), steward1.EmailOfChoice()},
+				wantToEmails:          []any{steward0.EmailOfChoice(), steward1.EmailOfChoice()},
 				wantSubjectContains:   "has been auto approved",
 				wantInappTextContains: "Coverage on a new policy item was just auto approved",
 				wantBodyContains: []string{
@@ -136,7 +136,7 @@ func (ts *TestSuite) Test_ItemRevisionQueueMessage() {
 	tests := []testData{
 		{
 			name:                  "revisions required",
-			wantToEmails:          []interface{}{member0.EmailOfChoice(), member1.EmailOfChoice()},
+			wantToEmails:          []any{member0.EmailOfChoice(), member1.EmailOfChoice()},
 			wantSubjectContains:   "Coverage Needs Attention",
 			wantInappTextContains: "Coverage needs attention",
 			wantBodyContains: []string{
@@ -185,7 +185,7 @@ func (ts *TestSuite) Test_ItemDeniedQueueMessage() {
 	tests := []testData{
 		{
 			name:                  "coverage denied",
-			wantToEmails:          []interface{}{member0.EmailOfChoice(), member1.EmailOfChoice()},
+			wantToEmails:          []any{member0.EmailOfChoice(), member1.EmailOfChoice()},
 			wantSubjectContains:   "An Update on Your Coverage Request",
 			wantInappTextContains: "coverage on your new policy item has been denied",
 			wantBodyContains: []string{

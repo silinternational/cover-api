@@ -58,23 +58,23 @@ type Fixtures struct {
 // TestBuffaloContext is a buffalo context user in tests
 type TestBuffaloContext struct {
 	buffalo.DefaultContext
-	params map[interface{}]interface{}
+	params map[any]any
 }
 
 // Value returns the value associated with the given key in the test context
-func (b *TestBuffaloContext) Value(key interface{}) interface{} {
+func (b *TestBuffaloContext) Value(key any) any {
 	return b.params[key]
 }
 
 // Set sets the value to be associated with the given key in the test context
-func (b *TestBuffaloContext) Set(key string, val interface{}) {
+func (b *TestBuffaloContext) Set(key string, val any) {
 	b.params[key] = val
 }
 
 // CreateTestContext sets the domain.ContextKeyCurrentUser to the user param in the TestBuffaloContext
 func CreateTestContext(user User) buffalo.Context {
 	ctx := &TestBuffaloContext{
-		params: map[interface{}]interface{}{},
+		params: map[any]any{},
 	}
 	ctx.Set(domain.ContextKeyCurrentUser, user)
 	return ctx
@@ -664,7 +664,7 @@ func DestroyAll() {
 	destroyTable(&entityCodes)
 }
 
-func destroyTable(i interface{}) {
+func destroyTable(i any) {
 	if err := DB.All(i); err != nil {
 		panic(err.Error())
 	}

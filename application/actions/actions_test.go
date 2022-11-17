@@ -30,12 +30,12 @@ type ActionSuite struct {
 }
 
 // HTML creates an httptest.Request with HTML content type.
-func (as *ActionSuite) HTML(u string, args ...interface{}) *httptest.Request {
+func (as *ActionSuite) HTML(u string, args ...any) *httptest.Request {
 	return httptest.New(as.app).HTML(u, args...)
 }
 
 // JSON creates an httptest.JSON request
-func (as *ActionSuite) JSON(u string, args ...interface{}) *httptest.JSON {
+func (as *ActionSuite) JSON(u string, args ...any) *httptest.JSON {
 	return httptest.New(as.app).JSON(u, args...)
 }
 
@@ -106,7 +106,7 @@ func newSessionStore() sessions.Store {
 	}
 }
 
-func (as *ActionSuite) decodeBody(body []byte, v interface{}) error {
+func (as *ActionSuite) decodeBody(body []byte, v any) error {
 	decoder := json.NewDecoder(bytes.NewReader(body))
 	decoder.DisallowUnknownFields()
 	return decoder.Decode(v)

@@ -29,7 +29,7 @@ type ListResponse struct {
 	Meta Meta `json:"meta"`
 
 	// Data containing the relevant list type
-	Data interface{} `json:"data"`
+	Data any `json:"data"`
 }
 
 // TODO: implement Meta type to provide pagination properties
@@ -67,7 +67,7 @@ type AppError struct {
 	Message string `json:"message"`
 
 	// Extra data providing detail about the error condition, only provided in development mode
-	Extras map[string]interface{} `json:"extras,omitempty"`
+	Extras map[string]any `json:"extras,omitempty"`
 
 	// URL to redirect, if HttpStatus is in 300-series
 	RedirectURL string `json:"-"`

@@ -64,7 +64,7 @@ func (ts *TestSuite) Test_findObject() {
 	tests := []struct {
 		name            string
 		payload         events.Payload
-		object          interface{}
+		object          any
 		listenerName    string
 		wantErrContains string
 		wantContains    []string
