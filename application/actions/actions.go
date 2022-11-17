@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net"
 	"net/http"
 
 	"github.com/gobuffalo/buffalo"
@@ -57,7 +58,9 @@ func reportError(c buffalo.Context, err error) error {
 	appErr.Extras["redirectURL"] = appErr.RedirectURL
 	appErr.Extras["method"] = c.Request().Method
 	appErr.Extras["URI"] = c.Request().RequestURI
-	appErr.Extras["IP"] = c.Request().RemoteAddr
+
+	address, _ := getClientIPAddress(c)
+	appErr.Extras["IP"] = address
 
 	level := rollbar.ERR
 	switch appErr.Category {
@@ -128,4 +131,26 @@ func getUUIDFromParam(c buffalo.Context, param string) (uuid.UUID, error) {
 		return uuid.UUID{}, api.NewAppError(err, api.ErrorMustBeAValidUUID, api.CategoryUser)
 	}
 	return id, nil
+}
+
+// getClientIPAddress gets the client IP address from CF-Connecting-IP or RemoteAddr
+func getClientIPAddress(c buffalo.Context) (net.IP, error) {
+	req := c.Request()
+
+	// https://developers.cloudflare.com/fundamentals/get-started/reference/http-request-headers/#cf-connecting-ip
+	if cf := req.Header.Get("CF-Connecting-IP"); cf != "" {
+		return net.ParseIP(cf), nil
+	}
+
+	ip, _, err := net.SplitHostPort(req.RemoteAddr)
+	if err != nil {
+		return nil, fmt.Errorf("userip: %q is not IP:port, %w", req.RemoteAddr, err)
+	}
+
+	userIP := net.ParseIP(ip)
+	if userIP == nil {
+		return nil, fmt.Errorf("userip: %q is not a valid IP address, %w", req.RemoteAddr, err)
+	}
+
+	return userIP, nil
 }
