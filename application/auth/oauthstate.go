@@ -162,7 +162,7 @@ func Logout(res http.ResponseWriter, req *http.Request) error {
 		return err
 	}
 	session.Options.MaxAge = -1
-	session.Values = make(map[interface{}]interface{})
+	session.Values = make(map[any]any)
 	err = session.Save(req, res)
 	if err != nil {
 		return errors.New("Could not delete user session ")

@@ -10,7 +10,7 @@ import (
 )
 
 // LogErrorMessage logs a message and sends it to Rollbar
-func LogErrorMessage(c buffalo.Context, msg string, level string, extras ...map[string]interface{}) {
+func LogErrorMessage(c buffalo.Context, msg string, level string, extras ...map[string]any) {
 	// Avoid panics running tests when c doesn't have the necessary nested methods
 	logger := c.Logger()
 	if logger == nil {
@@ -19,7 +19,7 @@ func LogErrorMessage(c buffalo.Context, msg string, level string, extras ...map[
 
 	es := MergeExtras(extras)
 	if es == nil {
-		es = map[string]interface{}{}
+		es = map[string]any{}
 	}
 
 	rollbarMessage(c, level, msg, es)
@@ -27,23 +27,23 @@ func LogErrorMessage(c buffalo.Context, msg string, level string, extras ...map[
 	logger.Error(encodeLogMsg(msg, es))
 }
 
-func jsonMin(i interface{}) ([]byte, error) {
+func jsonMin(i any) ([]byte, error) {
 	return json.Marshal(i)
 }
 
-func jsonIndented(i interface{}) ([]byte, error) {
+func jsonIndented(i any) ([]byte, error) {
 	return json.MarshalIndent(i, "", "  ")
 }
 
 // encodeLogMsg adds the message as an "extra" and returns a json-encoded copy of the resulting extras map
-func encodeLogMsg(msg string, extras map[string]interface{}) string {
+func encodeLogMsg(msg string, extras map[string]any) string {
 	encoder := jsonMin
 	if Env.GoEnv == "development" {
 		encoder = jsonIndented
 	}
 
 	if extras == nil {
-		extras = map[string]interface{}{}
+		extras = map[string]any{}
 	}
 	extras["message"] = msg
 
@@ -55,7 +55,7 @@ func encodeLogMsg(msg string, extras map[string]interface{}) string {
 }
 
 // rollbarMessage is a wrapper function to call rollbar's client.MessageWithExtras function from client stored in context
-func rollbarMessage(c buffalo.Context, level string, msg string, extras map[string]interface{}) {
+func rollbarMessage(c buffalo.Context, level string, msg string, extras map[string]any) {
 	rc, ok := c.Value(ContextKeyRollbar).(*rollbar.Client)
 	if ok {
 		rc.MessageWithExtras(level, msg, extras)

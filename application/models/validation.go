@@ -28,7 +28,7 @@ var fieldValidators = map[string]func(validator.FieldLevel) bool{
 	"ledgerEntryRecordType":         validateLedgerEntryRecordType,
 }
 
-func validateModel(m interface{}) *validate.Errors {
+func validateModel(m any) *validate.Errors {
 	vErrs := validate.NewErrors()
 
 	if err := mValidate.Struct(m); err != nil {

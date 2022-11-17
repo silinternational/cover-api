@@ -56,7 +56,7 @@ func (ms *ModelSuite) Test_CurrentUser() {
 		},
 		{
 			name:     "empty context",
-			context:  &TestBuffaloContext{params: map[interface{}]interface{}{}},
+			context:  &TestBuffaloContext{params: map[any]any{}},
 			wantUser: User{},
 		},
 	}
@@ -80,7 +80,7 @@ func (ms *ModelSuite) EqualAppError(expected api.AppError, actual error) {
 	ms.Equal(expected.Category, appErr.Category, "error category does not match")
 }
 
-func (ms *ModelSuite) EqualNullTime(expected nulls.Time, actual *time.Time, msgAndArgs ...interface{}) {
+func (ms *ModelSuite) EqualNullTime(expected nulls.Time, actual *time.Time, msgAndArgs ...any) {
 	if actual == nil {
 		ms.False(expected.Valid, msgAndArgs...)
 	} else {
@@ -88,7 +88,7 @@ func (ms *ModelSuite) EqualNullTime(expected nulls.Time, actual *time.Time, msgA
 	}
 }
 
-func (ms *ModelSuite) EqualNullUUID(expected nulls.UUID, actual *uuid.UUID, msgAndArgs ...interface{}) {
+func (ms *ModelSuite) EqualNullUUID(expected nulls.UUID, actual *uuid.UUID, msgAndArgs ...any) {
 	if actual == nil {
 		ms.False(expected.Valid, msgAndArgs...)
 	} else {

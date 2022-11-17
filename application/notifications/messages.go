@@ -9,7 +9,7 @@ type Message struct {
 	Body      string
 	Subject   string
 	Template  string
-	Data      map[string]interface{}
+	Data      map[string]any
 	FromName  string
 	FromEmail string
 	FromPhone string
@@ -22,7 +22,7 @@ type Message struct {
 func NewEmailMessage() Message {
 	msg := Message{
 		FromEmail: domain.EmailFromAddress(nil),
-		Data: map[string]interface{}{
+		Data: map[string]any{
 			"appName": domain.Env.AppName,
 			"uiURL":   domain.Env.UIURL,
 		},
