@@ -79,13 +79,30 @@ tracker:
   environment:
     TRACKING_ID: UA-56269387-10
 
-ga4tracker:
+ga4trackerMain:
   image: silintl/ga-event-tracker:latest
   encrypted_env_file: .env.encrypted
   environment:
     GA_MEASUREMENT_ID: G-NY4R8HM3Y3
-    GA_CLIENT_ID: Cover Api
-    GA_EVENT_NAME: Application Deployment
+    GA_CLIENT_ID: cover-api
+    GA_EVENT_NAME: main_cover_api
+    # Add to the .env.encrypted file ... GA_API_SECRET
+
+ga4trackerDevelop:
+  image: silintl/ga-event-tracker:latest
+  encrypted_env_file: .env.encrypted
+  environment:
+    GA_MEASUREMENT_ID: G-NY4R8HM3Y3
+    GA_CLIENT_ID: cover-api
+    GA_EVENT_NAME: develop_cover_api
+
+ga4trackerFeature:
+  image: silintl/ga-event-tracker:latest
+  encrypted_env_file: .env.encrypted
+  environment:
+    GA_MEASUREMENT_ID: G-NY4R8HM3Y3
+    GA_CLIENT_ID: cover-api
+    GA_EVENT_NAME: feature_cover_api
     # Add to the .env.encrypted file ... GA_API_SECRET
 
 rollbar:

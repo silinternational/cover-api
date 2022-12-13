@@ -61,8 +61,19 @@
   tag: ^(main|develop)
   command: "true"
 
-- name: ga4track_deployment
-  service: ga4tracker
+- name: ga4track_main_deployment
+  service: ga4trackerMain
+  tag: main
+  command: ./ga-event-tracker
+
+- name: ga4track_develop_deployment
+  service: ga4trackerDevelop
+  tag: develop
+  command: ./ga-event-tracker
+
+- name: ga4track_feature_deployment
+  service: ga4trackerFeature
+  exclude: ^(main|develop)
   command: ./ga-event-tracker
 
 - name: rollbar
