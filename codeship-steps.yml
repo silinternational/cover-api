@@ -74,8 +74,8 @@
 - name: ga4track_feature_deployment
   service: ga4trackerFeature
   exclude: ^(main|develop)
-  command: ./ga-event-tracker
-
+  command: sh -c "export GA_EVENT_NAME=${CI_BRANCH}}_App_Deployment && ./ga-event-tracker"
+  
 - name: rollbar
   service: rollbar
   tag: ^(main|develop)
