@@ -64,13 +64,13 @@
 - name: ga4track_deployment
   service: ga4tracker
   tag: ^(main|develop)
-  command: sh -c "export GA_EVENT_NAME=${CI_BRANCH} && ./ga-event-tracker"
+  command: sh -c "export GA_EVENT_NAME=${CI_BRANCH}_CoverAPI && ./ga-event-tracker"
 
 # ${CI_BRANCH} can't be used here because it includes a slash
 - name: ga4track_feature_deployment
   service: ga4trackerFeature
   exclude: ^(main|develop)
-  command: sh -c "export GA_EVENT_NAME=${CI_NAME}_Feature_Deployment && ./ga-event-tracker"
+  command: sh -c "export GA_EVENT_NAME=Feature_CoverAPI && ./ga-event-tracker"
 
 - name: rollbar
   service: rollbar
