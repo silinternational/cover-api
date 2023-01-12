@@ -9,6 +9,11 @@ RUN apt-get update && apt-get install -y \
     netcat \
     && apt-get clean
 
+# Install the desired version of NodeJS
+RUN npm cache clean -f && \
+    npm install -g n && \
+    n 16
+
 RUN curl -o /usr/local/bin/whenavail https://bitbucket.org/silintl/docker-whenavail/raw/1.0.2/whenavail \
      && chmod a+x /usr/local/bin/whenavail
 
