@@ -59,7 +59,7 @@ func generateCert(certFile, keyFile string) error {
 		return fmt.Errorf("close cert file '%s': %w", certFile, err)
 	}
 
-	// #nosec G304 -- ok to use a filename from a variable since this is not exported code
+	// #nosec G304 -- ok to use a filename from a variable since the filenames do not come from user data
 	keyOut, err := os.OpenFile(keyFile, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0o600)
 	if err != nil {
 		return fmt.Errorf("open key file '%s': %w", keyFile, err)
