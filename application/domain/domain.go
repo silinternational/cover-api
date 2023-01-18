@@ -128,7 +128,7 @@ var Env struct {
 	AccessTokenLifetimeSeconds int    `default:"1166400" split_words:"true"` // 13.5 days
 	AppName                    string `default:"Cover" split_words:"true"`
 	AppNameLong                string `default:"Cover by SIL" split_words:"true"`
-	ServerPort                 int    `default:"3000" split_words:"true"`
+	Port                       int    `default:"3000"`
 
 	ListenerDelayMilliseconds int `default:"1000" split_words:"true"`
 	ListenerMaxRetries        int `default:"10" split_words:"true"`
@@ -252,7 +252,7 @@ func (e *ErrLogProxy) SetOutput(w io.Writer) {
 	e.LocalLog.SetOutput(w)
 }
 
-func (e *ErrLogProxy) Printf(format string, a ...interface{}) {
+func (e *ErrLogProxy) Printf(format string, a ...any) {
 	// Send to local logger
 	e.LocalLog.Printf(format, a...)
 
@@ -273,7 +273,7 @@ func (e *ErrLogProxy) InitRollbar() {
 }
 
 // NewExtra Sets a new key-value pair in the `extras` entry of the context
-func NewExtra(c buffalo.Context, key string, e interface{}) {
+func NewExtra(c buffalo.Context, key string, e any) {
 	extras := getExtras(c)
 
 	extrasLock.Lock()
@@ -283,10 +283,10 @@ func NewExtra(c buffalo.Context, key string, e interface{}) {
 	c.Set(ContextKeyExtras, extras)
 }
 
-func getExtras(c buffalo.Context) map[string]interface{} {
-	extras, _ := c.Value(ContextKeyExtras).(map[string]interface{})
+func getExtras(c buffalo.Context) map[string]any {
+	extras, _ := c.Value(ContextKeyExtras).(map[string]any)
 	if extras == nil {
-		extras = map[string]interface{}{}
+		extras = map[string]any{}
 	}
 
 	return extras
@@ -372,11 +372,11 @@ func RollbarSetPerson(c buffalo.Context, id, userFirst, userLast, email string) 
 	}
 }
 
-func MergeExtras(extras []map[string]interface{}) map[string]interface{} {
-	allExtras := map[string]interface{}{}
+func MergeExtras(extras []map[string]any) map[string]any {
+	allExtras := map[string]any{}
 
 	// I didn't think I would need this, but without it at least one test was failing
-	// The code allowed a map[string]interface{} to get through (i.e. not in a slice)
+	// The code allowed a map[string]any to get through (i.e. not in a slice)
 	// without the compiler complaining
 	if len(extras) == 1 {
 		return extras[0]

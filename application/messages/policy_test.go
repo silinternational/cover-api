@@ -22,7 +22,7 @@ func (ts *TestSuite) Test_PolicyUserInviteQueueMessage() {
 	tests := []testData{
 		{
 			name:                "ok",
-			wantToEmails:        []interface{}{invite0.Email},
+			wantToEmails:        []any{invite0.Email},
 			wantSubjectContains: "Invitation",
 			wantBodyContains: []string{
 				domain.Env.UIURL,

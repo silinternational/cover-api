@@ -6,6 +6,11 @@ WORKDIR /src
 
 ENV GOPROXY http://proxy.golang.org
 
+# Install the desired version of NodeJS
+RUN npm cache clean -f && \
+    npm install -g n && \
+    n 16
+
 # Copy the Go Modules manifests
 COPY go.mod go.mod
 COPY go.sum go.sum

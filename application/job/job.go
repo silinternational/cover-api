@@ -21,23 +21,23 @@ var w worker.Worker
 // jobBuffaloContext is a buffalo context for jobs
 type jobBuffaloContext struct {
 	buffalo.DefaultContext
-	params map[interface{}]interface{}
+	params map[any]any
 }
 
 // Value returns the value associated with the given key in the context
-func (j *jobBuffaloContext) Value(key interface{}) interface{} {
+func (j *jobBuffaloContext) Value(key any) any {
 	return j.params[key]
 }
 
 // Set sets the value to be associated with the given key in the context. CAUTION: this is not thread-safe
-func (j *jobBuffaloContext) Set(key string, val interface{}) {
+func (j *jobBuffaloContext) Set(key string, val any) {
 	j.params[key] = val
 }
 
 // createJobContext creates an empty context
 func createJobContext() buffalo.Context {
 	ctx := &jobBuffaloContext{
-		params: map[interface{}]interface{}{},
+		params: map[any]any{},
 	}
 
 	user := models.GetDefaultSteward(models.DB)
@@ -106,14 +106,14 @@ func resubmitInactivateJob() {
 	// uncomment this in development, if you want it to run more often for debugging
 	// delay = time.Duration(time.Second * 10)
 
-	if err := SubmitDelayed(InactivateItems, delay, map[string]interface{}{}); err != nil {
+	if err := SubmitDelayed(InactivateItems, delay, map[string]any{}); err != nil {
 		domain.ErrLogger.Printf("error resubmitting inactivateItemsHandler: " + err.Error())
 	}
 	return
 }
 
 // SubmitDelayed enqueues a new Worker job for the given handler. Arguments can be provided in `args`.
-func SubmitDelayed(handler string, delay time.Duration, args map[string]interface{}) error {
+func SubmitDelayed(handler string, delay time.Duration, args map[string]any) error {
 	job := worker.Job{
 		Queue:   "default",
 		Args:    args,

@@ -79,6 +79,15 @@ tracker:
   environment:
     TRACKING_ID: UA-56269387-10
 
+ga4tracker:
+  image: silintl/ga-event-tracker:1.0.1
+  encrypted_env_file: .env.encrypted
+  environment:
+    GA_MEASUREMENT_ID: G-NY4R8HM3Y3
+    GA_CLIENT_ID: cover-api
+    # GA_EVENT_NAME is set by the codeship-steps command
+    # Add to the .env.encrypted file ... GA_API_SECRET
+
 rollbar:
   image: silintl/notify-rollbar-deployment:latest
   encrypted_env_file: .env.encrypted

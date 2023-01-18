@@ -71,7 +71,7 @@ func newEmailMessageData() MessageData {
 
 func (m MessageData) addClaimData(tx *pop.Connection, claim models.Claim) {
 	if m == nil {
-		m = map[string]interface{}{}
+		m = map[string]any{}
 	}
 
 	m.addStewardData(tx)
@@ -97,7 +97,7 @@ func (m MessageData) addClaimData(tx *pop.Connection, claim models.Claim) {
 
 func (m MessageData) addItemData(tx *pop.Connection, item models.Item) {
 	if m == nil {
-		m = map[string]interface{}{}
+		m = map[string]any{}
 	}
 	m.addStewardData(tx)
 
@@ -127,7 +127,7 @@ func (m MessageData) addItemData(tx *pop.Connection, item models.Item) {
 
 func (m MessageData) addStewardData(tx *pop.Connection) {
 	if m == nil {
-		m = map[string]interface{}{}
+		m = map[string]any{}
 	}
 
 	steward := models.GetDefaultSteward(tx)

@@ -62,7 +62,7 @@ func (as *ActionSuite) Test_ClaimItemsUpdate() {
 		name        string
 		actor       models.User
 		claimItem   models.ClaimItem
-		input       interface{}
+		input       any
 		addReviewer bool
 		wantStatus  int
 		wantInBody  string

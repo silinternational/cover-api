@@ -35,7 +35,7 @@ func (ts *TestSuite) Test_ClaimReview1QueueMessage() {
 	tests := []testData{
 		{
 			name:                  "submitted to review1",
-			wantToEmails:          []interface{}{steward.EmailOfChoice()},
+			wantToEmails:          []any{steward.EmailOfChoice()},
 			wantSubjectContains:   "New claim on " + review1Claim.ClaimItems[0].Item.Name,
 			wantInappTextContains: "A new claim is waiting for your approval",
 			wantBodyContains: []string{
@@ -70,7 +70,7 @@ func (ts *TestSuite) Test_ClaimRevisionQueueMessage() {
 	tests := []testData{
 		{
 			name:                  "revisions required",
-			wantToEmails:          []interface{}{member0.EmailOfChoice(), member1.EmailOfChoice()},
+			wantToEmails:          []any{member0.EmailOfChoice(), member1.EmailOfChoice()},
 			wantSubjectContains:   "Please provide more information",
 			wantInappTextContains: "Please provide more information on your new claim",
 			wantBodyContains: []string{
@@ -105,7 +105,7 @@ func (ts *TestSuite) Test_ClaimPreapprovedQueueMessage() {
 	tests := []testData{
 		{
 			name:                  "preapproved",
-			wantToEmails:          []interface{}{member0.EmailOfChoice(), member1.EmailOfChoice()},
+			wantToEmails:          []any{member0.EmailOfChoice(), member1.EmailOfChoice()},
 			wantSubjectContains:   "Claim Approved for Repair",
 			wantInappTextContains: "receipts are needed on your new claim",
 			wantBodyContains: []string{
@@ -139,7 +139,7 @@ func (ts *TestSuite) Test_ClaimReceiptQueueMessage() {
 	tests := []testData{
 		{
 			name:                  "receipts required again",
-			wantToEmails:          []interface{}{member0.EmailOfChoice(), member1.EmailOfChoice()},
+			wantToEmails:          []any{member0.EmailOfChoice(), member1.EmailOfChoice()},
 			wantSubjectContains:   "Claim Needs Receipt",
 			wantInappTextContains: "Please provide a receipt",
 			wantBodyContains: []string{
@@ -170,7 +170,7 @@ func (ts *TestSuite) Test_ClaimReview2QueueMessage() {
 	tests := []testData{
 		{
 			name:                  "submitted to review2",
-			wantToEmails:          []interface{}{steward.EmailOfChoice()},
+			wantToEmails:          []any{steward.EmailOfChoice()},
 			wantSubjectContains:   "Consider payout for claim on " + review2Claim.ClaimItems[0].Item.Name,
 			wantInappTextContains: "A claim is waiting for your approval",
 			wantBodyContains: []string{
@@ -201,7 +201,7 @@ func (ts *TestSuite) Test_ClaimReview3QueueMessage() {
 	tests := []testData{
 		{
 			name:                  "submitted to review3",
-			wantToEmails:          []interface{}{signator.EmailOfChoice()},
+			wantToEmails:          []any{signator.EmailOfChoice()},
 			wantSubjectContains:   "Final approval for claim on " + review3Claim.ClaimItems[0].Item.Name,
 			wantInappTextContains: "A claim is waiting for your approval",
 			wantBodyContains: []string{
@@ -235,7 +235,7 @@ func (ts *TestSuite) Test_ClaimApprovedQueueMessage() {
 	tests := []testData{
 		{
 			name:                  "coverage approved",
-			wantToEmails:          []interface{}{member0.EmailOfChoice(), member1.EmailOfChoice()},
+			wantToEmails:          []any{member0.EmailOfChoice(), member1.EmailOfChoice()},
 			wantSubjectContains:   "Claim Payout Approved",
 			wantInappTextContains: "your claim has been approved",
 			wantBodyContains: []string{
@@ -270,7 +270,7 @@ func (ts *TestSuite) Test_ClaimDeniedQueueMessage() {
 	tests := []testData{
 		{
 			name:                  "coverage denied",
-			wantToEmails:          []interface{}{member0.EmailOfChoice(), member1.EmailOfChoice()},
+			wantToEmails:          []any{member0.EmailOfChoice(), member1.EmailOfChoice()},
 			wantSubjectContains:   "An Update on Your Coverage Request",
 			wantInappTextContains: "your claim has been denied",
 			wantBodyContains: []string{

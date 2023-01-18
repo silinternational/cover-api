@@ -141,7 +141,7 @@ func (as *ActionSuite) Test_DependentsCreate() {
 	tests := []struct {
 		name          string
 		actor         models.User
-		reqBody       interface{}
+		reqBody       any
 		policy        models.Policy
 		wantCount     int
 		wantStatus    int
