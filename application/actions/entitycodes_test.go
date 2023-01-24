@@ -217,7 +217,7 @@ func (as *ActionSuite) Test_entityCodesCreate() {
 			wantError:  api.ErrorNotAuthorized,
 		},
 		{
-			name:       "regular user cannot create endity codes",
+			name:       "regular user cannot create entity codes",
 			actor:      user,
 			wantStatus: http.StatusNotFound,
 			wantError:  api.ErrorNotAuthorized,
