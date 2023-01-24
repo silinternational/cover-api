@@ -37,7 +37,7 @@ import (
 	"github.com/gobuffalo/buffalo"
 	"github.com/gobuffalo/buffalo-pop/v3/pop/popmw"
 	contenttype "github.com/gobuffalo/mw-contenttype"
-	"github.com/gobuffalo/mw-i18n/v2"
+	i18n "github.com/gobuffalo/mw-i18n/v2"
 	paramlogger "github.com/gobuffalo/mw-paramlogger"
 	"github.com/gorilla/sessions"
 	"github.com/rs/cors"
@@ -198,6 +198,7 @@ func App() *buffalo.App {
 		entityCodesGroup.GET("", entityCodesList)
 		entityCodesGroup.PUT(idRegex, entityCodesUpdate)
 		entityCodesGroup.GET(idRegex, entityCodesView)
+		entityCodesGroup.POST("/", entityCodesCreate)
 
 		// item
 		itemsGroup := app.Group(itemsPath)

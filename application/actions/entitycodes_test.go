@@ -197,3 +197,64 @@ func (as *ActionSuite) Test_entityCodesView() {
 		}
 	}
 }
+
+//test entityCodesCreate
+func (as *ActionSuite) Test_entityCodesCreate() {
+	user := models.CreateUserFixtures(as.DB, 1).Users[0]
+	admin := models.CreateAdminUsers(as.DB)[models.AppRoleSteward]
+
+	tests := []struct {
+		code			 string
+		name       string
+		actor      models.User
+		wantStatus int
+		wantError  api.ErrorKey
+	}{
+		{
+			name:       "must be authenticated",
+			actor:      models.User{},
+			wantStatus: http.StatusUnauthorized,
+			wantError:  api.ErrorNotAuthorized,
+		},
+		{
+			name:       "regular user cannot create endity codes",
+			actor:      user,
+			wantStatus: http.StatusNotFound,
+			wantError:  api.ErrorNotAuthorized,
+		},
+		{
+			name:       "admin can create",
+			actor:      admin,
+			wantStatus: http.StatusOK,
+		},
+	}
+	for _, tt := range tests {
+		req := as.JSON("%s", entityCodesPath)
+		req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
+		input := api.EntityCodeInput{
+			Code: "ABC",
+			Name: "ABC Code",
+			Active:        true,
+			IncomeAccount: "67890",
+			ParentEntity:  "XYZ",
+		}
+		res := req.Post(input)
+		body := res.Body.Bytes()
+
+		as.Equal(tt.wantStatus, res.Code, "incorrect status code returned: %d\n%s", res.Code, body)
+		if tt.wantError != "" {
+			var err api.AppError
+			as.NoError(as.decodeBody(body, &err), "response data is not as expected", body)
+			as.Equal(tt.wantError, err.Key, "error key is incorrect")
+		} else {
+			var code api.EntityCode
+			as.NoError(as.decodeBody(body, &code), "response data is not as expected %s", body)
+			as.NotNil(code.Active)
+			as.NotNil(code.IncomeAccount)
+			as.NotNil(code.ParentEntity)
+			as.Equal(input.Active, *code.Active)
+			as.Equal(input.IncomeAccount, *code.IncomeAccount)
+			as.Equal(input.ParentEntity, *code.ParentEntity)
+		}
+	}
+}

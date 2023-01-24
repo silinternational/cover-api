@@ -32,6 +32,16 @@ func (ec *EntityCode) Create(tx *pop.Connection) error {
 	return create(tx, ec)
 }
 
+//create a new entity code from an api entity code
+func (ec *EntityCode) CreateFromAPI(tx *pop.Connection, input api.EntityCodeInput) error {
+	ec.Code = input.Code
+	ec.Name = input.Name
+	ec.Active = input.Active
+	ec.IncomeAccount = input.IncomeAccount
+	ec.ParentEntity = input.ParentEntity
+	return ec.Create(tx)
+}
+
 func (ec *EntityCode) Update(tx *pop.Connection) error {
 	return update(tx, ec)
 }

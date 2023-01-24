@@ -32,6 +32,9 @@ type EntityCode struct {
 
 // swagger:model
 type EntityCodeInput struct {
+	// Code is a unique three-letter identifier for an accounting entity
+	Code string `json:"code"`
+
 	// Name is a succinct description of the entity code.
 	Name string `json:"name"`
 
