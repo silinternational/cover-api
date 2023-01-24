@@ -228,16 +228,16 @@ func (as *ActionSuite) Test_entityCodesCreate() {
 			wantStatus: http.StatusOK,
 		},
 	}
+	input := api.EntityCodeCreateInput{
+		Code: "ABC",
+		Name: "ABC Code",
+		Active:        true,
+		IncomeAccount: "67890",
+		ParentEntity:  "XYZ",
+	}
 	for _, tt := range tests {
 		req := as.JSON("%s", entityCodesPath)
 		req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
-		input := api.EntityCodeInput{
-			Code: "ABC",
-			Name: "ABC Code",
-			Active:        true,
-			IncomeAccount: "67890",
-			ParentEntity:  "XYZ",
-		}
 		res := req.Post(input)
 		body := res.Body.Bytes()
 
