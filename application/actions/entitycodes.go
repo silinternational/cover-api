@@ -107,14 +107,14 @@ func entityCodesUpdate(c buffalo.Context) error {
 //     description: entity code create input object
 //     required: true
 //     schema:
-//       "$ref": "#/definitions/EntityCodeInput"
+//       "$ref": "#/definitions/EntityCodeCreateInput"
 // responses:
 //  '200':
 //    description: an Entity Code record
 //    schema:
 //      "$ref": "#/definitions/EntityCode"
 func entityCodesCreate(c buffalo.Context) error {
-	var input api.EntityCodeInput
+	var input api.EntityCodeCreateInput
 	if err := StrictBind(c, &input); err != nil {
 		return reportError(c, err)
 	}

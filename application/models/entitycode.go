@@ -33,7 +33,7 @@ func (ec *EntityCode) Create(tx *pop.Connection) error {
 }
 
 //create a new entity code from an api entity code
-func (ec *EntityCode) CreateFromAPI(tx *pop.Connection, input api.EntityCodeInput) error {
+func (ec *EntityCode) CreateFromAPI(tx *pop.Connection, input api.EntityCodeCreateInput) error {
 	ec.Code = input.Code
 	ec.Name = input.Name
 	ec.Active = input.Active
