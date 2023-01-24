@@ -198,7 +198,7 @@ func App() *buffalo.App {
 		entityCodesGroup.GET("", entityCodesList)
 		entityCodesGroup.PUT(idRegex, entityCodesUpdate)
 		entityCodesGroup.GET(idRegex, entityCodesView)
-		entityCodesGroup.POST("/", entityCodesCreate)
+		entityCodesGroup.POST("", entityCodesCreate)
 
 		// item
 		itemsGroup := app.Group(itemsPath)
