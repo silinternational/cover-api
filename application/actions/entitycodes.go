@@ -94,6 +94,38 @@ func entityCodesUpdate(c buffalo.Context) error {
 	return renderEntityCode(c, *e)
 }
 
+// swagger:operation POST /entity-codes EntityCodes EntityCodesCreate
+//
+// EntityCodesCreate
+//
+// create a new Entity Code
+//
+// ---
+// parameters:
+//   - name: entity code create input
+//     in: body
+//     description: entity code create input object
+//     required: true
+//     schema:
+//       "$ref": "#/definitions/EntityCodeCreateInput"
+// responses:
+//  '200':
+//    description: an Entity Code record
+//    schema:
+//      "$ref": "#/definitions/EntityCode"
+func entityCodesCreate(c buffalo.Context) error {
+	var input api.EntityCodeCreateInput
+	if err := StrictBind(c, &input); err != nil {
+		return reportError(c, err)
+	}
+	
+	e := models.EntityCode{}
+	if err := e.CreateFromAPI(models.Tx(c), input); err != nil {
+		return err
+	}
+	return renderEntityCode(c, e)
+}
+
 // getReferencedEntityCodeFromCtx pulls the models.EntityCode resource from context that was put there
 // by the AuthZ middleware
 func getReferencedEntityCodeFromCtx(c buffalo.Context) *models.EntityCode {
