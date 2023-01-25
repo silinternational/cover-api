@@ -591,7 +591,7 @@ func (ms *ModelSuite) Test_AdjustLedgerAmount() {
 			name:       "new coverage, under $1",
 			entryType:  LedgerEntryTypeNewCoverage,
 			amount:     50,
-			wantAmount: 100,
+			wantAmount: 50,
 		},
 		{
 			name:       "refund, over $1",
@@ -615,7 +615,7 @@ func (ms *ModelSuite) Test_AdjustLedgerAmount() {
 			name:       "coverage change, positive, under $1",
 			entryType:  LedgerEntryTypeCoverageChange,
 			amount:     50,
-			wantAmount: 100,
+			wantAmount: 50,
 		},
 		{
 			name:       "coverage change, negative, over $1",
