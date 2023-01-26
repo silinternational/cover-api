@@ -67,7 +67,7 @@ func reportError(c buffalo.Context, err error) error {
 	case api.CategoryUnauthorized, api.CategoryUser:
 		level = rollbar.WARN
 	}
-	domain.LogErrorMessage(c, appErr.Error(), level, appErr.Extras)
+	domain.LogErrorMessage(c, err.Error(), level, appErr.Extras)
 
 	appErr.LoadTranslatedMessage(c)
 
