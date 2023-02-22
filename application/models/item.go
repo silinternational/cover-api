@@ -394,7 +394,7 @@ func (i *Item) cancelCoverageAfterClaim(tx *pop.Connection, reason string) error
 
 	i.CoverageEndDate = nulls.NewTime(now)
 	i.CoverageStatus = api.ItemCoverageStatusInactive
-	i.StatusChange = ItemStatusChangeInactivated + "approved claim"
+	i.StatusChange = ItemStatusChangeInactivated + "having a claim approved"
 	i.StatusReason = reason
 
 	return tx.Update(i)
