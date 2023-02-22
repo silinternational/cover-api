@@ -422,7 +422,11 @@ func GetHHID(staffID string) string {
 		domain.ErrLogger.Printf("HHID API error, %s", err)
 		return ""
 	}
-	defer response.Body.Close()
+	defer func() {
+		if err := response.Body.Close(); err != nil {
+			panic(err.Error())
+		}
+	}()
 
 	dec := json.NewDecoder(response.Body)
 	var v struct {
