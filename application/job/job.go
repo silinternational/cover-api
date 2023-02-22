@@ -1,6 +1,7 @@
 package job
 
 import (
+	"os"
 	"time"
 
 	"github.com/gobuffalo/buffalo"
@@ -16,7 +17,7 @@ const (
 	InactivateItems = "inactivate_items"
 )
 
-var w worker.Worker
+var w *worker.Worker
 
 // jobBuffaloContext is a buffalo context for jobs
 type jobBuffaloContext struct {
@@ -67,12 +68,25 @@ var handlers = map[string]func(worker.Args) error{
 	InactivateItems: inactivateItemsHandler,
 }
 
-func init() {
-	w = worker.NewSimple()
+func Init(appWorker *worker.Worker) {
+	w = appWorker
 	for key, handler := range handlers {
-		if err := w.Register(key, handler); err != nil {
+		if err := (*w).Register(key, handler); err != nil {
 			domain.ErrLogger.Printf("error registering '%s' handler, %s", key, err)
 		}
+	}
+
+	delay := time.Second * 10
+
+	// Kick off first run of inactivating items between 1h11 and 3h27 from now
+	if domain.Env.GoEnv != "development" {
+		randMins := time.Duration(domain.RandomInsecureIntInRange(71, 387))
+		delay = randMins * time.Minute
+	}
+
+	if err := SubmitDelayed(InactivateItems, delay, map[string]any{}); err != nil {
+		domain.ErrLogger.Printf("error initializing InactivateItems job: " + err.Error())
+		os.Exit(1)
 	}
 }
 
@@ -104,7 +118,7 @@ func resubmitInactivateJob() {
 	delay := time.Hour * 12
 
 	// uncomment this in development, if you want it to run more often for debugging
-	// delay = time.Duration(time.Second * 10)
+	// delay = time.Second * 10
 
 	if err := SubmitDelayed(InactivateItems, delay, map[string]any{}); err != nil {
 		domain.ErrLogger.Printf("error resubmitting inactivateItemsHandler: " + err.Error())
@@ -119,5 +133,5 @@ func SubmitDelayed(handler string, delay time.Duration, args map[string]any) err
 		Args:    args,
 		Handler: handler,
 	}
-	return w.PerformIn(job, delay)
+	return (*w).PerformIn(job, delay)
 }
