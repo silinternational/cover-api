@@ -638,7 +638,7 @@ func (p *Policy) ProcessAnnualCoverage(tx *pop.Connection, year int) error {
 	return nil
 }
 
-// CreateRenewalLedgerEntry creates a minimum charge of $1
+// CreateRenewalLedgerEntry creates a new ledger entry for coverage renewal
 func (p *Policy) CreateRenewalLedgerEntry(tx *pop.Connection, riskCategoryID uuid.UUID, amount api.Currency) error {
 	p.LoadEntityCode(tx, false)
 

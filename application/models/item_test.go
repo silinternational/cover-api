@@ -1396,7 +1396,8 @@ func (ms *ModelSuite) TestItem_cancelCoverageAfterClaim() {
 			ms.NoError(tt.item.FindByID(ms.DB, tt.item.ID), "failed retrieving item from db")
 			ms.Equal(api.ItemCoverageStatusInactive, tt.item.CoverageStatus, "Item CoverageStatus is incorrect")
 			ms.WithinDuration(now, tt.item.CoverageEndDate.Time, time.Hour*24, "Item CoverageEndDate is incorrect")
-			ms.Equal(ItemStatusChangeInactivated, tt.item.StatusChange, "Item StatusChange is incorrect")
+			ms.Equal(ItemStatusChangeInactivated+"having a claim approved", tt.item.StatusChange,
+				"Item StatusChange is incorrect")
 			ms.Equal(reason, tt.item.StatusReason, "Item StatusReason is incorrect")
 		})
 	}

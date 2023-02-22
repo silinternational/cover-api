@@ -41,6 +41,7 @@ import (
 	paramlogger "github.com/gobuffalo/mw-paramlogger"
 	"github.com/gorilla/sessions"
 	"github.com/rs/cors"
+	"github.com/silinternational/cover-api/job"
 
 	"github.com/silinternational/cover-api/api"
 	"github.com/silinternational/cover-api/domain"
@@ -238,6 +239,8 @@ func App() *buffalo.App {
 	}
 
 	listeners.RegisterListener()
+
+	job.Init(&app.Worker)
 
 	return app
 }

@@ -12,7 +12,6 @@ import (
 
 	"github.com/silinternational/cover-api/actions"
 	"github.com/silinternational/cover-api/domain"
-	"github.com/silinternational/cover-api/job"
 )
 
 var GitCommitHash string
@@ -24,19 +23,6 @@ var GitCommitHash string
 // call `app.Serve()`, unless you don't want to start your
 // application that is. :)
 func main() {
-	delay := time.Duration(time.Second * 10)
-
-	// Kick off first run of inactivating items between 1h11 and 3h27 from now
-	if domain.Env.GoEnv != "development" {
-		randMins := time.Duration(domain.RandomInsecureIntInRange(71, 387))
-		delay = randMins * time.Minute
-	}
-
-	if err := job.SubmitDelayed(job.InactivateItems, delay, map[string]any{}); err != nil {
-		domain.ErrLogger.Printf("error initializing InactivateItems job: " + err.Error())
-		os.Exit(1)
-	}
-
 	// init rollbar
 	rollbar.SetToken(domain.Env.RollbarToken)
 	rollbar.SetEnvironment(domain.Env.GoEnv)

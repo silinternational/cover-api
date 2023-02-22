@@ -51,10 +51,10 @@ to generate a Swagger specification file as well as render it as HTML.
 To generate the swagger spec `swagger/swagger.json` run `make swagger`.
 
 ## Access the Database
-A container running Adminer (similar to phpMyAdmin but for Postgres) will be running at port 8000 after you run `make`. 
+A container running Adminer (similar to phpMyAdmin but for Postgres) will be running at port 8080 after you run `make`. 
 You can access use Adminer to manage the PostgreSQL database using the following login details:
 
- - URL: http://localhost:8000
+ - URL: http://localhost:8080
  - System: PostgreSQL
  - Server: db
  - Username: cover
