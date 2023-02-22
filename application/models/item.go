@@ -282,6 +282,7 @@ func (i *Item) FindByID(tx *pop.Connection, id uuid.UUID) error {
 //  and if it has a Draft, Revision or Pending status.
 //  If the item's status is Denied or Inactive, it does nothing.
 //  Otherwise, it changes its status to Inactive.
+//  It also creates a corresponding credit ledger entry
 func (i *Item) SafeDeleteOrInactivate(ctx context.Context) error {
 	now := time.Now().UTC()
 	switch i.CoverageStatus {
@@ -343,8 +344,7 @@ func (i *Item) isNewEnough() bool {
 	return !i.CreatedAt.Before(cutOffDate)
 }
 
-// ScheduleInactivation sets the item's CoverageEndDate and creates a corresponding
-//  credit ledger entry
+// ScheduleInactivation sets the item's CoverageEndDate
 func (i *Item) ScheduleInactivation(ctx context.Context, t time.Time) error {
 	user := CurrentUser(ctx)
 	i.StatusChange = ItemStatusChangeInactivated + user.Name()
