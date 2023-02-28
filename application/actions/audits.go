@@ -15,9 +15,9 @@ import (
 // TODO: apply this to all API result sets and move this const to actions.go
 const MaxResultSize = 1000
 
-// swagger:operation POST /audits Audit AuditRun
+// swagger:operation POST /audits Audits AuditRun
 //
-// AuditRun
+// AuditsRun
 //
 // Run an audit
 //
