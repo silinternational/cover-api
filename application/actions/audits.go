@@ -61,7 +61,7 @@ func auditRun(c buffalo.Context) error {
 		result, err = runRenewalAudit(c, date)
 
 	default:
-		err = errors.New("unrecognized audit type, must be 'renewal'")
+		err = errors.New("unrecognized audit type, must be " + api.AuditTypeRenewal)
 		return reportError(c, api.NewAppError(err, api.ErrorUnrecognizedAuditType, api.CategoryUser))
 	}
 
