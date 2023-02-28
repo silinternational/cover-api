@@ -1402,3 +1402,62 @@ func (ms *ModelSuite) TestItem_cancelCoverageAfterClaim() {
 		})
 	}
 }
+
+func (ms *ModelSuite) TestItem_FindItemsIncorrectlyRenewed() {
+	now := time.Now().UTC()
+	thisYear := now.Year()
+	lastYear := thisYear - 1
+	aDateLastYear := time.Date(thisYear-1, 12, 31, 0, 0, 0, 0, time.UTC)
+	aDateTwoYearsAgo := time.Date(thisYear-2, 12, 31, 0, 0, 0, 0, time.UTC)
+
+	f := CreateItemFixtures(ms.DB, FixturesConfig{ItemsPerPolicy: 3})
+	incorrectItem := f.Items[0]
+	incorrectItem.PaidThroughYear = thisYear
+	incorrectItem.CoverageEndDate = nulls.NewTime(aDateLastYear)
+	Must(ms.DB.Update(&incorrectItem))
+
+	correctItem := f.Items[1]
+	correctItem.PaidThroughYear = lastYear
+	correctItem.CoverageEndDate = nulls.NewTime(aDateLastYear)
+	Must(ms.DB.Update(&correctItem))
+
+	incorrectLastYear := f.Items[2]
+	incorrectLastYear.PaidThroughYear = lastYear
+	incorrectLastYear.CoverageEndDate = nulls.NewTime(aDateTwoYearsAgo)
+	Must(ms.DB.Update(&incorrectLastYear))
+
+	tests := []struct {
+		name        string
+		date        time.Time
+		wantItemIDs []uuid.UUID
+	}{
+		{
+			name:        "this year has one incorrect item",
+			date:        now,
+			wantItemIDs: []uuid.UUID{incorrectItem.ID},
+		},
+		{
+			name:        "last year has one incorrect item",
+			date:        aDateLastYear,
+			wantItemIDs: []uuid.UUID{incorrectLastYear.ID},
+		},
+		{
+			name:        "no incorrect items",
+			date:        aDateTwoYearsAgo,
+			wantItemIDs: []uuid.UUID{},
+		},
+	}
+	for _, tt := range tests {
+		ms.T().Run(tt.name, func(t *testing.T) {
+			var items Items
+			err := items.FindItemsIncorrectlyRenewed(ms.DB, tt.date)
+			ms.NoError(err)
+
+			gotIDs := make([]uuid.UUID, len(items))
+			for i := range items {
+				gotIDs[i] = items[i].ID
+			}
+			ms.ElementsMatch(tt.wantItemIDs, gotIDs)
+		})
+	}
+}

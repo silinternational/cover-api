@@ -53,6 +53,7 @@ import (
 const idRegex = `/{id:[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[1-5][a-fA-F0-9]{3}-[8|9|aA|bB][a-fA-F0-9]{3}-[a-fA-F0-9]{12}}`
 
 const (
+	auditsPath          = "/audits"
 	stewardPath         = "/steward"
 	usersPath           = "/" + domain.TypeUser
 	claimsPath          = "/" + domain.TypeClaim
@@ -139,6 +140,10 @@ func App() *buffalo.App {
 		usersGroup.POST("/me/files", usersMeFilesAttach)
 		usersGroup.DELETE("/me/files", usersMeFilesDelete)
 		usersGroup.GET(idRegex, usersView)
+
+		auditGroup := app.Group(auditsPath)
+		auditGroup.Middleware.Skip(AuthZ, auditRun) // AuthZ is implemented in the handler
+		auditGroup.POST("/", auditRun)
 
 		auth := app.Group("/auth")
 		auth.Middleware.Skip(AuthN, authRequest, authCallback, authDestroy)

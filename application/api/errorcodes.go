@@ -23,6 +23,7 @@ const (
 	ErrorNotAuthorized            = ErrorKey("ErrorNotAuthorized")
 	ErrorQueryFailure             = ErrorKey("ErrorQueryFailure")
 	ErrorSaveFailure              = ErrorKey("ErrorSaveFailure")
+	ErrorTooManyRows              = ErrorKey("ErrorTooManyRows")
 	ErrorTransactionNotFound      = ErrorKey("ErrorTransactionNotFound")
 	ErrorUniqueKeyViolation       = ErrorKey("ErrorUniqueKeyViolation")
 	ErrorUnknown                  = ErrorKey("ErrorUnknown")
@@ -38,6 +39,10 @@ const (
 	ErrorMethodNotAllowed      = ErrorKey("ErrorMethodNotAllowed")
 	ErrorConflict              = ErrorKey("ErrorConflict")
 	ErrorUnprocessableEntity   = ErrorKey("ErrorUnprocessableEntity")
+
+	// Audit
+
+	ErrorUnrecognizedAuditType = ErrorKey("ErrorUnrecognizedAuditType")
 
 	// Authentication
 

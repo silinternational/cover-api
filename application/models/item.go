@@ -1098,6 +1098,7 @@ func ItemsWithRecentStatusChanges(tx *pop.Connection) (api.RecentItems, error) {
 	return items, nil
 }
 
+// NewHistory returns a new PolicyHistory template object, not yet added to the database.
 func (i *Item) NewHistory(ctx context.Context, action string, fieldUpdate FieldUpdate) PolicyHistory {
 	return PolicyHistory{
 		Action:    action,
@@ -1108,4 +1109,17 @@ func (i *Item) NewHistory(ctx context.Context, action string, fieldUpdate FieldU
 		OldValue:  fmt.Sprintf("%s", fieldUpdate.OldValue),
 		NewValue:  fmt.Sprintf("%s", fieldUpdate.NewValue),
 	}
+}
+
+// FindItemsIncorrectlyRenewed locates any items that were incorrectly renewed for another year of coverage. These are
+// identified as items that are marked as paid through the year but have an earlier coverage_end_date.
+func (i *Items) FindItemsIncorrectlyRenewed(tx *pop.Connection, date time.Time) error {
+	year := date.Year()
+	firstDayOfYear := time.Date(year, 1, 1, 0, 0, 0, 0, time.UTC)
+
+	err := tx.Where("paid_through_year >= ?", year).Where("coverage_end_date < ?", firstDayOfYear).All(i)
+	if err != nil {
+		return appErrorFromDB(err, api.ErrorQueryFailure)
+	}
+	return nil
 }
