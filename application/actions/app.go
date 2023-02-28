@@ -141,9 +141,9 @@ func App() *buffalo.App {
 		usersGroup.DELETE("/me/files", usersMeFilesDelete)
 		usersGroup.GET(idRegex, usersView)
 
-		auditGroup := app.Group(auditsPath)
-		auditGroup.Middleware.Skip(AuthZ, auditRun) // AuthZ is implemented in the handler
-		auditGroup.POST("/", auditRun)
+		auditsGroup := app.Group(auditsPath)
+		auditsGroup.Middleware.Skip(AuthZ, auditRun) // AuthZ is implemented in the handler
+		auditsGroup.POST("/", auditRun)
 
 		auth := app.Group("/auth")
 		auth.Middleware.Skip(AuthN, authRequest, authCallback, authDestroy)
