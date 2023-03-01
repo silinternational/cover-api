@@ -11,7 +11,7 @@ import (
 	"github.com/silinternational/cover-api/models"
 )
 
-func (as *ActionSuite) Test_commentsCreate() {
+func (as *ActionSuite) Test_auditsRun() {
 	user := models.CreateUserFixtures(as.DB, 1).Users[0]
 	admin := models.CreateAdminUsers(as.DB)[models.AppRoleSteward]
 	date := time.Now().UTC().Format(domain.DateFormat)
