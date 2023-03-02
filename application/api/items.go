@@ -102,6 +102,12 @@ type Item struct {
 
 	// Accountable person assigned to the policy item
 	AccountablePerson AccountablePerson `json:"accountable_person"`
+
+	// Can the item be deleted? Set to false if the item is in a state that prevents it from being deleted.
+	CanBeDeleted bool `json:"can_be_deleted"`
+
+	// Can the item be updated? Set to false if there is an active claim for the item.
+	CanBeUpdated bool `json:"can_be_updated"`
 }
 
 // swagger:model
