@@ -66,6 +66,7 @@ const (
 	policyDependentPath = "/" + domain.TypePolicyDependent
 	entityCodesPath     = "/" + domain.TypeEntityCode
 	policyMemberPath    = "/" + domain.TypePolicyMember
+	repairsPath         = "/repairs"
 	strikesPath         = "/" + domain.TypeStrike
 )
 
@@ -236,6 +237,11 @@ func App() *buffalo.App {
 		// policy-members
 		policyMembersGroup := app.Group(policyMemberPath)
 		policyMembersGroup.DELETE(idRegex, policiesMembersDelete)
+
+		// repairs
+		repairsGroup := app.Group(repairsPath)
+		repairsGroup.Middleware.Skip(AuthZ, repairsRun) // AuthZ is implemented in the handler
+		repairsGroup.POST("/", repairsRun)
 
 		// strikes
 		strikesGroup := app.Group(strikesPath)

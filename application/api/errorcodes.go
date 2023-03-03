@@ -121,4 +121,9 @@ const (
 	ErrorClaimItemMissingFMV             = ErrorKey("ClaimItemMissingFMV")
 	ErrorClaimItemInvalidPayoutOption    = ErrorKey("ClaimItemInvalidPayoutOption")
 	ErrorClaimInvalidApprover            = ErrorKey("ClaimInvalidApprover")
+
+	// Repairs
+
+	ErrorItemNeedsCoverageEndDate = ErrorKey("ErrorItemNeedsCoverageEndDate")
+	ErrorUnrecognizedRepairType   = ErrorKey("ErrorUnrecognizedRepairType")
 )
