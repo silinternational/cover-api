@@ -732,6 +732,8 @@ func (i *Item) ConvertToAPI(tx *pop.Connection) api.Item {
 		CoverageEndDate:       coverageEndDate,
 		AnnualPremium:         i.CalculateAnnualPremium(),
 		ProratedAnnualPremium: i.CalculateProratedPremium(time.Now().UTC()),
+		CanBeDeleted:          i.canBeDeleted(tx),
+		CanBeUpdated:          i.canBeUpdated(tx),
 		CreatedAt:             i.CreatedAt,
 		UpdatedAt:             i.UpdatedAt,
 	}
