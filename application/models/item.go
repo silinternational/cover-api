@@ -130,7 +130,7 @@ func (i *Item) Update(ctx context.Context) error {
 		}
 		if oldItem.CoverageAmount != i.CoverageAmount && !i.CoverageEndDate.Valid {
 			amount := i.calculatePremiumChange(time.Now().UTC(), oldItem.CalculateAnnualPremium(), i.CalculateAnnualPremium())
-			if err := i.CreateLedgerEntry(Tx(ctx), LedgerEntryTypeCoverageChange, amount); err != nil {
+			if err := i.CreateLedgerEntry(tx, LedgerEntryTypeCoverageChange, amount); err != nil {
 				return err
 			}
 		}
@@ -732,6 +732,8 @@ func (i *Item) ConvertToAPI(tx *pop.Connection) api.Item {
 		CoverageEndDate:       coverageEndDate,
 		AnnualPremium:         i.CalculateAnnualPremium(),
 		ProratedAnnualPremium: i.CalculateProratedPremium(time.Now().UTC()),
+		CanBeDeleted:          i.canBeDeleted(tx),
+		CanBeUpdated:          i.canBeUpdated(tx),
 		CreatedAt:             i.CreatedAt,
 		UpdatedAt:             i.UpdatedAt,
 	}
@@ -948,7 +950,8 @@ func (i *Item) SetAccountablePerson(tx *pop.Connection, id uuid.UUID) error {
 	return api.NewAppError(errors.New("accountable person ID not found"), api.ErrorNoRows, api.CategoryUser)
 }
 
-// CreateLedgerEntry creates a charge of at least $1
+// CreateLedgerEntry creates a ledger entry for the given type and amount. It makes any needed adjustments and negates
+// the amount before saving to the database.
 func (i *Item) CreateLedgerEntry(tx *pop.Connection, entryType LedgerEntryType, amount api.Currency) error {
 	adjustedAmount, err := adjustLedgerAmount(amount, entryType)
 	if err != nil {
@@ -977,7 +980,7 @@ func (i *Item) CreateLedgerEntry(tx *pop.Connection, entryType LedgerEntryType, 
 	}
 
 	if oldPaidYear != i.PaidThroughYear {
-		return tx.UpdateColumns(i, "paid_through_year", "updated_at")
+		return appErrorFromDB(tx.UpdateColumns(i, "paid_through_year", "updated_at"), api.ErrorUpdateFailure)
 	}
 
 	return nil
@@ -1098,6 +1101,7 @@ func ItemsWithRecentStatusChanges(tx *pop.Connection) (api.RecentItems, error) {
 	return items, nil
 }
 
+// NewHistory returns a new PolicyHistory template object, not yet added to the database.
 func (i *Item) NewHistory(ctx context.Context, action string, fieldUpdate FieldUpdate) PolicyHistory {
 	return PolicyHistory{
 		Action:    action,
@@ -1108,4 +1112,48 @@ func (i *Item) NewHistory(ctx context.Context, action string, fieldUpdate FieldU
 		OldValue:  fmt.Sprintf("%s", fieldUpdate.OldValue),
 		NewValue:  fmt.Sprintf("%s", fieldUpdate.NewValue),
 	}
+}
+
+// FindItemsIncorrectlyRenewed locates any items that were incorrectly renewed for another year of coverage. These are
+// identified as items that are marked as paid through the year but have an earlier coverage_end_date.
+func (i *Items) FindItemsIncorrectlyRenewed(tx *pop.Connection, date time.Time) error {
+	year := date.Year()
+	firstDayOfYear := time.Date(year, 1, 1, 0, 0, 0, 0, time.UTC)
+
+	err := tx.Where("paid_through_year >= ?", year).Where("coverage_end_date < ?", firstDayOfYear).All(i)
+	if err != nil {
+		return appErrorFromDB(err, api.ErrorQueryFailure)
+	}
+	return nil
+}
+
+// RepairItemsIncorrectlyRenewed repairs items that were incorrectly renewed for another year of coverage. These are
+// identified as items that are marked as paid through the year but have an earlier coverage_end_date.
+func (i *Items) RepairItemsIncorrectlyRenewed(c buffalo.Context, date time.Time) error {
+	tx := Tx(c)
+	if err := i.FindItemsIncorrectlyRenewed(tx, date); err != nil {
+		return err
+	}
+
+	for idx, item := range *i {
+		if !item.CoverageEndDate.Valid {
+			err := errors.New("item coverage_end_date is not set, can't proceed with repair")
+			return api.NewAppError(err, api.ErrorItemNeedsCoverageEndDate, api.CategoryInternal)
+		}
+
+		correctYear := item.CoverageEndDate.Time.Year()
+		incorrectYear := item.PaidThroughYear
+		annualPremium := item.CalculateAnnualPremium() // TODO: get the amount from the ledger entry, in case the coverage amount has changed
+		refund := annualPremium * api.Currency(incorrectYear-correctYear)
+
+		if err := item.CreateLedgerEntry(tx, LedgerEntryTypeCoverageRefund, -refund); err != nil {
+			return err
+		}
+
+		(*i)[idx].PaidThroughYear = correctYear
+		if err := (*i)[idx].Update(c); err != nil {
+			return err
+		}
+	}
+	return nil
 }

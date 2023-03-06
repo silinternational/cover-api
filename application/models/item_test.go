@@ -1248,6 +1248,8 @@ func (ms *ModelSuite) TestItem_ConvertToAPI() {
 		"AccountablePerson Name is not correct")
 	ms.Equal(fixtures.PolicyDependents[0].GetLocation().Country, got.AccountablePerson.Country,
 		"AccountablePerson Country is not correct")
+	ms.True(got.CanBeUpdated, "CanBeUpdated is not correct")
+	ms.True(got.CanBeDeleted, "CanBeDeleted is not correct")
 }
 
 func (ms *ModelSuite) TestItem_canBeUpdated() {
@@ -1399,6 +1401,148 @@ func (ms *ModelSuite) TestItem_cancelCoverageAfterClaim() {
 			ms.Equal(ItemStatusChangeInactivated+"having a claim approved", tt.item.StatusChange,
 				"Item StatusChange is incorrect")
 			ms.Equal(reason, tt.item.StatusReason, "Item StatusReason is incorrect")
+		})
+	}
+}
+
+func (ms *ModelSuite) TestItem_FindItemsIncorrectlyRenewed() {
+	now := time.Now().UTC()
+	thisYear := now.Year()
+	lastYear := thisYear - 1
+	aDateLastYear := time.Date(thisYear-1, 12, 31, 0, 0, 0, 0, time.UTC)
+	aDateTwoYearsAgo := time.Date(thisYear-2, 12, 31, 0, 0, 0, 0, time.UTC)
+
+	f := CreateItemFixtures(ms.DB, FixturesConfig{ItemsPerPolicy: 3})
+	incorrectItem := f.Items[0]
+	incorrectItem.PaidThroughYear = thisYear
+	incorrectItem.CoverageEndDate = nulls.NewTime(aDateLastYear)
+	Must(ms.DB.Update(&incorrectItem))
+
+	correctItem := f.Items[1]
+	correctItem.PaidThroughYear = lastYear
+	correctItem.CoverageEndDate = nulls.NewTime(aDateLastYear)
+	Must(ms.DB.Update(&correctItem))
+
+	incorrectLastYear := f.Items[2]
+	incorrectLastYear.PaidThroughYear = lastYear
+	incorrectLastYear.CoverageEndDate = nulls.NewTime(aDateTwoYearsAgo)
+	Must(ms.DB.Update(&incorrectLastYear))
+
+	tests := []struct {
+		name        string
+		date        time.Time
+		wantItemIDs []uuid.UUID
+	}{
+		{
+			name:        "this year has one incorrect item",
+			date:        now,
+			wantItemIDs: []uuid.UUID{incorrectItem.ID},
+		},
+		{
+			name:        "last year has one incorrect item",
+			date:        aDateLastYear,
+			wantItemIDs: []uuid.UUID{incorrectLastYear.ID},
+		},
+		{
+			name:        "no incorrect items",
+			date:        aDateTwoYearsAgo,
+			wantItemIDs: []uuid.UUID{},
+		},
+	}
+	for _, tt := range tests {
+		ms.T().Run(tt.name, func(t *testing.T) {
+			var items Items
+			err := items.FindItemsIncorrectlyRenewed(ms.DB, tt.date)
+			ms.NoError(err)
+
+			gotIDs := make([]uuid.UUID, len(items))
+			for i := range items {
+				gotIDs[i] = items[i].ID
+			}
+			ms.ElementsMatch(tt.wantItemIDs, gotIDs)
+		})
+	}
+}
+
+func (ms *ModelSuite) TestItem_RepairItemsIncorrectlyRenewed() {
+	now := time.Now().UTC()
+	thisYear := now.Year()
+	lastYear := thisYear - 1
+	aDateLastYear := time.Date(thisYear-1, 12, 31, 0, 0, 0, 0, time.UTC)
+	aDateTwoYearsAgo := time.Date(thisYear-2, 12, 31, 0, 0, 0, 0, time.UTC)
+
+	f := CreateItemFixtures(ms.DB, FixturesConfig{ItemsPerPolicy: 3})
+	incorrectItem := f.Items[0]
+	incorrectItem.PaidThroughYear = thisYear
+	incorrectItem.CoverageEndDate = nulls.NewTime(aDateLastYear)
+	incorrectItem.CoverageAmount = 10000
+	Must(ms.DB.Update(&incorrectItem))
+
+	correctItem := f.Items[1]
+	correctItem.PaidThroughYear = lastYear
+	correctItem.CoverageEndDate = nulls.NewTime(aDateLastYear)
+	Must(ms.DB.Update(&correctItem))
+
+	incorrectLastYear := f.Items[2]
+	incorrectLastYear.PaidThroughYear = lastYear
+	incorrectLastYear.CoverageEndDate = nulls.NewTime(aDateTwoYearsAgo)
+	incorrectLastYear.CoverageAmount = 20000
+	Must(ms.DB.Update(&incorrectLastYear))
+
+	actor := createAdminUserWithRole(ms.DB, AppRoleSteward)
+
+	tests := []struct {
+		name                string
+		date                time.Time
+		wantItemIDs         []uuid.UUID
+		wantPaidThroughYear int
+		wantRefundAmount    api.Currency
+	}{
+		{
+			name:                "this year has one incorrect item",
+			date:                now,
+			wantItemIDs:         []uuid.UUID{incorrectItem.ID},
+			wantPaidThroughYear: lastYear,
+			wantRefundAmount:    incorrectItem.CalculateAnnualPremium(),
+		},
+		{
+			name:                "last year has one incorrect item",
+			date:                aDateLastYear,
+			wantItemIDs:         []uuid.UUID{incorrectLastYear.ID},
+			wantPaidThroughYear: lastYear - 1,
+			wantRefundAmount:    incorrectLastYear.CalculateAnnualPremium(),
+		},
+		{
+			name:        "no incorrect items",
+			date:        aDateTwoYearsAgo,
+			wantItemIDs: []uuid.UUID{},
+		},
+	}
+	for _, tt := range tests {
+		ms.T().Run(tt.name, func(t *testing.T) {
+			var items Items
+			err := items.RepairItemsIncorrectlyRenewed(CreateTestContext(actor), tt.date)
+			ms.NoError(err)
+
+			gotIDs := make([]uuid.UUID, len(items))
+			for i := range items {
+				gotIDs[i] = items[i].ID
+
+				ms.Equal(tt.wantPaidThroughYear, items[i].PaidThroughYear,
+					"PaidThroughYear is incorrect on items[%d]", i)
+
+				var fromDB Item
+				Must(ms.DB.Find(&fromDB, items[i].ID))
+				ms.Equal(items[i].PaidThroughYear, fromDB.PaidThroughYear, "item wasn't saved correctly")
+			}
+			ms.ElementsMatch(tt.wantItemIDs, gotIDs)
+
+			if len(tt.wantItemIDs) > 0 {
+				var le LedgerEntries
+				Must(ms.DB.Where("item_id = ?", tt.wantItemIDs[0]).All(&le))
+				ms.Len(le, 1, "expected only one ledger entry for item")
+				ms.Equal(tt.wantRefundAmount, le[0].Amount, "refund amount is incorrect")
+			}
 		})
 	}
 }

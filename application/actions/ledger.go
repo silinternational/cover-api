@@ -54,9 +54,7 @@ func ledgerReportList(c buffalo.Context) error {
 //   '200':
 //     description: the requested LedgerReport
 //     schema:
-//       type: array
-//       items:
-//         "$ref": "#/definitions/LedgerReport"
+//       "$ref": "#/definitions/LedgerReport"
 func ledgerReportView(c buffalo.Context) error {
 	tx := models.Tx(c)
 
@@ -87,9 +85,7 @@ func ledgerReportView(c buffalo.Context) error {
 //   '200':
 //     description: the requested LedgerReport
 //     schema:
-//       type: array
-//       items:
-//         "$ref": "#/definitions/LedgerReport"
+//       "$ref": "#/definitions/LedgerReport"
 func ledgerReportCreate(c buffalo.Context) error {
 	var input api.LedgerReportCreateInput
 	if err := StrictBind(c, &input); err != nil {
@@ -132,9 +128,7 @@ func ledgerReportCreate(c buffalo.Context) error {
 //   '200':
 //     description: the requested LedgerReport
 //     schema:
-//       type: array
-//       items:
-//         "$ref": "#/definitions/LedgerReport"
+//       "$ref": "#/definitions/LedgerReport"
 func ledgerReportReconcile(c buffalo.Context) error {
 	tx := models.Tx(c)
 

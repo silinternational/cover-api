@@ -53,6 +53,7 @@ import (
 const idRegex = `/{id:[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[1-5][a-fA-F0-9]{3}-[8|9|aA|bB][a-fA-F0-9]{3}-[a-fA-F0-9]{12}}`
 
 const (
+	auditsPath          = "/audits"
 	stewardPath         = "/steward"
 	usersPath           = "/" + domain.TypeUser
 	claimsPath          = "/" + domain.TypeClaim
@@ -65,6 +66,7 @@ const (
 	policyDependentPath = "/" + domain.TypePolicyDependent
 	entityCodesPath     = "/" + domain.TypeEntityCode
 	policyMemberPath    = "/" + domain.TypePolicyMember
+	repairsPath         = "/repairs"
 	strikesPath         = "/" + domain.TypeStrike
 )
 
@@ -139,6 +141,10 @@ func App() *buffalo.App {
 		usersGroup.POST("/me/files", usersMeFilesAttach)
 		usersGroup.DELETE("/me/files", usersMeFilesDelete)
 		usersGroup.GET(idRegex, usersView)
+
+		auditsGroup := app.Group(auditsPath)
+		auditsGroup.Middleware.Skip(AuthZ, auditRun) // AuthZ is implemented in the handler
+		auditsGroup.POST("/", auditRun)
 
 		auth := app.Group("/auth")
 		auth.Middleware.Skip(AuthN, authRequest, authCallback, authDestroy)
@@ -231,6 +237,11 @@ func App() *buffalo.App {
 		// policy-members
 		policyMembersGroup := app.Group(policyMemberPath)
 		policyMembersGroup.DELETE(idRegex, policiesMembersDelete)
+
+		// repairs
+		repairsGroup := app.Group(repairsPath)
+		repairsGroup.Middleware.Skip(AuthZ, repairsRun) // AuthZ is implemented in the handler
+		repairsGroup.POST("/", repairsRun)
 
 		// strikes
 		strikesGroup := app.Group(strikesPath)
