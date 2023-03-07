@@ -26,7 +26,7 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/rollbar/rollbar-go v1.4.5
 	github.com/rs/cors v1.8.3
-	github.com/russellhaering/gosaml2 v0.8.1
+	github.com/russellhaering/gosaml2 v0.9.0
 	github.com/russellhaering/goxmldsig v1.2.0
 	github.com/stretchr/testify v1.8.1
 	golang.org/x/image v0.5.0
