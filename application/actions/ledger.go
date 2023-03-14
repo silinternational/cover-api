@@ -151,7 +151,7 @@ func ledgerReportReconcile(c buffalo.Context) error {
 // responses:
 //   '204':
 //     description: OK but no content in response
-func ledgerAnnualProcess(c buffalo.Context) error {
+func ledgerAnnualRenewalProcess(c buffalo.Context) error {
 	actor := models.CurrentUser(c)
 	if !actor.IsAdmin() {
 		err := fmt.Errorf("user not allowed to process annual batch data")
@@ -163,6 +163,39 @@ func ledgerAnnualProcess(c buffalo.Context) error {
 	}
 
 	return c.Render(http.StatusNoContent, nil)
+}
+
+// swagger:operation GET /ledger-reports/annual Ledger LedgerAnnualRenewalStatus
+//
+// LedgerAnnualRenewalStatus
+//
+// Get the status of the annual billing process.
+//
+// ---
+// responses:
+//   '200':
+//     description: the status of the annual billing process
+//     schema:
+//       "$ref": "#/definitions/AnnualRenewalStatus"
+func ledgerAnnualRenewalStatus(c buffalo.Context) error {
+	actor := models.CurrentUser(c)
+	if !actor.IsAdmin() {
+		err := fmt.Errorf("user not allowed to access annual batch data")
+		return reportError(c, api.NewAppError(err, api.ErrorNotAuthorized, api.CategoryForbidden))
+	}
+
+	currentYear := time.Now().UTC().Year()
+
+	itemsToRenew, err := models.CountItemsToRenew(models.Tx(c), currentYear)
+	if err != nil {
+		return err
+	}
+
+	status := api.AnnualRenewalStatus{
+		IsComplete:     itemsToRenew == 0,
+		ItemsToProcess: itemsToRenew,
+	}
+	return renderOk(c, status)
 }
 
 func getReferencedLedgerReportFromCtx(c buffalo.Context) *models.LedgerReport {

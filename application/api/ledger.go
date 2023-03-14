@@ -116,3 +116,9 @@ type LedgerEntry struct {
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 }
+
+// swagger:model
+type AnnualRenewalStatus struct {
+	IsComplete     bool `json:"is_complete"`
+	ItemsToProcess int  `json:"items_to_process"`
+}
