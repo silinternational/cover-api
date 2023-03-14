@@ -5,15 +5,11 @@ import (
 
 	"github.com/gobuffalo/buffalo/worker"
 	"github.com/gobuffalo/pop/v6"
-	"github.com/silinternational/cover-api/domain"
 	"github.com/silinternational/cover-api/models"
 )
 
 // annualRenewalHandler is the Worker handler for processing annual policy renewal
 func annualRenewalHandler(_ worker.Args) error {
-	domain.Logger.Printf("starting annualRenewal job")
-	nw := time.Now().UTC()
-
 	err := models.DB.Transaction(func(tx *pop.Connection) error {
 		currentYear := time.Now().UTC().Year()
 
@@ -23,10 +19,5 @@ func annualRenewalHandler(_ worker.Args) error {
 		}
 		return policies.ProcessAnnualCoverage(tx, currentYear)
 	})
-	if err != nil {
-		return err
-	}
-
-	domain.Logger.Printf("completed annualRenewal job in %v seconds", time.Since(nw).Seconds())
-	return nil
+	return err
 }
