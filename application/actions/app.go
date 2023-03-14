@@ -249,9 +249,10 @@ func App() *buffalo.App {
 		strikesGroup.DELETE(idRegex, strikesDelete)
 	}
 
-	listeners.RegisterListener()
+		listeners.RegisterListener()
 
-	job.Init(&app.Worker)
+		job.Init(&app.Worker)
+	}
 
 	return app
 }
