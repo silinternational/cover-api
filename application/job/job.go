@@ -2,6 +2,7 @@ package job
 
 import (
 	"os"
+	"runtime/debug"
 	"time"
 
 	"github.com/gobuffalo/buffalo"
@@ -14,10 +15,19 @@ import (
 )
 
 const (
+	handlerKey = "job_handler"
+	argJobType = "job_type"
+)
+
+const (
 	InactivateItems = "inactivate_items"
 )
 
 var w *worker.Worker
+
+var handlers = map[string]func(worker.Args) error{
+	InactivateItems: inactivateItemsHandler,
+}
 
 // jobBuffaloContext is a buffalo context for jobs
 type jobBuffaloContext struct {
@@ -64,16 +74,10 @@ func createJobContext() buffalo.Context {
 	return ctx
 }
 
-var handlers = map[string]func(worker.Args) error{
-	InactivateItems: inactivateItemsHandler,
-}
-
 func Init(appWorker *worker.Worker) {
 	w = appWorker
-	for key, handler := range handlers {
-		if err := (*w).Register(key, handler); err != nil {
-			domain.ErrLogger.Printf("error registering '%s' handler, %s", key, err)
-		}
+	if err := (*w).Register(handlerKey, mainHandler); err != nil {
+		domain.ErrLogger.Printf("error registering '%s' handler, %s", handlerKey, err)
 	}
 
 	delay := time.Second * 10
@@ -88,6 +92,11 @@ func Init(appWorker *worker.Worker) {
 		domain.ErrLogger.Printf("error initializing InactivateItems job: " + err.Error())
 		os.Exit(1)
 	}
+}
+
+func mainHandler(args worker.Args) error {
+	jobType := args[argJobType].(string)
+	return handlers[jobType](args)
 }
 
 // inactivateItemsHandler is the Worker handler for inactivating items that
@@ -127,11 +136,12 @@ func resubmitInactivateJob() {
 }
 
 // SubmitDelayed enqueues a new Worker job for the given handler. Arguments can be provided in `args`.
-func SubmitDelayed(handler string, delay time.Duration, args map[string]any) error {
+func SubmitDelayed(jobType string, delay time.Duration, args map[string]any) error {
 	job := worker.Job{
 		Queue:   "default",
 		Args:    args,
-		Handler: handler,
+		Handler: handlerKey,
 	}
+	job.Args[argJobType] = jobType
 	return (*w).PerformIn(job, delay)
 }
