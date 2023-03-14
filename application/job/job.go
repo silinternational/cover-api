@@ -98,6 +98,9 @@ func Init(appWorker *worker.Worker) {
 func mainHandler(args worker.Args) error {
 	jobType := args[argJobType].(string)
 
+	domain.Logger.Printf("starting %s job", jobType)
+	start := time.Now().UTC()
+
 	defer func() {
 		if err := recover(); err != nil {
 			domain.ErrLogger.Printf("panic in job handler %s: %s\n%s", jobType, err, debug.Stack())
@@ -108,6 +111,7 @@ func mainHandler(args worker.Args) error {
 		domain.ErrLogger.Printf("batch job %s failed: %s", jobType, err)
 	}
 
+	domain.Logger.Printf("completed %s job in %s seconds", jobType, time.Since(start))
 	return nil
 }
 

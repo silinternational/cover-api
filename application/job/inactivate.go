@@ -16,20 +16,13 @@ func inactivateItemsHandler(_ worker.Args) error {
 
 	ctx := createJobContext()
 
-	domain.Logger.Printf("starting inactivateItems job")
-	nw := time.Now().UTC()
-
 	err := models.DB.Transaction(func(tx *pop.Connection) error {
 		ctx.Set(domain.ContextKeyTx, tx)
 		var items models.Items
 		return items.InactivateApprovedButEnded(ctx)
 	})
-	if err != nil {
-		return err
-	}
 
-	domain.Logger.Printf("completed inactivateItems job in %v seconds", time.Since(nw).Seconds())
-	return nil
+	return err
 }
 
 func resubmitInactivateJob() {
