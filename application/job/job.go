@@ -96,7 +96,18 @@ func Init(appWorker *worker.Worker) {
 
 func mainHandler(args worker.Args) error {
 	jobType := args[argJobType].(string)
-	return handlers[jobType](args)
+
+	defer func() {
+		if err := recover(); err != nil {
+			domain.ErrLogger.Printf("panic in job handler %s: %s\n%s", jobType, err, debug.Stack())
+		}
+	}()
+
+	if err := handlers[jobType](args); err != nil {
+		domain.ErrLogger.Printf("batch job %s failed: %s", jobType, err)
+	}
+
+	return nil
 }
 
 // inactivateItemsHandler is the Worker handler for inactivating items that
