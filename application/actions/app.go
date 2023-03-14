@@ -247,7 +247,6 @@ func App() *buffalo.App {
 		strikesGroup := app.Group(strikesPath)
 		strikesGroup.PUT(idRegex, strikesUpdate)
 		strikesGroup.DELETE(idRegex, strikesDelete)
-	}
 
 		listeners.RegisterListener()
 
