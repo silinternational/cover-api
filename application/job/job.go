@@ -7,7 +7,6 @@ import (
 
 	"github.com/gobuffalo/buffalo"
 	"github.com/gobuffalo/buffalo/worker"
-	"github.com/gobuffalo/pop/v6"
 	"github.com/rollbar/rollbar-go"
 
 	"github.com/silinternational/cover-api/domain"
@@ -21,12 +20,14 @@ const (
 
 const (
 	InactivateItems = "inactivate_items"
+	AnnualRenewal   = "annual_renewal"
 )
 
 var w *worker.Worker
 
 var handlers = map[string]func(worker.Args) error{
 	InactivateItems: inactivateItemsHandler,
+	AnnualRenewal:   annualRenewalHandler,
 }
 
 // jobBuffaloContext is a buffalo context for jobs
@@ -110,7 +111,22 @@ func mainHandler(args worker.Args) error {
 	return nil
 }
 
-// SubmitDelayed enqueues a new Worker job for the given job type. Arguments can be provided in `args`.
+// Submit enqueues a new Worker job for the given job type. Arguments can be provided in `args`.
+func Submit(jobType string, args map[string]any) error {
+	if domain.Env.GoEnv == domain.EnvTest {
+		return nil
+	}
+	time.Sleep(time.Second)
+	job := worker.Job{
+		Queue:   "default",
+		Args:    args,
+		Handler: handlerKey,
+	}
+	job.Args[argJobType] = jobType
+	return (*w).Perform(job)
+}
+
+// SubmitDelayed enqueues a delayed Worker job for the given job type. Arguments can be provided in `args`.
 func SubmitDelayed(jobType string, delay time.Duration, args map[string]any) error {
 	if domain.Env.GoEnv == domain.EnvTest {
 		return nil

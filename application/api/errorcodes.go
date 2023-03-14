@@ -14,6 +14,7 @@ const (
 
 	ErrorCreateFailure            = ErrorKey("ErrorCreateFailure")
 	ErrorDestroyFailure           = ErrorKey("ErrorDestroyFailure")
+	ErrorFailedToSubmitJob        = ErrorKey("ErrorFailedToSubmitJob")
 	ErrorFailedToConvertToAPIType = ErrorKey("ErrorFailedToConvertToAPIType")
 	ErrorForeignKeyViolation      = ErrorKey("ErrorForeignKeyViolation")
 	ErrorInvalidRequestBody       = ErrorKey("ErrorInvalidRequestBody")
