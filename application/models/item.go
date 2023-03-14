@@ -20,6 +20,9 @@ import (
 	"github.com/silinternational/cover-api/domain"
 )
 
+// minimum coverage amount - the minimum amount that would have a non-zero annual premium at the default rate of 2%
+const minimumCoverageAmount = 25
+
 var ValidItemCoverageStatuses = map[api.ItemCoverageStatus]struct{}{
 	api.ItemCoverageStatusDraft:    {},
 	api.ItemCoverageStatusPending:  {},
@@ -512,6 +515,11 @@ func isItemActionAllowed(actorIsAdmin bool, oldStatus api.ItemCoverageStatus, pe
 // It assumes that the item's current status has already been validated.
 func (i *Item) SubmitForApproval(ctx context.Context) error {
 	tx := Tx(ctx)
+
+	if i.CoverageAmount < minimumCoverageAmount {
+		err := fmt.Errorf("coverage_amount must be at least %s", api.Currency(minimumCoverageAmount).String())
+		return api.NewAppError(err, api.ErrorItemCoverageAmountTooLow, api.CategoryUser)
+	}
 
 	i.CoverageStatus = api.ItemCoverageStatusPending
 
