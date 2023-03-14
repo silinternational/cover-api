@@ -32,7 +32,7 @@ func customErrorHandler(status int, origErr error, c buffalo.Context) error {
 	c.Response().WriteHeader(status)
 	c.Response().Header().Set("content-type", domain.ContentJson)
 
-	if domain.Env.GoEnv == "development" {
+	if domain.Env.GoEnv == domain.EnvDevelopment {
 		debug.PrintStack()
 	}
 

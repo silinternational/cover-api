@@ -44,7 +44,7 @@ func getS3ConfigFromEnv() awsConfig {
 	a.awsS3Bucket = domain.Env.AwsS3Bucket
 	a.awsDisableSSL = domain.Env.AwsS3DisableSSL
 
-	if domain.Env.GoEnv == "development" || domain.Env.GoEnv == "test" {
+	if domain.Env.GoEnv == domain.EnvDevelopment || domain.Env.GoEnv == domain.EnvTest {
 		a.awsAccessKeyID = "abc123"
 		a.awsSecretAccessKey = "abcd1234"
 	}
@@ -187,7 +187,7 @@ func RemoveFile(key string) error {
 // exists, it will not return an error.
 func CreateS3Bucket() error {
 	env := domain.Env.GoEnv
-	if env != "test" && env != "development" {
+	if env != domain.EnvTest && env != domain.EnvDevelopment {
 		return errors.New("CreateS3Bucket should only be used in test and development")
 	}
 

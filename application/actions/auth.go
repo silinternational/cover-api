@@ -366,7 +366,7 @@ func replaceNewLines(input string) string {
 }
 
 func checkSamlConfig() {
-	if domain.Env.GoEnv == "development" || domain.Env.GoEnv == "test" {
+	if domain.Env.GoEnv == domain.EnvDevelopment || domain.Env.GoEnv == domain.EnvTest {
 		return
 	}
 	if domain.Env.SamlIdpEntityId == "" {

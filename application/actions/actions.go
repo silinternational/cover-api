@@ -72,7 +72,7 @@ func reportError(c buffalo.Context, err error) error {
 	appErr.LoadTranslatedMessage(c)
 
 	// clear out debugging info if not in development or test
-	if domain.Env.GoEnv == "development" || domain.Env.GoEnv == "test" {
+	if domain.Env.GoEnv == domain.EnvDevelopment || domain.Env.GoEnv == domain.EnvTest {
 		if appErr.Err != nil {
 			appErr.DebugMsg = appErr.Err.Error()
 		}

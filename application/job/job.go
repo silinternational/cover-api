@@ -83,7 +83,7 @@ func Init(appWorker *worker.Worker) {
 	delay := time.Second * 10
 
 	// Kick off first run of inactivating items between 1h11 and 3h27 from now
-	if domain.Env.GoEnv != "development" {
+	if domain.Env.GoEnv != domain.EnvDevelopment {
 		randMins := time.Duration(domain.RandomInsecureIntInRange(71, 387))
 		delay = randMins * time.Minute
 	}
