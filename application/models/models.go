@@ -169,7 +169,7 @@ func init() {
 		domain.ErrLogger.Printf("error connecting to database ... %v", err)
 		log.Fatal(err)
 	}
-	pop.Debug = env == "development"
+	pop.Debug = env == domain.EnvDevelopment
 
 	// Just make sure we can use the crypto/rand library on our system
 	if _, err = getRandomToken(); err != nil {

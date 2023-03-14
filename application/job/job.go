@@ -7,7 +7,6 @@ import (
 
 	"github.com/gobuffalo/buffalo"
 	"github.com/gobuffalo/buffalo/worker"
-	"github.com/gobuffalo/pop/v6"
 	"github.com/rollbar/rollbar-go"
 
 	"github.com/silinternational/cover-api/domain"
@@ -21,12 +20,14 @@ const (
 
 const (
 	InactivateItems = "inactivate_items"
+	AnnualRenewal   = "annual_renewal"
 )
 
 var w *worker.Worker
 
 var handlers = map[string]func(worker.Args) error{
 	InactivateItems: inactivateItemsHandler,
+	AnnualRenewal:   annualRenewalHandler,
 }
 
 // jobBuffaloContext is a buffalo context for jobs
@@ -83,7 +84,7 @@ func Init(appWorker *worker.Worker) {
 	delay := time.Second * 10
 
 	// Kick off first run of inactivating items between 1h11 and 3h27 from now
-	if domain.Env.GoEnv != "development" {
+	if domain.Env.GoEnv != domain.EnvDevelopment {
 		randMins := time.Duration(domain.RandomInsecureIntInRange(71, 387))
 		delay = randMins * time.Minute
 	}
@@ -110,44 +111,25 @@ func mainHandler(args worker.Args) error {
 	return nil
 }
 
-// inactivateItemsHandler is the Worker handler for inactivating items that
-// have a coverage end date in the past
-func inactivateItemsHandler(_ worker.Args) error {
-	defer resubmitInactivateJob()
-
-	ctx := createJobContext()
-
-	domain.Logger.Printf("starting inactivateItems job")
-	nw := time.Now().UTC()
-
-	err := models.DB.Transaction(func(tx *pop.Connection) error {
-		ctx.Set(domain.ContextKeyTx, tx)
-		var items models.Items
-		return items.InactivateApprovedButEnded(ctx)
-	})
-	if err != nil {
-		return err
+// Submit enqueues a new Worker job for the given job type. Arguments can be provided in `args`.
+func Submit(jobType string, args map[string]any) error {
+	if domain.Env.GoEnv == domain.EnvTest {
+		return nil
 	}
-
-	domain.Logger.Printf("completed inactivateItems job in %v seconds", time.Since(nw).Seconds())
-	return nil
+	job := worker.Job{
+		Queue:   "default",
+		Args:    args,
+		Handler: handlerKey,
+	}
+	job.Args[argJobType] = jobType
+	return (*w).Perform(job)
 }
 
-func resubmitInactivateJob() {
-	// Run twice a day, in case it errors out
-	delay := time.Hour * 12
-
-	// uncomment this in development, if you want it to run more often for debugging
-	// delay = time.Second * 10
-
-	if err := SubmitDelayed(InactivateItems, delay, map[string]any{}); err != nil {
-		domain.ErrLogger.Printf("error resubmitting inactivateItemsHandler: " + err.Error())
-	}
-	return
-}
-
-// SubmitDelayed enqueues a new Worker job for the given handler. Arguments can be provided in `args`.
+// SubmitDelayed enqueues a delayed Worker job for the given job type. Arguments can be provided in `args`.
 func SubmitDelayed(jobType string, delay time.Duration, args map[string]any) error {
+	if domain.Env.GoEnv == domain.EnvTest {
+		return nil
+	}
 	job := worker.Job{
 		Queue:   "default",
 		Args:    args,

@@ -121,6 +121,15 @@ const (
 // redirect url for after logout
 var LogoutRedirectURL = "missing.ui.url/logged-out"
 
+// EnvDevelopment is used for various debugging aids
+const EnvDevelopment = "development"
+
+// EnvStaging is for the staging environment
+const EnvStaging = "test"
+
+// EnvTest is for automated tests, during which some things are disabled
+const EnvTest = "test"
+
 // Env Holds the values of environment variables
 var Env struct {
 	GoEnv                      string `ignored:"true"`
@@ -236,7 +245,7 @@ func readEnv() {
 	}
 
 	// Doing this separately to avoid needing two environment variables for the same thing
-	Env.GoEnv = envy.Get("GO_ENV", "development")
+	Env.GoEnv = envy.Get("GO_ENV", EnvDevelopment)
 }
 
 // ErrLogProxy is a "tee" that sends to Rollbar and to the local logger,

@@ -247,11 +247,11 @@ func App() *buffalo.App {
 		strikesGroup := app.Group(strikesPath)
 		strikesGroup.PUT(idRegex, strikesUpdate)
 		strikesGroup.DELETE(idRegex, strikesDelete)
+
+		listeners.RegisterListener()
+
+		job.Init(&app.Worker)
 	}
-
-	listeners.RegisterListener()
-
-	job.Init(&app.Worker)
 
 	return app
 }

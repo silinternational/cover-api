@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/gobuffalo/buffalo"
+	"github.com/silinternational/cover-api/job"
 
 	"github.com/silinternational/cover-api/api"
 	"github.com/silinternational/cover-api/domain"
@@ -157,16 +158,8 @@ func ledgerAnnualProcess(c buffalo.Context) error {
 		return reportError(c, api.NewAppError(err, api.ErrorNotAuthorized, api.CategoryForbidden))
 	}
 
-	tx := models.Tx(c)
-
-	currentYear := time.Now().UTC().Year()
-
-	var policies models.Policies
-	if err := policies.AllActive(tx); err != nil {
-		return reportError(c, err)
-	}
-	if err := policies.ProcessAnnualCoverage(tx, currentYear); err != nil {
-		return reportError(c, err)
+	if err := job.Submit(job.AnnualRenewal, map[string]any{}); err != nil {
+		return reportError(c, api.NewAppError(err, api.ErrorFailedToSubmitJob, api.CategoryInternal))
 	}
 
 	return c.Render(http.StatusNoContent, nil)
