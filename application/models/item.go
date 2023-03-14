@@ -1157,3 +1157,13 @@ func (i *Items) RepairItemsIncorrectlyRenewed(c buffalo.Context, date time.Time)
 	}
 	return nil
 }
+
+func (i *Items) ItemsToRenew(tx *pop.Connection, year int) (int, error) {
+	count, err := tx.Where("coverage_status = ?", api.ItemCoverageStatusApproved).
+		Where("paid_through_year < ?", year).
+		Count(i)
+	if err != nil {
+		return 0, appErrorFromDB(err, api.ErrorQueryFailure)
+	}
+	return count, nil
+}

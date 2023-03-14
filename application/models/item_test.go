@@ -1546,3 +1546,38 @@ func (ms *ModelSuite) TestItem_RepairItemsIncorrectlyRenewed() {
 		})
 	}
 }
+
+func (ms *ModelSuite) TestItems_ItemsToRenew() {
+	year := time.Now().UTC().Year()
+
+	f := CreateItemFixtures(ms.DB, FixturesConfig{ItemsPerPolicy: 5})
+	for i := range f.Items {
+		f.Items[i].PaidThroughYear = year - 1
+		UpdateItemStatus(ms.DB, f.Items[i], api.ItemCoverageStatusApproved, "")
+	}
+
+	tests := []struct {
+		name string
+		year int
+		want int
+	}{
+		{
+			name: "0 items",
+			year: year - 1,
+			want: 0,
+		},
+		{
+			name: "4 items",
+			year: year,
+			want: 5,
+		},
+	}
+	for _, tt := range tests {
+		ms.T().Run(tt.name, func(t *testing.T) {
+			var items Items
+			got, err := items.ItemsToRenew(ms.DB, tt.year)
+			ms.NoError(err)
+			ms.Equal(tt.want, got)
+		})
+	}
+}
