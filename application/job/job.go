@@ -116,7 +116,6 @@ func Submit(jobType string, args map[string]any) error {
 	if domain.Env.GoEnv == domain.EnvTest {
 		return nil
 	}
-	time.Sleep(time.Second)
 	job := worker.Job{
 		Queue:   "default",
 		Args:    args,
