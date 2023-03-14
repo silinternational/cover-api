@@ -1547,7 +1547,7 @@ func (ms *ModelSuite) TestItem_RepairItemsIncorrectlyRenewed() {
 	}
 }
 
-func (ms *ModelSuite) TestItems_ItemsToRenew() {
+func (ms *ModelSuite) Test_CountItemsToRenew() {
 	year := time.Now().UTC().Year()
 
 	f := CreateItemFixtures(ms.DB, FixturesConfig{ItemsPerPolicy: 5})
@@ -1574,8 +1574,7 @@ func (ms *ModelSuite) TestItems_ItemsToRenew() {
 	}
 	for _, tt := range tests {
 		ms.T().Run(tt.name, func(t *testing.T) {
-			var items Items
-			got, err := items.ItemsToRenew(ms.DB, tt.year)
+			got, err := CountItemsToRenew(ms.DB, tt.year)
 			ms.NoError(err)
 			ms.Equal(tt.want, got)
 		})

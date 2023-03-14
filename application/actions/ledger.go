@@ -186,8 +186,7 @@ func ledgerAnnualRenewalStatus(c buffalo.Context) error {
 
 	currentYear := time.Now().UTC().Year()
 
-	var items models.Items
-	itemsToRenew, err := items.ItemsToRenew(models.Tx(c), currentYear)
+	itemsToRenew, err := models.CountItemsToRenew(models.Tx(c), currentYear)
 	if err != nil {
 		return err
 	}
