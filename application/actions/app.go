@@ -156,12 +156,13 @@ func App() *buffalo.App {
 		// accounting ledger
 		ledgerReportGroup := app.Group(ledgerReportPath)
 		// AuthZ is implemented in the handlers
-		ledgerReportGroup.Middleware.Skip(AuthZ, ledgerAnnualProcess)
+		ledgerReportGroup.Middleware.Skip(AuthZ, ledgerAnnualRenewalStatus, ledgerAnnualRenewalProcess)
 		ledgerReportGroup.GET("/", ledgerReportList)
 		ledgerReportGroup.GET(idRegex, ledgerReportView)
 		ledgerReportGroup.POST("/", ledgerReportCreate)
 		ledgerReportGroup.PUT(idRegex, ledgerReportReconcile)
-		ledgerReportGroup.POST("/annual", ledgerAnnualProcess)
+		ledgerReportGroup.GET("/annual", ledgerAnnualRenewalStatus)
+		ledgerReportGroup.POST("/annual", ledgerAnnualRenewalProcess)
 
 		stewardGroup := app.Group(stewardPath)
 		stewardGroup.Middleware.Skip(AuthZ, stewardListRecentObjects) // AuthZ is implemented in the handler
@@ -247,11 +248,11 @@ func App() *buffalo.App {
 		strikesGroup := app.Group(strikesPath)
 		strikesGroup.PUT(idRegex, strikesUpdate)
 		strikesGroup.DELETE(idRegex, strikesDelete)
+
+		listeners.RegisterListener()
+
+		job.Init(&app.Worker)
 	}
-
-	listeners.RegisterListener()
-
-	job.Init(&app.Worker)
 
 	return app
 }

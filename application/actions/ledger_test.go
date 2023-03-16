@@ -361,6 +361,60 @@ func (as *ActionSuite) Test_LedgerAnnualProcess() {
 	}
 }
 
+func (as *ActionSuite) Test_LedgerAnnualStatus() {
+	year := time.Now().UTC().Year()
+
+	f := models.CreateItemFixtures(as.DB, models.FixturesConfig{ItemsPerPolicy: 3})
+
+	f.Items[0].PaidThroughYear = year
+	models.UpdateItemStatus(as.DB, f.Items[0], api.ItemCoverageStatusApproved, "")
+	models.UpdateItemStatus(as.DB, f.Items[1], api.ItemCoverageStatusApproved, "")
+
+	normalUser := f.Users[0]
+	stewardUser := models.CreateAdminUsers(as.DB)[models.AppRoleSteward]
+
+	tests := []struct {
+		name       string
+		actor      models.User
+		wantStatus int
+		wantInBody []string
+	}{
+		{
+			name:       "unauthenticated",
+			actor:      models.User{},
+			wantStatus: http.StatusUnauthorized,
+			wantInBody: []string{api.ErrorNotAuthorized.String()},
+		},
+		{
+			name:       "insufficient privileges",
+			actor:      normalUser,
+			wantStatus: http.StatusNotFound,
+			wantInBody: []string{`"key":"` + api.ErrorNotAuthorized.String()},
+		},
+		{
+			name:       "steward user good results",
+			actor:      stewardUser,
+			wantStatus: http.StatusOK,
+			wantInBody: []string{`"is_complete":false`, `"items_to_process":1`},
+		},
+	}
+
+	for _, tt := range tests {
+		as.T().Run(tt.name, func(t *testing.T) {
+			req := as.JSON(ledgerReportPath + "/annual")
+			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
+			res := req.Get()
+
+			body := res.Body.String()
+			as.Equal(tt.wantStatus, res.Code, "incorrect status code returned, body: %s", body)
+
+			for _, s := range tt.wantInBody {
+				as.Contains(body, s)
+			}
+		})
+	}
+}
+
 func (as *ActionSuite) createFixturesForLedger() models.Fixtures {
 	f := models.CreateItemFixtures(as.DB, models.FixturesConfig{ItemsPerPolicy: 3})
 

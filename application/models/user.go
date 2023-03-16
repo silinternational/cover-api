@@ -143,7 +143,7 @@ func (u *User) FindOrCreateFromAuthUser(tx *pop.Connection, authUser *auth.User)
 	if u.AppRole == "" {
 		u.AppRole = AppRoleCustomer
 		id, _ := strconv.Atoi(authUser.StaffID)
-		if domain.Env.GoEnv == "development" || domain.Env.GoEnv == "staging" {
+		if domain.Env.GoEnv == domain.EnvDevelopment || domain.Env.GoEnv == domain.EnvStaging {
 			if id >= 1000000 {
 				u.AppRole = AppRoleSteward
 			}

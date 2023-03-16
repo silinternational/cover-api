@@ -38,7 +38,7 @@ func jsonIndented(i any) ([]byte, error) {
 // encodeLogMsg adds the message as an "extra" and returns a json-encoded copy of the resulting extras map
 func encodeLogMsg(msg string, extras map[string]any) string {
 	encoder := jsonMin
-	if Env.GoEnv == "development" {
+	if Env.GoEnv == EnvDevelopment {
 		encoder = jsonIndented
 	}
 

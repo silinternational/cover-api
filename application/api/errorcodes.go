@@ -14,6 +14,7 @@ const (
 
 	ErrorCreateFailure            = ErrorKey("ErrorCreateFailure")
 	ErrorDestroyFailure           = ErrorKey("ErrorDestroyFailure")
+	ErrorFailedToSubmitJob        = ErrorKey("ErrorFailedToSubmitJob")
 	ErrorFailedToConvertToAPIType = ErrorKey("ErrorFailedToConvertToAPIType")
 	ErrorForeignKeyViolation      = ErrorKey("ErrorForeignKeyViolation")
 	ErrorInvalidRequestBody       = ErrorKey("ErrorInvalidRequestBody")
@@ -83,6 +84,7 @@ const (
 	ErrorItemFromContext                  = ErrorKey("ErrorItemFromContext")
 	ErrorItemNullAccountablePerson        = ErrorKey("ErrorItemNullAccountablePerson")
 	ErrorItemCoverageAmountCannotIncrease = ErrorKey("ErrorItemCoverageAmountCannotIncrease")
+	ErrorItemCoverageAmountTooLow         = ErrorKey("ErrorItemCoverageAmountTooLow")
 	ErrorItemInvalidCoverageStartDate     = ErrorKey("ErrorItemInvalidCoverageStartDate")
 	ErrorItemInvalidCoverageEndDate       = ErrorKey("ErrorItemInvalidCoverageEndDate")
 	ErrorInvalidCategory                  = ErrorKey("ErrorInvalidCategory")
