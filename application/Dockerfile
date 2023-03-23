@@ -2,6 +2,8 @@
 # https://docs.docker.com/engine/userguide/eng-image/multistage-build/
 FROM gobuffalo/buffalo:v0.18.8 as builder
 
+ARG ci_commit_id
+
 WORKDIR /src
 
 ENV GOPROXY http://proxy.golang.org
@@ -18,7 +20,11 @@ COPY go.sum go.sum
 # and so that source changes don't invalidate our downloaded layer
 RUN go mod download
 
-ADD . .
+COPY . .
+
+RUN sh -c "echo $ci_commit_id > domain/commit.txt"
+RUN cat domain/commit.txt
+
 RUN buffalo build --static -o /bin/app
 
 FROM alpine
