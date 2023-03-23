@@ -7,7 +7,6 @@ import (
 
 	"github.com/gobuffalo/buffalo"
 	"github.com/gobuffalo/buffalo/worker"
-	"github.com/rollbar/rollbar-go"
 
 	"github.com/silinternational/cover-api/domain"
 	"github.com/silinternational/cover-api/log"
@@ -55,22 +54,6 @@ func createJobContext() buffalo.Context {
 
 	user := models.GetDefaultSteward(models.DB)
 	ctx.Set(domain.ContextKeyCurrentUser, user)
-
-	if domain.Env.RollbarToken == "" || domain.Env.GoEnv == "test" {
-		return ctx
-	}
-
-	client := rollbar.New(
-		domain.Env.RollbarToken,
-		domain.Env.GoEnv,
-		"",
-		"",
-		domain.Env.RollbarServerRoot)
-	defer func() {
-		if err := client.Close(); err != nil {
-			log.Errorf("rollbar client.Close error: %s", err)
-		}
-	}()
 
 	return ctx
 }

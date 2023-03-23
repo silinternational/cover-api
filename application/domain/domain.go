@@ -140,10 +140,8 @@ var Env struct {
 	ListenerDelayMilliseconds int `default:"1000" split_words:"true"`
 	ListenerMaxRetries        int `default:"10" split_words:"true"`
 
-	SessionSecret     string `required:"true" split_words:"true"`
-	RollbarServerRoot string `default:"" split_words:"true"`
-	RollbarToken      string `default:"" split_words:"true"`
-	UIURL             string `default:"http://missing.ui.url"`
+	SessionSecret string `required:"true" split_words:"true"`
+	UIURL         string `default:"http://missing.ui.url"`
 
 	SamlSpEntityId                  string `default:"" split_words:"true"`
 	SamlAudienceUri                 string `default:"" split_words:"true"`
