@@ -277,7 +277,7 @@ func getExtras(c buffalo.Context) map[string]any {
 func GetUUID() uuid.UUID {
 	id, err := uuid.NewV4()
 	if err != nil {
-		log.Errorf("error creating new uuid ... %v", err)
+		log.Error("error creating new uuid,", err)
 	}
 	return id
 }

@@ -26,20 +26,19 @@ import (
 func main() {
 	srv, err := getServer()
 	if err != nil {
-		log.Error(err.Error())
-		os.Exit(1)
+		log.Fatal(err)
 	}
 
 	app := actions.App()
 
-	log.Infof("Go version: %s", runtime.Version())
-	log.Infof("Buffalo version: %s", buffalo.Version)
-	log.Infof("Buffalo build info: %s", buffalo.Build())
-	log.Infof("Commit hash: %s", strings.TrimSpace(domain.Commit))
+	log.Info("Go version:", runtime.Version())
+	log.Info("Buffalo version:", buffalo.Version)
+	log.Info("Buffalo build info:", buffalo.Build())
+	log.Info("Commit hash:", strings.TrimSpace(domain.Commit))
 
 	if err := app.Serve(srv); err != nil {
 		if err.Error() != "context canceled" {
-			panic(err)
+			log.Panic(err)
 		}
 		os.Exit(0)
 	}

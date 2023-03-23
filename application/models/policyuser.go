@@ -54,7 +54,7 @@ func (p *PolicyUser) IsActorAllowedTo(tx *pop.Connection, actor User, perm Permi
 
 	var policy Policy
 	if err := policy.FindByID(tx, p.PolicyID); err != nil {
-		log.Errorf("failed to load policy for dependent: %s", err)
+		log.Error("failed to load policy for dependent:", err)
 		return false
 	}
 

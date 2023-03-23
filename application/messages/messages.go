@@ -182,7 +182,7 @@ func SendQueuedNotifications(tx *pop.Connection) {
 			msg.ToEmail = domain.Env.SandboxEmailAddress
 		}
 		if err := notifications.Send(msg); err != nil {
-			log.Errorf("error sending queued notification email, %s", err)
+			log.Error("error sending queued notification email,", err)
 			n.LastAttemptUTC = nulls.NewTime(time.Now().UTC())
 			n.SendAfterUTC = nextAttemptTime(n.SendAttemptCount)
 			n.SendAttemptCount++
@@ -190,7 +190,7 @@ func SendQueuedNotifications(tx *pop.Connection) {
 			n.SentAtUTC = nulls.NewTime(time.Now().UTC())
 		}
 		if err := n.Update(tx); err != nil {
-			log.Errorf("error updating queued NotificationUser, %s", err)
+			log.Error("error updating queued NotificationUser,", err)
 		}
 	}
 }

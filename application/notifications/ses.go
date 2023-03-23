@@ -53,7 +53,7 @@ func SendRaw(from string, data []byte) error {
 		return fmt.Errorf("SendEmail failed using SES, %s", err)
 	}
 
-	log.Errorf("Message sent using SES, message ID: %s", *result.MessageId)
+	log.Infof("Message sent using SES, message ID: %s", *result.MessageId)
 	return nil
 }
 

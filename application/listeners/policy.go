@@ -20,6 +20,6 @@ func policyUserInviteCreated(e events.Event) {
 		return nil
 	})
 	if err != nil {
-		log.Errorf("error queuing policy user invite: %s", err)
+		log.Error("error queuing policy user invite:", err)
 	}
 }

@@ -157,7 +157,7 @@ func (c *ClaimItem) IsActorAllowedTo(tx *pop.Connection, actor User, perm Permis
 
 	var policy Policy
 	if err := policy.FindByID(tx, c.Item.PolicyID); err != nil {
-		log.Errorf("failed to load Policy for ClaimItem: %s", err)
+		log.Error("failed to load Policy for ClaimItem:", err)
 		return false
 	}
 

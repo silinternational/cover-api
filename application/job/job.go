@@ -90,7 +90,7 @@ func Init(appWorker *worker.Worker) {
 	}
 
 	if err := SubmitDelayed(InactivateItems, delay, map[string]any{}); err != nil {
-		log.Errorf("error initializing InactivateItems job: " + err.Error())
+		log.Error("error initializing InactivateItems job:", err)
 		os.Exit(1)
 	}
 }
@@ -98,7 +98,7 @@ func Init(appWorker *worker.Worker) {
 func mainHandler(args worker.Args) error {
 	jobType := args[argJobType].(string)
 
-	log.Errorf("starting %s job", jobType)
+	log.Infof("starting %s job", jobType)
 	start := time.Now().UTC()
 
 	defer func() {
@@ -111,7 +111,7 @@ func mainHandler(args worker.Args) error {
 		log.Errorf("batch job %s failed: %s", jobType, err)
 	}
 
-	log.Errorf("completed %s job in %s seconds", jobType, time.Since(start))
+	log.Infof("completed %s job in %s seconds", jobType, time.Since(start))
 	return nil
 }
 

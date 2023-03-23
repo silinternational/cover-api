@@ -986,7 +986,7 @@ func (c *Claim) SubmittedAt(tx *pop.Connection) time.Time {
 		LIMIT 1
 		`, c.ID, FieldClaimStatus, api.HistoryActionUpdate, api.ClaimStatusReview1).All(&histories)
 	if err != nil {
-		log.Errorf("error finding claim's histories: %s", err)
+		log.Error("error finding claim's histories:", err)
 		return c.UpdatedAt
 	}
 
@@ -1026,8 +1026,7 @@ func (c *Claim) Deductible(tx *pop.Connection) float64 {
 	err := strikes.RecentForPolicy(tx, c.PolicyID, cutOff)
 
 	if domain.IsOtherThanNoRows(err) {
-		msg := fmt.Sprintf("error retrieving recent strikes for claim %s: %s", c.ID.String(), err)
-		log.Errorf(msg)
+		log.Errorf("error retrieving recent strikes for claim %s: %s", c.ID.String(), err)
 		return domain.Env.Deductible
 	}
 

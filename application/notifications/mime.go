@@ -63,7 +63,7 @@ var images = map[string]string{
 func rawEmail(to, from, subject, body string) []byte {
 	tbody, err := html2text.FromString(body)
 	if err != nil {
-		log.Warningf("error converting html email to plain text ... %s", err.Error())
+		log.Warning("error converting html email to plain text,", err)
 		tbody = body
 	}
 
@@ -83,7 +83,7 @@ func rawEmail(to, from, subject, body string) []byte {
 		"Content-Disposition": {"inline"},
 	})
 	if err != nil {
-		log.Errorf("failed to create MIME text part, %s", err)
+		log.Error("failed to create MIME text part,", err)
 	} else {
 		_, _ = fmt.Fprint(w, tbody)
 	}
@@ -93,7 +93,7 @@ func rawEmail(to, from, subject, body string) []byte {
 		"Content-Type": {`multipart/related; type="text/html"; boundary="` + relatedWriter.Boundary() + `"`},
 	})
 	if err != nil {
-		log.Errorf("failed to create MIME related part, %s", err)
+		log.Error("failed to create MIME related part,", err)
 	}
 
 	w, err = relatedWriter.CreatePart(textproto.MIMEHeader{
@@ -101,7 +101,7 @@ func rawEmail(to, from, subject, body string) []byte {
 		"Content-Disposition": {"inline"},
 	})
 	if err != nil {
-		log.Errorf("failed to create MIME html part, %s", err)
+		log.Error("failed to create MIME html part,", err)
 	} else {
 		_, _ = fmt.Fprint(w, body)
 	}
@@ -110,11 +110,11 @@ func rawEmail(to, from, subject, body string) []byte {
 	attachImages(relatedWriter, b, cids)
 
 	if err = relatedWriter.Close(); err != nil {
-		log.Errorf("failed to close MIME related part, %s", err)
+		log.Error("failed to close MIME related part,", err)
 	}
 
 	if err = alternativeWriter.Close(); err != nil {
-		log.Errorf("failed to close MIME alternative part, %s", err)
+		log.Error("failed to close MIME alternative part,", err)
 	}
 
 	return b.Bytes()
@@ -146,7 +146,7 @@ func attachImages(relatedWriter *multipart.Writer, b *bytes.Buffer, images map[s
 		}
 
 		if err := encodeFile(&efs, filename, b); err != nil {
-			log.Errorf(err.Error())
+			log.Error(err)
 		}
 	}
 }

@@ -808,7 +808,7 @@ func (i *Items) InactivateApprovedButEnded(ctx context.Context) error {
 	for _, ii := range *i {
 		if err := ii.inactivateEnded(ctx); err != nil {
 			errCount++
-			log.Errorf("InactivateApprovedButEnded error, %s", err)
+			log.Error("InactivateApprovedButEnded error,", err)
 			lastErr = err
 		}
 	}

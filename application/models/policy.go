@@ -309,8 +309,7 @@ func (p *Policy) hydrateApiPolicy(tx *pop.Connection, apiPolicy *api.Policy) {
 
 	var reports LedgerReports
 	if err := reports.AllForPolicy(tx, p.ID); domain.IsOtherThanNoRows(err) {
-		msg := fmt.Sprintf("error retrieving ledger reports for policy %s: %s", p.ID.String(), err)
-		log.Errorf(msg)
+		log.Errorf("error retrieving ledger reports for policy %s: %s", p.ID.String(), err)
 		return
 	}
 	if len(reports) > 0 {
@@ -319,8 +318,7 @@ func (p *Policy) hydrateApiPolicy(tx *pop.Connection, apiPolicy *api.Policy) {
 
 	var strikes Strikes
 	if err := strikes.RecentForPolicy(tx, p.ID, time.Now().UTC()); domain.IsOtherThanNoRows(err) {
-		msg := fmt.Sprintf("error retrieving recent strikes for policy %s: %s", p.ID.String(), err)
-		log.Errorf(msg)
+		log.Errorf("error retrieving recent strikes for policy %s: %s", p.ID.String(), err)
 		return
 	}
 

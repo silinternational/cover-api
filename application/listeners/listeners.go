@@ -1,7 +1,6 @@
 package listeners
 
 import (
-	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -93,8 +92,8 @@ func getID(p events.Payload) (uuid.UUID, error) {
 func findObject(payload events.Payload, object any, listenerName string) error {
 	id, err := getID(payload)
 	if err != nil {
-		err := errors.New("Failed to get object ID from event payload: " + err.Error())
-		log.Errorf(err.Error())
+		err := fmt.Errorf("failed to get object ID from event payload: %w", err)
+		log.Error(err)
 		return err
 	}
 
@@ -115,8 +114,8 @@ func findObject(payload events.Payload, object any, listenerName string) error {
 	}
 
 	if !foundObject {
-		err := fmt.Errorf("Failed to find object in %s, %s", listenerName, findErr)
-		log.Errorf("Failed to find object in %s, %s", listenerName, findErr)
+		err := fmt.Errorf("failed to find object in %s, %w", listenerName, findErr)
+		log.Error(err)
 		return err
 	}
 	return nil

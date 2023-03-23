@@ -27,7 +27,7 @@ func (t *DummyEmailService) Send(msg Message) error {
 		return errors.New("mock error for testing sending email message")
 	}
 
-	log.Errorf("dummy message subject: %s, recipient: %s",
+	log.Infof("dummy message subject: %s, recipient: %s",
 		msg.Subject, msg.ToName)
 
 	t.sentMessages = append(t.sentMessages,

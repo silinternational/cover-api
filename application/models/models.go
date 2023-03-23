@@ -166,8 +166,7 @@ func init() {
 	env := domain.Env.GoEnv
 	DB, err = pop.Connect(env)
 	if err != nil {
-		log.Errorf("error connecting to database ... %v", err)
-		panic(err)
+		panic(fmt.Sprintf("error connecting to database ... %v", err))
 	}
 	pop.Debug = env == domain.EnvDevelopment
 
@@ -221,7 +220,7 @@ func CurrentUser(ctx context.Context) User {
 func Tx(ctx context.Context) *pop.Connection {
 	tx, ok := ctx.Value(domain.ContextKeyTx).(*pop.Connection)
 	if !ok {
-		log.Error("no transaction found in context, called from: " + domain.GetFunctionName(2))
+		log.Info("no transaction found in context, called from:", domain.GetFunctionName(2))
 		return DB
 	}
 	return tx
@@ -411,7 +410,7 @@ func GetHHID(staffID string) string {
 
 	req, err := http.NewRequest(http.MethodGet, domain.Env.HouseholdIDLookupURL+staffID, nil)
 	if err != nil {
-		log.Errorf("HHID API error, %s", err)
+		log.Error("HHID API error,", err)
 		return ""
 	}
 	req.SetBasicAuth(domain.Env.HouseholdIDLookupUsername, domain.Env.HouseholdIDLookupPassword)
@@ -419,7 +418,7 @@ func GetHHID(staffID string) string {
 	client := &http.Client{Timeout: time.Second * 30}
 	response, err := client.Do(req)
 	if err != nil {
-		log.Errorf("HHID API error, %s", err)
+		log.Error("HHID API error,", err)
 		return ""
 	}
 	defer func() {
@@ -433,7 +432,7 @@ func GetHHID(staffID string) string {
 		ID string `json:"householdIdOut"`
 	}
 	if err = dec.Decode(&v); err != nil {
-		log.Errorf("HHID API error decoding response, %s", err)
+		log.Error("HHID API error decoding response,", err)
 		return ""
 	}
 	return v.ID
