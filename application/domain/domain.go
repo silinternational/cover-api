@@ -220,7 +220,7 @@ func init() {
 	LogoutRedirectURL = Env.UIURL + "/logged-out"
 
 	log.ErrLogger.Init(
-		log.UseCommit(Commit),
+		log.UseCommit(strings.TrimSpace(Commit)),
 		log.UseEnv(Env.GoEnv),
 		log.UseLevel(Env.LogLevel),
 		log.UsePretty(Env.GoEnv == EnvDevelopment),
