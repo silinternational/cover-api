@@ -179,12 +179,13 @@ in the `DebugMsg`.
 #### Internal error logging
 
 Errors that do not justify an error being passed to the API client may be logged
-to `stderr` and Rollbar using `domain.Error` if context is available, or
-`log.Errorf` if no context is available.
+to `stderr` and the remote logging service using the `log` package. 
 
-`domain.Warn` can be used to log at level "warning" and also send to Rollbar
+Example:
 
-`domain.Info` or `log.Errorf` will log but not send to Rollbar.
+```go
+	log.WithContext(c).WithFields(map[string]any{"key":"value"}).Info("example message")
+```
 
 ## Debugging with Delve
 
