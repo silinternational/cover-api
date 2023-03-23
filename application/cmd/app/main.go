@@ -5,16 +5,17 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"runtime"
+	"strings"
 	"time"
 
+	buffalo "github.com/gobuffalo/buffalo/runtime"
 	"github.com/gobuffalo/buffalo/servers"
-	"github.com/rollbar/rollbar-go"
 
 	"github.com/silinternational/cover-api/actions"
 	"github.com/silinternational/cover-api/domain"
+	"github.com/silinternational/cover-api/log"
 )
-
-var GitCommitHash string
 
 // main is the starting point for your Buffalo application.
 // You can feel free and add to this `main` method, change
@@ -23,27 +24,25 @@ var GitCommitHash string
 // call `app.Serve()`, unless you don't want to start your
 // application that is. :)
 func main() {
-	// init rollbar
-	rollbar.SetToken(domain.Env.RollbarToken)
-	rollbar.SetEnvironment(domain.Env.GoEnv)
-	rollbar.SetCodeVersion(GitCommitHash)
-	rollbar.SetServerRoot(domain.Env.RollbarServerRoot)
-
 	srv, err := getServer()
 	if err != nil {
-		domain.ErrLogger.Printf(err.Error())
+		log.Error(err.Error())
 		os.Exit(1)
 	}
 
 	app := actions.App()
-	rollbar.WrapAndWait(func() {
-		if err := app.Serve(srv); err != nil {
-			if err.Error() != "context canceled" {
-				panic(err)
-			}
-			os.Exit(0)
+
+	log.Infof("Go version: %s", runtime.Version())
+	log.Infof("Buffalo version: %s", buffalo.Version)
+	log.Infof("Buffalo build info: %s", buffalo.Build())
+	log.Infof("Commit hash: %s", strings.TrimSpace(domain.Commit))
+
+	if err := app.Serve(srv); err != nil {
+		if err.Error() != "context canceled" {
+			panic(err)
 		}
-	})
+		os.Exit(0)
+	}
 }
 
 func getServer() (servers.Server, error) {

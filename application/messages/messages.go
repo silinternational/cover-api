@@ -12,6 +12,7 @@ import (
 
 	"github.com/silinternational/cover-api/api"
 	"github.com/silinternational/cover-api/domain"
+	"github.com/silinternational/cover-api/log"
 	"github.com/silinternational/cover-api/models"
 	"github.com/silinternational/cover-api/notifications"
 )
@@ -181,7 +182,7 @@ func SendQueuedNotifications(tx *pop.Connection) {
 			msg.ToEmail = domain.Env.SandboxEmailAddress
 		}
 		if err := notifications.Send(msg); err != nil {
-			domain.ErrLogger.Printf("error sending queued notification email, %s", err)
+			log.Errorf("error sending queued notification email, %s", err)
 			n.LastAttemptUTC = nulls.NewTime(time.Now().UTC())
 			n.SendAfterUTC = nextAttemptTime(n.SendAttemptCount)
 			n.SendAttemptCount++
@@ -189,7 +190,7 @@ func SendQueuedNotifications(tx *pop.Connection) {
 			n.SentAtUTC = nulls.NewTime(time.Now().UTC())
 		}
 		if err := n.Update(tx); err != nil {
-			domain.ErrLogger.Printf("error updating queued NotificationUser, %s", err)
+			log.Errorf("error updating queued NotificationUser, %s", err)
 		}
 	}
 }

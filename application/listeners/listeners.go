@@ -12,6 +12,7 @@ import (
 	"github.com/gofrs/uuid"
 
 	"github.com/silinternational/cover-api/domain"
+	"github.com/silinternational/cover-api/log"
 	"github.com/silinternational/cover-api/messages"
 	"github.com/silinternational/cover-api/models"
 )
@@ -47,7 +48,7 @@ func notificationCreated(e events.Event) {
 func listener(e events.Event) {
 	defer func() {
 		if err := recover(); err != nil {
-			domain.ErrLogger.Printf("panic in event %s: %s", e.Kind, err)
+			log.Errorf("panic in event %s: %s", e.Kind, err)
 		}
 	}()
 
@@ -93,7 +94,7 @@ func findObject(payload events.Payload, object any, listenerName string) error {
 	id, err := getID(payload)
 	if err != nil {
 		err := errors.New("Failed to get object ID from event payload: " + err.Error())
-		domain.ErrLogger.Printf(err.Error())
+		log.Errorf(err.Error())
 		return err
 	}
 
@@ -115,7 +116,7 @@ func findObject(payload events.Payload, object any, listenerName string) error {
 
 	if !foundObject {
 		err := fmt.Errorf("Failed to find object in %s, %s", listenerName, findErr)
-		domain.ErrLogger.Printf("Failed to find object in %s, %s", listenerName, findErr)
+		log.Errorf("Failed to find object in %s, %s", listenerName, findErr)
 		return err
 	}
 	return nil

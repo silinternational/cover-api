@@ -16,6 +16,7 @@ import (
 
 	"github.com/silinternational/cover-api/api"
 	"github.com/silinternational/cover-api/domain"
+	"github.com/silinternational/cover-api/log"
 )
 
 const (
@@ -303,7 +304,7 @@ func (c *Claim) IsActorAllowedTo(tx *pop.Connection, actor User, perm Permission
 
 	var policy Policy
 	if err := policy.FindByID(tx, c.PolicyID); err != nil {
-		domain.ErrLogger.Printf("failed to load Policy %s for Claim: %s", c.PolicyID, err)
+		log.Errorf("failed to load Policy %s for Claim: %s", c.PolicyID, err)
 		return false
 	}
 
@@ -985,7 +986,7 @@ func (c *Claim) SubmittedAt(tx *pop.Connection) time.Time {
 		LIMIT 1
 		`, c.ID, FieldClaimStatus, api.HistoryActionUpdate, api.ClaimStatusReview1).All(&histories)
 	if err != nil {
-		domain.ErrLogger.Printf("error finding claim's histories: %s", err)
+		log.Errorf("error finding claim's histories: %s", err)
 		return c.UpdatedAt
 	}
 
@@ -1026,7 +1027,7 @@ func (c *Claim) Deductible(tx *pop.Connection) float64 {
 
 	if domain.IsOtherThanNoRows(err) {
 		msg := fmt.Sprintf("error retrieving recent strikes for claim %s: %s", c.ID.String(), err)
-		domain.ErrLogger.Printf(msg)
+		log.Errorf(msg)
 		return domain.Env.Deductible
 	}
 

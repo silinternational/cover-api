@@ -9,6 +9,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/ses"
 
 	"github.com/silinternational/cover-api/domain"
+	"github.com/silinternational/cover-api/log"
 )
 
 // SES sends email using Amazon Simple Email Service (SES)
@@ -52,7 +53,7 @@ func SendRaw(from string, data []byte) error {
 		return fmt.Errorf("SendEmail failed using SES, %s", err)
 	}
 
-	domain.Logger.Printf("Message sent using SES, message ID: %s", *result.MessageId)
+	log.Errorf("Message sent using SES, message ID: %s", *result.MessageId)
 	return nil
 }
 

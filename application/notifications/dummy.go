@@ -3,7 +3,7 @@ package notifications
 import (
 	"errors"
 
-	"github.com/silinternational/cover-api/domain"
+	"github.com/silinternational/cover-api/log"
 )
 
 type DummyEmailService struct {
@@ -27,7 +27,7 @@ func (t *DummyEmailService) Send(msg Message) error {
 		return errors.New("mock error for testing sending email message")
 	}
 
-	domain.Logger.Printf("dummy message subject: %s, recipient: %s",
+	log.Errorf("dummy message subject: %s, recipient: %s",
 		msg.Subject, msg.ToName)
 
 	t.sentMessages = append(t.sentMessages,

@@ -10,7 +10,7 @@ import (
 	"github.com/gofrs/uuid"
 
 	"github.com/silinternational/cover-api/api"
-	"github.com/silinternational/cover-api/domain"
+	"github.com/silinternational/cover-api/log"
 	"github.com/silinternational/cover-api/storage"
 )
 
@@ -67,7 +67,7 @@ func (c *ClaimFile) Destroy(tx *pop.Connection) {
 	}
 
 	if err := storage.RemoveFile(file.ID.String()); err != nil {
-		domain.ErrLogger.Printf("error removing file from S3, id='%s', %s", file.ID.String(), err)
+		log.Errorf("error removing file from S3, id='%s', %s", file.ID.String(), err)
 	}
 
 	if err := tx.Destroy(&file); err != nil {

@@ -18,6 +18,7 @@ import (
 
 	"github.com/silinternational/cover-api/api"
 	"github.com/silinternational/cover-api/domain"
+	"github.com/silinternational/cover-api/log"
 )
 
 // minimum coverage amount - the minimum amount that would have a non-zero annual premium at the default rate of 2%
@@ -807,7 +808,7 @@ func (i *Items) InactivateApprovedButEnded(ctx context.Context) error {
 	for _, ii := range *i {
 		if err := ii.inactivateEnded(ctx); err != nil {
 			errCount++
-			domain.ErrLogger.Printf("InactivateApprovedButEnded error, %s", err)
+			log.Errorf("InactivateApprovedButEnded error, %s", err)
 			lastErr = err
 		}
 	}

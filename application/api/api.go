@@ -1,6 +1,7 @@
 package api
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"regexp"
@@ -50,6 +51,7 @@ func (e ErrorCategory) String() string {
 }
 
 // AppError holds information that is helpful in logging and reporting api errors
+// swagger:model
 type AppError struct {
 	Err error `json:"-"`
 
@@ -59,14 +61,15 @@ type AppError struct {
 
 	HttpStatus int `json:"status"`
 
-	// detailed error message for debugging
+	// detailed error message for debugging, only provided in development environment
 	DebugMsg string `json:"debug_msg,omitempty"`
 
 	Category ErrorCategory `json:"-"`
 
+	// user-facing error message
 	Message string `json:"message"`
 
-	// Extra data providing detail about the error condition, only provided in development mode
+	// Extra data providing detail about the error condition, only provided in development environment
 	Extras map[string]any `json:"extras,omitempty"`
 
 	// URL to redirect, if HttpStatus is in 300-series
@@ -84,7 +87,15 @@ func (a *AppError) Unwrap() error {
 	return a.Err
 }
 
-// NewAppError returns a new AppError with its Err, Key and Category sset
+// Is tests the provided error against the AppError by comparing the Key. If they match, Is returns true.
+// This can be used like `if errors.Is(err, &api.AppError{Key: ErrorUserNotFound})`
+// See https://pkg.go.dev/errors#Is for more information.
+func (a *AppError) Is(err error) bool {
+	var appErr *AppError
+	return errors.As(err, &appErr) && appErr.Key == a.Key
+}
+
+// NewAppError returns a new AppError with its Err, Key and Category set
 func NewAppError(err error, key ErrorKey, category ErrorCategory) *AppError {
 	return &AppError{
 		Err:      err,

@@ -22,6 +22,7 @@ import (
 
 	"github.com/silinternational/cover-api/api"
 	"github.com/silinternational/cover-api/domain"
+	"github.com/silinternational/cover-api/log"
 	"github.com/silinternational/cover-api/storage"
 )
 
@@ -197,7 +198,7 @@ func (f *Files) DeleteUnlinked(tx *pop.Connection) error {
 		All(&files); err != nil {
 		return err
 	}
-	domain.Logger.Printf("unlinked files: %d", len(files))
+	log.Errorf("unlinked files: %d", len(files))
 	if len(files) > domain.Env.MaxFileDelete {
 		return fmt.Errorf("attempted to delete too many files, MaxFileDelete=%d", domain.Env.MaxFileDelete)
 	}
@@ -209,23 +210,23 @@ func (f *Files) DeleteUnlinked(tx *pop.Connection) error {
 	nRemovedFromS3 := 0
 	for _, file := range files {
 		if err := storage.RemoveFile(file.ID.String()); err != nil {
-			domain.ErrLogger.Printf("error removing from S3, id='%s', %s", file.ID.String(), err)
+			log.Errorf("error removing from S3, id='%s', %s", file.ID.String(), err)
 			continue
 		}
 		nRemovedFromS3++
 
 		f := file
 		if err := tx.Destroy(&f); err != nil {
-			domain.ErrLogger.Printf("file %d destroy error, %s", file.ID, err)
+			log.Errorf("file %d destroy error, %s", file.ID, err)
 			continue
 		}
 		nRemovedFromDB++
 	}
 
 	if nRemovedFromDB < len(files) || nRemovedFromS3 < len(files) {
-		domain.ErrLogger.Printf("not all unlinked files were removed")
+		log.Errorf("not all unlinked files were removed")
 	}
-	domain.Logger.Printf("removed %d from S3, %d from file table", nRemovedFromS3, nRemovedFromDB)
+	log.Errorf("removed %d from S3, %d from file table", nRemovedFromS3, nRemovedFromDB)
 	return nil
 }
 

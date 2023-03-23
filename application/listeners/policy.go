@@ -4,7 +4,7 @@ import (
 	"github.com/gobuffalo/events"
 	"github.com/gobuffalo/pop/v6"
 
-	"github.com/silinternational/cover-api/domain"
+	"github.com/silinternational/cover-api/log"
 	"github.com/silinternational/cover-api/messages"
 	"github.com/silinternational/cover-api/models"
 )
@@ -20,6 +20,6 @@ func policyUserInviteCreated(e events.Event) {
 		return nil
 	})
 	if err != nil {
-		domain.ErrLogger.Printf("error queuing policy user invite: %s", err)
+		log.Errorf("error queuing policy user invite: %s", err)
 	}
 }

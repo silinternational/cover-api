@@ -16,6 +16,7 @@ import (
 	"github.com/silinternational/cover-api/auth"
 	"github.com/silinternational/cover-api/auth/saml"
 	"github.com/silinternational/cover-api/domain"
+	"github.com/silinternational/cover-api/log"
 	"github.com/silinternational/cover-api/models"
 )
 
@@ -257,7 +258,7 @@ func authCallback(c buffalo.Context) error {
 	authUser.AccessTokenExpiresAt = uat.ExpiresAt.UTC().Unix()
 
 	// set person on rollbar session
-	domain.RollbarSetPerson(c, user.StaffID.String, user.FirstName, user.LastName, user.Email)
+	log.SetUser(user.StaffID.String, user.GetName().String(), user.Email)
 
 	return c.Redirect(302, getLoginSuccessRedirectURL(*authUser, returnTo))
 }
@@ -327,7 +328,7 @@ func authDestroy(c buffalo.Context) error {
 	}
 
 	// set person on rollbar session
-	domain.RollbarSetPerson(c, authUser.ID.String(), authUser.FirstName, authUser.LastName, authUser.Email)
+	log.SetUser(authUser.ID.String(), authUser.GetName().String(), authUser.Email)
 
 	sp, err := saml.New(samlConfig)
 	if err != nil {

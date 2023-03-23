@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
 	"net/http"
 	"reflect"
 	"strings"
@@ -23,6 +22,7 @@ import (
 
 	"github.com/silinternational/cover-api/api"
 	"github.com/silinternational/cover-api/domain"
+	"github.com/silinternational/cover-api/log"
 )
 
 // DB is a connection to the database to be used throughout the application.
@@ -166,14 +166,14 @@ func init() {
 	env := domain.Env.GoEnv
 	DB, err = pop.Connect(env)
 	if err != nil {
-		domain.ErrLogger.Printf("error connecting to database ... %v", err)
-		log.Fatal(err)
+		log.Errorf("error connecting to database ... %v", err)
+		panic(err)
 	}
 	pop.Debug = env == domain.EnvDevelopment
 
 	// Just make sure we can use the crypto/rand library on our system
 	if _, err = getRandomToken(); err != nil {
-		log.Fatal(fmt.Errorf("error using crypto/rand ... %v", err))
+		panic(fmt.Errorf("error using crypto/rand ... %v", err))
 	}
 
 	// initialize model validation library
@@ -182,7 +182,7 @@ func init() {
 	// register custom validators for custom types
 	for tag, vFunc := range fieldValidators {
 		if err = mValidate.RegisterValidation(tag, vFunc, false); err != nil {
-			log.Fatal(fmt.Errorf("failed to register validation for %s: %s", tag, err))
+			panic(fmt.Errorf("failed to register validation for %s: %s", tag, err))
 		}
 	}
 
@@ -221,7 +221,7 @@ func CurrentUser(ctx context.Context) User {
 func Tx(ctx context.Context) *pop.Connection {
 	tx, ok := ctx.Value(domain.ContextKeyTx).(*pop.Connection)
 	if !ok {
-		domain.Logger.Print("no transaction found in context, called from: " + domain.GetFunctionName(2))
+		log.Error("no transaction found in context, called from: " + domain.GetFunctionName(2))
 		return DB
 	}
 	return tx
@@ -340,7 +340,7 @@ func destroy(tx *pop.Connection, m any) error {
 // This can include an event payload, which is a map[string]any
 func emitEvent(e events.Event) {
 	if err := events.Emit(e); err != nil {
-		domain.ErrLogger.Printf("error emitting event %s ... %v", e.Kind, err)
+		log.Errorf("error emitting event %s ... %v", e.Kind, err)
 	}
 }
 
@@ -380,7 +380,7 @@ func addFile(tx *pop.Connection, m Updatable, f File) error {
 
 	oldFile := File{ID: oldID.UUID}
 	if err := oldFile.ClearLinked(tx); err != nil {
-		domain.ErrLogger.Printf("error marking old file %s as unlinked, %s", oldFile.ID, err)
+		log.Errorf("error marking old file %s as unlinked, %s", oldFile.ID, err)
 	}
 
 	return nil
@@ -411,7 +411,7 @@ func GetHHID(staffID string) string {
 
 	req, err := http.NewRequest(http.MethodGet, domain.Env.HouseholdIDLookupURL+staffID, nil)
 	if err != nil {
-		domain.ErrLogger.Printf("HHID API error, %s", err)
+		log.Errorf("HHID API error, %s", err)
 		return ""
 	}
 	req.SetBasicAuth(domain.Env.HouseholdIDLookupUsername, domain.Env.HouseholdIDLookupPassword)
@@ -419,7 +419,7 @@ func GetHHID(staffID string) string {
 	client := &http.Client{Timeout: time.Second * 30}
 	response, err := client.Do(req)
 	if err != nil {
-		domain.ErrLogger.Printf("HHID API error, %s", err)
+		log.Errorf("HHID API error, %s", err)
 		return ""
 	}
 	defer func() {
@@ -433,7 +433,7 @@ func GetHHID(staffID string) string {
 		ID string `json:"householdIdOut"`
 	}
 	if err = dec.Decode(&v); err != nil {
-		domain.ErrLogger.Printf("HHID API error decoding response, %s", err)
+		log.Errorf("HHID API error decoding response, %s", err)
 		return ""
 	}
 	return v.ID

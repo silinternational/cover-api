@@ -180,11 +180,11 @@ in the `DebugMsg`.
 
 Errors that do not justify an error being passed to the API client may be logged
 to `stderr` and Rollbar using `domain.Error` if context is available, or
-`domain.ErrLogger.printf` if no context is available.
+`log.Errorf` if no context is available.
 
 `domain.Warn` can be used to log at level "warning" and also send to Rollbar
 
-`domain.Info` or `domain.Logger.printf` will log but not send to Rollbar.
+`domain.Info` or `log.Errorf` will log but not send to Rollbar.
 
 ## Debugging with Delve
 

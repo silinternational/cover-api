@@ -11,6 +11,7 @@ import (
 	"github.com/gofrs/uuid"
 
 	"github.com/silinternational/cover-api/domain"
+	"github.com/silinternational/cover-api/log"
 )
 
 type Notifications []Notification
@@ -45,7 +46,7 @@ func (n *Notification) Create(tx *pop.Connection) error {
 	}
 
 	if err := events.Emit(events.Event{Kind: domain.EventApiNotificationCreated}); err != nil {
-		domain.ErrLogger.Printf("error emitting event %s ... %v", domain.EventApiNotificationCreated, err)
+		log.Errorf("error emitting event %s ... %v", domain.EventApiNotificationCreated, err)
 	}
 
 	return nil
