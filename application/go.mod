@@ -4,6 +4,7 @@ go 1.18
 
 require (
 	github.com/aws/aws-sdk-go v1.44.216
+	github.com/getsentry/sentry-go v0.19.0
 	github.com/go-playground/validator/v10 v10.11.2
 	github.com/gobuffalo/buffalo v1.1.0
 	github.com/gobuffalo/buffalo-pop/v3 v3.0.7
@@ -11,6 +12,7 @@ require (
 	github.com/gobuffalo/events v1.4.3
 	github.com/gobuffalo/grift v1.5.2
 	github.com/gobuffalo/httptest v1.5.2
+	github.com/gobuffalo/logger v1.0.7
 	github.com/gobuffalo/mw-contenttype v1.0.2
 	github.com/gobuffalo/mw-i18n/v2 v2.0.3
 	github.com/gobuffalo/mw-paramlogger v1.0.2
@@ -28,6 +30,7 @@ require (
 	github.com/rs/cors v1.8.3
 	github.com/russellhaering/gosaml2 v0.9.1
 	github.com/russellhaering/goxmldsig v1.3.0
+	github.com/sirupsen/logrus v1.9.0
 	github.com/stretchr/testify v1.8.2
 	golang.org/x/image v0.6.0
 	jaytaylor.com/html2text v0.0.0-20211105163654-bc68cce691ba
@@ -51,13 +54,11 @@ require (
 	github.com/gobuffalo/flect v1.0.2 // indirect
 	github.com/gobuffalo/github_flavored_markdown v1.1.4 // indirect
 	github.com/gobuffalo/helpers v0.6.7 // indirect
-	github.com/gobuffalo/logger v1.0.7 // indirect
 	github.com/gobuffalo/meta v0.3.3 // indirect
 	github.com/gobuffalo/plush/v4 v4.1.18 // indirect
 	github.com/gobuffalo/refresh v1.13.3 // indirect
 	github.com/gobuffalo/tags/v3 v3.1.4 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
-	github.com/google/go-cmp v0.5.9 // indirect
 	github.com/gorilla/css v1.0.0 // indirect
 	github.com/gorilla/handlers v1.5.1 // indirect
 	github.com/gorilla/mux v1.8.0 // indirect
@@ -92,7 +93,6 @@ require (
 	github.com/rivo/uniseg v0.4.4 // indirect
 	github.com/rogpeppe/go-internal v1.9.0 // indirect
 	github.com/sergi/go-diff v1.3.1 // indirect
-	github.com/sirupsen/logrus v1.9.0 // indirect
 	github.com/sourcegraph/annotate v0.0.0-20160123013949-f4cad6c6324d // indirect
 	github.com/sourcegraph/syntaxhighlight v0.0.0-20170531221838-bd320f5d308e // indirect
 	github.com/spf13/cobra v1.6.1 // indirect

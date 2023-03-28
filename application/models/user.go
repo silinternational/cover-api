@@ -17,6 +17,7 @@ import (
 	"github.com/silinternational/cover-api/api"
 	"github.com/silinternational/cover-api/auth"
 	"github.com/silinternational/cover-api/domain"
+	"github.com/silinternational/cover-api/log"
 	"github.com/silinternational/cover-api/storage"
 )
 
@@ -415,7 +416,7 @@ func (u *User) AttachPhotoFile(tx *pop.Connection, fileID uuid.UUID) error {
 // DeletePhotoFile deletes the user's profile photo file
 func (u *User) DeletePhotoFile(tx *pop.Connection) error {
 	if !u.PhotoFileID.Valid {
-		domain.Logger.Printf("user %v has no PhotoFileID to delete", u.ID)
+		log.Warningf("user %v has no PhotoFileID to delete", u.ID)
 		return nil
 	}
 
@@ -428,7 +429,7 @@ func (u *User) DeletePhotoFile(tx *pop.Connection) error {
 	}
 
 	if err := storage.RemoveFile(f.ID.String()); err != nil {
-		domain.ErrLogger.Printf("error removing file from S3, id='%s', %s", f.ID.String(), err)
+		log.Errorf("error removing file from S3, id='%s', %s", f.ID.String(), err)
 	}
 
 	if err := tx.Destroy(&f); err != nil {

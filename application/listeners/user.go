@@ -4,7 +4,7 @@ import (
 	"github.com/gobuffalo/events"
 	"github.com/gobuffalo/pop/v6"
 
-	"github.com/silinternational/cover-api/domain"
+	"github.com/silinternational/cover-api/log"
 	"github.com/silinternational/cover-api/messages"
 	"github.com/silinternational/cover-api/models"
 )
@@ -21,7 +21,7 @@ func userCreated(e events.Event) {
 	}
 
 	if err := user.CreateInitialPolicy(nil, householdID); err != nil {
-		domain.ErrLogger.Printf("Failed to create initial policy in %s, %s", e.Kind, err)
+		log.Errorf("Failed to create initial policy in %s, %s", e.Kind, err)
 		return
 	}
 

@@ -52,6 +52,8 @@ binary:
     image: 369020531563.dkr.ecr.us-east-1.amazonaws.com/cover-stg
     context: application
     dockerfile: Dockerfile
+    args:
+      ci_commit_id: "{{ .CommitID }}"
   cached: true
   default_cache_branch: "develop"
   working_dir: /cover

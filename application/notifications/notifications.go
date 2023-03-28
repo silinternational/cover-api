@@ -1,8 +1,6 @@
 package notifications
 
-import (
-	"github.com/silinternational/cover-api/domain"
-)
+import "github.com/silinternational/cover-api/log"
 
 var notifiers []Notifier
 
@@ -17,7 +15,7 @@ func Send(msg Message) error {
 		if err := n.Send(msg); err != nil {
 			return err
 		}
-		domain.Logger.Printf("%T: '%s' message sent to '%s'", n, msg.Subject, msg.ToEmail)
+		log.Infof("%T: '%s' message sent to '%s'", n, msg.Subject, msg.ToEmail)
 	}
 
 	return nil

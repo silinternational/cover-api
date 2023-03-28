@@ -5,13 +5,14 @@ import (
 	"os"
 
 	"github.com/silinternational/cover-api/domain"
+	"github.com/silinternational/cover-api/log"
 )
 
 func (ts *TestSuite) TestRawEmail() {
 	var buf bytes.Buffer
-	domain.ErrLogger.SetOutput(&buf)
+	log.ErrLogger.SetOutput(&buf)
 
-	defer domain.ErrLogger.SetOutput(os.Stderr)
+	defer log.ErrLogger.SetOutput(os.Stderr)
 
 	raw := rawEmail(
 		"to@example.com",

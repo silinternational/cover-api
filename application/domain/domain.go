@@ -2,14 +2,11 @@ package domain
 
 import (
 	"database/sql"
-	"errors"
+	_ "embed"
 	"fmt"
-	"io"
-	"log"
 	"math"
 	"math/rand"
 	"net/http"
-	"os"
 	"regexp"
 	"strings"
 	"sync"
@@ -20,19 +17,14 @@ import (
 	mwi18n "github.com/gobuffalo/mw-i18n/v2"
 	"github.com/gofrs/uuid"
 	"github.com/kelseyhightower/envconfig"
-	"github.com/rollbar/rollbar-go"
+
+	"github.com/silinternational/cover-api/log"
 )
 
-var (
-	// Logger is a plain instance of log.Logger, normally set to stdout
-	Logger log.Logger
+//go:embed commit.txt
+var Commit string
 
-	// ErrLogger is an instance of ErrLogProxy, and is the only error logging
-	// mechanism that can be used without access to the Buffalo context.
-	ErrLogger ErrLogProxy
-
-	AuthCallbackURL string
-)
+var AuthCallbackURL string
 
 // T is the Buffalo i18n translator
 var T *mwi18n.Translator
@@ -55,12 +47,17 @@ var AllowedFileUploadTypes = []string{
 const (
 	ContextKeyCurrentUser = "current_user"
 	ContextKeyExtras      = "extras"
-	ContextKeyRollbar     = "rollbar"
 	ContextKeyTx          = "tx"
 
 	DefaultUIPath = "/home"
 
 	EventPayloadID = "id"
+
+	ExtrasIP     = "IP"
+	ExtrasKey    = "key"
+	ExtrasMethod = "method"
+	ExtrasStatus = "status"
+	ExtrasURI    = "URI"
 
 	TypeClaim           = "claims"
 	TypeClaimItem       = "claim-items"
@@ -125,7 +122,7 @@ var LogoutRedirectURL = "missing.ui.url/logged-out"
 const EnvDevelopment = "development"
 
 // EnvStaging is for the staging environment
-const EnvStaging = "test"
+const EnvStaging = "staging"
 
 // EnvTest is for automated tests, during which some things are disabled
 const EnvTest = "test"
@@ -136,16 +133,15 @@ var Env struct {
 	ApiBaseURL                 string `required:"true" split_words:"true"`
 	AccessTokenLifetimeSeconds int    `default:"1166400" split_words:"true"` // 13.5 days
 	AppName                    string `default:"Cover" split_words:"true"`
+	LogLevel                   string `default:"debug" split_words:"true"`
 	AppNameLong                string `default:"Cover by SIL" split_words:"true"`
 	Port                       int    `default:"3000"`
 
 	ListenerDelayMilliseconds int `default:"1000" split_words:"true"`
 	ListenerMaxRetries        int `default:"10" split_words:"true"`
 
-	SessionSecret     string `required:"true" split_words:"true"`
-	RollbarServerRoot string `default:"" split_words:"true"`
-	RollbarToken      string `default:"" split_words:"true"`
-	UIURL             string `default:"http://missing.ui.url"`
+	SessionSecret string `required:"true" split_words:"true"`
+	UIURL         string `default:"http://missing.ui.url"`
 
 	SamlSpEntityId                  string `default:"" split_words:"true"`
 	SamlAudienceUri                 string `default:"" split_words:"true"`
@@ -218,19 +214,25 @@ var Env struct {
 
 func init() {
 	readEnv()
-	Logger.SetOutput(os.Stdout)
-	ErrLogger.SetOutput(os.Stderr)
-	ErrLogger.InitRollbar()
+
 	AuthCallbackURL = Env.ApiBaseURL + "/auth/callback"
 
 	LogoutRedirectURL = Env.UIURL + "/logged-out"
+
+	log.ErrLogger.Init(
+		log.UseCommit(strings.TrimSpace(Commit)),
+		log.UseEnv(Env.GoEnv),
+		log.UseLevel(Env.LogLevel),
+		log.UsePretty(Env.GoEnv == EnvDevelopment),
+		log.UseRemote(Env.GoEnv != EnvTest),
+	)
 }
 
 // readEnv loads environment data into `Env`
 func readEnv() {
 	err := envconfig.Process("", &Env)
 	if err != nil {
-		log.Fatal(errors.New("error loading env vars: " + err.Error()))
+		panic("error loading env vars: " + err.Error())
 	}
 
 	Env.PolicyMaxCoverage *= CurrencyFactor
@@ -246,39 +248,6 @@ func readEnv() {
 
 	// Doing this separately to avoid needing two environment variables for the same thing
 	Env.GoEnv = envy.Get("GO_ENV", EnvDevelopment)
-}
-
-// ErrLogProxy is a "tee" that sends to Rollbar and to the local logger,
-// normally set to stderr. Rollbar is disabled if `GoEnv` is "test", and
-// is a client instantiation separate from the one used in the Rollbar
-// middleware.
-type ErrLogProxy struct {
-	LocalLog  log.Logger
-	RemoteLog *rollbar.Client
-}
-
-func (e *ErrLogProxy) SetOutput(w io.Writer) {
-	e.LocalLog.SetOutput(w)
-}
-
-func (e *ErrLogProxy) Printf(format string, a ...any) {
-	// Send to local logger
-	e.LocalLog.Printf(format, a...)
-
-	// Only send to remote log if not in test env
-	if Env.GoEnv == "test" {
-		return
-	}
-	e.RemoteLog.Errorf(rollbar.ERR, format, a...)
-}
-
-func (e *ErrLogProxy) InitRollbar() {
-	e.RemoteLog = rollbar.New(
-		Env.RollbarToken,
-		Env.GoEnv,
-		"",
-		"",
-		Env.RollbarServerRoot)
 }
 
 // NewExtra Sets a new key-value pair in the `extras` entry of the context
@@ -302,33 +271,13 @@ func getExtras(c buffalo.Context) map[string]any {
 }
 
 // GetUUID creates a new, unique version 4 (random) UUID and returns it
-// as a uuid2.UUID. Errors are ignored.
+// as a uuid.UUID. Errors are ignored.
 func GetUUID() uuid.UUID {
 	id, err := uuid.NewV4()
 	if err != nil {
-		ErrLogger.Printf("error creating new uuid ... %v", err)
+		log.Error("error creating new uuid,", err)
 	}
 	return id
-}
-
-func RollbarMiddleware(next buffalo.Handler) buffalo.Handler {
-	return func(c buffalo.Context) error {
-		if Env.RollbarToken == "" || Env.GoEnv == "test" {
-			return next(c)
-		}
-
-		client := rollbar.New(
-			Env.RollbarToken,
-			Env.GoEnv,
-			"",
-			"",
-			Env.RollbarServerRoot)
-		defer client.Close()
-
-		c.Set(ContextKeyRollbar, client)
-
-		return next(c)
-	}
 }
 
 // EmailFromAddress combines a name with the configured from address for use in an email From header. If name is nil,
@@ -370,15 +319,6 @@ func IsOtherThanNoRows(err error) bool {
 	}
 
 	return true
-}
-
-// RollbarSetPerson sets person on the rollbar context for further logging
-func RollbarSetPerson(c buffalo.Context, id, userFirst, userLast, email string) {
-	username := strings.TrimSpace(userFirst + " " + userLast)
-	rc, ok := c.Value(ContextKeyRollbar).(*rollbar.Client)
-	if ok {
-		rc.SetPerson(id, username, email)
-	}
 }
 
 func MergeExtras(extras []map[string]any) map[string]any {

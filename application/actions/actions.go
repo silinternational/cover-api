@@ -10,10 +10,10 @@ import (
 	"github.com/gobuffalo/buffalo"
 	"github.com/gobuffalo/buffalo/render"
 	"github.com/gofrs/uuid"
-	"github.com/rollbar/rollbar-go"
 
 	"github.com/silinternational/cover-api/api"
 	"github.com/silinternational/cover-api/domain"
+	"github.com/silinternational/cover-api/log"
 )
 
 var r *render.Engine
@@ -53,29 +53,28 @@ func reportError(c buffalo.Context, err error) error {
 
 	appErr.Extras = domain.MergeExtras([]map[string]any{getExtras(c), appErr.Extras})
 	appErr.Extras["function"] = domain.GetFunctionName(2)
-	appErr.Extras["key"] = appErr.Key
-	appErr.Extras["status"] = appErr.HttpStatus
+	appErr.Extras[domain.ExtrasKey] = appErr.Key
+	appErr.Extras[domain.ExtrasStatus] = appErr.HttpStatus
 	appErr.Extras["redirectURL"] = appErr.RedirectURL
-	appErr.Extras["method"] = c.Request().Method
-	appErr.Extras["URI"] = c.Request().RequestURI
+	appErr.Extras[domain.ExtrasMethod] = c.Request().Method
+	appErr.Extras[domain.ExtrasURI] = c.Request().RequestURI
 
 	address, _ := getClientIPAddress(c)
-	appErr.Extras["IP"] = address
+	appErr.Extras[domain.ExtrasIP] = address
 
-	level := rollbar.ERR
+	entry := log.WithContext(c).WithFields(appErr.Extras)
 	switch appErr.Category {
 	case api.CategoryUnauthorized, api.CategoryUser:
-		level = rollbar.WARN
+		entry.Warning(err)
+	default:
+		entry.Error(err)
 	}
-	domain.LogErrorMessage(c, err.Error(), level, appErr.Extras)
 
 	appErr.LoadTranslatedMessage(c)
 
 	// clear out debugging info if not in development or test
 	if domain.Env.GoEnv == domain.EnvDevelopment || domain.Env.GoEnv == domain.EnvTest {
-		if appErr.Err != nil {
-			appErr.DebugMsg = appErr.Err.Error()
-		}
+		appErr.DebugMsg = err.Error()
 	} else {
 		appErr.Extras = map[string]any{}
 	}

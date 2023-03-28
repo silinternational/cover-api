@@ -14,6 +14,7 @@ import (
 
 	"github.com/silinternational/cover-api/api"
 	"github.com/silinternational/cover-api/domain"
+	"github.com/silinternational/cover-api/log"
 )
 
 type PolicyUsers []PolicyUser
@@ -53,7 +54,7 @@ func (p *PolicyUser) IsActorAllowedTo(tx *pop.Connection, actor User, perm Permi
 
 	var policy Policy
 	if err := policy.FindByID(tx, p.PolicyID); err != nil {
-		domain.ErrLogger.Printf("failed to load policy for dependent: %s", err)
+		log.Error("failed to load policy for dependent:", err)
 		return false
 	}
 
