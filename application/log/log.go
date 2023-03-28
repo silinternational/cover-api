@@ -72,10 +72,14 @@ func (e *ErrLogProxy) Init(options ...func(*Option)) {
 
 	if e.config.remote {
 		e.rollbar = NewRollbarHook(e.config.env, e.config.commit)
-		e.LocalLog.AddHook(e.rollbar)
+		if e.rollbar != nil {
+			e.LocalLog.AddHook(e.rollbar)
+		}
 
 		e.sentry = NewSentryHook(e.config.env, e.config.commit)
-		e.LocalLog.AddHook(e.sentry)
+		if e.sentry != nil {
+			e.LocalLog.AddHook(e.sentry)
+		}
 	}
 }
 
