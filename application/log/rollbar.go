@@ -26,8 +26,12 @@ type RollbarHook struct {
 }
 
 func NewRollbarHook(env, commit string) *RollbarHook {
+	token := os.Getenv("ROLLBAR_SERVER_TOKEN")
+	if token == "" {
+		return nil
+	}
 	return &RollbarHook{client: rollbar.New(
-		os.Getenv("ROLLBAR_SERVER_TOKEN"),
+		token,
 		env,
 		commit,
 		"",

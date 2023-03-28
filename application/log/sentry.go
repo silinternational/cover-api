@@ -91,8 +91,12 @@ func (r *SentryHook) SetUser(id, username, email string) {
 }
 
 func NewSentryHook(env, commit string) *SentryHook {
+	dsn := os.Getenv("SENTRY_DSN")
+	if dsn == "" {
+		return nil
+	}
 	err := sentry.Init(sentry.ClientOptions{
-		Dsn:              os.Getenv("SENTRY_DSN"),
+		Dsn:              dsn,
 		Environment:      env,
 		Release:          commit,
 		TracesSampleRate: 1.0,
