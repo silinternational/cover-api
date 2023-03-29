@@ -9,7 +9,6 @@ command_flags: []
 enable_colors: true
 ignored_folders:
 - vendor
-- log
 - logs
 - assets
 - public

@@ -83,6 +83,10 @@ func (r *RollbarHook) Fire(entry *logrus.Entry) error {
 }
 
 func (r *RollbarHook) SetUser(id, username, email string) {
+	if r == nil || r.client == nil {
+		return
+	}
+
 	r.client.SetPerson(id, username, email)
 }
 

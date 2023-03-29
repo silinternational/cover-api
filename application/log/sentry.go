@@ -58,11 +58,11 @@ func recoverWithSentry(hub *sentry.Hub, r *http.Request) {
 	}
 }
 
-func (r *SentryHook) Levels() []logrus.Level {
+func (s *SentryHook) Levels() []logrus.Level {
 	return []logrus.Level{logrus.PanicLevel, logrus.FatalLevel, logrus.ErrorLevel, logrus.WarnLevel}
 }
 
-func (r *SentryHook) Fire(entry *logrus.Entry) error {
+func (s *SentryHook) Fire(entry *logrus.Entry) error {
 	extras := entry.Data
 
 	if extras["status"] == 401 || extras["status"] == 404 {
@@ -82,8 +82,12 @@ func (r *SentryHook) Fire(entry *logrus.Entry) error {
 	return nil
 }
 
-func (r *SentryHook) SetUser(id, username, email string) {
-	r.hub.Scope().SetUser(sentry.User{
+func (s *SentryHook) SetUser(id, username, email string) {
+	if s == nil || s.hub == nil {
+		return
+	}
+
+	s.hub.Scope().SetUser(sentry.User{
 		ID:       id,
 		Username: username,
 		Email:    email,
