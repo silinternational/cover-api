@@ -195,11 +195,8 @@ var Env struct {
 	ExpenseAccount     string `required:"true" split_words:"true"`
 	ClaimIncomeAccount string `required:"true" split_words:"true"`
 
-	// For CertMagic to provide TLS in container
-	CertDomainName  string `default:"" split_words:"true"`
-	CloudflareToken string `default:"" split_words:"true"`
-	DisableTLS      bool   `default:"true" split_words:"true"`
-	DynamoDBTable   string `default:"" split_words:"true"`
+	// For local development only, TLS can be disabled
+	DisableTLS bool `default:"false" split_words:"true"`
 
 	HouseholdIDLookupURL      string `default:"" split_words:"true"`
 	HouseholdIDLookupUsername string `default:"" split_words:"true"`
