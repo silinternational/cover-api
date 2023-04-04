@@ -3,9 +3,7 @@ package log
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"os"
-	"time"
 
 	"github.com/getsentry/sentry-go"
 	_ "github.com/getsentry/sentry-go"
@@ -38,23 +36,8 @@ func SentryMiddleware(next buffalo.Handler) buffalo.Handler {
 			hub = sentry.CurrentHub().Clone()
 		}
 
-		hub.Scope().SetRequest(r)
-		defer recoverWithSentry(hub, r)
 		c.Set(ContextKeySentryHub, hub)
 		return next(c)
-	}
-}
-
-func recoverWithSentry(hub *sentry.Hub, r *http.Request) {
-	if err := recover(); err != nil {
-		eventID := hub.RecoverWithContext(
-			context.WithValue(r.Context(), sentry.RequestContextKey, r),
-			err,
-		)
-		if eventID != nil {
-			hub.Flush(time.Second * 2)
-		}
-		panic(err)
 	}
 }
 
