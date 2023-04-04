@@ -65,16 +65,19 @@ func (s *SentryHook) Fire(entry *logrus.Entry) error {
 	return nil
 }
 
-func (s *SentryHook) SetUser(id, username, email string) {
+func (s *SentryHook) SetUser(ctx context.Context, id, username, email string) {
 	if s == nil || s.hub == nil {
 		return
 	}
 
-	s.hub.Scope().SetUser(sentry.User{
-		ID:       id,
-		Username: username,
-		Email:    email,
-	})
+	contextHub := s.getClient(ctx)
+	if contextHub != nil {
+		s.hub.Scope().SetUser(sentry.User{
+			ID:       id,
+			Username: username,
+			Email:    email,
+		})
+	}
 }
 
 func NewSentryHook(env, commit string) *SentryHook {
@@ -93,4 +96,11 @@ func NewSentryHook(env, commit string) *SentryHook {
 	}
 
 	return &SentryHook{hub: sentry.CurrentHub()}
+}
+
+func (s *SentryHook) getClient(ctx context.Context) *sentry.Hub {
+	if c, ok := ctx.Value(ContextKeySentryHub).(*sentry.Hub); ok {
+		return c
+	}
+	return nil
 }

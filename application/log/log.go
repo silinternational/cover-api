@@ -175,10 +175,10 @@ func WithContext(ctx context.Context) *logrus.Entry {
 	return ErrLogger.LocalLog.WithContext(ctx)
 }
 
-func SetUser(id, username, email string) {
+func SetUser(ctx context.Context, id, username, email string) {
 	if !ErrLogger.config.remote {
 		return
 	}
-	ErrLogger.rollbar.SetUser(id, username, email)
-	ErrLogger.sentry.SetUser(id, username, email)
+	ErrLogger.rollbar.SetUser(ctx, id, username, email)
+	ErrLogger.sentry.SetUser(ctx, id, username, email)
 }
