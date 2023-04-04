@@ -68,7 +68,7 @@ func (r *RollbarHook) Levels() []logrus.Level {
 func (r *RollbarHook) Fire(entry *logrus.Entry) error {
 	extras := entry.Data
 
-	if extras["status"] == 401 || extras["status"] == 404 {
+	if extras["status"] == 401 {
 		return nil
 	}
 
