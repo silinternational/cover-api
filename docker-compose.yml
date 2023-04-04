@@ -18,6 +18,7 @@ services:
       ADDR: 0.0.0.0
       PORT: 3000
       DATABASE_URL: postgres://cover:cover@db:5432/cover?sslmode=disable
+      DISABLE_TLS: true
       GO_ENV: development
     depends_on:
       - db
@@ -42,6 +43,7 @@ services:
       ADDR: 0.0.0.0
       PORT: 3000
       DATABASE_URL: postgres://cover:cover@db:5432/cover?sslmode=disable
+      DISABLE_TLS: true
       GO_ENV: development
     depends_on:
       - db
