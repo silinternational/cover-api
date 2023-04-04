@@ -68,31 +68,34 @@ func (r *RollbarHook) Levels() []logrus.Level {
 func (r *RollbarHook) Fire(entry *logrus.Entry) error {
 	extras := entry.Data
 
-	if extras["status"] == 401 || extras["status"] == 404 {
+	if extras["status"] == 401 {
 		return nil
 	}
 
 	if ctx, ok := entry.Context.(buffalo.Context); ok {
 		client := r.getClient(ctx)
-		client.RequestMessageWithExtras(mapRollbarToLogrusLevel[entry.Level], ctx.Request(), entry.Message, extras)
-	} else {
-		r.client.MessageWithExtras(mapRollbarToLogrusLevel[entry.Level], entry.Message, extras)
+		if client != nil {
+			client.RequestMessageWithExtras(mapRollbarToLogrusLevel[entry.Level], ctx.Request(), entry.Message, extras)
+			return nil
+		}
 	}
-
+	r.client.MessageWithExtras(mapRollbarToLogrusLevel[entry.Level], entry.Message, extras)
 	return nil
 }
 
-func (r *RollbarHook) SetUser(id, username, email string) {
+func (r *RollbarHook) SetUser(ctx context.Context, id, username, email string) {
 	if r == nil || r.client == nil {
 		return
 	}
-
-	r.client.SetPerson(id, username, email)
+	contextClient := r.getClient(ctx)
+	if contextClient != nil {
+		contextClient.SetPerson(id, username, email)
+	}
 }
 
 func (r *RollbarHook) getClient(ctx context.Context) *rollbar.Client {
 	if c, ok := ctx.Value(ContextKeyRollbar).(*rollbar.Client); ok {
 		return c
 	}
-	return r.client
+	return nil
 }

@@ -3,9 +3,7 @@ package log
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"os"
-	"time"
 
 	"github.com/getsentry/sentry-go"
 	_ "github.com/getsentry/sentry-go"
@@ -38,23 +36,8 @@ func SentryMiddleware(next buffalo.Handler) buffalo.Handler {
 			hub = sentry.CurrentHub().Clone()
 		}
 
-		hub.Scope().SetRequest(r)
-		defer recoverWithSentry(hub, r)
 		c.Set(ContextKeySentryHub, hub)
 		return next(c)
-	}
-}
-
-func recoverWithSentry(hub *sentry.Hub, r *http.Request) {
-	if err := recover(); err != nil {
-		eventID := hub.RecoverWithContext(
-			context.WithValue(r.Context(), sentry.RequestContextKey, r),
-			err,
-		)
-		if eventID != nil {
-			hub.Flush(time.Second * 2)
-		}
-		panic(err)
 	}
 }
 
@@ -65,7 +48,7 @@ func (s *SentryHook) Levels() []logrus.Level {
 func (s *SentryHook) Fire(entry *logrus.Entry) error {
 	extras := entry.Data
 
-	if extras["status"] == 401 || extras["status"] == 404 {
+	if extras["status"] == 401 {
 		return nil
 	}
 
@@ -82,16 +65,19 @@ func (s *SentryHook) Fire(entry *logrus.Entry) error {
 	return nil
 }
 
-func (s *SentryHook) SetUser(id, username, email string) {
+func (s *SentryHook) SetUser(ctx context.Context, id, username, email string) {
 	if s == nil || s.hub == nil {
 		return
 	}
 
-	s.hub.Scope().SetUser(sentry.User{
-		ID:       id,
-		Username: username,
-		Email:    email,
-	})
+	contextHub := s.getClient(ctx)
+	if contextHub != nil {
+		s.hub.Scope().SetUser(sentry.User{
+			ID:       id,
+			Username: username,
+			Email:    email,
+		})
+	}
 }
 
 func NewSentryHook(env, commit string) *SentryHook {
@@ -110,4 +96,11 @@ func NewSentryHook(env, commit string) *SentryHook {
 	}
 
 	return &SentryHook{hub: sentry.CurrentHub()}
+}
+
+func (s *SentryHook) getClient(ctx context.Context) *sentry.Hub {
+	if c, ok := ctx.Value(ContextKeySentryHub).(*sentry.Hub); ok {
+		return c
+	}
+	return nil
 }
