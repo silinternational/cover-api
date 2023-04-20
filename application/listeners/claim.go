@@ -7,7 +7,7 @@ import (
 	"github.com/gobuffalo/pop/v6"
 
 	"github.com/silinternational/cover-api/api"
-	"github.com/silinternational/cover-api/domain"
+	"github.com/silinternational/cover-api/log"
 	"github.com/silinternational/cover-api/messages"
 	"github.com/silinternational/cover-api/models"
 )
@@ -116,7 +116,7 @@ func claimApproved(e events.Event) {
 
 	models.DB.Transaction(func(tx *pop.Connection) error {
 		if err := claim.StopItemCoverage(tx); err != nil {
-			domain.ErrLogger.Printf("error ending coverage in claimApproved for claim %s: %s", claim.ID.String(), err)
+			log.Errorf("error ending coverage in claimApproved for claim %s: %s", claim.ID.String(), err)
 		}
 		return nil
 	})

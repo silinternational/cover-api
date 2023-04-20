@@ -383,7 +383,7 @@ func (as *ActionSuite) Test_ItemsRevision() {
 			wantStatus: http.StatusBadRequest,
 			wantInBody: []string{
 				`"key":"` + string(api.ErrorValidation),
-				`"message":"Item.StatusReason`,
+				`"debug_msg":"Item.StatusReason`,
 			},
 		},
 		{
@@ -585,7 +585,7 @@ func (as *ActionSuite) Test_ItemsDeny() {
 			wantStatus: http.StatusBadRequest,
 			wantInBody: []string{
 				`"key":"` + string(api.ErrorValidation),
-				`"message":"Item.StatusReason`,
+				`"debug_msg":"Item.StatusReason`,
 			},
 		},
 		{

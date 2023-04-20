@@ -10,7 +10,7 @@ import (
 	"github.com/gofrs/uuid"
 
 	"github.com/silinternational/cover-api/api"
-	"github.com/silinternational/cover-api/domain"
+	"github.com/silinternational/cover-api/log"
 )
 
 var ValidPolicyDependentRelationships = map[api.PolicyDependentRelationship]struct{}{
@@ -94,7 +94,7 @@ func (p *PolicyDependent) IsActorAllowedTo(tx *pop.Connection, actor User, perm 
 
 	var policy Policy
 	if err := policy.FindByID(tx, p.PolicyID); err != nil {
-		domain.ErrLogger.Printf("failed to load policy for dependent: %s", err)
+		log.Error("failed to load policy for dependent:", err)
 		return false
 	}
 

@@ -15,6 +15,7 @@ import (
 
 	"github.com/silinternational/cover-api/api"
 	"github.com/silinternational/cover-api/domain"
+	"github.com/silinternational/cover-api/log"
 )
 
 var ValidPayoutOptions = map[api.PayoutOption]struct{}{
@@ -156,7 +157,7 @@ func (c *ClaimItem) IsActorAllowedTo(tx *pop.Connection, actor User, perm Permis
 
 	var policy Policy
 	if err := policy.FindByID(tx, c.Item.PolicyID); err != nil {
-		domain.ErrLogger.Printf("failed to load Policy for ClaimItem: %s", err)
+		log.Error("failed to load Policy for ClaimItem:", err)
 		return false
 	}
 

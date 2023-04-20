@@ -4,29 +4,29 @@
 //
 // there are no TOS at this moment, use at your own risk we take no responsibility
 //
-//     Schemes: https
-//     Host: localhost
-//     BasePath: /
-//     Version: 0.0.1
-//     License: MIT http://opensource.org/licenses/MIT
+//  Schemes: https
+//  Host: localhost
+//  BasePath: /
+//  Version: 0.0.1
+//  License: MIT http://opensource.org/licenses/MIT
 //
-//     Consumes:
-//     - application/json
+//  Consumes:
+//  - application/json
 //
-//     Produces:
-//     - application/json
+//  Produces:
+//  - application/json
 //
-//     Security:
-//     - oauth2:
+//  Security:
+//  - oauth2:
 //
-//     SecurityDefinitions:
-//     oauth2:
-//         type: oauth2
-//         authorizationUrl: /auth/login
-//         tokenUrl: /auth/token
-//         scopes:
-//           all: scopes are not used at this time
-//         flow: implicit
+//  SecurityDefinitions:
+//  oauth2:
+//      type: oauth2
+//      authorizationUrl: /auth/login
+//      tokenUrl: /auth/token
+//      scopes:
+//        all: scopes are not used at this time
+//      flow: implicit
 //
 // swagger:meta
 package actions
@@ -36,12 +36,15 @@ import (
 
 	"github.com/gobuffalo/buffalo"
 	"github.com/gobuffalo/buffalo-pop/v3/pop/popmw"
+	"github.com/gobuffalo/logger"
 	contenttype "github.com/gobuffalo/mw-contenttype"
 	i18n "github.com/gobuffalo/mw-i18n/v2"
 	paramlogger "github.com/gobuffalo/mw-paramlogger"
 	"github.com/gorilla/sessions"
 	"github.com/rs/cors"
+
 	"github.com/silinternational/cover-api/job"
+	"github.com/silinternational/cover-api/log"
 
 	"github.com/silinternational/cover-api/api"
 	"github.com/silinternational/cover-api/domain"
@@ -88,7 +91,8 @@ var app *buffalo.App
 func App() *buffalo.App {
 	if app == nil {
 		app = buffalo.New(buffalo.Options{
-			Env: domain.Env.GoEnv,
+			Env:    domain.Env.GoEnv,
+			Logger: logger.Logrus{FieldLogger: log.ErrLogger.LocalLog},
 			PreWares: []buffalo.PreWare{
 				cors.New(cors.Options{
 					AllowCredentials: true,
@@ -110,13 +114,13 @@ func App() *buffalo.App {
 
 		registerCustomErrorHandler(app)
 
-		// Initialize and attach "rollbar" to context
-		app.Use(domain.RollbarMiddleware)
+		// Initialize and attach service providers to context
+		app.Use(log.RollbarMiddleware, log.SentryMiddleware)
 
 		// Log request parameters (filters apply).
 		app.Use(paramlogger.ParameterLogger)
 
-		//  Add authentication and authorization
+		// Add authentication and authorization middleware
 		app.Use(AuthN, AuthZ)
 		app.Middleware.Skip(AuthN, HomeHandler, statusHandler)
 		app.Middleware.Skip(AuthZ, HomeHandler, statusHandler, uploadHandler)

@@ -7,7 +7,7 @@ import (
 	"github.com/gobuffalo/pop/v6"
 
 	"github.com/silinternational/cover-api/api"
-	"github.com/silinternational/cover-api/domain"
+	"github.com/silinternational/cover-api/log"
 	"github.com/silinternational/cover-api/messages"
 	"github.com/silinternational/cover-api/models"
 )
@@ -21,7 +21,7 @@ func itemSubmitted(e events.Event) {
 	}
 
 	if item.CoverageStatus != api.ItemCoverageStatusPending {
-		domain.ErrLogger.Printf(wrongStatusMsg, "itemSubmitted", item.CoverageStatus)
+		log.Errorf(wrongStatusMsg, "itemSubmitted", item.CoverageStatus)
 	}
 
 	models.DB.Transaction(func(tx *pop.Connection) error {
@@ -54,7 +54,7 @@ func itemAutoApproved(e events.Event) {
 	}
 
 	if item.CoverageStatus != api.ItemCoverageStatusApproved {
-		domain.ErrLogger.Printf(wrongStatusMsg, "itemApproved", item.CoverageStatus)
+		log.Errorf(wrongStatusMsg, "itemApproved", item.CoverageStatus)
 		return
 	}
 
@@ -71,7 +71,7 @@ func itemApproved(e events.Event) {
 	}
 
 	if item.CoverageStatus != api.ItemCoverageStatusApproved {
-		domain.ErrLogger.Printf(wrongStatusMsg, "itemApproved", item.CoverageStatus)
+		log.Errorf(wrongStatusMsg, "itemApproved", item.CoverageStatus)
 		return
 	}
 
@@ -88,7 +88,7 @@ func itemDenied(e events.Event) {
 	}
 
 	if item.CoverageStatus != api.ItemCoverageStatusDenied {
-		domain.ErrLogger.Printf(wrongStatusMsg, "itemDenied", item.CoverageStatus)
+		log.Errorf(wrongStatusMsg, "itemDenied", item.CoverageStatus)
 		return
 	}
 

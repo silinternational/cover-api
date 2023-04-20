@@ -5,7 +5,9 @@ import (
 
 	"github.com/gobuffalo/buffalo/worker"
 	"github.com/gobuffalo/pop/v6"
+
 	"github.com/silinternational/cover-api/domain"
+	"github.com/silinternational/cover-api/log"
 	"github.com/silinternational/cover-api/models"
 )
 
@@ -33,7 +35,7 @@ func resubmitInactivateJob() {
 	// delay = time.Second * 10
 
 	if err := SubmitDelayed(InactivateItems, delay, map[string]any{}); err != nil {
-		domain.ErrLogger.Printf("error resubmitting inactivateItemsHandler: " + err.Error())
+		log.Error("error resubmitting inactivateItemsHandler:", err)
 	}
 	return
 }

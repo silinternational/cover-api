@@ -10,6 +10,7 @@ import (
 
 	"github.com/silinternational/cover-api/api"
 	"github.com/silinternational/cover-api/domain"
+	"github.com/silinternational/cover-api/log"
 )
 
 var httpErrorCodes = map[int]api.ErrorKey{
@@ -41,6 +42,21 @@ func customErrorHandler(status int, origErr error, c buffalo.Context) error {
 		Key:        getErrorCodeFromStatus(status),
 		DebugMsg:   fmt.Sprintf("(%T) %s", origErr, origErr),
 	}
+
+	address, _ := getClientIPAddress(c)
+	e := log.WithFields(map[string]any{
+		domain.ExtrasKey:    appError.Key,
+		domain.ExtrasStatus: status,
+		domain.ExtrasMethod: c.Request().Method,
+		domain.ExtrasURI:    c.Request().RequestURI,
+		domain.ExtrasIP:     address,
+	})
+	if status >= 500 {
+		e.Errorf(origErr.Error())
+	} else {
+		e.Warningf(origErr.Error())
+	}
+
 	err := json.NewEncoder(c.Response()).Encode(&appError)
 	return err
 }
