@@ -29,13 +29,7 @@ type SentryHook struct {
 
 func SentryMiddleware(next buffalo.Handler) buffalo.Handler {
 	return func(c buffalo.Context) error {
-		r := c.Request()
-		hub := sentry.GetHubFromContext(r.Context())
-
-		if hub == nil {
-			hub = sentry.CurrentHub().Clone()
-		}
-
+		hub := sentry.NewHub(sentry.CurrentHub().Client(), sentry.NewScope())
 		c.Set(ContextKeySentryHub, hub)
 		return next(c)
 	}
@@ -48,7 +42,7 @@ func (s *SentryHook) Levels() []logrus.Level {
 func (s *SentryHook) Fire(entry *logrus.Entry) error {
 	extras := entry.Data
 
-	if extras["status"] == 401 {
+	if extras["status"] == 401 || extras["status"] == 404 {
 		return nil
 	}
 
@@ -61,7 +55,8 @@ func (s *SentryHook) Fire(entry *logrus.Entry) error {
 		event.Request = sentry.NewRequest(c.Request())
 	}
 
-	sentry.CaptureEvent(&event)
+	hub := s.getHub(entry.Context)
+	hub.CaptureEvent(&event)
 	return nil
 }
 
@@ -70,14 +65,17 @@ func (s *SentryHook) SetUser(ctx context.Context, id, username, email string) {
 		return
 	}
 
-	contextHub := s.getClient(ctx)
-	if contextHub != nil {
-		s.hub.Scope().SetUser(sentry.User{
-			ID:       id,
-			Username: username,
-			Email:    email,
-		})
+	hub := s.getHub(ctx)
+	if hub == s.hub {
+		// don't set a user on the root hub
+		return
 	}
+
+	hub.Scope().SetUser(sentry.User{
+		ID:       id,
+		Username: username,
+		Email:    email,
+	})
 }
 
 func NewSentryHook(env, commit string) *SentryHook {
@@ -98,9 +96,19 @@ func NewSentryHook(env, commit string) *SentryHook {
 	return &SentryHook{hub: sentry.CurrentHub()}
 }
 
-func (s *SentryHook) getClient(ctx context.Context) *sentry.Hub {
-	if c, ok := ctx.Value(ContextKeySentryHub).(*sentry.Hub); ok {
-		return c
+// getHub looks for a hub in the context. If not found, it will return the global hub
+func (s *SentryHook) getHub(ctx context.Context) *sentry.Hub {
+	if s == nil || s.hub == nil {
+		panic("Sentry log hook has not been initialized")
 	}
-	return nil
+
+	if ctx == nil {
+		return s.hub
+	}
+
+	if contextHub, ok := ctx.Value(ContextKeySentryHub).(*sentry.Hub); ok {
+		return contextHub
+	}
+
+	return s.hub
 }
