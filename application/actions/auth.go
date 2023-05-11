@@ -257,7 +257,7 @@ func authCallback(c buffalo.Context) error {
 	authUser.AccessToken = uat.AccessToken
 	authUser.AccessTokenExpiresAt = uat.ExpiresAt.UTC().Unix()
 
-	// set person on rollbar session
+	// set person on log context
 	log.SetUser(c, user.StaffID.String, user.GetName().String(), user.Email)
 
 	return c.Redirect(302, getLoginSuccessRedirectURL(*authUser, returnTo))
@@ -327,7 +327,7 @@ func authDestroy(c buffalo.Context) error {
 		})
 	}
 
-	// set person on rollbar session
+	// set person on log context
 	log.SetUser(c, authUser.ID.String(), authUser.GetName().String(), authUser.Email)
 
 	sp, err := saml.New(samlConfig)

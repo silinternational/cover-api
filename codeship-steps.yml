@@ -60,8 +60,3 @@
   service: ga4tracker
   tag: ^(main|develop)
   command: sh -c "export GA_EVENT_NAME=${CI_BRANCH}_CoverAPI && ./ga-event-tracker"
-
-- name: rollbar
-  service: rollbar
-  tag: ^(main|develop)
-  command: "/notify.sh"
