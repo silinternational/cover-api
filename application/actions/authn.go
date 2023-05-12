@@ -43,7 +43,7 @@ func AuthN(next buffalo.Handler) buffalo.Handler {
 		}
 		c.Set(domain.ContextKeyCurrentUser, user)
 
-		// set user for remote logger (e.g. Rollbar, Sentry)
+		// set person on log context
 		log.SetUser(c, user.ID.String(), user.GetName().String(), user.Email)
 
 		return next(c)

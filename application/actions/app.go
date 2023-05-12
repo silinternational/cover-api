@@ -115,7 +115,7 @@ func App() *buffalo.App {
 		registerCustomErrorHandler(app)
 
 		// Initialize and attach service providers to context
-		app.Use(log.RollbarMiddleware, log.SentryMiddleware)
+		app.Use(log.SentryMiddleware)
 
 		// Log request parameters (filters apply).
 		app.Use(paramlogger.ParameterLogger)

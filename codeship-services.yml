@@ -85,10 +85,6 @@ ga4tracker:
     # GA_EVENT_NAME is set by the codeship-steps command
     # Add to the .env.encrypted file ... GA_API_SECRET
 
-rollbar:
-  image: silintl/notify-rollbar-deployment:latest
-  encrypted_env_file: .env.encrypted
-
 minio:
   image: minio/minio
   command: server /data
