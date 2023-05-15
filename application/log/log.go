@@ -11,13 +11,10 @@ import (
 // ErrLogger is an instance of ErrLogProxy, which can be used without access to the Buffalo context.
 var ErrLogger ErrLogProxy
 
-// ErrLogProxy wraps a logrus logger with optional hooks for sending to remote loggers like Rollbar
+// ErrLogProxy wraps a logrus logger with optional hooks for sending to remote loggers like Sentry
 type ErrLogProxy struct {
 	// LocalLog is sent to stdout
 	LocalLog *logrus.Logger
-
-	// RollbarHook is for sending entries to Rollbar
-	rollbar *RollbarHook
 
 	// SentryHook is for sending entries to Sentry
 	sentry *SentryHook
@@ -71,11 +68,6 @@ func (e *ErrLogProxy) Init(options ...func(*Option)) {
 	e.LocalLog = newLogrusLogger(e.config.level, e.config.pretty)
 
 	if e.config.remote {
-		e.rollbar = NewRollbarHook(e.config.env, e.config.commit)
-		if e.rollbar != nil {
-			e.LocalLog.AddHook(e.rollbar)
-		}
-
 		e.sentry = NewSentryHook(e.config.env, e.config.commit)
 		if e.sentry != nil {
 			e.LocalLog.AddHook(e.sentry)
@@ -179,6 +171,5 @@ func SetUser(ctx context.Context, id, username, email string) {
 	if !ErrLogger.config.remote {
 		return
 	}
-	ErrLogger.rollbar.SetUser(ctx, id, username, email)
 	ErrLogger.sentry.SetUser(ctx, id, username, email)
 }

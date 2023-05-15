@@ -76,11 +76,6 @@ awsgenerator:
   encrypted_env_file: .env.encrypted
   add_docker: true
 
-tracker:
-  image: silintl/app-deployment-tracker-ga:latest
-  environment:
-    TRACKING_ID: UA-56269387-10
-
 ga4tracker:
   image: silintl/ga-event-tracker:1.0.2
   encrypted_env_file: .env.encrypted
@@ -89,10 +84,6 @@ ga4tracker:
     GA_CLIENT_ID: cover-api
     # GA_EVENT_NAME is set by the codeship-steps command
     # Add to the .env.encrypted file ... GA_API_SECRET
-
-rollbar:
-  image: silintl/notify-rollbar-deployment:latest
-  encrypted_env_file: .env.encrypted
 
 minio:
   image: minio/minio

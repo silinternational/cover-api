@@ -26,7 +26,6 @@ require (
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/markbates/goth v1.76.1
 	github.com/pkg/errors v0.9.1
-	github.com/rollbar/rollbar-go v1.4.5
 	github.com/rs/cors v1.8.3
 	github.com/russellhaering/gosaml2 v0.9.1
 	github.com/russellhaering/goxmldsig v1.3.0
