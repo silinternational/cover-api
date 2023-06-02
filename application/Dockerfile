@@ -27,7 +27,7 @@ RUN cat domain/commit.txt
 
 RUN buffalo build --static -o /bin/app
 
-FROM alpine
+FROM alpine:3
 RUN apk add --no-cache bash ca-certificates
 
 WORKDIR /bin/
