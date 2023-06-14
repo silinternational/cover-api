@@ -133,6 +133,7 @@ var Env struct {
 	ApiBaseURL                 string `required:"true" split_words:"true"`
 	AccessTokenLifetimeSeconds int    `default:"1166400" split_words:"true"` // 13.5 days
 	AppName                    string `default:"Cover" split_words:"true"`
+	HstsTtl                    int    `default:"3600" split_words:"true"` // default = 1 hour
 	LogLevel                   string `default:"debug" split_words:"true"`
 	AppNameLong                string `default:"Cover by SIL" split_words:"true"`
 	Port                       int    `default:"3000"`
