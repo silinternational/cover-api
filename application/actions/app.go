@@ -282,7 +282,7 @@ func cookieStore() sessions.Store {
 
 func hstsMiddleware(next buffalo.Handler) buffalo.Handler {
 	return func(c buffalo.Context) error {
-		headerValue := fmt.Sprintf("max-age=%d", domain.Env.HstsTtl)
+		headerValue := fmt.Sprintf("max-age=%d", domain.Env.HstsMaxAge)
 		c.Response().Header().Add("Strict-Transport-Security", headerValue)
 		return next(c)
 	}
