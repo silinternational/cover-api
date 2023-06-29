@@ -246,7 +246,7 @@ func decodeKey(key, expectedType string) ([]byte, error) {
 	bytes = make([]byte, base64.StdEncoding.DecodedLen(len(key)))
 	n, err := base64.StdEncoding.Decode(bytes, []byte(key))
 	if err != nil {
-		return nil, fmt.Errorf("unable to decode RSA private key: %w", err)
+		return nil, fmt.Errorf("unable to decode base64: %w", err)
 	}
 	return bytes[:n], nil
 }
