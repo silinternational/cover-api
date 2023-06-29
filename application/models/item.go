@@ -780,6 +780,8 @@ func (i *Item) inactivateEnded(ctx context.Context) error {
 		return err
 	}
 
+	log.WithFields(map[string]any{"item_id": i.ID}).Infof("marking item as %s", api.ItemCoverageStatusInactive)
+
 	i.CoverageStatus = api.ItemCoverageStatusInactive
 
 	return update(tx, i)
