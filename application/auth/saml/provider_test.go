@@ -247,11 +247,11 @@ func Test_decodeKey(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := decodeKey(tt.pemStr, tt.expectedType)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("pemToBase64() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("decodeKey() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if len(got) != tt.wantNumBytes {
-				t.Errorf("pemToBase64() got = %v bytes\n want %v bytes", len(got), tt.wantNumBytes)
+				t.Errorf("decodeKey() got = %v bytes\n want %v bytes", len(got), tt.wantNumBytes)
 			}
 		})
 	}
