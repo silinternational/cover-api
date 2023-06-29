@@ -17,6 +17,11 @@ import (
 	"github.com/silinternational/cover-api/domain"
 )
 
+const (
+	keyTypeCert    = "CERTIFICATE"
+	keyTypePrivate = "PRIVATE KEY"
+)
+
 type Provider struct {
 	Config       Config
 	SamlProvider *saml2.SAMLServiceProvider
@@ -185,7 +190,7 @@ func getRsaPrivateKey(privateKey, publicCert string) (*rsa.PrivateKey, error) {
 		return rsaKey, errors.New("A valid PEM or base64 encoded publicCert is required")
 	}
 
-	privateKeyBytes, err := decodeKey(privateKey, "PRIVATE KEY")
+	privateKeyBytes, err := decodeKey(privateKey, keyTypePrivate)
 	if err != nil {
 		return nil, fmt.Errorf("problem with RSA private key: %w", err)
 	}
@@ -203,7 +208,7 @@ func getRsaPrivateKey(privateKey, publicCert string) (*rsa.PrivateKey, error) {
 		return rsaKey, errors.New("unable to assert parsed key type")
 	}
 
-	publicCertBytes, err := decodeKey(publicCert, "CERTIFICATE")
+	publicCertBytes, err := decodeKey(publicCert, keyTypeCert)
 	if err != nil {
 		return nil, fmt.Errorf("problem with RSA public cert: %w", err)
 	}
