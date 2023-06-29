@@ -74,7 +74,6 @@ XZ9jcIL+Gwpfi/QLvhJrmMGJ
 -----END PRIVATE KEY-----`
 
 func TestNew(t *testing.T) {
-
 	config := Config{
 		IDPEntityID:                 "",
 		SPEntityID:                  "",
@@ -199,35 +198,52 @@ func Test_getRsaPrivateKey(t *testing.T) {
 	}
 }
 
-func Test_pemToBase64(t *testing.T) {
+func Test_decodeKey(t *testing.T) {
 	tests := []struct {
-		name    string
-		pemStr  string
-		want    string
-		wantErr bool
+		name         string
+		pemStr       string
+		expectedType string
+		wantNumBytes int
+		wantErr      bool
 	}{
 		{
-			name:    "error expected",
-			pemStr:  "",
-			wantErr: true,
-			want:    "",
+			name:         "error expected",
+			pemStr:       "NOT VALID",
+			expectedType: "CERTIFICATE",
+			wantErr:      true,
+			wantNumBytes: 0,
 		},
 		{
-			name:    "valid cert",
-			pemStr:  ValidPublicCert,
-			wantErr: false,
-			want:    "MIIEXTCCAsWgAwIBAgIJAM6I9eCQdTglMA0GCSqGSIb3DQEBCwUAMEUxCzAJBgNVBAYTAkFVMRMwEQYDVQQIDApTb21lLVN0YXRlMSEwHwYDVQQKDBhJbnRlcm5ldCBXaWRnaXRzIFB0eSBMdGQwHhcNMTkwODEzMTQ1MDE1WhcNMjkwODEyMTQ1MDE1WjBFMQswCQYDVQQGEwJBVTETMBEGA1UECAwKU29tZS1TdGF0ZTEhMB8GA1UECgwYSW50ZXJuZXQgV2lkZ2l0cyBQdHkgTHRkMIIBojANBgkqhkiG9w0BAQEFAAOCAY8AMIIBigKCAYEA2Bf0H/hW/P8FbuTnuSVGTX+12ORmW3jhMokTefEd/cysfxXycuIaQ3oK4WFoxlHhwkkdrmabB4b/LsJyn9g40tVi9TRKnD7RzR3gCvIAEb7ldX2B78/0VtQnzcUAt91qo84AOHk7kY5R8fRhtP23n49F0Wk5QGczcVf9fC7td2hKAKbXQskIeylIElwNC8j9q/QIE1pHlc1/vHZmKuE6pPqazto8sJkcVXD7Yqel7kmhYFrR9GUnbS6/HHB4oQ4MInI+kHgBmYM3ctVe2Dsvdj4eGEbxiYYY11ynj5jofuiib0FrZWUNwoYDJSLEavl5Rwsn5i2pBxmGXHNez5se8qrAPQnKGBsUYn13102CnIwTKPlMUlYq0JKUKd20bxtgTqOgHffSL2BGEj8ojqBIUU/ewkjz+fD+yVujDjp/Lx9jZ0WKuUYZiuTUAeWFKyp9UQdl4xhzFFMkeseZHg4wQGPqFTc8KKZ27IWmygF4J5SVSDv7hbd90bVPwvVEvzuRAgMBAAGjUDBOMB0GA1UdDgQWBBQQliE+bg7SY3M68U03oo5YZohhvjAfBgNVHSMEGDAWgBQQliE+bg7SY3M68U03oo5YZohhvjAMBgNVHRMEBTADAQH/MA0GCSqGSIb3DQEBCwUAA4IBgQCIXJBtUo6NZWIqVXMcgSN/79VnrtdNR53FMyehO/BnS/OCD78V6nhsdIXlXQFvamgbTb0+HLIjicrta3rIwl03pIAzD8kKkeYntkD7hhnBI30CDxeDhTOWo+pi8JlPLl9KIY6kk5Yt777CZzLe2bhTKBZiL+ybKbbppFZmpLj9QeIRsgyb63ufq1XGVjeXtlHjeE1KJUva367oTNJ2wasgbumCAOAHmQ/dweO+WxeNrjSAMyc1MFtHnuR+8XLiSh3xjA2mG0oMYxAroOpWVqHmrHfsCBvDoMoBo2AkyezFpUfaD83aE5UMDjOTOFbOXdQec8HG2kPjqjhP27nL+oyWfstG32xtv7Q1nxD+iJ+H0qeiX3/RTnJ+l878FpEK8LjuzYBcctqj8Ioqu9oUE2U2xMDQeXzG55v9l6UyT1HuyfJxr9o/f6YzQyuyuf7gO/X57PEF/t/EByTFDlnZLzq9nE45xPHX7mv/ASczw1QTUVj3mPQU2/GgAW62CgKpXZE=",
+			name:         "valid PEM cert",
+			pemStr:       ValidPublicCert,
+			expectedType: "CERTIFICATE",
+			wantErr:      false,
+			wantNumBytes: 1121,
+		},
+		{
+			name:         "valid PEM key",
+			pemStr:       ValidPrivateKey,
+			expectedType: "PRIVATE KEY",
+			wantErr:      false,
+			wantNumBytes: 1794,
+		},
+		{
+			name:         "wrong type",
+			pemStr:       ValidPrivateKey,
+			expectedType: "CERTIFICATE",
+			wantErr:      true,
+			wantNumBytes: 0,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := pemToBase64(tt.pemStr)
+			got, err := decodeKey(tt.pemStr, tt.expectedType)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("pemToBase64() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if got != tt.want {
-				t.Errorf("pemToBase64() got = %v, want %v", got, tt.want)
+			if len(got) != tt.wantNumBytes {
+				t.Errorf("pemToBase64() got = %v bytes\n want %v bytes", len(got), tt.wantNumBytes)
 			}
 		})
 	}

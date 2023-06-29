@@ -7,7 +7,6 @@ import (
 	"encoding/pem"
 	"errors"
 	"fmt"
-	"strings"
 
 	"github.com/gobuffalo/buffalo"
 	saml2 "github.com/russellhaering/gosaml2"
@@ -65,7 +64,7 @@ func New(config Config) (*Provider, error) {
 func (p *Provider) initSAMLServiceProvider() error {
 	idpCertStore, err := getCertStore(p.Config.IDPPublicCert)
 	if err != nil {
-		return err
+		return fmt.Errorf("error in initSAMLServiceProvider: %w", err)
 	}
 
 	p.SamlProvider = &saml2.SAMLServiceProvider{
@@ -156,16 +155,11 @@ func getCertStore(cert string) (dsig.MemoryX509CertificateStore, error) {
 		Roots: []*x509.Certificate{},
 	}
 
-	if cert == "" || !strings.HasPrefix(cert, "-") {
-		return certStore, errors.New("a valid PEM encoded certificate is required")
+	if cert == "" {
+		return certStore, errors.New("a valid PEM or base64 encoded certificate is required")
 	}
 
-	cert, err := pemToBase64(cert)
-	if err != nil {
-		return certStore, err
-	}
-
-	certData, err := base64.StdEncoding.DecodeString(cert)
+	certData, err := decodeKey(cert, "CERTIFICATE")
 	if err != nil {
 		return certStore, fmt.Errorf("error decoding cert from string: %s", err)
 	}
@@ -184,22 +178,21 @@ func getRsaPrivateKey(privateKey, publicCert string) (*rsa.PrivateKey, error) {
 	var rsaKey *rsa.PrivateKey
 
 	if privateKey == "" {
-		return rsaKey, errors.New("A valid PEM encoded privateKey is required")
+		return rsaKey, errors.New("A valid PEM or base64 encoded privateKey is required")
 	}
 
 	if publicCert == "" {
-		return rsaKey, errors.New("A valid PEM encoded publicCert is required")
+		return rsaKey, errors.New("A valid PEM or base64 encoded publicCert is required")
 	}
 
-	privPem, _ := pem.Decode([]byte(privateKey))
-	if privPem.Type != "PRIVATE KEY" {
-		return rsaKey, fmt.Errorf("RSA private key is of the wrong type: %s", privPem.Type)
+	privateKeyBytes, err := decodeKey(privateKey, "PRIVATE KEY")
+	if err != nil {
+		return nil, fmt.Errorf("problem with RSA private key: %w", err)
 	}
 
-	var err error
 	var parsedKey any
-	if parsedKey, err = x509.ParsePKCS8PrivateKey(privPem.Bytes); err != nil {
-		if parsedKey, err = x509.ParsePKCS1PrivateKey(privPem.Bytes); err != nil {
+	if parsedKey, err = x509.ParsePKCS8PrivateKey(privateKeyBytes); err != nil {
+		if parsedKey, err = x509.ParsePKCS1PrivateKey(privateKeyBytes); err != nil {
 			return rsaKey, fmt.Errorf("unable to parse RSA private key: %s", err)
 		}
 	}
@@ -210,22 +203,19 @@ func getRsaPrivateKey(privateKey, publicCert string) (*rsa.PrivateKey, error) {
 		return rsaKey, errors.New("unable to assert parsed key type")
 	}
 
-	pubPem, _ := pem.Decode([]byte(publicCert))
-	if pubPem == nil {
-		return rsaKey, errors.New("rsa public key not in pem format")
-	}
-	if pubPem.Type != "CERTIFICATE" {
-		return rsaKey, fmt.Errorf("RSA public key is of the wrong type: %s", pubPem.Type)
+	publicCertBytes, err := decodeKey(publicCert, "CERTIFICATE")
+	if err != nil {
+		return nil, fmt.Errorf("problem with RSA public cert: %w", err)
 	}
 
-	cert, err := x509.ParseCertificate(pubPem.Bytes)
+	cert, err := x509.ParseCertificate(publicCertBytes)
 	if err != nil {
-		return rsaKey, fmt.Errorf("unable to parse RSA public key: %s", err)
+		return rsaKey, fmt.Errorf("unable to parse RSA public cert: %s", err)
 	}
 
 	var pubKey *rsa.PublicKey
 	if pubKey, ok = cert.PublicKey.(*rsa.PublicKey); !ok {
-		return rsaKey, fmt.Errorf("unable to parse RSA public key: %s", err)
+		return rsaKey, errors.New("unable to assert RSA public cert type")
 	}
 
 	rsaKey.PublicKey = *pubKey
@@ -240,4 +230,23 @@ func pemToBase64(pemStr string) (string, error) {
 	}
 
 	return base64.StdEncoding.EncodeToString(block.Bytes), nil
+}
+
+// decodeKey decodes a key from either a PEM-encoded string or a base64 string
+func decodeKey(key, expectedType string) ([]byte, error) {
+	block, _ := pem.Decode([]byte(key))
+	if block != nil {
+		if block.Type != expectedType {
+			return nil, fmt.Errorf("key is of the wrong type, expected %s but found %s", expectedType, block.Type)
+		}
+		return block.Bytes, nil
+	}
+
+	var bytes []byte
+	bytes = make([]byte, base64.StdEncoding.DecodedLen(len(key)))
+	n, err := base64.StdEncoding.Decode(bytes, []byte(key))
+	if err != nil {
+		return nil, fmt.Errorf("unable to decode RSA private key: %w", err)
+	}
+	return bytes[:n], nil
 }
