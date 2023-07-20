@@ -9,6 +9,7 @@ import (
 
 	"github.com/silinternational/cover-api/api"
 	"github.com/silinternational/cover-api/domain"
+	"github.com/silinternational/cover-api/fin"
 )
 
 func (ms *ModelSuite) TestLedgerReport_Create() {
@@ -178,7 +179,7 @@ func (ms *ModelSuite) TestNewLedgerReport() {
 	}
 	for _, tt := range tests {
 		ms.T().Run(tt.name, func(t *testing.T) {
-			got, err := NewLedgerReport(ctx, tt.reportType, tt.date)
+			got, err := NewLedgerReport(ctx, fin.ProviderTypeSage, tt.reportType, tt.date)
 			if tt.wantErr != nil {
 				ms.Error(err, "test should have produced an error")
 				ms.EqualAppError(*tt.wantErr, err)
@@ -302,7 +303,7 @@ func (ms *ModelSuite) TestNewPolicyLedgerReport() {
 	}
 	for _, tt := range tests {
 		ms.T().Run(tt.name, func(t *testing.T) {
-			got, err := NewPolicyLedgerReport(ctx, policy, tt.reportType, tt.month, tt.year)
+			got, err := NewPolicyLedgerReport(ctx, policy, fin.ProviderTypeSage, tt.reportType, tt.month, tt.year)
 			if tt.wantErr != nil {
 				ms.Error(err, "test should have produced an error")
 				ms.EqualAppError(*tt.wantErr, err)

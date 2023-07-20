@@ -8,15 +8,13 @@ import (
 )
 
 const (
-	header1 = `"RECTYPE","BATCHID","BTCHENTRY","ORIGCOMP","SRCELEDGER","SRCETYPE","FSCSYR","FSCSPERD","SWEDIT",` +
+	sageHeader1 = `"RECTYPE","BATCHID","BTCHENTRY","ORIGCOMP","SRCELEDGER","SRCETYPE","FSCSYR","FSCSPERD","SWEDIT",` +
 		`"JRNLDESC","REVPERD","ERRBATCH","ERRENTRY","DETAILCNT","PROCESSCMD"` + "\n"
-	header2 = `"RECTYPE","BATCHNBR","JOURNALID","TRANSNBR","DESCOMP","ROUTE","ACCTID","COMPANYID","TRANSAMT",` +
+	sageHeader2 = `"RECTYPE","BATCHNBR","JOURNALID","TRANSNBR","DESCOMP","ROUTE","ACCTID","COMPANYID","TRANSAMT",` +
 		`"SCURNDEC","TRANSDESC","TRANSREF","TRANSDATE","SRCELDGR","SRCETYPE",` + "\n"
-)
 
-const (
-	transactionRowTemplate = `"2","000000","00001","%010d","",0,"%s","",%s,"2","%s","%s",%s,"GL","JE"` + "\n"
-	summaryRowTemplate     = `"1","000000","00001","","GL","JE","%d","%02d",0,"%s","00",0,0,0,2` + "\n"
+	sageTransactionRowTemplate = `"2","000000","00001","%010d","",0,"%s","",%s,"2","%s","%s",%s,"GL","JE"` + "\n"
+	sageSummaryRowTemplate     = `"1","000000","00001","","GL","JE","%d","%02d",0,"%s","00",0,0,0,2` + "\n"
 )
 
 type Sage struct {
@@ -34,8 +32,8 @@ func (s *Sage) AppendToBatch(t Transaction) {
 
 func (s *Sage) BatchToCSV() []byte {
 	var buf bytes.Buffer
-	buf.Write([]byte(header1))
-	buf.Write([]byte(header2))
+	buf.Write([]byte(sageHeader1))
+	buf.Write([]byte(sageHeader2))
 	buf.Write(s.summaryRow())
 	for i := range s.Transactions {
 		buf.Write(s.transactionRow(i))
@@ -45,14 +43,14 @@ func (s *Sage) BatchToCSV() []byte {
 }
 
 func (s *Sage) summaryRow() []byte {
-	str := fmt.Sprintf(summaryRowTemplate, s.Year, s.Period, s.JournalDescription)
+	str := fmt.Sprintf(sageSummaryRowTemplate, s.Year, s.Period, s.JournalDescription)
 	return []byte(str)
 }
 
 func (s *Sage) transactionRow(rowNumber int) []byte {
 	t := s.Transactions[rowNumber]
 	str := fmt.Sprintf(
-		transactionRowTemplate,
+		sageTransactionRowTemplate,
 		20*(rowNumber+1),
 		t.Account,
 		api.Currency(-t.Amount).String(),

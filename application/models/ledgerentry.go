@@ -129,7 +129,7 @@ func (le *LedgerEntries) AllNotEntered(tx *pop.Connection, cutoff time.Time) err
 	return appErrorFromDB(err, api.ErrorQueryFailure)
 }
 
-func (le *LedgerEntries) ToCsvForPolicy() []byte {
+func (le *LedgerEntries) ToCsvForPolicy(format string) []byte {
 	rowTemplate := `%s,"%s","%s",%s` + "\n"
 
 	var buf bytes.Buffer
@@ -144,7 +144,7 @@ func (le *LedgerEntries) ToCsvForPolicy() []byte {
 			rowTemplate,
 			l.Amount.String(),
 			l.getDescription(),
-			l.getReference(),
+			l.getReference(format),
 			l.DateSubmitted.Format(domain.DateFormat),
 		)
 		buf.Write([]byte(nextRow))
@@ -155,8 +155,8 @@ func (le *LedgerEntries) ToCsvForPolicy() []byte {
 
 type TransactionBlocks map[string]LedgerEntries // keyed by account
 
-func (le *LedgerEntries) ToCsv(date time.Time) []byte {
-	sage := fin.NewBatch(fin.ProviderTypeSage, date)
+func (le *LedgerEntries) ToCsv(format string, date time.Time) []byte {
+	report := fin.NewBatch(format, date)
 
 	blocks := le.MakeBlocks()
 	for account, ledgerEntries := range blocks {
@@ -165,17 +165,17 @@ func (le *LedgerEntries) ToCsv(date time.Time) []byte {
 		}
 		var balance int
 		for _, l := range ledgerEntries {
-			sage.AppendToBatch(fin.Transaction{
-				Account:     domain.Env.ExpenseAccount,
+			report.AppendToBatch(fin.Transaction{
+				Account:     l.getAccount(format),
 				Amount:      int(l.Amount),
 				Description: l.getDescription(),
-				Reference:   l.getReference(),
+				Reference:   l.getReference(format),
 				Date:        l.DateSubmitted,
 			})
 
 			balance -= int(l.Amount)
 		}
-		sage.AppendToBatch(fin.Transaction{
+		report.AppendToBatch(fin.Transaction{
 			Account:     account,
 			Amount:      balance,
 			Description: ledgerEntries[0].balanceDescription(),
@@ -184,7 +184,7 @@ func (le *LedgerEntries) ToCsv(date time.Time) []byte {
 		})
 	}
 
-	return sage.BatchToCSV()
+	return report.BatchToCSV()
 }
 
 func (le *LedgerEntries) MakeBlocks() TransactionBlocks {
@@ -229,10 +229,32 @@ func (le *LedgerEntry) Reconcile(ctx context.Context, now time.Time) error {
 	return nil
 }
 
+// getAccount returns text that is based on which report is being run and
+// LedgerEntry policy type (not including `<` and `>`)
+//
+// - For Sage reports, it returns the expense account
+//
+// - For household-type entries this returns `<entry.HouseholdID>`
+//
+// - For other entries this returns `<entry.EntityCode>`
+func (le *LedgerEntry) getAccount(format string) string {
+	if format == fin.ProviderTypeSage {
+		return domain.Env.ExpenseAccount
+	}
+
+	if le.PolicyType == api.PolicyTypeHousehold {
+		return le.HouseholdID
+	}
+
+	return fmt.Sprintf("%s %s%s / %s",
+		le.EntityCode, le.AccountNumber, le.CostCenter, le.PolicyName)
+}
+
 // getDescription returns text that is base on other fields of the LedgerEntry
 // For household-type entries this returns `<entry.Type.Description> / <Policy.Name>`.
 // For other entries this returns `<entry.Type.Description> / <Policy.Name> (<accountable person name>)`,
-//   not including `<` and `>`
+//
+//	not including `<` and `>`
 func (le *LedgerEntry) getDescription() string {
 	description := le.Type.Description(le.ClaimPayoutOption, le.Amount)
 
@@ -257,8 +279,8 @@ func (le *LedgerEntry) getDescription() string {
 // getReference returns text that is base on other fields of the LedgerEntry
 // For household-type entries this returns `MC <entry.HouseholdID> / <accountable person name>`
 // For other entries this returns `<entry.EntityCode> <entry.AccountNumber><entry.CostCenter> / <Policy.Name>`,
-//   not including `<` and `>`.
-func (le *LedgerEntry) getReference() string {
+// not including `<` and `>`.
+func (le *LedgerEntry) getReference(format string) string {
 	// For household policies
 	if le.PolicyType == api.PolicyTypeHousehold {
 		ref := fmt.Sprintf("MC %s", le.HouseholdID)

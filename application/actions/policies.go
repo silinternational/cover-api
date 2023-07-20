@@ -11,6 +11,7 @@ import (
 
 	"github.com/silinternational/cover-api/api"
 	"github.com/silinternational/cover-api/domain"
+	"github.com/silinternational/cover-api/fin"
 	"github.com/silinternational/cover-api/models"
 )
 
@@ -249,7 +250,11 @@ func policiesLedgerReportCreate(c buffalo.Context) error {
 		return reportError(c, err)
 	}
 
-	report, err := models.NewPolicyLedgerReport(c, *policy, input.Type, input.Month, input.Year)
+	if input.Format == "" {
+		input.Format = fin.ProviderTypeSage
+	}
+
+	report, err := models.NewPolicyLedgerReport(c, *policy, input.Format, input.Type, input.Month, input.Year)
 	if err != nil {
 		return reportError(c, err)
 	}

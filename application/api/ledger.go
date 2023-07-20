@@ -26,6 +26,12 @@ type LedgerReport struct {
 
 // swagger:model
 type LedgerReportCreateInput struct {
+	// Format:
+	// + `netsuite` - Report given in NetSuite format
+	// + `sage` - Report given in Sage format (default)
+	//
+	Format string `json:"format"`
+
 	// Report types:
 	// + `monthly` - Return all ledger entries not yet reconciled, up to the beginning of the given date.
 	// + `annual` - Return the policy renewal entries for the year of the given date.
