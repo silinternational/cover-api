@@ -143,6 +143,7 @@ func (ms *ModelSuite) TestNewLedgerReport() {
 	tests := []struct {
 		name       string
 		date       time.Time
+		format     string
 		reportType string
 		want       LedgerReport
 		wantErr    *api.AppError
@@ -151,24 +152,40 @@ func (ms *ModelSuite) TestNewLedgerReport() {
 			name:       "invalid report type",
 			date:       may,
 			reportType: "invalid",
+			format:     fin.ProviderTypeSage,
 			wantErr:    &api.AppError{Key: api.ErrorInvalidReportType, Category: api.CategoryUser},
 		},
 		{
 			name:       "none found",
 			date:       april,
 			reportType: ReportTypeMonthly,
+			format:     fin.ProviderTypeSage,
 			wantErr:    &api.AppError{Key: api.ErrorNoLedgerEntries, Category: api.CategoryNotFound},
 		},
 		{
 			name:       "future date",
 			date:       time.Now().UTC().AddDate(0, 0, 1),
 			reportType: ReportTypeMonthly,
+			format:     fin.ProviderTypeSage,
 			wantErr:    &api.AppError{Key: api.ErrorInvalidDate, Category: api.CategoryUser},
 		},
 		{
-			name:       "one entry",
+			name:       "one entry, sage",
 			date:       may,
 			reportType: ReportTypeMonthly,
+			format:     fin.ProviderTypeSage,
+			want: LedgerReport{
+				Type:          ReportTypeMonthly,
+				Date:          may,
+				File:          File{},
+				LedgerEntries: nil,
+			},
+		},
+		{
+			name:       "one entry, netsuite",
+			date:       may,
+			reportType: ReportTypeMonthly,
+			format:     fin.ProviderTypeNetSuite,
 			want: LedgerReport{
 				Type:          ReportTypeMonthly,
 				Date:          may,
@@ -179,7 +196,7 @@ func (ms *ModelSuite) TestNewLedgerReport() {
 	}
 	for _, tt := range tests {
 		ms.T().Run(tt.name, func(t *testing.T) {
-			got, err := NewLedgerReport(ctx, fin.ProviderTypeSage, tt.reportType, tt.date)
+			got, err := NewLedgerReport(ctx, tt.format, tt.reportType, tt.date)
 			if tt.wantErr != nil {
 				ms.Error(err, "test should have produced an error")
 				ms.EqualAppError(*tt.wantErr, err)
@@ -234,6 +251,7 @@ func (ms *ModelSuite) TestNewPolicyLedgerReport() {
 		month      int
 		year       int
 		reportType string
+		format     string
 		want       LedgerReport
 		wantCount  int
 		wantErr    *api.AppError
@@ -243,6 +261,7 @@ func (ms *ModelSuite) TestNewPolicyLedgerReport() {
 			month:      int(may.Month()),
 			year:       may.Year(),
 			reportType: "invalid",
+			format:     fin.ProviderTypeSage,
 			wantErr:    &api.AppError{Key: api.ErrorInvalidReportType, Category: api.CategoryUser},
 		},
 		{
@@ -250,6 +269,7 @@ func (ms *ModelSuite) TestNewPolicyLedgerReport() {
 			month:      int(nextMonth.Month()),
 			year:       nextMonth.Year(),
 			reportType: ReportTypeMonthly,
+			format:     fin.ProviderTypeSage,
 			wantErr:    &api.AppError{Key: api.ErrorInvalidDate, Category: api.CategoryUser},
 		},
 		{
@@ -257,6 +277,7 @@ func (ms *ModelSuite) TestNewPolicyLedgerReport() {
 			month:      0,
 			year:       2020,
 			reportType: ReportTypeMonthly,
+			format:     fin.ProviderTypeSage,
 			wantErr:    &api.AppError{Key: api.ErrorInvalidDate, Category: api.CategoryUser},
 		},
 		{
@@ -264,6 +285,7 @@ func (ms *ModelSuite) TestNewPolicyLedgerReport() {
 			month:      1,
 			year:       now.Year() + 1,
 			reportType: ReportTypeAnnual,
+			format:     fin.ProviderTypeSage,
 			wantErr:    &api.AppError{Key: api.ErrorInvalidDate, Category: api.CategoryUser},
 		},
 		{
@@ -271,6 +293,7 @@ func (ms *ModelSuite) TestNewPolicyLedgerReport() {
 			month:      int(april.Month()),
 			year:       april.Year(),
 			reportType: ReportTypeMonthly,
+			format:     fin.ProviderTypeSage,
 			want: LedgerReport{
 				Type:          ReportTypeMonthly,
 				Date:          april,
@@ -284,6 +307,7 @@ func (ms *ModelSuite) TestNewPolicyLedgerReport() {
 			month:      int(may.Month()),
 			year:       may.Year(),
 			reportType: ReportTypeAnnual,
+			format:     fin.ProviderTypeSage,
 			want: LedgerReport{
 				Type:          ReportTypeAnnual,
 				Date:          january,
@@ -297,13 +321,51 @@ func (ms *ModelSuite) TestNewPolicyLedgerReport() {
 			month:      int(may.Month()),
 			year:       may.Year(),
 			reportType: ReportTypeMonthly,
+			format:     fin.ProviderTypeSage,
+			want:       LedgerReport{},
+			wantCount:  0,
+		},
+		{
+			name:       "one monthly entry",
+			month:      int(april.Month()),
+			year:       april.Year(),
+			reportType: ReportTypeMonthly,
+			format:     fin.ProviderTypeNetSuite,
+			want: LedgerReport{
+				Type:          ReportTypeMonthly,
+				Date:          april,
+				File:          File{},
+				LedgerEntries: nil,
+			},
+			wantCount: 1,
+		},
+		{
+			name:       "two annual entries",
+			month:      int(may.Month()),
+			year:       may.Year(),
+			reportType: ReportTypeAnnual,
+			format:     fin.ProviderTypeNetSuite,
+			want: LedgerReport{
+				Type:          ReportTypeAnnual,
+				Date:          january,
+				File:          File{},
+				LedgerEntries: nil,
+			},
+			wantCount: 2,
+		},
+		{
+			name:       "none found",
+			month:      int(may.Month()),
+			year:       may.Year(),
+			reportType: ReportTypeMonthly,
+			format:     fin.ProviderTypeNetSuite,
 			want:       LedgerReport{},
 			wantCount:  0,
 		},
 	}
 	for _, tt := range tests {
 		ms.T().Run(tt.name, func(t *testing.T) {
-			got, err := NewPolicyLedgerReport(ctx, policy, fin.ProviderTypeSage, tt.reportType, tt.month, tt.year)
+			got, err := NewPolicyLedgerReport(ctx, policy, tt.format, tt.reportType, tt.month, tt.year)
 			if tt.wantErr != nil {
 				ms.Error(err, "test should have produced an error")
 				ms.EqualAppError(*tt.wantErr, err)

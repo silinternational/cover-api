@@ -86,16 +86,19 @@ func (ms *ModelSuite) TestLedgerEntries_ToCsvForPolicy() {
 
 	tests := []struct {
 		name    string
+		format  string
 		entries LedgerEntries
 		want    []string
 	}{
 		{
 			name:    "no data",
+			format:  fin.ProviderTypeSage,
 			entries: LedgerEntries{},
 			want:    []string{csvPolicyHeader},
 		},
 		{
-			name:    "1 entry",
+			name:    "1 entry, sage",
+			format:  fin.ProviderTypeSage,
 			entries: LedgerEntries{entry},
 			want: []string{
 				csvPolicyHeader,
@@ -107,10 +110,24 @@ func (ms *ModelSuite) TestLedgerEntries_ToCsvForPolicy() {
 				),
 			},
 		},
+		{
+			name:    "1 entry, netsuite",
+			format:  fin.ProviderTypeNetSuite,
+			entries: LedgerEntries{entry},
+			want: []string{
+				csvPolicyHeader,
+				fmt.Sprintf(`%s,"%s","%s",%s`,
+					entry.Amount.String(),
+					entry.getDescription(),
+					entry.getReference(fin.ProviderTypeNetSuite),
+					date.Format(domain.DateFormat),
+				),
+			},
+		},
 	}
 	for _, tt := range tests {
 		ms.T().Run(tt.name, func(t *testing.T) {
-			got := tt.entries.ToCsvForPolicy(fin.ProviderTypeSage)
+			got := tt.entries.ToCsvForPolicy(tt.format)
 			for _, w := range tt.want {
 				ms.Contains(string(got), w)
 			}
