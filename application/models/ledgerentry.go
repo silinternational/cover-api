@@ -268,7 +268,7 @@ func (le *LedgerEntry) getDescription() string {
 // For household-type entries this returns `MC <entry.HouseholdID> / <accountable person name>`
 // For other entries this returns `<entry.EntityCode> <entry.AccountNumber><entry.CostCenter> / <Policy.Name>`,
 // not including `<` and `>`.
-func (le *LedgerEntry) getReference(format string) string {
+func (le *LedgerEntry) getReference() string {
 	// For household policies
 	if le.PolicyType == api.PolicyTypeHousehold {
 		ref := fmt.Sprintf("MC %s", le.HouseholdID)

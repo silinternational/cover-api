@@ -105,7 +105,7 @@ func (ms *ModelSuite) TestLedgerEntries_ToCsvForPolicy() {
 				fmt.Sprintf(`%s,"%s","%s",%s`,
 					entry.Amount.String(),
 					entry.getDescription(),
-					entry.getReference(fin.ProviderTypeSage),
+					entry.getReference(),
 					date.Format(domain.DateFormat),
 				),
 			},
@@ -119,7 +119,7 @@ func (ms *ModelSuite) TestLedgerEntries_ToCsvForPolicy() {
 				fmt.Sprintf(`%s,"%s","%s",%s`,
 					entry.Amount.String(),
 					entry.getDescription(),
-					entry.getReference(fin.ProviderTypeNetSuite),
+					entry.getReference(),
 					date.Format(domain.DateFormat),
 				),
 			},
@@ -179,7 +179,7 @@ func (ms *ModelSuite) TestLedgerEntries_ToCsv() {
 					domain.Env.ExpenseAccount,
 					api.Currency(-entry.Amount).String(),
 					entry.getDescription(),
-					entry.getReference(fin.ProviderTypeSage),
+					entry.getReference(),
 					date.Format("20060102"),
 				),
 				fmt.Sprintf(`"2","000000","00001","0000000040","",0,"%s","",%s,"2","%s","",%s,"GL","JE"`,
@@ -516,7 +516,7 @@ func (ms *ModelSuite) TestLedgerEntry_getReference() {
 	}
 	for _, tt := range tests {
 		ms.T().Run(tt.name, func(t *testing.T) {
-			got := tt.entry.getReference(fin.ProviderTypeSage)
+			got := tt.entry.getReference()
 
 			ms.Equal(tt.want, got)
 		})
