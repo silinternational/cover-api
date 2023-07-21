@@ -12,14 +12,21 @@ import (
 
 func TestNetSuite_BatchToCSV(t *testing.T) {
 	transaction := Transaction{
-		Account:     "xyz123",
-		Amount:      0,
-		Description: "transaction description",
-		Reference:   "abc123",
-		Date:        time.Now(),
+		EntityCode:        "abc1",
+		RiskCategoryName:  "def2",
+		RiskCategoryCC:    "ghi3",
+		Type:              "jkl4",
+		PolicyType:        api.PolicyTypeHousehold,
+		HouseholdID:       "mno5",
+		IncomeAccount:     "pqr6",
+		Name:              "stu7",
+		ClaimPayoutOption: "vwx8",
+		Amount:            0,
+		Date:              time.Now(),
+		Description:       "transaction description",
 	}
 
-	s := &NetSuite{
+	n := &NetSuite{
 		Period:             9,
 		Year:               2020,
 		JournalDescription: "journal description",
@@ -27,18 +34,19 @@ func TestNetSuite_BatchToCSV(t *testing.T) {
 	}
 
 	summaryRow := fmt.Sprintf(`"1","000000","00001","","GL","JE","%d","%02d",0,"%s","00",0,0,0,2`+"\n",
-		s.Year, s.Period, s.JournalDescription)
+		n.Year, n.Period, n.JournalDescription)
 
-	transactionRow := fmt.Sprintf(`"2","%s",%s,"2","%s",%s,"GL","JE"`+"\n",
-		transaction.Account,
+	transactionRow := fmt.Sprintf(netSuiteTransactionRowTemplate,
+		transaction.HouseholdID,
 		api.Currency(transaction.Amount).String(),
 		transaction.Description,
+		fmt.Sprintf("MC / %s", transaction.Name),
 		transaction.Date.Format("20060102"),
 	)
 
 	want := netSuiteHeader1 + netSuiteHeader2 + summaryRow + transactionRow
 
-	got := s.BatchToCSV()
+	got := n.BatchToCSV()
 
 	require.Equal(t, want, string(got))
 }

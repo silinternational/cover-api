@@ -244,7 +244,7 @@ func NewPolicyLedgerReport(ctx context.Context, policy Policy, format, reportTyp
 
 	report.File.Name = fmt.Sprintf("%s_policy_%s_%s_%d-%d.csv",
 		domain.Env.AppName, policy.ID.String(), reportType, year, month)
-	report.File.Content = le.ToCsvForPolicy(format)
+	report.File.Content = le.ToCsvForPolicy()
 	report.File.CreatedByID = CurrentUser(ctx).ID
 	report.File.ContentType = domain.ContentCSV
 	report.LedgerEntries = le

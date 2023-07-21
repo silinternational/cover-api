@@ -127,7 +127,7 @@ func (ms *ModelSuite) TestLedgerEntries_ToCsvForPolicy() {
 	}
 	for _, tt := range tests {
 		ms.T().Run(tt.name, func(t *testing.T) {
-			got := tt.entries.ToCsvForPolicy(tt.format)
+			got := tt.entries.ToCsvForPolicy()
 			for _, w := range tt.want {
 				ms.Contains(string(got), w)
 			}

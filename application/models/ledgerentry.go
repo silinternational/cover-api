@@ -1,7 +1,6 @@
 package models
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"time"
@@ -11,7 +10,6 @@ import (
 	"github.com/gofrs/uuid"
 
 	"github.com/silinternational/cover-api/api"
-	"github.com/silinternational/cover-api/domain"
 	"github.com/silinternational/cover-api/fin"
 )
 
@@ -129,34 +127,36 @@ func (le *LedgerEntries) AllNotEntered(tx *pop.Connection, cutoff time.Time) err
 	return appErrorFromDB(err, api.ErrorQueryFailure)
 }
 
-func (le *LedgerEntries) ToCsvForPolicy(format string) []byte {
-	rowTemplate := `%s,"%s","%s",%s` + "\n"
-
-	var buf bytes.Buffer
-	buf.Write([]byte(csvPolicyHeader))
-
+func (le *LedgerEntries) ToCsvForPolicy() []byte {
+	report := fin.NewBatch(fin.ProviderTypePolicy, time.Now())
 	for _, l := range *le {
-		if l.Amount == 0 {
-			continue
-		}
-
-		nextRow := fmt.Sprintf(
-			rowTemplate,
-			l.Amount.String(),
-			l.getDescription(),
-			l.getReference(format),
-			l.DateSubmitted.Format(domain.DateFormat),
-		)
-		buf.Write([]byte(nextRow))
+		report.AppendToBatch(fin.Transaction{
+			EntityCode:        l.AccountNumber,
+			RiskCategoryName:  l.RiskCategoryName,
+			RiskCategoryCC:    l.RiskCategoryCC,
+			Type:              string(l.Type),
+			PolicyType:        l.PolicyType,
+			HouseholdID:       l.HouseholdID,
+			CostCenter:        l.CostCenter,
+			AccountNumber:     l.AccountNumber,
+			IncomeAccount:     l.IncomeAccount,
+			Name:              l.Name,
+			PolicyName:        l.PolicyName,
+			ClaimPayoutOption: l.ClaimPayoutOption,
+			Amount:            int(l.Amount),
+			Date:              l.DateSubmitted,
+			Description:       l.getDescription(),
+		})
 	}
 
-	return buf.Bytes()
+	return report.BatchToCSV()
 }
 
 type TransactionBlocks map[string]LedgerEntries // keyed by account
 
 func (le *LedgerEntries) ToCsv(format string, date time.Time) []byte {
 	report := fin.NewBatch(format, date)
+	ref := ""
 
 	blocks := le.MakeBlocks()
 	for account, ledgerEntries := range blocks {
@@ -166,11 +166,21 @@ func (le *LedgerEntries) ToCsv(format string, date time.Time) []byte {
 		var balance int
 		for _, l := range ledgerEntries {
 			report.AppendToBatch(fin.Transaction{
-				Account:     l.getAccount(format),
-				Amount:      int(l.Amount),
-				Description: l.getDescription(),
-				Reference:   l.getReference(format),
-				Date:        l.DateSubmitted,
+				EntityCode:        l.AccountNumber,
+				RiskCategoryName:  l.RiskCategoryName,
+				RiskCategoryCC:    l.RiskCategoryCC,
+				Type:              string(l.Type),
+				PolicyType:        l.PolicyType,
+				HouseholdID:       l.HouseholdID,
+				CostCenter:        l.CostCenter,
+				AccountNumber:     l.AccountNumber,
+				IncomeAccount:     l.IncomeAccount,
+				Name:              l.Name,
+				PolicyName:        l.PolicyName,
+				ClaimPayoutOption: l.ClaimPayoutOption,
+				Amount:            int(l.Amount),
+				Date:              l.DateSubmitted,
+				Description:       l.getDescription(),
 			})
 
 			balance -= int(l.Amount)
@@ -179,7 +189,7 @@ func (le *LedgerEntries) ToCsv(format string, date time.Time) []byte {
 			Account:     account,
 			Amount:      balance,
 			Description: ledgerEntries[0].balanceDescription(),
-			Reference:   "",
+			Reference:   &ref,
 			Date:        date,
 		})
 	}
@@ -227,27 +237,6 @@ func (le *LedgerEntry) Reconcile(ctx context.Context, now time.Time) error {
 		}
 	}
 	return nil
-}
-
-// getAccount returns text that is based on which report is being run and
-// LedgerEntry policy type (not including `<` and `>`)
-//
-// - For Sage reports, it returns the expense account
-//
-// - For household-type entries this returns `<entry.HouseholdID>`
-//
-// - For other entries this returns `<entry.EntityCode>`
-func (le *LedgerEntry) getAccount(format string) string {
-	if format == fin.ProviderTypeSage {
-		return domain.Env.ExpenseAccount
-	}
-
-	if le.PolicyType == api.PolicyTypeHousehold {
-		return le.HouseholdID
-	}
-
-	return fmt.Sprintf("%s %s%s / %s",
-		le.EntityCode, le.AccountNumber, le.CostCenter, le.PolicyName)
 }
 
 // getDescription returns text that is base on other fields of the LedgerEntry
