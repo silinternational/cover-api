@@ -242,8 +242,7 @@ func (le *LedgerEntry) Reconcile(ctx context.Context, now time.Time) error {
 // getDescription returns text that is base on other fields of the LedgerEntry
 // For household-type entries this returns `<entry.Type.Description> / <Policy.Name>`.
 // For other entries this returns `<entry.Type.Description> / <Policy.Name> (<accountable person name>)`,
-//
-//	not including `<` and `>`
+// not including `<` and `>`
 func (le *LedgerEntry) getDescription() string {
 	description := le.Type.Description(le.ClaimPayoutOption, le.Amount)
 
