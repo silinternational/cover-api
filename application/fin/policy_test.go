@@ -27,11 +27,8 @@ func TestPolicy_BatchToCSV(t *testing.T) {
 		Description:       "transaction description",
 	}
 
-	n := &NetSuite{
-		Period:             9,
-		Year:               2020,
-		JournalDescription: "journal description",
-		Transactions:       []Transaction{transaction},
+	n := &Policy{
+		Transactions: []Transaction{transaction},
 	}
 
 	transactionRow := fmt.Sprintf(policyTransactionRowTemplate,

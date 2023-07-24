@@ -10,7 +10,7 @@ import (
 
 const (
 	policyHeader                 = `"Amount","Description","Reference","Date Entered"` + "\n"
-	policyTransactionRowTemplate = `%d,"%s","%s",%s` + "\n"
+	policyTransactionRowTemplate = `%s,"%s","%s",%s` + "\n"
 )
 
 type Policy struct {
@@ -67,7 +67,7 @@ func (p *Policy) transactionRow(rowNumber int) []byte {
 	t := p.Transactions[rowNumber]
 	str := fmt.Sprintf(
 		policyTransactionRowTemplate,
-		api.Currency(-t.Amount),
+		api.Currency(-t.Amount).String(),
 		p.getDescription(t),
 		p.getReference(t),
 		t.Date.Format(domain.DateFormat),

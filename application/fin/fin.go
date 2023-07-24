@@ -34,7 +34,7 @@ type Transaction struct {
 	ClaimPayoutOption string
 
 	Account     string
-	Amount      int
+	Amount      api.Currency
 	Description string
 	Reference   *string // Override the reference if given
 	Date        time.Time

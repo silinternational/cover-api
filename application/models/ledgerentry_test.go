@@ -92,27 +92,13 @@ func (ms *ModelSuite) TestLedgerEntries_ToCsvForPolicy() {
 	}{
 		{
 			name:    "no data",
-			format:  fin.ProviderTypeSage,
+			format:  fin.ProviderTypePolicy,
 			entries: LedgerEntries{},
 			want:    []string{csvPolicyHeader},
 		},
 		{
-			name:    "1 entry, sage",
-			format:  fin.ProviderTypeSage,
-			entries: LedgerEntries{entry},
-			want: []string{
-				csvPolicyHeader,
-				fmt.Sprintf(`%s,"%s","%s",%s`,
-					entry.Amount.String(),
-					entry.getDescription(),
-					entry.getReference(),
-					date.Format(domain.DateFormat),
-				),
-			},
-		},
-		{
-			name:    "1 entry, netsuite",
-			format:  fin.ProviderTypeNetSuite,
+			name:    "1 entry",
+			format:  fin.ProviderTypePolicy,
 			entries: LedgerEntries{entry},
 			want: []string{
 				csvPolicyHeader,

@@ -131,7 +131,7 @@ func (le *LedgerEntries) ToCsvForPolicy() []byte {
 	report := fin.NewBatch(fin.ProviderTypePolicy, time.Now())
 	for _, l := range *le {
 		report.AppendToBatch(fin.Transaction{
-			EntityCode:        l.AccountNumber,
+			EntityCode:        l.EntityCode,
 			RiskCategoryName:  l.RiskCategoryName,
 			RiskCategoryCC:    l.RiskCategoryCC,
 			Type:              string(l.Type),
@@ -143,7 +143,7 @@ func (le *LedgerEntries) ToCsvForPolicy() []byte {
 			Name:              l.Name,
 			PolicyName:        l.PolicyName,
 			ClaimPayoutOption: l.ClaimPayoutOption,
-			Amount:            int(l.Amount),
+			Amount:            l.Amount,
 			Date:              l.DateSubmitted,
 			Description:       l.getDescription(),
 		})
@@ -166,7 +166,7 @@ func (le *LedgerEntries) ToCsv(format string, date time.Time) []byte {
 		var balance int
 		for _, l := range ledgerEntries {
 			report.AppendToBatch(fin.Transaction{
-				EntityCode:        l.AccountNumber,
+				EntityCode:        l.EntityCode,
 				RiskCategoryName:  l.RiskCategoryName,
 				RiskCategoryCC:    l.RiskCategoryCC,
 				Type:              string(l.Type),
@@ -178,7 +178,7 @@ func (le *LedgerEntries) ToCsv(format string, date time.Time) []byte {
 				Name:              l.Name,
 				PolicyName:        l.PolicyName,
 				ClaimPayoutOption: l.ClaimPayoutOption,
-				Amount:            int(l.Amount),
+				Amount:            l.Amount,
 				Date:              l.DateSubmitted,
 				Description:       l.getDescription(),
 			})
@@ -187,7 +187,7 @@ func (le *LedgerEntries) ToCsv(format string, date time.Time) []byte {
 		}
 		report.AppendToBatch(fin.Transaction{
 			Account:     account,
-			Amount:      balance,
+			Amount:      api.Currency(balance),
 			Description: ledgerEntries[0].balanceDescription(),
 			Reference:   &ref,
 			Date:        date,
