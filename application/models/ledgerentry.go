@@ -3,6 +3,7 @@ package models
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/gobuffalo/nulls"
@@ -186,7 +187,7 @@ func (le *LedgerEntries) ToCsv(format string, date time.Time) []byte {
 			balance -= int(l.Amount)
 		}
 		report.AppendToBatch(fin.Transaction{
-			Account:     account,
+			Account:     strings.TrimSpace(account),
 			Amount:      api.Currency(balance),
 			Description: ledgerEntries[0].balanceDescription(),
 			Reference:   &ref,
@@ -201,6 +202,9 @@ func (le *LedgerEntries) MakeBlocks() TransactionBlocks {
 	blocks := TransactionBlocks{}
 	for _, e := range *le {
 		key := e.IncomeAccount + e.RiskCategoryCC
+		if e.PolicyType == api.PolicyTypeHousehold {
+			key += " "
+		}
 		blocks[key] = append(blocks[key], e)
 	}
 	return blocks
@@ -342,7 +346,7 @@ func (le *LedgerEntry) balanceDescription() string {
 		premiumsOrClaims = "Claims"
 
 		// Claims transactions use the same account for all entities
-		entity = "all"
+		entity = string(le.PolicyType)
 	}
 
 	return fmt.Sprintf("Total %s %s %s", entity, le.RiskCategoryName, premiumsOrClaims)

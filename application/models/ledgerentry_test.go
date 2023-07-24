@@ -238,13 +238,24 @@ func (ms *ModelSuite) TestLedgerEntry_balanceDescription() {
 			want: fmt.Sprintf("Total %s cat2 Premiums", parentEntity.Code),
 		},
 		{
-			name: "claims",
+			name: "household claims",
 			entry: LedgerEntry{
 				EntityCode:       subEntity.Code,
 				RiskCategoryName: "cat2",
+				PolicyType:       api.PolicyTypeHousehold,
 				Type:             LedgerEntryTypeClaimAdjustment,
 			},
-			want: "Total all cat2 Claims",
+			want: fmt.Sprintf("Total %s cat2 Claims", api.PolicyTypeHousehold),
+		},
+		{
+			name: "team claims",
+			entry: LedgerEntry{
+				EntityCode:       subEntity.Code,
+				RiskCategoryName: "cat2",
+				PolicyType:       api.PolicyTypeTeam,
+				Type:             LedgerEntryTypeClaimAdjustment,
+			},
+			want: fmt.Sprintf("Total %s cat2 Claims", api.PolicyTypeTeam),
 		},
 	}
 	for _, tt := range tests {
