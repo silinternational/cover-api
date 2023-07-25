@@ -51,10 +51,6 @@ func (s *Sage) getAccount(t Transaction) string {
 	return domain.Env.ExpenseAccount
 }
 
-func (s *Sage) getDescription(t Transaction) string {
-	return t.Description
-}
-
 func (s *Sage) getReference(t Transaction) string {
 	if t.Reference != nil {
 		return *t.Reference
@@ -93,7 +89,7 @@ func (s *Sage) transactionRow(rowNumber int) []byte {
 		20*(rowNumber+1),
 		s.getAccount(t),
 		api.Currency(-t.Amount).String(),
-		fmt.Sprintf("%.60s", s.getDescription(t)), // truncate to Sage limit of 60 characters
+		fmt.Sprintf("%.60s", t.Description), // truncate to Sage limit of 60 characters
 		s.getReference(t),
 		t.Date.Format("20060102"),
 	)

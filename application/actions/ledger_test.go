@@ -21,7 +21,7 @@ func (as *ActionSuite) Test_LedgerReportList() {
 	normalUser := f.Users[0]
 	stewardUser := models.CreateAdminUsers(as.DB)[models.AppRoleSteward]
 
-	lr, err := models.NewLedgerReport(models.CreateTestContext(stewardUser), fin.ProviderTypeSage, models.ReportTypeMonthly, time.Now())
+	lr, err := models.NewLedgerReport(models.CreateTestContext(stewardUser), fin.ReportFormatSage, models.ReportTypeMonthly, time.Now())
 	as.NoError(err)
 	as.NoError(lr.Create(as.DB))
 
@@ -86,12 +86,12 @@ func (as *ActionSuite) Test_LedgerReportView() {
 
 	now := time.Now().UTC()
 
-	lr, err := models.NewLedgerReport(models.CreateTestContext(stewardUser), fin.ProviderTypeSage, models.ReportTypeMonthly, now)
+	lr, err := models.NewLedgerReport(models.CreateTestContext(stewardUser), fin.ReportFormatSage, models.ReportTypeMonthly, now)
 	as.NoError(err)
 	as.NoError(lr.Create(as.DB))
 
 	policyReport, err := models.NewPolicyLedgerReport(models.CreateTestContext(normalUser),
-		policy, fin.ProviderTypeSage, models.ReportTypeAnnual, 0, now.Year())
+		policy, models.ReportTypeAnnual, 0, now.Year())
 	as.NoError(err)
 	as.NoError(policyReport.Create(as.DB))
 
@@ -238,7 +238,7 @@ func (as *ActionSuite) Test_LedgerReportReconcile() {
 	normalUser := f.Users[0]
 	stewardUser := models.CreateAdminUsers(as.DB)[models.AppRoleSteward]
 
-	lr, err := models.NewLedgerReport(models.CreateTestContext(stewardUser), fin.ProviderTypeSage, models.ReportTypeMonthly, time.Now())
+	lr, err := models.NewLedgerReport(models.CreateTestContext(stewardUser), fin.ReportFormatSage, models.ReportTypeMonthly, time.Now())
 	as.NoError(err)
 	as.NoError(lr.Create(as.DB))
 

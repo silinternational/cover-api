@@ -33,10 +33,6 @@ func (p *Policy) BatchToCSV() []byte {
 	return buf.Bytes()
 }
 
-func (p *Policy) getDescription(t Transaction) string {
-	return t.Description
-}
-
 func (p *Policy) getReference(t Transaction) string {
 	if t.Reference != nil {
 		return *t.Reference
@@ -68,7 +64,7 @@ func (p *Policy) transactionRow(rowNumber int) []byte {
 	str := fmt.Sprintf(
 		policyTransactionRowTemplate,
 		api.Currency(-t.Amount).String(),
-		p.getDescription(t),
+		t.Description,
 		p.getReference(t),
 		t.Date.Format(domain.DateFormat),
 	)

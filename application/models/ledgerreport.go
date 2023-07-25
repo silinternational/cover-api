@@ -212,7 +212,7 @@ func NewLedgerReport(ctx context.Context, format, reportType string, date time.T
 // NewPolicyLedgerReport creates a new report for one policy by querying the database according
 // to the requested report type and the month and year of the request.
 // If no ledger entries are found, it returns an empty LedgerReport.
-func NewPolicyLedgerReport(ctx context.Context, policy Policy, format, reportType string, month, year int) (LedgerReport, error) {
+func NewPolicyLedgerReport(ctx context.Context, policy Policy, reportType string, month, year int) (LedgerReport, error) {
 	tx := Tx(ctx)
 
 	report := LedgerReport{Type: reportType, PolicyID: nulls.NewUUID(policy.ID)}

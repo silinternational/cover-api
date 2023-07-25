@@ -128,7 +128,7 @@ func (le *LedgerEntries) AllNotEntered(tx *pop.Connection, cutoff time.Time) err
 }
 
 func (le *LedgerEntries) ToCsvForPolicy() []byte {
-	report := fin.NewBatch(fin.ProviderTypePolicy, time.Now())
+	report := fin.NewBatch(fin.ReportFormatPolicy, time.Now())
 	for _, l := range *le {
 		report.AppendToBatch(fin.Transaction{
 			EntityCode:        l.EntityCode,
@@ -262,31 +262,6 @@ func (le *LedgerEntry) getDescription() string {
 	}
 
 	return fmt.Sprintf(`%s (%s)`, description, le.Name)
-}
-
-// getReference returns text that is base on other fields of the LedgerEntry
-// For household-type entries this returns `MC <entry.HouseholdID> / <accountable person name>`
-// For other entries this returns `<entry.EntityCode> <entry.AccountNumber><entry.CostCenter> / <Policy.Name>`,
-// not including `<` and `>`.
-func (le *LedgerEntry) getReference() string {
-	// For household policies
-	if le.PolicyType == api.PolicyTypeHousehold {
-		ref := fmt.Sprintf("MC %s", le.HouseholdID)
-
-		if le.Name == "" {
-			return ref
-		}
-
-		return fmt.Sprintf("%s / %s", ref, le.Name)
-	}
-
-	// For non-household policies
-	if le.PolicyName == "" {
-		return fmt.Sprintf("%s %s%s", le.EntityCode, le.AccountNumber, le.CostCenter)
-	}
-
-	return fmt.Sprintf("%s %s%s / %s",
-		le.EntityCode, le.AccountNumber, le.CostCenter, le.PolicyName)
 }
 
 func (le *LedgerEntry) getItemName(tx *pop.Connection) string {

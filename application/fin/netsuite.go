@@ -52,10 +52,6 @@ func (n *NetSuite) getAccount(t Transaction) string {
 	return t.EntityCode
 }
 
-func (n *NetSuite) getDescription(t Transaction) string {
-	return t.Description
-}
-
 func (n *NetSuite) getReference(t Transaction) string {
 	if t.Reference != nil {
 		return *t.Reference
@@ -93,7 +89,7 @@ func (n *NetSuite) transactionRow(rowNumber int) []byte {
 		netSuiteTransactionRowTemplate,
 		n.getAccount(t),
 		api.Currency(-t.Amount).String(),
-		fmt.Sprintf("%.60s", n.getDescription(t)), // TODO does NetSuite have a 60 char field limit?
+		t.Description,
 		n.getReference(t),
 		t.Date.Format("20060102"),
 	)

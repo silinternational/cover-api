@@ -9,9 +9,9 @@ import (
 )
 
 const (
-	ProviderTypeNetSuite = "netsuite"
-	ProviderTypePolicy   = "policy"
-	ProviderTypeSage     = "sage"
+	ReportFormatNetSuite = "netsuite"
+	ReportFormatPolicy   = "policy"
+	ReportFormatSage     = "sage"
 )
 
 type (
@@ -40,28 +40,27 @@ type Transaction struct {
 	Date        time.Time
 }
 
-type Provider interface {
+type Report interface {
 	AppendToBatch(Transaction)
 	BatchToCSV() []byte
-	
-	getDescription(Transaction) string
+
 	getReference(Transaction) string
 }
 
-func NewBatch(providerType string, date time.Time) Provider {
+func NewBatch(reportFormat string, date time.Time) Report {
 	batchDesc := fmt.Sprintf("%s %s JE", date.Format("January 2006"), domain.Env.AppName)
 
-	switch providerType {
-	case ProviderTypeNetSuite:
+	switch reportFormat {
+	case ReportFormatNetSuite:
 		return &NetSuite{
 			Period:             getFiscalPeriod(int(date.Month())),
 			Year:               getFiscalYear(date),
 			JournalDescription: batchDesc,
 			Transactions:       nil,
 		}
-	case ProviderTypePolicy:
+	case ReportFormatPolicy:
 		return &Policy{}
-	case ProviderTypeSage:
+	case ReportFormatSage:
 		return &Sage{
 			Period:             getFiscalPeriod(int(date.Month())),
 			Year:               getFiscalYear(date),

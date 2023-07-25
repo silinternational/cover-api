@@ -100,7 +100,7 @@ func ledgerReportCreate(c buffalo.Context) error {
 	}
 
 	if input.Format == "" {
-		input.Format = fin.ProviderTypeSage
+		input.Format = fin.ReportFormatSage
 	}
 
 	report, err := models.NewLedgerReport(c, input.Format, input.Type, date)
