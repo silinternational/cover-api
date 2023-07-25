@@ -9,7 +9,7 @@ import (
 
 const (
 	netSuiteHeader1 = `"RECTYPE","BATCHID", "BTCHENTRY","ORIGCOMP","SRCELEDGER","SRCETYPE","FSCSYR","FSCSPERD","SWEDIT","JRNLDESC","REVPERD","ERRBATCH","ERRENTRY","DETAILCNT","PROCESSCMD"` + "\n"
-	netSuiteHeader2 = `"RECTYPE","ACCTID","TRANSAMT","SCURNDEC","TRANSDESC","TRANSREF","TRANSDATE","SRCELDGR","SRCETYPE",` + "\n"
+	netSuiteHeader2 = `"RECTYPE","ACCTID","TRANSAMT","SCURNDEC","TRANSDESC","TRANSREF","TRANSDATE","SRCELDGR","SRCETYPE"` + "\n"
 
 	netSuiteSummaryRowTemplate     = `"1","000000","00001","","GL","JE","%d","%02d",0,"%s","00",0,0,0,2` + "\n"
 	netSuiteTransactionRowTemplate = `"2","%s",%s,"2","%s","%s",%s,"GL","JE"` + "\n"
