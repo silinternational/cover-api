@@ -202,7 +202,9 @@ func (le *LedgerEntries) MakeBlocks() TransactionBlocks {
 	blocks := TransactionBlocks{}
 	for _, e := range *le {
 		key := e.IncomeAccount + e.RiskCategoryCC
-		if e.PolicyType == api.PolicyTypeHousehold {
+
+		// Split claims up by Policy Type, using space to trim later to keep same account number
+		if e.Type.IsClaim() && e.PolicyType == api.PolicyTypeHousehold {
 			key += " "
 		}
 		blocks[key] = append(blocks[key], e)
@@ -344,8 +346,6 @@ func (le *LedgerEntry) balanceDescription() string {
 	premiumsOrClaims := "Premiums"
 	if le.Type.IsClaim() {
 		premiumsOrClaims = "Claims"
-
-		// Claims transactions use the same account for all entities
 		entity = string(le.PolicyType)
 	}
 
