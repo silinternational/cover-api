@@ -206,6 +206,31 @@ func (ms *ModelSuite) TestLedgerEntries_MakeBlocks() {
 	ms.Equal(2, len(blocks["4020067890"]))
 	ms.Equal(policy2, blocks["4020067890"][0].PolicyID)
 	ms.Equal(policy3, blocks["4020067890"][1].PolicyID)
+
+	policy4 := domain.GetUUID()
+	policy5 := domain.GetUUID()
+	entries = LedgerEntries{
+		{PolicyID: policy4, IncomeAccount: "40200", RiskCategoryCC: "67890", Type: LedgerEntryTypeClaim, PolicyType: api.PolicyTypeHousehold},
+		{PolicyID: policy5, IncomeAccount: "40200", RiskCategoryCC: "67890", Type: LedgerEntryTypeClaim, PolicyType: api.PolicyTypeTeam},
+	}
+	blocks = entries.MakeBlocks()
+	ms.Equal(2, len(blocks))
+
+	keys := make([]string, 0, len(blocks))
+	for k := range blocks {
+		keys = append(keys, k)
+	}
+
+	ms.ElementsMatch(
+		[]string{
+			string(api.PolicyTypeHousehold) + "4020067890",
+			string(api.PolicyTypeTeam) + "4020067890",
+		},
+		keys,
+	)
+
+	ms.Equal(policy4, blocks[string(api.PolicyTypeHousehold)+"4020067890"][0].PolicyID)
+	ms.Equal(policy5, blocks[string(api.PolicyTypeTeam)+"4020067890"][0].PolicyID)
 }
 
 func (ms *ModelSuite) TestLedgerEntry_balanceDescription() {
