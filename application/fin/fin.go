@@ -43,6 +43,7 @@ type Transaction struct {
 type Provider interface {
 	AppendToBatch(Transaction)
 	BatchToCSV() []byte
+	
 	getDescription(Transaction) string
 	getReference(Transaction) string
 }
