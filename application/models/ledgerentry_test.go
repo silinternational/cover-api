@@ -10,6 +10,7 @@ import (
 
 	"github.com/silinternational/cover-api/api"
 	"github.com/silinternational/cover-api/domain"
+	"github.com/silinternational/cover-api/fin"
 )
 
 func (ms *ModelSuite) TestLedgerEntries_AllForMonth() {
@@ -85,23 +86,26 @@ func (ms *ModelSuite) TestLedgerEntries_ToCsvForPolicy() {
 
 	tests := []struct {
 		name    string
+		format  string
 		entries LedgerEntries
 		want    []string
 	}{
 		{
 			name:    "no data",
+			format:  fin.ReportFormatPolicy,
 			entries: LedgerEntries{},
 			want:    []string{csvPolicyHeader},
 		},
 		{
 			name:    "1 entry",
+			format:  fin.ReportFormatPolicy,
 			entries: LedgerEntries{entry},
 			want: []string{
 				csvPolicyHeader,
 				fmt.Sprintf(`%s,"%s","%s",%s`,
 					entry.Amount.String(),
 					entry.getDescription(),
-					entry.getReference(),
+					getReference(entry),
 					date.Format(domain.DateFormat),
 				),
 			},
@@ -161,7 +165,7 @@ func (ms *ModelSuite) TestLedgerEntries_ToCsv() {
 					domain.Env.ExpenseAccount,
 					api.Currency(-entry.Amount).String(),
 					entry.getDescription(),
-					entry.getReference(),
+					getReference(entry),
 					date.Format("20060102"),
 				),
 				fmt.Sprintf(`"2","000000","00001","0000000040","",0,"%s","",%s,"2","%s","",%s,"GL","JE"`,
@@ -175,7 +179,7 @@ func (ms *ModelSuite) TestLedgerEntries_ToCsv() {
 	}
 	for _, tt := range tests {
 		ms.T().Run(tt.name, func(t *testing.T) {
-			got := tt.entries.ToCsv(tt.batchDate)
+			got := tt.entries.ToCsv(fin.ReportFormatSage, tt.batchDate)
 			for _, w := range tt.want {
 				ms.Contains(string(got), w)
 			}
@@ -498,7 +502,7 @@ func (ms *ModelSuite) TestLedgerEntry_getReference() {
 	}
 	for _, tt := range tests {
 		ms.T().Run(tt.name, func(t *testing.T) {
-			got := tt.entry.getReference()
+			got := getReference(tt.entry)
 
 			ms.Equal(tt.want, got)
 		})
@@ -638,4 +642,25 @@ func (ms *ModelSuite) Test_AdjustLedgerAmount() {
 			ms.Equal(tt.wantAmount, got, "adjustment is incorrect")
 		})
 	}
+}
+
+func getReference(le LedgerEntry) string {
+	// For household policies
+	if le.PolicyType == api.PolicyTypeHousehold {
+		ref := fmt.Sprintf("MC %s", le.HouseholdID)
+
+		if le.Name == "" {
+			return ref
+		}
+
+		return fmt.Sprintf("%s / %s", ref, le.Name)
+	}
+
+	// For non-household policies
+	if le.PolicyName == "" {
+		return fmt.Sprintf("%s %s%s", le.EntityCode, le.AccountNumber, le.CostCenter)
+	}
+
+	return fmt.Sprintf("%s %s%s / %s",
+		le.EntityCode, le.AccountNumber, le.CostCenter, le.PolicyName)
 }

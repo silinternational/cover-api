@@ -1,7 +1,6 @@
 package models
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"time"
@@ -11,7 +10,6 @@ import (
 	"github.com/gofrs/uuid"
 
 	"github.com/silinternational/cover-api/api"
-	"github.com/silinternational/cover-api/domain"
 	"github.com/silinternational/cover-api/fin"
 )
 
@@ -130,33 +128,35 @@ func (le *LedgerEntries) AllNotEntered(tx *pop.Connection, cutoff time.Time) err
 }
 
 func (le *LedgerEntries) ToCsvForPolicy() []byte {
-	rowTemplate := `%s,"%s","%s",%s` + "\n"
-
-	var buf bytes.Buffer
-	buf.Write([]byte(csvPolicyHeader))
-
+	report := fin.NewBatch(fin.ReportFormatPolicy, time.Now())
 	for _, l := range *le {
-		if l.Amount == 0 {
-			continue
-		}
-
-		nextRow := fmt.Sprintf(
-			rowTemplate,
-			l.Amount.String(),
-			l.getDescription(),
-			l.getReference(),
-			l.DateSubmitted.Format(domain.DateFormat),
-		)
-		buf.Write([]byte(nextRow))
+		report.AppendToBatch(fin.Transaction{
+			EntityCode:        l.EntityCode,
+			RiskCategoryName:  l.RiskCategoryName,
+			RiskCategoryCC:    l.RiskCategoryCC,
+			Type:              string(l.Type),
+			PolicyType:        l.PolicyType,
+			HouseholdID:       l.HouseholdID,
+			CostCenter:        l.CostCenter,
+			AccountNumber:     l.AccountNumber,
+			IncomeAccount:     l.IncomeAccount,
+			Name:              l.Name,
+			PolicyName:        l.PolicyName,
+			ClaimPayoutOption: l.ClaimPayoutOption,
+			Amount:            l.Amount,
+			Date:              l.DateSubmitted,
+			Description:       l.getDescription(),
+		})
 	}
 
-	return buf.Bytes()
+	return report.BatchToCSV()
 }
 
 type TransactionBlocks map[string]LedgerEntries // keyed by account
 
-func (le *LedgerEntries) ToCsv(date time.Time) []byte {
-	sage := fin.NewBatch(fin.ProviderTypeSage, date)
+func (le *LedgerEntries) ToCsv(format string, date time.Time) []byte {
+	report := fin.NewBatch(format, date)
+	ref := ""
 
 	blocks := le.MakeBlocks()
 	for account, ledgerEntries := range blocks {
@@ -165,26 +165,36 @@ func (le *LedgerEntries) ToCsv(date time.Time) []byte {
 		}
 		var balance int
 		for _, l := range ledgerEntries {
-			sage.AppendToBatch(fin.Transaction{
-				Account:     domain.Env.ExpenseAccount,
-				Amount:      int(l.Amount),
-				Description: l.getDescription(),
-				Reference:   l.getReference(),
-				Date:        l.DateSubmitted,
+			report.AppendToBatch(fin.Transaction{
+				EntityCode:        l.EntityCode,
+				RiskCategoryName:  l.RiskCategoryName,
+				RiskCategoryCC:    l.RiskCategoryCC,
+				Type:              string(l.Type),
+				PolicyType:        l.PolicyType,
+				HouseholdID:       l.HouseholdID,
+				CostCenter:        l.CostCenter,
+				AccountNumber:     l.AccountNumber,
+				IncomeAccount:     l.IncomeAccount,
+				Name:              l.Name,
+				PolicyName:        l.PolicyName,
+				ClaimPayoutOption: l.ClaimPayoutOption,
+				Amount:            l.Amount,
+				Date:              l.DateSubmitted,
+				Description:       l.getDescription(),
 			})
 
 			balance -= int(l.Amount)
 		}
-		sage.AppendToBatch(fin.Transaction{
+		report.AppendToBatch(fin.Transaction{
 			Account:     account,
-			Amount:      balance,
+			Amount:      api.Currency(balance),
 			Description: ledgerEntries[0].balanceDescription(),
-			Reference:   "",
+			Reference:   &ref,
 			Date:        date,
 		})
 	}
 
-	return sage.BatchToCSV()
+	return report.BatchToCSV()
 }
 
 func (le *LedgerEntries) MakeBlocks() TransactionBlocks {
@@ -232,7 +242,7 @@ func (le *LedgerEntry) Reconcile(ctx context.Context, now time.Time) error {
 // getDescription returns text that is base on other fields of the LedgerEntry
 // For household-type entries this returns `<entry.Type.Description> / <Policy.Name>`.
 // For other entries this returns `<entry.Type.Description> / <Policy.Name> (<accountable person name>)`,
-//   not including `<` and `>`
+// not including `<` and `>`
 func (le *LedgerEntry) getDescription() string {
 	description := le.Type.Description(le.ClaimPayoutOption, le.Amount)
 
@@ -252,31 +262,6 @@ func (le *LedgerEntry) getDescription() string {
 	}
 
 	return fmt.Sprintf(`%s (%s)`, description, le.Name)
-}
-
-// getReference returns text that is base on other fields of the LedgerEntry
-// For household-type entries this returns `MC <entry.HouseholdID> / <accountable person name>`
-// For other entries this returns `<entry.EntityCode> <entry.AccountNumber><entry.CostCenter> / <Policy.Name>`,
-//   not including `<` and `>`.
-func (le *LedgerEntry) getReference() string {
-	// For household policies
-	if le.PolicyType == api.PolicyTypeHousehold {
-		ref := fmt.Sprintf("MC %s", le.HouseholdID)
-
-		if le.Name == "" {
-			return ref
-		}
-
-		return fmt.Sprintf("%s / %s", ref, le.Name)
-	}
-
-	// For non-household policies
-	if le.PolicyName == "" {
-		return fmt.Sprintf("%s %s%s", le.EntityCode, le.AccountNumber, le.CostCenter)
-	}
-
-	return fmt.Sprintf("%s %s%s / %s",
-		le.EntityCode, le.AccountNumber, le.CostCenter, le.PolicyName)
 }
 
 func (le *LedgerEntry) getItemName(tx *pop.Connection) string {

@@ -1339,7 +1339,7 @@ func (ms *ModelSuite) TestClaim_Deductible() {
 
 	strikeDates := [][]*time.Time{
 		{},                                 // Policy with no strikes
-		[]*time.Time{&dayBefore1},          // Policy with one strike
+		{&dayBefore1},                      // Policy with one strike
 		{&dayBefore2, &dayBefore2},         // Policy with two strikes
 		{&dayBefore3, &dayBefore3},         // Policy with three strikes
 		{&yearsBeforeOld4, &dayBeforeOld4}, // Policy with an old strike and a normal strike
@@ -1470,7 +1470,7 @@ func (ms *ModelSuite) TestClaim_StopItemCoverage() {
 				gotStatusMap[ci.ID.String()] = ci.Item.CoverageStatus
 			}
 
-			ms.Equal(tt.wantStatusMap, gotStatusMap, "incorrect Item Coverage Stautes")
+			ms.Equal(tt.wantStatusMap, gotStatusMap, "incorrect Item Coverage Statuses")
 		})
 	}
 }

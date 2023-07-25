@@ -12,6 +12,7 @@ import (
 
 	"github.com/silinternational/cover-api/api"
 	"github.com/silinternational/cover-api/domain"
+	"github.com/silinternational/cover-api/fin"
 	"github.com/silinternational/cover-api/models"
 )
 
@@ -20,7 +21,7 @@ func (as *ActionSuite) Test_LedgerReportList() {
 	normalUser := f.Users[0]
 	stewardUser := models.CreateAdminUsers(as.DB)[models.AppRoleSteward]
 
-	lr, err := models.NewLedgerReport(models.CreateTestContext(stewardUser), models.ReportTypeMonthly, time.Now())
+	lr, err := models.NewLedgerReport(models.CreateTestContext(stewardUser), fin.ReportFormatSage, models.ReportTypeMonthly, time.Now())
 	as.NoError(err)
 	as.NoError(lr.Create(as.DB))
 
@@ -85,7 +86,7 @@ func (as *ActionSuite) Test_LedgerReportView() {
 
 	now := time.Now().UTC()
 
-	lr, err := models.NewLedgerReport(models.CreateTestContext(stewardUser), models.ReportTypeMonthly, now)
+	lr, err := models.NewLedgerReport(models.CreateTestContext(stewardUser), fin.ReportFormatSage, models.ReportTypeMonthly, now)
 	as.NoError(err)
 	as.NoError(lr.Create(as.DB))
 
@@ -237,7 +238,7 @@ func (as *ActionSuite) Test_LedgerReportReconcile() {
 	normalUser := f.Users[0]
 	stewardUser := models.CreateAdminUsers(as.DB)[models.AppRoleSteward]
 
-	lr, err := models.NewLedgerReport(models.CreateTestContext(stewardUser), models.ReportTypeMonthly, time.Now())
+	lr, err := models.NewLedgerReport(models.CreateTestContext(stewardUser), fin.ReportFormatSage, models.ReportTypeMonthly, time.Now())
 	as.NoError(err)
 	as.NoError(lr.Create(as.DB))
 

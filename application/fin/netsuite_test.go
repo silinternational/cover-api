@@ -8,10 +8,9 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/silinternational/cover-api/api"
-	"github.com/silinternational/cover-api/domain"
 )
 
-func TestSage_BatchToCSV(t *testing.T) {
+func TestNetSuite_BatchToCSV(t *testing.T) {
 	transaction := Transaction{
 		EntityCode:        "abc1",
 		RiskCategoryName:  "def2",
@@ -27,7 +26,7 @@ func TestSage_BatchToCSV(t *testing.T) {
 		Description:       "transaction description",
 	}
 
-	s := &Sage{
+	n := &NetSuite{
 		Period:             9,
 		Year:               2020,
 		JournalDescription: "journal description",
@@ -35,19 +34,19 @@ func TestSage_BatchToCSV(t *testing.T) {
 	}
 
 	summaryRow := fmt.Sprintf(`"1","000000","00001","","GL","JE","%d","%02d",0,"%s","00",0,0,0,2`+"\n",
-		s.Year, s.Period, s.JournalDescription)
+		n.Year, n.Period, n.JournalDescription)
 
-	transactionRow := fmt.Sprintf(`"2","000000","00001","0000000020","",0,"%s","",%s,"2","%s","%s",%s,"GL","JE"`+"\n",
-		domain.Env.ExpenseAccount,
+	transactionRow := fmt.Sprintf(netSuiteTransactionRowTemplate,
+		transaction.HouseholdID,
 		api.Currency(transaction.Amount).String(),
 		transaction.Description,
-		fmt.Sprintf("MC %s / %s", transaction.HouseholdID, transaction.Name),
+		fmt.Sprintf("MC / %s", transaction.Name),
 		transaction.Date.Format("20060102"),
 	)
 
-	want := sageHeader1 + sageHeader2 + summaryRow + transactionRow
+	want := netSuiteHeader1 + netSuiteHeader2 + summaryRow + transactionRow
 
-	got := s.BatchToCSV()
+	got := n.BatchToCSV()
 
 	require.Equal(t, want, string(got))
 }

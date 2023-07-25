@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/gobuffalo/buffalo"
+	"github.com/silinternational/cover-api/fin"
 	"github.com/silinternational/cover-api/job"
 
 	"github.com/silinternational/cover-api/api"
@@ -98,7 +99,11 @@ func ledgerReportCreate(c buffalo.Context) error {
 		return reportError(c, api.NewAppError(err, api.ErrorInvalidDate, api.CategoryUser))
 	}
 
-	report, err := models.NewLedgerReport(c, input.Type, date)
+	if input.Format == "" {
+		input.Format = fin.ReportFormatSage
+	}
+
+	report, err := models.NewLedgerReport(c, input.Format, input.Type, date)
 	if err != nil {
 		return reportError(c, err)
 	}

@@ -22,10 +22,10 @@ func (ms *ModelSuite) TestStrikes_RecentForPolicy() {
 
 	oldDate := policyHasOldStrike.Claims[0].IncidentDate.AddDate(-2, 0, 0)
 	strikeDates := [][]*time.Time{
-		{},                // Policy with no strikes
-		[]*time.Time{nil}, // Policy with one strike
-		{nil, nil},        // Policy with two strikes
-		{&oldDate, nil},   // Policy with an old strike and a new strike
+		{},              // Policy with no strikes
+		{nil},           // Policy with one strike
+		{nil, nil},      // Policy with two strikes
+		{&oldDate, nil}, // Policy with an old strike and a new strike
 	}
 
 	strikes := CreateStrikeFixtures(ms.DB, fixtures.Policies, strikeDates)
