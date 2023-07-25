@@ -185,10 +185,16 @@ func (le *LedgerEntries) ToCsv(format string, date time.Time) []byte {
 
 			balance -= int(l.Amount)
 		}
+
+		le := ledgerEntries[0]
+		if le.Type.IsClaim() {
+			account = account[len(le.PolicyType):]
+		}
+
 		report.AppendToBatch(fin.Transaction{
 			Account:     account,
 			Amount:      api.Currency(balance),
-			Description: ledgerEntries[0].balanceDescription(),
+			Description: le.balanceDescription(),
 			Reference:   &ref,
 			Date:        date,
 		})
@@ -201,6 +207,12 @@ func (le *LedgerEntries) MakeBlocks() TransactionBlocks {
 	blocks := TransactionBlocks{}
 	for _, e := range *le {
 		key := e.IncomeAccount + e.RiskCategoryCC
+
+		// Split claims up by Policy Type
+		if e.Type.IsClaim() {
+			key = string(e.PolicyType) + key
+		}
+
 		blocks[key] = append(blocks[key], e)
 	}
 	return blocks
@@ -315,9 +327,7 @@ func (le *LedgerEntry) balanceDescription() string {
 	premiumsOrClaims := "Premiums"
 	if le.Type.IsClaim() {
 		premiumsOrClaims = "Claims"
-
-		// Claims transactions use the same account for all entities
-		entity = "all"
+		entity = string(le.PolicyType)
 	}
 
 	return fmt.Sprintf("Total %s %s %s", entity, le.RiskCategoryName, premiumsOrClaims)

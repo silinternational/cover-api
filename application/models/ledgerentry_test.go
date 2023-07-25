@@ -126,6 +126,7 @@ func (ms *ModelSuite) TestLedgerEntries_ToCsv() {
 
 	entry := LedgerEntry{
 		PolicyID:         domain.GetUUID(),
+		PolicyType:       api.PolicyTypeHousehold,
 		EntityCode:       "EntityCode",
 		RiskCategoryName: "Mobile",
 		Type:             LedgerEntryTypeClaim,
@@ -136,6 +137,21 @@ func (ms *ModelSuite) TestLedgerEntries_ToCsv() {
 		AccountNumber:    "AccountNumber",
 		IncomeAccount:    "12345",
 		HouseholdID:      "HouseholdID",
+		CostCenter:       "CostCenter",
+	}
+	teamEntry := LedgerEntry{
+		PolicyID:         domain.GetUUID(),
+		PolicyType:       api.PolicyTypeTeam,
+		EntityCode:       "EntityCode",
+		RiskCategoryName: "Mobile",
+		Type:             LedgerEntryTypeClaim,
+		Name:             "MyColleague",
+		PolicyName:       "OurPolicy",
+		Amount:           345,
+		DateSubmitted:    date,
+		AccountNumber:    "AccountNumber",
+		IncomeAccount:    "12345",
+		HouseholdID:      "Team",
 		CostCenter:       "CostCenter",
 	}
 
@@ -176,6 +192,40 @@ func (ms *ModelSuite) TestLedgerEntries_ToCsv() {
 				),
 			},
 		},
+		{
+			name:      "split claim entries",
+			entries:   LedgerEntries{entry, teamEntry},
+			batchDate: date,
+			want: []string{
+				summaryLine,
+				fmt.Sprintf(`"2","000000","00001","0000000020","",0,"%s","",%s,"2","%s","%s",%s,"GL","JE"`,
+					domain.Env.ExpenseAccount,
+					api.Currency(-entry.Amount).String(),
+					entry.getDescription(),
+					entry.getReference(),
+					date.Format("20060102"),
+				),
+				fmt.Sprintf(`"2","000000","00001","0000000040","",0,"%s","",%s,"2","%s","",%s,"GL","JE"`,
+					entry.IncomeAccount+entry.RiskCategoryCC,
+					entry.Amount.String(),
+					entry.balanceDescription(),
+					date.Format("20060102"),
+				),
+				fmt.Sprintf(`"2","000000","00001","0000000060","",0,"%s","",%s,"2","%s","%s",%s,"GL","JE"`,
+					domain.Env.ExpenseAccount,
+					api.Currency(-teamEntry.Amount).String(),
+					teamEntry.getDescription(),
+					teamEntry.getReference(),
+					date.Format("20060102"),
+				),
+				fmt.Sprintf(`"2","000000","00001","0000000080","",0,"%s","",%s,"2","%s","",%s,"GL","JE"`,
+					teamEntry.IncomeAccount+teamEntry.RiskCategoryCC,
+					teamEntry.Amount.String(),
+					teamEntry.balanceDescription(),
+					date.Format("20060102"),
+				),
+			},
+		},
 	}
 	for _, tt := range tests {
 		ms.T().Run(tt.name, func(t *testing.T) {
@@ -206,6 +256,31 @@ func (ms *ModelSuite) TestLedgerEntries_MakeBlocks() {
 	ms.Equal(2, len(blocks["4020067890"]))
 	ms.Equal(policy2, blocks["4020067890"][0].PolicyID)
 	ms.Equal(policy3, blocks["4020067890"][1].PolicyID)
+
+	policy4 := domain.GetUUID()
+	policy5 := domain.GetUUID()
+	entries = LedgerEntries{
+		{PolicyID: policy4, IncomeAccount: "40200", RiskCategoryCC: "67890", Type: LedgerEntryTypeClaim, PolicyType: api.PolicyTypeHousehold},
+		{PolicyID: policy5, IncomeAccount: "40200", RiskCategoryCC: "67890", Type: LedgerEntryTypeClaim, PolicyType: api.PolicyTypeTeam},
+	}
+	blocks = entries.MakeBlocks()
+	ms.Equal(2, len(blocks))
+
+	keys := make([]string, 0, len(blocks))
+	for k := range blocks {
+		keys = append(keys, k)
+	}
+
+	ms.ElementsMatch(
+		[]string{
+			string(api.PolicyTypeHousehold) + "4020067890",
+			string(api.PolicyTypeTeam) + "4020067890",
+		},
+		keys,
+	)
+
+	ms.Equal(policy4, blocks[string(api.PolicyTypeHousehold)+"4020067890"][0].PolicyID)
+	ms.Equal(policy5, blocks[string(api.PolicyTypeTeam)+"4020067890"][0].PolicyID)
 }
 
 func (ms *ModelSuite) TestLedgerEntry_balanceDescription() {
@@ -238,13 +313,24 @@ func (ms *ModelSuite) TestLedgerEntry_balanceDescription() {
 			want: fmt.Sprintf("Total %s cat2 Premiums", parentEntity.Code),
 		},
 		{
-			name: "claims",
+			name: "household claims",
 			entry: LedgerEntry{
 				EntityCode:       subEntity.Code,
 				RiskCategoryName: "cat2",
+				PolicyType:       api.PolicyTypeHousehold,
 				Type:             LedgerEntryTypeClaimAdjustment,
 			},
-			want: "Total all cat2 Claims",
+			want: fmt.Sprintf("Total %s cat2 Claims", api.PolicyTypeHousehold),
+		},
+		{
+			name: "team claims",
+			entry: LedgerEntry{
+				EntityCode:       subEntity.Code,
+				RiskCategoryName: "cat2",
+				PolicyType:       api.PolicyTypeTeam,
+				Type:             LedgerEntryTypeClaimAdjustment,
+			},
+			want: fmt.Sprintf("Total %s cat2 Claims", api.PolicyTypeTeam),
 		},
 	}
 	for _, tt := range tests {
