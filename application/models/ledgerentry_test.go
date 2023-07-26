@@ -202,7 +202,7 @@ func (ms *ModelSuite) TestLedgerEntries_ToCsv() {
 					domain.Env.ExpenseAccount,
 					api.Currency(-entry.Amount).String(),
 					entry.getDescription(),
-					entry.getReference(),
+					getReference(entry),
 					date.Format("20060102"),
 				),
 				fmt.Sprintf(`"2","000000","00001","0000000040","",0,"%s","",%s,"2","%s","",%s,"GL","JE"`,
@@ -215,7 +215,7 @@ func (ms *ModelSuite) TestLedgerEntries_ToCsv() {
 					domain.Env.ExpenseAccount,
 					api.Currency(-teamEntry.Amount).String(),
 					teamEntry.getDescription(),
-					teamEntry.getReference(),
+					getReference(teamEntry),
 					date.Format("20060102"),
 				),
 				fmt.Sprintf(`"2","000000","00001","0000000080","",0,"%s","",%s,"2","%s","",%s,"GL","JE"`,
@@ -528,67 +528,6 @@ func (ms *ModelSuite) TestLedgerEntry_getItemName() {
 	for _, tt := range tests {
 		ms.T().Run(tt.name, func(t *testing.T) {
 			got := tt.entry.getItemName(ms.DB)
-
-			ms.Equal(tt.want, got)
-		})
-	}
-}
-
-func (ms *ModelSuite) TestLedgerEntry_getReference() {
-	f := CreateItemFixtures(ms.DB, FixturesConfig{NumberOfPolicies: 2, ClaimsPerPolicy: 1, UsersPerPolicy: 2})
-	hhPolicy := f.Policies[0]
-	hhPolicyItem := hhPolicy.Items[0]
-	hhPolicy.LoadMembers(ms.DB, false)
-
-	// Give the household item an accountable person
-	hhAccPerson := hhPolicy.Members[1]
-	hhAccPersonName := hhAccPerson.GetName().String()
-	ms.NoError(hhPolicyItem.SetAccountablePerson(ms.DB, hhAccPerson.ID))
-	ms.NoError(ms.DB.Update(&hhPolicyItem), "error updating household policy item for test")
-
-	hhPolicyClaim := f.Policies[0].Claims[0]
-	ms.False(uuid.Nil == hhPolicyClaim.ID, "householdPolicyClaim is not hydrated")
-
-	teamPolicy := ConvertPolicyType(ms.DB, f.Policies[1])
-	teamPolicyItem := teamPolicy.Items[0]
-	teamPolicy.LoadMembers(ms.DB, false)
-
-	// Give the team item an accountable person
-	ms.NoError(teamPolicyItem.SetAccountablePerson(ms.DB, teamPolicy.Members[1].ID))
-	ms.NoError(ms.DB.Update(&teamPolicyItem), "error updating team policy item for test")
-
-	// Create new Ledger Entries for each policy
-	hhEntry := NewLedgerEntry(hhAccPersonName, hhPolicy, &hhPolicyItem, nil)
-	hhEntry.Type = LedgerEntryTypeNewCoverage
-
-	teamEntry := NewLedgerEntry("", teamPolicy, &teamPolicyItem, nil)
-	teamEntry.Type = LedgerEntryTypeCoverageRenewal
-	teamEntry.AccountNumber = "TAcc"
-	teamEntry.CostCenter = "TCC"
-
-	tests := []struct {
-		name  string
-		entry LedgerEntry
-		item  Item
-		want  string
-	}{
-		{
-			name:  "household policy item",
-			entry: hhEntry,
-			item:  hhPolicyItem,
-			want:  fmt.Sprintf("MC %s / %s", hhEntry.HouseholdID, hhAccPersonName),
-		},
-		{
-			name:  "team policy item",
-			entry: teamEntry,
-			item:  teamPolicyItem,
-			want: fmt.Sprintf("%s %s%s / %s",
-				teamEntry.EntityCode, teamEntry.AccountNumber, teamEntry.CostCenter, teamPolicy.Name),
-		},
-	}
-	for _, tt := range tests {
-		ms.T().Run(tt.name, func(t *testing.T) {
-			got := getReference(tt.entry)
 
 			ms.Equal(tt.want, got)
 		})
