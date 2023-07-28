@@ -1,8 +1,10 @@
 package fin
 
 import (
+	"archive/zip"
 	"bytes"
 	"fmt"
+	"log"
 
 	"github.com/silinternational/cover-api/api"
 )
@@ -19,22 +21,62 @@ type NetSuite struct {
 	Period             int
 	Year               int
 	JournalDescription string
-	Transactions       []Transaction
+	Transactions       TransactionBlocks
 }
 
-func (n *NetSuite) AppendToBatch(t Transaction) {
+func (n *NetSuite) AppendToBatch(block string, t Transaction) {
 	if t.Amount != 0 {
-		n.Transactions = append(n.Transactions, t)
+		n.Transactions[block] = append(n.Transactions[block], t)
 	}
 }
 
-func (n *NetSuite) BatchToCSV() []byte {
+func (n *NetSuite) ToCSV() []byte {
 	var buf bytes.Buffer
 	buf.Write([]byte(netSuiteHeader1))
 	buf.Write([]byte(netSuiteHeader2))
 	buf.Write(n.summaryRow())
-	for i := range n.Transactions {
-		buf.Write(n.transactionRow(i))
+	for _, transactions := range n.Transactions {
+		for _, transaction := range transactions {
+			buf.Write(n.transactionRow(transaction))
+		}
+	}
+
+	return buf.Bytes()
+}
+
+func (n *NetSuite) ToZip() []byte {
+	// Create a buffer to write our archive to.
+	buff := new(bytes.Buffer)
+
+	// Create a new zip archive.
+	w := zip.NewWriter(buff)
+
+	for block, transactions := range n.Transactions {
+		f, err := w.Create(block + ".csv")
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		contents := n.generateCSV(transactions)
+		if _, err = f.Write(contents); err != nil {
+			log.Fatal(err)
+		}
+	}
+
+	if err := w.Close(); err != nil {
+		log.Fatal(err)
+	}
+
+	return buff.Bytes()
+}
+
+func (n *NetSuite) generateCSV(transactions Transactions) []byte {
+	var buf bytes.Buffer
+	buf.Write([]byte(netSuiteHeader1))
+	buf.Write([]byte(netSuiteHeader2))
+	buf.Write(n.summaryRow())
+	for _, transaction := range transactions {
+		buf.Write(n.transactionRow(transaction))
 	}
 
 	return buf.Bytes()
@@ -83,8 +125,7 @@ func (n *NetSuite) summaryRow() []byte {
 	return []byte(str)
 }
 
-func (n *NetSuite) transactionRow(rowNumber int) []byte {
-	t := n.Transactions[rowNumber]
+func (n *NetSuite) transactionRow(t Transaction) []byte {
 	str := fmt.Sprintf(
 		netSuiteTransactionRowTemplate,
 		n.getAccount(t),

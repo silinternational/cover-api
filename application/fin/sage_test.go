@@ -47,7 +47,7 @@ func TestSage_BatchToCSV(t *testing.T) {
 
 	want := sageHeader1 + sageHeader2 + summaryRow + transactionRow
 
-	got := s.BatchToCSV()
+	got := s.ToCSV()
 
 	require.Equal(t, want, string(got))
 }

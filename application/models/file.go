@@ -156,6 +156,10 @@ func (f *File) Find(tx *pop.Connection, id uuid.UUID) error {
 
 // RefreshURL ensures the file URL is good for at least a few minutes
 func (f *File) RefreshURL(tx *pop.Connection) error {
+	if f == nil {
+		return nil
+	}
+
 	if f.URLExpiration.After(time.Now().Add(minimumFileLifespan)) {
 		return nil
 	}
@@ -260,11 +264,15 @@ func (f *Files) FindByIDs(tx *pop.Connection, ids []int) error {
 }
 
 // ConvertToAPI converts a models.File to an api.File
-func (f *File) ConvertToAPI(tx *pop.Connection) api.File {
+func (f *File) ConvertToAPI(tx *pop.Connection) *api.File {
+	if f == nil {
+		return nil
+	}
+
 	if err := f.RefreshURL(tx); err != nil {
 		panic(err.Error())
 	}
-	return api.File{
+	return &api.File{
 		ID:            f.ID,
 		URL:           f.URL,
 		URLExpiration: f.URLExpiration,

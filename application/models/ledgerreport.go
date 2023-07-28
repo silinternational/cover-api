@@ -50,6 +50,7 @@ func (lr *LedgerReports) ConvertToAPI(tx *pop.Connection) api.LedgerReports {
 type LedgerReport struct {
 	ID        uuid.UUID  `db:"id"`
 	FileID    uuid.UUID  `db:"file_id" validate:"required"`
+	ZipID     nulls.UUID `db:"zip_id"`
 	Type      string     `db:"type"`
 	Date      time.Time  `db:"date"`
 	PolicyID  nulls.UUID `db:"policy_id"`
@@ -57,6 +58,7 @@ type LedgerReport struct {
 	UpdatedAt time.Time  `db:"updated_at"`
 
 	File          File          `belongs_to:"files" validate:"-"`
+	Zip           *File         `belongs_to:"files" validate:"-"`
 	Policy        Policy        `belongs_to:"policies" validate:"-"`
 	LedgerEntries LedgerEntries `many_to_many:"ledger_report_entries" validate:"-"`
 }
@@ -66,13 +68,21 @@ func (lr *LedgerReport) Validate(tx *pop.Connection) (*validate.Errors, error) {
 	return validateModel(lr), nil
 }
 
-// Create the LedgerReport, the File, and LedgerEntry junction table records
+// Create the LedgerReport, the Files, and LedgerEntry junction table records
 func (lr *LedgerReport) Create(tx *pop.Connection) error {
 	lr.File.Linked = true
 	if err := lr.File.Store(tx); err != nil {
 		return err
 	}
 	lr.FileID = lr.File.ID
+
+	if lr.Zip != nil {
+		lr.Zip.Linked = true
+		if err := lr.Zip.Store(tx); err != nil {
+			return err
+		}
+		lr.ZipID = nulls.NewUUID(lr.Zip.ID)
+	}
 
 	// Pop will create junction table records for all connected LedgerEntries
 	if err := create(tx, lr); err != nil {
@@ -125,7 +135,8 @@ func (lr *LedgerReport) ConvertToAPI(tx *pop.Connection) api.LedgerReport {
 
 	return api.LedgerReport{
 		ID:               lr.ID,
-		File:             lr.File.ConvertToAPI(tx),
+		File:             *lr.File.ConvertToAPI(tx),
+		Zip:              lr.Zip.ConvertToAPI(tx),
 		Type:             lr.Type,
 		Date:             lr.Date,
 		TransactionCount: transactionCount,
@@ -135,7 +146,7 @@ func (lr *LedgerReport) ConvertToAPI(tx *pop.Connection) api.LedgerReport {
 	}
 }
 
-// LoadFile hydrates the File property if necessary or if `reload` is true. The file URL is refreshed
+// LoadFile hydrates the File and Zip properties if necessary or if `reload` is true. The file URL is refreshed
 // in any case.
 func (lr *LedgerReport) LoadFile(tx *pop.Connection, reload bool) {
 	if lr.File.ID == uuid.Nil || reload {
@@ -145,6 +156,20 @@ func (lr *LedgerReport) LoadFile(tx *pop.Connection, reload bool) {
 	}
 	if err := lr.File.RefreshURL(tx); err != nil {
 		panic("failed to refresh LedgerReport.File URL, " + err.Error())
+	}
+
+	if lr.Zip.ID == uuid.Nil || reload {
+		if err := tx.Load(lr, "Zip"); err != nil {
+			panic("database error loading LedgerReport.Zip, " + err.Error())
+		}
+	}
+
+	if lr.Zip == nil {
+		return
+	}
+
+	if err := lr.Zip.RefreshURL(tx); err != nil {
+		panic("failed to refresh LedgerReport.Zip URL, " + err.Error())
 	}
 }
 
@@ -166,7 +191,7 @@ func (lr *LedgerReport) LoadPolicy(tx *pop.Connection, reload bool) {
 }
 
 // NewLedgerReport creates a new report by querying the database according to the requested report type
-func NewLedgerReport(ctx context.Context, format, reportType string, date time.Time) (LedgerReport, error) {
+func NewLedgerReport(ctx context.Context, reportType string, date time.Time) (LedgerReport, error) {
 	tx := Tx(ctx)
 
 	report := LedgerReport{Type: reportType}
@@ -199,11 +224,22 @@ func NewLedgerReport(ctx context.Context, format, reportType string, date time.T
 		return LedgerReport{}, api.NewAppError(err, api.ErrorNoLedgerEntries, api.CategoryNotFound)
 	}
 
-	report.File.Name = fmt.Sprintf("%s_%s_%s.csv",
-		domain.Env.AppName, reportType, report.Date.Format(domain.DateFormat))
-	report.File.Content = le.ToCsv(format, report.Date)
-	report.File.CreatedByID = CurrentUser(ctx).ID
-	report.File.ContentType = domain.ContentCSV
+	report.File = File{
+		Name: fmt.Sprintf("%s_%s_%s.csv",
+			domain.Env.AppName, reportType, report.Date.Format(domain.DateFormat)),
+		CreatedByID: CurrentUser(ctx).ID,
+		Content:     le.ToCSV(report.Date),
+		ContentType: domain.ContentCSV,
+	}
+
+	report.Zip = &File{
+		Name: fmt.Sprintf("%s_%s_%s.zip",
+			domain.Env.AppName, reportType, report.Date.Format(domain.DateFormat)),
+		CreatedByID: CurrentUser(ctx).ID,
+		Content:     le.ToZip(report.Date),
+		ContentType: domain.ContentZip,
+	}
+
 	report.LedgerEntries = le
 
 	return report, nil
@@ -244,7 +280,7 @@ func NewPolicyLedgerReport(ctx context.Context, policy Policy, reportType string
 
 	report.File.Name = fmt.Sprintf("%s_policy_%s_%s_%d-%d.csv",
 		domain.Env.AppName, policy.ID.String(), reportType, year, month)
-	report.File.Content = le.ToCsvForPolicy()
+	report.File.Content = le.ToCSVForPolicy()
 	report.File.CreatedByID = CurrentUser(ctx).ID
 	report.File.ContentType = domain.ContentCSV
 	report.LedgerEntries = le

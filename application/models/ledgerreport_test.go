@@ -96,7 +96,8 @@ func (ms *ModelSuite) TestLedgerReport_Create() {
 func (ms *ModelSuite) TestLedgerReport_ConvertToAPI() {
 	id := domain.GetUUID()
 	user := CreateUserFixtures(ms.DB, 1).Users[0]
-	fileID := CreateFileFixtures(ms.DB, 1, user.ID).Files[0].ID
+	files := CreateFileFixtures(ms.DB, 1, user.ID).Files
+	fileID := files[0].ID
 	date := time.Date(2022, 1, 28, 0, 0, 0, 0, time.UTC)
 	updatedAt := time.Now()
 	createdAt := updatedAt.Add(-1 * time.Hour)
@@ -141,39 +142,34 @@ func (ms *ModelSuite) TestNewLedgerReport() {
 	}
 
 	tests := []struct {
-		name         string
-		date         time.Time
-		reportFormat string
-		reportType   string
-		want         LedgerReport
-		wantErr      *api.AppError
+		name       string
+		date       time.Time
+		reportType string
+		want       LedgerReport
+		wantErr    *api.AppError
 	}{
 		{
-			name:         "invalid report type",
-			date:         may,
-			reportType:   "invalid",
-			reportFormat: fin.ReportFormatSage,
-			wantErr:      &api.AppError{Key: api.ErrorInvalidReportType, Category: api.CategoryUser},
+			name:       "invalid report type",
+			date:       may,
+			reportType: "invalid",
+			wantErr:    &api.AppError{Key: api.ErrorInvalidReportType, Category: api.CategoryUser},
 		},
 		{
-			name:         "none found",
-			date:         april,
-			reportType:   ReportTypeMonthly,
-			reportFormat: fin.ReportFormatSage,
-			wantErr:      &api.AppError{Key: api.ErrorNoLedgerEntries, Category: api.CategoryNotFound},
+			name:       "none found",
+			date:       april,
+			reportType: ReportTypeMonthly,
+			wantErr:    &api.AppError{Key: api.ErrorNoLedgerEntries, Category: api.CategoryNotFound},
 		},
 		{
-			name:         "future date",
-			date:         time.Now().UTC().AddDate(0, 0, 1),
-			reportType:   ReportTypeMonthly,
-			reportFormat: fin.ReportFormatSage,
-			wantErr:      &api.AppError{Key: api.ErrorInvalidDate, Category: api.CategoryUser},
+			name:       "future date",
+			date:       time.Now().UTC().AddDate(0, 0, 1),
+			reportType: ReportTypeMonthly,
+			wantErr:    &api.AppError{Key: api.ErrorInvalidDate, Category: api.CategoryUser},
 		},
 		{
-			name:         "one entry, sage",
-			date:         may,
-			reportType:   ReportTypeMonthly,
-			reportFormat: fin.ReportFormatSage,
+			name:       "one entry, sage",
+			date:       may,
+			reportType: ReportTypeMonthly,
 			want: LedgerReport{
 				Type:          ReportTypeMonthly,
 				Date:          may,
@@ -182,10 +178,9 @@ func (ms *ModelSuite) TestNewLedgerReport() {
 			},
 		},
 		{
-			name:         "one entry, netsuite",
-			date:         may,
-			reportType:   ReportTypeMonthly,
-			reportFormat: fin.ReportFormatNetSuite,
+			name:       "one entry, netsuite",
+			date:       may,
+			reportType: ReportTypeMonthly,
 			want: LedgerReport{
 				Type:          ReportTypeMonthly,
 				Date:          may,
@@ -196,7 +191,7 @@ func (ms *ModelSuite) TestNewLedgerReport() {
 	}
 	for _, tt := range tests {
 		ms.T().Run(tt.name, func(t *testing.T) {
-			got, err := NewLedgerReport(ctx, tt.reportFormat, tt.reportType, tt.date)
+			got, err := NewLedgerReport(ctx, tt.reportType, tt.date)
 			if tt.wantErr != nil {
 				ms.Error(err, "test should have produced an error")
 				ms.EqualAppError(*tt.wantErr, err)

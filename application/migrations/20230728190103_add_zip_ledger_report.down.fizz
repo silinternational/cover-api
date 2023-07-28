@@ -1,0 +1,1 @@
+drop_column("ledger_reports", "zip_id")

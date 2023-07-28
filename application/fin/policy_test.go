@@ -40,7 +40,7 @@ func TestPolicy_BatchToCSV(t *testing.T) {
 
 	want := policyHeader + transactionRow
 
-	got := n.BatchToCSV()
+	got := n.ToCSV()
 
 	require.Equal(t, want, string(got))
 }

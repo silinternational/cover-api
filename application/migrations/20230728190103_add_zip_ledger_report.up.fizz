@@ -1,0 +1,1 @@
+add_column("ledger_reports", "zip_id", "uuid", {"null": true})

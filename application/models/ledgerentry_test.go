@@ -66,7 +66,7 @@ func (ms *ModelSuite) TestLedgerEntries_AllForMonth() {
 	}
 }
 
-func (ms *ModelSuite) TestLedgerEntries_ToCsvForPolicy() {
+func (ms *ModelSuite) TestLedgerEntries_ToFileForPolicy() {
 	date := time.Date(2021, 3, 1, 0, 0, 0, 0, time.UTC)
 
 	entry := LedgerEntry{
@@ -113,7 +113,7 @@ func (ms *ModelSuite) TestLedgerEntries_ToCsvForPolicy() {
 	}
 	for _, tt := range tests {
 		ms.T().Run(tt.name, func(t *testing.T) {
-			got := tt.entries.ToCsvForPolicy()
+			got := tt.entries.ToCSVForPolicy()
 			for _, w := range tt.want {
 				ms.Contains(string(got), w)
 			}
@@ -121,7 +121,7 @@ func (ms *ModelSuite) TestLedgerEntries_ToCsvForPolicy() {
 	}
 }
 
-func (ms *ModelSuite) TestLedgerEntries_ToCsv() {
+func (ms *ModelSuite) TestLedgerEntries_ToFile() {
 	date := time.Date(2021, 3, 1, 0, 0, 0, 0, time.UTC)
 
 	entry := LedgerEntry{
@@ -229,7 +229,7 @@ func (ms *ModelSuite) TestLedgerEntries_ToCsv() {
 	}
 	for _, tt := range tests {
 		ms.T().Run(tt.name, func(t *testing.T) {
-			got := tt.entries.ToCsv(fin.ReportFormatSage, tt.batchDate)
+			got := tt.entries.ToCSV(tt.batchDate)
 			for _, w := range tt.want {
 				ms.Contains(string(got), w)
 			}

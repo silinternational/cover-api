@@ -90,6 +90,7 @@ const (
 
 	ContentCSV  = "text/csv"
 	ContentJson = "application/json"
+	ContentZip  = "application/zip"
 )
 
 // Event Kinds
@@ -306,7 +307,8 @@ func GetBearerTokenFromRequest(r *http.Request) string {
 }
 
 // IsOtherThanNoRows returns false if the error is nil or is just reporting that there
-//   were no rows in the result set for a sql query.
+//
+//	were no rows in the result set for a sql query.
 func IsOtherThanNoRows(err error) bool {
 	if err == nil {
 		return false
@@ -364,7 +366,8 @@ func RandomString(n int, includeLetters string) string {
 }
 
 // RandomInsecureIntInRange is insecure because it only uses the math/rand package
-//  and not the crypto/rand package
+//
+//	and not the crypto/rand package
 func RandomInsecureIntInRange(min, max int) int {
 	if min >= max {
 		panic("invalid parameters to RandomInsecureIntInRange: max of range must be greater than min.")
@@ -374,8 +377,10 @@ func RandomInsecureIntInRange(min, max int) int {
 }
 
 // CalculatePartialYearValue returns the value multiplied by the number
-//   of days left between the startDate and the last day of the same year (inclusive)
-//   divided by 365  (rounded down)
+//
+//	of days left between the startDate and the last day of the same year (inclusive)
+//	divided by 365  (rounded down)
+//
 // If the startDate is January 1, then the input value is returned.
 // Note that the startDate's time of day is ignored.
 func CalculatePartialYearValue(value int, startDate time.Time) int {
@@ -398,8 +403,9 @@ func CalculatePartialYearValue(value int, startDate time.Time) int {
 }
 
 // CalculateMonthlyRefundValue returns the value multiplied by the number
-//   of full calendar months left between the startDate and the end of
-//   the same year divided by 12  (rounded)
+//
+//	of full calendar months left between the startDate and the end of
+//	the same year divided by 12  (rounded)
 func CalculateMonthlyRefundValue(value int, startDate time.Time) int {
 	remainingMonths := 12 - int(startDate.Month())
 	return int(math.Round(float64(value*remainingMonths) / 12.0))

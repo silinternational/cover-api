@@ -41,8 +41,9 @@ type Transaction struct {
 }
 
 type Report interface {
-	AppendToBatch(Transaction)
-	BatchToCSV() []byte
+	AppendToBatch(string, Transaction)
+	ToCSV() []byte
+	ToZip() []byte
 
 	getReference(Transaction) string
 }
@@ -56,7 +57,7 @@ func NewBatch(reportFormat string, date time.Time) Report {
 			Period:             getFiscalPeriod(int(date.Month())),
 			Year:               getFiscalYear(date),
 			JournalDescription: batchDesc,
-			Transactions:       nil,
+			Transactions:       make(TransactionBlocks),
 		}
 	case ReportFormatPolicy:
 		return &Policy{}
