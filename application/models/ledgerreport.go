@@ -158,7 +158,7 @@ func (lr *LedgerReport) LoadFile(tx *pop.Connection, reload bool) {
 		panic("failed to refresh LedgerReport.File URL, " + err.Error())
 	}
 
-	if lr.Zip.ID == uuid.Nil || reload {
+	if lr.Zip == nil || lr.Zip.ID == uuid.Nil || reload {
 		if err := tx.Load(lr, "Zip"); err != nil {
 			panic("database error loading LedgerReport.Zip, " + err.Error())
 		}
