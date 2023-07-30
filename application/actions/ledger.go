@@ -99,16 +99,38 @@ func ledgerReportCreate(c buffalo.Context) error {
 		return reportError(c, api.NewAppError(err, api.ErrorInvalidDate, api.CategoryUser))
 	}
 
-	if input.Format == "" {
-		input.Format = fin.ReportFormatSage
-	}
-
-	report, err := models.NewLedgerReport(c, input.Format, input.Type, date)
+	// Create Sage report
+	report, err := models.NewLedgerReport(c, fin.ReportFormatSage, input.Type, date)
 	if err != nil {
 		return reportError(c, err)
 	}
 
 	tx := models.Tx(c)
+
+	if err = report.Create(tx); err != nil {
+		return reportError(c, err)
+	}
+
+	// Create NetSuite report
+	report = models.LedgerReport{
+		Type:          input.Type,
+		Date:          date,
+		LedgerEntries: report.LedgerEntries,
+	}
+
+	content, contentType := report.LedgerEntries.ExportReport(fin.ReportFormatNetSuite, report.Date)
+	ext := "csv"
+	if contentType == domain.ContentZip {
+		ext = "zip"
+	}
+
+	report.File = models.File{
+		Name: fmt.Sprintf("%s_%s_%s.%s",
+			domain.Env.AppName, report.Type, report.Date.Format(domain.DateFormat), ext),
+		Content:     content,
+		ContentType: contentType,
+		CreatedByID: models.CurrentUser(c).ID,
+	}
 
 	if err = report.Create(tx); err != nil {
 		return reportError(c, err)

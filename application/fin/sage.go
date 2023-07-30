@@ -25,13 +25,13 @@ type Sage struct {
 	Transactions       []Transaction
 }
 
-func (s *Sage) AppendToBatch(t Transaction) {
+func (s *Sage) AppendToBatch(_ string, t Transaction) {
 	if t.Amount != 0 {
 		s.Transactions = append(s.Transactions, t)
 	}
 }
 
-func (s *Sage) BatchToCSV() []byte {
+func (s *Sage) RenderBatch() ([]byte, string) {
 	var buf bytes.Buffer
 	buf.Write([]byte(sageHeader1))
 	buf.Write([]byte(sageHeader2))
@@ -40,7 +40,7 @@ func (s *Sage) BatchToCSV() []byte {
 		buf.Write(s.transactionRow(i))
 	}
 
-	return buf.Bytes()
+	return buf.Bytes(), domain.ContentCSV
 }
 
 func (s *Sage) getAccount(t Transaction) string {

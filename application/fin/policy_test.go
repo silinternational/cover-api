@@ -11,7 +11,7 @@ import (
 	"github.com/silinternational/cover-api/domain"
 )
 
-func TestPolicy_BatchToCSV(t *testing.T) {
+func TestPolicy_Export(t *testing.T) {
 	transaction := Transaction{
 		EntityCode:        "abc1",
 		RiskCategoryName:  "def2",
@@ -27,7 +27,7 @@ func TestPolicy_BatchToCSV(t *testing.T) {
 		Description:       "transaction description",
 	}
 
-	n := &Policy{
+	p := &Policy{
 		Transactions: []Transaction{transaction},
 	}
 
@@ -40,7 +40,8 @@ func TestPolicy_BatchToCSV(t *testing.T) {
 
 	want := policyHeader + transactionRow
 
-	got := n.BatchToCSV()
+	got, gotType := p.RenderBatch()
 
 	require.Equal(t, want, string(got))
+	require.Equal(t, domain.ContentCSV, gotType)
 }

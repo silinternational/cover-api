@@ -17,20 +17,20 @@ type Policy struct {
 	Transactions []Transaction
 }
 
-func (p *Policy) AppendToBatch(t Transaction) {
+func (p *Policy) AppendToBatch(_ string, t Transaction) {
 	if t.Amount != 0 {
 		p.Transactions = append(p.Transactions, t)
 	}
 }
 
-func (p *Policy) BatchToCSV() []byte {
+func (p *Policy) RenderBatch() ([]byte, string) {
 	var buf bytes.Buffer
 	buf.Write([]byte(policyHeader))
 	for i := range p.Transactions {
 		buf.Write(p.transactionRow(i))
 	}
 
-	return buf.Bytes()
+	return buf.Bytes(), domain.ContentCSV
 }
 
 func (p *Policy) getReference(t Transaction) string {

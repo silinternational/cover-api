@@ -3,6 +3,7 @@ package models
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/gobuffalo/nulls"
@@ -127,10 +128,10 @@ func (le *LedgerEntries) AllNotEntered(tx *pop.Connection, cutoff time.Time) err
 	return appErrorFromDB(err, api.ErrorQueryFailure)
 }
 
-func (le *LedgerEntries) ToCsvForPolicy() []byte {
+func (le *LedgerEntries) ExportForPolicy() ([]byte, string) {
 	report := fin.NewBatch(fin.ReportFormatPolicy, time.Now())
 	for _, l := range *le {
-		report.AppendToBatch(fin.Transaction{
+		report.AppendToBatch("", fin.Transaction{
 			EntityCode:        l.EntityCode,
 			RiskCategoryName:  l.RiskCategoryName,
 			RiskCategoryCC:    l.RiskCategoryCC,
@@ -149,12 +150,17 @@ func (le *LedgerEntries) ToCsvForPolicy() []byte {
 		})
 	}
 
-	return report.BatchToCSV()
+	return report.RenderBatch()
 }
 
 type TransactionBlocks map[string]LedgerEntries // keyed by account
 
-func (le *LedgerEntries) ToCsv(format string, date time.Time) []byte {
+func (le *LedgerEntries) ExportReport(reportFormat string, date time.Time) ([]byte, string) {
+	report := le.prepareReport(reportFormat, date)
+	return report.RenderBatch()
+}
+
+func (le *LedgerEntries) prepareReport(format string, date time.Time) fin.Report {
 	report := fin.NewBatch(format, date)
 	ref := ""
 
@@ -164,8 +170,14 @@ func (le *LedgerEntries) ToCsv(format string, date time.Time) []byte {
 			continue
 		}
 		var balance int
+		le := ledgerEntries[0]
+		if le.Type.IsClaim() {
+			account = account[len(le.PolicyType):]
+		}
+		desc := le.balanceDescription()
+
 		for _, l := range ledgerEntries {
-			report.AppendToBatch(fin.Transaction{
+			report.AppendToBatch(desc, fin.Transaction{
 				EntityCode:        l.EntityCode,
 				RiskCategoryName:  l.RiskCategoryName,
 				RiskCategoryCC:    l.RiskCategoryCC,
@@ -186,21 +198,18 @@ func (le *LedgerEntries) ToCsv(format string, date time.Time) []byte {
 			balance -= int(l.Amount)
 		}
 
-		le := ledgerEntries[0]
-		if le.Type.IsClaim() {
-			account = account[len(le.PolicyType):]
-		}
-
-		report.AppendToBatch(fin.Transaction{
-			Account:     account,
-			Amount:      api.Currency(balance),
-			Description: le.balanceDescription(),
-			Reference:   &ref,
-			Date:        date,
-		})
+		report.AppendToBatch(
+			strings.TrimPrefix(desc, "Total "),
+			fin.Transaction{
+				Account:     account,
+				Amount:      api.Currency(balance),
+				Description: desc,
+				Reference:   &ref,
+				Date:        date,
+			},
+		)
 	}
-
-	return report.BatchToCSV()
+	return report
 }
 
 func (le *LedgerEntries) MakeBlocks() TransactionBlocks {

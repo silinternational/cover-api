@@ -141,12 +141,13 @@ func (ms *ModelSuite) TestNewLedgerReport() {
 	}
 
 	tests := []struct {
-		name         string
-		date         time.Time
-		reportFormat string
-		reportType   string
-		want         LedgerReport
-		wantErr      *api.AppError
+		name            string
+		date            time.Time
+		reportFormat    string
+		reportType      string
+		want            LedgerReport
+		wantContentType string
+		wantErr         *api.AppError
 	}{
 		{
 			name:         "invalid report type",
@@ -180,6 +181,7 @@ func (ms *ModelSuite) TestNewLedgerReport() {
 				File:          File{},
 				LedgerEntries: nil,
 			},
+			wantContentType: domain.ContentCSV,
 		},
 		{
 			name:         "one entry, netsuite",
@@ -192,6 +194,7 @@ func (ms *ModelSuite) TestNewLedgerReport() {
 				File:          File{},
 				LedgerEntries: nil,
 			},
+			wantContentType: domain.ContentZip,
 		},
 	}
 	for _, tt := range tests {
@@ -207,7 +210,7 @@ func (ms *ModelSuite) TestNewLedgerReport() {
 
 			ms.Equal(tt.want.Type, got.Type, "incorrect report Type")
 			ms.Equal(tt.want.Date, got.Date, "incorrect report Date")
-			ms.Equal(domain.ContentCSV, got.File.ContentType, "incorrect ContentType")
+			ms.Equal(tt.wantContentType, got.File.ContentType, "incorrect ContentType")
 			ms.Equal(user.ID, got.File.CreatedByID, "incorrect CreatedByID")
 			ms.Equal(1, len(got.LedgerEntries), "incorrect number of LedgerEntries")
 		})

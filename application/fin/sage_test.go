@@ -11,7 +11,7 @@ import (
 	"github.com/silinternational/cover-api/domain"
 )
 
-func TestSage_BatchToCSV(t *testing.T) {
+func TestSage_Export(t *testing.T) {
 	transaction := Transaction{
 		EntityCode:        "abc1",
 		RiskCategoryName:  "def2",
@@ -47,7 +47,8 @@ func TestSage_BatchToCSV(t *testing.T) {
 
 	want := sageHeader1 + sageHeader2 + summaryRow + transactionRow
 
-	got := s.BatchToCSV()
+	got, gotType := s.RenderBatch()
 
 	require.Equal(t, want, string(got))
+	require.Equal(t, domain.ContentCSV, gotType)
 }
