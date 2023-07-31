@@ -14,6 +14,7 @@ import (
 
 	"github.com/silinternational/cover-api/api"
 	"github.com/silinternational/cover-api/domain"
+	"github.com/silinternational/cover-api/fin"
 )
 
 const (
@@ -118,6 +119,7 @@ func (lr *LedgerReport) IsActorAllowedTo(tx *pop.Connection, actor User, perm Pe
 // ConvertToAPI converts a LedgerReport to api.LedgerReport
 func (lr *LedgerReport) ConvertToAPI(tx *pop.Connection) api.LedgerReport {
 	lr.LoadFile(tx, false)
+	lr.LoadZip(tx, false)
 	lr.LoadLedgerEntries(tx, false)
 
 	transactionCount := len(lr.LedgerEntries)
@@ -133,10 +135,11 @@ func (lr *LedgerReport) ConvertToAPI(tx *pop.Connection) api.LedgerReport {
 		}
 	}
 
+	zip := lr.Zip.ConvertToAPI(tx)
 	return api.LedgerReport{
 		ID:               lr.ID,
-		File:             *lr.File.ConvertToAPI(tx),
-		Zip:              lr.Zip.ConvertToAPI(tx),
+		File:             lr.File.ConvertToAPI(tx),
+		Zip:              &zip,
 		Type:             lr.Type,
 		Date:             lr.Date,
 		TransactionCount: transactionCount,
@@ -146,7 +149,7 @@ func (lr *LedgerReport) ConvertToAPI(tx *pop.Connection) api.LedgerReport {
 	}
 }
 
-// LoadFile hydrates the File and Zip properties if necessary or if `reload` is true. The file URL is refreshed
+// LoadFile hydrates the File property if necessary or if `reload` is true. The file URL is refreshed
 // in any case.
 func (lr *LedgerReport) LoadFile(tx *pop.Connection, reload bool) {
 	if lr.File.ID == uuid.Nil || reload {
@@ -157,7 +160,11 @@ func (lr *LedgerReport) LoadFile(tx *pop.Connection, reload bool) {
 	if err := lr.File.RefreshURL(tx); err != nil {
 		panic("failed to refresh LedgerReport.File URL, " + err.Error())
 	}
+}
 
+// LoadZip hydrates the Zip property if necessary or if `reload` is true. The zip URL is refreshed
+// in any case.
+func (lr *LedgerReport) LoadZip(tx *pop.Connection, reload bool) {
 	if lr.Zip == nil || lr.Zip.ID == uuid.Nil || reload {
 		if err := tx.Load(lr, "Zip"); err != nil {
 			panic("database error loading LedgerReport.Zip, " + err.Error())
@@ -224,20 +231,22 @@ func NewLedgerReport(ctx context.Context, reportType string, date time.Time) (Le
 		return LedgerReport{}, api.NewAppError(err, api.ErrorNoLedgerEntries, api.CategoryNotFound)
 	}
 
+	sage, contentType := le.ExportReport(fin.ReportFormatSage, report.Date)
 	report.File = File{
-		Name: fmt.Sprintf("%s_%s_%s.csv",
-			domain.Env.AppName, reportType, report.Date.Format(domain.DateFormat)),
+		Name: fmt.Sprintf("%s_%s_%s_%s.csv",
+			domain.Env.AppName, fin.ReportFormatSage, reportType, report.Date.Format(domain.DateFormat)),
 		CreatedByID: CurrentUser(ctx).ID,
-		Content:     le.ToCSV(report.Date),
-		ContentType: domain.ContentCSV,
+		Content:     sage,
+		ContentType: contentType,
 	}
 
+	netsuite, contentType := le.ExportReport(fin.ReportFormatNetSuite, report.Date)
 	report.Zip = &File{
-		Name: fmt.Sprintf("%s_%s_%s.zip",
-			domain.Env.AppName, reportType, report.Date.Format(domain.DateFormat)),
+		Name: fmt.Sprintf("%s_%s_%s_%s.zip",
+			domain.Env.AppName, fin.ReportFormatNetSuite, reportType, report.Date.Format(domain.DateFormat)),
 		CreatedByID: CurrentUser(ctx).ID,
-		Content:     le.ToZip(report.Date),
-		ContentType: domain.ContentZip,
+		Content:     netsuite,
+		ContentType: contentType,
 	}
 
 	report.LedgerEntries = le
@@ -278,11 +287,14 @@ func NewPolicyLedgerReport(ctx context.Context, policy Policy, reportType string
 		return LedgerReport{}, nil
 	}
 
-	report.File.Name = fmt.Sprintf("%s_policy_%s_%s_%d-%d.csv",
-		domain.Env.AppName, policy.ID.String(), reportType, year, month)
-	report.File.Content = le.ToCSVForPolicy()
-	report.File.CreatedByID = CurrentUser(ctx).ID
-	report.File.ContentType = domain.ContentCSV
+	content, contentType := le.ToCSVForPolicy()
+	report.File = File{
+		Name: fmt.Sprintf("%s_policy_%s_%s_%d-%d.csv",
+			domain.Env.AppName, policy.ID.String(), reportType, year, month),
+		CreatedByID: CurrentUser(ctx).ID,
+		Content:     content,
+		ContentType: contentType,
+	}
 	report.LedgerEntries = le
 
 	return report, nil

@@ -31,11 +31,7 @@ func (s *Sage) AppendToBatch(_ string, t Transaction) {
 	}
 }
 
-func (s *Sage) ToZip() []byte {
-	return nil
-}
-
-func (s *Sage) ToCSV() []byte {
+func (s *Sage) RenderBatch() ([]byte, string) {
 	var buf bytes.Buffer
 	buf.Write([]byte(sageHeader1))
 	buf.Write([]byte(sageHeader2))
@@ -44,7 +40,7 @@ func (s *Sage) ToCSV() []byte {
 		buf.Write(s.transactionRow(i))
 	}
 
-	return buf.Bytes()
+	return buf.Bytes(), domain.ContentCSV
 }
 
 func (s *Sage) getAccount(t Transaction) string {

@@ -484,7 +484,7 @@ func (u *User) ConvertToAPI(tx *pop.Connection, hydrate bool) api.User {
 
 	if u.PhotoFile != nil {
 		f := u.PhotoFile.ConvertToAPI(tx)
-		output.PhotoFile = f
+		output.PhotoFile = &f
 	}
 
 	return output

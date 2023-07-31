@@ -7,6 +7,7 @@ import (
 	"log"
 
 	"github.com/silinternational/cover-api/api"
+	"github.com/silinternational/cover-api/domain"
 )
 
 const (
@@ -30,34 +31,20 @@ func (n *NetSuite) AppendToBatch(block string, t Transaction) {
 	}
 }
 
-func (n *NetSuite) ToCSV() []byte {
-	var buf bytes.Buffer
-	buf.Write([]byte(netSuiteHeader1))
-	buf.Write([]byte(netSuiteHeader2))
-	buf.Write(n.summaryRow())
-	for _, transactions := range n.Transactions {
-		for _, transaction := range transactions {
-			buf.Write(n.transactionRow(transaction))
-		}
-	}
-
-	return buf.Bytes()
-}
-
-func (n *NetSuite) ToZip() []byte {
+func (n *NetSuite) RenderBatch() ([]byte, string) {
 	// Create a buffer to write our archive to.
 	buff := new(bytes.Buffer)
 
 	// Create a new zip archive.
 	w := zip.NewWriter(buff)
 
-	for block, transactions := range n.Transactions {
-		f, err := w.Create(block + ".csv")
+	for blockName, block := range n.Transactions {
+		f, err := w.Create(blockName + ".csv")
 		if err != nil {
 			log.Fatal(err)
 		}
 
-		contents := n.generateCSV(transactions)
+		contents := n.generateCSV(block)
 		if _, err = f.Write(contents); err != nil {
 			log.Fatal(err)
 		}
@@ -67,7 +54,7 @@ func (n *NetSuite) ToZip() []byte {
 		log.Fatal(err)
 	}
 
-	return buff.Bytes()
+	return buff.Bytes(), domain.ContentZip
 }
 
 func (n *NetSuite) generateCSV(transactions Transactions) []byte {

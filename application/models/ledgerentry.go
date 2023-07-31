@@ -128,7 +128,7 @@ func (le *LedgerEntries) AllNotEntered(tx *pop.Connection, cutoff time.Time) err
 	return appErrorFromDB(err, api.ErrorQueryFailure)
 }
 
-func (le *LedgerEntries) ToCSVForPolicy() []byte {
+func (le *LedgerEntries) ToCSVForPolicy() ([]byte, string) {
 	report := fin.NewBatch(fin.ReportFormatPolicy, time.Now())
 	for _, l := range *le {
 		report.AppendToBatch("", fin.Transaction{
@@ -150,19 +150,14 @@ func (le *LedgerEntries) ToCSVForPolicy() []byte {
 		})
 	}
 
-	return report.ToCSV()
+	return report.RenderBatch()
 }
 
 type TransactionBlocks map[string]LedgerEntries // keyed by account
 
-func (le *LedgerEntries) ToCSV(date time.Time) []byte {
-	report := le.prepareReport(fin.ReportFormatSage, date)
-	return report.ToCSV()
-}
-
-func (le *LedgerEntries) ToZip(date time.Time) []byte {
-	report := le.prepareReport(fin.ReportFormatNetSuite, date)
-	return report.ToZip()
+func (le *LedgerEntries) ExportReport(format string, date time.Time) ([]byte, string) {
+	report := le.prepareReport(format, date)
+	return report.RenderBatch()
 }
 
 func (le *LedgerEntries) prepareReport(format string, date time.Time) fin.Report {

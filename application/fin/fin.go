@@ -42,8 +42,7 @@ type Transaction struct {
 
 type Report interface {
 	AppendToBatch(string, Transaction)
-	ToCSV() []byte
-	ToZip() []byte
+	RenderBatch() ([]byte, string)
 
 	getReference(Transaction) string
 }

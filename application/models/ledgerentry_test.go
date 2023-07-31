@@ -113,7 +113,7 @@ func (ms *ModelSuite) TestLedgerEntries_ToFileForPolicy() {
 	}
 	for _, tt := range tests {
 		ms.T().Run(tt.name, func(t *testing.T) {
-			got := tt.entries.ToCSVForPolicy()
+			got, _ := tt.entries.ToCSVForPolicy()
 			for _, w := range tt.want {
 				ms.Contains(string(got), w)
 			}
@@ -229,7 +229,7 @@ func (ms *ModelSuite) TestLedgerEntries_ToFile() {
 	}
 	for _, tt := range tests {
 		ms.T().Run(tt.name, func(t *testing.T) {
-			got := tt.entries.ToCSV(tt.batchDate)
+			got, _ := tt.entries.ExportReport(fin.ReportFormatSage, tt.batchDate)
 			for _, w := range tt.want {
 				ms.Contains(string(got), w)
 			}

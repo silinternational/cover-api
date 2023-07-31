@@ -23,18 +23,14 @@ func (p *Policy) AppendToBatch(_ string, t Transaction) {
 	}
 }
 
-func (p *Policy) ToCSV() []byte {
+func (p *Policy) RenderBatch() ([]byte, string) {
 	var buf bytes.Buffer
 	buf.Write([]byte(policyHeader))
 	for i := range p.Transactions {
 		buf.Write(p.transactionRow(i))
 	}
 
-	return buf.Bytes()
-}
-
-func (p *Policy) ToZip() []byte {
-	return nil
+	return buf.Bytes(), domain.ContentCSV
 }
 
 func (p *Policy) getReference(t Transaction) string {
