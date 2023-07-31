@@ -112,27 +112,8 @@ func ledgerReportCreate(c buffalo.Context) error {
 	}
 
 	// Create NetSuite report
-	report = models.LedgerReport{
-		Type:          input.Type,
-		Date:          date,
-		LedgerEntries: report.LedgerEntries,
-	}
-
-	content, contentType := report.LedgerEntries.ExportReport(fin.ReportFormatNetSuite, report.Date)
-	ext := "csv"
-	if contentType == domain.ContentZip {
-		ext = "zip"
-	}
-
-	report.File = models.File{
-		Name: fmt.Sprintf("%s_%s_%s.%s",
-			domain.Env.AppName, report.Type, report.Date.Format(domain.DateFormat), ext),
-		Content:     content,
-		ContentType: contentType,
-		CreatedByID: models.CurrentUser(c).ID,
-	}
-
-	if err = report.Create(tx); err != nil {
+	netsuite := report.LedgerEntries.NewReport(c, fin.ReportFormatNetSuite, input.Type, date)
+	if err = netsuite.Create(tx); err != nil {
 		return reportError(c, err)
 	}
 

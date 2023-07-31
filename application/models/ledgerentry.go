@@ -11,6 +11,7 @@ import (
 	"github.com/gofrs/uuid"
 
 	"github.com/silinternational/cover-api/api"
+	"github.com/silinternational/cover-api/domain"
 	"github.com/silinternational/cover-api/fin"
 )
 
@@ -154,6 +155,31 @@ func (le *LedgerEntries) ExportForPolicy() ([]byte, string) {
 }
 
 type TransactionBlocks map[string]LedgerEntries // keyed by account
+
+// NewReport creates a new LedgerReport with the current LedgerEntries
+func (le *LedgerEntries) NewReport(ctx context.Context, reportFormat, reportType string, date time.Time) LedgerReport {
+	report := LedgerReport{
+		Date: date,
+		Type: reportType,
+	}
+
+	content, contentType := le.ExportReport(reportFormat, report.Date)
+	ext := "csv"
+	if contentType == domain.ContentZip {
+		ext = "zip"
+	}
+
+	report.File = File{
+		Name: fmt.Sprintf("%s_%s_%s.%s",
+			domain.Env.AppName, reportType, report.Date.Format(domain.DateFormat), ext),
+		Content:     content,
+		ContentType: contentType,
+		CreatedByID: CurrentUser(ctx).ID,
+	}
+	report.LedgerEntries = *le
+
+	return report
+}
 
 func (le *LedgerEntries) ExportReport(reportFormat string, date time.Time) ([]byte, string) {
 	report := le.prepareReport(reportFormat, date)
