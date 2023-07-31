@@ -16,19 +16,18 @@ import (
 
 // swagger:operation GET /ledger-reports LedgerReport LedgerReportList
 //
-// # LedgerReportList
+// LedgerReportList
 //
-// # Return a list of ledger reports that are not associated with a policy
+// Return a list of ledger reports that are not associated with a policy
 //
 // ---
 // responses:
-//
-//	'200':
-//	  description: LedgerReport list
-//	  schema:
-//	    type: array
-//	    items:
-//	      "$ref": "#/definitions/LedgerReport"
+//   '200':
+//     description: LedgerReport list
+//     schema:
+//       type: array
+//       items:
+//         "$ref": "#/definitions/LedgerReport"
 func ledgerReportList(c buffalo.Context) error {
 	var list models.LedgerReports
 
@@ -42,24 +41,22 @@ func ledgerReportList(c buffalo.Context) error {
 
 // swagger:operation GET /ledger-reports/{id} LedgerReport LedgerReportView
 //
-// # LedgerReportView
+// LedgerReportView
 //
 // Return the ledger report specified by `id`. The returned object contains metadata and a File object pointing to
 // a CSV file suitable for use with Sage Accounting.
 //
 // ---
 // parameters:
-//   - name: id
-//     in: path
-//     required: true
-//     description: specifies the ID of the report to view
-//
+// - name: id
+//   in: path
+//   required: true
+//   description: specifies the ID of the report to view
 // responses:
-//
-//	'200':
-//	  description: the requested LedgerReport
-//	  schema:
-//	    "$ref": "#/definitions/LedgerReport"
+//   '200':
+//     description: the requested LedgerReport
+//     schema:
+//       "$ref": "#/definitions/LedgerReport"
 func ledgerReportView(c buffalo.Context) error {
 	tx := models.Tx(c)
 
@@ -69,7 +66,7 @@ func ledgerReportView(c buffalo.Context) error {
 
 // swagger:operation POST /ledger-reports LedgerReport LedgerReportCreate
 //
-// # LedgerReportCreate
+// LedgerReportCreate
 //
 // Create and return a report on the ledger entries as specified by the input object. The returned object
 // contains metadata and a File object pointing to a CSV file suitable for use with Sage Accounting.
@@ -85,14 +82,12 @@ func ledgerReportView(c buffalo.Context) error {
 //     description: LedgerReportCreateInput object
 //     required: true
 //     schema:
-//     "$ref": "#/definitions/LedgerReportCreateInput"
-//
+//       "$ref": "#/definitions/LedgerReportCreateInput"
 // responses:
-//
-//	'200':
-//	  description: the requested LedgerReport
-//	  schema:
-//	    "$ref": "#/definitions/LedgerReport"
+//   '200':
+//     description: the requested LedgerReport
+//     schema:
+//       "$ref": "#/definitions/LedgerReport"
 func ledgerReportCreate(c buffalo.Context) error {
 	var input api.LedgerReportCreateInput
 	if err := StrictBind(c, &input); err != nil {
@@ -117,7 +112,7 @@ func ledgerReportCreate(c buffalo.Context) error {
 	}
 
 	// Create NetSuite report
-	netsuite := report.LedgerEntries.NewReport(c, fin.ReportFormatNetSuite, input.Type, report.Date)
+	netsuite := report.LedgerEntries.NewReport(c, fin.ReportFormatNetSuite, input.Type, date)
 	if err = netsuite.Create(tx); err != nil {
 		return reportError(c, err)
 	}
@@ -127,24 +122,22 @@ func ledgerReportCreate(c buffalo.Context) error {
 
 // swagger:operation PUT /ledger-reports/{id} LedgerReport LedgerReportReconcile
 //
-// # LedgerReportReconcile
+// LedgerReportReconcile
 //
 // Mark ledger entries in the report reconciled as of today. Call this only after all transactions in the report
 // have been fully loaded into the accounting record.
 //
 // ---
 // parameters:
-//   - name: id
-//     in: path
-//     required: true
-//     description: specifies the ID of the report to reconcile
-//
+// - name: id
+//   in: path
+//   required: true
+//   description: specifies the ID of the report to reconcile
 // responses:
-//
-//	'200':
-//	  description: the requested LedgerReport
-//	  schema:
-//	    "$ref": "#/definitions/LedgerReport"
+//   '200':
+//     description: the requested LedgerReport
+//     schema:
+//       "$ref": "#/definitions/LedgerReport"
 func ledgerReportReconcile(c buffalo.Context) error {
 	tx := models.Tx(c)
 
@@ -158,15 +151,14 @@ func ledgerReportReconcile(c buffalo.Context) error {
 
 // swagger:operation POST /ledger-reports/annual Ledger LedgerAnnualProcess
 //
-// # LedgerAnnualProcess
+// LedgerAnnualProcess
 //
 // Process billing for current year's policy renewals.
 //
 // ---
 // responses:
-//
-//	'204':
-//	  description: OK but no content in response
+//   '204':
+//     description: OK but no content in response
 func ledgerAnnualRenewalProcess(c buffalo.Context) error {
 	actor := models.CurrentUser(c)
 	if !actor.IsAdmin() {
@@ -183,17 +175,16 @@ func ledgerAnnualRenewalProcess(c buffalo.Context) error {
 
 // swagger:operation GET /ledger-reports/annual Ledger LedgerAnnualRenewalStatus
 //
-// # LedgerAnnualRenewalStatus
+// LedgerAnnualRenewalStatus
 //
 // Get the status of the annual billing process.
 //
 // ---
 // responses:
-//
-//	'200':
-//	  description: the status of the annual billing process
-//	  schema:
-//	    "$ref": "#/definitions/AnnualRenewalStatus"
+//   '200':
+//     description: the status of the annual billing process
+//     schema:
+//       "$ref": "#/definitions/AnnualRenewalStatus"
 func ledgerAnnualRenewalStatus(c buffalo.Context) error {
 	actor := models.CurrentUser(c)
 	if !actor.IsAdmin() {
