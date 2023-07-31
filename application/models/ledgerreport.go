@@ -135,11 +135,9 @@ func (lr *LedgerReport) ConvertToAPI(tx *pop.Connection) api.LedgerReport {
 		}
 	}
 
-	zip := lr.Zip.ConvertToAPI(tx)
-	return api.LedgerReport{
+	apiLedgerReport := api.LedgerReport{
 		ID:               lr.ID,
 		File:             lr.File.ConvertToAPI(tx),
-		Zip:              &zip,
 		Type:             lr.Type,
 		Date:             lr.Date,
 		TransactionCount: transactionCount,
@@ -147,6 +145,11 @@ func (lr *LedgerReport) ConvertToAPI(tx *pop.Connection) api.LedgerReport {
 		CreatedAt:        lr.CreatedAt,
 		UpdatedAt:        lr.UpdatedAt,
 	}
+	if lr.Zip != nil {
+		zip := lr.Zip.ConvertToAPI(tx)
+		apiLedgerReport.Zip = &zip
+	}
+	return apiLedgerReport
 }
 
 // LoadFile hydrates the File property if necessary or if `reload` is true. The file URL is refreshed
