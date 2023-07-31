@@ -170,8 +170,8 @@ func (le *LedgerEntries) NewReport(ctx context.Context, reportFormat, reportType
 	}
 
 	report.File = File{
-		Name: fmt.Sprintf("%s_%s_%s.%s",
-			domain.Env.AppName, reportType, report.Date.Format(domain.DateFormat), ext),
+		Name: fmt.Sprintf("%s_%s_%s_%s.%s",
+			domain.Env.AppName, reportFormat, reportType, report.Date.Format(domain.DateFormat), ext),
 		Content:     content,
 		ContentType: contentType,
 		CreatedByID: CurrentUser(ctx).ID,
