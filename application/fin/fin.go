@@ -56,7 +56,7 @@ func NewBatch(reportFormat string, date time.Time) Report {
 			Period:             getFiscalPeriod(int(date.Month())),
 			Year:               getFiscalYear(date),
 			JournalDescription: batchDesc,
-			Transactions:       make(TransactionBlocks),
+			Blocks:             make(TransactionBlocks),
 		}
 	case ReportFormatPolicy:
 		return &Policy{}

@@ -48,7 +48,7 @@ func TestNetSuite_BatchToZip(t *testing.T) {
 		Period:             9,
 		Year:               2020,
 		JournalDescription: "journal description",
-		Transactions:       TransactionBlocks{"": Transactions{t1}, "bar": Transactions{t2}},
+		Blocks:             TransactionBlocks{"": Transactions{t1}, "bar": Transactions{t2}},
 	}
 
 	summaryRow := fmt.Sprintf(`"1","000000","00001","","GL","JE","%d","%02d",0,"%s","00",0,0,0,2`+"\n",
@@ -82,7 +82,7 @@ func TestNetSuite_BatchToZip(t *testing.T) {
 
 	for _, f := range files {
 		name := f.Name[:len(f.Name)-4]
-		require.Contains(t, n.Transactions, name)
+		require.Contains(t, n.Blocks, name)
 
 		contents, err := f.Open()
 		require.NoError(t, err)

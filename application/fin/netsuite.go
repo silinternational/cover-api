@@ -22,12 +22,12 @@ type NetSuite struct {
 	Period             int
 	Year               int
 	JournalDescription string
-	Transactions       TransactionBlocks
+	Blocks             TransactionBlocks
 }
 
 func (n *NetSuite) AppendToBatch(block string, t Transaction) {
 	if t.Amount != 0 {
-		n.Transactions[block] = append(n.Transactions[block], t)
+		n.Blocks[block] = append(n.Blocks[block], t)
 	}
 }
 
@@ -38,7 +38,7 @@ func (n *NetSuite) RenderBatch() ([]byte, string) {
 	// Create a new zip archive.
 	w := zip.NewWriter(buff)
 
-	for blockName, block := range n.Transactions {
+	for blockName, block := range n.Blocks {
 		f, err := w.Create(blockName + ".csv")
 		if err != nil {
 			log.Fatal(err)
