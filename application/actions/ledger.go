@@ -112,7 +112,7 @@ func ledgerReportCreate(c buffalo.Context) error {
 	}
 
 	// Create NetSuite report
-	netsuite := report.LedgerEntries.NewReport(c, fin.ReportFormatNetSuite, input.Type, date)
+	netsuite := report.LedgerEntries.NewReport(c, fin.ReportFormatNetSuite, input.Type, report.Date)
 	if err = netsuite.Create(tx); err != nil {
 		return reportError(c, err)
 	}
