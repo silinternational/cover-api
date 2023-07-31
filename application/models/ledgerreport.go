@@ -199,22 +199,7 @@ func NewLedgerReport(ctx context.Context, reportFormat, reportType string, date 
 		return LedgerReport{}, api.NewAppError(err, api.ErrorNoLedgerEntries, api.CategoryNotFound)
 	}
 
-	content, contentType := le.ExportReport(reportFormat, report.Date)
-	ext := "csv"
-	if contentType == domain.ContentZip {
-		ext = "zip"
-	}
-
-	report.File = File{
-		Name: fmt.Sprintf("%s_%s_%s.%s",
-			domain.Env.AppName, reportType, report.Date.Format(domain.DateFormat), ext),
-		Content:     content,
-		ContentType: contentType,
-		CreatedByID: CurrentUser(ctx).ID,
-	}
-	report.LedgerEntries = le
-
-	return report, nil
+	return le.NewReport(ctx, reportFormat, reportType, report.Date), nil
 }
 
 // NewPolicyLedgerReport creates a new report for one policy by querying the database according
