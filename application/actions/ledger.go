@@ -99,11 +99,8 @@ func ledgerReportCreate(c buffalo.Context) error {
 		return reportError(c, api.NewAppError(err, api.ErrorInvalidDate, api.CategoryUser))
 	}
 
-	if input.Format == "" {
-		input.Format = fin.ReportFormatSage
-	}
-
-	report, err := models.NewLedgerReport(c, input.Format, input.Type, date)
+	// Create Sage report
+	report, err := models.NewLedgerReport(c, fin.ReportFormatSage, input.Type, date)
 	if err != nil {
 		return reportError(c, err)
 	}
@@ -111,6 +108,12 @@ func ledgerReportCreate(c buffalo.Context) error {
 	tx := models.Tx(c)
 
 	if err = report.Create(tx); err != nil {
+		return reportError(c, err)
+	}
+
+	// Create NetSuite report
+	netsuite := report.LedgerEntries.NewReport(c, fin.ReportFormatNetSuite, input.Type, report.Date)
+	if err = netsuite.Create(tx); err != nil {
 		return reportError(c, err)
 	}
 

@@ -1,10 +1,13 @@
 package fin
 
 import (
+	"archive/zip"
 	"bytes"
 	"fmt"
+	"log"
 
 	"github.com/silinternational/cover-api/api"
+	"github.com/silinternational/cover-api/domain"
 )
 
 const (
@@ -19,22 +22,48 @@ type NetSuite struct {
 	Period             int
 	Year               int
 	JournalDescription string
-	Transactions       []Transaction
+	TransactionBlocks  TransactionBlocks
 }
 
-func (n *NetSuite) AppendToBatch(t Transaction) {
+func (n *NetSuite) AppendToBatch(block string, t Transaction) {
 	if t.Amount != 0 {
-		n.Transactions = append(n.Transactions, t)
+		n.TransactionBlocks[block] = append(n.TransactionBlocks[block], t)
 	}
 }
 
-func (n *NetSuite) BatchToCSV() []byte {
+func (n *NetSuite) RenderBatch() ([]byte, string) {
+	// Create a buffer to write our archive to.
+	buff := new(bytes.Buffer)
+
+	// Create a new zip archive.
+	w := zip.NewWriter(buff)
+
+	for blockName, block := range n.TransactionBlocks {
+		f, err := w.Create(blockName + ".csv")
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		contents := n.generateCSV(block)
+		if _, err = f.Write(contents); err != nil {
+			log.Fatal(err)
+		}
+	}
+
+	if err := w.Close(); err != nil {
+		log.Fatal(err)
+	}
+
+	return buff.Bytes(), domain.ContentZip
+}
+
+func (n *NetSuite) generateCSV(transactions Transactions) []byte {
 	var buf bytes.Buffer
 	buf.Write([]byte(netSuiteHeader1))
 	buf.Write([]byte(netSuiteHeader2))
 	buf.Write(n.summaryRow())
-	for i := range n.Transactions {
-		buf.Write(n.transactionRow(i))
+	for _, transaction := range transactions {
+		buf.Write(n.transactionRow(transaction))
 	}
 
 	return buf.Bytes()
@@ -83,8 +112,7 @@ func (n *NetSuite) summaryRow() []byte {
 	return []byte(str)
 }
 
-func (n *NetSuite) transactionRow(rowNumber int) []byte {
-	t := n.Transactions[rowNumber]
+func (n *NetSuite) transactionRow(t Transaction) []byte {
 	str := fmt.Sprintf(
 		netSuiteTransactionRowTemplate,
 		n.getAccount(t),
