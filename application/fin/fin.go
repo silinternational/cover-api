@@ -4,29 +4,63 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/silinternational/cover-api/api"
 	"github.com/silinternational/cover-api/domain"
 )
 
-const ProviderTypeSage = "sage"
+const (
+	ReportFormatNetSuite = "netsuite"
+	ReportFormatPolicy   = "policy"
+	ReportFormatSage     = "sage"
+)
+
+type (
+	Transactions      []Transaction
+	TransactionBlocks map[string]Transactions // keyed by account
+)
 
 type Transaction struct {
+	EntityCode        string
+	RiskCategoryName  string
+	RiskCategoryCC    string // Risk Category Cost Center
+	Type              string
+	PolicyType        api.PolicyType
+	HouseholdID       string
+	CostCenter        string
+	AccountNumber     string
+	IncomeAccount     string
+	Name              string
+	PolicyName        string
+	ClaimPayoutOption string
+
 	Account     string
-	Amount      int
+	Amount      api.Currency
 	Description string
-	Reference   string
+	Reference   *string // Override the reference if given
 	Date        time.Time
 }
 
-type Provider interface {
-	AppendToBatch(Transaction)
-	BatchToCSV() []byte
+type Report interface {
+	AppendToBatch(string, Transaction)
+	RenderBatch() ([]byte, string)
+
+	getReference(Transaction) string
 }
 
-func NewBatch(providerType string, date time.Time) Provider {
+func NewBatch(reportFormat string, date time.Time) Report {
 	batchDesc := fmt.Sprintf("%s %s JE", date.Format("January 2006"), domain.Env.AppName)
 
-	switch providerType {
-	case ProviderTypeSage:
+	switch reportFormat {
+	case ReportFormatNetSuite:
+		return &NetSuite{
+			Period:             getFiscalPeriod(int(date.Month())),
+			Year:               getFiscalYear(date),
+			JournalDescription: batchDesc,
+			TransactionBlocks:  make(TransactionBlocks),
+		}
+	case ReportFormatPolicy:
+		return &Policy{}
+	case ReportFormatSage:
 		return &Sage{
 			Period:             getFiscalPeriod(int(date.Month())),
 			Year:               getFiscalYear(date),

@@ -1,9 +1,9 @@
 package models
 
 import (
-	"bytes"
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/gobuffalo/nulls"
@@ -129,34 +129,66 @@ func (le *LedgerEntries) AllNotEntered(tx *pop.Connection, cutoff time.Time) err
 	return appErrorFromDB(err, api.ErrorQueryFailure)
 }
 
-func (le *LedgerEntries) ToCsvForPolicy() []byte {
-	rowTemplate := `%s,"%s","%s",%s` + "\n"
-
-	var buf bytes.Buffer
-	buf.Write([]byte(csvPolicyHeader))
-
+func (le *LedgerEntries) ExportForPolicy() ([]byte, string) {
+	report := fin.NewBatch(fin.ReportFormatPolicy, time.Now())
 	for _, l := range *le {
-		if l.Amount == 0 {
-			continue
-		}
-
-		nextRow := fmt.Sprintf(
-			rowTemplate,
-			l.Amount.String(),
-			l.getDescription(),
-			l.getReference(),
-			l.DateSubmitted.Format(domain.DateFormat),
-		)
-		buf.Write([]byte(nextRow))
+		report.AppendToBatch("", fin.Transaction{
+			EntityCode:        l.EntityCode,
+			RiskCategoryName:  l.RiskCategoryName,
+			RiskCategoryCC:    l.RiskCategoryCC,
+			Type:              string(l.Type),
+			PolicyType:        l.PolicyType,
+			HouseholdID:       l.HouseholdID,
+			CostCenter:        l.CostCenter,
+			AccountNumber:     l.AccountNumber,
+			IncomeAccount:     l.IncomeAccount,
+			Name:              l.Name,
+			PolicyName:        l.PolicyName,
+			ClaimPayoutOption: l.ClaimPayoutOption,
+			Amount:            l.Amount,
+			Date:              l.DateSubmitted,
+			Description:       l.getDescription(),
+		})
 	}
 
-	return buf.Bytes()
+	return report.RenderBatch()
 }
 
 type TransactionBlocks map[string]LedgerEntries // keyed by account
 
-func (le *LedgerEntries) ToCsv(date time.Time) []byte {
-	sage := fin.NewBatch(fin.ProviderTypeSage, date)
+// NewReport creates a new LedgerReport with the current LedgerEntries
+func (le *LedgerEntries) NewReport(ctx context.Context, reportFormat, reportType string, date time.Time) LedgerReport {
+	report := LedgerReport{
+		Date: date,
+		Type: reportType,
+	}
+
+	content, contentType := le.ExportReport(reportFormat, report.Date)
+	ext := "csv"
+	if contentType == domain.ContentZip {
+		ext = "zip"
+	}
+
+	report.File = File{
+		Name: fmt.Sprintf("%s_%s_%s_%s.%s",
+			domain.Env.AppName, reportFormat, reportType, report.Date.Format(domain.DateFormat), ext),
+		Content:     content,
+		ContentType: contentType,
+		CreatedByID: CurrentUser(ctx).ID,
+	}
+	report.LedgerEntries = *le
+
+	return report
+}
+
+func (le *LedgerEntries) ExportReport(reportFormat string, date time.Time) ([]byte, string) {
+	report := le.prepareReport(reportFormat, date)
+	return report.RenderBatch()
+}
+
+func (le *LedgerEntries) prepareReport(format string, date time.Time) fin.Report {
+	report := fin.NewBatch(format, date)
+	ref := ""
 
 	blocks := le.MakeBlocks()
 	for account, ledgerEntries := range blocks {
@@ -164,33 +196,56 @@ func (le *LedgerEntries) ToCsv(date time.Time) []byte {
 			continue
 		}
 		var balance int
+		le := ledgerEntries[0]
+		if le.Type.IsClaim() {
+			account = account[len(le.PolicyType):]
+		}
+		desc := le.balanceDescription()
+		blockName := strings.TrimPrefix(desc, "Total ")
+
 		for _, l := range ledgerEntries {
-			sage.AppendToBatch(fin.Transaction{
-				Account:     domain.Env.ExpenseAccount,
-				Amount:      int(l.Amount),
-				Description: l.getDescription(),
-				Reference:   l.getReference(),
-				Date:        l.DateSubmitted,
+			report.AppendToBatch(blockName, fin.Transaction{
+				EntityCode:        l.EntityCode,
+				RiskCategoryName:  l.RiskCategoryName,
+				RiskCategoryCC:    l.RiskCategoryCC,
+				Type:              string(l.Type),
+				PolicyType:        l.PolicyType,
+				HouseholdID:       l.HouseholdID,
+				CostCenter:        l.CostCenter,
+				AccountNumber:     l.AccountNumber,
+				IncomeAccount:     l.IncomeAccount,
+				Name:              l.Name,
+				PolicyName:        l.PolicyName,
+				ClaimPayoutOption: l.ClaimPayoutOption,
+				Amount:            l.Amount,
+				Date:              l.DateSubmitted,
+				Description:       l.getDescription(),
 			})
 
 			balance -= int(l.Amount)
 		}
-		sage.AppendToBatch(fin.Transaction{
+
+		report.AppendToBatch(blockName, fin.Transaction{
 			Account:     account,
-			Amount:      balance,
-			Description: ledgerEntries[0].balanceDescription(),
-			Reference:   "",
+			Amount:      api.Currency(balance),
+			Description: desc,
+			Reference:   &ref,
 			Date:        date,
 		})
 	}
-
-	return sage.BatchToCSV()
+	return report
 }
 
 func (le *LedgerEntries) MakeBlocks() TransactionBlocks {
 	blocks := TransactionBlocks{}
 	for _, e := range *le {
 		key := e.IncomeAccount + e.RiskCategoryCC
+
+		// Split claims up by Policy Type
+		if e.Type.IsClaim() {
+			key = string(e.PolicyType) + key
+		}
+
 		blocks[key] = append(blocks[key], e)
 	}
 	return blocks
@@ -232,7 +287,7 @@ func (le *LedgerEntry) Reconcile(ctx context.Context, now time.Time) error {
 // getDescription returns text that is base on other fields of the LedgerEntry
 // For household-type entries this returns `<entry.Type.Description> / <Policy.Name>`.
 // For other entries this returns `<entry.Type.Description> / <Policy.Name> (<accountable person name>)`,
-//   not including `<` and `>`
+// not including `<` and `>`
 func (le *LedgerEntry) getDescription() string {
 	description := le.Type.Description(le.ClaimPayoutOption, le.Amount)
 
@@ -252,31 +307,6 @@ func (le *LedgerEntry) getDescription() string {
 	}
 
 	return fmt.Sprintf(`%s (%s)`, description, le.Name)
-}
-
-// getReference returns text that is base on other fields of the LedgerEntry
-// For household-type entries this returns `MC <entry.HouseholdID> / <accountable person name>`
-// For other entries this returns `<entry.EntityCode> <entry.AccountNumber><entry.CostCenter> / <Policy.Name>`,
-//   not including `<` and `>`.
-func (le *LedgerEntry) getReference() string {
-	// For household policies
-	if le.PolicyType == api.PolicyTypeHousehold {
-		ref := fmt.Sprintf("MC %s", le.HouseholdID)
-
-		if le.Name == "" {
-			return ref
-		}
-
-		return fmt.Sprintf("%s / %s", ref, le.Name)
-	}
-
-	// For non-household policies
-	if le.PolicyName == "" {
-		return fmt.Sprintf("%s %s%s", le.EntityCode, le.AccountNumber, le.CostCenter)
-	}
-
-	return fmt.Sprintf("%s %s%s / %s",
-		le.EntityCode, le.AccountNumber, le.CostCenter, le.PolicyName)
 }
 
 func (le *LedgerEntry) getItemName(tx *pop.Connection) string {
@@ -330,9 +360,7 @@ func (le *LedgerEntry) balanceDescription() string {
 	premiumsOrClaims := "Premiums"
 	if le.Type.IsClaim() {
 		premiumsOrClaims = "Claims"
-
-		// Claims transactions use the same account for all entities
-		entity = "all"
+		entity = string(le.PolicyType)
 	}
 
 	return fmt.Sprintf("Total %s %s %s", entity, le.RiskCategoryName, premiumsOrClaims)

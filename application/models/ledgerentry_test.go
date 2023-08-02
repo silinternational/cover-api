@@ -10,6 +10,7 @@ import (
 
 	"github.com/silinternational/cover-api/api"
 	"github.com/silinternational/cover-api/domain"
+	"github.com/silinternational/cover-api/fin"
 )
 
 func (ms *ModelSuite) TestLedgerEntries_AllForMonth() {
@@ -65,7 +66,7 @@ func (ms *ModelSuite) TestLedgerEntries_AllForMonth() {
 	}
 }
 
-func (ms *ModelSuite) TestLedgerEntries_ToCsvForPolicy() {
+func (ms *ModelSuite) TestLedgerEntries_ExportForPolicy() {
 	date := time.Date(2021, 3, 1, 0, 0, 0, 0, time.UTC)
 
 	entry := LedgerEntry{
@@ -85,23 +86,26 @@ func (ms *ModelSuite) TestLedgerEntries_ToCsvForPolicy() {
 
 	tests := []struct {
 		name    string
+		format  string
 		entries LedgerEntries
 		want    []string
 	}{
 		{
 			name:    "no data",
+			format:  fin.ReportFormatPolicy,
 			entries: LedgerEntries{},
 			want:    []string{csvPolicyHeader},
 		},
 		{
 			name:    "1 entry",
+			format:  fin.ReportFormatPolicy,
 			entries: LedgerEntries{entry},
 			want: []string{
 				csvPolicyHeader,
 				fmt.Sprintf(`%s,"%s","%s",%s`,
 					entry.Amount.String(),
 					entry.getDescription(),
-					entry.getReference(),
+					getReference(entry),
 					date.Format(domain.DateFormat),
 				),
 			},
@@ -109,7 +113,7 @@ func (ms *ModelSuite) TestLedgerEntries_ToCsvForPolicy() {
 	}
 	for _, tt := range tests {
 		ms.T().Run(tt.name, func(t *testing.T) {
-			got := tt.entries.ToCsvForPolicy()
+			got, _ := tt.entries.ExportForPolicy()
 			for _, w := range tt.want {
 				ms.Contains(string(got), w)
 			}
@@ -117,11 +121,12 @@ func (ms *ModelSuite) TestLedgerEntries_ToCsvForPolicy() {
 	}
 }
 
-func (ms *ModelSuite) TestLedgerEntries_ToCsv() {
+func (ms *ModelSuite) TestLedgerEntries_Export() {
 	date := time.Date(2021, 3, 1, 0, 0, 0, 0, time.UTC)
 
 	entry := LedgerEntry{
 		PolicyID:         domain.GetUUID(),
+		PolicyType:       api.PolicyTypeHousehold,
 		EntityCode:       "EntityCode",
 		RiskCategoryName: "Mobile",
 		Type:             LedgerEntryTypeClaim,
@@ -132,6 +137,21 @@ func (ms *ModelSuite) TestLedgerEntries_ToCsv() {
 		AccountNumber:    "AccountNumber",
 		IncomeAccount:    "12345",
 		HouseholdID:      "HouseholdID",
+		CostCenter:       "CostCenter",
+	}
+	teamEntry := LedgerEntry{
+		PolicyID:         domain.GetUUID(),
+		PolicyType:       api.PolicyTypeTeam,
+		EntityCode:       "EntityCode",
+		RiskCategoryName: "Mobile",
+		Type:             LedgerEntryTypeClaim,
+		Name:             "MyColleague",
+		PolicyName:       "OurPolicy",
+		Amount:           345,
+		DateSubmitted:    date,
+		AccountNumber:    "AccountNumber",
+		IncomeAccount:    "12345",
+		HouseholdID:      "Team",
 		CostCenter:       "CostCenter",
 	}
 
@@ -161,7 +181,7 @@ func (ms *ModelSuite) TestLedgerEntries_ToCsv() {
 					domain.Env.ExpenseAccount,
 					api.Currency(-entry.Amount).String(),
 					entry.getDescription(),
-					entry.getReference(),
+					getReference(entry),
 					date.Format("20060102"),
 				),
 				fmt.Sprintf(`"2","000000","00001","0000000040","",0,"%s","",%s,"2","%s","",%s,"GL","JE"`,
@@ -172,10 +192,44 @@ func (ms *ModelSuite) TestLedgerEntries_ToCsv() {
 				),
 			},
 		},
+		{
+			name:      "split claim entries",
+			entries:   LedgerEntries{entry, teamEntry},
+			batchDate: date,
+			want: []string{
+				summaryLine,
+				fmt.Sprintf(`"2","000000","00001","0000000020","",0,"%s","",%s,"2","%s","%s",%s,"GL","JE"`,
+					domain.Env.ExpenseAccount,
+					api.Currency(-entry.Amount).String(),
+					entry.getDescription(),
+					getReference(entry),
+					date.Format("20060102"),
+				),
+				fmt.Sprintf(`"2","000000","00001","0000000040","",0,"%s","",%s,"2","%s","",%s,"GL","JE"`,
+					entry.IncomeAccount+entry.RiskCategoryCC,
+					entry.Amount.String(),
+					entry.balanceDescription(),
+					date.Format("20060102"),
+				),
+				fmt.Sprintf(`"2","000000","00001","0000000060","",0,"%s","",%s,"2","%s","%s",%s,"GL","JE"`,
+					domain.Env.ExpenseAccount,
+					api.Currency(-teamEntry.Amount).String(),
+					teamEntry.getDescription(),
+					getReference(teamEntry),
+					date.Format("20060102"),
+				),
+				fmt.Sprintf(`"2","000000","00001","0000000080","",0,"%s","",%s,"2","%s","",%s,"GL","JE"`,
+					teamEntry.IncomeAccount+teamEntry.RiskCategoryCC,
+					teamEntry.Amount.String(),
+					teamEntry.balanceDescription(),
+					date.Format("20060102"),
+				),
+			},
+		},
 	}
 	for _, tt := range tests {
 		ms.T().Run(tt.name, func(t *testing.T) {
-			got := tt.entries.ToCsv(tt.batchDate)
+			got, _ := tt.entries.ExportReport(fin.ReportFormatSage, tt.batchDate)
 			for _, w := range tt.want {
 				ms.Contains(string(got), w)
 			}
@@ -202,6 +256,31 @@ func (ms *ModelSuite) TestLedgerEntries_MakeBlocks() {
 	ms.Equal(2, len(blocks["4020067890"]))
 	ms.Equal(policy2, blocks["4020067890"][0].PolicyID)
 	ms.Equal(policy3, blocks["4020067890"][1].PolicyID)
+
+	policy4 := domain.GetUUID()
+	policy5 := domain.GetUUID()
+	entries = LedgerEntries{
+		{PolicyID: policy4, IncomeAccount: "40200", RiskCategoryCC: "67890", Type: LedgerEntryTypeClaim, PolicyType: api.PolicyTypeHousehold},
+		{PolicyID: policy5, IncomeAccount: "40200", RiskCategoryCC: "67890", Type: LedgerEntryTypeClaim, PolicyType: api.PolicyTypeTeam},
+	}
+	blocks = entries.MakeBlocks()
+	ms.Equal(2, len(blocks))
+
+	keys := make([]string, 0, len(blocks))
+	for k := range blocks {
+		keys = append(keys, k)
+	}
+
+	ms.ElementsMatch(
+		[]string{
+			string(api.PolicyTypeHousehold) + "4020067890",
+			string(api.PolicyTypeTeam) + "4020067890",
+		},
+		keys,
+	)
+
+	ms.Equal(policy4, blocks[string(api.PolicyTypeHousehold)+"4020067890"][0].PolicyID)
+	ms.Equal(policy5, blocks[string(api.PolicyTypeTeam)+"4020067890"][0].PolicyID)
 }
 
 func (ms *ModelSuite) TestLedgerEntry_balanceDescription() {
@@ -234,13 +313,24 @@ func (ms *ModelSuite) TestLedgerEntry_balanceDescription() {
 			want: fmt.Sprintf("Total %s cat2 Premiums", parentEntity.Code),
 		},
 		{
-			name: "claims",
+			name: "household claims",
 			entry: LedgerEntry{
 				EntityCode:       subEntity.Code,
 				RiskCategoryName: "cat2",
+				PolicyType:       api.PolicyTypeHousehold,
 				Type:             LedgerEntryTypeClaimAdjustment,
 			},
-			want: "Total all cat2 Claims",
+			want: fmt.Sprintf("Total %s cat2 Claims", api.PolicyTypeHousehold),
+		},
+		{
+			name: "team claims",
+			entry: LedgerEntry{
+				EntityCode:       subEntity.Code,
+				RiskCategoryName: "cat2",
+				PolicyType:       api.PolicyTypeTeam,
+				Type:             LedgerEntryTypeClaimAdjustment,
+			},
+			want: fmt.Sprintf("Total %s cat2 Claims", api.PolicyTypeTeam),
 		},
 	}
 	for _, tt := range tests {
@@ -444,67 +534,6 @@ func (ms *ModelSuite) TestLedgerEntry_getItemName() {
 	}
 }
 
-func (ms *ModelSuite) TestLedgerEntry_getReference() {
-	f := CreateItemFixtures(ms.DB, FixturesConfig{NumberOfPolicies: 2, ClaimsPerPolicy: 1, UsersPerPolicy: 2})
-	hhPolicy := f.Policies[0]
-	hhPolicyItem := hhPolicy.Items[0]
-	hhPolicy.LoadMembers(ms.DB, false)
-
-	// Give the household item an accountable person
-	hhAccPerson := hhPolicy.Members[1]
-	hhAccPersonName := hhAccPerson.GetName().String()
-	ms.NoError(hhPolicyItem.SetAccountablePerson(ms.DB, hhAccPerson.ID))
-	ms.NoError(ms.DB.Update(&hhPolicyItem), "error updating household policy item for test")
-
-	hhPolicyClaim := f.Policies[0].Claims[0]
-	ms.False(uuid.Nil == hhPolicyClaim.ID, "householdPolicyClaim is not hydrated")
-
-	teamPolicy := ConvertPolicyType(ms.DB, f.Policies[1])
-	teamPolicyItem := teamPolicy.Items[0]
-	teamPolicy.LoadMembers(ms.DB, false)
-
-	// Give the team item an accountable person
-	ms.NoError(teamPolicyItem.SetAccountablePerson(ms.DB, teamPolicy.Members[1].ID))
-	ms.NoError(ms.DB.Update(&teamPolicyItem), "error updating team policy item for test")
-
-	// Create new Ledger Entries for each policy
-	hhEntry := NewLedgerEntry(hhAccPersonName, hhPolicy, &hhPolicyItem, nil)
-	hhEntry.Type = LedgerEntryTypeNewCoverage
-
-	teamEntry := NewLedgerEntry("", teamPolicy, &teamPolicyItem, nil)
-	teamEntry.Type = LedgerEntryTypeCoverageRenewal
-	teamEntry.AccountNumber = "TAcc"
-	teamEntry.CostCenter = "TCC"
-
-	tests := []struct {
-		name  string
-		entry LedgerEntry
-		item  Item
-		want  string
-	}{
-		{
-			name:  "household policy item",
-			entry: hhEntry,
-			item:  hhPolicyItem,
-			want:  fmt.Sprintf("MC %s / %s", hhEntry.HouseholdID, hhAccPersonName),
-		},
-		{
-			name:  "team policy item",
-			entry: teamEntry,
-			item:  teamPolicyItem,
-			want: fmt.Sprintf("%s %s%s / %s",
-				teamEntry.EntityCode, teamEntry.AccountNumber, teamEntry.CostCenter, teamPolicy.Name),
-		},
-	}
-	for _, tt := range tests {
-		ms.T().Run(tt.name, func(t *testing.T) {
-			got := tt.entry.getReference()
-
-			ms.Equal(tt.want, got)
-		})
-	}
-}
-
 func (ms *ModelSuite) TestLedgerEntries_Reconcile() {
 	f := CreateItemFixtures(ms.DB, FixturesConfig{ItemsPerPolicy: 2, ClaimsPerPolicy: 2, ClaimItemsPerClaim: 1})
 	ctx := CreateTestContext(CreateAdminUsers(ms.DB)[AppRoleSteward])
@@ -638,4 +667,25 @@ func (ms *ModelSuite) Test_AdjustLedgerAmount() {
 			ms.Equal(tt.wantAmount, got, "adjustment is incorrect")
 		})
 	}
+}
+
+func getReference(le LedgerEntry) string {
+	// For household policies
+	if le.PolicyType == api.PolicyTypeHousehold {
+		ref := fmt.Sprintf("MC %s", le.HouseholdID)
+
+		if le.Name == "" {
+			return ref
+		}
+
+		return fmt.Sprintf("%s / %s", ref, le.Name)
+	}
+
+	// For non-household policies
+	if le.PolicyName == "" {
+		return fmt.Sprintf("%s %s%s", le.EntityCode, le.AccountNumber, le.CostCenter)
+	}
+
+	return fmt.Sprintf("%s %s%s / %s",
+		le.EntityCode, le.AccountNumber, le.CostCenter, le.PolicyName)
 }

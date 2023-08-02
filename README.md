@@ -8,7 +8,11 @@ The only system requirement for running this application is Docker. Once the sou
 to do to get it running is:
 
 1. Copy `local-example.env` to `local.env` and update values as described in the file. Secrets may be provided by another team member via Signal or other secure communication tool.
-1. Add `127.0.0.1 minio` to `/etc/hosts` (or equivalent for your OS)
+1. Add the following to `/etc/hosts` (or equivalent for your OS)
+   ```
+   127.0.0.1 minio
+   127.0.0.1 cover.local
+   ```
 1. Run `make`
 
 At this point you'll have a running instance of this application available at http://localhost:3000.

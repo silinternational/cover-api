@@ -91,7 +91,7 @@ func (lr *LedgerReport) FindByID(tx *pop.Connection, id uuid.UUID) error {
 }
 
 // IsActorAllowedTo ensures the actor is either an admin or a member of
-//    the LedgerReport's policy (assuming it has one)
+// the LedgerReport's policy (assuming it has one)
 func (lr *LedgerReport) IsActorAllowedTo(tx *pop.Connection, actor User, perm Permission, sub SubResource, r *http.Request) bool {
 	if actor.IsAdmin() {
 		return true
@@ -166,7 +166,7 @@ func (lr *LedgerReport) LoadPolicy(tx *pop.Connection, reload bool) {
 }
 
 // NewLedgerReport creates a new report by querying the database according to the requested report type
-func NewLedgerReport(ctx context.Context, reportType string, date time.Time) (LedgerReport, error) {
+func NewLedgerReport(ctx context.Context, reportFormat, reportType string, date time.Time) (LedgerReport, error) {
 	tx := Tx(ctx)
 
 	report := LedgerReport{Type: reportType}
@@ -199,19 +199,12 @@ func NewLedgerReport(ctx context.Context, reportType string, date time.Time) (Le
 		return LedgerReport{}, api.NewAppError(err, api.ErrorNoLedgerEntries, api.CategoryNotFound)
 	}
 
-	report.File.Name = fmt.Sprintf("%s_%s_%s.csv",
-		domain.Env.AppName, reportType, report.Date.Format(domain.DateFormat))
-	report.File.Content = le.ToCsv(report.Date)
-	report.File.CreatedByID = CurrentUser(ctx).ID
-	report.File.ContentType = domain.ContentCSV
-	report.LedgerEntries = le
-
-	return report, nil
+	return le.NewReport(ctx, reportFormat, reportType, report.Date), nil
 }
 
 // NewPolicyLedgerReport creates a new report for one policy by querying the database according
-//   to the requested report type and the month and year of the request.
-//   If no ledger entries are found, it returns an empty LedgerReport.
+// to the requested report type and the month and year of the request.
+// If no ledger entries are found, it returns an empty LedgerReport.
 func NewPolicyLedgerReport(ctx context.Context, policy Policy, reportType string, month, year int) (LedgerReport, error) {
 	tx := Tx(ctx)
 
@@ -242,11 +235,19 @@ func NewPolicyLedgerReport(ctx context.Context, policy Policy, reportType string
 		return LedgerReport{}, nil
 	}
 
-	report.File.Name = fmt.Sprintf("%s_policy_%s_%s_%d-%d.csv",
-		domain.Env.AppName, policy.ID.String(), reportType, year, month)
-	report.File.Content = le.ToCsvForPolicy()
-	report.File.CreatedByID = CurrentUser(ctx).ID
-	report.File.ContentType = domain.ContentCSV
+	content, contentType := le.ExportForPolicy()
+	ext := "csv"
+	if contentType == domain.ContentZip {
+		ext = "zip"
+	}
+
+	report.File = File{
+		Name: fmt.Sprintf("%s_policy_%s_%s_%d-%d.%s",
+			domain.Env.AppName, policy.ID.String(), reportType, year, month, ext),
+		Content:     content,
+		ContentType: contentType,
+		CreatedByID: CurrentUser(ctx).ID,
+	}
 	report.LedgerEntries = le
 
 	return report, nil
