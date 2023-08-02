@@ -201,9 +201,10 @@ func (le *LedgerEntries) prepareReport(format string, date time.Time) fin.Report
 			account = account[len(le.PolicyType):]
 		}
 		desc := le.balanceDescription()
+		blockName := strings.TrimPrefix(desc, "Total ")
 
 		for _, l := range ledgerEntries {
-			report.AppendToBatch(desc, fin.Transaction{
+			report.AppendToBatch(blockName, fin.Transaction{
 				EntityCode:        l.EntityCode,
 				RiskCategoryName:  l.RiskCategoryName,
 				RiskCategoryCC:    l.RiskCategoryCC,
@@ -224,16 +225,13 @@ func (le *LedgerEntries) prepareReport(format string, date time.Time) fin.Report
 			balance -= int(l.Amount)
 		}
 
-		report.AppendToBatch(
-			strings.TrimPrefix(desc, "Total "),
-			fin.Transaction{
-				Account:     account,
-				Amount:      api.Currency(balance),
-				Description: desc,
-				Reference:   &ref,
-				Date:        date,
-			},
-		)
+		report.AppendToBatch(blockName, fin.Transaction{
+			Account:     account,
+			Amount:      api.Currency(balance),
+			Description: desc,
+			Reference:   &ref,
+			Date:        date,
+		})
 	}
 	return report
 }
