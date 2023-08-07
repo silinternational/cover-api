@@ -11,12 +11,11 @@ import (
 )
 
 const (
-	netSuiteHeader1 = `"RECTYPE","BATCHID", "BTCHENTRY","ORIGCOMP","SRCELEDGER","SRCETYPE","FSCSYR","FSCSPERD","SWEDIT","JRNLDESC","REVPERD","ERRBATCH","ERRENTRY","DETAILCNT","PROCESSCMD"` + "\n"
-	netSuiteHeader2 = `"RECTYPE","ACCTID","TRANSAMT","SCURNDEC","TRANSDESC","TRANSREF","TRANSDATE","SRCELDGR","SRCETYPE"` + "\n"
-
-	netSuiteSummaryRowTemplate     = `"1","000000","00001","","GL","JE","%d","%02d",0,"%s","00",0,0,0,2` + "\n"
-	netSuiteTransactionRowTemplate = `"2","%s",%s,"2","%s","%s",%s,"GL","JE"` + "\n"
+	netSuiteHeader                 = `"TRANSID","ACCTID","TRANSAMT","TRANSDESC","TRANSREF","TRANSDATE"` + "\n"
+	netSuiteTransactionRowTemplate = `%s,"%s",%s,"%s","%s",%s` + "\n"
 )
+
+var netsuiteRowNum int
 
 type NetSuite struct {
 	Period             int
@@ -59,9 +58,7 @@ func (n *NetSuite) RenderBatch() ([]byte, string) {
 
 func (n *NetSuite) generateCSV(transactions Transactions) []byte {
 	var buf bytes.Buffer
-	buf.Write([]byte(netSuiteHeader1))
-	buf.Write([]byte(netSuiteHeader2))
-	buf.Write(n.summaryRow())
+	buf.Write([]byte(netSuiteHeader))
 	for _, transaction := range transactions {
 		buf.Write(n.transactionRow(transaction))
 	}
@@ -107,14 +104,15 @@ func (n *NetSuite) getReference(t Transaction) string {
 	return fmt.Sprintf("%s / %s", ref, t.PolicyName)
 }
 
-func (n *NetSuite) summaryRow() []byte {
-	str := fmt.Sprintf(netSuiteSummaryRowTemplate, n.Year, n.Period, n.JournalDescription)
-	return []byte(str)
+func (n *NetSuite) getRowID() string {
+	return fmt.Sprintf("%d%02d%06d", n.Year, n.Period, netsuiteRowNum)
 }
 
 func (n *NetSuite) transactionRow(t Transaction) []byte {
+	netsuiteRowNum++
 	str := fmt.Sprintf(
 		netSuiteTransactionRowTemplate,
+		n.getRowID(),
 		n.getAccount(t),
 		api.Currency(-t.Amount).String(),
 		t.Description,

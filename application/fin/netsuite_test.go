@@ -51,10 +51,8 @@ func TestNetSuite_Export(t *testing.T) {
 		TransactionBlocks:  TransactionBlocks{"": Transactions{t1}, "bar": Transactions{t2}},
 	}
 
-	summaryRow := fmt.Sprintf(`"1","000000","00001","","GL","JE","%d","%02d",0,"%s","00",0,0,0,2`+"\n",
-		n.Year, n.Period, n.JournalDescription)
-
 	transaction1Row := fmt.Sprintf(netSuiteTransactionRowTemplate,
+		fmt.Sprintf("%d%02d%06d", n.Year, n.Period, 1),
 		n.getAccount(t1),
 		api.Currency(t1.Amount).String(),
 		t1.Description,
@@ -63,6 +61,7 @@ func TestNetSuite_Export(t *testing.T) {
 	)
 
 	transaction2Row := fmt.Sprintf(netSuiteTransactionRowTemplate,
+		fmt.Sprintf("%d%02d%06d", n.Year, n.Period, 2),
 		n.getAccount(t2),
 		api.Currency(t2.Amount).String(),
 		t2.Description,
@@ -95,6 +94,6 @@ func TestNetSuite_Export(t *testing.T) {
 			want = transaction2Row
 		}
 
-		require.Equal(t, netSuiteHeader1+netSuiteHeader2+summaryRow+want, string(body))
+		require.Equal(t, netSuiteHeader+want, string(body))
 	}
 }
