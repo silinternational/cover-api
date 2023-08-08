@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/silinternational/cover-api/api"
 	"github.com/silinternational/cover-api/domain"
@@ -18,6 +19,7 @@ const (
 var netsuiteRowNum int
 
 type NetSuite struct {
+	Date               time.Time
 	Period             int
 	Year               int
 	JournalDescription string
@@ -38,7 +40,7 @@ func (n *NetSuite) RenderBatch() ([]byte, string) {
 	w := zip.NewWriter(buff)
 
 	for blockName, block := range n.TransactionBlocks {
-		f, err := w.Create(blockName + ".csv")
+		f, err := w.Create(fmt.Sprintf("%s_%s.csv", blockName, n.Date.Format(domain.DateFormat)))
 		if err != nil {
 			log.Fatal(err)
 		}

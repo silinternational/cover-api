@@ -53,6 +53,7 @@ func NewBatch(reportFormat string, date time.Time) Report {
 	switch reportFormat {
 	case ReportFormatNetSuite:
 		return &NetSuite{
+			Date:               date,
 			Period:             getFiscalPeriod(int(date.Month())),
 			Year:               getFiscalYear(date),
 			JournalDescription: batchDesc,
