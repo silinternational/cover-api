@@ -19,11 +19,13 @@ const (
 var netsuiteRowNum int
 
 type NetSuite struct {
-	Date               time.Time
 	Period             int
 	Year               int
 	JournalDescription string
 	TransactionBlocks  TransactionBlocks
+
+	date   time.Time
+	annual int
 }
 
 func (n *NetSuite) AppendToBatch(block string, t Transaction) {
@@ -40,7 +42,7 @@ func (n *NetSuite) RenderBatch() ([]byte, string) {
 	w := zip.NewWriter(buff)
 
 	for blockName, block := range n.TransactionBlocks {
-		f, err := w.Create(fmt.Sprintf("%s_%s.csv", blockName, n.Date.Format(domain.DateFormat)))
+		f, err := w.Create(fmt.Sprintf("%s_%s.csv", blockName, n.date.Format(domain.DateFormat)))
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -107,7 +109,7 @@ func (n *NetSuite) getReference(t Transaction) string {
 }
 
 func (n *NetSuite) getRowID() string {
-	return fmt.Sprintf("%d%02d%06d", n.Year, n.Period, netsuiteRowNum)
+	return fmt.Sprintf("%d%02d%d%06d", n.Year, n.Period, n.annual, netsuiteRowNum)
 }
 
 func (n *NetSuite) transactionRow(t Transaction) []byte {
