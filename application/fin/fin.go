@@ -52,18 +52,7 @@ func NewBatch(reportFormat, reportType string, date time.Time) Report {
 
 	switch reportFormat {
 	case ReportFormatNetSuite:
-		annual := 0
-		if reportType == "Annual" {
-			annual = 1
-		}
-		return &NetSuite{
-			Period:             getFiscalPeriod(int(date.Month())),
-			Year:               getFiscalYear(date),
-			JournalDescription: batchDesc,
-			TransactionBlocks:  make(TransactionBlocks),
-			date:               date,
-			annual:             annual,
-		}
+		return newNetSuiteReport(batchDesc, reportType, date)
 	case ReportFormatPolicy:
 		return &Policy{}
 	case ReportFormatSage:

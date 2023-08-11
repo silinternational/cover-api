@@ -26,7 +26,7 @@ func TestNetSuite_Export(t *testing.T) {
 		IncomeAccount:     "pqr6",
 		Name:              "stu7",
 		ClaimPayoutOption: "vwx8",
-		Amount:            0,
+		Amount:            1,
 		Date:              time.Now(),
 		Description:       "transaction description",
 	}
@@ -40,31 +40,28 @@ func TestNetSuite_Export(t *testing.T) {
 		AccountNumber:     "kji4",
 		CostCenter:        "hgf3",
 		ClaimPayoutOption: "edc2",
-		Amount:            0,
+		Amount:            2,
 		Date:              time.Now(),
 		Description:       "transaction description",
 	}
 
-	n := &NetSuite{
-		Period:             9,
-		Year:               2020,
-		JournalDescription: "journal description",
-		TransactionBlocks:  TransactionBlocks{"": Transactions{t1}, "bar": Transactions{t2}},
-	}
+	n := newNetSuiteReport("journal description", "", time.Now())
+	n.AppendToBatch("", t1)
+	n.AppendToBatch("bar", t2)
 
 	transaction1Row := fmt.Sprintf(netSuiteTransactionRowTemplate,
-		fmt.Sprintf("%d%02d0%06d", n.Year, n.Period, 1),
+		n.rowID+1,
 		n.getAccount(t1),
-		api.Currency(t1.Amount).String(),
+		api.Currency(-t1.Amount).String(),
 		t1.Description,
 		n.getReference(t1),
 		t1.Date.Format("20060102"),
 	)
 
 	transaction2Row := fmt.Sprintf(netSuiteTransactionRowTemplate,
-		fmt.Sprintf("%d%02d0%06d", n.Year, n.Period, 2),
+		n.rowID+2,
 		n.getAccount(t2),
-		api.Currency(t2.Amount).String(),
+		api.Currency(-t2.Amount).String(),
 		t2.Description,
 		n.getReference(t2),
 		t2.Date.Format("20060102"),

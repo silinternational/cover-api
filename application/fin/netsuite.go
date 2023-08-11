@@ -13,10 +13,8 @@ import (
 
 const (
 	netSuiteHeader                 = `"TRANSID","ACCTID","TRANSAMT","TRANSDESC","TRANSREF","TRANSDATE"` + "\n"
-	netSuiteTransactionRowTemplate = `%s,"%s",%s,"%s","%s",%s` + "\n"
+	netSuiteTransactionRowTemplate = `%d,"%s",%s,"%s","%s",%s` + "\n"
 )
-
-var netsuiteRowNum int
 
 type NetSuite struct {
 	Period             int
@@ -24,8 +22,27 @@ type NetSuite struct {
 	JournalDescription string
 	TransactionBlocks  TransactionBlocks
 
-	date   time.Time
-	annual int
+	date  time.Time
+	rowID int64
+}
+
+func newNetSuiteReport(batchDesc, reportType string, date time.Time) *NetSuite {
+	period := getFiscalPeriod(int(date.Month()))
+	year := getFiscalYear(date)
+	rowID := int64(((year * 100) + period) * 10)
+	if reportType == "Annual" {
+		rowID++
+	}
+	rowID *= 100000
+
+	return &NetSuite{
+		Period:             period,
+		Year:               year,
+		JournalDescription: batchDesc,
+		TransactionBlocks:  make(TransactionBlocks),
+		date:               date,
+		rowID:              rowID,
+	}
 }
 
 func (n *NetSuite) AppendToBatch(block string, t Transaction) {
@@ -108,15 +125,11 @@ func (n *NetSuite) getReference(t Transaction) string {
 	return fmt.Sprintf("%s / %s", ref, t.PolicyName)
 }
 
-func (n *NetSuite) getRowID() string {
-	return fmt.Sprintf("%d%02d%d%06d", n.Year, n.Period, n.annual, netsuiteRowNum)
-}
-
 func (n *NetSuite) transactionRow(t Transaction) []byte {
-	netsuiteRowNum++
+	n.rowID++
 	str := fmt.Sprintf(
 		netSuiteTransactionRowTemplate,
-		n.getRowID(),
+		n.rowID,
 		n.getAccount(t),
 		api.Currency(-t.Amount).String(),
 		t.Description,
