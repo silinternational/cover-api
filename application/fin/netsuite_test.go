@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"strings"
 	"testing"
 	"time"
 
@@ -25,7 +26,7 @@ func TestNetSuite_Export(t *testing.T) {
 		IncomeAccount:     "pqr6",
 		Name:              "stu7",
 		ClaimPayoutOption: "vwx8",
-		Amount:            0,
+		Amount:            1,
 		Date:              time.Now(),
 		Description:       "transaction description",
 	}
@@ -39,32 +40,28 @@ func TestNetSuite_Export(t *testing.T) {
 		AccountNumber:     "kji4",
 		CostCenter:        "hgf3",
 		ClaimPayoutOption: "edc2",
-		Amount:            0,
+		Amount:            2,
 		Date:              time.Now(),
 		Description:       "transaction description",
 	}
 
-	n := &NetSuite{
-		Period:             9,
-		Year:               2020,
-		JournalDescription: "journal description",
-		TransactionBlocks:  TransactionBlocks{"": Transactions{t1}, "bar": Transactions{t2}},
-	}
-
-	summaryRow := fmt.Sprintf(`"1","000000","00001","","GL","JE","%d","%02d",0,"%s","00",0,0,0,2`+"\n",
-		n.Year, n.Period, n.JournalDescription)
+	n := newNetSuiteReport("journal description", "", time.Now())
+	n.AppendToBatch("", t1)
+	n.AppendToBatch("bar", t2)
 
 	transaction1Row := fmt.Sprintf(netSuiteTransactionRowTemplate,
+		n.rowID+1,
 		n.getAccount(t1),
-		api.Currency(t1.Amount).String(),
+		api.Currency(-t1.Amount).String(),
 		t1.Description,
 		n.getReference(t1),
 		t1.Date.Format("20060102"),
 	)
 
 	transaction2Row := fmt.Sprintf(netSuiteTransactionRowTemplate,
+		n.rowID+2,
 		n.getAccount(t2),
-		api.Currency(t2.Amount).String(),
+		api.Currency(-t2.Amount).String(),
 		t2.Description,
 		n.getReference(t2),
 		t2.Date.Format("20060102"),
@@ -81,7 +78,11 @@ func TestNetSuite_Export(t *testing.T) {
 	require.Equal(t, 2, len(files))
 
 	for _, f := range files {
+		date := n.date.Format(domain.DateFormat)
 		name := f.Name[:len(f.Name)-4]
+		require.True(t, strings.HasSuffix(name, date))
+
+		name = name[:len(name)-len(date)-1]
 		require.Contains(t, n.TransactionBlocks, name)
 
 		contents, err := f.Open()
@@ -95,6 +96,6 @@ func TestNetSuite_Export(t *testing.T) {
 			want = transaction2Row
 		}
 
-		require.Equal(t, netSuiteHeader1+netSuiteHeader2+summaryRow+want, string(body))
+		require.Equal(t, netSuiteHeader+want, string(body))
 	}
 }

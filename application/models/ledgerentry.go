@@ -130,7 +130,7 @@ func (le *LedgerEntries) AllNotEntered(tx *pop.Connection, cutoff time.Time) err
 }
 
 func (le *LedgerEntries) ExportForPolicy() ([]byte, string) {
-	report := fin.NewBatch(fin.ReportFormatPolicy, time.Now())
+	report := fin.NewBatch(fin.ReportFormatPolicy, "", time.Now())
 	for _, l := range *le {
 		report.AppendToBatch("", fin.Transaction{
 			EntityCode:        l.EntityCode,
@@ -163,7 +163,7 @@ func (le *LedgerEntries) NewReport(ctx context.Context, reportFormat, reportType
 		Type: reportType,
 	}
 
-	content, contentType := le.ExportReport(reportFormat, report.Date)
+	content, contentType := le.ExportReport(reportFormat, reportType, report.Date)
 	ext := "csv"
 	if contentType == domain.ContentZip {
 		ext = "zip"
@@ -181,13 +181,13 @@ func (le *LedgerEntries) NewReport(ctx context.Context, reportFormat, reportType
 	return report
 }
 
-func (le *LedgerEntries) ExportReport(reportFormat string, date time.Time) ([]byte, string) {
-	report := le.prepareReport(reportFormat, date)
+func (le *LedgerEntries) ExportReport(reportFormat, reportType string, date time.Time) ([]byte, string) {
+	report := le.prepareReport(reportFormat, reportType, date)
 	return report.RenderBatch()
 }
 
-func (le *LedgerEntries) prepareReport(format string, date time.Time) fin.Report {
-	report := fin.NewBatch(format, date)
+func (le *LedgerEntries) prepareReport(reportFormat, reportType string, date time.Time) fin.Report {
+	report := fin.NewBatch(reportFormat, reportType, date)
 	ref := ""
 
 	blocks := le.MakeBlocks()
@@ -202,6 +202,7 @@ func (le *LedgerEntries) prepareReport(format string, date time.Time) fin.Report
 		}
 		desc := le.balanceDescription()
 		blockName := strings.TrimPrefix(desc, "Total ")
+		blockName = strings.ReplaceAll(blockName, " ", "_")
 
 		for _, l := range ledgerEntries {
 			report.AppendToBatch(blockName, fin.Transaction{
