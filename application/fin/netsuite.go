@@ -12,8 +12,8 @@ import (
 )
 
 const (
-	netSuiteHeader                 = `"TRANSID","ACCTID","TRANSAMT","TRANSDESC","TRANSREF","TRANSDATE"` + "\n"
-	netSuiteTransactionRowTemplate = `%d,"%s",%s,"%s","%s",%s` + "\n"
+	netSuiteHeader                 = `"TRANSID","EntityCode","TRANSAMT","TRANSDESC", "Account", "SuiteKey","TRANSREF","TRANSDATE"` + "\n"
+	netSuiteTransactionRowTemplate = `%d,"%s",%s,"%s","%s","%s","%s",%s` + "\n"
 )
 
 type NetSuite struct {
@@ -106,23 +106,11 @@ func (n *NetSuite) getReference(t Transaction) string {
 
 	// For household policies
 	if t.PolicyType == api.PolicyTypeHousehold {
-		ref := "MC"
-
-		if t.Name == "" {
-			return ref
-		}
-
-		return fmt.Sprintf("%s / %s", ref, t.Name)
+		return t.Name
 	}
 
 	// For non-household policies
-	ref := fmt.Sprintf("%s%s", t.AccountNumber, t.CostCenter)
-
-	if t.PolicyName == "" {
-		return ref
-	}
-
-	return fmt.Sprintf("%s / %s", ref, t.PolicyName)
+	return t.PolicyName
 }
 
 func (n *NetSuite) transactionRow(t Transaction) []byte {
@@ -133,6 +121,8 @@ func (n *NetSuite) transactionRow(t Transaction) []byte {
 		n.getAccount(t),
 		api.Currency(-t.Amount).String(),
 		t.Description,
+		t.AccountNumber,
+		t.CostCenter,
 		n.getReference(t),
 		t.Date.Format("20060102"),
 	)

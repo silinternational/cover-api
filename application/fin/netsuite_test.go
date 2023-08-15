@@ -54,6 +54,8 @@ func TestNetSuite_Export(t *testing.T) {
 		n.getAccount(t1),
 		api.Currency(-t1.Amount).String(),
 		t1.Description,
+		t1.AccountNumber,
+		t1.CostCenter,
 		n.getReference(t1),
 		t1.Date.Format("20060102"),
 	)
@@ -63,6 +65,8 @@ func TestNetSuite_Export(t *testing.T) {
 		n.getAccount(t2),
 		api.Currency(-t2.Amount).String(),
 		t2.Description,
+		t2.AccountNumber,
+		t2.CostCenter,
 		n.getReference(t2),
 		t2.Date.Format("20060102"),
 	)
