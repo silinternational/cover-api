@@ -52,7 +52,7 @@ func createJobContext() buffalo.Context {
 		params: map[any]any{},
 	}
 
-	user := models.GetDefaultSteward(models.DB)
+	user := models.GetServiceUser(models.DB)
 	ctx.Set(domain.ContextKeyCurrentUser, user)
 
 	return ctx
