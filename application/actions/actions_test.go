@@ -61,6 +61,7 @@ func (as *ActionSuite) SetupTest() {
 	}
 
 	models.DestroyAll()
+	models.InsertTestData()
 }
 
 func (as *ActionSuite) verifyResponseData(wantData []string, body string, msg string) {
