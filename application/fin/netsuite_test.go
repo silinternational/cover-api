@@ -16,6 +16,7 @@ import (
 )
 
 func TestNetSuite_Export(t *testing.T) {
+	now := time.Now().UTC()
 	t1 := Transaction{
 		EntityCode:        "abc1",
 		RiskCategoryName:  "def2",
@@ -27,7 +28,7 @@ func TestNetSuite_Export(t *testing.T) {
 		Name:              "stu7",
 		ClaimPayoutOption: "vwx8",
 		Amount:            1,
-		Date:              time.Now(),
+		Date:              now,
 		Description:       "transaction description",
 	}
 	t2 := Transaction{
@@ -41,11 +42,11 @@ func TestNetSuite_Export(t *testing.T) {
 		CostCenter:        "hgf3",
 		ClaimPayoutOption: "edc2",
 		Amount:            2,
-		Date:              time.Now(),
+		Date:              now,
 		Description:       "transaction description",
 	}
 
-	n := newNetSuiteReport("journal description", "", time.Now())
+	n := newNetSuiteReport("journal description", "", now)
 	n.AppendToBatch("", t1)
 	n.AppendToBatch("bar", t2)
 
