@@ -7,7 +7,7 @@ grifts: db
 	docker-compose run --rm buffalo /bin/bash -c "buffalo task db:seed && buffalo task minio:seed"
 
 migratestatus: db
-	docker-compose run buffalo buffalo-pop pop migrate status
+	docker-compose run --rm buffalo buffalo-pop pop migrate status
 
 migratetestdb: testdb
 	docker-compose run --rm test whenavail testdb 5432 10 buffalo-pop pop migrate up
