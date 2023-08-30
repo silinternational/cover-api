@@ -131,7 +131,7 @@ func (m MessageData) addStewardData(tx *pop.Connection) {
 		m = map[string]any{}
 	}
 
-	steward := models.GetDefaultSteward(tx)
+	steward := models.GetPrimarySteward(tx)
 	m["supportEmail"] = domain.Env.SupportEmail
 	m["supportName"] = steward.Name()
 	m["supportFirstName"] = steward.FirstName

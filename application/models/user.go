@@ -189,11 +189,11 @@ func (u *User) EmailOfChoice() string {
 	return u.Email
 }
 
-// GetDefaultSteward returns the User with AppRoleSteward who logged in most recently
-func GetDefaultSteward(tx *pop.Connection) User {
+// GetPrimarySteward returns the User with AppRoleSteward and the earliest created_at
+func GetPrimarySteward(tx *pop.Connection) User {
 	u := User{}
-	if err := tx.Where("app_role = ?", AppRoleSteward).Order("last_login_utc desc").First(&u); err != nil {
-		panic("error finding most recently logged in steward user " + err.Error())
+	if err := tx.Where("app_role = ? AND NOT is_blocked", AppRoleSteward).Order("created_at ASC").First(&u); err != nil {
+		log.Fatalf("error finding the primary steward user: %s", err)
 	}
 	return u
 }
