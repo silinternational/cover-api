@@ -375,7 +375,7 @@ func (i *Item) cancelCoverageAfterClaim(tx *pop.Connection, reason string) error
 		Action:    api.HistoryActionUpdate,
 		PolicyID:  i.PolicyID,
 		ItemID:    nulls.NewUUID(i.ID),
-		UserID:    GetDefaultSteward(tx).ID,
+		UserID:    uuid.FromStringOrNil(ServiceUserID),
 		FieldName: FieldItemCoverageStatus,
 		OldValue:  string(api.ItemCoverageStatusApproved),
 		NewValue:  string(api.ItemCoverageStatusInactive),

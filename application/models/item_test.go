@@ -1346,9 +1346,6 @@ func (ms *ModelSuite) TestItem_cancelCoverageAfterClaim() {
 	itemApproved := UpdateItemStatus(ms.DB, f.Items[0], api.ItemCoverageStatusApproved, "test")
 	itemPending := UpdateItemStatus(ms.DB, f.Items[1], api.ItemCoverageStatusPending, "test")
 
-	adminUsers := CreateAdminUsers(ms.DB)
-	steward := adminUsers[AppRoleSteward]
-
 	now := time.Now().UTC()
 	reason := "test claim approved"
 
@@ -1391,7 +1388,7 @@ func (ms *ModelSuite) TestItem_cancelCoverageAfterClaim() {
 
 			var history PolicyHistory
 			ms.NoError(ms.DB.Where("item_id = ?", tt.item.ID).First(&history))
-			ms.Equal(steward.ID, history.UserID, "History UserID is incorrect")
+			ms.Equal(ServiceUserID, history.UserID.String(), "History UserID is incorrect")
 			ms.Equal(FieldItemCoverageStatus, history.FieldName, "History FieldName is incorrect")
 			ms.Equal(api.HistoryActionUpdate, history.Action, "History Action is incorrect")
 
