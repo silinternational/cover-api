@@ -202,7 +202,7 @@ func GetDefaultSteward(tx *pop.Connection) User {
 func GetServiceUser(tx *pop.Connection) User {
 	u := User{}
 	if err := tx.Find(&u, ServiceUserID); err != nil {
-		log.Fatalf("error finding service user, %s", err)
+		log.Fatalf("error finding service user: %s", err)
 	}
 	return u
 }
