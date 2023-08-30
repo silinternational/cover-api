@@ -673,6 +673,22 @@ func destroyTable(i any) {
 	}
 }
 
+func InsertTestData() {
+	insertServiceUser()
+}
+
+func insertServiceUser() {
+	serviceUser := User{
+		ID:        uuid.FromStringOrNil(ServiceUserID),
+		Email:     "service_user@example.com",
+		FirstName: "Service",
+		LastName:  "User",
+	}
+	if err := DB.Create(&serviceUser); err != nil {
+		panic("failed to insert service user: " + err.Error())
+	}
+}
+
 // RegisterEventDetector is a helper method for testing if events are triggered
 // call with the kind of event and a pointer to a boolean and it'll update the boolean
 // to true if the event kind is detected. A 10ms delay may be required between emit and detection

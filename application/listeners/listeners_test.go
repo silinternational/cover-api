@@ -25,6 +25,7 @@ type TestSuite struct {
 func (ts *TestSuite) SetupTest() {
 	ts.Assertions = require.New(ts.T())
 	models.DestroyAll()
+	models.InsertTestData()
 }
 
 // Test_TestSuite runs the test suite
