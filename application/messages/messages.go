@@ -64,6 +64,7 @@ func newEmailMessageData() MessageData {
 	m["uiURL"] = domain.Env.UIURL
 	m["appName"] = domain.Env.AppName
 	m["premiumPercentage"] = fmt.Sprintf("%.2g%%", domain.Env.PremiumFactor*100)
+	m["supportEmail"] = domain.Env.SupportEmail
 	m["supportURL"] = domain.Env.SupportURL
 	m["faqURL"] = domain.Env.FaqURL
 
@@ -131,8 +132,7 @@ func (m MessageData) addStewardData(tx *pop.Connection) {
 		m = map[string]any{}
 	}
 
-	steward := models.GetDefaultSteward(tx)
-	m["supportEmail"] = domain.Env.SupportEmail
+	steward := models.GetPrimarySteward(tx)
 	m["supportName"] = steward.Name()
 	m["supportFirstName"] = steward.FirstName
 }
