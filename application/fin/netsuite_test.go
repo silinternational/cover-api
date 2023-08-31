@@ -108,7 +108,7 @@ func TestNetSuite_Export(t *testing.T) {
 		// Replace the first instance of "<number>," with "\d,"
 		// So that map order will not affect test
 		// For example, 2023080000001 becomes 202308000000\d
-		want = re.ReplaceAllString(want, `${1}\d,$2`)
+		want = re.ReplaceAllString(want, `$1\d,$2`)
 
 		require.Regexp(t, netSuiteHeader+want, string(body))
 	}
