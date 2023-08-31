@@ -64,7 +64,7 @@ func (as *ActionSuite) Test_entityCodesList() {
 				gotCodes = append(gotCodes, c.Code)
 			}
 			as.ElementsMatch(tt.wantCodes, gotCodes)
-
+			as.NotNil(codes[0].Active)
 			if tt.actor.IsAdmin() {
 				as.NotNil(codes[0].IncomeAccount)
 				as.NotNil(codes[0].ParentEntity)
