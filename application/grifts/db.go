@@ -28,7 +28,7 @@ var _ = grift.Namespace("db", func() {
 			return err
 		}
 
-		if count > 0 {
+		if count > 1 {
 			fmt.Printf("\nINFO: It appears that the grifts have already been run, "+
 				"since there are already %v users.\n", count)
 			return nil
