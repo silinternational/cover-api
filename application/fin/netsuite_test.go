@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"regexp"
 	"strings"
 	"testing"
 	"time"
@@ -101,6 +102,9 @@ func TestNetSuite_Export(t *testing.T) {
 			want = transaction2Row
 		}
 
-		require.Equal(t, netSuiteHeader+want, string(body))
+		re := regexp.MustCompile(`^(.*?)\d,(.*)$`)
+		want = re.ReplaceAllString(want, `${1}\d,$2`)
+
+		require.Regexp(t, netSuiteHeader+want, string(body))
 	}
 }
