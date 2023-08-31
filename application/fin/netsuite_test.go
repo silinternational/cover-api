@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"regexp"
 	"strings"
 	"testing"
 	"time"
@@ -82,6 +83,9 @@ func TestNetSuite_Export(t *testing.T) {
 	files := r.File
 	require.Equal(t, 2, len(files))
 
+	// Find first instance of "<number>,"
+	re := regexp.MustCompile(`^(.*?)\d,(.*)$`)
+
 	for _, f := range files {
 		date := n.date.Format(domain.DateFormat)
 		name := f.Name[:len(f.Name)-4]
@@ -101,6 +105,11 @@ func TestNetSuite_Export(t *testing.T) {
 			want = transaction2Row
 		}
 
-		require.Equal(t, netSuiteHeader+want, string(body))
+		// Replace the first instance of "<number>," with "\d,"
+		// So that map order will not affect test
+		// For example, 2023080000001 becomes 202308000000\d
+		want = re.ReplaceAllString(want, `$1\d,$2`)
+
+		require.Regexp(t, netSuiteHeader+want, string(body))
 	}
 }
