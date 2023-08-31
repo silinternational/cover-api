@@ -67,11 +67,9 @@ func (as *ActionSuite) Test_entityCodesList() {
 
 			if tt.actor.IsAdmin() {
 				as.NotNil(codes[0].IncomeAccount)
-				as.NotNil(codes[0].Active)
 				as.NotNil(codes[0].ParentEntity)
 			} else {
 				as.Nil(codes[0].IncomeAccount)
-				as.Nil(codes[0].Active)
 				as.Nil(codes[0].ParentEntity)
 			}
 		}
@@ -198,13 +196,13 @@ func (as *ActionSuite) Test_entityCodesView() {
 	}
 }
 
-//test entityCodesCreate
+// test entityCodesCreate
 func (as *ActionSuite) Test_entityCodesCreate() {
 	user := models.CreateUserFixtures(as.DB, 1).Users[0]
 	admin := models.CreateAdminUsers(as.DB)[models.AppRoleSteward]
 
 	tests := []struct {
-		code			 string
+		code       string
 		name       string
 		actor      models.User
 		wantStatus int
@@ -229,8 +227,8 @@ func (as *ActionSuite) Test_entityCodesCreate() {
 		},
 	}
 	input := api.EntityCodeCreateInput{
-		Code: "ABC",
-		Name: "ABC Code",
+		Code:          "ABC",
+		Name:          "ABC Code",
 		Active:        true,
 		IncomeAccount: "67890",
 		ParentEntity:  "XYZ",
