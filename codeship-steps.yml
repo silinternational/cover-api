@@ -55,8 +55,3 @@
   service: ecsdeploy
   tag: main
   command: "-c appsdev-prod -n cover-api -i 369020531563.dkr.ecr.us-east-1.amazonaws.com/cover-prod -e CI_TIMESTAMP -t 600 --max-definitions 10"
-
-- name: ga4track_deployment
-  service: ga4tracker
-  tag: ^(main|develop)
-  command: sh -c "export GA_EVENT_NAME=${CI_BRANCH}_CoverAPI && ./ga-event-tracker"
