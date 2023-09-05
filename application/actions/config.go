@@ -13,13 +13,13 @@ import (
 // list all valid Claim Incident Types
 //
 // ---
-// responses:
-//   '200':
-//     description: list of valid Claim Incident Types
-//     schema:
-//       type: array
-//       items:
-//         "$ref": "#/definitions/ClaimIncidentTypeStruct"
+//	responses:
+//	  '200':
+//	    description: list of valid Claim Incident Types
+//	    schema:
+//	      type: array
+//	      items:
+//	        "$ref": "#/definitions/ClaimIncidentTypeStruct"
 func claimIncidentTypes(c buffalo.Context) error {
 	return renderOk(c, api.AllClaimIncidentTypes)
 }
@@ -31,13 +31,13 @@ func claimIncidentTypes(c buffalo.Context) error {
 // list of countries
 //
 // ---
-// responses:
-//   '200':
-//     description: list of countries
-//     schema:
-//       type: array
-//       items:
-//         "$ref": "#/definitions/Country"
+//	responses:
+//	  '200':
+//	    description: list of countries
+//	    schema:
+//	      type: array
+//	      items:
+//	        "$ref": "#/definitions/Country"
 func countries(c buffalo.Context) error {
 	return renderOk(c, api.AllCountries)
 }

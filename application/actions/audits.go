@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/gobuffalo/buffalo"
+
 	"github.com/silinternational/cover-api/api"
 	"github.com/silinternational/cover-api/domain"
 	"github.com/silinternational/cover-api/models"
@@ -25,18 +26,18 @@ const MaxResultSize = 1000
 // + `renewal` - Return all items that were incorrectly renewed and billed for another year of coverage.
 //
 // ---
-// parameters:
-//   - name: input
-//     in: body
-//     description: parameters for the Audit Run
-//     required: true
-//     schema:
-//       "$ref": "#/definitions/AuditRunInput"
-// responses:
-//   '200':
-//     description: the audit result
-//     schema:
-//       "$ref": "#/definitions/AuditResult"
+//	parameters:
+//	  - name: input
+//	    in: body
+//	    description: parameters for the Audit Run
+//	    required: true
+//	    schema:
+//	      "$ref": "#/definitions/AuditRunInput"
+//	responses:
+//	  '200':
+//	    description: the audit result
+//	    schema:
+//	      "$ref": "#/definitions/AuditResult"
 func auditRun(c buffalo.Context) error {
 	actor := models.CurrentUser(c)
 	if !actor.IsAdmin() {

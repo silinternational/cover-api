@@ -17,18 +17,18 @@ import (
 // gets the data for all the members of a Policy
 //
 // ---
-// parameters:
-//   - name: id
-//     in: path
-//     required: true
-//     description: policy ID
-// responses:
-//   '200':
-//     description: all policy members
-//     schema:
-//       type: array
-//       items:
-//         "$ref": "#/definitions/PolicyMember"
+//	parameters:
+//	  - name: id
+//	    in: path
+//	    required: true
+//	    description: policy ID
+//	responses:
+//	  '200':
+//	    description: all policy members
+//	    schema:
+//	      type: array
+//	      items:
+//	        "$ref": "#/definitions/PolicyMember"
 func policiesListMembers(c buffalo.Context) error {
 	tx := models.Tx(c)
 	policy := getReferencedPolicyFromCtx(c)
@@ -45,21 +45,21 @@ func policiesListMembers(c buffalo.Context) error {
 // invite new user to co-manage policy
 //
 // ---
-// parameters:
-//   - name: id
-//     in: path
-//     required: true
-//     description: policy ID
-//   - name: policy member invite input
-//     in: body
-//     description: policy user invite input object
-//     required: true
-//     schema:
-//       "$ref": "#/definitions/PolicyUserInviteCreate"
-// responses:
-//   '204':
-//     description: success, no content
-//   '400':
+//	parameters:
+//	  - name: id
+//	    in: path
+//	    required: true
+//	    description: policy ID
+//	  - name: policy member invite input
+//	    in: body
+//	    description: policy user invite input object
+//	    required: true
+//	    schema:
+//	      "$ref": "#/definitions/PolicyUserInviteCreate"
+//	responses:
+//	  '204':
+//	    description: success, no content
+//	  '400':
 //	   description: bad request, check the error and fix your code
 func policiesInviteMember(c buffalo.Context) error {
 	tx := models.Tx(c)
@@ -102,14 +102,14 @@ func policiesInviteMember(c buffalo.Context) error {
 //   null out the PolicyUserID on related items
 //
 // ---
-// parameters:
-//   - name: id
-//     in: path
-//     required: true
-//     description: policy-member ID
-// responses:
-//   '204':
-//     description: OK but no content in response
+//	parameters:
+//	  - name: id
+//	    in: path
+//	    required: true
+//	    description: policy-member ID
+//	responses:
+//	  '204':
+//	    description: OK but no content in response
 func policiesMembersDelete(c buffalo.Context) error {
 	policyUser := getReferencedPolicyMemberFromCtx(c)
 

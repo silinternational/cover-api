@@ -22,18 +22,18 @@ import (
 // Review3, Revision, Receipt, Approved, Paid, Denied
 //
 // ---
-// parameters:
-// - name: status
-//   in: query
-//   required: false
-//   description: comma-separated list of status values to include
-// responses:
-//   '200':
-//     description: a list of Claims
-//     schema:
-//       type: array
-//       items:
-//         "$ref": "#/definitions/Claim"
+//	parameters:
+//	- name: status
+//	  in: query
+//	  required: false
+//	  description: comma-separated list of status values to include
+//	responses:
+//	  '200':
+//	    description: a list of Claims
+//	    schema:
+//	      type: array
+//	      items:
+//	        "$ref": "#/definitions/Claim"
 func claimsList(c buffalo.Context) error {
 	user := models.CurrentUser(c)
 
@@ -78,13 +78,13 @@ func claimsListCustomer(c buffalo.Context) error {
 // List claims for a given policy
 //
 // ---
-// responses:
-//   '200':
-//     description: a list of Claims
-//     schema:
-//       type: array
-//       items:
-//         "$ref": "#/definitions/Claim"
+//	responses:
+//	  '200':
+//	    description: a list of Claims
+//	    schema:
+//	      type: array
+//	      items:
+//	        "$ref": "#/definitions/Claim"
 func policiesClaimsList(c buffalo.Context) error {
 	policy := getReferencedPolicyFromCtx(c)
 
@@ -102,16 +102,16 @@ func policiesClaimsList(c buffalo.Context) error {
 // view a specific claim
 //
 // ---
-// parameters:
-// - name: id
-//   in: path
-//   required: true
-//   description: claim ID
-// responses:
-//   '200':
-//     description: a Claim
-//     schema:
-//       "$ref": "#/definitions/Claim"
+//	parameters:
+//	- name: id
+//	  in: path
+//	  required: true
+//	  description: claim ID
+//	responses:
+//	  '200':
+//	    description: a Claim
+//	    schema:
+//	      "$ref": "#/definitions/Claim"
 func claimsView(c buffalo.Context) error {
 	tx := models.Tx(c)
 	claim := getReferencedClaimFromCtx(c)
@@ -125,22 +125,22 @@ func claimsView(c buffalo.Context) error {
 // update a claim
 //
 // ---
-// parameters:
-// - name: id
-//   in: path
-//   required: true
-//   description: claim ID
-// - name: claim input
-//   in: body
-//   description: claim create input object
-//   required: true
-//   schema:
-//     "$ref": "#/definitions/ClaimUpdateInput"
-// responses:
-//   '200':
-//     description: a Claim
-//     schema:
-//       "$ref": "#/definitions/Claim"
+//	parameters:
+//	- name: id
+//	  in: path
+//	  required: true
+//	  description: claim ID
+//	- name: claim input
+//	  in: body
+//	  description: claim create input object
+//	  required: true
+//	  schema:
+//	    "$ref": "#/definitions/ClaimUpdateInput"
+//	responses:
+//	  '200':
+//	    description: a Claim
+//	    schema:
+//	      "$ref": "#/definitions/Claim"
 func claimsUpdate(c buffalo.Context) error {
 	tx := models.Tx(c)
 	claim := getReferencedClaimFromCtx(c)
@@ -168,22 +168,22 @@ func claimsUpdate(c buffalo.Context) error {
 // create a new Claim on a policy
 //
 // ---
-// parameters:
-//   - name: id
-//     in: path
-//     required: true
-//     description: policy ID
-//   - name: claim input
-//     in: body
-//     description: claim create input object
-//     required: true
-//     schema:
-//       "$ref": "#/definitions/ClaimCreateInput"
-// responses:
-//   '200':
-//     description: the new Claim
-//     schema:
-//       "$ref": "#/definitions/Claim"
+//	parameters:
+//	  - name: id
+//	    in: path
+//	    required: true
+//	    description: policy ID
+//	  - name: claim input
+//	    in: body
+//	    description: claim create input object
+//	    required: true
+//	    schema:
+//	      "$ref": "#/definitions/ClaimCreateInput"
+//	responses:
+//	  '200':
+//	    description: the new Claim
+//	    schema:
+//	      "$ref": "#/definitions/Claim"
 func claimsCreate(c buffalo.Context) error {
 	policy := getReferencedPolicyFromCtx(c)
 
@@ -209,16 +209,16 @@ func claimsCreate(c buffalo.Context) error {
 //  "Receipt" to submit for payout approval.
 //
 // ---
-// parameters:
-//   - name: id
-//     in: path
-//     required: true
-//     description: claim ID
-// responses:
-//   '200':
-//     description: submitted Claim
-//     schema:
-//       "$ref": "#/definitions/Claim"
+//	parameters:
+//	  - name: id
+//	    in: path
+//	    required: true
+//	    description: claim ID
+//	responses:
+//	  '200':
+//	    description: submitted Claim
+//	    schema:
+//	      "$ref": "#/definitions/Claim"
 func claimsSubmit(c buffalo.Context) error {
 	tx := models.Tx(c)
 	claim := getReferencedClaimFromCtx(c)
@@ -239,14 +239,14 @@ func claimsSubmit(c buffalo.Context) error {
 //   approved, denied or paid.
 //
 // ---
-// parameters:
-//   - name: id
-//     in: path
-//     required: true
-//     description: claim ID
-// responses:
-//   '204':
-//     description: OK but no content in response
+//	parameters:
+//	  - name: id
+//	    in: path
+//	    required: true
+//	    description: claim ID
+//	responses:
+//	  '204':
+//	    description: OK but no content in response
 func claimsRemove(c buffalo.Context) error {
 	claim := getReferencedClaimFromCtx(c)
 
@@ -264,22 +264,22 @@ func claimsRemove(c buffalo.Context) error {
 // Admin requests revisions on a claim.  Can be used at state "Review1", "Review2", or "Review3".
 //
 // ---
-// parameters:
-//   - name: id
-//     in: path
-//     required: true
-//     description: claim ID
-//   - name: claim revision input
-//     in: body
-//     description: claim request revision input object
-//     required: true
-//     schema:
-//       "$ref": "#/definitions/ClaimStatusInput"
-// responses:
-//   '200':
-//     description: Claim in focus
-//     schema:
-//       "$ref": "#/definitions/Claim"
+//	parameters:
+//	  - name: id
+//	    in: path
+//	    required: true
+//	    description: claim ID
+//	  - name: claim revision input
+//	    in: body
+//	    description: claim request revision input object
+//	    required: true
+//	    schema:
+//	      "$ref": "#/definitions/ClaimStatusInput"
+//	responses:
+//	  '200':
+//	    description: Claim in focus
+//	    schema:
+//	      "$ref": "#/definitions/Claim"
 func claimsRequestRevision(c buffalo.Context) error {
 	tx := models.Tx(c)
 	claim := getReferencedClaimFromCtx(c)
@@ -304,16 +304,16 @@ func claimsRequestRevision(c buffalo.Context) error {
 // Admin preapproves a claim and requests a receipt.  Can only be used at state "Review1".
 //
 // ---
-// parameters:
-//   - name: id
-//     in: path
-//     required: true
-//     description: claim ID
-// responses:
-//   '200':
-//     description: Claim in focus
-//     schema:
-//       "$ref": "#/definitions/Claim"
+//	parameters:
+//	  - name: id
+//	    in: path
+//	    required: true
+//	    description: claim ID
+//	responses:
+//	  '200':
+//	    description: Claim in focus
+//	    schema:
+//	      "$ref": "#/definitions/Claim"
 func claimsPreapprove(c buffalo.Context) error {
 	tx := models.Tx(c)
 	claim := getReferencedClaimFromCtx(c)
@@ -334,22 +334,22 @@ func claimsPreapprove(c buffalo.Context) error {
 // Can be used at state "Review2" or "Review3".
 //
 // ---
-// parameters:
-//   - name: id
-//     in: path
-//     required: true
-//     description: claim ID
-//   - name: claim receipt reason input
-//     in: body
-//     description: claim receipt reason input object
-//     required: true
-//     schema:
-//       "$ref": "#/definitions/ClaimStatusInput"
-// responses:
-//   '200':
-//     description: Claim in focus
-//     schema:
-//       "$ref": "#/definitions/Claim"
+//	parameters:
+//	  - name: id
+//	    in: path
+//	    required: true
+//	    description: claim ID
+//	  - name: claim receipt reason input
+//	    in: body
+//	    description: claim receipt reason input object
+//	    required: true
+//	    schema:
+//	      "$ref": "#/definitions/ClaimStatusInput"
+//	responses:
+//	  '200':
+//	    description: Claim in focus
+//	    schema:
+//	      "$ref": "#/definitions/Claim"
 func claimsRequestReceipt(c buffalo.Context) error {
 	tx := models.Tx(c)
 	claim := getReferencedClaimFromCtx(c)
@@ -374,16 +374,16 @@ func claimsRequestReceipt(c buffalo.Context) error {
 // Admin approves a claim.  Can be used at states "Review1","Review2","Review3".
 //
 // ---
-// parameters:
-//   - name: id
-//     in: path
-//     required: true
-//     description: claim ID
-// responses:
-//   '200':
-//     description: Claim in focus
-//     schema:
-//       "$ref": "#/definitions/Claim"
+//	parameters:
+//	  - name: id
+//	    in: path
+//	    required: true
+//	    description: claim ID
+//	responses:
+//	  '200':
+//	    description: Claim in focus
+//	    schema:
+//	      "$ref": "#/definitions/Claim"
 func claimsApprove(c buffalo.Context) error {
 	tx := models.Tx(c)
 
@@ -404,22 +404,22 @@ func claimsApprove(c buffalo.Context) error {
 // Admin denies a claim.  Can be used at states "Review1","Review2","Review3".
 //
 // ---
-// parameters:
-//   - name: id
-//     in: path
-//     required: true
-//     description: claim ID
-//   - name: claim deny input
-//     in: body
-//     description: claim deny input object
-//     required: true
-//     schema:
-//       "$ref": "#/definitions/ClaimStatusInput"
-// responses:
-//   '200':
-//     description: Claim in focus
-//     schema:
-//       "$ref": "#/definitions/Claim"
+//	parameters:
+//	  - name: id
+//	    in: path
+//	    required: true
+//	    description: claim ID
+//	  - name: claim deny input
+//	    in: body
+//	    description: claim deny input object
+//	    required: true
+//	    schema:
+//	      "$ref": "#/definitions/ClaimStatusInput"
+//	responses:
+//	  '200':
+//	    description: Claim in focus
+//	    schema:
+//	      "$ref": "#/definitions/Claim"
 func claimsDeny(c buffalo.Context) error {
 	tx := models.Tx(c)
 
@@ -445,22 +445,22 @@ func claimsDeny(c buffalo.Context) error {
 // create a new ClaimItem on a Claim
 //
 // ---
-// parameters:
-//   - name: id
-//     in: path
-//     required: true
-//     description: claim ID
-//   - name: claim item input
-//     in: body
-//     description: claim item create input object
-//     required: true
-//     schema:
-//       "$ref": "#/definitions/ClaimItemCreateInput"
-// responses:
-//   '200':
-//     description: the new ClaimItem
-//     schema:
-//       "$ref": "#/definitions/ClaimItem"
+//	parameters:
+//	  - name: id
+//	    in: path
+//	    required: true
+//	    description: claim ID
+//	  - name: claim item input
+//	    in: body
+//	    description: claim item create input object
+//	    required: true
+//	    schema:
+//	      "$ref": "#/definitions/ClaimItemCreateInput"
+//	responses:
+//	  '200':
+//	    description: the new ClaimItem
+//	    schema:
+//	      "$ref": "#/definitions/ClaimItem"
 func claimsItemsCreate(c buffalo.Context) error {
 	claim := getReferencedClaimFromCtx(c)
 

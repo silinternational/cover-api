@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/gobuffalo/buffalo"
+
 	"github.com/silinternational/cover-api/fin"
 	"github.com/silinternational/cover-api/job"
 
@@ -21,13 +22,13 @@ import (
 // Return a list of ledger reports that are not associated with a policy
 //
 // ---
-// responses:
-//   '200':
-//     description: LedgerReport list
-//     schema:
-//       type: array
-//       items:
-//         "$ref": "#/definitions/LedgerReport"
+//	responses:
+//	  '200':
+//	    description: LedgerReport list
+//	    schema:
+//	      type: array
+//	      items:
+//	        "$ref": "#/definitions/LedgerReport"
 func ledgerReportList(c buffalo.Context) error {
 	var list models.LedgerReports
 
@@ -47,16 +48,16 @@ func ledgerReportList(c buffalo.Context) error {
 // a CSV file suitable for use with Sage Accounting.
 //
 // ---
-// parameters:
-// - name: id
-//   in: path
-//   required: true
-//   description: specifies the ID of the report to view
-// responses:
-//   '200':
-//     description: the requested LedgerReport
-//     schema:
-//       "$ref": "#/definitions/LedgerReport"
+//	parameters:
+//	- name: id
+//	  in: path
+//	  required: true
+//	  description: specifies the ID of the report to view
+//	responses:
+//	  '200':
+//	    description: the requested LedgerReport
+//	    schema:
+//	      "$ref": "#/definitions/LedgerReport"
 func ledgerReportView(c buffalo.Context) error {
 	tx := models.Tx(c)
 
@@ -76,18 +77,18 @@ func ledgerReportView(c buffalo.Context) error {
 // + `annual` - Return the billing detail for given year's policy renewals.
 //
 // ---
-// parameters:
-//   - name: input
-//     in: body
-//     description: LedgerReportCreateInput object
-//     required: true
-//     schema:
-//       "$ref": "#/definitions/LedgerReportCreateInput"
-// responses:
-//   '200':
-//     description: the requested LedgerReport
-//     schema:
-//       "$ref": "#/definitions/LedgerReport"
+//	parameters:
+//	  - name: input
+//	    in: body
+//	    description: LedgerReportCreateInput object
+//	    required: true
+//	    schema:
+//	      "$ref": "#/definitions/LedgerReportCreateInput"
+//	responses:
+//	  '200':
+//	    description: the requested LedgerReport
+//	    schema:
+//	      "$ref": "#/definitions/LedgerReport"
 func ledgerReportCreate(c buffalo.Context) error {
 	var input api.LedgerReportCreateInput
 	if err := StrictBind(c, &input); err != nil {
@@ -128,16 +129,16 @@ func ledgerReportCreate(c buffalo.Context) error {
 // have been fully loaded into the accounting record.
 //
 // ---
-// parameters:
-// - name: id
-//   in: path
-//   required: true
-//   description: specifies the ID of the report to reconcile
-// responses:
-//   '200':
-//     description: the requested LedgerReport
-//     schema:
-//       "$ref": "#/definitions/LedgerReport"
+//	parameters:
+//	- name: id
+//	  in: path
+//	  required: true
+//	  description: specifies the ID of the report to reconcile
+//	responses:
+//	  '200':
+//	    description: the requested LedgerReport
+//	    schema:
+//	      "$ref": "#/definitions/LedgerReport"
 func ledgerReportReconcile(c buffalo.Context) error {
 	tx := models.Tx(c)
 
@@ -156,9 +157,9 @@ func ledgerReportReconcile(c buffalo.Context) error {
 // Process billing for current year's policy renewals.
 //
 // ---
-// responses:
-//   '204':
-//     description: OK but no content in response
+//	responses:
+//	  '204':
+//	    description: OK but no content in response
 func ledgerAnnualRenewalProcess(c buffalo.Context) error {
 	actor := models.CurrentUser(c)
 	if !actor.IsAdmin() {
@@ -180,11 +181,11 @@ func ledgerAnnualRenewalProcess(c buffalo.Context) error {
 // Get the status of the annual billing process.
 //
 // ---
-// responses:
-//   '200':
-//     description: the status of the annual billing process
-//     schema:
-//       "$ref": "#/definitions/AnnualRenewalStatus"
+//	responses:
+//	  '200':
+//	    description: the status of the annual billing process
+//	    schema:
+//	      "$ref": "#/definitions/AnnualRenewalStatus"
 func ledgerAnnualRenewalStatus(c buffalo.Context) error {
 	actor := models.CurrentUser(c)
 	if !actor.IsAdmin() {

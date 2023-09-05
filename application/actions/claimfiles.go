@@ -17,22 +17,22 @@ import (
 // attach a File to a Claim
 //
 // ---
-// parameters:
-//   - name: id
-//     in: path
-//     required: true
-//     description: claim ID
-//   - name: claim file input
-//     in: body
-//     description: claim file attach input object
-//     required: true
-//     schema:
-//       "$ref": "#/definitions/ClaimFileAttachInput"
-// responses:
-//   '200':
-//     description: the new ClaimFile
-//     schema:
-//       "$ref": "#/definitions/ClaimFile"
+//	parameters:
+//	  - name: id
+//	    in: path
+//	    required: true
+//	    description: claim ID
+//	  - name: claim file input
+//	    in: body
+//	    description: claim file attach input object
+//	    required: true
+//	    schema:
+//	      "$ref": "#/definitions/ClaimFileAttachInput"
+//	responses:
+//	  '200':
+//	    description: the new ClaimFile
+//	    schema:
+//	      "$ref": "#/definitions/ClaimFile"
 func claimFilesAttach(c buffalo.Context) error {
 	var input api.ClaimFileAttachInput
 	if err := StrictBind(c, &input); err != nil {
@@ -57,14 +57,14 @@ func claimFilesAttach(c buffalo.Context) error {
 // Delete a ClaimFile and its associated File in the db and on S3
 //
 // ---
-// parameters:
-//   - name: id
-//     in: path
-//     required: true
-//     description: claim file ID
-// responses:
-//   '204':
-//     description: OK but no content in response
+//	parameters:
+//	  - name: id
+//	    in: path
+//	    required: true
+//	    description: claim file ID
+//	responses:
+//	  '204':
+//	    description: OK but no content in response
 func claimFilesDelete(c buffalo.Context) error {
 	tx := models.Tx(c)
 	cFile := getReferencedClaimFileFromCtx(c)

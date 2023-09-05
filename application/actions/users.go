@@ -18,13 +18,13 @@ import (
 // gets the data for all Users.
 //
 // ---
-// responses:
-//   '200':
-//     description: all users
-//     schema:
-//       type: array
-//       items:
-//         "$ref": "#/definitions/User"
+//	responses:
+//	  '200':
+//	    description: all users
+//	    schema:
+//	      type: array
+//	      items:
+//	        "$ref": "#/definitions/User"
 func usersList(c buffalo.Context) error {
 	var users models.Users
 	tx := models.Tx(c)
@@ -44,16 +44,16 @@ func usersList(c buffalo.Context) error {
 // gets the data for a specific User.
 //
 // ---
-// parameters:
-//   - name: id
-//     in: path
-//     required: true
-//     description: user ID
-// responses:
-//   '200':
-//     description: a user
-//     schema:
-//       "$ref": "#/definitions/User"
+//	parameters:
+//	  - name: id
+//	    in: path
+//	    required: true
+//	    description: user ID
+//	responses:
+//	  '200':
+//	    description: a user
+//	    schema:
+//	      "$ref": "#/definitions/User"
 func usersView(c buffalo.Context) error {
 	user := getReferencedUserFromCtx(c)
 	return renderUser(c, *user)
@@ -66,11 +66,11 @@ func usersView(c buffalo.Context) error {
 // gets the data for authenticated User.
 //
 // ---
-// responses:
-//   '200':
-//     description: authenticated user
-//     schema:
-//       "$ref": "#/definitions/User"
+//	responses:
+//	  '200':
+//	    description: authenticated user
+//	    schema:
+//	      "$ref": "#/definitions/User"
 func usersMe(c buffalo.Context) error {
 	return renderUser(c, models.CurrentUser(c))
 }
@@ -82,18 +82,18 @@ func usersMe(c buffalo.Context) error {
 // update the current user's personal settings
 //
 // ---
-// parameters:
-//   - name: user's settings input
-//     in: body
-//     description: the editable settings for a user
-//     required: true
-//     schema:
-//       "$ref": "#/definitions/UserInput"
-// responses:
-//   '200':
-//     description: updated User
-//     schema:
-//       "$ref": "#/definitions/User"
+//	parameters:
+//	  - name: user's settings input
+//	    in: body
+//	    description: the editable settings for a user
+//	    required: true
+//	    schema:
+//	      "$ref": "#/definitions/UserInput"
+//	responses:
+//	  '200':
+//	    description: updated User
+//	    schema:
+//	      "$ref": "#/definitions/User"
 func usersMeUpdate(c buffalo.Context) error {
 	tx := models.Tx(c)
 	user := models.CurrentUser(c)
@@ -123,18 +123,18 @@ func usersMeUpdate(c buffalo.Context) error {
 // attach a File to the current user
 //
 // ---
-// parameters:
-//   - name: user file input
-//     in: body
-//     description: photo/avatar to attach to the current user
-//     required: true
-//     schema:
-//       "$ref": "#/definitions/UserFileAttachInput"
-// responses:
-//   '200':
-//     description: the User
-//     schema:
-//       "$ref": "#/definitions/User"
+//	parameters:
+//	  - name: user file input
+//	    in: body
+//	    description: photo/avatar to attach to the current user
+//	    required: true
+//	    schema:
+//	      "$ref": "#/definitions/UserFileAttachInput"
+//	responses:
+//	  '200':
+//	    description: the User
+//	    schema:
+//	      "$ref": "#/definitions/User"
 func usersMeFilesAttach(c buffalo.Context) error {
 	var input api.UserFileAttachInput
 	if err := StrictBind(c, &input); err != nil {
@@ -158,10 +158,10 @@ func usersMeFilesAttach(c buffalo.Context) error {
 // detach the Photo File from the current user and remove it from S3
 //
 // ---
-// parameters:
-// responses:
-//   '204':
-//     description: OK but no content in response
+//	parameters:
+//	responses:
+//	  '204':
+//	    description: OK but no content in response
 func usersMeFilesDelete(c buffalo.Context) error {
 	tx := models.Tx(c)
 

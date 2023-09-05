@@ -30,29 +30,29 @@ const (
 // in the system, limited by query parameters.
 //
 // ---
-// parameters:
-// - name: limit
-//   in: query
-//   required: false
-//   description: number of records to return, minimum 1, maximum 50, default 10
-// - name: search
-//   in: query
-//   required: false
-//   description: search text to find across fields (name, household_id, cost_center, and all members' first and last names)
-// - name: filter
-//   in: query
-//   required: false
-//   description: comma-separated list of search pairs like "field:text". Presently, only meta-field 'active' is supported
-// responses:
-//   '200':
-//     description: all policies
-//     schema:
-//       type: object
-//       properties:
-//         meta:
-//           "$ref": "#/definitions/Meta"
-//         data:
-//           "$ref": "#/definitions/Policies"
+//	parameters:
+//	- name: limit
+//	  in: query
+//	  required: false
+//	  description: number of records to return, minimum 1, maximum 50, default 10
+//	- name: search
+//	  in: query
+//	  required: false
+//	  description: search text to find across fields (name, household_id, cost_center, and all members' first and last names)
+//	- name: filter
+//	  in: query
+//	  required: false
+//	  description: comma-separated list of search pairs like "field:text". Presently, only meta-field 'active' is supported
+//	responses:
+//	  '200':
+//	    description: all policies
+//	    schema:
+//	      type: object
+//	      properties:
+//	        meta:
+//	          "$ref": "#/definitions/Meta"
+//	        data:
+//	          "$ref": "#/definitions/Policies"
 func policiesList(c buffalo.Context) error {
 	user := models.CurrentUser(c)
 
@@ -101,11 +101,11 @@ func policiesListCustomer(c buffalo.Context) error {
 // gets the data for a specific policy
 //
 // ---
-// responses:
-//   '200':
-//     description: a policy
-//     schema:
-//       "$ref": "#/definitions/Policy"
+//	responses:
+//	  '200':
+//	    description: a policy
+//	    schema:
+//	      "$ref": "#/definitions/Policy"
 func policiesView(c buffalo.Context) error {
 	policy := getReferencedPolicyFromCtx(c)
 
@@ -119,18 +119,18 @@ func policiesView(c buffalo.Context) error {
 // create a new Policy with type Team
 //
 // ---
-// parameters:
-//   - name: policy input
-//     in: body
-//     description: policy create input object
-//     required: true
-//     schema:
-//       "$ref": "#/definitions/PolicyCreate"
-// responses:
-//   '200':
-//     description: the new Policy
-//     schema:
-//       "$ref": "#/definitions/Policy"
+//	parameters:
+//	  - name: policy input
+//	    in: body
+//	    description: policy create input object
+//	    required: true
+//	    schema:
+//	      "$ref": "#/definitions/PolicyCreate"
+//	responses:
+//	  '200':
+//	    description: the new Policy
+//	    schema:
+//	      "$ref": "#/definitions/Policy"
 func policiesCreateTeam(c buffalo.Context) error {
 	var input api.PolicyCreate
 	if err := StrictBind(c, &input); err != nil {
@@ -161,22 +161,22 @@ func policiesCreateTeam(c buffalo.Context) error {
 // update a policy
 //
 // ---
-// parameters:
-//   - name: id
-//     in: path
-//     required: true
-//     description: policy ID
-//   - name: policy update input
-//     in: body
-//     description: policy update input object
-//     required: true
-//     schema:
-//       "$ref": "#/definitions/PolicyUpdate"
-// responses:
-//   '200':
-//     description: updated Policy
-//     schema:
-//       "$ref": "#/definitions/Policy"
+//	parameters:
+//	  - name: id
+//	    in: path
+//	    required: true
+//	    description: policy ID
+//	  - name: policy update input
+//	    in: body
+//	    description: policy update input object
+//	    required: true
+//	    schema:
+//	      "$ref": "#/definitions/PolicyUpdate"
+//	responses:
+//	  '200':
+//	    description: updated Policy
+//	    schema:
+//	      "$ref": "#/definitions/Policy"
 func policiesUpdate(c buffalo.Context) error {
 	tx := models.Tx(c)
 	policy := getReferencedPolicyFromCtx(c)
@@ -222,24 +222,24 @@ func policiesUpdate(c buffalo.Context) error {
 //  Type, Year and (if applicable) Month, then a 204 is returned.
 //
 // ---
-// parameters:
-//   - name: id
-//     in: path
-//     required: true
-//     description: policy ID
-//   - name: input
-//     in: body
-//     description: PolicyLedgerReportCreateInput object
-//     required: true
-//     schema:
-//       "$ref": "#/definitions/PolicyLedgerReportCreateInput"
-// responses:
-//   '200':
-//     description: the requested LedgerReport for the Policy
-//     schema:
-//       type: array
-//       items:
-//         "$ref": "#/definitions/LedgerReport"
+//	parameters:
+//	  - name: id
+//	    in: path
+//	    required: true
+//	    description: policy ID
+//	  - name: input
+//	    in: body
+//	    description: PolicyLedgerReportCreateInput object
+//	    required: true
+//	    schema:
+//	      "$ref": "#/definitions/PolicyLedgerReportCreateInput"
+//	responses:
+//	  '200':
+//	    description: the requested LedgerReport for the Policy
+//	    schema:
+//	      type: array
+//	      items:
+//	        "$ref": "#/definitions/LedgerReport"
 func policiesLedgerReportCreate(c buffalo.Context) error {
 	tx := models.Tx(c)
 	policy := getReferencedPolicyFromCtx(c)
@@ -274,24 +274,24 @@ func policiesLedgerReportCreate(c buffalo.Context) error {
 //  Year and Month, then a 204 is returned.
 //
 // ---
-// parameters:
-//   - name: id
-//     in: path
-//     required: true
-//     description: policy ID
-//   - name: month
-//     in: query
-//     required: true
-//     description: the month (number) within which the ledger entries were entered into the accounting system
-//   - name: year
-//     in: query
-//     required: true
-//     description: the year within which the ledger entries were entered into the accounting system
-// responses:
-//   '200':
-//     description: the requested LedgerTable for the Policy
-//     schema:
-//       "$ref": "#/definitions/LedgerTable"
+//	parameters:
+//	  - name: id
+//	    in: path
+//	    required: true
+//	    description: policy ID
+//	  - name: month
+//	    in: query
+//	    required: true
+//	    description: the month (number) within which the ledger entries were entered into the accounting system
+//	  - name: year
+//	    in: query
+//	    required: true
+//	    description: the year within which the ledger entries were entered into the accounting system
+//	responses:
+//	  '200':
+//	    description: the requested LedgerTable for the Policy
+//	    schema:
+//	      "$ref": "#/definitions/LedgerTable"
 func policiesLedgerTableView(c buffalo.Context) error {
 	policy := getReferencedPolicyFromCtx(c)
 
@@ -332,24 +332,24 @@ func policiesLedgerTableView(c buffalo.Context) error {
 // Create a strike on the policy and return its recent strikes
 //
 // ---
-// parameters:
-//   - name: id
-//     in: path
-//     required: true
-//     description: policy ID
-//   - name: input
-//     in: body
-//     description: StrikeInput object
-//     required: true
-//     schema:
-//       "$ref": "#/definitions/StrikeInput"
-// responses:
-//   '200':
-//     description: the Strikes for the Policy that are still in force
-//     schema:
-//       type: array
-//       items:
-//         "$ref": "#/definitions/Strike"
+//	parameters:
+//	  - name: id
+//	    in: path
+//	    required: true
+//	    description: policy ID
+//	  - name: input
+//	    in: body
+//	    description: StrikeInput object
+//	    required: true
+//	    schema:
+//	      "$ref": "#/definitions/StrikeInput"
+//	responses:
+//	  '200':
+//	    description: the Strikes for the Policy that are still in force
+//	    schema:
+//	      type: array
+//	      items:
+//	        "$ref": "#/definitions/Strike"
 func policiesStrikeCreate(c buffalo.Context) error {
 	tx := models.Tx(c)
 	policy := getReferencedPolicyFromCtx(c)

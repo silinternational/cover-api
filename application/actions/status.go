@@ -13,9 +13,9 @@ import (
 // checks the app status
 //
 // ---
-// responses:
-//   '204':
-//     description: app status is good
+//	responses:
+//	  '204':
+//	    description: app status is good
 func statusHandler(c buffalo.Context) error {
 	return c.Render(http.StatusNoContent, nil)
 }

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/gobuffalo/buffalo"
+
 	"github.com/silinternational/cover-api/api"
 	"github.com/silinternational/cover-api/domain"
 	"github.com/silinternational/cover-api/models"
@@ -21,18 +22,18 @@ import (
 // + `renewal` - Repair all items that were incorrectly renewed and billed for another year of coverage. Also issues premium refunds for the incorrect renewal charges.
 //
 // ---
-// parameters:
-//   - name: input
-//     in: body
-//     description: parameters for the Repair Run
-//     required: true
-//     schema:
-//       "$ref": "#/definitions/RepairRunInput"
-// responses:
-//   '200':
-//     description: the repair result
-//     schema:
-//       "$ref": "#/definitions/RepairResult"
+//	parameters:
+//	  - name: input
+//	    in: body
+//	    description: parameters for the Repair Run
+//	    required: true
+//	    schema:
+//	      "$ref": "#/definitions/RepairRunInput"
+//	responses:
+//	  '200':
+//	    description: the repair result
+//	    schema:
+//	      "$ref": "#/definitions/RepairResult"
 func repairsRun(c buffalo.Context) error {
 	actor := models.CurrentUser(c)
 	if !actor.IsAdmin() {

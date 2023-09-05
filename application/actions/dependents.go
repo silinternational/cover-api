@@ -19,18 +19,18 @@ import (
 // list policy dependents
 //
 // ---
-// parameters:
-//   - name: id
-//     in: path
-//     required: true
-//     description: policy ID
-// responses:
-//   '200':
-//     description: a list of PolicyDependents
-//     schema:
-//       type: array
-//       items:
-//         "$ref": "#/definitions/PolicyDependents"
+//	parameters:
+//	  - name: id
+//	    in: path
+//	    required: true
+//	    description: policy ID
+//	responses:
+//	  '200':
+//	    description: a list of PolicyDependents
+//	    schema:
+//	      type: array
+//	      items:
+//	        "$ref": "#/definitions/PolicyDependents"
 func dependentsList(c buffalo.Context) error {
 	policy := getReferencedPolicyFromCtx(c)
 
@@ -47,22 +47,22 @@ func dependentsList(c buffalo.Context) error {
 // create a new PolicyDependent on a policy
 //
 // ---
-// parameters:
-//   - name: id
-//     in: path
-//     required: true
-//     description: policy ID
-//   - name: policy dependent
-//     in: body
-//     description: policy dependent input object
-//     required: true
-//     schema:
-//       "$ref": "#/definitions/PolicyDependentInput"
-// responses:
-//   '200':
-//     description: the new PolicyDependent
-//     schema:
-//       "$ref": "#/definitions/PolicyDependent"
+//	parameters:
+//	  - name: id
+//	    in: path
+//	    required: true
+//	    description: policy ID
+//	  - name: policy dependent
+//	    in: body
+//	    description: policy dependent input object
+//	    required: true
+//	    schema:
+//	      "$ref": "#/definitions/PolicyDependentInput"
+//	responses:
+//	  '200':
+//	    description: the new PolicyDependent
+//	    schema:
+//	      "$ref": "#/definitions/PolicyDependent"
 func dependentsCreate(c buffalo.Context) error {
 	policy := getReferencedPolicyFromCtx(c)
 
@@ -89,22 +89,22 @@ func dependentsCreate(c buffalo.Context) error {
 // update a policy dependent
 //
 // ---
-// parameters:
-//   - name: id
-//     in: path
-//     required: true
-//     description: policy dependent ID
-//   - name: policy dependent update input
-//     in: body
-//     description: policy dependent input object
-//     required: true
-//     schema:
-//       "$ref": "#/definitions/PolicyDependentInput"
-// responses:
-//   '200':
-//     description: the updated PolicyDependent
-//     schema:
-//       "$ref": "#/definitions/PolicyDependent"
+//	parameters:
+//	  - name: id
+//	    in: path
+//	    required: true
+//	    description: policy dependent ID
+//	  - name: policy dependent update input
+//	    in: body
+//	    description: policy dependent input object
+//	    required: true
+//	    schema:
+//	      "$ref": "#/definitions/PolicyDependentInput"
+//	responses:
+//	  '200':
+//	    description: the updated PolicyDependent
+//	    schema:
+//	      "$ref": "#/definitions/PolicyDependent"
 func dependentsUpdate(c buffalo.Context) error {
 	tx := models.Tx(c)
 	dependent := getReferencedDependentFromCtx(c)
@@ -134,14 +134,14 @@ func dependentsUpdate(c buffalo.Context) error {
 // Delete a policy dependent if it has no related policy items.
 //
 // ---
-// parameters:
-//   - name: id
-//     in: path
-//     required: true
-//     description: policy dependent ID
-// responses:
-//   '204':
-//     description: OK but no content in response
+//	parameters:
+//	  - name: id
+//	    in: path
+//	    required: true
+//	    description: policy dependent ID
+//	responses:
+//	  '204':
+//	    description: OK but no content in response
 func dependentsDelete(c buffalo.Context) error {
 	tx := models.Tx(c)
 	dependent := getReferencedDependentFromCtx(c)

@@ -17,18 +17,18 @@ import (
 // gets the data for all the items on a Policy
 //
 // ---
-// parameters:
-//   - name: id
-//     in: path
-//     required: true
-//     description: policy ID
-// responses:
-//   '200':
-//     description: all policy items
-//     schema:
-//       type: array
-//       items:
-//         "$ref": "#/definitions/Item"
+//	parameters:
+//	  - name: id
+//	    in: path
+//	    required: true
+//	    description: policy ID
+//	responses:
+//	  '200':
+//	    description: all policy items
+//	    schema:
+//	      type: array
+//	      items:
+//	        "$ref": "#/definitions/Item"
 func itemsList(c buffalo.Context) error {
 	tx := models.Tx(c)
 
@@ -46,22 +46,22 @@ func itemsList(c buffalo.Context) error {
 // create a policy item
 //
 // ---
-// parameters:
-//   - name: id
-//     in: path
-//     required: true
-//     description: policy ID
-//   - name: policy item create input
-//     in: body
-//     description: policy item create input object
-//     required: true
-//     schema:
-//       "$ref": "#/definitions/ItemCreate"
-// responses:
-//   '200':
-//     description: new Item
-//     schema:
-//       "$ref": "#/definitions/Item"
+//	parameters:
+//	  - name: id
+//	    in: path
+//	    required: true
+//	    description: policy ID
+//	  - name: policy item create input
+//	    in: body
+//	    description: policy item create input object
+//	    required: true
+//	    schema:
+//	      "$ref": "#/definitions/ItemCreate"
+//	responses:
+//	  '200':
+//	    description: new Item
+//	    schema:
+//	      "$ref": "#/definitions/Item"
 func itemsCreate(c buffalo.Context) error {
 	tx := models.Tx(c)
 	policy := getReferencedPolicyFromCtx(c)
@@ -92,22 +92,22 @@ func itemsCreate(c buffalo.Context) error {
 // update a policy item
 //
 // ---
-// parameters:
-//   - name: id
-//     in: path
-//     required: true
-//     description: item ID
-//   - name: policy item update input
-//     in: body
-//     description: policy item update object
-//     required: true
-//     schema:
-//       "$ref": "#/definitions/ItemUpdate"
-// responses:
-//   '200':
-//     description: updated Item
-//     schema:
-//       "$ref": "#/definitions/Item"
+//	parameters:
+//	  - name: id
+//	    in: path
+//	    required: true
+//	    description: item ID
+//	  - name: policy item update input
+//	    in: body
+//	    description: policy item update object
+//	    required: true
+//	    schema:
+//	      "$ref": "#/definitions/ItemUpdate"
+//	responses:
+//	  '200':
+//	    description: updated Item
+//	    schema:
+//	      "$ref": "#/definitions/Item"
 func itemsUpdate(c buffalo.Context) error {
 	tx := models.Tx(c)
 	item := getReferencedItemFromCtx(c)
@@ -157,16 +157,16 @@ func itemsUpdate(c buffalo.Context) error {
 // submit a policy item for coverage
 //
 // ---
-// parameters:
-//   - name: id
-//     in: path
-//     required: true
-//     description: item ID
-// responses:
-//   '200':
-//     description: submitted Item
-//     schema:
-//       "$ref": "#/definitions/Item"
+//	parameters:
+//	  - name: id
+//	    in: path
+//	    required: true
+//	    description: item ID
+//	responses:
+//	  '200':
+//	    description: submitted Item
+//	    schema:
+//	      "$ref": "#/definitions/Item"
 func itemsSubmit(c buffalo.Context) error {
 	tx := models.Tx(c)
 	item := getReferencedItemFromCtx(c)
@@ -186,22 +186,22 @@ func itemsSubmit(c buffalo.Context) error {
 // admin requires changes on a policy item
 //
 // ---
-// parameters:
-//   - name: id
-//     in: path
-//     required: true
-//     description: item ID
-//   - name: item revision input
-//     in: body
-//     description: item revision input object
-//     required: true
-//     schema:
-//       "$ref": "#/definitions/ItemStatusInput"
-// responses:
-//   '200':
-//     description: Policy Item
-//     schema:
-//       "$ref": "#/definitions/Item"
+//	parameters:
+//	  - name: id
+//	    in: path
+//	    required: true
+//	    description: item ID
+//	  - name: item revision input
+//	    in: body
+//	    description: item revision input object
+//	    required: true
+//	    schema:
+//	      "$ref": "#/definitions/ItemStatusInput"
+//	responses:
+//	  '200':
+//	    description: Policy Item
+//	    schema:
+//	      "$ref": "#/definitions/Item"
 func itemsRevision(c buffalo.Context) error {
 	tx := models.Tx(c)
 	item := getReferencedItemFromCtx(c)
@@ -226,16 +226,16 @@ func itemsRevision(c buffalo.Context) error {
 // approve coverage on a policy item
 //
 // ---
-// parameters:
-//   - name: id
-//     in: path
-//     required: true
-//     description: item ID
-// responses:
-//   '200':
-//     description: approved Item
-//     schema:
-//       "$ref": "#/definitions/Item"
+//	parameters:
+//	  - name: id
+//	    in: path
+//	    required: true
+//	    description: item ID
+//	responses:
+//	  '200':
+//	    description: approved Item
+//	    schema:
+//	      "$ref": "#/definitions/Item"
 func itemsApprove(c buffalo.Context) error {
 	tx := models.Tx(c)
 	item := getReferencedItemFromCtx(c)
@@ -255,22 +255,22 @@ func itemsApprove(c buffalo.Context) error {
 // deny coverage on a policy item
 //
 // ---
-// parameters:
-//   - name: id
-//     in: path
-//     required: true
-//     description: item ID
-//   - name: item denial input
-//     in: body
-//     description: item denial input object
-//     required: true
-//     schema:
-//       "$ref": "#/definitions/ItemStatusInput"
-// responses:
-//   '200':
-//     description: denied Item
-//     schema:
-//       "$ref": "#/definitions/Item"
+//	parameters:
+//	  - name: id
+//	    in: path
+//	    required: true
+//	    description: item ID
+//	  - name: item denial input
+//	    in: body
+//	    description: item denial input object
+//	    required: true
+//	    schema:
+//	      "$ref": "#/definitions/ItemStatusInput"
+//	responses:
+//	  '200':
+//	    description: denied Item
+//	    schema:
+//	      "$ref": "#/definitions/Item"
 func itemsDeny(c buffalo.Context) error {
 	tx := models.Tx(c)
 	item := getReferencedItemFromCtx(c)
@@ -296,14 +296,14 @@ func itemsDeny(c buffalo.Context) error {
 //   Otherwise, inactivate coverage on it.
 //
 // ---
-// parameters:
-//   - name: id
-//     in: path
-//     required: true
-//     description: item ID
-// responses:
-//   '204':
-//     description: OK but no content in response
+//	parameters:
+//	  - name: id
+//	    in: path
+//	    required: true
+//	    description: item ID
+//	responses:
+//	  '204':
+//	    description: OK but no content in response
 func itemsRemove(c buffalo.Context) error {
 	item := getReferencedItemFromCtx(c)
 
