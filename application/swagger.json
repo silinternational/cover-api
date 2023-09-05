@@ -1671,6 +1671,7 @@
         "tags": [
           "Files"
         ],
+        "summary": "UploadFile",
         "operationId": "UploadFile",
         "parameters": [
           {

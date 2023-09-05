@@ -26,6 +26,7 @@ type UploadResponse struct {
 }
 
 // swagger:operation POST /upload Files UploadFile
+// UploadFile
 //
 // Upload a new File object
 // ---
