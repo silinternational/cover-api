@@ -10,11 +10,9 @@ import (
 )
 
 // swagger:operation GET /steward/recent Steward ListRecentObjects
-//
 // ListRecentObjects
 //
 // gets Items and Claims that have recently had their coverage_status/status changed
-//
 // ---
 //	responses:
 //	  '200':

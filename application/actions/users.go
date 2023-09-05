@@ -12,11 +12,9 @@ import (
 )
 
 // swagger:operation GET /users Users UsersList
-//
 // UsersList
 //
 // gets the data for all Users.
-//
 // ---
 //	responses:
 //	  '200':
@@ -38,11 +36,9 @@ func usersList(c buffalo.Context) error {
 }
 
 // swagger:operation GET /users/{id} Users UsersView
-//
 // UsersView
 //
 // gets the data for a specific User.
-//
 // ---
 //	parameters:
 //	  - name: id
@@ -60,11 +56,9 @@ func usersView(c buffalo.Context) error {
 }
 
 // swagger:operation GET /users/me Users UsersMe
-//
 // UsersMe
 //
 // gets the data for authenticated User.
-//
 // ---
 //	responses:
 //	  '200':
@@ -76,11 +70,9 @@ func usersMe(c buffalo.Context) error {
 }
 
 // swagger:operation PUT /users/me Users UserMeUpdate
-//
 // UserMeUpdate
 //
 // update the current user's personal settings
-//
 // ---
 //	parameters:
 //	  - name: user's settings input
@@ -117,11 +109,9 @@ func usersMeUpdate(c buffalo.Context) error {
 }
 
 // swagger:operation POST /users/me/files Users UsersMeFileAttach
-//
 // UsersMeFileAttach
 //
 // attach a File to the current user
-//
 // ---
 //	parameters:
 //	  - name: user file input
@@ -152,11 +142,9 @@ func usersMeFilesAttach(c buffalo.Context) error {
 }
 
 // swagger:operation DELETE /users/me/files Users UsersMeFileDelete
-//
 // UsersMeFileDelete
 //
 // detach the Photo File from the current user and remove it from S3
-//
 // ---
 //	parameters:
 //	responses:

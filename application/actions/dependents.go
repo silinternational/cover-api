@@ -13,11 +13,9 @@ import (
 )
 
 // swagger:operation GET /policies/{id}/dependents PolicyDependents PolicyDependentsList
-//
 // PolicyDependentsList
 //
 // list policy dependents
-//
 // ---
 //	parameters:
 //	  - name: id
@@ -41,11 +39,9 @@ func dependentsList(c buffalo.Context) error {
 }
 
 // swagger:operation POST /policies/{id}/dependents PolicyDependents PolicyDependentsCreate
-//
 // PolicyDependentsCreate
 //
 // create a new PolicyDependent on a policy
-//
 // ---
 //	parameters:
 //	  - name: id
@@ -83,11 +79,9 @@ func dependentsCreate(c buffalo.Context) error {
 }
 
 // swagger:operation PUT /policy-dependents/{id} PolicyDependents PolicyDependentsUpdate
-//
 // PolicyDependentsUpdate
 //
 // update a policy dependent
-//
 // ---
 //	parameters:
 //	  - name: id
@@ -128,11 +122,9 @@ func dependentsUpdate(c buffalo.Context) error {
 }
 
 // swagger:operation DELETE /policy-dependents/{id} PolicyDependents PolicyDependentsDelete
-//
 // PolicyDependentsDelete
 //
 // Delete a policy dependent if it has no related policy items.
-//
 // ---
 //	parameters:
 //	  - name: id

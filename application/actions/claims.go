@@ -12,7 +12,6 @@ import (
 )
 
 // swagger:operation GET /claims Claims ClaimsList
-//
 // ClaimsList
 //
 // List the claims visible to the authenticated user, filtered by the given
@@ -20,7 +19,6 @@ import (
 // For an admin (steward or signator) only the review status values are
 // included by default. Accepted status values: Draft, Review1, Review2,
 // Review3, Revision, Receipt, Approved, Paid, Denied
-//
 // ---
 //	parameters:
 //	- name: status
@@ -72,11 +70,9 @@ func claimsListCustomer(c buffalo.Context) error {
 }
 
 // swagger:operation GET /policies/{id}/claims Claims PolicyClaimsList
-//
 // PolicyClaimsList
 //
 // List claims for a given policy
-//
 // ---
 //	responses:
 //	  '200':
@@ -96,11 +92,9 @@ func policiesClaimsList(c buffalo.Context) error {
 }
 
 // swagger:operation GET /claims/{id} Claims ClaimsView
-//
 // ClaimsView
 //
 // view a specific claim
-//
 // ---
 //	parameters:
 //	- name: id
@@ -119,11 +113,9 @@ func claimsView(c buffalo.Context) error {
 }
 
 // swagger:operation PUT /claims/{id} Claims ClaimsUpdate
-//
 // ClaimsUpdate
 //
 // update a claim
-//
 // ---
 //	parameters:
 //	- name: id
@@ -162,11 +154,9 @@ func claimsUpdate(c buffalo.Context) error {
 }
 
 // swagger:operation POST /policies/{id}/claims Claims ClaimsCreate
-//
 // ClaimsCreate
 //
 // create a new Claim on a policy
-//
 // ---
 //	parameters:
 //	  - name: id
@@ -202,12 +192,10 @@ func claimsCreate(c buffalo.Context) error {
 }
 
 // swagger:operation POST /claims/{id}/submit Claims ClaimsSubmit
-//
 // ClaimsSubmit
 //
 // Submit a claim for review.  Can be used at state "Draft" to submit for pre-approval or
 //  "Receipt" to submit for payout approval.
-//
 // ---
 //	parameters:
 //	  - name: id
@@ -232,12 +220,10 @@ func claimsSubmit(c buffalo.Context) error {
 }
 
 // swagger:operation DELETE /claims/{id} Claims ClaimsRemove
-//
 // ClaimsRemove
 //
 // Delete a claim and its claim items as long as it does not have a status of
 //   approved, denied or paid.
-//
 // ---
 //	parameters:
 //	  - name: id
@@ -258,11 +244,9 @@ func claimsRemove(c buffalo.Context) error {
 }
 
 // swagger:operation POST /claims/{id}/revision Claims ClaimsRequestRevision
-//
 // ClaimsRequestRevision
 //
 // Admin requests revisions on a claim.  Can be used at state "Review1", "Review2", or "Review3".
-//
 // ---
 //	parameters:
 //	  - name: id
@@ -298,11 +282,9 @@ func claimsRequestRevision(c buffalo.Context) error {
 }
 
 // swagger:operation POST /claims/{id}/preapprove Claims ClaimsPreapprove
-//
 // ClaimsPreapprove
 //
 // Admin preapproves a claim and requests a receipt.  Can only be used at state "Review1".
-//
 // ---
 //	parameters:
 //	  - name: id
@@ -327,12 +309,10 @@ func claimsPreapprove(c buffalo.Context) error {
 }
 
 // swagger:operation POST /claims/{id}/receipt Claims ClaimsFixReceipt
-//
 // ClaimsFixReceipt
 //
 // Admin reverts a claim to request a new/better receipt.
 // Can be used at state "Review2" or "Review3".
-//
 // ---
 //	parameters:
 //	  - name: id
@@ -368,11 +348,9 @@ func claimsRequestReceipt(c buffalo.Context) error {
 }
 
 // swagger:operation POST /claims/{id}/approve Claims ClaimsApprove
-//
 // ClaimsApprove
 //
 // Admin approves a claim.  Can be used at states "Review1","Review2","Review3".
-//
 // ---
 //	parameters:
 //	  - name: id
@@ -398,11 +376,9 @@ func claimsApprove(c buffalo.Context) error {
 }
 
 // swagger:operation POST /claims/{id}/deny Claims ClaimsDeny
-//
 // ClaimsDeny
 //
 // Admin denies a claim.  Can be used at states "Review1","Review2","Review3".
-//
 // ---
 //	parameters:
 //	  - name: id
@@ -439,11 +415,9 @@ func claimsDeny(c buffalo.Context) error {
 }
 
 // swagger:operation POST /claims/{id}/items Claims ClaimsItemsCreate
-//
 // ClaimsItemsCreate
 //
 // create a new ClaimItem on a Claim
-//
 // ---
 //	parameters:
 //	  - name: id

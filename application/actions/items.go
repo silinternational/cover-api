@@ -11,11 +11,9 @@ import (
 )
 
 // swagger:operation GET /policies/{id}/items PolicyItems PolicyItemsList
-//
 // PolicyItemsList
 //
 // gets the data for all the items on a Policy
-//
 // ---
 //	parameters:
 //	  - name: id
@@ -40,11 +38,9 @@ func itemsList(c buffalo.Context) error {
 }
 
 // swagger:operation POST /policies/{id}/items PolicyItems PolicyItemsCreate
-//
 // PolicyItemsCreate
 //
 // create a policy item
-//
 // ---
 //	parameters:
 //	  - name: id
@@ -86,11 +82,9 @@ func itemsCreate(c buffalo.Context) error {
 }
 
 // swagger:operation PUT /items/{id} PolicyItems PolicyItemsUpdate
-//
 // PolicyItemsUpdate
 //
 // update a policy item
-//
 // ---
 //	parameters:
 //	  - name: id
@@ -151,11 +145,9 @@ func itemsUpdate(c buffalo.Context) error {
 }
 
 // swagger:operation POST /items/{id}/submit PolicyItems PolicyItemsSubmit
-//
 // PolicyItemsSubmit
 //
 // submit a policy item for coverage
-//
 // ---
 //	parameters:
 //	  - name: id
@@ -180,11 +172,9 @@ func itemsSubmit(c buffalo.Context) error {
 }
 
 // swagger:operation POST /items/{id}/revision PolicyItems PolicyItemsRevision
-//
 // PolicyItemsRevision
 //
 // admin requires changes on a policy item
-//
 // ---
 //	parameters:
 //	  - name: id
@@ -220,11 +210,9 @@ func itemsRevision(c buffalo.Context) error {
 }
 
 // swagger:operation POST /items/{id}/approve PolicyItems PolicyItemsApprove
-//
 // PolicyItemsApprove
 //
 // approve coverage on a policy item
-//
 // ---
 //	parameters:
 //	  - name: id
@@ -249,11 +237,9 @@ func itemsApprove(c buffalo.Context) error {
 }
 
 // swagger:operation POST /items/{id}/deny PolicyItems PolicyItemsDeny
-//
 // PolicyItemsDeny
 //
 // deny coverage on a policy item
-//
 // ---
 //	parameters:
 //	  - name: id
@@ -289,12 +275,10 @@ func itemsDeny(c buffalo.Context) error {
 }
 
 // swagger:operation DELETE /items/{id} PolicyItems PolicyItemsRemove
-//
 // PolicyItemsRemove
 //
 // Delete a policy item if it is less than 72 hours old and has no associations.
 //   Otherwise, inactivate coverage on it.
-//
 // ---
 //	parameters:
 //	  - name: id

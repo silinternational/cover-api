@@ -7,11 +7,9 @@ import (
 )
 
 // swagger:operation GET /config/item-categories Config ItemCategoriesList
-//
 // ItemCategoriesList
 //
 // list all the enabled item categories
-//
 // ---
 //	responses:
 //	  '200':

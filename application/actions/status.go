@@ -7,11 +7,9 @@ import (
 )
 
 // swagger:operation GET /status Status Status
-//
 // Status
 //
 // checks the app status
-//
 // ---
 //	responses:
 //	  '204':

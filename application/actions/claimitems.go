@@ -10,11 +10,9 @@ import (
 )
 
 // swagger:operation PUT /claim-items/{id} ClaimItems ClaimItemsUpdate
-//
 // ClaimItemsUpdate
 //
 // update a claim item
-//
 // ---
 //	parameters:
 //	- name: id

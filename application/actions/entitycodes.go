@@ -9,11 +9,9 @@ import (
 )
 
 // swagger:operation GET /entity-codes EntityCodes EntityCodesList
-//
 // EntityCodesList
 //
 // list Entity Codes
-//
 // ---
 //	responses:
 //	  '200':
@@ -39,11 +37,9 @@ func entityCodesList(c buffalo.Context) error {
 }
 
 // swagger:operation GET /entity-codes/{id} EntityCodes EntityCodesView
-//
 // EntityCodesView
 //
 // get a single Entity Code
-//
 // ---
 //	parameters:
 //	  - name: id
@@ -61,11 +57,9 @@ func entityCodesView(c buffalo.Context) error {
 }
 
 // swagger:operation PUT /entity-codes/{id} EntityCodes EntityCodesUpdate
-//
 // EntityCodesUpdate
 //
 // update a Entity Code
-//
 // ---
 //	parameters:
 //	  - name: id
@@ -96,11 +90,9 @@ func entityCodesUpdate(c buffalo.Context) error {
 }
 
 // swagger:operation POST /entity-codes EntityCodes EntityCodesCreate
-//
 // EntityCodesCreate
 //
 // create a new Entity Code
-//
 // ---
 //	parameters:
 //	  - name: entity code create input

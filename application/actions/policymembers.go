@@ -11,11 +11,9 @@ import (
 )
 
 // swagger:operation GET /policies/{id}/members PolicyMembers PolicyMembersList
-//
 // PolicyMembersList
 //
 // gets the data for all the members of a Policy
-//
 // ---
 //	parameters:
 //	  - name: id
@@ -39,11 +37,9 @@ func policiesListMembers(c buffalo.Context) error {
 }
 
 // swagger:operation POST /policies/{id}/members PolicyMembers PolicyMembersInvite
-//
 // PolicyMembersInvite
 //
 // invite new user to co-manage policy
-//
 // ---
 //	parameters:
 //	  - name: id
@@ -95,12 +91,10 @@ func policiesInviteMember(c buffalo.Context) error {
 }
 
 // swagger:operation DELETE /policy-members/{id} PolicyMembers PolicyMembersDelete
-//
 // PolicyMembersDelete
 //
 // Delete a policy user as long as the related policy has another user. Also,
 //   null out the PolicyUserID on related items
-//
 // ---
 //	parameters:
 //	  - name: id

@@ -7,11 +7,9 @@ import (
 )
 
 // swagger:operation GET /config/claim-incident-types Config ClaimIncidentTypes
-//
 // ClaimIncidentTypes
 //
 // list all valid Claim Incident Types
-//
 // ---
 //	responses:
 //	  '200':
@@ -25,11 +23,9 @@ func claimIncidentTypes(c buffalo.Context) error {
 }
 
 // swagger:operation GET /config/countries Config Countries
-//
 // Countries
 //
 // list of countries
-//
 // ---
 //	responses:
 //	  '200':

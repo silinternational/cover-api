@@ -11,11 +11,9 @@ import (
 )
 
 // swagger:operation POST /claims/{id}/files ClaimFiles ClaimFilesAttach
-//
 // ClaimFilesAttach
 //
 // attach a File to a Claim
-//
 // ---
 //	parameters:
 //	  - name: id
@@ -51,11 +49,9 @@ func claimFilesAttach(c buffalo.Context) error {
 }
 
 // swagger:operation DELETE /claim-files/{id} ClaimFiles ClaimFilesDelete
-//
 // ClaimFilesDelete
 //
 // Delete a ClaimFile and its associated File in the db and on S3
-//
 // ---
 //	parameters:
 //	  - name: id

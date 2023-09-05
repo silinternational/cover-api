@@ -11,11 +11,9 @@ import (
 )
 
 // swagger:operation PUT /strikes/{id} Strikes StrikesUpdate
-//
 // StrikesUpdate
 //
 // update a strike
-//
 // ---
 //	parameters:
 //	  - name: id
@@ -52,11 +50,9 @@ func strikesUpdate(c buffalo.Context) error {
 }
 
 // swagger:operation DELETE /strikes/{id} Strikes StrikesDelete
-//
 // StrikesDelete
 //
 // Delete a strike.
-//
 // ---
 //	parameters:
 //	  - name: id

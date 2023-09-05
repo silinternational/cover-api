@@ -59,11 +59,9 @@ var samlConfig = saml.Config{
 }
 
 // swagger:operation POST /auth/login Authentication AuthLogin
-//
 // AuthLogin
 //
 // Start the SAML login process
-//
 // ---
 //	parameters:
 //	- name: client-id
@@ -288,11 +286,9 @@ func getLoginSuccessRedirectURL(authUser auth.User, returnTo string) string {
 }
 
 // swagger:operation GET /auth/logout Authentication AuthLogout
-//
 // AuthLogout
 //
 // Logout of application
-//
 // ---
 //	parameters:
 //	- name: token
