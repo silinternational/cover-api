@@ -192,6 +192,7 @@ var Env struct {
 	DeductibleMaximum       float64 `default:"0.45"`
 	EvacuationDeductible    float64 `default:"0.333333333" split_words:"true"`
 	StrikeLifetimeMonths    int     `default:"24" split_words:"true"`
+	VehiclePremiumFactor    float64 `default:"0.02" split_words:"true"` // TODO use actual rate
 
 	FiscalStartMonth   int    `default:"1" split_words:"true"`
 	ExpenseAccount     string `required:"true" split_words:"true"`
