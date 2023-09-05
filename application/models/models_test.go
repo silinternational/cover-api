@@ -27,6 +27,7 @@ type ModelSuite struct {
 func (ms *ModelSuite) SetupTest() {
 	ms.Assertions = require.New(ms.T())
 	DestroyAll()
+	InsertTestData()
 }
 
 // Test_ModelSuite runs the test suite

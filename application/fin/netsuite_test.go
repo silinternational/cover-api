@@ -5,6 +5,8 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"regexp"
+	"strings"
 	"testing"
 	"time"
 
@@ -15,6 +17,7 @@ import (
 )
 
 func TestNetSuite_Export(t *testing.T) {
+	now := time.Now().UTC()
 	t1 := Transaction{
 		EntityCode:        "abc1",
 		RiskCategoryName:  "def2",
@@ -25,8 +28,8 @@ func TestNetSuite_Export(t *testing.T) {
 		IncomeAccount:     "pqr6",
 		Name:              "stu7",
 		ClaimPayoutOption: "vwx8",
-		Amount:            0,
-		Date:              time.Now(),
+		Amount:            1,
+		Date:              now,
 		Description:       "transaction description",
 	}
 	t2 := Transaction{
@@ -39,33 +42,33 @@ func TestNetSuite_Export(t *testing.T) {
 		AccountNumber:     "kji4",
 		CostCenter:        "hgf3",
 		ClaimPayoutOption: "edc2",
-		Amount:            0,
-		Date:              time.Now(),
+		Amount:            2,
+		Date:              now,
 		Description:       "transaction description",
 	}
 
-	n := &NetSuite{
-		Period:             9,
-		Year:               2020,
-		JournalDescription: "journal description",
-		TransactionBlocks:  TransactionBlocks{"": Transactions{t1}, "bar": Transactions{t2}},
-	}
-
-	summaryRow := fmt.Sprintf(`"1","000000","00001","","GL","JE","%d","%02d",0,"%s","00",0,0,0,2`+"\n",
-		n.Year, n.Period, n.JournalDescription)
+	n := newNetSuiteReport("journal description", "", now)
+	n.AppendToBatch("", t1)
+	n.AppendToBatch("bar", t2)
 
 	transaction1Row := fmt.Sprintf(netSuiteTransactionRowTemplate,
+		n.rowID+1,
 		n.getAccount(t1),
-		api.Currency(t1.Amount).String(),
+		api.Currency(-t1.Amount).String(),
 		t1.Description,
+		t1.AccountNumber,
+		t1.CostCenter,
 		n.getReference(t1),
 		t1.Date.Format("20060102"),
 	)
 
 	transaction2Row := fmt.Sprintf(netSuiteTransactionRowTemplate,
+		n.rowID+2,
 		n.getAccount(t2),
-		api.Currency(t2.Amount).String(),
+		api.Currency(-t2.Amount).String(),
 		t2.Description,
+		t2.AccountNumber,
+		t2.CostCenter,
 		n.getReference(t2),
 		t2.Date.Format("20060102"),
 	)
@@ -80,8 +83,15 @@ func TestNetSuite_Export(t *testing.T) {
 	files := r.File
 	require.Equal(t, 2, len(files))
 
+	// Find first instance of "<number>,"
+	re := regexp.MustCompile(`^(.*?)\d,(.*)$`)
+
 	for _, f := range files {
+		date := n.date.Format(domain.DateFormat)
 		name := f.Name[:len(f.Name)-4]
+		require.True(t, strings.HasSuffix(name, date))
+
+		name = name[:len(name)-len(date)-1]
 		require.Contains(t, n.TransactionBlocks, name)
 
 		contents, err := f.Open()
@@ -95,6 +105,11 @@ func TestNetSuite_Export(t *testing.T) {
 			want = transaction2Row
 		}
 
-		require.Equal(t, netSuiteHeader1+netSuiteHeader2+summaryRow+want, string(body))
+		// Replace the first instance of "<number>," with "\d,"
+		// So that map order will not affect test
+		// For example, 2023080000001 becomes 202308000000\d
+		want = re.ReplaceAllString(want, `$1\d,$2`)
+
+		require.Regexp(t, netSuiteHeader+want, string(body))
 	}
 }

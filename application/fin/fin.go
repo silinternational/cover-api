@@ -47,17 +47,12 @@ type Report interface {
 	getReference(Transaction) string
 }
 
-func NewBatch(reportFormat string, date time.Time) Report {
+func NewBatch(reportFormat, reportType string, date time.Time) Report {
 	batchDesc := fmt.Sprintf("%s %s JE", date.Format("January 2006"), domain.Env.AppName)
 
 	switch reportFormat {
 	case ReportFormatNetSuite:
-		return &NetSuite{
-			Period:             getFiscalPeriod(int(date.Month())),
-			Year:               getFiscalYear(date),
-			JournalDescription: batchDesc,
-			TransactionBlocks:  make(TransactionBlocks),
-		}
+		return newNetSuiteReport(batchDesc, reportType, date)
 	case ReportFormatPolicy:
 		return &Policy{}
 	case ReportFormatSage:

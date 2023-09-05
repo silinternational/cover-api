@@ -7,7 +7,7 @@ grifts: db
 	docker-compose run --rm buffalo /bin/bash -c "buffalo task db:seed && buffalo task minio:seed"
 
 migratestatus: db
-	docker-compose run buffalo buffalo-pop pop migrate status
+	docker-compose run --rm buffalo buffalo-pop pop migrate status
 
 migratetestdb: testdb
 	docker-compose run --rm test whenavail testdb 5432 10 buffalo-pop pop migrate up
@@ -23,10 +23,10 @@ debug: killbuffalo
 	docker-compose logs -f debug
 
 swagger: swaggerspec
-	docker-compose run --rm --service-ports swagger serve -p 8082 --no-open swagger.json
+	docker-compose run --rm --service-ports swagger swagger serve -p 8082 --no-open swagger.json
 
 swaggerspec:
-	docker-compose run --rm swagger generate spec -m -o swagger.json
+	docker-compose run --rm swagger swagger generate spec -m -o swagger.json
 
 bounce: db
 	docker-compose kill buffalo

@@ -5,17 +5,15 @@ import (
 	"bytes"
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/silinternational/cover-api/api"
 	"github.com/silinternational/cover-api/domain"
 )
 
 const (
-	netSuiteHeader1 = `"RECTYPE","BATCHID", "BTCHENTRY","ORIGCOMP","SRCELEDGER","SRCETYPE","FSCSYR","FSCSPERD","SWEDIT","JRNLDESC","REVPERD","ERRBATCH","ERRENTRY","DETAILCNT","PROCESSCMD"` + "\n"
-	netSuiteHeader2 = `"RECTYPE","ACCTID","TRANSAMT","SCURNDEC","TRANSDESC","TRANSREF","TRANSDATE","SRCELDGR","SRCETYPE"` + "\n"
-
-	netSuiteSummaryRowTemplate     = `"1","000000","00001","","GL","JE","%d","%02d",0,"%s","00",0,0,0,2` + "\n"
-	netSuiteTransactionRowTemplate = `"2","%s",%s,"2","%s","%s",%s,"GL","JE"` + "\n"
+	netSuiteHeader                 = `"TRANSID","ACCTID","TRANSAMT","TRANSDESC", "EntityAccount", "SuiteKey","TRANSREF","TRANSDATE"` + "\n"
+	netSuiteTransactionRowTemplate = `%d,"%s",%s,"%s","%s","%s","%s",%s` + "\n"
 )
 
 type NetSuite struct {
@@ -23,6 +21,28 @@ type NetSuite struct {
 	Year               int
 	JournalDescription string
 	TransactionBlocks  TransactionBlocks
+
+	date  time.Time
+	rowID int64
+}
+
+func newNetSuiteReport(batchDesc, reportType string, date time.Time) *NetSuite {
+	period := getFiscalPeriod(int(date.Month()))
+	year := getFiscalYear(date)
+	rowID := int64(((year * 100) + period) * 10)
+	if reportType == "Annual" {
+		rowID++
+	}
+	rowID *= 100000
+
+	return &NetSuite{
+		Period:             period,
+		Year:               year,
+		JournalDescription: batchDesc,
+		TransactionBlocks:  make(TransactionBlocks),
+		date:               date,
+		rowID:              rowID,
+	}
 }
 
 func (n *NetSuite) AppendToBatch(block string, t Transaction) {
@@ -39,7 +59,7 @@ func (n *NetSuite) RenderBatch() ([]byte, string) {
 	w := zip.NewWriter(buff)
 
 	for blockName, block := range n.TransactionBlocks {
-		f, err := w.Create(blockName + ".csv")
+		f, err := w.Create(fmt.Sprintf("%s_%s.csv", blockName, n.date.Format(domain.DateFormat)))
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -59,9 +79,7 @@ func (n *NetSuite) RenderBatch() ([]byte, string) {
 
 func (n *NetSuite) generateCSV(transactions Transactions) []byte {
 	var buf bytes.Buffer
-	buf.Write([]byte(netSuiteHeader1))
-	buf.Write([]byte(netSuiteHeader2))
-	buf.Write(n.summaryRow())
+	buf.Write([]byte(netSuiteHeader))
 	for _, transaction := range transactions {
 		buf.Write(n.transactionRow(transaction))
 	}
@@ -88,36 +106,23 @@ func (n *NetSuite) getReference(t Transaction) string {
 
 	// For household policies
 	if t.PolicyType == api.PolicyTypeHousehold {
-		ref := "MC"
-
-		if t.Name == "" {
-			return ref
-		}
-
-		return fmt.Sprintf("%s / %s", ref, t.Name)
+		return t.Name
 	}
 
 	// For non-household policies
-	ref := fmt.Sprintf("%s%s", t.AccountNumber, t.CostCenter)
-
-	if t.PolicyName == "" {
-		return ref
-	}
-
-	return fmt.Sprintf("%s / %s", ref, t.PolicyName)
-}
-
-func (n *NetSuite) summaryRow() []byte {
-	str := fmt.Sprintf(netSuiteSummaryRowTemplate, n.Year, n.Period, n.JournalDescription)
-	return []byte(str)
+	return t.PolicyName
 }
 
 func (n *NetSuite) transactionRow(t Transaction) []byte {
+	n.rowID++
 	str := fmt.Sprintf(
 		netSuiteTransactionRowTemplate,
+		n.rowID,
 		n.getAccount(t),
 		api.Currency(-t.Amount).String(),
 		t.Description,
+		t.AccountNumber,
+		t.CostCenter,
 		n.getReference(t),
 		t.Date.Format("20060102"),
 	)

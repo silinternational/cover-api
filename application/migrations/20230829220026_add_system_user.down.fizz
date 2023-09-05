@@ -1,0 +1,4 @@
+sql(`
+  DELETE FROM "users"
+  WHERE (("id" = 'b9367e15-6a84-4fc8-b2ea-bd7615260b01'));
+`)

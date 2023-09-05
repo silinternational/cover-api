@@ -27,6 +27,7 @@ const (
 	AppRoleCustomer = UserAppRole("Customer")
 	AppRoleSignator = UserAppRole("Signator")
 	AppRoleSteward  = UserAppRole("Steward")
+	ServiceUserID   = "b9367e15-6a84-4fc8-b2ea-bd7615260b01"
 )
 
 var validUserAppRoles = map[UserAppRole]struct{}{
@@ -188,11 +189,20 @@ func (u *User) EmailOfChoice() string {
 	return u.Email
 }
 
-// GetDefaultSteward returns the User with AppRoleSteward who logged in most recently
-func GetDefaultSteward(tx *pop.Connection) User {
+// GetPrimarySteward returns the User with AppRoleSteward and the earliest created_at
+func GetPrimarySteward(tx *pop.Connection) User {
 	u := User{}
-	if err := tx.Where("app_role = ?", AppRoleSteward).Order("last_login_utc desc").First(&u); err != nil {
-		panic("error finding most recently logged in steward user " + err.Error())
+	if err := tx.Where("app_role = ? AND NOT is_blocked", AppRoleSteward).Order("created_at ASC").First(&u); err != nil {
+		log.Fatalf("error finding the primary steward user: %s", err)
+	}
+	return u
+}
+
+// GetServiceUser returns the Service User record
+func GetServiceUser(tx *pop.Connection) User {
+	u := User{}
+	if err := tx.Find(&u, ServiceUserID); err != nil {
+		log.Fatalf("error finding service user: %s", err)
 	}
 	return u
 }

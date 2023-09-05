@@ -6,6 +6,7 @@ import (
 
 	"github.com/gobuffalo/pop/v6"
 	"github.com/gofrs/uuid"
+
 	"github.com/silinternational/cover-api/api"
 )
 
@@ -32,7 +33,7 @@ func (ec *EntityCode) Create(tx *pop.Connection) error {
 	return create(tx, ec)
 }
 
-//create a new entity code from an api entity code
+// create a new entity code from an api entity code
 func (ec *EntityCode) CreateFromAPI(tx *pop.Connection, input api.EntityCodeCreateInput) error {
 	ec.ID = EntityCodeID(input.Code)
 	ec.Code = input.Code
@@ -95,14 +96,16 @@ func (ec *EntityCodes) AllActive(tx *pop.Connection) error {
 
 // ConvertToAPI adapts an EntityCode model record to API model. If admin is true, all fields are hydrated.
 func (ec *EntityCode) ConvertToAPI(tx *pop.Connection, admin bool) api.EntityCode {
+	active := ec.Active
 	code := api.EntityCode{
-		ID:   ec.ID,
-		Code: ec.Code,
-		Name: ec.Name,
+		ID:     ec.ID,
+		Code:   ec.Code,
+		Name:   ec.Name,
+		Active: &active,
 	}
 	if admin {
-		incomeAccount, active, parentEntity := ec.IncomeAccount, ec.Active, ec.ParentEntity
-		code.IncomeAccount, code.Active, code.ParentEntity = &incomeAccount, &active, &parentEntity
+		incomeAccount, parentEntity := ec.IncomeAccount, ec.ParentEntity
+		code.IncomeAccount, code.ParentEntity = &incomeAccount, &parentEntity
 	}
 	return code
 }
