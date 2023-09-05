@@ -1,0 +1,3893 @@
+{
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "schemes": [
+    "https"
+  ],
+  "swagger": "2.0",
+  "info": {
+    "description": "Cover API",
+    "termsOfService": "there are no TOS at this moment, use at your own risk we take no responsibility",
+    "license": {
+      "name": "MIT",
+      "url": "http://opensource.org/licenses/MIT"
+    },
+    "version": "0.0.1"
+  },
+  "host": "localhost",
+  "basePath": "/",
+  "paths": {
+    "/audits": {
+      "post": {
+        "description": "Run an audit\n\n### Audit types:\n+ `renewal` - Return all items that were incorrectly renewed and billed for another year of coverage.",
+        "tags": [
+          "Audits"
+        ],
+        "summary": "AuditsRun",
+        "operationId": "AuditRun",
+        "parameters": [
+          {
+            "description": "parameters for the Audit Run",
+            "name": "input",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/AuditRunInput"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "the audit result",
+            "schema": {
+              "$ref": "#/definitions/AuditResult"
+            }
+          }
+        }
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "description": "Start the SAML login process",
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "AuthLogin",
+        "operationId": "AuthLogin",
+        "parameters": [
+          {
+            "description": "the user's client id",
+            "name": "client-id",
+            "in": "query",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "returns a \"RedirectURL\" key with the saml idp url that has a saml request"
+          }
+        }
+      }
+    },
+    "/auth/logout": {
+      "get": {
+        "description": "Logout of application",
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "AuthLogout",
+        "operationId": "AuthLogout",
+        "parameters": [
+          {
+            "description": "the user's bearer token",
+            "name": "token",
+            "in": "query",
+            "required": true
+          }
+        ],
+        "responses": {
+          "302": {
+            "description": "redirect to UI"
+          }
+        }
+      }
+    },
+    "/claim-files/{id}": {
+      "delete": {
+        "description": "Delete a ClaimFile and its associated File in the db and on S3",
+        "tags": [
+          "ClaimFiles"
+        ],
+        "summary": "ClaimFilesDelete",
+        "operationId": "ClaimFilesDelete",
+        "parameters": [
+          {
+            "description": "claim file ID",
+            "name": "id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "OK but no content in response"
+          }
+        }
+      }
+    },
+    "/claim-items/{id}": {
+      "put": {
+        "description": "update a claim item",
+        "tags": [
+          "ClaimItems"
+        ],
+        "summary": "ClaimItemsUpdate",
+        "operationId": "ClaimItemsUpdate",
+        "parameters": [
+          {
+            "description": "claim item ID",
+            "name": "id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "description": "claim item update input object",
+            "name": "claim item input",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/ClaimItemUpdateInput"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "the updated ClaimItem",
+            "schema": {
+              "$ref": "#/definitions/ClaimItem"
+            }
+          }
+        }
+      }
+    },
+    "/claims": {
+      "get": {
+        "description": "List the claims visible to the authenticated user, filtered by the given\nstatus values. For a user, all status values are included by default.\nFor an admin (steward or signator) only the review status values are\nincluded by default. Accepted status values: Draft, Review1, Review2,\nReview3, Revision, Receipt, Approved, Paid, Denied",
+        "tags": [
+          "Claims"
+        ],
+        "summary": "ClaimsList",
+        "operationId": "ClaimsList",
+        "parameters": [
+          {
+            "description": "comma-separated list of status values to include",
+            "name": "status",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "a list of Claims",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/Claim"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/claims/{id}": {
+      "get": {
+        "description": "view a specific claim",
+        "tags": [
+          "Claims"
+        ],
+        "summary": "ClaimsView",
+        "operationId": "ClaimsView",
+        "parameters": [
+          {
+            "description": "claim ID",
+            "name": "id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "a Claim",
+            "schema": {
+              "$ref": "#/definitions/Claim"
+            }
+          }
+        }
+      },
+      "put": {
+        "description": "update a claim",
+        "tags": [
+          "Claims"
+        ],
+        "summary": "ClaimsUpdate",
+        "operationId": "ClaimsUpdate",
+        "parameters": [
+          {
+            "description": "claim ID",
+            "name": "id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "description": "claim create input object",
+            "name": "claim input",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/ClaimUpdateInput"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "a Claim",
+            "schema": {
+              "$ref": "#/definitions/Claim"
+            }
+          }
+        }
+      },
+      "delete": {
+        "description": "Delete a claim and its claim items as long as it does not have a status of\napproved, denied or paid.",
+        "tags": [
+          "Claims"
+        ],
+        "summary": "ClaimsRemove",
+        "operationId": "ClaimsRemove",
+        "parameters": [
+          {
+            "description": "claim ID",
+            "name": "id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "OK but no content in response"
+          }
+        }
+      }
+    },
+    "/claims/{id}/approve": {
+      "post": {
+        "description": "Admin approves a claim.  Can be used at states \"Review1\",\"Review2\",\"Review3\".",
+        "tags": [
+          "Claims"
+        ],
+        "summary": "ClaimsApprove",
+        "operationId": "ClaimsApprove",
+        "parameters": [
+          {
+            "description": "claim ID",
+            "name": "id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Claim in focus",
+            "schema": {
+              "$ref": "#/definitions/Claim"
+            }
+          }
+        }
+      }
+    },
+    "/claims/{id}/deny": {
+      "post": {
+        "description": "Admin denies a claim.  Can be used at states \"Review1\",\"Review2\",\"Review3\".",
+        "tags": [
+          "Claims"
+        ],
+        "summary": "ClaimsDeny",
+        "operationId": "ClaimsDeny",
+        "parameters": [
+          {
+            "description": "claim ID",
+            "name": "id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "description": "claim deny input object",
+            "name": "claim deny input",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/ClaimStatusInput"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Claim in focus",
+            "schema": {
+              "$ref": "#/definitions/Claim"
+            }
+          }
+        }
+      }
+    },
+    "/claims/{id}/files": {
+      "post": {
+        "description": "attach a File to a Claim",
+        "tags": [
+          "ClaimFiles"
+        ],
+        "summary": "ClaimFilesAttach",
+        "operationId": "ClaimFilesAttach",
+        "parameters": [
+          {
+            "description": "claim ID",
+            "name": "id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "description": "claim file attach input object",
+            "name": "claim file input",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/ClaimFileAttachInput"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "the new ClaimFile",
+            "schema": {
+              "$ref": "#/definitions/ClaimFile"
+            }
+          }
+        }
+      }
+    },
+    "/claims/{id}/items": {
+      "post": {
+        "description": "create a new ClaimItem on a Claim",
+        "tags": [
+          "Claims"
+        ],
+        "summary": "ClaimsItemsCreate",
+        "operationId": "ClaimsItemsCreate",
+        "parameters": [
+          {
+            "description": "claim ID",
+            "name": "id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "description": "claim item create input object",
+            "name": "claim item input",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/ClaimItemCreateInput"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "the new ClaimItem",
+            "schema": {
+              "$ref": "#/definitions/ClaimItem"
+            }
+          }
+        }
+      }
+    },
+    "/claims/{id}/preapprove": {
+      "post": {
+        "description": "Admin preapproves a claim and requests a receipt.  Can only be used at state \"Review1\".",
+        "tags": [
+          "Claims"
+        ],
+        "summary": "ClaimsPreapprove",
+        "operationId": "ClaimsPreapprove",
+        "parameters": [
+          {
+            "description": "claim ID",
+            "name": "id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Claim in focus",
+            "schema": {
+              "$ref": "#/definitions/Claim"
+            }
+          }
+        }
+      }
+    },
+    "/claims/{id}/receipt": {
+      "post": {
+        "description": "Admin reverts a claim to request a new/better receipt.\nCan be used at state \"Review2\" or \"Review3\".",
+        "tags": [
+          "Claims"
+        ],
+        "summary": "ClaimsFixReceipt",
+        "operationId": "ClaimsFixReceipt",
+        "parameters": [
+          {
+            "description": "claim ID",
+            "name": "id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "description": "claim receipt reason input object",
+            "name": "claim receipt reason input",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/ClaimStatusInput"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Claim in focus",
+            "schema": {
+              "$ref": "#/definitions/Claim"
+            }
+          }
+        }
+      }
+    },
+    "/claims/{id}/revision": {
+      "post": {
+        "description": "Admin requests revisions on a claim.  Can be used at state \"Review1\", \"Review2\", or \"Review3\".",
+        "tags": [
+          "Claims"
+        ],
+        "summary": "ClaimsRequestRevision",
+        "operationId": "ClaimsRequestRevision",
+        "parameters": [
+          {
+            "description": "claim ID",
+            "name": "id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "description": "claim request revision input object",
+            "name": "claim revision input",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/ClaimStatusInput"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Claim in focus",
+            "schema": {
+              "$ref": "#/definitions/Claim"
+            }
+          }
+        }
+      }
+    },
+    "/claims/{id}/submit": {
+      "post": {
+        "description": "Submit a claim for review.  Can be used at state \"Draft\" to submit for pre-approval or\n\"Receipt\" to submit for payout approval.",
+        "tags": [
+          "Claims"
+        ],
+        "summary": "ClaimsSubmit",
+        "operationId": "ClaimsSubmit",
+        "parameters": [
+          {
+            "description": "claim ID",
+            "name": "id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "submitted Claim",
+            "schema": {
+              "$ref": "#/definitions/Claim"
+            }
+          }
+        }
+      }
+    },
+    "/config/claim-incident-types": {
+      "get": {
+        "description": "list all valid Claim Incident Types",
+        "tags": [
+          "Config"
+        ],
+        "summary": "ClaimIncidentTypes",
+        "operationId": "ClaimIncidentTypes",
+        "responses": {
+          "200": {
+            "description": "list of valid Claim Incident Types",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/ClaimIncidentTypeStruct"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/config/countries": {
+      "get": {
+        "description": "list of countries",
+        "tags": [
+          "Config"
+        ],
+        "summary": "Countries",
+        "operationId": "Countries",
+        "responses": {
+          "200": {
+            "description": "list of countries",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/Country"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/config/item-categories": {
+      "get": {
+        "description": "list all the enabled item categories",
+        "tags": [
+          "Config"
+        ],
+        "summary": "ItemCategoriesList",
+        "operationId": "ItemCategoriesList",
+        "responses": {
+          "200": {
+            "description": "a list of ItemCategories",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/ItemCategory"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/entity-codes": {
+      "get": {
+        "description": "list Entity Codes",
+        "tags": [
+          "EntityCodes"
+        ],
+        "summary": "EntityCodesList",
+        "operationId": "EntityCodesList",
+        "responses": {
+          "200": {
+            "description": "list of Entity Codes",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/EntityCode"
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "description": "create a new Entity Code",
+        "tags": [
+          "EntityCodes"
+        ],
+        "summary": "EntityCodesCreate",
+        "operationId": "EntityCodesCreate",
+        "parameters": [
+          {
+            "description": "entity code create input object",
+            "name": "entity code create input",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/EntityCodeCreateInput"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "an Entity Code record",
+            "schema": {
+              "$ref": "#/definitions/EntityCode"
+            }
+          }
+        }
+      }
+    },
+    "/entity-codes/{id}": {
+      "get": {
+        "description": "get a single Entity Code",
+        "tags": [
+          "EntityCodes"
+        ],
+        "summary": "EntityCodesView",
+        "operationId": "EntityCodesView",
+        "parameters": [
+          {
+            "description": "entity code ID",
+            "name": "id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "an Entity Code record",
+            "schema": {
+              "$ref": "#/definitions/EntityCode"
+            }
+          }
+        }
+      },
+      "put": {
+        "description": "update a Entity Code",
+        "tags": [
+          "EntityCodes"
+        ],
+        "summary": "EntityCodesUpdate",
+        "operationId": "EntityCodesUpdate",
+        "parameters": [
+          {
+            "description": "entity code ID",
+            "name": "id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "description": "entity code update input object",
+            "name": "entity code update input",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/EntityCodeInput"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "an Entity Code record",
+            "schema": {
+              "$ref": "#/definitions/EntityCode"
+            }
+          }
+        }
+      }
+    },
+    "/items/{id}": {
+      "put": {
+        "description": "update a policy item",
+        "tags": [
+          "PolicyItems"
+        ],
+        "summary": "PolicyItemsUpdate",
+        "operationId": "PolicyItemsUpdate",
+        "parameters": [
+          {
+            "description": "item ID",
+            "name": "id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "description": "policy item update object",
+            "name": "policy item update input",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/ItemUpdate"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "updated Item",
+            "schema": {
+              "$ref": "#/definitions/Item"
+            }
+          }
+        }
+      },
+      "delete": {
+        "description": "Delete a policy item if it is less than 72 hours old and has no associations.\nOtherwise, inactivate coverage on it.",
+        "tags": [
+          "PolicyItems"
+        ],
+        "summary": "PolicyItemsRemove",
+        "operationId": "PolicyItemsRemove",
+        "parameters": [
+          {
+            "description": "item ID",
+            "name": "id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "OK but no content in response"
+          }
+        }
+      }
+    },
+    "/items/{id}/approve": {
+      "post": {
+        "description": "approve coverage on a policy item",
+        "tags": [
+          "PolicyItems"
+        ],
+        "summary": "PolicyItemsApprove",
+        "operationId": "PolicyItemsApprove",
+        "parameters": [
+          {
+            "description": "item ID",
+            "name": "id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "approved Item",
+            "schema": {
+              "$ref": "#/definitions/Item"
+            }
+          }
+        }
+      }
+    },
+    "/items/{id}/deny": {
+      "post": {
+        "description": "deny coverage on a policy item",
+        "tags": [
+          "PolicyItems"
+        ],
+        "summary": "PolicyItemsDeny",
+        "operationId": "PolicyItemsDeny",
+        "parameters": [
+          {
+            "description": "item ID",
+            "name": "id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "description": "item denial input object",
+            "name": "item denial input",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/ItemStatusInput"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "denied Item",
+            "schema": {
+              "$ref": "#/definitions/Item"
+            }
+          }
+        }
+      }
+    },
+    "/items/{id}/revision": {
+      "post": {
+        "description": "admin requires changes on a policy item",
+        "tags": [
+          "PolicyItems"
+        ],
+        "summary": "PolicyItemsRevision",
+        "operationId": "PolicyItemsRevision",
+        "parameters": [
+          {
+            "description": "item ID",
+            "name": "id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "description": "item revision input object",
+            "name": "item revision input",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/ItemStatusInput"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Policy Item",
+            "schema": {
+              "$ref": "#/definitions/Item"
+            }
+          }
+        }
+      }
+    },
+    "/items/{id}/submit": {
+      "post": {
+        "description": "submit a policy item for coverage",
+        "tags": [
+          "PolicyItems"
+        ],
+        "summary": "PolicyItemsSubmit",
+        "operationId": "PolicyItemsSubmit",
+        "parameters": [
+          {
+            "description": "item ID",
+            "name": "id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "submitted Item",
+            "schema": {
+              "$ref": "#/definitions/Item"
+            }
+          }
+        }
+      }
+    },
+    "/ledger-reports": {
+      "get": {
+        "description": "Return a list of ledger reports that are not associated with a policy",
+        "tags": [
+          "LedgerReport"
+        ],
+        "summary": "LedgerReportList",
+        "operationId": "LedgerReportList",
+        "responses": {
+          "200": {
+            "description": "LedgerReport list",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/LedgerReport"
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "description": "Create and return a report on the ledger entries as specified by the input object. The returned object\ncontains metadata and a File object pointing to a CSV file suitable for use with Sage Accounting.\n\n### Report types:\n+ `monthly` - Return all ledger entries not yet reconciled, up to the beginning of the given day (0:00 UTC).\n+ `annual` - Return the billing detail for given year's policy renewals.",
+        "tags": [
+          "LedgerReport"
+        ],
+        "summary": "LedgerReportCreate",
+        "operationId": "LedgerReportCreate",
+        "parameters": [
+          {
+            "description": "LedgerReportCreateInput object",
+            "name": "input",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/LedgerReportCreateInput"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "the requested LedgerReport",
+            "schema": {
+              "$ref": "#/definitions/LedgerReport"
+            }
+          }
+        }
+      }
+    },
+    "/ledger-reports/annual": {
+      "get": {
+        "description": "Get the status of the annual billing process.",
+        "tags": [
+          "Ledger"
+        ],
+        "summary": "LedgerAnnualRenewalStatus",
+        "operationId": "LedgerAnnualRenewalStatus",
+        "responses": {
+          "200": {
+            "description": "the status of the annual billing process",
+            "schema": {
+              "$ref": "#/definitions/AnnualRenewalStatus"
+            }
+          }
+        }
+      },
+      "post": {
+        "description": "Process billing for current year's policy renewals.",
+        "tags": [
+          "Ledger"
+        ],
+        "summary": "LedgerAnnualProcess",
+        "operationId": "LedgerAnnualProcess",
+        "responses": {
+          "204": {
+            "description": "OK but no content in response"
+          }
+        }
+      }
+    },
+    "/ledger-reports/{id}": {
+      "get": {
+        "description": "Return the ledger report specified by `id`. The returned object contains metadata and a File object pointing to\na CSV file suitable for use with Sage Accounting.",
+        "tags": [
+          "LedgerReport"
+        ],
+        "summary": "LedgerReportView",
+        "operationId": "LedgerReportView",
+        "parameters": [
+          {
+            "description": "specifies the ID of the report to view",
+            "name": "id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "the requested LedgerReport",
+            "schema": {
+              "$ref": "#/definitions/LedgerReport"
+            }
+          }
+        }
+      },
+      "put": {
+        "description": "Mark ledger entries in the report reconciled as of today. Call this only after all transactions in the report\nhave been fully loaded into the accounting record.",
+        "tags": [
+          "LedgerReport"
+        ],
+        "summary": "LedgerReportReconcile",
+        "operationId": "LedgerReportReconcile",
+        "parameters": [
+          {
+            "description": "specifies the ID of the report to reconcile",
+            "name": "id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "the requested LedgerReport",
+            "schema": {
+              "$ref": "#/definitions/LedgerReport"
+            }
+          }
+        }
+      }
+    },
+    "/policies": {
+      "get": {
+        "description": "Get the data for all the user's Policies if the user is not an admin. If called by an admin, returns all Policies\nin the system, limited by query parameters.",
+        "tags": [
+          "Policies"
+        ],
+        "summary": "PoliciesList",
+        "operationId": "PoliciesList",
+        "parameters": [
+          {
+            "description": "number of records to return, minimum 1, maximum 50, default 10",
+            "name": "limit",
+            "in": "query"
+          },
+          {
+            "description": "search text to find across fields (name, household_id, cost_center, and all members' first and last names)",
+            "name": "search",
+            "in": "query"
+          },
+          {
+            "description": "comma-separated list of search pairs like \"field:text\". Presently, only meta-field 'active' is supported",
+            "name": "filter",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "all policies",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "data": {
+                  "$ref": "#/definitions/Policies"
+                },
+                "meta": {
+                  "$ref": "#/definitions/Meta"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "description": "create a new Policy with type Team",
+        "tags": [
+          "Policies"
+        ],
+        "summary": "PoliciesCreateTeam",
+        "operationId": "PoliciesCreateTeam",
+        "parameters": [
+          {
+            "description": "policy create input object",
+            "name": "policy input",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/PolicyCreate"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "the new Policy",
+            "schema": {
+              "$ref": "#/definitions/Policy"
+            }
+          }
+        }
+      }
+    },
+    "/policies/{id}": {
+      "get": {
+        "description": "gets the data for a specific policy",
+        "tags": [
+          "Policies"
+        ],
+        "summary": "PoliciesView",
+        "operationId": "PoliciesView",
+        "responses": {
+          "200": {
+            "description": "a policy",
+            "schema": {
+              "$ref": "#/definitions/Policy"
+            }
+          }
+        }
+      },
+      "put": {
+        "description": "update a policy",
+        "tags": [
+          "Policies"
+        ],
+        "summary": "PoliciesUpdate",
+        "operationId": "PoliciesUpdate",
+        "parameters": [
+          {
+            "description": "policy ID",
+            "name": "id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "description": "policy update input object",
+            "name": "policy update input",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/PolicyUpdate"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "updated Policy",
+            "schema": {
+              "$ref": "#/definitions/Policy"
+            }
+          }
+        }
+      }
+    },
+    "/policies/{id}/claims": {
+      "get": {
+        "description": "List claims for a given policy",
+        "tags": [
+          "Claims"
+        ],
+        "summary": "PolicyClaimsList",
+        "operationId": "PolicyClaimsList",
+        "responses": {
+          "200": {
+            "description": "a list of Claims",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/Claim"
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "description": "create a new Claim on a policy",
+        "tags": [
+          "Claims"
+        ],
+        "summary": "ClaimsCreate",
+        "operationId": "ClaimsCreate",
+        "parameters": [
+          {
+            "description": "policy ID",
+            "name": "id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "description": "claim create input object",
+            "name": "claim input",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/ClaimCreateInput"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "the new Claim",
+            "schema": {
+              "$ref": "#/definitions/Claim"
+            }
+          }
+        }
+      }
+    },
+    "/policies/{id}/dependents": {
+      "get": {
+        "description": "list policy dependents",
+        "tags": [
+          "PolicyDependents"
+        ],
+        "summary": "PolicyDependentsList",
+        "operationId": "PolicyDependentsList",
+        "parameters": [
+          {
+            "description": "policy ID",
+            "name": "id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "a list of PolicyDependents",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/PolicyDependents"
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "description": "create a new PolicyDependent on a policy",
+        "tags": [
+          "PolicyDependents"
+        ],
+        "summary": "PolicyDependentsCreate",
+        "operationId": "PolicyDependentsCreate",
+        "parameters": [
+          {
+            "description": "policy ID",
+            "name": "id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "description": "policy dependent input object",
+            "name": "policy dependent",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/PolicyDependentInput"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "the new PolicyDependent",
+            "schema": {
+              "$ref": "#/definitions/PolicyDependent"
+            }
+          }
+        }
+      }
+    },
+    "/policies/{id}/items": {
+      "get": {
+        "description": "gets the data for all the items on a Policy",
+        "tags": [
+          "PolicyItems"
+        ],
+        "summary": "PolicyItemsList",
+        "operationId": "PolicyItemsList",
+        "parameters": [
+          {
+            "description": "policy ID",
+            "name": "id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "all policy items",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/Item"
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "description": "create a policy item",
+        "tags": [
+          "PolicyItems"
+        ],
+        "summary": "PolicyItemsCreate",
+        "operationId": "PolicyItemsCreate",
+        "parameters": [
+          {
+            "description": "policy ID",
+            "name": "id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "description": "policy item create input object",
+            "name": "policy item create input",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/ItemCreate"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "new Item",
+            "schema": {
+              "$ref": "#/definitions/Item"
+            }
+          }
+        }
+      }
+    },
+    "/policies/{id}/ledger-reports": {
+      "get": {
+        "description": "Return data regarding the ledger entries of a policy for a particular month.\nIf no ledger entries are found with a `date_entered` value that matches the requested\nYear and Month, then a 204 is returned.",
+        "tags": [
+          "PolicyLedgerReport"
+        ],
+        "summary": "PolicyLedgerTableView",
+        "operationId": "PolicyLedgerTableView",
+        "parameters": [
+          {
+            "description": "policy ID",
+            "name": "id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "description": "the month (number) within which the ledger entries were entered into the accounting system",
+            "name": "month",
+            "in": "query",
+            "required": true
+          },
+          {
+            "description": "the year within which the ledger entries were entered into the accounting system",
+            "name": "year",
+            "in": "query",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "the requested LedgerTable for the Policy",
+            "schema": {
+              "$ref": "#/definitions/LedgerTable"
+            }
+          }
+        }
+      },
+      "post": {
+        "description": "Create and return a report on the ledger entries of a policy as specified by the input object.\nThe returned object contains metadata and a File object pointing to a CSV file.\nIf no ledger entries are found with a `date_entered` value that matches the requested\nType, Year and (if applicable) Month, then a 204 is returned.",
+        "tags": [
+          "PolicyLedgerReport"
+        ],
+        "summary": "PolicyLedgerReportCreate",
+        "operationId": "PolicyLedgerReportCreate",
+        "parameters": [
+          {
+            "description": "policy ID",
+            "name": "id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "description": "PolicyLedgerReportCreateInput object",
+            "name": "input",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/PolicyLedgerReportCreateInput"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "the requested LedgerReport for the Policy",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/LedgerReport"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/policies/{id}/members": {
+      "get": {
+        "description": "gets the data for all the members of a Policy",
+        "tags": [
+          "PolicyMembers"
+        ],
+        "summary": "PolicyMembersList",
+        "operationId": "PolicyMembersList",
+        "parameters": [
+          {
+            "description": "policy ID",
+            "name": "id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "all policy members",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/PolicyMember"
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "description": "invite new user to co-manage policy",
+        "tags": [
+          "PolicyMembers"
+        ],
+        "summary": "PolicyMembersInvite",
+        "operationId": "PolicyMembersInvite",
+        "parameters": [
+          {
+            "description": "policy ID",
+            "name": "id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "description": "policy user invite input object",
+            "name": "policy member invite input",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/PolicyUserInviteCreate"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "success, no content"
+          },
+          "400": {
+            "description": "bad request, check the error and fix your code"
+          }
+        }
+      }
+    },
+    "/policies/{id}/strikes": {
+      "post": {
+        "description": "Create a strike on the policy and return its recent strikes",
+        "tags": [
+          "PolicyStrike"
+        ],
+        "summary": "PolicyStrikeCreate",
+        "operationId": "PolicyStrikeCreate",
+        "parameters": [
+          {
+            "description": "policy ID",
+            "name": "id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "description": "StrikeInput object",
+            "name": "input",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/StrikeInput"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "the Strikes for the Policy that are still in force",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/Strike"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/policy-dependents/{id}": {
+      "put": {
+        "description": "update a policy dependent",
+        "tags": [
+          "PolicyDependents"
+        ],
+        "summary": "PolicyDependentsUpdate",
+        "operationId": "PolicyDependentsUpdate",
+        "parameters": [
+          {
+            "description": "policy dependent ID",
+            "name": "id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "description": "policy dependent input object",
+            "name": "policy dependent update input",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/PolicyDependentInput"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "the updated PolicyDependent",
+            "schema": {
+              "$ref": "#/definitions/PolicyDependent"
+            }
+          }
+        }
+      },
+      "delete": {
+        "description": "Delete a policy dependent if it has no related policy items.",
+        "tags": [
+          "PolicyDependents"
+        ],
+        "summary": "PolicyDependentsDelete",
+        "operationId": "PolicyDependentsDelete",
+        "parameters": [
+          {
+            "description": "policy dependent ID",
+            "name": "id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "OK but no content in response"
+          }
+        }
+      }
+    },
+    "/policy-members/{id}": {
+      "delete": {
+        "description": "Delete a policy user as long as the related policy has another user. Also,\nnull out the PolicyUserID on related items",
+        "tags": [
+          "PolicyMembers"
+        ],
+        "summary": "PolicyMembersDelete",
+        "operationId": "PolicyMembersDelete",
+        "parameters": [
+          {
+            "description": "policy-member ID",
+            "name": "id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "OK but no content in response"
+          }
+        }
+      }
+    },
+    "/repairs": {
+      "post": {
+        "description": "Run a repair\n\n### Repair types:\n+ `renewal` - Repair all items that were incorrectly renewed and billed for another year of coverage. Also issues premium refunds for the incorrect renewal charges.",
+        "tags": [
+          "Repairs"
+        ],
+        "summary": "RepairsRun",
+        "operationId": "RepairsRun",
+        "parameters": [
+          {
+            "description": "parameters for the Repair Run",
+            "name": "input",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/RepairRunInput"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "the repair result",
+            "schema": {
+              "$ref": "#/definitions/RepairResult"
+            }
+          }
+        }
+      }
+    },
+    "/status": {
+      "get": {
+        "description": "checks the app status",
+        "tags": [
+          "Status"
+        ],
+        "summary": "Status",
+        "operationId": "Status",
+        "responses": {
+          "204": {
+            "description": "app status is good"
+          }
+        }
+      }
+    },
+    "/steward/recent": {
+      "get": {
+        "description": "gets Items and Claims that have recently had their coverage_status/status changed",
+        "tags": [
+          "Steward"
+        ],
+        "summary": "ListRecentObjects",
+        "operationId": "ListRecentObjects",
+        "responses": {
+          "200": {
+            "description": "a list of Items and a list of Claims which each have the time when their status was last changed.",
+            "schema": {
+              "$ref": "#/definitions/RecentObjects"
+            }
+          }
+        }
+      }
+    },
+    "/strikes/{id}": {
+      "put": {
+        "description": "update a strike",
+        "tags": [
+          "Strikes"
+        ],
+        "summary": "StrikesUpdate",
+        "operationId": "StrikesUpdate",
+        "parameters": [
+          {
+            "description": "strike ID",
+            "name": "id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "description": "policy item update object",
+            "name": "strike input",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/StrikeInput"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "updated Strike",
+            "schema": {
+              "$ref": "#/definitions/Strike"
+            }
+          }
+        }
+      },
+      "delete": {
+        "description": "Delete a strike.",
+        "tags": [
+          "Strikes"
+        ],
+        "summary": "StrikesDelete",
+        "operationId": "StrikesDelete",
+        "parameters": [
+          {
+            "description": "item ID",
+            "name": "id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "OK but no content in response"
+          }
+        }
+      }
+    },
+    "/upload": {
+      "post": {
+        "description": "Upload a new File object",
+        "consumes": [
+          "multipart/form-data"
+        ],
+        "tags": [
+          "Files"
+        ],
+        "operationId": "UploadFile",
+        "parameters": [
+          {
+            "type": "file",
+            "description": "file object",
+            "name": "file",
+            "in": "formData"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "uploaded File data",
+            "schema": {
+              "$ref": "#/definitions/UploadResponse"
+            }
+          }
+        }
+      }
+    },
+    "/users": {
+      "get": {
+        "description": "gets the data for all Users.",
+        "tags": [
+          "Users"
+        ],
+        "summary": "UsersList",
+        "operationId": "UsersList",
+        "responses": {
+          "200": {
+            "description": "all users",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/User"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/users/me": {
+      "get": {
+        "description": "gets the data for authenticated User.",
+        "tags": [
+          "Users"
+        ],
+        "summary": "UsersMe",
+        "operationId": "UsersMe",
+        "responses": {
+          "200": {
+            "description": "authenticated user",
+            "schema": {
+              "$ref": "#/definitions/User"
+            }
+          }
+        }
+      },
+      "put": {
+        "description": "update the current user's personal settings",
+        "tags": [
+          "Users"
+        ],
+        "summary": "UserMeUpdate",
+        "operationId": "UserMeUpdate",
+        "parameters": [
+          {
+            "description": "the editable settings for a user",
+            "name": "user's settings input",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/UserInput"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "updated User",
+            "schema": {
+              "$ref": "#/definitions/User"
+            }
+          }
+        }
+      }
+    },
+    "/users/me/files": {
+      "post": {
+        "description": "attach a File to the current user",
+        "tags": [
+          "Users"
+        ],
+        "summary": "UsersMeFileAttach",
+        "operationId": "UsersMeFileAttach",
+        "parameters": [
+          {
+            "description": "photo/avatar to attach to the current user",
+            "name": "user file input",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/UserFileAttachInput"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "the User",
+            "schema": {
+              "$ref": "#/definitions/User"
+            }
+          }
+        }
+      },
+      "delete": {
+        "description": "detach the Photo File from the current user and remove it from S3",
+        "tags": [
+          "Users"
+        ],
+        "summary": "UsersMeFileDelete",
+        "operationId": "UsersMeFileDelete",
+        "responses": {
+          "204": {
+            "description": "OK but no content in response"
+          }
+        }
+      }
+    },
+    "/users/{id}": {
+      "get": {
+        "description": "gets the data for a specific User.",
+        "tags": [
+          "Users"
+        ],
+        "summary": "UsersView",
+        "operationId": "UsersView",
+        "parameters": [
+          {
+            "description": "user ID",
+            "name": "id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "a user",
+            "schema": {
+              "$ref": "#/definitions/User"
+            }
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "AccountablePerson": {
+      "type": "object",
+      "properties": {
+        "country": {
+          "description": "country where person is located",
+          "type": "string",
+          "x-go-name": "Country"
+        },
+        "id": {
+          "description": "ID that can reference either a User or a PolicyDependent",
+          "type": "string",
+          "format": "uuid4",
+          "x-go-name": "ID"
+        },
+        "name": {
+          "description": "full name",
+          "type": "string",
+          "x-go-name": "Name"
+        }
+      },
+      "x-go-package": "github.com/silinternational/cover-api/api"
+    },
+    "AnnualRenewalStatus": {
+      "type": "object",
+      "properties": {
+        "is_complete": {
+          "type": "boolean",
+          "x-go-name": "IsComplete"
+        },
+        "items_to_process": {
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "ItemsToProcess"
+        }
+      },
+      "x-go-package": "github.com/silinternational/cover-api/api"
+    },
+    "AppError": {
+      "description": "AppError holds information that is helpful in logging and reporting api errors",
+      "type": "object",
+      "properties": {
+        "debug_msg": {
+          "description": "detailed error message for debugging, only provided in development environment",
+          "type": "string",
+          "x-go-name": "DebugMsg"
+        },
+        "extras": {
+          "description": "Extra data providing detail about the error condition, only provided in development environment",
+          "type": "object",
+          "additionalProperties": {},
+          "x-go-name": "Extras"
+        },
+        "key": {
+          "$ref": "#/definitions/ErrorKey"
+        },
+        "message": {
+          "description": "user-facing error message",
+          "type": "string",
+          "x-go-name": "Message"
+        },
+        "status": {
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "HttpStatus"
+        }
+      },
+      "x-go-package": "github.com/silinternational/cover-api/api"
+    },
+    "AuditResult": {
+      "type": "object",
+      "properties": {
+        "audit_type": {
+          "type": "string",
+          "x-go-name": "AuditType"
+        },
+        "items": {
+          "$ref": "#/definitions/Items"
+        }
+      },
+      "x-go-package": "github.com/silinternational/cover-api/api"
+    },
+    "AuditRunInput": {
+      "type": "object",
+      "properties": {
+        "audit_type": {
+          "type": "string",
+          "x-go-name": "AuditType"
+        },
+        "date": {
+          "type": "string",
+          "x-go-name": "Date"
+        }
+      },
+      "x-go-package": "github.com/silinternational/cover-api/api"
+    },
+    "Claim": {
+      "type": "object",
+      "properties": {
+        "claim_files": {
+          "description": "list of files attached to the claim",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ClaimFile"
+          },
+          "x-go-name": "Files"
+        },
+        "claim_items": {
+          "$ref": "#/definitions/ClaimItems"
+        },
+        "id": {
+          "description": "unique ID",
+          "type": "string",
+          "format": "uuid4",
+          "x-go-name": "ID"
+        },
+        "incident_date": {
+          "description": "incident date",
+          "type": "string",
+          "format": "date-time",
+          "x-go-name": "IncidentDate"
+        },
+        "incident_description": {
+          "description": "incident description .",
+          "type": "string",
+          "x-go-name": "IncidentDescription"
+        },
+        "incident_type": {
+          "$ref": "#/definitions/ClaimIncidentType"
+        },
+        "is_removable": {
+          "description": "whether the claim can be removed/deleted",
+          "type": "boolean",
+          "x-go-name": "IsRemovable"
+        },
+        "payment_date": {
+          "description": "payment date",
+          "type": "string",
+          "format": "date-time",
+          "x-go-name": "PaymentDate"
+        },
+        "policy_id": {
+          "description": "policy ID",
+          "type": "string",
+          "format": "uuid4",
+          "x-go-name": "PolicyID"
+        },
+        "reference_number": {
+          "description": "reference number\n\nhuman friendly seven character string, e.g.: AB43312",
+          "type": "string",
+          "x-go-name": "ReferenceNumber"
+        },
+        "review_date": {
+          "description": "review date",
+          "type": "string",
+          "format": "date-time",
+          "x-go-name": "ReviewDate"
+        },
+        "reviewer_id": {
+          "description": "reviewer ID",
+          "type": "string",
+          "format": "uuid4",
+          "x-go-name": "ReviewerID"
+        },
+        "status": {
+          "$ref": "#/definitions/ClaimStatus"
+        },
+        "status_change": {
+          "description": "how the status changed most recently (for the stewards dashboard)",
+          "type": "string",
+          "x-go-name": "StatusChange"
+        },
+        "status_reason": {
+          "description": "message from a reviewer detailing the revisions needed",
+          "type": "string",
+          "x-go-name": "StatusReason"
+        },
+        "total_payout": {
+          "$ref": "#/definitions/Currency"
+        }
+      },
+      "x-go-package": "github.com/silinternational/cover-api/api"
+    },
+    "ClaimCreateInput": {
+      "type": "object",
+      "properties": {
+        "incident_date": {
+          "description": "incident date",
+          "type": "string",
+          "format": "date-time",
+          "x-go-name": "IncidentDate"
+        },
+        "incident_description": {
+          "description": "incident description",
+          "type": "string",
+          "x-go-name": "IncidentDescription"
+        },
+        "incident_type": {
+          "$ref": "#/definitions/ClaimIncidentType"
+        }
+      },
+      "x-go-package": "github.com/silinternational/cover-api/api"
+    },
+    "ClaimFile": {
+      "type": "object",
+      "properties": {
+        "claim_id": {
+          "description": "ID of the Claim",
+          "type": "string",
+          "format": "uuid4",
+          "x-go-name": "ClaimID"
+        },
+        "created_at": {
+          "description": "created time",
+          "type": "string",
+          "format": "date-time",
+          "x-go-name": "CreatedAt"
+        },
+        "file": {
+          "$ref": "#/definitions/File"
+        },
+        "file_id": {
+          "description": "ID of the File",
+          "type": "string",
+          "format": "uuid4",
+          "x-go-name": "FileID"
+        },
+        "id": {
+          "description": "ID of the ClaimFile",
+          "type": "string",
+          "format": "uuid4",
+          "x-go-name": "ID"
+        },
+        "purpose": {
+          "$ref": "#/definitions/ClaimFilePurpose"
+        },
+        "updated_at": {
+          "description": "last updated time",
+          "type": "string",
+          "format": "date-time",
+          "x-go-name": "UpdatedAt"
+        }
+      },
+      "x-go-package": "github.com/silinternational/cover-api/api"
+    },
+    "ClaimFileAttachInput": {
+      "type": "object",
+      "properties": {
+        "file_id": {
+          "description": "File ID to attach to the claim",
+          "type": "string",
+          "format": "uuid4",
+          "x-go-name": "FileID"
+        },
+        "purpose": {
+          "$ref": "#/definitions/ClaimFilePurpose"
+        }
+      },
+      "x-go-package": "github.com/silinternational/cover-api/api"
+    },
+    "ClaimFilePurpose": {
+      "description": "may be one of: \"Receipt\", \"Evidence of FMV\", \"Repair Estimate\"",
+      "type": "string",
+      "title": "ClaimFilePurpose",
+      "x-go-package": "github.com/silinternational/cover-api/api"
+    },
+    "ClaimIncidentType": {
+      "description": "must be one of the values returned by /config/claim-incident-types",
+      "type": "string",
+      "title": "ClaimIncidentType",
+      "x-go-package": "github.com/silinternational/cover-api/api"
+    },
+    "ClaimIncidentTypeStruct": {
+      "type": "object",
+      "properties": {
+        "description": {
+          "type": "string",
+          "x-go-name": "Description"
+        },
+        "is_repairable": {
+          "type": "boolean",
+          "x-go-name": "IsRepairable"
+        },
+        "name": {
+          "$ref": "#/definitions/ClaimIncidentType"
+        }
+      },
+      "x-go-package": "github.com/silinternational/cover-api/api"
+    },
+    "ClaimItem": {
+      "type": "object",
+      "properties": {
+        "claim_id": {
+          "description": "claim ID",
+          "type": "string",
+          "format": "uuid4",
+          "x-go-name": "ClaimID"
+        },
+        "coverage_amount": {
+          "$ref": "#/definitions/Currency"
+        },
+        "created_at": {
+          "description": "date-time created",
+          "type": "string",
+          "format": "date-time",
+          "x-go-name": "CreatedAt"
+        },
+        "fmv": {
+          "$ref": "#/definitions/Currency"
+        },
+        "id": {
+          "description": "claim item ID",
+          "type": "string",
+          "format": "uuid4",
+          "x-go-name": "ID"
+        },
+        "is_repairable": {
+          "description": "is item repairable?",
+          "type": "boolean",
+          "x-go-name": "IsRepairable"
+        },
+        "item": {
+          "$ref": "#/definitions/Item"
+        },
+        "item_id": {
+          "description": "item ID",
+          "type": "string",
+          "format": "uuid4",
+          "x-go-name": "ItemID"
+        },
+        "payout_amount": {
+          "$ref": "#/definitions/Currency"
+        },
+        "payout_option": {
+          "$ref": "#/definitions/PayoutOption"
+        },
+        "repair_actual": {
+          "$ref": "#/definitions/Currency"
+        },
+        "repair_estimate": {
+          "$ref": "#/definitions/Currency"
+        },
+        "replace_actual": {
+          "$ref": "#/definitions/Currency"
+        },
+        "replace_estimate": {
+          "$ref": "#/definitions/Currency"
+        },
+        "review_date": {
+          "description": "review date",
+          "type": "string",
+          "format": "date-time",
+          "x-go-name": "ReviewDate"
+        },
+        "reviewer_id": {
+          "description": "reviewer User ID",
+          "type": "string",
+          "format": "uuid4",
+          "x-go-name": "ReviewerID"
+        },
+        "status": {
+          "$ref": "#/definitions/ClaimStatus"
+        },
+        "updated_at": {
+          "description": "date-time last updated",
+          "type": "string",
+          "format": "date-time",
+          "x-go-name": "UpdatedAt"
+        }
+      },
+      "x-go-package": "github.com/silinternational/cover-api/api"
+    },
+    "ClaimItemCreateInput": {
+      "type": "object",
+      "properties": {
+        "fmv": {
+          "$ref": "#/definitions/Currency"
+        },
+        "is_repairable": {
+          "description": "is item repairable?",
+          "type": "boolean",
+          "x-go-name": "IsRepairable"
+        },
+        "item_id": {
+          "description": "item ID",
+          "type": "string",
+          "format": "uuid4",
+          "x-go-name": "ItemID"
+        },
+        "payout_option": {
+          "$ref": "#/definitions/PayoutOption"
+        },
+        "repair_actual": {
+          "$ref": "#/definitions/Currency"
+        },
+        "repair_estimate": {
+          "$ref": "#/definitions/Currency"
+        },
+        "replace_actual": {
+          "$ref": "#/definitions/Currency"
+        },
+        "replace_estimate": {
+          "$ref": "#/definitions/Currency"
+        }
+      },
+      "x-go-package": "github.com/silinternational/cover-api/api"
+    },
+    "ClaimItemUpdateInput": {
+      "type": "object",
+      "properties": {
+        "fmv": {
+          "$ref": "#/definitions/Currency"
+        },
+        "is_repairable": {
+          "description": "is item repairable?",
+          "type": "boolean",
+          "x-go-name": "IsRepairable"
+        },
+        "payout_option": {
+          "$ref": "#/definitions/PayoutOption"
+        },
+        "repair_actual": {
+          "$ref": "#/definitions/Currency"
+        },
+        "repair_estimate": {
+          "$ref": "#/definitions/Currency"
+        },
+        "replace_actual": {
+          "$ref": "#/definitions/Currency"
+        },
+        "replace_estimate": {
+          "$ref": "#/definitions/Currency"
+        }
+      },
+      "x-go-package": "github.com/silinternational/cover-api/api"
+    },
+    "ClaimItems": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/ClaimItem"
+      },
+      "x-go-package": "github.com/silinternational/cover-api/api"
+    },
+    "ClaimStatus": {
+      "description": "may be one of: Draft, Review1, Review2, Review3, Revision, Receipt, Approved, Paid, Denied",
+      "type": "string",
+      "title": "ClaimStatus",
+      "x-go-package": "github.com/silinternational/cover-api/api"
+    },
+    "ClaimStatusInput": {
+      "type": "object",
+      "properties": {
+        "status_reason": {
+          "description": "message from a reviewer noting the reason for the new status, e.g. detailing the revisions needed",
+          "type": "string",
+          "x-go-name": "StatusReason"
+        }
+      },
+      "x-go-package": "github.com/silinternational/cover-api/api"
+    },
+    "ClaimUpdateInput": {
+      "type": "object",
+      "properties": {
+        "incident_date": {
+          "description": "incident date",
+          "type": "string",
+          "format": "date-time",
+          "x-go-name": "IncidentDate"
+        },
+        "incident_description": {
+          "description": "incident description",
+          "type": "string",
+          "x-go-name": "IncidentDescription"
+        },
+        "incident_type": {
+          "$ref": "#/definitions/ClaimIncidentType"
+        }
+      },
+      "x-go-package": "github.com/silinternational/cover-api/api"
+    },
+    "Claims": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/Claim"
+      },
+      "x-go-package": "github.com/silinternational/cover-api/api"
+    },
+    "Country": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "x-go-name": "Name"
+        }
+      },
+      "x-go-package": "github.com/silinternational/cover-api/api"
+    },
+    "Currency": {
+      "description": "Currency is in US Dollars, specified as an integer representing cents ($0.01 USD is represented as 1 and $105.36 as 10536)",
+      "type": "integer",
+      "format": "int64",
+      "x-go-package": "github.com/silinternational/cover-api/api"
+    },
+    "EntityCode": {
+      "type": "object",
+      "properties": {
+        "active": {
+          "description": "Active set to true allows it to be displayed in the selection list for policies. Only visible to admins.",
+          "type": "boolean",
+          "x-go-name": "Active"
+        },
+        "code": {
+          "description": "Code is a unique three-letter identifier for an accounting entity",
+          "type": "string",
+          "x-go-name": "Code"
+        },
+        "id": {
+          "description": "unique ID",
+          "type": "string",
+          "format": "uuid4",
+          "x-go-name": "ID"
+        },
+        "income_account": {
+          "description": "IncomeAccount is the account use for income transactions. Only visible to admins.",
+          "type": "string",
+          "x-go-name": "IncomeAccount"
+        },
+        "name": {
+          "description": "Name is a succinct description of the entity code.",
+          "type": "string",
+          "x-go-name": "Name"
+        },
+        "parent_entity": {
+          "description": "ParentEntity is the parent entity code for grouping in reports. Only visible to admins.",
+          "type": "string",
+          "x-go-name": "ParentEntity"
+        }
+      },
+      "x-go-package": "github.com/silinternational/cover-api/api"
+    },
+    "EntityCodeCreateInput": {
+      "type": "object",
+      "properties": {
+        "active": {
+          "description": "Active set to true allows it to be displayed in the selection list for policies. Only visible to admins.",
+          "type": "boolean",
+          "x-go-name": "Active"
+        },
+        "code": {
+          "description": "Code is a unique three-letter identifier for an accounting entity",
+          "type": "string",
+          "x-go-name": "Code"
+        },
+        "income_account": {
+          "description": "IncomeAccount is the account use for income transactions. Only visible to admins.",
+          "type": "string",
+          "x-go-name": "IncomeAccount"
+        },
+        "name": {
+          "description": "Name is a succinct description of the entity code.",
+          "type": "string",
+          "x-go-name": "Name"
+        },
+        "parent_entity": {
+          "description": "ParentEntity is the parent entity code for grouping in reports. Only visible to admins.",
+          "type": "string",
+          "x-go-name": "ParentEntity"
+        }
+      },
+      "x-go-package": "github.com/silinternational/cover-api/api"
+    },
+    "EntityCodeInput": {
+      "type": "object",
+      "properties": {
+        "active": {
+          "description": "Active set to true allows it to be displayed in the selection list for policies. Only visible to admins.",
+          "type": "boolean",
+          "x-go-name": "Active"
+        },
+        "income_account": {
+          "description": "IncomeAccount is the account use for income transactions. Only visible to admins.",
+          "type": "string",
+          "x-go-name": "IncomeAccount"
+        },
+        "name": {
+          "description": "Name is a succinct description of the entity code.",
+          "type": "string",
+          "x-go-name": "Name"
+        },
+        "parent_entity": {
+          "description": "ParentEntity is the parent entity code for grouping in reports. Only visible to admins.",
+          "type": "string",
+          "x-go-name": "ParentEntity"
+        }
+      },
+      "x-go-package": "github.com/silinternational/cover-api/api"
+    },
+    "EntityCodes": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/EntityCode"
+      },
+      "x-go-package": "github.com/silinternational/cover-api/api"
+    },
+    "ErrorKey": {
+      "type": "string",
+      "x-go-package": "github.com/silinternational/cover-api/api"
+    },
+    "File": {
+      "description": "If the URL expiration time passes, a new query will refresh\nthe URL and the URL expiration time.",
+      "type": "object",
+      "title": "File metadata for images and other supported file types.",
+      "properties": {
+        "content_type": {
+          "description": "MIME content type, limited to 255 characters, e.g. 'image/jpeg'",
+          "type": "string",
+          "x-go-name": "ContentType"
+        },
+        "created_by_id": {
+          "description": "ID of file creator / owner",
+          "type": "string",
+          "format": "uuid4",
+          "x-go-name": "CreatedByID"
+        },
+        "id": {
+          "description": "unique identifier for the File object",
+          "type": "string",
+          "format": "uuid4",
+          "x-go-name": "ID"
+        },
+        "name": {
+          "description": "filename with extension, limited to 255 characters, e.g. `image.jpg`",
+          "type": "string",
+          "x-go-name": "Name"
+        },
+        "size": {
+          "description": "file size in bytes",
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "Size"
+        },
+        "url": {
+          "description": "file content can be loaded from the given URL if the expiration time has not passed, limited to 1,024 characters",
+          "type": "string",
+          "x-go-name": "URL"
+        },
+        "url_expiration": {
+          "description": "expiration time of the URL, re-issue the API request to get a new URL and expiration time",
+          "type": "string",
+          "format": "date-time",
+          "x-go-name": "URLExpiration"
+        }
+      },
+      "x-go-package": "github.com/silinternational/cover-api/api"
+    },
+    "Item": {
+      "description": "Item represents a single item on a policy",
+      "type": "object",
+      "properties": {
+        "accountable_person": {
+          "$ref": "#/definitions/AccountablePerson"
+        },
+        "annual_premium": {
+          "$ref": "#/definitions/Currency"
+        },
+        "can_be_deleted": {
+          "description": "Can the item be deleted? Set to false if the item is in a state that prevents it from being deleted.",
+          "type": "boolean",
+          "x-go-name": "CanBeDeleted"
+        },
+        "can_be_updated": {
+          "description": "Can the item be updated? Set to false if there is an active claim for the item.",
+          "type": "boolean",
+          "x-go-name": "CanBeUpdated"
+        },
+        "category": {
+          "$ref": "#/definitions/ItemCategory"
+        },
+        "country": {
+          "description": "country where item is located",
+          "type": "string",
+          "x-go-name": "Country"
+        },
+        "coverage_amount": {
+          "description": "coverage amount (0.01 USD)",
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "CoverageAmount"
+        },
+        "coverage_end_date": {
+          "description": "date (yyyy-mm-dd) of item's coverage end date",
+          "type": "string",
+          "format": "date-time",
+          "x-go-name": "CoverageEndDate"
+        },
+        "coverage_start_date": {
+          "description": "date (yyyy-mm-dd) of item's coverage start date",
+          "type": "string",
+          "x-go-name": "CoverageStartDate"
+        },
+        "coverage_status": {
+          "$ref": "#/definitions/ItemCoverageStatus"
+        },
+        "created_at": {
+          "description": "The time the item was created",
+          "type": "string",
+          "format": "date-time",
+          "x-go-name": "CreatedAt"
+        },
+        "description": {
+          "description": "item description",
+          "type": "string",
+          "x-go-name": "Description"
+        },
+        "id": {
+          "description": "unique ID",
+          "type": "string",
+          "format": "uuid4",
+          "x-go-name": "ID"
+        },
+        "in_storage": {
+          "description": "is item in storage?",
+          "type": "boolean",
+          "x-go-name": "InStorage"
+        },
+        "make": {
+          "description": "make (manufacturer)",
+          "type": "string",
+          "x-go-name": "Make"
+        },
+        "model": {
+          "description": "model",
+          "type": "string",
+          "x-go-name": "Model"
+        },
+        "name": {
+          "type": "string",
+          "x-go-name": "Name"
+        },
+        "policy_id": {
+          "description": "policy ID",
+          "type": "string",
+          "format": "uuid4",
+          "x-go-name": "PolicyID"
+        },
+        "prorated_annual_premium": {
+          "$ref": "#/definitions/Currency"
+        },
+        "risk_category": {
+          "$ref": "#/definitions/RiskCategory"
+        },
+        "serial_number": {
+          "description": "serial number",
+          "type": "string",
+          "x-go-name": "SerialNumber"
+        },
+        "status_change": {
+          "description": "how the status changed most recently (for the stewards dashboard)",
+          "type": "string",
+          "x-go-name": "StatusChange"
+        },
+        "status_reason": {
+          "description": "message from a reviewer detailing the revisions needed",
+          "type": "string",
+          "x-go-name": "StatusReason"
+        },
+        "updated_at": {
+          "description": "The time the item was last updated",
+          "type": "string",
+          "format": "date-time",
+          "x-go-name": "UpdatedAt"
+        }
+      },
+      "x-go-package": "github.com/silinternational/cover-api/api"
+    },
+    "ItemCategories": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/ItemCategory"
+      },
+      "x-go-package": "github.com/silinternational/cover-api/api"
+    },
+    "ItemCategory": {
+      "type": "object",
+      "properties": {
+        "created_at": {
+          "description": "date-time created",
+          "type": "string",
+          "format": "date-time",
+          "x-go-name": "CreatedAt"
+        },
+        "help_text": {
+          "description": "help text",
+          "type": "string",
+          "x-go-name": "HelpText"
+        },
+        "id": {
+          "description": "unique ID",
+          "type": "string",
+          "format": "uuid4",
+          "x-go-name": "ID"
+        },
+        "name": {
+          "description": "name",
+          "type": "string",
+          "x-go-name": "Name"
+        },
+        "require_make_model": {
+          "description": "whether make and model are required in order for item coverage to be auto approved",
+          "type": "boolean",
+          "x-go-name": "RequireMakeModel"
+        },
+        "risk_category": {
+          "$ref": "#/definitions/RiskCategory"
+        },
+        "updated_at": {
+          "description": "date-time last updated",
+          "type": "string",
+          "format": "date-time",
+          "x-go-name": "UpdatedAt"
+        }
+      },
+      "x-go-package": "github.com/silinternational/cover-api/api"
+    },
+    "ItemCategoryStatus": {
+      "description": "may be one of: Draft, Enabled, Deprecated, Disabled",
+      "type": "string",
+      "title": "ItemCategoryStatus",
+      "x-go-package": "github.com/silinternational/cover-api/api"
+    },
+    "ItemCoverageStatus": {
+      "description": "may be one of: Draft, Pending, Revision, Approved, Denied, Inactive",
+      "type": "string",
+      "title": "ItemCoverageStatus",
+      "x-go-package": "github.com/silinternational/cover-api/api"
+    },
+    "ItemCreate": {
+      "description": "ItemCreate represents payload for adding an item",
+      "type": "object",
+      "properties": {
+        "accountable_person_id": {
+          "description": "Accountable person ID. Can be either a policy dependent ID or a user ID",
+          "type": "string",
+          "format": "uuid4",
+          "x-go-name": "AccountablePersonID"
+        },
+        "category_id": {
+          "description": "category ID",
+          "type": "string",
+          "format": "uuid4",
+          "x-go-name": "CategoryID"
+        },
+        "country": {
+          "description": "country where item is located",
+          "type": "string",
+          "x-go-name": "Country"
+        },
+        "coverage_amount": {
+          "description": "coverage amount (0.01 USD)",
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "CoverageAmount"
+        },
+        "coverage_end_date": {
+          "description": "date (yyyy-mm-dd) of item's coverage end date, optional",
+          "type": "string",
+          "format": "date-time",
+          "x-go-name": "CoverageEndDate"
+        },
+        "coverage_start_date": {
+          "description": "date (yyyy-mm-dd) of item's coverage start date",
+          "type": "string",
+          "x-go-name": "CoverageStartDate"
+        },
+        "coverage_status": {
+          "$ref": "#/definitions/ItemCoverageStatus"
+        },
+        "description": {
+          "description": "item description",
+          "type": "string",
+          "x-go-name": "Description"
+        },
+        "in_storage": {
+          "description": "is item in storage?",
+          "type": "boolean",
+          "x-go-name": "InStorage"
+        },
+        "make": {
+          "description": "make (manufacturer)",
+          "type": "string",
+          "x-go-name": "Make"
+        },
+        "model": {
+          "description": "model",
+          "type": "string",
+          "x-go-name": "Model"
+        },
+        "name": {
+          "description": "name",
+          "type": "string",
+          "x-go-name": "Name"
+        },
+        "risk_category_id": {
+          "description": "risk category ID, should only be set if the user has adequate permissions to override the risk category\nassigned to the item's category",
+          "type": "string",
+          "format": "uuid4",
+          "x-go-name": "RiskCategoryID"
+        },
+        "serial_number": {
+          "description": "serial number",
+          "type": "string",
+          "x-go-name": "SerialNumber"
+        }
+      },
+      "x-go-package": "github.com/silinternational/cover-api/api"
+    },
+    "ItemStatusInput": {
+      "type": "object",
+      "properties": {
+        "status_reason": {
+          "description": "message from a reviewer detailing the revisions needed or the reason for denial",
+          "type": "string",
+          "x-go-name": "StatusReason"
+        }
+      },
+      "x-go-package": "github.com/silinternational/cover-api/api"
+    },
+    "ItemUpdate": {
+      "description": "ItemUpdate represents payload for updating an item",
+      "type": "object",
+      "properties": {
+        "accountable_person_id": {
+          "description": "Accountable person ID. Can be either a policy dependent ID or a user ID",
+          "type": "string",
+          "format": "uuid4",
+          "x-go-name": "AccountablePersonID"
+        },
+        "category_id": {
+          "description": "category ID",
+          "type": "string",
+          "format": "uuid4",
+          "x-go-name": "CategoryID"
+        },
+        "country": {
+          "description": "country where item is located",
+          "type": "string",
+          "x-go-name": "Country"
+        },
+        "coverage_amount": {
+          "description": "coverage amount (0.01 USD)",
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "CoverageAmount"
+        },
+        "description": {
+          "description": "item description",
+          "type": "string",
+          "x-go-name": "Description"
+        },
+        "in_storage": {
+          "description": "is item in storage?",
+          "type": "boolean",
+          "x-go-name": "InStorage"
+        },
+        "make": {
+          "description": "make (manufacturer)",
+          "type": "string",
+          "x-go-name": "Make"
+        },
+        "model": {
+          "description": "model",
+          "type": "string",
+          "x-go-name": "Model"
+        },
+        "name": {
+          "description": "name",
+          "type": "string",
+          "x-go-name": "Name"
+        },
+        "risk_category_id": {
+          "description": "risk category ID, should only be set if the user has adequate permissions to override the risk category\nassigned to the item's category",
+          "type": "string",
+          "format": "uuid4",
+          "x-go-name": "RiskCategoryID"
+        },
+        "serial_number": {
+          "description": "serial number",
+          "type": "string",
+          "x-go-name": "SerialNumber"
+        }
+      },
+      "x-go-package": "github.com/silinternational/cover-api/api"
+    },
+    "Items": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/Item"
+      },
+      "x-go-package": "github.com/silinternational/cover-api/api"
+    },
+    "LedgerEntries": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/LedgerEntry"
+      },
+      "x-go-package": "github.com/silinternational/cover-api/api"
+    },
+    "LedgerEntry": {
+      "type": "object",
+      "properties": {
+        "account_number": {
+          "type": "string",
+          "x-go-name": "AccountNumber"
+        },
+        "amount": {
+          "$ref": "#/definitions/Currency"
+        },
+        "claim_id": {
+          "description": "claim ID",
+          "type": "string",
+          "format": "uuid4",
+          "x-go-name": "ClaimID"
+        },
+        "cost_center": {
+          "type": "string",
+          "x-go-name": "CostCenter"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time",
+          "x-go-name": "CreatedAt"
+        },
+        "date_entered": {
+          "description": "date entered into accounting system",
+          "type": "string",
+          "format": "date-time",
+          "x-go-name": "DateEntered"
+        },
+        "date_submitted": {
+          "description": "date added to ledger",
+          "type": "string",
+          "format": "date-time",
+          "x-go-name": "DateSubmitted"
+        },
+        "entity_code": {
+          "type": "string",
+          "x-go-name": "EntityCode"
+        },
+        "household_id": {
+          "type": "string",
+          "x-go-name": "HouseholdID"
+        },
+        "id": {
+          "description": "unique ID",
+          "type": "string",
+          "format": "uuid4",
+          "x-go-name": "ID"
+        },
+        "income_account": {
+          "type": "string",
+          "x-go-name": "IncomeAccount"
+        },
+        "item_id": {
+          "description": "item ID",
+          "type": "string",
+          "format": "uuid4",
+          "x-go-name": "ItemID"
+        },
+        "name": {
+          "description": "name of accountable person if available",
+          "type": "string",
+          "x-go-name": "Name"
+        },
+        "policy_id": {
+          "description": "policy ID",
+          "type": "string",
+          "format": "uuid4",
+          "x-go-name": "PolicyID"
+        },
+        "policy_name": {
+          "type": "string",
+          "x-go-name": "PolicyName"
+        },
+        "policy_type": {
+          "$ref": "#/definitions/PolicyType"
+        },
+        "risk_category_cc": {
+          "type": "string",
+          "x-go-name": "RiskCategoryCC"
+        },
+        "risk_category_name": {
+          "type": "string",
+          "x-go-name": "RiskCategoryName"
+        },
+        "type": {
+          "$ref": "#/definitions/LedgerEntryType"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time",
+          "x-go-name": "UpdatedAt"
+        }
+      },
+      "x-go-package": "github.com/silinternational/cover-api/api"
+    },
+    "LedgerEntryType": {
+      "type": "string",
+      "x-go-package": "github.com/silinternational/cover-api/api"
+    },
+    "LedgerReport": {
+      "type": "object",
+      "properties": {
+        "created_at": {
+          "type": "string",
+          "format": "date-time",
+          "x-go-name": "CreatedAt"
+        },
+        "date": {
+          "type": "string",
+          "format": "date-time",
+          "x-go-name": "Date"
+        },
+        "file": {
+          "$ref": "#/definitions/File"
+        },
+        "id": {
+          "type": "string",
+          "format": "uuid",
+          "x-go-name": "ID"
+        },
+        "is_cleared": {
+          "type": "boolean",
+          "x-go-name": "IsCleared"
+        },
+        "transaction_count": {
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "TransactionCount"
+        },
+        "type": {
+          "type": "string",
+          "x-go-name": "Type"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time",
+          "x-go-name": "UpdatedAt"
+        }
+      },
+      "x-go-package": "github.com/silinternational/cover-api/api"
+    },
+    "LedgerReportCreateInput": {
+      "type": "object",
+      "properties": {
+        "date": {
+          "description": "Report date, e.g. return the ledger entries prior to the given date. Details vary by the report type.",
+          "type": "string",
+          "x-go-name": "Date"
+        },
+        "type": {
+          "description": "Report types:\n+ `monthly` - Return all ledger entries not yet reconciled, up to the beginning of the given date.\n+ `annual` - Return the policy renewal entries for the year of the given date.",
+          "type": "string",
+          "x-go-name": "Type"
+        }
+      },
+      "x-go-package": "github.com/silinternational/cover-api/api"
+    },
+    "LedgerReports": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/LedgerReport"
+      },
+      "x-go-package": "github.com/silinternational/cover-api/api"
+    },
+    "LedgerTable": {
+      "type": "object",
+      "properties": {
+        "coverage_value": {
+          "$ref": "#/definitions/Currency"
+        },
+        "entries": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/LedgerTableEntry"
+          },
+          "x-go-name": "Entries"
+        },
+        "last_changed": {
+          "type": "string",
+          "format": "date-time",
+          "x-go-name": "LastChanged"
+        },
+        "net_transactions": {
+          "$ref": "#/definitions/Currency"
+        },
+        "payout_total": {
+          "$ref": "#/definitions/Currency"
+        },
+        "premium_rate": {
+          "type": "number",
+          "format": "double",
+          "x-go-name": "PremiumRate"
+        },
+        "premium_total": {
+          "$ref": "#/definitions/Currency"
+        },
+        "report_month": {
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "ReportMonth"
+        },
+        "report_year": {
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "ReportYear"
+        }
+      },
+      "x-go-package": "github.com/silinternational/cover-api/api"
+    },
+    "LedgerTableEntry": {
+      "type": "object",
+      "properties": {
+        "assigned_to": {
+          "type": "string",
+          "x-go-name": "AssignedTo"
+        },
+        "date": {
+          "type": "string",
+          "format": "date-time",
+          "x-go-name": "Date"
+        },
+        "item_name": {
+          "type": "string",
+          "x-go-name": "ItemName"
+        },
+        "location": {
+          "type": "string",
+          "x-go-name": "Location"
+        },
+        "status_after": {
+          "type": "string",
+          "x-go-name": "StatusAfter"
+        },
+        "status_before": {
+          "type": "string",
+          "x-go-name": "StatusBefore"
+        },
+        "type": {
+          "type": "string",
+          "x-go-name": "Type"
+        },
+        "value": {
+          "$ref": "#/definitions/Currency"
+        }
+      },
+      "x-go-package": "github.com/silinternational/cover-api/api"
+    },
+    "ListResponse": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "description": "Data containing the relevant list type",
+          "x-go-name": "Data"
+        },
+        "meta": {
+          "$ref": "#/definitions/Meta"
+        }
+      },
+      "x-go-package": "github.com/silinternational/cover-api/api"
+    },
+    "Meta": {
+      "description": "TODO: implement Meta type to provide pagination properties",
+      "type": "object",
+      "properties": {
+        "current_entries_size": {
+          "description": "Total records returns, will be \u003c= PerPage",
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "CurrentEntriesSize"
+        },
+        "offset": {
+          "description": "Page * PerPage (ex: 2 * 20, Offset == 40)",
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "Offset"
+        },
+        "page": {
+          "description": "Current page you're on",
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "Page"
+        },
+        "per_page": {
+          "description": "Number of results you want per page",
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "PerPage"
+        },
+        "total_entries_size": {
+          "description": "Total potential records matching the query",
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "TotalEntriesSize"
+        },
+        "total_pages": {
+          "description": "Total pages",
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "TotalPages"
+        }
+      },
+      "x-go-package": "github.com/silinternational/cover-api/api"
+    },
+    "Paginator": {
+      "description": "Paginator is a type used to represent the pagination of records\nfrom the database.",
+      "type": "object",
+      "properties": {
+        "current_entries_size": {
+          "description": "Total records returns, will be \u003c= PerPage",
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "CurrentEntriesSize"
+        },
+        "offset": {
+          "description": "Page * PerPage (ex: 2 * 20, Offset == 40)",
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "Offset"
+        },
+        "page": {
+          "description": "Current page you're on",
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "Page"
+        },
+        "per_page": {
+          "description": "Number of results you want per page",
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "PerPage"
+        },
+        "total_entries_size": {
+          "description": "Total potential records matching the query",
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "TotalEntriesSize"
+        },
+        "total_pages": {
+          "description": "Total pages",
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "TotalPages"
+        }
+      },
+      "x-go-package": "github.com/gobuffalo/pop/v6"
+    },
+    "PayoutOption": {
+      "description": "may be one of: Repair, Replacement, FMV, FixedFraction",
+      "type": "string",
+      "title": "PayoutOption",
+      "x-go-package": "github.com/silinternational/cover-api/api"
+    },
+    "Policies": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/Policy"
+      },
+      "x-go-package": "github.com/silinternational/cover-api/api"
+    },
+    "Policy": {
+      "description": "Policy represents a single policy, either household or team",
+      "type": "object",
+      "properties": {
+        "account": {
+          "description": "Account code for billing",
+          "type": "string",
+          "x-go-name": "Account"
+        },
+        "account_detail": {
+          "description": "AccountDetail allows for optional detail to route transactions. e.g.: \"Nigeria Grp Off-Ins\"",
+          "type": "string",
+          "x-go-name": "AccountDetail"
+        },
+        "claims": {
+          "$ref": "#/definitions/Claims"
+        },
+        "cost_center": {
+          "description": "Cost center for billing",
+          "type": "string",
+          "x-go-name": "CostCenter"
+        },
+        "created_at": {
+          "description": "The time the policy was created",
+          "type": "string",
+          "format": "date-time",
+          "x-go-name": "CreatedAt"
+        },
+        "dependents": {
+          "$ref": "#/definitions/PolicyDependents"
+        },
+        "entity_code": {
+          "$ref": "#/definitions/EntityCode"
+        },
+        "household_id": {
+          "description": "Household ID for billing",
+          "type": "string",
+          "x-go-name": "HouseholdID"
+        },
+        "id": {
+          "description": "unique ID",
+          "type": "string",
+          "format": "uuid4",
+          "x-go-name": "ID"
+        },
+        "invites": {
+          "$ref": "#/definitions/PolicyUserInvites"
+        },
+        "ledger_reports": {
+          "$ref": "#/definitions/LedgerReports"
+        },
+        "members": {
+          "$ref": "#/definitions/PolicyMembers"
+        },
+        "name": {
+          "description": "policy name",
+          "type": "string",
+          "x-go-name": "Name"
+        },
+        "strikes": {
+          "$ref": "#/definitions/Strikes"
+        },
+        "type": {
+          "$ref": "#/definitions/PolicyType"
+        },
+        "updated_at": {
+          "description": "The time the policy was last updated",
+          "type": "string",
+          "format": "date-time",
+          "x-go-name": "UpdatedAt"
+        }
+      },
+      "x-go-package": "github.com/silinternational/cover-api/api"
+    },
+    "PolicyCreate": {
+      "description": "PolicyCreate represents payload for creating a policy",
+      "type": "object",
+      "properties": {
+        "account": {
+          "description": "Account code for billing. Only required/allowed on Team type policies.",
+          "type": "string",
+          "x-go-name": "Account"
+        },
+        "account_detail": {
+          "description": "AccountDetail allows for optional detail to route transactions. e.g.: \"Nigeria Grp Off-Ins\"",
+          "type": "string",
+          "x-go-name": "AccountDetail"
+        },
+        "cost_center": {
+          "description": "Cost center for billing. Only required/allowed on Team type policies.",
+          "type": "string",
+          "x-go-name": "CostCenter"
+        },
+        "entity_code": {
+          "description": "Entity code for billing. Only required/allowed on Team type policies.",
+          "type": "string",
+          "x-go-name": "EntityCode"
+        },
+        "name": {
+          "description": "policy name",
+          "type": "string",
+          "x-go-name": "Name"
+        }
+      },
+      "x-go-package": "github.com/silinternational/cover-api/api"
+    },
+    "PolicyDependent": {
+      "type": "object",
+      "properties": {
+        "child_birth_year": {
+          "description": "birth year of child",
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "ChildBirthYear"
+        },
+        "country": {
+          "description": "dependent location",
+          "type": "string",
+          "x-go-name": "Country"
+        },
+        "id": {
+          "description": "unique ID",
+          "type": "string",
+          "format": "uuid4",
+          "x-go-name": "ID"
+        },
+        "name": {
+          "description": "dependent name",
+          "type": "string",
+          "x-go-name": "Name"
+        },
+        "relationship": {
+          "$ref": "#/definitions/PolicyDependentRelationship"
+        }
+      },
+      "x-go-package": "github.com/silinternational/cover-api/api"
+    },
+    "PolicyDependentInput": {
+      "type": "object",
+      "properties": {
+        "child_birth_year": {
+          "description": "birth year of child",
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "ChildBirthYear"
+        },
+        "country": {
+          "description": "dependent location",
+          "type": "string",
+          "x-go-name": "Country"
+        },
+        "name": {
+          "description": "dependent name",
+          "type": "string",
+          "x-go-name": "Name"
+        },
+        "relationship": {
+          "$ref": "#/definitions/PolicyDependentRelationship"
+        }
+      },
+      "x-go-package": "github.com/silinternational/cover-api/api"
+    },
+    "PolicyDependentRelationship": {
+      "description": "may be one of: Spouse, Child",
+      "type": "string",
+      "title": "PolicyDependentRelationship",
+      "x-go-package": "github.com/silinternational/cover-api/api"
+    },
+    "PolicyDependents": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/PolicyDependent"
+      },
+      "x-go-package": "github.com/silinternational/cover-api/api"
+    },
+    "PolicyLedgerReportCreateInput": {
+      "type": "object",
+      "properties": {
+        "month": {
+          "description": "Report month, e.g. return the policy's ledger entries entered in that month and year.\nThe month and year (together) must not be in the future.\nFor annual reports only, the month may be 0.",
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "Month"
+        },
+        "type": {
+          "description": "Report types:\n+ `Monthly` - Return all ledger entries not yet reconciled, up to the beginning of the given date.\n+ `Annual` - Return the policy renewal entries for the year of the given date.",
+          "type": "string",
+          "x-go-name": "Type"
+        },
+        "year": {
+          "description": "Report year, e.g. return the policy's ledger entries entered in that year.",
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "Year"
+        }
+      },
+      "x-go-package": "github.com/silinternational/cover-api/api"
+    },
+    "PolicyMember": {
+      "type": "object",
+      "properties": {
+        "country": {
+          "description": "a country",
+          "type": "string",
+          "x-go-name": "Country"
+        },
+        "email": {
+          "description": "email address",
+          "type": "string",
+          "x-go-name": "Email"
+        },
+        "email_override": {
+          "description": "email address",
+          "type": "string",
+          "x-go-name": "EmailOverride"
+        },
+        "first_name": {
+          "description": "first name",
+          "type": "string",
+          "x-go-name": "FirstName"
+        },
+        "id": {
+          "description": "unique ID",
+          "type": "string",
+          "format": "uuid4",
+          "x-go-name": "ID"
+        },
+        "last_login_utc": {
+          "description": "last login time (UTC)",
+          "type": "string",
+          "format": "date-time",
+          "x-go-name": "LastLoginUTC"
+        },
+        "last_name": {
+          "description": "last name",
+          "type": "string",
+          "x-go-name": "LastName"
+        },
+        "policy_user_id": {
+          "description": "ID of the PolicyUser object that is related to this policy and user",
+          "type": "string",
+          "format": "uuid4",
+          "x-go-name": "PolicyUserID"
+        }
+      },
+      "x-go-package": "github.com/silinternational/cover-api/api"
+    },
+    "PolicyMembers": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/PolicyMember"
+      },
+      "x-go-package": "github.com/silinternational/cover-api/api"
+    },
+    "PolicyType": {
+      "description": "may be one of: Household, Team",
+      "type": "string",
+      "title": "PolicyType",
+      "x-go-package": "github.com/silinternational/cover-api/api"
+    },
+    "PolicyUpdate": {
+      "description": "PolicyUpdate represents payload for updating a policy",
+      "type": "object",
+      "properties": {
+        "account": {
+          "description": "Account code for billing. Only required/allowed on Team type policies.",
+          "type": "string",
+          "x-go-name": "Account"
+        },
+        "account_detail": {
+          "description": "AccountDetail allows for optional detail to route transactions. e.g.: \"Nigeria Grp Off-Ins\"",
+          "type": "string",
+          "x-go-name": "AccountDetail"
+        },
+        "cost_center": {
+          "description": "Cost center for billing. Only required/allowed on Team type policies.",
+          "type": "string",
+          "x-go-name": "CostCenter"
+        },
+        "entity_code": {
+          "description": "Entity code for billing. Only required/allowed on Team type policies.",
+          "type": "string",
+          "x-go-name": "EntityCode"
+        },
+        "household_id": {
+          "description": "Household ID for billing. Only required/allowed on Household type policies.",
+          "type": "string",
+          "x-go-name": "HouseholdID"
+        },
+        "name": {
+          "description": "policy name",
+          "type": "string",
+          "x-go-name": "Name"
+        }
+      },
+      "x-go-package": "github.com/silinternational/cover-api/api"
+    },
+    "PolicyUserInvite": {
+      "type": "object",
+      "properties": {
+        "email": {
+          "description": "invitee's email",
+          "type": "string",
+          "x-go-name": "Email"
+        },
+        "email_sent_at": {
+          "description": "date and time when invite email was sent (omitted if empty)",
+          "type": "string",
+          "format": "date-time",
+          "x-go-name": "EmailSentAt"
+        },
+        "name": {
+          "description": "invitee's name",
+          "type": "string",
+          "x-go-name": "Name"
+        }
+      },
+      "x-go-package": "github.com/silinternational/cover-api/api"
+    },
+    "PolicyUserInviteCreate": {
+      "description": "input model for creating policy user invites",
+      "type": "object",
+      "title": "PolicyUserInviteCreate",
+      "required": [
+        "email",
+        "name"
+      ],
+      "properties": {
+        "email": {
+          "description": "invitee's email address",
+          "type": "string",
+          "x-go-name": "Email"
+        },
+        "inviter_message": {
+          "description": "A personal message from inviter to include in invite email",
+          "type": "string",
+          "x-go-name": "InviterMessage"
+        },
+        "name": {
+          "description": "invitee's name",
+          "type": "string",
+          "x-go-name": "Name"
+        }
+      },
+      "x-go-package": "github.com/silinternational/cover-api/api"
+    },
+    "PolicyUserInvites": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/PolicyUserInvite"
+      },
+      "x-go-package": "github.com/silinternational/cover-api/api"
+    },
+    "RecentClaim": {
+      "type": "object",
+      "properties": {
+        "Claim": {
+          "$ref": "#/definitions/Claim"
+        },
+        "StatusUpdatedAt": {
+          "description": "The time the claim had its status changed",
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "x-go-package": "github.com/silinternational/cover-api/api"
+    },
+    "RecentClaims": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/RecentClaim"
+      },
+      "x-go-package": "github.com/silinternational/cover-api/api"
+    },
+    "RecentItem": {
+      "type": "object",
+      "properties": {
+        "Item": {
+          "$ref": "#/definitions/Item"
+        },
+        "StatusUpdatedAt": {
+          "description": "The time the item had its coverage_status changed",
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "x-go-package": "github.com/silinternational/cover-api/api"
+    },
+    "RecentItems": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/RecentItem"
+      },
+      "x-go-package": "github.com/silinternational/cover-api/api"
+    },
+    "RecentObjects": {
+      "type": "object",
+      "properties": {
+        "Claims": {
+          "$ref": "#/definitions/RecentClaims"
+        },
+        "Items": {
+          "$ref": "#/definitions/RecentItems"
+        }
+      },
+      "x-go-package": "github.com/silinternational/cover-api/api"
+    },
+    "RepairResult": {
+      "type": "object",
+      "properties": {
+        "items": {
+          "$ref": "#/definitions/Items"
+        },
+        "repair_type": {
+          "type": "string",
+          "x-go-name": "RepairType"
+        }
+      },
+      "x-go-package": "github.com/silinternational/cover-api/api"
+    },
+    "RepairRunInput": {
+      "type": "object",
+      "properties": {
+        "date": {
+          "type": "string",
+          "x-go-name": "Date"
+        },
+        "repair_type": {
+          "type": "string",
+          "x-go-name": "RepairType"
+        }
+      },
+      "x-go-package": "github.com/silinternational/cover-api/api"
+    },
+    "RiskCategories": {
+      "description": "RiskCategories is a slice of RiskCategory objects",
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/RiskCategory"
+      },
+      "x-go-package": "github.com/silinternational/cover-api/api"
+    },
+    "RiskCategory": {
+      "description": "RiskCategory represents an item category's risk category",
+      "type": "object",
+      "properties": {
+        "cost_center": {
+          "description": "financial cost center code used for crediting the transactions that use this risk category",
+          "type": "string",
+          "x-go-name": "CostCenter"
+        },
+        "created_at": {
+          "description": "created date",
+          "type": "string",
+          "format": "date-time",
+          "x-go-name": "CreatedAt"
+        },
+        "id": {
+          "description": "unique ID",
+          "type": "string",
+          "format": "uuid4",
+          "x-go-name": "ID"
+        },
+        "name": {
+          "description": "risk category name",
+          "type": "string",
+          "x-go-name": "Name"
+        },
+        "policy_max": {
+          "description": "maximum coverage per policy (0.01 USD)",
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "PolicyMax"
+        },
+        "updated_at": {
+          "description": "updated date",
+          "type": "string",
+          "format": "date-time",
+          "x-go-name": "UpdatedAt"
+        }
+      },
+      "x-go-package": "github.com/silinternational/cover-api/api"
+    },
+    "Strike": {
+      "type": "object",
+      "properties": {
+        "created_at": {
+          "description": "The time the strike was created",
+          "type": "string",
+          "format": "date-time",
+          "x-go-name": "CreatedAt"
+        },
+        "description": {
+          "description": "strike description",
+          "type": "string",
+          "x-go-name": "Description"
+        },
+        "id": {
+          "description": "unique ID",
+          "type": "string",
+          "format": "uuid4",
+          "x-go-name": "ID"
+        },
+        "policy_id": {
+          "type": "string",
+          "format": "uuid4",
+          "x-go-name": "PolicyID"
+        },
+        "updated_at": {
+          "description": "The time the strike was updated",
+          "type": "string",
+          "format": "date-time",
+          "x-go-name": "UpdatedAt"
+        }
+      },
+      "x-go-package": "github.com/silinternational/cover-api/api"
+    },
+    "StrikeInput": {
+      "type": "object",
+      "properties": {
+        "description": {
+          "description": "strike description",
+          "type": "string",
+          "x-go-name": "Description"
+        }
+      },
+      "x-go-package": "github.com/silinternational/cover-api/api"
+    },
+    "Strikes": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/Strike"
+      },
+      "x-go-package": "github.com/silinternational/cover-api/api"
+    },
+    "UUID": {
+      "description": "UUID can be used with the standard sql package to represent a\nUUID value that can be NULL in the database",
+      "type": "object",
+      "properties": {
+        "UUID": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "Valid": {
+          "type": "boolean"
+        }
+      },
+      "x-go-package": "github.com/gobuffalo/nulls"
+    },
+    "UploadResponse": {
+      "description": "UploadResponse is a JSON response for the /upload endpoint",
+      "type": "object",
+      "properties": {
+        "content_type": {
+          "type": "string",
+          "x-go-name": "ContentType"
+        },
+        "filename": {
+          "type": "string",
+          "x-go-name": "Name"
+        },
+        "id": {
+          "type": "string",
+          "x-go-name": "ID"
+        },
+        "size": {
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "Size"
+        },
+        "url": {
+          "type": "string",
+          "x-go-name": "URL"
+        }
+      },
+      "x-go-package": "github.com/silinternational/cover-api/actions"
+    },
+    "User": {
+      "description": "app user",
+      "type": "object",
+      "properties": {
+        "app_role": {
+          "description": "role in the application ('User', 'Steward', 'Signator', 'Admin')",
+          "type": "string",
+          "x-go-name": "AppRole"
+        },
+        "country": {
+          "description": "country",
+          "type": "string",
+          "x-go-name": "Country"
+        },
+        "email": {
+          "description": "email address",
+          "type": "string",
+          "x-go-name": "Email"
+        },
+        "email_override": {
+          "description": "email address",
+          "type": "string",
+          "x-go-name": "EmailOverride"
+        },
+        "first_name": {
+          "description": "first name",
+          "type": "string",
+          "x-go-name": "FirstName"
+        },
+        "id": {
+          "description": "unique ID",
+          "type": "string",
+          "format": "uuid4",
+          "x-go-name": "ID"
+        },
+        "last_login_utc": {
+          "description": "last login date and time (UTC)",
+          "type": "string",
+          "format": "date-time",
+          "x-go-name": "LastLoginUTC"
+        },
+        "last_name": {
+          "description": "last name",
+          "type": "string",
+          "x-go-name": "LastName"
+        },
+        "name": {
+          "description": "full name",
+          "type": "string",
+          "x-go-name": "Name"
+        },
+        "photo_file": {
+          "$ref": "#/definitions/File"
+        },
+        "photo_file_id": {
+          "description": "unique id (uuid) for a avatar or photo file",
+          "type": "string",
+          "format": "uuid4",
+          "x-go-name": "PhotoFileID"
+        },
+        "policies": {
+          "$ref": "#/definitions/Policies"
+        }
+      },
+      "x-go-package": "github.com/silinternational/cover-api/api"
+    },
+    "UserFileAttachInput": {
+      "type": "object",
+      "properties": {
+        "file_id": {
+          "description": "File ID to attach to the current user",
+          "type": "string",
+          "format": "uuid4",
+          "x-go-name": "FileID"
+        }
+      },
+      "x-go-package": "github.com/silinternational/cover-api/api"
+    },
+    "UserInput": {
+      "description": "app user update input",
+      "type": "object",
+      "properties": {
+        "country": {
+          "description": "country",
+          "type": "string",
+          "x-go-name": "Country"
+        },
+        "email_override": {
+          "description": "email address",
+          "type": "string",
+          "x-go-name": "EmailOverride"
+        }
+      },
+      "x-go-package": "github.com/silinternational/cover-api/api"
+    },
+    "Users": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/User"
+      },
+      "x-go-package": "github.com/silinternational/cover-api/api"
+    }
+  },
+  "securityDefinitions": {
+    "oauth2": {
+      "type": "oauth2",
+      "flow": "implicit",
+      "authorizationUrl": "/auth/login",
+      "tokenUrl": "/auth/token",
+      "scopes": {
+        "all": "scopes are not used at this time"
+      }
+    }
+  },
+  "security": [
+    {
+      "oauth2": []
+    }
+  ]
+}
