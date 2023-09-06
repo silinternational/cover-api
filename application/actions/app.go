@@ -1,32 +1,31 @@
 // Cover API
 //
-// Terms Of Service:
+//	Terms Of Service:
+//	  there are no TOS at this moment, use at your own risk we take no responsibility
 //
-// there are no TOS at this moment, use at your own risk we take no responsibility
+//	 Schemes: https
+//	 Host: localhost
+//	 BasePath: /
+//	 Version: 0.0.1
+//	 License: MIT http://opensource.org/licenses/MIT
 //
-//  Schemes: https
-//  Host: localhost
-//  BasePath: /
-//  Version: 0.0.1
-//  License: MIT http://opensource.org/licenses/MIT
+//	 Consumes:
+//	 - application/json
 //
-//  Consumes:
-//  - application/json
+//	 Produces:
+//	 - application/json
 //
-//  Produces:
-//  - application/json
+//	 Security:
+//	 - oauth2:
 //
-//  Security:
-//  - oauth2:
-//
-//  SecurityDefinitions:
-//  oauth2:
-//      type: oauth2
-//      authorizationUrl: /auth/login
-//      tokenUrl: /auth/token
-//      scopes:
-//        all: scopes are not used at this time
-//      flow: implicit
+//	 SecurityDefinitions:
+//	 oauth2:
+//	   type: oauth2
+//	   authorizationUrl: /auth/login
+//	   tokenUrl: /auth/token
+//	   flow: implicit
+//	   scopes:
+//	     all: scopes are not used at this time
 //
 // swagger:meta
 package actions

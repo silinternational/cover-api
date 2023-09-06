@@ -26,22 +26,23 @@ type UploadResponse struct {
 }
 
 // swagger:operation POST /upload Files UploadFile
+// UploadFile
 //
 // Upload a new File object
-//
 // ---
-// consumes:
-//   - multipart/form-data
-// parameters:
-//   - name: file
-//     in: formData
-//     type: file
-//     description: file object
-// responses:
-//   '200':
-//     description: uploaded File data
-//     schema:
-//       "$ref": "#/definitions/UploadResponse"
+//
+//	consumes:
+//	  - multipart/form-data
+//	parameters:
+//	  - name: file
+//	    in: formData
+//	    type: file
+//	    description: file object
+//	responses:
+//	  '200':
+//	    description: uploaded File data
+//	    schema:
+//	      "$ref": "#/definitions/UploadResponse"
 func uploadHandler(c buffalo.Context) error {
 	f, err := c.File(fileFieldName)
 	if err != nil {

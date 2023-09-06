@@ -11,28 +11,27 @@ import (
 )
 
 // swagger:operation PUT /strikes/{id} Strikes StrikesUpdate
-//
 // StrikesUpdate
 //
 // update a strike
-//
 // ---
-// parameters:
-//   - name: id
-//     in: path
-//     required: true
-//     description: strike ID
-//   - name: strike input
-//     in: body
-//     description: policy item update object
-//     required: true
-//     schema:
-//       "$ref": "#/definitions/StrikeInput"
-// responses:
-//   '200':
-//     description: updated Strike
-//     schema:
-//       "$ref": "#/definitions/Strike"
+//
+//	parameters:
+//	  - name: id
+//	    in: path
+//	    required: true
+//	    description: strike ID
+//	  - name: strike input
+//	    in: body
+//	    description: policy item update object
+//	    required: true
+//	    schema:
+//	      "$ref": "#/definitions/StrikeInput"
+//	responses:
+//	  '200':
+//	    description: updated Strike
+//	    schema:
+//	      "$ref": "#/definitions/Strike"
 func strikesUpdate(c buffalo.Context) error {
 	strike := getReferencedStrikeFromCtx(c)
 
@@ -52,20 +51,19 @@ func strikesUpdate(c buffalo.Context) error {
 }
 
 // swagger:operation DELETE /strikes/{id} Strikes StrikesDelete
-//
 // StrikesDelete
 //
 // Delete a strike.
-//
 // ---
-// parameters:
-//   - name: id
-//     in: path
-//     required: true
-//     description: item ID
-// responses:
-//   '204':
-//     description: OK but no content in response
+//
+//	parameters:
+//	  - name: id
+//	    in: path
+//	    required: true
+//	    description: item ID
+//	responses:
+//	  '204':
+//	    description: OK but no content in response
 func strikesDelete(c buffalo.Context) error {
 	strike := getReferencedStrikeFromCtx(c)
 

@@ -11,24 +11,23 @@ import (
 )
 
 // swagger:operation GET /policies/{id}/items PolicyItems PolicyItemsList
-//
 // PolicyItemsList
 //
 // gets the data for all the items on a Policy
-//
 // ---
-// parameters:
-//   - name: id
-//     in: path
-//     required: true
-//     description: policy ID
-// responses:
-//   '200':
-//     description: all policy items
-//     schema:
-//       type: array
-//       items:
-//         "$ref": "#/definitions/Item"
+//
+//	parameters:
+//	  - name: id
+//	    in: path
+//	    required: true
+//	    description: policy ID
+//	responses:
+//	  '200':
+//	    description: all policy items
+//	    schema:
+//	      type: array
+//	      items:
+//	        "$ref": "#/definitions/Item"
 func itemsList(c buffalo.Context) error {
 	tx := models.Tx(c)
 
@@ -40,28 +39,27 @@ func itemsList(c buffalo.Context) error {
 }
 
 // swagger:operation POST /policies/{id}/items PolicyItems PolicyItemsCreate
-//
 // PolicyItemsCreate
 //
 // create a policy item
-//
 // ---
-// parameters:
-//   - name: id
-//     in: path
-//     required: true
-//     description: policy ID
-//   - name: policy item create input
-//     in: body
-//     description: policy item create input object
-//     required: true
-//     schema:
-//       "$ref": "#/definitions/ItemCreate"
-// responses:
-//   '200':
-//     description: new Item
-//     schema:
-//       "$ref": "#/definitions/Item"
+//
+//	parameters:
+//	  - name: id
+//	    in: path
+//	    required: true
+//	    description: policy ID
+//	  - name: policy item create input
+//	    in: body
+//	    description: policy item create input object
+//	    required: true
+//	    schema:
+//	      "$ref": "#/definitions/ItemCreate"
+//	responses:
+//	  '200':
+//	    description: new Item
+//	    schema:
+//	      "$ref": "#/definitions/Item"
 func itemsCreate(c buffalo.Context) error {
 	tx := models.Tx(c)
 	policy := getReferencedPolicyFromCtx(c)
@@ -86,28 +84,27 @@ func itemsCreate(c buffalo.Context) error {
 }
 
 // swagger:operation PUT /items/{id} PolicyItems PolicyItemsUpdate
-//
 // PolicyItemsUpdate
 //
 // update a policy item
-//
 // ---
-// parameters:
-//   - name: id
-//     in: path
-//     required: true
-//     description: item ID
-//   - name: policy item update input
-//     in: body
-//     description: policy item update object
-//     required: true
-//     schema:
-//       "$ref": "#/definitions/ItemUpdate"
-// responses:
-//   '200':
-//     description: updated Item
-//     schema:
-//       "$ref": "#/definitions/Item"
+//
+//	parameters:
+//	  - name: id
+//	    in: path
+//	    required: true
+//	    description: item ID
+//	  - name: policy item update input
+//	    in: body
+//	    description: policy item update object
+//	    required: true
+//	    schema:
+//	      "$ref": "#/definitions/ItemUpdate"
+//	responses:
+//	  '200':
+//	    description: updated Item
+//	    schema:
+//	      "$ref": "#/definitions/Item"
 func itemsUpdate(c buffalo.Context) error {
 	tx := models.Tx(c)
 	item := getReferencedItemFromCtx(c)
@@ -151,22 +148,21 @@ func itemsUpdate(c buffalo.Context) error {
 }
 
 // swagger:operation POST /items/{id}/submit PolicyItems PolicyItemsSubmit
-//
 // PolicyItemsSubmit
 //
 // submit a policy item for coverage
-//
 // ---
-// parameters:
-//   - name: id
-//     in: path
-//     required: true
-//     description: item ID
-// responses:
-//   '200':
-//     description: submitted Item
-//     schema:
-//       "$ref": "#/definitions/Item"
+//
+//	parameters:
+//	  - name: id
+//	    in: path
+//	    required: true
+//	    description: item ID
+//	responses:
+//	  '200':
+//	    description: submitted Item
+//	    schema:
+//	      "$ref": "#/definitions/Item"
 func itemsSubmit(c buffalo.Context) error {
 	tx := models.Tx(c)
 	item := getReferencedItemFromCtx(c)
@@ -180,28 +176,27 @@ func itemsSubmit(c buffalo.Context) error {
 }
 
 // swagger:operation POST /items/{id}/revision PolicyItems PolicyItemsRevision
-//
 // PolicyItemsRevision
 //
 // admin requires changes on a policy item
-//
 // ---
-// parameters:
-//   - name: id
-//     in: path
-//     required: true
-//     description: item ID
-//   - name: item revision input
-//     in: body
-//     description: item revision input object
-//     required: true
-//     schema:
-//       "$ref": "#/definitions/ItemStatusInput"
-// responses:
-//   '200':
-//     description: Policy Item
-//     schema:
-//       "$ref": "#/definitions/Item"
+//
+//	parameters:
+//	  - name: id
+//	    in: path
+//	    required: true
+//	    description: item ID
+//	  - name: item revision input
+//	    in: body
+//	    description: item revision input object
+//	    required: true
+//	    schema:
+//	      "$ref": "#/definitions/ItemStatusInput"
+//	responses:
+//	  '200':
+//	    description: Policy Item
+//	    schema:
+//	      "$ref": "#/definitions/Item"
 func itemsRevision(c buffalo.Context) error {
 	tx := models.Tx(c)
 	item := getReferencedItemFromCtx(c)
@@ -220,22 +215,21 @@ func itemsRevision(c buffalo.Context) error {
 }
 
 // swagger:operation POST /items/{id}/approve PolicyItems PolicyItemsApprove
-//
 // PolicyItemsApprove
 //
 // approve coverage on a policy item
-//
 // ---
-// parameters:
-//   - name: id
-//     in: path
-//     required: true
-//     description: item ID
-// responses:
-//   '200':
-//     description: approved Item
-//     schema:
-//       "$ref": "#/definitions/Item"
+//
+//	parameters:
+//	  - name: id
+//	    in: path
+//	    required: true
+//	    description: item ID
+//	responses:
+//	  '200':
+//	    description: approved Item
+//	    schema:
+//	      "$ref": "#/definitions/Item"
 func itemsApprove(c buffalo.Context) error {
 	tx := models.Tx(c)
 	item := getReferencedItemFromCtx(c)
@@ -249,28 +243,27 @@ func itemsApprove(c buffalo.Context) error {
 }
 
 // swagger:operation POST /items/{id}/deny PolicyItems PolicyItemsDeny
-//
 // PolicyItemsDeny
 //
 // deny coverage on a policy item
-//
 // ---
-// parameters:
-//   - name: id
-//     in: path
-//     required: true
-//     description: item ID
-//   - name: item denial input
-//     in: body
-//     description: item denial input object
-//     required: true
-//     schema:
-//       "$ref": "#/definitions/ItemStatusInput"
-// responses:
-//   '200':
-//     description: denied Item
-//     schema:
-//       "$ref": "#/definitions/Item"
+//
+//	parameters:
+//	  - name: id
+//	    in: path
+//	    required: true
+//	    description: item ID
+//	  - name: item denial input
+//	    in: body
+//	    description: item denial input object
+//	    required: true
+//	    schema:
+//	      "$ref": "#/definitions/ItemStatusInput"
+//	responses:
+//	  '200':
+//	    description: denied Item
+//	    schema:
+//	      "$ref": "#/definitions/Item"
 func itemsDeny(c buffalo.Context) error {
 	tx := models.Tx(c)
 	item := getReferencedItemFromCtx(c)
@@ -289,21 +282,19 @@ func itemsDeny(c buffalo.Context) error {
 }
 
 // swagger:operation DELETE /items/{id} PolicyItems PolicyItemsRemove
-//
 // PolicyItemsRemove
 //
-// Delete a policy item if it is less than 72 hours old and has no associations.
-//   Otherwise, inactivate coverage on it.
-//
+// Delete a policy item if it is less than 72 hours old and has no associations. Otherwise, inactivate coverage on it.
 // ---
-// parameters:
-//   - name: id
-//     in: path
-//     required: true
-//     description: item ID
-// responses:
-//   '204':
-//     description: OK but no content in response
+//
+//	parameters:
+//	  - name: id
+//	    in: path
+//	    required: true
+//	    description: item ID
+//	responses:
+//	  '204':
+//	    description: OK but no content in response
 func itemsRemove(c buffalo.Context) error {
 	item := getReferencedItemFromCtx(c)
 
