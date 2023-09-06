@@ -18,7 +18,7 @@ import (
 
 var r *render.Engine
 
-func init() {
+func Init() {
 	r = render.New(render.Options{
 		DefaultContentType: domain.ContentJson,
 	})

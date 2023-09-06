@@ -161,7 +161,7 @@ type FieldUpdate struct {
 	NewValue  string
 }
 
-func init() {
+func Init() {
 	var err error
 	env := domain.Env.GoEnv
 	DB, err = pop.Connect(env)

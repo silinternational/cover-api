@@ -212,7 +212,7 @@ var Env struct {
 	SandboxEmailAddress string `default:"" split_words:"true"`
 }
 
-func init() {
+func Init() {
 	readEnv()
 
 	AuthCallbackURL = Env.ApiBaseURL + "/auth/callback"
