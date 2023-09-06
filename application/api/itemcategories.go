@@ -3,6 +3,7 @@ package api
 import (
 	"time"
 
+	"github.com/gobuffalo/nulls"
 	"github.com/gofrs/uuid"
 )
 
@@ -53,5 +54,5 @@ type ItemCategory struct {
 	RequireMakeModel bool `json:"require_make_model"`
 
 	// the premium factor for this category
-	PremiumFactor *float64 `json:"premium_factor"`
+	PremiumFactor nulls.Float64 `json:"premium_factor"`
 }

@@ -847,12 +847,12 @@ func (i *Item) CalculateProratedPremium(t time.Time) api.Currency {
 func (i *Item) CalculateMonthlyPremium(tx *pop.Connection) *api.Currency {
 	i.Load(tx)
 
-	if i.Category.PremiumFactor == nil {
-		return nil
+	if i.Category.PremiumFactor.Valid {
+		premium := api.Currency(math.Round(float64(i.CoverageAmount) * i.Category.PremiumFactor.Float64))
+		return &premium
 	}
 
-	premium := api.Currency(math.Round(float64(i.CoverageAmount) * *i.Category.PremiumFactor))
-	return &premium
+	return nil
 }
 
 // True if coverage on the item started in a previous year and the current
