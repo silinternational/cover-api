@@ -42,4 +42,6 @@ ENV ADDR=0.0.0.0
 
 EXPOSE 3000
 
+ENV TEST_ENV_VAR ${TEST_ENV_VAR:foo}
+
 CMD /bin/app migrate; /bin/app

@@ -7,6 +7,7 @@ import (
 	"math"
 	"math/rand"
 	"net/http"
+	"os"
 	"regexp"
 	"strings"
 	"sync"
@@ -225,6 +226,8 @@ func init() {
 		log.UsePretty(Env.GoEnv == EnvDevelopment),
 		log.UseRemote(Env.GoEnv != EnvTest),
 	)
+
+	log.Infof("TEST_ENV_VAR = %s", os.Getenv("TEST_ENV_VAR"))
 }
 
 // readEnv loads environment data into `Env`
