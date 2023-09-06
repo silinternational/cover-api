@@ -16,6 +16,7 @@ import (
 //
 // gets the data for all Users.
 // ---
+//
 //	responses:
 //	  '200':
 //	    description: all users
@@ -40,6 +41,7 @@ func usersList(c buffalo.Context) error {
 //
 // gets the data for a specific User.
 // ---
+//
 //	parameters:
 //	  - name: id
 //	    in: path
@@ -60,6 +62,7 @@ func usersView(c buffalo.Context) error {
 //
 // gets the data for authenticated User.
 // ---
+//
 //	responses:
 //	  '200':
 //	    description: authenticated user
@@ -74,6 +77,7 @@ func usersMe(c buffalo.Context) error {
 //
 // update the current user's personal settings
 // ---
+//
 //	parameters:
 //	  - name: user's settings input
 //	    in: body
@@ -113,6 +117,7 @@ func usersMeUpdate(c buffalo.Context) error {
 //
 // attach a File to the current user
 // ---
+//
 //	parameters:
 //	  - name: user file input
 //	    in: body
@@ -146,6 +151,7 @@ func usersMeFilesAttach(c buffalo.Context) error {
 //
 // detach the Photo File from the current user and remove it from S3
 // ---
+//
 //	parameters:
 //	responses:
 //	  '204':

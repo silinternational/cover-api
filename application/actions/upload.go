@@ -30,6 +30,7 @@ type UploadResponse struct {
 //
 // Upload a new File object
 // ---
+//
 //	consumes:
 //	  - multipart/form-data
 //	parameters:

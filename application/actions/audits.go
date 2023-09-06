@@ -17,13 +17,14 @@ import (
 const MaxResultSize = 1000
 
 // swagger:operation POST /audits Audits AuditRun
-// AuditsRun
-//
-// Run an audit
-//
-// ### Audit types:
-// + `renewal` - Return all items that were incorrectly renewed and billed for another year of coverage.
 // ---
+//
+//	summary: AuditsRun
+//	description: |-
+//	  Run an audit
+//
+//	  ### Audit types:
+//	  + `renewal` - Return all items that were incorrectly renewed and billed for another year of coverage.
 //	parameters:
 //	  - name: input
 //	    in: body

@@ -20,6 +20,7 @@ import (
 // included by default. Accepted status values: Draft, Review1, Review2,
 // Review3, Revision, Receipt, Approved, Paid, Denied
 // ---
+//
 //	parameters:
 //	- name: status
 //	  in: query
@@ -74,6 +75,7 @@ func claimsListCustomer(c buffalo.Context) error {
 //
 // List claims for a given policy
 // ---
+//
 //	responses:
 //	  '200':
 //	    description: a list of Claims
@@ -96,6 +98,7 @@ func policiesClaimsList(c buffalo.Context) error {
 //
 // view a specific claim
 // ---
+//
 //	parameters:
 //	- name: id
 //	  in: path
@@ -117,6 +120,7 @@ func claimsView(c buffalo.Context) error {
 //
 // update a claim
 // ---
+//
 //	parameters:
 //	- name: id
 //	  in: path
@@ -158,6 +162,7 @@ func claimsUpdate(c buffalo.Context) error {
 //
 // create a new Claim on a policy
 // ---
+//
 //	parameters:
 //	  - name: id
 //	    in: path
@@ -193,10 +198,12 @@ func claimsCreate(c buffalo.Context) error {
 
 // swagger:operation POST /claims/{id}/submit Claims ClaimsSubmit
 // ClaimsSubmit
-//
-// Submit a claim for review.  Can be used at state "Draft" to submit for pre-approval or
-//  "Receipt" to submit for payout approval.
 // ---
+//
+//	summary: ClaimsSubmit
+//	description: |-
+//	  Submit a claim for review.  Can be used at state "Draft" to submit for pre-approval or
+//	  "Receipt" to submit for payout approval.
 //	parameters:
 //	  - name: id
 //	    in: path
@@ -222,9 +229,9 @@ func claimsSubmit(c buffalo.Context) error {
 // swagger:operation DELETE /claims/{id} Claims ClaimsRemove
 // ClaimsRemove
 //
-// Delete a claim and its claim items as long as it does not have a status of
-//   approved, denied or paid.
+// Delete a claim and its claim items as long as it does not have a status of approved, denied or paid.
 // ---
+//
 //	parameters:
 //	  - name: id
 //	    in: path
@@ -248,6 +255,7 @@ func claimsRemove(c buffalo.Context) error {
 //
 // Admin requests revisions on a claim.  Can be used at state "Review1", "Review2", or "Review3".
 // ---
+//
 //	parameters:
 //	  - name: id
 //	    in: path
@@ -286,6 +294,7 @@ func claimsRequestRevision(c buffalo.Context) error {
 //
 // Admin preapproves a claim and requests a receipt.  Can only be used at state "Review1".
 // ---
+//
 //	parameters:
 //	  - name: id
 //	    in: path
@@ -314,6 +323,7 @@ func claimsPreapprove(c buffalo.Context) error {
 // Admin reverts a claim to request a new/better receipt.
 // Can be used at state "Review2" or "Review3".
 // ---
+//
 //	parameters:
 //	  - name: id
 //	    in: path
@@ -352,6 +362,7 @@ func claimsRequestReceipt(c buffalo.Context) error {
 //
 // Admin approves a claim.  Can be used at states "Review1","Review2","Review3".
 // ---
+//
 //	parameters:
 //	  - name: id
 //	    in: path
@@ -380,6 +391,7 @@ func claimsApprove(c buffalo.Context) error {
 //
 // Admin denies a claim.  Can be used at states "Review1","Review2","Review3".
 // ---
+//
 //	parameters:
 //	  - name: id
 //	    in: path
@@ -419,6 +431,7 @@ func claimsDeny(c buffalo.Context) error {
 //
 // create a new ClaimItem on a Claim
 // ---
+//
 //	parameters:
 //	  - name: id
 //	    in: path

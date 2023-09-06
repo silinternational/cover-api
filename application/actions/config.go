@@ -11,6 +11,7 @@ import (
 //
 // list all valid Claim Incident Types
 // ---
+//
 //	responses:
 //	  '200':
 //	    description: list of valid Claim Incident Types
@@ -27,6 +28,7 @@ func claimIncidentTypes(c buffalo.Context) error {
 //
 // list of countries
 // ---
+//
 //	responses:
 //	  '200':
 //	    description: list of countries

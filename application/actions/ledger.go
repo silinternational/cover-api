@@ -20,6 +20,7 @@ import (
 //
 // Return a list of ledger reports that are not associated with a policy
 // ---
+//
 //	responses:
 //	  '200':
 //	    description: LedgerReport list
@@ -44,6 +45,7 @@ func ledgerReportList(c buffalo.Context) error {
 // Return the ledger report specified by `id`. The returned object contains metadata and a File object pointing to
 // a CSV file suitable for use with Sage Accounting.
 // ---
+//
 //	parameters:
 //	- name: id
 //	  in: path
@@ -71,6 +73,7 @@ func ledgerReportView(c buffalo.Context) error {
 // + `monthly` - Return all ledger entries not yet reconciled, up to the beginning of the given day (0:00 UTC).
 // + `annual` - Return the billing detail for given year's policy renewals.
 // ---
+//
 //	parameters:
 //	  - name: input
 //	    in: body
@@ -121,6 +124,7 @@ func ledgerReportCreate(c buffalo.Context) error {
 // Mark ledger entries in the report reconciled as of today. Call this only after all transactions in the report
 // have been fully loaded into the accounting record.
 // ---
+//
 //	parameters:
 //	- name: id
 //	  in: path
@@ -147,6 +151,7 @@ func ledgerReportReconcile(c buffalo.Context) error {
 //
 // Process billing for current year's policy renewals.
 // ---
+//
 //	responses:
 //	  '204':
 //	    description: OK but no content in response
@@ -169,6 +174,7 @@ func ledgerAnnualRenewalProcess(c buffalo.Context) error {
 //
 // Get the status of the annual billing process.
 // ---
+//
 //	responses:
 //	  '200':
 //	    description: the status of the annual billing process

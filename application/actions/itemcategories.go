@@ -11,6 +11,7 @@ import (
 //
 // list all the enabled item categories
 // ---
+//
 //	responses:
 //	  '200':
 //	    description: a list of ItemCategories

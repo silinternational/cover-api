@@ -14,6 +14,7 @@ import (
 //
 // update a claim item
 // ---
+//
 //	parameters:
 //	- name: id
 //	  in: path

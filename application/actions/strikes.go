@@ -15,6 +15,7 @@ import (
 //
 // update a strike
 // ---
+//
 //	parameters:
 //	  - name: id
 //	    in: path
@@ -54,6 +55,7 @@ func strikesUpdate(c buffalo.Context) error {
 //
 // Delete a strike.
 // ---
+//
 //	parameters:
 //	  - name: id
 //	    in: path

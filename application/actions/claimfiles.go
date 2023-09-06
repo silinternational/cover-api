@@ -15,6 +15,7 @@ import (
 //
 // attach a File to a Claim
 // ---
+//
 //	parameters:
 //	  - name: id
 //	    in: path
@@ -53,6 +54,7 @@ func claimFilesAttach(c buffalo.Context) error {
 //
 // Delete a ClaimFile and its associated File in the db and on S3
 // ---
+//
 //	parameters:
 //	  - name: id
 //	    in: path

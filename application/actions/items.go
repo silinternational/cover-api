@@ -15,6 +15,7 @@ import (
 //
 // gets the data for all the items on a Policy
 // ---
+//
 //	parameters:
 //	  - name: id
 //	    in: path
@@ -42,6 +43,7 @@ func itemsList(c buffalo.Context) error {
 //
 // create a policy item
 // ---
+//
 //	parameters:
 //	  - name: id
 //	    in: path
@@ -86,6 +88,7 @@ func itemsCreate(c buffalo.Context) error {
 //
 // update a policy item
 // ---
+//
 //	parameters:
 //	  - name: id
 //	    in: path
@@ -149,6 +152,7 @@ func itemsUpdate(c buffalo.Context) error {
 //
 // submit a policy item for coverage
 // ---
+//
 //	parameters:
 //	  - name: id
 //	    in: path
@@ -176,6 +180,7 @@ func itemsSubmit(c buffalo.Context) error {
 //
 // admin requires changes on a policy item
 // ---
+//
 //	parameters:
 //	  - name: id
 //	    in: path
@@ -214,6 +219,7 @@ func itemsRevision(c buffalo.Context) error {
 //
 // approve coverage on a policy item
 // ---
+//
 //	parameters:
 //	  - name: id
 //	    in: path
@@ -241,6 +247,7 @@ func itemsApprove(c buffalo.Context) error {
 //
 // deny coverage on a policy item
 // ---
+//
 //	parameters:
 //	  - name: id
 //	    in: path
@@ -277,9 +284,9 @@ func itemsDeny(c buffalo.Context) error {
 // swagger:operation DELETE /items/{id} PolicyItems PolicyItemsRemove
 // PolicyItemsRemove
 //
-// Delete a policy item if it is less than 72 hours old and has no associations.
-//   Otherwise, inactivate coverage on it.
+// Delete a policy item if it is less than 72 hours old and has no associations. Otherwise, inactivate coverage on it.
 // ---
+//
 //	parameters:
 //	  - name: id
 //	    in: path

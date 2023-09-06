@@ -15,6 +15,7 @@ import (
 //
 // gets the data for all the members of a Policy
 // ---
+//
 //	parameters:
 //	  - name: id
 //	    in: path
@@ -41,6 +42,7 @@ func policiesListMembers(c buffalo.Context) error {
 //
 // invite new user to co-manage policy
 // ---
+//
 //	parameters:
 //	  - name: id
 //	    in: path
@@ -94,8 +96,9 @@ func policiesInviteMember(c buffalo.Context) error {
 // PolicyMembersDelete
 //
 // Delete a policy user as long as the related policy has another user. Also,
-//   null out the PolicyUserID on related items
+// null out the PolicyUserID on related items
 // ---
+//
 //	parameters:
 //	  - name: id
 //	    in: path

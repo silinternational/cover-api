@@ -13,6 +13,7 @@ import (
 //
 // list Entity Codes
 // ---
+//
 //	responses:
 //	  '200':
 //	    description: list of Entity Codes
@@ -41,6 +42,7 @@ func entityCodesList(c buffalo.Context) error {
 //
 // get a single Entity Code
 // ---
+//
 //	parameters:
 //	  - name: id
 //	    in: path
@@ -61,6 +63,7 @@ func entityCodesView(c buffalo.Context) error {
 //
 // update a Entity Code
 // ---
+//
 //	parameters:
 //	  - name: id
 //	    in: path
@@ -94,6 +97,7 @@ func entityCodesUpdate(c buffalo.Context) error {
 //
 // create a new Entity Code
 // ---
+//
 //	parameters:
 //	  - name: entity code create input
 //	    in: body

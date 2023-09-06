@@ -28,6 +28,7 @@ const (
 // Get the data for all the user's Policies if the user is not an admin. If called by an admin, returns all Policies
 // in the system, limited by query parameters.
 // ---
+//
 //	parameters:
 //	- name: limit
 //	  in: query
@@ -97,6 +98,7 @@ func policiesListCustomer(c buffalo.Context) error {
 //
 // gets the data for a specific policy
 // ---
+//
 //	responses:
 //	  '200':
 //	    description: a policy
@@ -113,6 +115,7 @@ func policiesView(c buffalo.Context) error {
 //
 // create a new Policy with type Team
 // ---
+//
 //	parameters:
 //	  - name: policy input
 //	    in: body
@@ -153,6 +156,7 @@ func policiesCreateTeam(c buffalo.Context) error {
 //
 // update a policy
 // ---
+//
 //	parameters:
 //	  - name: id
 //	    in: path
@@ -210,8 +214,9 @@ func policiesUpdate(c buffalo.Context) error {
 // Create and return a report on the ledger entries of a policy as specified by the input object.
 // The returned object contains metadata and a File object pointing to a CSV file.
 // If no ledger entries are found with a `date_entered` value that matches the requested
-//  Type, Year and (if applicable) Month, then a 204 is returned.
+// Type, Year and (if applicable) Month, then a 204 is returned.
 // ---
+//
 //	parameters:
 //	  - name: id
 //	    in: path
@@ -260,8 +265,9 @@ func policiesLedgerReportCreate(c buffalo.Context) error {
 //
 // Return data regarding the ledger entries of a policy for a particular month.
 // If no ledger entries are found with a `date_entered` value that matches the requested
-//  Year and Month, then a 204 is returned.
+// Year and Month, then a 204 is returned.
 // ---
+//
 //	parameters:
 //	  - name: id
 //	    in: path
@@ -318,6 +324,7 @@ func policiesLedgerTableView(c buffalo.Context) error {
 //
 // Create a strike on the policy and return its recent strikes
 // ---
+//
 //	parameters:
 //	  - name: id
 //	    in: path

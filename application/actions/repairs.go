@@ -13,13 +13,14 @@ import (
 )
 
 // swagger:operation POST /repairs Repairs RepairsRun
-// RepairsRun
-//
-// Run a repair
-//
-// ### Repair types:
-// + `renewal` - Repair all items that were incorrectly renewed and billed for another year of coverage. Also issues premium refunds for the incorrect renewal charges.
 // ---
+//
+//	summary: RepairsRun
+//	description: |-
+//	  Run a repair
+//
+//	  ### Repair types:
+//	  + `renewal` - Repair all items that were incorrectly renewed and billed for another year of coverage. Also issues premium refunds for the incorrect renewal charges.
 //	parameters:
 //	  - name: input
 //	    in: body

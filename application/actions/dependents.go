@@ -17,6 +17,7 @@ import (
 //
 // list policy dependents
 // ---
+//
 //	parameters:
 //	  - name: id
 //	    in: path
@@ -43,6 +44,7 @@ func dependentsList(c buffalo.Context) error {
 //
 // create a new PolicyDependent on a policy
 // ---
+//
 //	parameters:
 //	  - name: id
 //	    in: path
@@ -83,6 +85,7 @@ func dependentsCreate(c buffalo.Context) error {
 //
 // update a policy dependent
 // ---
+//
 //	parameters:
 //	  - name: id
 //	    in: path
@@ -126,6 +129,7 @@ func dependentsUpdate(c buffalo.Context) error {
 //
 // Delete a policy dependent if it has no related policy items.
 // ---
+//
 //	parameters:
 //	  - name: id
 //	    in: path

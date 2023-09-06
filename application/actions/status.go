@@ -11,6 +11,7 @@ import (
 //
 // checks the app status
 // ---
+//
 //	responses:
 //	  '204':
 //	    description: app status is good

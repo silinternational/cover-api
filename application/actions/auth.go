@@ -63,6 +63,7 @@ var samlConfig = saml.Config{
 //
 // Start the SAML login process
 // ---
+//
 //	parameters:
 //	- name: client-id
 //	  in: query
@@ -290,6 +291,7 @@ func getLoginSuccessRedirectURL(authUser auth.User, returnTo string) string {
 //
 // Logout of application
 // ---
+//
 //	parameters:
 //	- name: token
 //	  in: query
