@@ -227,7 +227,9 @@ func init() {
 		log.UseRemote(Env.GoEnv != EnvTest),
 	)
 
+	log.Infof("ENV_VAR = %s", os.Getenv("ENV_VAR"))
 	log.Infof("TEST_ENV_VAR = %s", os.Getenv("TEST_ENV_VAR"))
+	log.Infof("ENV_ENCRYPTED_VAR = %s", os.Getenv("ENV_ENCRYPTED_VAR"))
 }
 
 // readEnv loads environment data into `Env`

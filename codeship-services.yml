@@ -57,6 +57,10 @@ binary:
   cached: true
   default_cache_branch: "develop"
   working_dir: /cover
+  encrypted_env_file: .env.encrypted
+  env_file: test.env
+  environment:
+    ENV_VAR: bar
   command: true
 
 docs:
