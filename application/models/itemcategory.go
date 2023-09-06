@@ -34,6 +34,8 @@ type ItemCategory struct {
 	Status           api.ItemCategoryStatus `db:"status" validate:"itemCategoryStatus"`
 	AutoApproveMax   int                    `db:"auto_approve_max" validate:"min=0"`
 	RequireMakeModel bool                   `db:"require_make_model"`
+	PremiumFactor    *float64               `db:"premium_factor"`
+	BillingPeriod    int                    `db:"billing_Period"`
 	LegacyID         nulls.Int              `db:"legacy_id"`
 	CreatedAt        time.Time              `db:"created_at"`
 	UpdatedAt        time.Time              `db:"updated_at"`
@@ -77,6 +79,7 @@ func (i *ItemCategory) ConvertToAPI(tx *pop.Connection) api.ItemCategory {
 		HelpText:         i.HelpText,
 		RiskCategory:     i.RiskCategory.ConvertToAPI(),
 		RequireMakeModel: i.RequireMakeModel,
+		PremiumFactor:    i.PremiumFactor,
 		CreatedAt:        i.CreatedAt,
 		UpdatedAt:        i.UpdatedAt,
 	}

@@ -741,7 +741,7 @@ func (i *Item) ConvertToAPI(tx *pop.Connection) api.Item {
 		CoverageStartDate:     i.CoverageStartDate.Format(domain.DateFormat),
 		CoverageEndDate:       coverageEndDate,
 		AnnualPremium:         i.CalculateAnnualPremium(),
-		MonthlyPremium:        i.CalculateMonthlyPremium(),
+		MonthlyPremium:        i.CalculateMonthlyPremium(tx),
 		ProratedAnnualPremium: i.CalculateProratedPremium(time.Now().UTC()),
 		CanBeDeleted:          i.canBeDeleted(tx),
 		CanBeUpdated:          i.canBeUpdated(tx),
@@ -844,16 +844,14 @@ func (i *Item) CalculateProratedPremium(t time.Time) api.Currency {
 }
 
 // CalculateMonthlyPremium returns the rounded product of the item's CoverageAmount and the PremiumFactor
-func (i *Item) CalculateMonthlyPremium() *api.Currency {
-	var rate float64
-	switch {
-	case i.IsVehicle():
-		rate = domain.Env.VehiclePremiumFactor
-	default:
+func (i *Item) CalculateMonthlyPremium(tx *pop.Connection) *api.Currency {
+	i.Load(tx)
+
+	if i.Category.PremiumFactor == nil {
 		return nil
 	}
 
-	premium := api.Currency(math.Round(float64(i.CoverageAmount) * rate))
+	premium := api.Currency(math.Round(float64(i.CoverageAmount) * *i.Category.PremiumFactor))
 	return &premium
 }
 
@@ -1194,9 +1192,4 @@ func CountItemsToRenew(tx *pop.Connection, year int) (int, error) {
 		return 0, appErrorFromDB(err, api.ErrorQueryFailure)
 	}
 	return count, nil
-}
-
-// IsVehicle returns if the item is a vehicle or not
-func (i *Item) IsVehicle() bool {
-	return i.Category.Name == "Cars and Heavy Vehicles"
 }

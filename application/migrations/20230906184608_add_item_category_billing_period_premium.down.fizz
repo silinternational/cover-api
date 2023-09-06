@@ -1,0 +1,2 @@
+drop_column("item_categories", "billing_period")
+drop_column("item_categories", "premium_factor")

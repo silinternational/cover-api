@@ -1,0 +1,2 @@
+add_column("item_categories", "billing_period", "int", {"null": true})
+add_column("item_categories", "premium_factor", "real", {"null": true})

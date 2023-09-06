@@ -51,4 +51,7 @@ type ItemCategory struct {
 
 	// whether make and model are required in order for item coverage to be auto approved
 	RequireMakeModel bool `json:"require_make_model"`
+
+	// the premium factor for this category
+	PremiumFactor *float64 `json:"premium_factor"`
 }
