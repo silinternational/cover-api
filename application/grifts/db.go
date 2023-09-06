@@ -302,7 +302,7 @@ INSERT INTO "item_categories" ("id", "risk_category_id", "name", "help_text",
 ('036e5315-18ca-4404-8435-72a695f2c9a7',	'3be38915-7092-44f2-90ef-26f48214b34f',	'Travel and recreation',	'Includes suitcases, travel bags, cycling, skating, sports. No motorized vehicles.',
     'Enabled',	300000,	'2021-08-27 19:46:28',	'2021-08-27 19:46:28',	9, true);
 ('0619a0ba-785e-428d-858c-96d3bd56929a',	'3be38915-7092-44f2-90ef-26f48214b34f',	'Cars and Heavy Vehicles',	'Coverage for Cars and Heavy Vehicles does not include liability and is not intended to fulfill local regulations or compete with local insurance offerings.',
-    'Enabled',	8000000,	'2021-08-27 19:46:28',	'2021-08-27 19:46:28',	9, true);
+    'Enabled',	8000000,	'2021-08-27 19:46:28',	'2021-08-27 19:46:28',	NULL, true);
 `
 	if err := tx.RawQuery(itemCategoriesSql).Exec(); err != nil {
 		panic("error loading item categories, " + err.Error())
