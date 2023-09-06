@@ -1,1 +1,1 @@
-# add_column("items", "year", "int", {"null": true})
+add_column("items", "year", "int", {"null": true})
