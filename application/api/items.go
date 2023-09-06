@@ -104,7 +104,7 @@ type Item struct {
 	ProratedAnnualPremium Currency `json:"prorated_annual_premium"`
 
 	// monthly premium (0.01 USD)
-	MonthlyPremium Currency `json:"monthly_premium"`
+	MonthlyPremium *Currency `json:"monthly_premium"`
 
 	// Accountable person assigned to the policy item
 	AccountablePerson AccountablePerson `json:"accountable_person"`

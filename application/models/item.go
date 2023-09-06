@@ -844,9 +844,17 @@ func (i *Item) CalculateProratedPremium(t time.Time) api.Currency {
 }
 
 // CalculateMonthlyPremium returns the rounded product of the item's CoverageAmount and the PremiumFactor
-func (i *Item) CalculateMonthlyPremium() api.Currency {
-	p := int(math.Round(float64(i.CoverageAmount) * domain.Env.VehiclePremiumFactor))
-	return api.Currency(p)
+func (i *Item) CalculateMonthlyPremium() *api.Currency {
+	var rate float64
+	switch {
+	case i.IsVehicle():
+		rate = domain.Env.VehiclePremiumFactor
+	default:
+		return nil
+	}
+
+	premium := api.Currency(math.Round(float64(i.CoverageAmount) * rate))
+	return &premium
 }
 
 // True if coverage on the item started in a previous year and the current
@@ -1186,4 +1194,9 @@ func CountItemsToRenew(tx *pop.Connection, year int) (int, error) {
 		return 0, appErrorFromDB(err, api.ErrorQueryFailure)
 	}
 	return count, nil
+}
+
+// IsVehicle returns if the item is a vehicle or not
+func (i *Item) IsVehicle() bool {
+	return i.Category.Name == "Cars and Heavy Vehicles"
 }
