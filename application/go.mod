@@ -21,6 +21,7 @@ require (
 	github.com/gobuffalo/validate/v3 v3.3.3
 	github.com/gofrs/uuid v4.4.0+incompatible
 	github.com/gorilla/sessions v1.2.1
+	github.com/ianlopshire/go-ssm-config v1.0.2
 	github.com/jackc/pgconn v1.14.0
 	github.com/jackc/pgerrcode v0.0.0-20220416144525-469b46aa5efa
 	github.com/kelseyhightower/envconfig v1.4.0
