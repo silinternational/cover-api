@@ -25,7 +25,7 @@ import (
 //go:embed commit.txt
 var Commit string
 
-var AuthCallbackURL = Env.ApiBaseURL + "/auth/callback"
+var AuthCallbackURL string
 
 // T is the Buffalo i18n translator
 var T *mwi18n.Translator
@@ -118,7 +118,7 @@ const (
 )
 
 // redirect url for after logout
-var LogoutRedirectURL = Env.UIURL + "/logged-out"
+var LogoutRedirectURL = "missing.ui.url/logged-out"
 
 // EnvDevelopment is used for various debugging aids
 const EnvDevelopment = "development"
@@ -215,6 +215,10 @@ type EnvStruct struct {
 }
 
 func Init() {
+	AuthCallbackURL = Env.ApiBaseURL + "/auth/callback"
+
+	LogoutRedirectURL = Env.UIURL + "/logged-out"
+
 	log.ErrLogger.Init(
 		log.UseCommit(strings.TrimSpace(Commit)),
 		log.UseEnv(Env.GoEnv),
