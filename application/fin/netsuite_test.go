@@ -96,11 +96,13 @@ func TestNetSuite_Export(t *testing.T) {
 		body, err := io.ReadAll(contents)
 		require.NoError(t, err)
 
-		// don't try to compare the row number since we can't guarantee the transaction batch ordering
-		want := transaction1Row[12:]
+		row := transaction1Row
 		if name == "bar" {
-			want = transaction2Row[12:]
+			row = transaction2Row
 		}
+
+		// don't try to compare the row number since we can't guarantee the transaction batch ordering
+		_, want, _ := strings.Cut(row, ",")
 
 		require.Contains(t, string(body), want)
 	}
