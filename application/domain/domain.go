@@ -14,7 +14,6 @@ import (
 	"time"
 
 	"github.com/gobuffalo/buffalo"
-	"github.com/gobuffalo/envy"
 	mwi18n "github.com/gobuffalo/mw-i18n/v2"
 	"github.com/gofrs/uuid"
 	"github.com/kelseyhightower/envconfig"
@@ -133,7 +132,7 @@ const EnvTest = "test"
 var Env = readEnv()
 
 type EnvStruct struct {
-	GoEnv                      string `ignored:"true"`
+	GoEnv                      string `default:"development" split_words:"true"`
 	ApiBaseURL                 string `required:"true" split_words:"true"`
 	AccessTokenLifetimeSeconds int    `default:"1166400" split_words:"true"` // 13.5 days
 	AppName                    string `default:"Cover" split_words:"true"`
@@ -253,9 +252,6 @@ func readEnv() *EnvStruct {
 	if env.StrikeLifetimeMonths < 2 {
 		env.StrikeLifetimeMonths = 2
 	}
-
-	// Doing this separately to avoid needing two environment variables for the same thing
-	env.GoEnv = envy.Get("GO_ENV", EnvDevelopment)
 
 	return env
 }
