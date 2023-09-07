@@ -16,15 +16,9 @@ import (
 	"github.com/silinternational/cover-api/log"
 )
 
-var r *render.Engine
-
-func Init() {
-	r = render.New(render.Options{
-		DefaultContentType: domain.ContentJson,
-	})
-
-	checkSamlConfig()
-}
+var r = render.New(render.Options{
+	DefaultContentType: domain.ContentJson,
+})
 
 // StrictBind hydrates a struct with values from a POST
 // REMEMBER the request body must have *exported* fields.

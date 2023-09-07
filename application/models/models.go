@@ -12,7 +12,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/go-playground/validator/v10"
 	"github.com/gobuffalo/events"
 	"github.com/gobuffalo/nulls"
 	"github.com/gobuffalo/pop/v6"
@@ -107,7 +106,7 @@ const (
 	FieldItemStatusReason      = "CoverageStatusReason"
 )
 
-var uuidNamespace uuid.UUID
+var uuidNamespace = uuid.FromStringOrNil(uuidNamespaceString)
 
 type Authable interface {
 	GetID() uuid.UUID
@@ -174,13 +173,12 @@ func Init() {
 	if _, err = getRandomToken(); err != nil {
 		panic(fmt.Errorf("error using crypto/rand ... %v", err))
 	}
+}
 
-	// initialize model validation library
-	mValidate = validator.New()
-
+func init() {
 	// register custom validators for custom types
 	for tag, vFunc := range fieldValidators {
-		if err = mValidate.RegisterValidation(tag, vFunc, false); err != nil {
+		if err := mValidate.RegisterValidation(tag, vFunc, false); err != nil {
 			panic(fmt.Errorf("failed to register validation for %s: %s", tag, err))
 		}
 	}
@@ -191,12 +189,6 @@ func Init() {
 	mValidate.RegisterStructValidation(policyStructLevelValidation, Policy{})
 	mValidate.RegisterStructValidation(itemStructLevelValidation, Item{})
 	mValidate.RegisterStructValidation(notificationStructLevelValidation, Notification{})
-
-	// get fixed IDs
-	riskCategoryStationaryID = uuid.FromStringOrNil(RiskCategoryStationaryIDString)
-	riskCategoryMobileID = uuid.FromStringOrNil(RiskCategoryMobileIDString)
-	householdEntityID = uuid.FromStringOrNil(HouseholdEntityIDString)
-	uuidNamespace = uuid.FromStringOrNil(uuidNamespaceString)
 }
 
 func getRandomToken() (string, error) {
@@ -220,7 +212,6 @@ func CurrentUser(ctx context.Context) User {
 func Tx(ctx context.Context) *pop.Connection {
 	tx, ok := ctx.Value(domain.ContextKeyTx).(*pop.Connection)
 	if !ok {
-		log.Info("no transaction found in context, called from:", domain.GetFunctionName(2))
 		return DB
 	}
 	return tx
