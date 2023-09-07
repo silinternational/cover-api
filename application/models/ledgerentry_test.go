@@ -231,7 +231,7 @@ func (ms *ModelSuite) TestLedgerEntries_Export() {
 		ms.T().Run(tt.name, func(t *testing.T) {
 			got, _ := tt.entries.ExportReport(fin.ReportFormatSage, "", tt.batchDate)
 			for _, w := range tt.want {
-				ms.Contains(string(got), w)
+				ms.Contains(string(got), w, "line %q not found in report output", w)
 			}
 		})
 	}
