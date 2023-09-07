@@ -13,10 +13,8 @@ import (
 	"github.com/gobuffalo/buffalo/servers"
 
 	"github.com/silinternational/cover-api/actions"
-	"github.com/silinternational/cover-api/auth"
 	"github.com/silinternational/cover-api/domain"
 	"github.com/silinternational/cover-api/log"
-	"github.com/silinternational/cover-api/models"
 )
 
 // main is the starting point for your Buffalo application.
@@ -26,11 +24,6 @@ import (
 // call `app.Serve()`, unless you don't want to start your
 // application that is. :)
 func main() {
-	domain.Init()
-	actions.Init()
-	auth.Init()
-	models.Init()
-
 	srv, err := getServer()
 	if err != nil {
 		log.Fatal(err)
