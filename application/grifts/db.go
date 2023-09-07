@@ -22,6 +22,8 @@ import (
 var _ = grift.Namespace("db", func() {
 	grift.Desc("seed", "Seeds a database")
 	_ = grift.Add("seed", func(c *grift.Context) error {
+		models.Init()
+
 		countUsers := models.Users{}
 		count, err := models.DB.Count(countUsers)
 		if err != nil {
