@@ -61,6 +61,7 @@ const (
 	TypeClaim           = "claims"
 	TypeClaimItem       = "claim-items"
 	TypeClaimFile       = "claim-files"
+	TypeCountry         = "countries"
 	TypeEntityCode      = "entity-codes"
 	TypeFile            = "files"
 	TypeItem            = "items"

@@ -207,6 +207,12 @@ func App() *buffalo.App {
 		configGroup.GET("/claim-incident-types", claimIncidentTypes)
 		configGroup.GET("/item-categories", itemCategoriesList)
 
+		// countries
+		countriesGroup := app.Group("/countries")
+		countriesGroup.Middleware.Skip(AuthZ)
+		countriesGroup.GET("", countriesList)
+		countriesGroup.GET("/{code:[A-Za-z]{3}}", countriesByCode)
+
 		// dependent
 		depsGroup := app.Group(policyDependentPath)
 		depsGroup.PUT(idRegex, dependentsUpdate)

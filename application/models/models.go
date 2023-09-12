@@ -93,6 +93,7 @@ const (
 	FieldItemRiskCategoryID    = "RiskCategoryID"
 	FieldItemInStorage         = "InStorage"
 	FieldItemCountry           = "Country"
+	FieldItemCountryCode       = "CountryCode"
 	FieldItemDescription       = "Description"
 	FieldItemPolicyDependentID = "PolicyDependentID"
 	FieldItemPolicyUserID      = "PolicyUserID"

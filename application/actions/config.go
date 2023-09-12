@@ -26,7 +26,7 @@ func claimIncidentTypes(c buffalo.Context) error {
 // swagger:operation GET /config/countries Config Countries
 // Countries
 //
-// list of countries
+// list of countries -- Deprecated: use GET /countries
 // ---
 //
 //	responses:

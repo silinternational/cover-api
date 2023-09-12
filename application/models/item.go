@@ -60,6 +60,7 @@ type Item struct {
 	City              string                 `db:"city"`
 	State             string                 `db:"state"`
 	Country           string                 `db:"country"`
+	CountryCode       string                 `db:country_code`
 	LegacyID          nulls.Int              `db:"legacy_id"`
 	CreatedAt         time.Time              `db:"created_at"`
 	UpdatedAt         time.Time              `db:"updated_at"`
@@ -117,6 +118,13 @@ func (i *Item) Update(ctx context.Context) error {
 		err := errors.New("item cannot be updated because it has an active claim")
 		return api.NewAppError(err, api.ErrorItemHasActiveClaim, api.CategoryUser)
 	}
+
+	var country Country
+	if err := country.FindByName(tx, i.Country); err != nil {
+		err := fmt.Errorf("invalid country name %s", i.Country)
+		return api.NewAppError(err, api.ErrorInvalidItemCountryName, api.CategoryUser)
+	}
+	i.CountryCode = country.Code
 
 	updates := i.Compare(oldItem)
 	for ii := range updates {
@@ -187,6 +195,14 @@ func (i *Item) Compare(old Item) []FieldUpdate {
 		updates = append(updates, FieldUpdate{
 			OldValue:  old.Country,
 			NewValue:  i.Country,
+			FieldName: FieldItemCountry,
+		})
+	}
+
+	if i.CountryCode != old.CountryCode {
+		updates = append(updates, FieldUpdate{
+			OldValue:  old.CountryCode,
+			NewValue:  i.CountryCode,
 			FieldName: FieldItemCountry,
 		})
 	}
@@ -283,10 +299,11 @@ func (i *Item) FindByID(tx *pop.Connection, id uuid.UUID) error {
 }
 
 // SafeDeleteOrInactivate deletes the item if it is newish (less than 72 hours old)
-//  and if it has a Draft, Revision or Pending status.
-//  If the item's status is Denied or Inactive, it does nothing.
-//  Otherwise, it changes its status to Inactive.
-//  It also creates a corresponding credit ledger entry
+//
+//	and if it has a Draft, Revision or Pending status.
+//	If the item's status is Denied or Inactive, it does nothing.
+//	Otherwise, it changes its status to Inactive.
+//	It also creates a corresponding credit ledger entry
 func (i *Item) SafeDeleteOrInactivate(ctx context.Context) error {
 	now := time.Now().UTC()
 	switch i.CoverageStatus {
@@ -365,7 +382,8 @@ func (i *Item) ScheduleInactivation(ctx context.Context, t time.Time) error {
 }
 
 // cancelCoverageAfterClaim sets the item's CoverageEndDate to the current time and creates a corresponding
-//  credit ledger entry
+//
+//	credit ledger entry
 func (i *Item) cancelCoverageAfterClaim(tx *pop.Connection, reason string) error {
 	if i.CoverageStatus != api.ItemCoverageStatusApproved {
 		return errors.New("cannot cancel coverage on an item which is not approved")
@@ -478,8 +496,9 @@ func isItemTransitionValid(status1, status2 api.ItemCoverageStatus) bool {
 }
 
 // isItemActionAllowed does not check whether the actor is the owner of the item.
-//  Otherwise, it checks whether the item can be acted on using a certain action based on its
-//    current coverage status and "sub-resource" (e.g. submit, approve, ...)
+//
+//	Otherwise, it checks whether the item can be acted on using a certain action based on its
+//	  current coverage status and "sub-resource" (e.g. submit, approve, ...)
 func isItemActionAllowed(actorIsAdmin bool, oldStatus api.ItemCoverageStatus, perm Permission, sub SubResource) bool {
 	switch oldStatus {
 
@@ -546,8 +565,10 @@ func (i *Item) SubmitForApproval(ctx context.Context) error {
 }
 
 // Checks whether the item has a category that expects the make and model fields
-//   to be hydrated. Returns true if they are hydrated of if the item has
-//   a lenient category.
+//
+//	to be hydrated. Returns true if they are hydrated of if the item has
+//	a lenient category.
+//
 // Assumes the item already has its Category loaded
 func (i *Item) areFieldsValidForAutoApproval(tx *pop.Connection) bool {
 	if !i.Category.RequireMakeModel {
@@ -788,8 +809,9 @@ func (i *Item) inactivateEnded(ctx context.Context) error {
 }
 
 // InactivateApprovedButEnded fetches all the items that have coverage_status=Approved
-//   and coverage_end_date before today and then
-//   saves them with coverage_status=Inactive
+//
+//	and coverage_end_date before today and then
+//	saves them with coverage_status=Inactive
 func (i *Items) InactivateApprovedButEnded(ctx context.Context) error {
 	tx := Tx(ctx)
 
@@ -842,7 +864,8 @@ func (i *Item) CalculateProratedPremium(t time.Time) api.Currency {
 }
 
 // True if coverage on the item started in a previous year and the current
-//  month is January.
+//
+//	month is January.
 func (i *Item) shouldGiveFullYearRefund(t time.Time) bool {
 	return i.CoverageStartDate.Year() < t.Year() && t.Month() == 1
 }
@@ -906,6 +929,13 @@ func NewItemFromApiInput(c buffalo.Context, input api.ItemCreate, policyID uuid.
 	item.SerialNumber = input.SerialNumber
 	item.CoverageAmount = input.CoverageAmount
 	item.CoverageStatus = input.CoverageStatus
+
+	var country Country
+	if err := country.FindByName(tx, item.Country); err != nil {
+		err := fmt.Errorf("invalid country name %s", item.Country)
+		return item, api.NewAppError(err, api.ErrorInvalidItemCountryName, api.CategoryUser)
+	}
+	item.CountryCode = country.Code
 
 	if err := item.SetAccountablePerson(tx, input.AccountablePersonID); err != nil {
 		return item, err
@@ -1038,7 +1068,8 @@ func (i *Item) GetAccountablePerson(tx *pop.Connection) Person {
 }
 
 // GetAccountableMember gets either the accountable person if they are a User or
-//   the first member of the item's policy
+//
+//	the first member of the item's policy
 func (i *Item) GetAccountableMember(tx *pop.Connection) Person {
 	var person Person
 	if i.PolicyUserID.Valid {
@@ -1088,8 +1119,9 @@ func (i *Item) canBeUpdated(tx *pop.Connection) bool {
 }
 
 // ItemsWithRecentStatusChanges returns the RecentItems associated with
-//  items that have had their CoverageStatus changed recently.
-//  The slice is sorted by updated time with most recent first.
+//
+//	items that have had their CoverageStatus changed recently.
+//	The slice is sorted by updated time with most recent first.
 func ItemsWithRecentStatusChanges(tx *pop.Connection) (api.RecentItems, error) {
 	var pHistories PolicyHistories
 

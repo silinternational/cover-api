@@ -83,6 +83,7 @@ const (
 	// Item
 	ErrorItemFromContext                  = ErrorKey("ErrorItemFromContext")
 	ErrorItemNullAccountablePerson        = ErrorKey("ErrorItemNullAccountablePerson")
+	ErrorInvalidItemCountryName           = ErrorKey("ErrorInvalidItemCountryName")
 	ErrorItemCoverageAmountCannotIncrease = ErrorKey("ErrorItemCoverageAmountCannotIncrease")
 	ErrorItemCoverageAmountTooLow         = ErrorKey("ErrorItemCoverageAmountTooLow")
 	ErrorItemInvalidCoverageStartDate     = ErrorKey("ErrorItemInvalidCoverageStartDate")
