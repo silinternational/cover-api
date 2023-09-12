@@ -51,6 +51,7 @@ type User struct {
 	City          string       `db:"city"`
 	State         string       `db:"state"`
 	Country       string       `db:"country"`
+	CountryCode   string       `db:"country_code"`
 	StaffID       nulls.String `db:"staff_id"`
 	AppRole       UserAppRole  `db:"app_role" validate:"appRole"`
 	PhotoFileID   nulls.UUID   `json:"photo_file_id" db:"photo_file_id"`
@@ -65,7 +66,8 @@ type User struct {
 }
 
 // Validate gets run every time you call a "pop.Validate*" (pop.ValidateAndSave, pop.ValidateAndCreate, pop.ValidateAndUpdate) method.
-//  It first adds a UUID to the user if its UUID is empty
+//
+//	It first adds a UUID to the user if its UUID is empty
 func (u *User) Validate(tx *pop.Connection) (*validate.Errors, error) {
 	return validateModel(u), nil
 }
@@ -75,6 +77,14 @@ func (u *User) Create(tx *pop.Connection) error {
 	if u.AppRole == "" {
 		u.AppRole = AppRoleCustomer
 	}
+
+	var country Country
+	if err := country.FindByName(tx, u.Country); err != nil {
+		err := fmt.Errorf("invalid country name %s", u.Country)
+		return api.NewAppError(err, api.ErrorInvalidUserCountryName, api.CategoryUser)
+	}
+	u.CountryCode = country.ID
+
 	return create(tx, u)
 }
 
@@ -83,6 +93,14 @@ func (u *User) Update(tx *pop.Connection) error {
 	if u.AppRole == "" {
 		u.AppRole = AppRoleCustomer
 	}
+
+	var country Country
+	if err := country.FindByName(tx, u.Country); err != nil {
+		err := fmt.Errorf("invalid country name %s", u.Country)
+		return api.NewAppError(err, api.ErrorInvalidUserCountryName, api.CategoryUser)
+	}
+	u.CountryCode = country.ID
+
 	return update(tx, u)
 }
 
@@ -181,7 +199,8 @@ func (u *User) FindOrCreateFromAuthUser(tx *pop.Connection, authUser *auth.User)
 }
 
 // EmailOfChoice returns the user's EmailOverride value if it's not blank.
-//   Otherwise it returns the user's Email value.
+//
+//	Otherwise it returns the user's Email value.
 func (u *User) EmailOfChoice() string {
 	if u.EmailOverride != "" {
 		return u.EmailOverride

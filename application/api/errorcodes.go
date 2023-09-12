@@ -130,4 +130,8 @@ const (
 
 	ErrorItemNeedsCoverageEndDate = ErrorKey("ErrorItemNeedsCoverageEndDate")
 	ErrorUnrecognizedRepairType   = ErrorKey("ErrorUnrecognizedRepairType")
+
+	// Users
+
+	ErrorInvalidUserCountryName = ErrorKey("ErrorInvalidUserCountryName")
 )

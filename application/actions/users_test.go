@@ -107,8 +107,8 @@ func (as *ActionSuite) Test_UsersMeUpdate() {
 	userAddBoth := f.Users[2]
 
 	inputAddEmail := api.UserInput{EmailOverride: "new_email0@example.org"}
-	inputAddLocation := api.UserInput{Country: "Canada"}
-	inputAddBoth := api.UserInput{EmailOverride: "new_email2@example.org", Country: "Mexico"}
+	inputAddLocation := api.UserInput{Country: models.FakeCountries[0]}
+	inputAddBoth := api.UserInput{EmailOverride: "new_email2@example.org", Country: models.FakeCountries[1]}
 
 	tests := []struct {
 		name       string
