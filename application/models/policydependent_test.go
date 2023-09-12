@@ -102,7 +102,7 @@ func (ms *ModelSuite) TestPolicyDependent_ConvertToAPI() {
 		ChildBirthYear: domain.RandomInsecureIntInRange(2000, 2020),
 	}
 
-	got := dependent.ConvertToAPI()
+	got := dependent.ConvertToAPI(ms.DB)
 
 	ms.Equal(dependent.ID, got.ID, "ID is not correct")
 	ms.Equal(dependent.Name, got.Name, "Name is not correct")

@@ -490,6 +490,7 @@ func (u *Users) ConvertToAPI(tx *pop.Connection) api.Users {
 
 func (u *User) ConvertToAPI(tx *pop.Connection, hydrate bool) api.User {
 	u.LoadPhotoFile(tx)
+	u.OverrideCountryName(tx)
 
 	output := api.User{
 		ID:            u.ID,
@@ -522,5 +523,18 @@ func (u *User) GetLocation() Location {
 		City:    u.City,
 		State:   u.State,
 		Country: u.Country,
+	}
+}
+
+func (u *User) OverrideCountryName(tx *pop.Connection) {
+	if u.CountryCode == "" {
+		return
+	}
+
+	var country Country
+	if err := country.FindByCode(tx, u.CountryCode); err != nil {
+		log.Errorf("found invalid country code %q on user %s", u.CountryCode, u.ID)
+	} else {
+		u.Country = country.Name
 	}
 }

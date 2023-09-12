@@ -304,7 +304,7 @@ func (p *Policy) hydrateApiPolicy(tx *pop.Connection, apiPolicy *api.Policy) {
 	p.LoadDependents(tx, true)
 	p.LoadInvites(tx, true)
 	apiPolicy.Claims = p.Claims.ConvertToAPI(tx)
-	apiPolicy.Dependents = p.Dependents.ConvertToAPI()
+	apiPolicy.Dependents = p.Dependents.ConvertToAPI(tx)
 	apiPolicy.Invites = p.Invites.ConvertToAPI()
 
 	var reports LedgerReports

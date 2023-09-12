@@ -730,6 +730,7 @@ func (i *Item) Load(tx *pop.Connection) {
 
 func (i *Item) ConvertToAPI(tx *pop.Connection) api.Item {
 	i.Load(tx)
+	i.OverrideCountryName(tx)
 
 	var coverageEndDate *string
 	if i.CoverageEndDate.Valid {
@@ -1200,4 +1201,17 @@ func CountItemsToRenew(tx *pop.Connection, year int) (int, error) {
 		return 0, appErrorFromDB(err, api.ErrorQueryFailure)
 	}
 	return count, nil
+}
+
+func (i *Item) OverrideCountryName(tx *pop.Connection) {
+	if i.CountryCode == "" {
+		return
+	}
+
+	var country Country
+	if err := country.FindByCode(tx, i.CountryCode); err != nil {
+		log.Errorf("found invalid country code %q on item %s", i.CountryCode, i.ID)
+	} else {
+		i.Country = country.Name
+	}
 }

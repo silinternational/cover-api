@@ -124,7 +124,8 @@ func (p *PolicyDependent) IsActorAllowedTo(tx *pop.Connection, actor User, perm 
 	return false
 }
 
-func (p *PolicyDependent) ConvertToAPI() api.PolicyDependent {
+func (p *PolicyDependent) ConvertToAPI(tx *pop.Connection) api.PolicyDependent {
+	p.OverrideCountryName(tx)
 	return api.PolicyDependent{
 		ID:             p.ID,
 		Name:           p.Name,
@@ -134,10 +135,10 @@ func (p *PolicyDependent) ConvertToAPI() api.PolicyDependent {
 	}
 }
 
-func (p *PolicyDependents) ConvertToAPI() api.PolicyDependents {
+func (p *PolicyDependents) ConvertToAPI(tx *pop.Connection) api.PolicyDependents {
 	deps := make(api.PolicyDependents, len(*p))
 	for i, pp := range *p {
-		deps[i] = pp.ConvertToAPI()
+		deps[i] = pp.ConvertToAPI(tx)
 	}
 	return deps
 }
@@ -160,5 +161,18 @@ func (p *PolicyDependent) FixTeamRelationship(policy Policy) {
 	if policy.Type == api.PolicyTypeTeam {
 		p.Relationship = api.PolicyDependentRelationshipNone
 		p.ChildBirthYear = 0
+	}
+}
+
+func (p *PolicyDependent) OverrideCountryName(tx *pop.Connection) {
+	if p.CountryCode == "" {
+		return
+	}
+
+	var country Country
+	if err := country.FindByCode(tx, p.CountryCode); err != nil {
+		log.Errorf("found invalid country code %q on dependent %s", p.CountryCode, p.ID)
+	} else {
+		p.Country = country.Name
 	}
 }

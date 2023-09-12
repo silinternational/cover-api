@@ -43,6 +43,7 @@ type ClaimItem struct {
 	City            string           `db:"city"`
 	State           string           `db:"state"`
 	Country         string           `db:"country"`
+	CountryCode     string           `db:"country_code"`
 	LegacyID        nulls.Int        `db:"legacy_id"`
 	CreatedAt       time.Time        `db:"created_at"`
 	UpdatedAt       time.Time        `db:"updated_at"`
@@ -191,6 +192,7 @@ func (c *ClaimItem) LoadItem(tx *pop.Connection, reload bool) {
 func (c *ClaimItem) ConvertToAPI(tx *pop.Connection) api.ClaimItem {
 	c.LoadItem(tx, false)
 	c.LoadClaim(tx, false)
+	c.OverrideCountryName(tx)
 
 	apiClaimItem := api.ClaimItem{
 		ID:              c.ID,
@@ -458,4 +460,17 @@ func (c *ClaimItem) updatePayoutAmount(ctx context.Context) error {
 
 	c.PayoutAmount = payout
 	return c.Update(ctx)
+}
+
+func (c *ClaimItem) OverrideCountryName(tx *pop.Connection) {
+	if c.CountryCode == "" {
+		return
+	}
+
+	var country Country
+	if err := country.FindByCode(tx, c.CountryCode); err != nil {
+		log.Errorf("found invalid country code %q on claim item %s", c.CountryCode, c.ID)
+	} else {
+		c.Country = country.Name
+	}
 }

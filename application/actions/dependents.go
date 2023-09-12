@@ -36,7 +36,7 @@ func dependentsList(c buffalo.Context) error {
 	tx := models.Tx(c)
 	policy.LoadDependents(tx, false)
 
-	return renderOk(c, policy.Dependents.ConvertToAPI())
+	return renderOk(c, policy.Dependents.ConvertToAPI(tx))
 }
 
 // swagger:operation POST /policies/{id}/dependents PolicyDependents PolicyDependentsCreate
@@ -77,7 +77,7 @@ func dependentsCreate(c buffalo.Context) error {
 
 	policy.LoadDependents(tx, false)
 
-	return renderOk(c, dependent.ConvertToAPI())
+	return renderOk(c, dependent.ConvertToAPI(tx))
 }
 
 // swagger:operation PUT /policy-dependents/{id} PolicyDependents PolicyDependentsUpdate
@@ -120,7 +120,7 @@ func dependentsUpdate(c buffalo.Context) error {
 		return reportError(c, err)
 	}
 
-	output := dependent.ConvertToAPI()
+	output := dependent.ConvertToAPI(tx)
 	return c.Render(http.StatusOK, r.JSON(output))
 }
 
