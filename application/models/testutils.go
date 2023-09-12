@@ -154,11 +154,13 @@ func CreateItemFixtures(tx *pop.Connection, config FixturesConfig) Fixtures {
 }
 
 func createItemFixture(tx *pop.Connection, policyID uuid.UUID, categoryID uuid.UUID) Item {
+	countryName := randomCountryName()
 	item := Item{
 		Name:              randStr(10),
 		CategoryID:        categoryID,
 		RiskCategoryID:    RiskCategoryStationaryID(),
-		Country:           randomCountryName(),
+		Country:           countryName,
+		CountryCode:       strings.ToUpper(countryName[0:3]),
 		Description:       randStr(40),
 		PolicyID:          policyID,
 		Make:              randStr(10),
@@ -345,6 +347,7 @@ func CreateUserFixtures(tx *pop.Connection, n int) Fixtures {
 		users[i].City = randStr(10)
 		users[i].State = randStr(2)
 		users[i].Country = randomCountryName()
+		users[i].CountryCode = strings.ToUpper(users[i].Country[0:3])
 		MustCreate(tx, &users[i])
 
 		accessTokenFixtures[i].UserID = users[i].ID
