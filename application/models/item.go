@@ -745,6 +745,7 @@ func (i *Item) ConvertToAPI(tx *pop.Connection) api.Item {
 		RiskCategory:          i.RiskCategory.ConvertToAPI(),
 		InStorage:             i.InStorage,
 		Country:               i.Country,
+		CountryCode:           i.CountryCode,
 		Description:           i.Description,
 		PolicyID:              i.PolicyID,
 		Make:                  i.Make,
@@ -766,9 +767,10 @@ func (i *Item) ConvertToAPI(tx *pop.Connection) api.Item {
 	person := i.GetAccountablePerson(tx)
 	if person != nil {
 		apiItem.AccountablePerson = api.AccountablePerson{
-			ID:      person.GetID(),
-			Name:    person.GetName().String(),
-			Country: person.GetLocation().Country,
+			ID:          person.GetID(),
+			Name:        person.GetName().String(),
+			Country:     person.GetLocation().Country,
+			CountryCode: person.GetLocation().CountryCode,
 		}
 	}
 	return apiItem

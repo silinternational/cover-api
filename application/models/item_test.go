@@ -1229,6 +1229,7 @@ func (ms *ModelSuite) TestItem_ConvertToAPI() {
 	ms.Equal(item.Name, got.Name, "Name is not correct")
 	ms.Equal(item.InStorage, got.InStorage, "InStorage is not correct")
 	ms.Equal(item.Country, got.Country, "Country is not correct")
+	ms.Equal(item.CountryCode, got.CountryCode, "CountryCode is not correct")
 	ms.Equal(item.Description, got.Description, "Description is not correct")
 	ms.Equal(item.PolicyID, got.PolicyID, "PolicyID is not correct")
 	ms.Equal(item.Make, got.Make, "Make is not correct")
@@ -1253,6 +1254,8 @@ func (ms *ModelSuite) TestItem_ConvertToAPI() {
 		"AccountablePerson Name is not correct")
 	ms.Equal(fixtures.PolicyDependents[0].GetLocation().Country, got.AccountablePerson.Country,
 		"AccountablePerson Country is not correct")
+	ms.Equal(fixtures.PolicyDependents[0].GetLocation().CountryCode, got.AccountablePerson.CountryCode,
+		"AccountablePerson CountryCode is not correct")
 	ms.True(got.CanBeUpdated, "CanBeUpdated is not correct")
 	ms.True(got.CanBeDeleted, "CanBeDeleted is not correct")
 }

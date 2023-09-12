@@ -34,6 +34,9 @@ type PolicyDependent struct {
 	// dependent location
 	Country string `json:"country"`
 
+	// country code (ISO-3166 alpha-3) where dependent is located
+	CountryCode string `json:"country_code"`
+
 	// birth year of child
 	ChildBirthYear int `json:"child_birth_year"`
 }

@@ -108,5 +108,6 @@ func (ms *ModelSuite) TestPolicyDependent_ConvertToAPI() {
 	ms.Equal(dependent.Name, got.Name, "Name is not correct")
 	ms.Equal(dependent.Relationship, got.Relationship, "Relationship is not correct")
 	ms.Equal(dependent.Country, got.Country, "Country is not correct")
+	ms.Equal(dependent.CountryCode, got.CountryCode, "CountryCode is not correct")
 	ms.Equal(dependent.ChildBirthYear, got.ChildBirthYear, "ChildBirthYear is not correct")
 }

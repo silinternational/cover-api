@@ -130,9 +130,10 @@ type Person interface {
 }
 
 type Location struct {
-	City    string
-	State   string
-	Country string
+	City        string
+	State       string
+	Country     string
+	CountryCode string
 }
 
 func (l Location) String() string {

@@ -131,6 +131,7 @@ func (p *PolicyDependent) ConvertToAPI(tx *pop.Connection) api.PolicyDependent {
 		Name:           p.Name,
 		Relationship:   p.Relationship,
 		Country:        p.GetLocation().Country,
+		CountryCode:    p.GetLocation().CountryCode,
 		ChildBirthYear: p.ChildBirthYear,
 	}
 }
@@ -145,9 +146,10 @@ func (p *PolicyDependents) ConvertToAPI(tx *pop.Connection) api.PolicyDependents
 
 func (p *PolicyDependent) GetLocation() Location {
 	return Location{
-		City:    p.City,
-		State:   p.State,
-		Country: p.Country,
+		City:        p.City,
+		State:       p.State,
+		Country:     p.Country,
+		CountryCode: p.CountryCode,
 	}
 }
 

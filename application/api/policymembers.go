@@ -33,8 +33,11 @@ type PolicyMember struct {
 	// swagger:strfmt date-time
 	LastLoginUTC time.Time `json:"last_login_utc"`
 
-	// a country
+	// country where policy member is located
 	Country string `json:"country,omitempty"`
+
+	// country code (ISO-3166 alpha-3) where policy member is located
+	CountryCode string `json:"country_code"`
 
 	// ID of the PolicyUser object that is related to this policy and user
 	//

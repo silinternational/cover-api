@@ -41,6 +41,9 @@ type Item struct {
 	// country where item is located
 	Country string `json:"country"`
 
+	// country code (ISO-3166 alpha-3) where item is located
+	CountryCode string `json:"country_code"`
+
 	// item description
 	Description string `json:"description"`
 

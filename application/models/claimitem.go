@@ -313,6 +313,7 @@ func NewClaimItem(tx *pop.Connection, input api.ClaimItemCreateInput, item Item,
 	claimItem.City = loc.City
 	claimItem.State = loc.State
 	claimItem.Country = loc.Country
+	claimItem.CountryCode = loc.CountryCode
 	claimItem.CoverageAmount = api.Currency(item.CoverageAmount)
 	return claimItem, nil
 }
@@ -406,9 +407,10 @@ func (c *ClaimItem) Compare(old ClaimItem) []FieldUpdate {
 
 func (c *ClaimItem) GetLocation() Location {
 	return Location{
-		City:    c.City,
-		State:   c.State,
-		Country: c.Country,
+		City:        c.City,
+		State:       c.State,
+		Country:     c.Country,
+		CountryCode: c.CountryCode,
 	}
 }
 

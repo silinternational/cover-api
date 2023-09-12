@@ -38,8 +38,11 @@ type User struct {
 	// last login date and time (UTC)
 	LastLoginUTC time.Time `json:"last_login_utc"`
 
-	// country
+	// country where user is located
 	Country string `json:"country,omitempty"`
+
+	// country code (ISO-3166 alpha-3) where user is located
+	CountryCode string `json:"country_code"`
 
 	// all policies in which the user is a member
 	Policies Policies `json:"policies,omitempty"`

@@ -296,6 +296,7 @@ func (u *User) ConvertToPolicyMember(polUserID uuid.UUID) api.PolicyMember {
 		EmailOverride: u.EmailOverride,
 		LastLoginUTC:  u.LastLoginUTC,
 		Country:       u.GetLocation().Country,
+		CountryCode:   u.GetLocation().CountryCode,
 		PolicyUserID:  polUserID,
 	}
 }
@@ -502,6 +503,7 @@ func (u *User) ConvertToAPI(tx *pop.Connection, hydrate bool) api.User {
 		AppRole:       string(u.AppRole),
 		LastLoginUTC:  u.LastLoginUTC,
 		Country:       u.GetLocation().Country,
+		CountryCode:   u.GetLocation().CountryCode,
 		PhotoFileID:   convertUUIDToAPI(u.PhotoFileID),
 	}
 
@@ -520,9 +522,10 @@ func (u *User) ConvertToAPI(tx *pop.Connection, hydrate bool) api.User {
 
 func (u *User) GetLocation() Location {
 	return Location{
-		City:    u.City,
-		State:   u.State,
-		Country: u.Country,
+		City:        u.City,
+		State:       u.State,
+		Country:     u.Country,
+		CountryCode: u.CountryCode,
 	}
 }
 

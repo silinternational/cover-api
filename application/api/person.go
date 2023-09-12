@@ -16,4 +16,7 @@ type AccountablePerson struct {
 
 	// country where person is located
 	Country string `json:"country"`
+
+	// country code (ISO-3166 alpha-3) where person is located
+	CountryCode string `json:"country_code"`
 }
