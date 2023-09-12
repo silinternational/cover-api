@@ -1,6 +1,8 @@
 package models
 
 import (
+	"strings"
+
 	"github.com/gobuffalo/pop/v6"
 
 	"github.com/silinternational/cover-api/api"
@@ -8,7 +10,7 @@ import (
 
 // swagger:model
 type Country struct {
-	Code string `db:"code" json:"code"`
+	ID   string `db:"code" json:"code"`
 	Name string `db:"name" json:"name"`
 }
 
@@ -21,7 +23,7 @@ func (c *Countries) All(tx *pop.Connection) error {
 }
 
 func (c *Country) FindByCode(tx *pop.Connection, code string) error {
-	err := tx.Where("code = ?", code).First(c)
+	err := tx.Where("code = ?", strings.ToUpper(code)).First(c)
 	if err != nil {
 		return appErrorFromDB(err, api.ErrorQueryFailure)
 	}

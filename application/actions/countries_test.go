@@ -3,6 +3,7 @@ package actions
 import (
 	"fmt"
 	"net/http"
+	"strings"
 	"testing"
 
 	"github.com/silinternational/cover-api/api"
@@ -24,16 +25,16 @@ func (as *ActionSuite) Test_countriesByCode() {
 		{
 			name:       "not found",
 			actor:      actor,
-			code:       "XX",
-			wantStatus: http.StatusNotFound,
-			wantError:  api.ErrorResourceNotFound,
+			code:       "AAA",
+			wantStatus: http.StatusBadRequest,
+			wantError:  api.ErrorNoRows,
 		},
 		{
 			name:       "found",
 			actor:      actor,
-			code:       "CH",
+			code:       models.FakeCountries[0][0:3],
 			wantStatus: http.StatusOK,
-			wantName:   "Switzerland",
+			wantName:   models.FakeCountries[0],
 		},
 	}
 	for _, tt := range tests {
@@ -53,7 +54,7 @@ func (as *ActionSuite) Test_countriesByCode() {
 			} else {
 				var country models.Country
 				as.NoError(as.decodeBody(body, &country), "response data is not as expected")
-				as.Equal(tt.code, country.Code, "Code is not as expected")
+				as.Equal(strings.ToUpper(tt.code), country.ID, "Code is not as expected")
 				as.Equal(tt.wantName, country.Name, "Name is not as expected")
 			}
 		})
@@ -74,7 +75,7 @@ func (as *ActionSuite) Test_countriesList() {
 			name:          "found",
 			actor:         actor,
 			wantStatus:    http.StatusOK,
-			wantCountries: 242,
+			wantCountries: len(models.FakeCountries),
 		},
 	}
 	for _, tt := range tests {

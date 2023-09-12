@@ -284,7 +284,7 @@ func (ms *ModelSuite) TestItem_Create() {
 		RiskCategoryID:    RiskCategoryStationaryID(),
 		PolicyID:          policy.ID,
 		InStorage:         true,
-		Country:           "Thailand",
+		Country:           FakeCountries[0],
 		Description:       "camera",
 		Make:              "Minolta",
 		Model:             "Max",

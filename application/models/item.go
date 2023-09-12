@@ -60,7 +60,7 @@ type Item struct {
 	City              string                 `db:"city"`
 	State             string                 `db:"state"`
 	Country           string                 `db:"country"`
-	CountryCode       string                 `db:country_code`
+	CountryCode       string                 `db:"country_code"`
 	LegacyID          nulls.Int              `db:"legacy_id"`
 	CreatedAt         time.Time              `db:"created_at"`
 	UpdatedAt         time.Time              `db:"updated_at"`
@@ -124,7 +124,7 @@ func (i *Item) Update(ctx context.Context) error {
 		err := fmt.Errorf("invalid country name %s", i.Country)
 		return api.NewAppError(err, api.ErrorInvalidItemCountryName, api.CategoryUser)
 	}
-	i.CountryCode = country.Code
+	i.CountryCode = country.ID
 
 	updates := i.Compare(oldItem)
 	for ii := range updates {
@@ -935,7 +935,7 @@ func NewItemFromApiInput(c buffalo.Context, input api.ItemCreate, policyID uuid.
 		err := fmt.Errorf("invalid country name %s", item.Country)
 		return item, api.NewAppError(err, api.ErrorInvalidItemCountryName, api.CategoryUser)
 	}
-	item.CountryCode = country.Code
+	item.CountryCode = country.ID
 
 	if err := item.SetAccountablePerson(tx, input.AccountablePersonID); err != nil {
 		return item, err

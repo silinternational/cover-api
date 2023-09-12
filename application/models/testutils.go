@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"log"
 	"math/rand"
+	"strings"
 	"time"
 
 	"github.com/gobuffalo/events"
@@ -61,6 +62,15 @@ type TestBuffaloContext struct {
 	params map[any]any
 }
 
+var FakeCountries = []string{
+	"Florin",
+	"Genovia",
+	"Guilder",
+	"Panem",
+	"Shire",
+	"Wakanda",
+}
+
 // Value returns the value associated with the given key in the test context
 func (b *TestBuffaloContext) Value(key any) any {
 	return b.params[key]
@@ -81,7 +91,7 @@ func CreateTestContext(user User) buffalo.Context {
 }
 
 // CreateFileFixtures generates any number of file records for testing
-//  all owned by the same user.
+// all owned by the same user.
 func CreateFileFixtures(tx *pop.Connection, n int, createdByID uuid.UUID) Fixtures {
 	_ = storage.CreateS3Bucket()
 	files := make(Files, n)
@@ -148,7 +158,7 @@ func createItemFixture(tx *pop.Connection, policyID uuid.UUID, categoryID uuid.U
 		Name:              randStr(10),
 		CategoryID:        categoryID,
 		RiskCategoryID:    RiskCategoryStationaryID(),
-		Country:           randStr(10),
+		Country:           randomCountryName(),
 		Description:       randStr(40),
 		PolicyID:          policyID,
 		Make:              randStr(10),
@@ -249,7 +259,7 @@ func createClaimFixture(tx *pop.Connection, policy Policy, config FixturesConfig
 			FMV:             130 * domain.CurrencyFactor,
 			City:            randStr(10),
 			State:           randStr(2),
-			Country:         randStr(10),
+			Country:         randomCountryName(),
 		}
 		MustCreate(tx, &claim.ClaimItems[i])
 		totalPayout += nextPayout
@@ -274,7 +284,7 @@ func createClaimFixture(tx *pop.Connection, policy Policy, config FixturesConfig
 }
 
 // CreateCategoryFixtures generates any number of category records for testing
-//   even indexed categories are Stationary and odd indexed ones are Mobile
+// even indexed categories are Stationary and odd indexed ones are Mobile
 func CreateCategoryFixtures(tx *pop.Connection, n int) Fixtures {
 	CreateRiskCategories(tx)
 
@@ -334,7 +344,7 @@ func CreateUserFixtures(tx *pop.Connection, n int) Fixtures {
 		users[i].AppRole = AppRoleCustomer
 		users[i].City = randStr(10)
 		users[i].State = randStr(2)
-		users[i].Country = randStr(10)
+		users[i].Country = randomCountryName()
 		MustCreate(tx, &users[i])
 
 		accessTokenFixtures[i].UserID = users[i].ID
@@ -503,7 +513,7 @@ func CreatePolicyDependentFixtures(tx *pop.Connection, policy Policy, n int) Fix
 		policyDependents[i].Relationship = api.PolicyDependentRelationshipChild
 		policyDependents[i].City = randStr(10)
 		policyDependents[i].State = randStr(2)
-		policyDependents[i].Country = randStr(10)
+		policyDependents[i].Country = randomCountryName()
 		policyDependents[i].ChildBirthYear = time.Now().Year() - 18
 
 		if policy.Type == api.PolicyTypeTeam {
@@ -544,7 +554,7 @@ func CreateRiskCategories(tx *pop.Connection) {
 }
 
 // CreatePolicyUserInviteFixtures generates any number of policies with one
-//  primary member and one policy user invite records
+// primary member and one policy user invite records
 func CreatePolicyUserInviteFixtures(tx *pop.Connection, policies Policies, n int) Fixtures {
 	if len(policies) == 0 {
 		config := FixturesConfig{
@@ -615,6 +625,10 @@ func randStr(n int) string {
 }
 
 func DestroyAll() {
+	// destroy all Countries
+	var countries Countries
+	destroyTable(&countries)
+
 	// delete all LedgerReports
 	var ledgerReports LedgerReports
 	destroyTable(&ledgerReports)
@@ -675,6 +689,7 @@ func destroyTable(i any) {
 
 func InsertTestData() {
 	insertServiceUser()
+	insertTestCountries()
 }
 
 func insertServiceUser() {
@@ -686,6 +701,18 @@ func insertServiceUser() {
 	}
 	if err := DB.Create(&serviceUser); err != nil {
 		panic("failed to insert service user: " + err.Error())
+	}
+}
+
+func insertTestCountries() {
+	for _, name := range FakeCountries {
+		country := Country{
+			ID:   strings.ToUpper(name[0:3]),
+			Name: name,
+		}
+		if err := DB.Create(&country); err != nil {
+			panic(fmt.Sprintf("failed to insert country '%s': %s", name, err))
+		}
 	}
 }
 
@@ -701,11 +728,11 @@ func RegisterEventDetector(kind string, detected *bool) (events.DeleteFn, error)
 }
 
 // CreatePolicyHistoryFixtures generates a Policy with three Items each with
-//   four PolicyHistory entries as follows
-//	 CoverageStatus/Create  [not included because not update]
-//	 Name/Update [not included because not on CoverageStatus field]
-//	 CoverageStatus/Update [could be included, if date is recent]
-//	 CoverageStatus/Update [could be included, if date is recent]
+// four PolicyHistory entries as follows:
+// - CoverageStatus/Create  [not included because not update]
+// - Name/Update [not included because not on CoverageStatus field]
+// - CoverageStatus/Update [could be included, if date is recent]
+// - CoverageStatus/Update [could be included, if date is recent]
 func CreatePolicyHistoryFixtures_RecentItemStatusChanges(tx *pop.Connection) Fixtures {
 	config := FixturesConfig{
 		NumberOfPolicies: 1,
@@ -797,11 +824,11 @@ func CreatePolicyHistoryFixtures_RecentItemStatusChanges(tx *pop.Connection) Fix
 }
 
 // CreateClaimHistoryFixtures generates a Policy with three Claims each
-//   with four ClaimHistory entries as follows
-//	 Status/Create  [not included as "recent" because not update]
-//	 ReferenceNumber/Update [not included as "recent" because not on Status field]
-//	 Status/Update [could be included, if date is recent]
-//	 Status/Update [could be included, if date is recent]
+// with four ClaimHistory entries as follows:
+// - Status/Create  [not included as "recent" because not update]
+// - ReferenceNumber/Update [not included as "recent" because not on Status field]
+// - Status/Update [could be included, if date is recent]
+// - Status/Update [could be included, if date is recent]
 func CreateClaimHistoryFixtures_RecentClaimStatusChanges(tx *pop.Connection) Fixtures {
 	config := FixturesConfig{
 		NumberOfPolicies:   1,
@@ -945,4 +972,8 @@ func Must(err error) {
 	if err != nil {
 		panic(err.Error())
 	}
+}
+
+func randomCountryName() string {
+	return FakeCountries[rand.Int31n(int32(len(FakeCountries)))]
 }

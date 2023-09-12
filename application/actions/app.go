@@ -209,7 +209,7 @@ func App() *buffalo.App {
 
 		// countries
 		countriesGroup := app.Group("/countries")
-		countriesGroup.Middleware.Skip(AuthZ)
+		countriesGroup.Middleware.Skip(AuthZ, countriesList, countriesByCode)
 		countriesGroup.GET("", countriesList)
 		countriesGroup.GET("/{code:[A-Za-z]{3}}", countriesByCode)
 
