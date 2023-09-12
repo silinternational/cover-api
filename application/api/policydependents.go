@@ -47,7 +47,7 @@ type PolicyDependentInput struct {
 	Relationship PolicyDependentRelationship `json:"relationship"`
 
 	// dependent location
-	Country string `json:"country"` // TODO: look up country code
+	Country string `json:"country"`
 
 	// birth year of child
 	ChildBirthYear int `json:"child_birth_year"`
