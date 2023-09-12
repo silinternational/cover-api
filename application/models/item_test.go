@@ -1110,6 +1110,11 @@ func (ms *ModelSuite) TestItem_Compare() {
 					NewValue:  newItem.Country,
 				},
 				{
+					FieldName: FieldItemCountryCode,
+					OldValue:  oldItem.CountryCode,
+					NewValue:  newItem.CountryCode,
+				},
+				{
 					FieldName: FieldItemDescription,
 					OldValue:  oldItem.Description,
 					NewValue:  newItem.Description,
