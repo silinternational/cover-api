@@ -19,7 +19,10 @@ type Countries []Country
 
 func (c *Countries) All(tx *pop.Connection) error {
 	err := tx.All(c)
-	return appErrorFromDB(err, api.ErrorQueryFailure)
+	if err != nil {
+		return appErrorFromDB(err, api.ErrorQueryFailure)
+	}
+	return nil
 }
 
 func (c *Country) FindByCode(tx *pop.Connection, code string) error {
