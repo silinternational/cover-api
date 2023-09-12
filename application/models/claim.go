@@ -416,8 +416,7 @@ func (c *Claim) AddItem(ctx context.Context, input api.ClaimItemCreateInput) (Cl
 }
 
 // SubmitForApproval changes the status of the claim to either Review1 or Review2
-//
-//	depending on its current status.
+// depending on its current status.
 func (c *Claim) SubmitForApproval(ctx context.Context) error {
 	tx := Tx(ctx)
 	user := CurrentUser(ctx)
