@@ -203,7 +203,7 @@ func (i *Item) Compare(old Item) []FieldUpdate {
 		updates = append(updates, FieldUpdate{
 			OldValue:  old.CountryCode,
 			NewValue:  i.CountryCode,
-			FieldName: FieldItemCountry,
+			FieldName: FieldItemCountryCode,
 		})
 	}
 
