@@ -1,0 +1,6 @@
+drop_table("countries")
+drop_column("users", "country_code")
+drop_column("policy_dependents", "country_code")
+drop_column("claims", "country_code")
+drop_column("claim_items", "country_code")
+drop_column("items", "country_code")
