@@ -66,8 +66,7 @@ type User struct {
 }
 
 // Validate gets run every time you call a "pop.Validate*" (pop.ValidateAndSave, pop.ValidateAndCreate, pop.ValidateAndUpdate) method.
-//
-//	It first adds a UUID to the user if its UUID is empty
+// It first adds a UUID to the user if its UUID is empty
 func (u *User) Validate(tx *pop.Connection) (*validate.Errors, error) {
 	return validateModel(u), nil
 }
@@ -199,8 +198,7 @@ func (u *User) FindOrCreateFromAuthUser(tx *pop.Connection, authUser *auth.User)
 }
 
 // EmailOfChoice returns the user's EmailOverride value if it's not blank.
-//
-//	Otherwise it returns the user's Email value.
+// Otherwise it returns the user's Email value.
 func (u *User) EmailOfChoice() string {
 	if u.EmailOverride != "" {
 		return u.EmailOverride
