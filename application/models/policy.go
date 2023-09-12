@@ -92,7 +92,7 @@ func (p *Policy) Update(ctx context.Context) error {
 }
 
 // CreateTeam creates a new Team type policy for the user.
-//   The EntityCodeID, CostCenter and Account must have non-blank values
+// The EntityCodeID, CostCenter and Account must have non-blank values
 func (p *Policy) CreateTeam(ctx context.Context) error {
 	tx := Tx(ctx)
 	actor := CurrentUser(ctx)
@@ -173,8 +173,8 @@ func (p *Policy) isDependent(tx *pop.Connection, id uuid.UUID) bool {
 }
 
 // itemCoverageTotals returns a map with an entry for
-//  the policy ID with the total of all the items' coverage amounts as well as
-//  an entry for each dependant with the total of each of their items' coverage amounts
+// the policy ID with the total of all the items' coverage amounts as well as
+// an entry for each dependant with the total of each of their items' coverage amounts
 func (p *Policy) itemCoverageTotals(tx *pop.Connection) map[uuid.UUID]int {
 	p.LoadItems(tx, false)
 
@@ -251,7 +251,7 @@ func (p *Policy) LoadMembers(tx *pop.Connection, reload bool) {
 }
 
 // GetPolicyUserIDs loads the members of the Policy and also returns a list of the corresponding
-//  PolicyUser IDs
+// PolicyUser IDs
 func (p *Policy) GetPolicyUserIDs(tx *pop.Connection, reload bool) []uuid.UUID {
 	p.LoadMembers(tx, reload)
 	puIDS := make([]uuid.UUID, len(p.Members))

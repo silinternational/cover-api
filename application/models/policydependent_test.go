@@ -22,6 +22,7 @@ func (ms *ModelSuite) TestPolicyDependent_Validate() {
 				Name:         "Jane Smith",
 				Relationship: api.PolicyDependentRelationshipSpouse,
 				Country:      "USA",
+				CountryCode:  "USA",
 			},
 			wantErr: false,
 		},
@@ -31,6 +32,7 @@ func (ms *ModelSuite) TestPolicyDependent_Validate() {
 				Name:           "John Doe",
 				Relationship:   api.PolicyDependentRelationshipChild,
 				Country:        "USA",
+				CountryCode:    "USA",
 				ChildBirthYear: time.Now().UTC().Year() - 18,
 			},
 			wantErr: false,
@@ -40,6 +42,7 @@ func (ms *ModelSuite) TestPolicyDependent_Validate() {
 			policyDependent: PolicyDependent{
 				Relationship:   api.PolicyDependentRelationshipChild,
 				Country:        "USA",
+				CountryCode:    "USA",
 				ChildBirthYear: time.Now().UTC().Year() - 18,
 			},
 			wantErr:  true,
@@ -50,6 +53,7 @@ func (ms *ModelSuite) TestPolicyDependent_Validate() {
 			policyDependent: PolicyDependent{
 				Name:           "Jane Smith",
 				Country:        "USA",
+				CountryCode:    "USA",
 				ChildBirthYear: time.Now().UTC().Year() - 18,
 			},
 			wantErr:  true,
@@ -69,6 +73,7 @@ func (ms *ModelSuite) TestPolicyDependent_Validate() {
 			name: "missing ChildBirthYear",
 			policyDependent: PolicyDependent{
 				Name:         "Jane Smith",
+				CountryCode:  "USA",
 				Relationship: api.PolicyDependentRelationshipChild,
 			},
 			wantErr:  true,

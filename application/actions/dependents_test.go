@@ -127,14 +127,14 @@ func (as *ActionSuite) Test_DependentsCreate() {
 	goodRequest := api.PolicyDependentInput{
 		Name:           "dependent name",
 		Relationship:   api.PolicyDependentRelationshipChild,
-		Country:        "Bahamas",
+		Country:        models.FakeCountries[0],
 		ChildBirthYear: 1999,
 	}
 
 	goodRequest2 := api.PolicyDependentInput{
 		Name:           "dependent name2",
 		Relationship:   api.PolicyDependentRelationshipChild,
-		Country:        "USA",
+		Country:        models.FakeCountries[0],
 		ChildBirthYear: 2001,
 	}
 
@@ -264,7 +264,7 @@ func (as *ActionSuite) Test_DependentsUpdate() {
 	goodDep := api.PolicyDependentInput{
 		Name:           "New-" + dependent.Name,
 		Relationship:   dependent.Relationship,
-		Country:        "New-" + dependent.Country,
+		Country:        models.FakeCountries[0],
 		ChildBirthYear: dependent.ChildBirthYear - 10,
 	}
 

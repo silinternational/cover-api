@@ -514,6 +514,7 @@ func CreatePolicyDependentFixtures(tx *pop.Connection, policy Policy, n int) Fix
 		policyDependents[i].City = randStr(10)
 		policyDependents[i].State = randStr(2)
 		policyDependents[i].Country = randomCountryName()
+		policyDependents[i].CountryCode = strings.ToUpper(policyDependents[i].Country[0:3])
 		policyDependents[i].ChildBirthYear = time.Now().Year() - 18
 
 		if policy.Type == api.PolicyTypeTeam {

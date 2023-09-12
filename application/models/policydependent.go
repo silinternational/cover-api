@@ -29,6 +29,7 @@ type PolicyDependent struct {
 	City           string                          `db:"city"`
 	State          string                          `db:"state"`
 	Country        string                          `db:"country" validate:"required"`
+	CountryCode    string                          `db:"country_code" validate:"required"`
 	ChildBirthYear int                             `db:"child_birth_year" validate:"policyDependentChildBirthYear,required_if=Relationship Child"`
 
 	CreatedAt time.Time `db:"created_at"`
@@ -49,6 +50,13 @@ func (p *PolicyDependent) FindByID(tx *pop.Connection, id uuid.UUID) error {
 }
 
 func (p *PolicyDependent) Create(tx *pop.Connection) error {
+	var country Country
+	if err := country.FindByName(tx, p.Country); err != nil {
+		err := fmt.Errorf("invalid country name %s", p.Country)
+		return api.NewAppError(err, api.ErrorInvalidDependentCountryName, api.CategoryUser)
+	}
+	p.CountryCode = country.ID
+
 	return create(tx, p)
 }
 
@@ -57,6 +65,13 @@ func (p *PolicyDependent) Update(tx *pop.Connection) error {
 	if err := policy.FindByID(tx, p.PolicyID); err != nil {
 		panic("error finding dependent's policy: " + err.Error())
 	}
+
+	var country Country
+	if err := country.FindByName(tx, p.Country); err != nil {
+		err := fmt.Errorf("invalid country name %s", p.Country)
+		return api.NewAppError(err, api.ErrorInvalidDependentCountryName, api.CategoryUser)
+	}
+	p.CountryCode = country.ID
 
 	p.FixTeamRelationship(policy)
 
