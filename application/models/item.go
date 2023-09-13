@@ -843,12 +843,13 @@ func (i *Item) CalculateProratedPremium(t time.Time) api.Currency {
 	return api.Currency(p)
 }
 
-// CalculateMonthlyPremium returns the rounded product of the item's CoverageAmount and the PremiumFactor
+// CalculateMonthlyPremium returns the rounded product of the item's CoverageAmount and the category's
+// PremiumFactor divided by 12
 func (i *Item) CalculateMonthlyPremium(tx *pop.Connection) *api.Currency {
 	i.Load(tx)
 
 	if i.Category.PremiumFactor.Valid {
-		premium := api.Currency(math.Round(float64(i.CoverageAmount) * i.Category.PremiumFactor.Float64))
+		premium := api.Currency(math.Round(float64(i.CoverageAmount) * i.Category.PremiumFactor.Float64 / 12))
 		return &premium
 	}
 
