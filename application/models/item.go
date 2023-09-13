@@ -704,7 +704,6 @@ func (i *Item) LoadPolicyMembers(tx *pop.Connection, reload bool) {
 	i.Policy.LoadMembers(tx, reload)
 }
 
-// TODO: split this into two functions (and add a `reload` parameter)
 // Load - a simple wrapper method for loading child objects
 func (i *Item) Load(tx *pop.Connection) {
 	if i.Category.ID == uuid.Nil {
