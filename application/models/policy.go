@@ -92,7 +92,7 @@ func (p *Policy) Update(ctx context.Context) error {
 }
 
 // CreateTeam creates a new Team type policy for the user.
-//   The EntityCodeID, CostCenter and Account must have non-blank values
+// The EntityCodeID, CostCenter and Account must have non-blank values
 func (p *Policy) CreateTeam(ctx context.Context) error {
 	tx := Tx(ctx)
 	actor := CurrentUser(ctx)
@@ -173,8 +173,8 @@ func (p *Policy) isDependent(tx *pop.Connection, id uuid.UUID) bool {
 }
 
 // itemCoverageTotals returns a map with an entry for
-//  the policy ID with the total of all the items' coverage amounts as well as
-//  an entry for each dependant with the total of each of their items' coverage amounts
+// the policy ID with the total of all the items' coverage amounts as well as
+// an entry for each dependant with the total of each of their items' coverage amounts
 func (p *Policy) itemCoverageTotals(tx *pop.Connection) map[uuid.UUID]int {
 	p.LoadItems(tx, false)
 
@@ -251,7 +251,7 @@ func (p *Policy) LoadMembers(tx *pop.Connection, reload bool) {
 }
 
 // GetPolicyUserIDs loads the members of the Policy and also returns a list of the corresponding
-//  PolicyUser IDs
+// PolicyUser IDs
 func (p *Policy) GetPolicyUserIDs(tx *pop.Connection, reload bool) []uuid.UUID {
 	p.LoadMembers(tx, reload)
 	puIDS := make([]uuid.UUID, len(p.Members))
@@ -613,7 +613,7 @@ func (p *Policies) ProcessAnnualCoverage(tx *pop.Connection, year int) error {
 func (p *Policy) ProcessAnnualCoverage(tx *pop.Connection, year int) error {
 	var items Items
 	if err := tx.Where("coverage_status = ?", api.ItemCoverageStatusApproved).
-		Where("paid_through_year < ?", year).
+		Where("paid_through_date < ?", domain.EndOfYear(year)).
 		Where("policy_id  = ?", p.ID).
 		All(&items); err != nil {
 		return appErrorFromDB(err, api.ErrorQueryFailure)
@@ -621,9 +621,9 @@ func (p *Policy) ProcessAnnualCoverage(tx *pop.Connection, year int) error {
 
 	totalAnnualPremium := map[uuid.UUID]api.Currency{}
 	for i := range items {
-		items[i].PaidThroughYear = year
-		if err := tx.UpdateColumns(&items[i], "paid_through_year", "updated_at"); err != nil {
-			return fmt.Errorf("failed to update paid_through_year for item %s: %w", items[i].ID, err)
+		items[i].PaidThroughDate = domain.EndOfYear(year)
+		if err := tx.UpdateColumns(&items[i], "paid_through_date", "updated_at"); err != nil {
+			return fmt.Errorf("failed to update paid_through_date for item %s: %w", items[i].ID, err)
 		}
 		totalAnnualPremium[items[i].RiskCategoryID] += items[i].CalculateAnnualPremium()
 	}
