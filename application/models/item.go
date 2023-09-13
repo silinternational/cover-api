@@ -309,7 +309,6 @@ func (i *Item) SafeDeleteOrInactivate(ctx context.Context) error {
 		// Don't give a refund if premium has not been paid beyond today
 		// TODO: make sure this is correct for monthly billing
 		if i.PaidThroughDate.Before(time.Now()) {
-			// if i.PaidThroughDate.Before(domain.EndOfYear(time.Now().UTC().Year())) {
 			return nil
 		}
 
