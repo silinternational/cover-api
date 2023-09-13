@@ -827,6 +827,8 @@ func (ms *ModelSuite) TestItem_CalculateMonthlyPremium() {
 	defaultPremium := f.Items[0]
 	defaultPremium.CoverageAmount = 30000
 	Must(ms.DB.Update(&defaultPremium))
+	f.ItemCategories[0].PremiumFactor = nulls.NewFloat64(0.02)
+	Must(ms.DB.Update(&f.ItemCategories[0]))
 
 	categoryPremium := f.Items[1]
 	categoryPremium.CoverageAmount = 30000

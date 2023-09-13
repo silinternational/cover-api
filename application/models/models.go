@@ -173,6 +173,17 @@ func Init() {
 	if _, err = getRandomToken(); err != nil {
 		panic(fmt.Errorf("error using crypto/rand ... %v", err))
 	}
+
+	itemCategories := ItemCategories{}
+	if err := DB.Where("premium_factor IS NULL").All(&itemCategories); err != nil {
+		panic(fmt.Sprintf("failed to query item_categories: %s", err))
+	}
+	for _, cat := range itemCategories {
+		cat.PremiumFactor = nulls.NewFloat64(domain.Env.PremiumFactor)
+		if err := DB.UpdateColumns(&cat, "premium_factor", "updated_at"); err != nil {
+			panic(fmt.Sprintf("failed to set item_categories.premium_factor: %s", err))
+		}
+	}
 }
 
 func init() {

@@ -81,7 +81,7 @@ func CreateTestContext(user User) buffalo.Context {
 }
 
 // CreateFileFixtures generates any number of file records for testing
-//  all owned by the same user.
+// all owned by the same user.
 func CreateFileFixtures(tx *pop.Connection, n int, createdByID uuid.UUID) Fixtures {
 	_ = storage.CreateS3Bucket()
 	files := make(Files, n)
@@ -274,7 +274,7 @@ func createClaimFixture(tx *pop.Connection, policy Policy, config FixturesConfig
 }
 
 // CreateCategoryFixtures generates any number of category records for testing
-//   even indexed categories are Stationary and odd indexed ones are Mobile
+// even indexed categories are Stationary and odd indexed ones are Mobile
 func CreateCategoryFixtures(tx *pop.Connection, n int) Fixtures {
 	CreateRiskCategories(tx)
 
@@ -293,6 +293,7 @@ func CreateCategoryFixtures(tx *pop.Connection, n int) Fixtures {
 		categories[i].HelpText = randStr(40)
 		categories[i].Status = api.ItemCategoryStatusEnabled
 		categories[i].AutoApproveMax = 3000 * domain.CurrencyFactor //  $3,000
+		categories[i].PremiumFactor = nulls.NewFloat64(0.02)
 		MustCreate(tx, &categories[i])
 	}
 
@@ -544,7 +545,7 @@ func CreateRiskCategories(tx *pop.Connection) {
 }
 
 // CreatePolicyUserInviteFixtures generates any number of policies with one
-//  primary member and one policy user invite records
+// primary member and one policy user invite records
 func CreatePolicyUserInviteFixtures(tx *pop.Connection, policies Policies, n int) Fixtures {
 	if len(policies) == 0 {
 		config := FixturesConfig{
@@ -701,11 +702,11 @@ func RegisterEventDetector(kind string, detected *bool) (events.DeleteFn, error)
 }
 
 // CreatePolicyHistoryFixtures generates a Policy with three Items each with
-//   four PolicyHistory entries as follows
-//	 CoverageStatus/Create  [not included because not update]
-//	 Name/Update [not included because not on CoverageStatus field]
-//	 CoverageStatus/Update [could be included, if date is recent]
-//	 CoverageStatus/Update [could be included, if date is recent]
+// four PolicyHistory entries as follows:
+// - CoverageStatus/Create  [not included because not update]
+// - Name/Update [not included because not on CoverageStatus field]
+// - CoverageStatus/Update [could be included, if date is recent]
+// - CoverageStatus/Update [could be included, if date is recent]
 func CreatePolicyHistoryFixtures_RecentItemStatusChanges(tx *pop.Connection) Fixtures {
 	config := FixturesConfig{
 		NumberOfPolicies: 1,
@@ -797,11 +798,11 @@ func CreatePolicyHistoryFixtures_RecentItemStatusChanges(tx *pop.Connection) Fix
 }
 
 // CreateClaimHistoryFixtures generates a Policy with three Claims each
-//   with four ClaimHistory entries as follows
-//	 Status/Create  [not included as "recent" because not update]
-//	 ReferenceNumber/Update [not included as "recent" because not on Status field]
-//	 Status/Update [could be included, if date is recent]
-//	 Status/Update [could be included, if date is recent]
+// with four ClaimHistory entries as follows:
+// - Status/Create  [not included as "recent" because not update]
+// - ReferenceNumber/Update [not included as "recent" because not on Status field]
+// - Status/Update [could be included, if date is recent]
+// - Status/Update [could be included, if date is recent]
 func CreateClaimHistoryFixtures_RecentClaimStatusChanges(tx *pop.Connection) Fixtures {
 	config := FixturesConfig{
 		NumberOfPolicies:   1,
