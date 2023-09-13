@@ -821,6 +821,46 @@ func (ms *ModelSuite) TestItem_calculateProratedPremium() {
 	}
 }
 
+func (ms *ModelSuite) TestItem_CalculateMonthlyPremium() {
+	f := CreateItemFixtures(ms.DB, FixturesConfig{ItemsPerPolicy: 2})
+
+	defaultPremium := f.Items[0]
+
+	categoryPremium := f.Items[1]
+	categoryPremium.CoverageAmount = 10000
+	Must(ms.DB.Update(&categoryPremium))
+	f.ItemCategories[1].PremiumFactor = nulls.NewFloat64(0.03)
+	Must(ms.DB.Update(&f.ItemCategories[1]))
+
+	tests := []struct {
+		name    string
+		item    Item
+		wantNil bool
+		want    api.Currency
+	}{
+		{
+			name:    "default premium",
+			item:    defaultPremium,
+			wantNil: true,
+		},
+		{
+			name: "category premium",
+			item: categoryPremium,
+			want: 25,
+		},
+	}
+	for _, tt := range tests {
+		ms.T().Run(tt.name, func(t *testing.T) {
+			got := tt.item.CalculateMonthlyPremium(ms.DB)
+			if tt.wantNil {
+				ms.Nil(got)
+				return
+			}
+			ms.Equal(tt.want, *got)
+		})
+	}
+}
+
 func (ms *ModelSuite) TestItem_calculateCancellationCredit() {
 	domain.Env.PremiumFactor = 0.02
 	earlyJanuary := time.Date(2019, 1, 1, 1, 1, 1, 1, time.UTC)
