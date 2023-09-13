@@ -3,6 +3,7 @@ package api
 import (
 	"time"
 
+	"github.com/gobuffalo/nulls"
 	"github.com/gofrs/uuid"
 )
 
@@ -51,4 +52,7 @@ type ItemCategory struct {
 
 	// whether make and model are required in order for item coverage to be auto approved
 	RequireMakeModel bool `json:"require_make_model"`
+
+	// the premium factor for this category
+	PremiumFactor nulls.Float64 `json:"premium_factor"`
 }
