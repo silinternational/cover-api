@@ -373,11 +373,11 @@ func (ms *ModelSuite) TestItem_SubmitForApproval() {
 	itemMobileMissingModel.CoverageStatus = api.ItemCoverageStatusDraft
 
 	// set their coverage amounts to be helpful for the tests and set the dependent as needed
-	itemAutoApprove.Load(ms.DB)
+	itemAutoApprove.LoadCategory(ms.DB, false)
 	itemAutoApprove.CoverageAmount = itemAutoApprove.Category.AutoApproveMax - 1
 	ms.NoError(ms.DB.Update(&itemAutoApprove), "error updating item fixture for test")
 
-	itemManualApprove.Load(ms.DB)
+	itemManualApprove.LoadCategory(ms.DB, false)
 	itemManualApprove.CoverageAmount = itemManualApprove.Category.AutoApproveMax + 1
 	ms.NoError(ms.DB.Update(&itemManualApprove), "error updating item fixture for test")
 
@@ -410,12 +410,12 @@ func (ms *ModelSuite) TestItem_SubmitForApproval() {
 	corpPolicy := corpFixtures.Policies[0]
 	ConvertPolicyType(ms.DB, corpPolicy)
 	corpItemAutoApprove := corpPolicy.Items[0]
-	corpItemAutoApprove.Load(ms.DB)
+	corpItemAutoApprove.LoadCategory(ms.DB, true)
 	corpItemAutoApprove.CoverageAmount = corpItemAutoApprove.Category.AutoApproveMax
 	ms.NoError(ms.DB.Update(&corpItemAutoApprove))
 
 	corpItemManualApprove := corpPolicy.Items[1]
-	corpItemManualApprove.Load(ms.DB)
+	corpItemManualApprove.LoadCategory(ms.DB, true)
 	corpItemManualApprove.CoverageAmount = corpItemManualApprove.Category.AutoApproveMax + 1
 	ms.NoError(ms.DB.Update(&corpItemManualApprove))
 

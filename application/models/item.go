@@ -525,8 +525,6 @@ func (i *Item) SubmitForApproval(ctx context.Context) error {
 
 	i.CoverageStatus = api.ItemCoverageStatusPending
 
-	i.Load(tx)
-
 	if i.canAutoApprove(tx) {
 		return i.AutoApprove(ctx)
 	}
@@ -547,22 +545,23 @@ func (i *Item) SubmitForApproval(ctx context.Context) error {
 }
 
 // Checks whether the item has a category that expects the make and model fields
-// to be hydrated. Returns true if they are hydrated of if the item has
+// to be hydrated. Returns true if they are hydrated or if the item has
 // a lenient category.
-// Assumes the item already has its Category loaded
 func (i *Item) areFieldsValidForAutoApproval(tx *pop.Connection) bool {
+	i.LoadCategory(tx, false)
+
 	if !i.Category.RequireMakeModel {
 		return true
 	}
 	return i.Make != `` && i.Model != ``
 }
 
-// Assumes the item already has its Category loaded
 func (i *Item) canAutoApprove(tx *pop.Connection) bool {
 	if !i.areFieldsValidForAutoApproval(tx) {
 		return false
 	}
 
+	i.LoadCategory(tx, false)
 	if i.CoverageAmount > i.Category.AutoApproveMax {
 		return false
 	}
@@ -704,18 +703,18 @@ func (i *Item) LoadPolicyMembers(tx *pop.Connection, reload bool) {
 	i.Policy.LoadMembers(tx, reload)
 }
 
-// TODO: split this into two functions (and add a `reload` parameter)
-// Load - a simple wrapper method for loading child objects
-func (i *Item) Load(tx *pop.Connection) {
-	if i.Category.ID == uuid.Nil {
-		if err := tx.Load(i, "Category", "RiskCategory"); err != nil {
-			panic("error loading item child objects: " + err.Error())
+// LoadCategory - a simple wrapper method for loading the item category
+func (i *Item) LoadCategory(tx *pop.Connection, reload bool) {
+	if i.Category.ID == uuid.Nil || reload {
+		if err := tx.Load(i, "Category"); err != nil {
+			panic("error loading item category: " + err.Error())
 		}
 	}
 }
 
 func (i *Item) ConvertToAPI(tx *pop.Connection) api.Item {
-	i.Load(tx)
+	i.LoadCategory(tx, false)
+	i.LoadRiskCategory(tx, false)
 
 	var coverageEndDate *string
 	if i.CoverageEndDate.Valid {
@@ -847,7 +846,7 @@ func (i *Item) CalculateProratedPremium(t time.Time) api.Currency {
 // CalculateMonthlyPremium returns the rounded product of the item's CoverageAmount and the category's
 // PremiumFactor divided by 12
 func (i *Item) CalculateMonthlyPremium(tx *pop.Connection) api.Currency {
-	i.Load(tx)
+	i.LoadCategory(tx, false)
 	if i.Category.PremiumFactor.Valid {
 		premium := api.Currency(math.Round(float64(i.CoverageAmount) * i.Category.PremiumFactor.Float64 / 12))
 		return premium
