@@ -49,7 +49,7 @@ type Item struct {
 	PolicyUserID      nulls.UUID             `db:"policy_user_id"`
 	Make              string                 `db:"make"`
 	Model             string                 `db:"model"`
-	Year              int                    `db:"year"`
+	Year              nulls.Int              `db:"year"`
 	SerialNumber      string                 `db:"serial_number"`
 	CoverageAmount    int                    `db:"coverage_amount" validate:"min=0"`
 	CoverageStatus    api.ItemCoverageStatus `db:"coverage_status" validate:"itemCoverageStatus"`
