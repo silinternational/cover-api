@@ -704,6 +704,7 @@ func (i *Item) LoadPolicyMembers(tx *pop.Connection, reload bool) {
 	i.Policy.LoadMembers(tx, reload)
 }
 
+// TODO: split this into two functions (and add a `reload` parameter)
 // Load - a simple wrapper method for loading child objects
 func (i *Item) Load(tx *pop.Connection) {
 	if i.Category.ID == uuid.Nil {
@@ -845,15 +846,15 @@ func (i *Item) CalculateProratedPremium(t time.Time) api.Currency {
 
 // CalculateMonthlyPremium returns the rounded product of the item's CoverageAmount and the category's
 // PremiumFactor divided by 12
-func (i *Item) CalculateMonthlyPremium(tx *pop.Connection) *api.Currency {
+func (i *Item) CalculateMonthlyPremium(tx *pop.Connection) api.Currency {
 	i.Load(tx)
-
 	if i.Category.PremiumFactor.Valid {
 		premium := api.Currency(math.Round(float64(i.CoverageAmount) * i.Category.PremiumFactor.Float64 / 12))
-		return &premium
+		return premium
+	} else {
+		premium := api.Currency(math.Round(float64(i.CoverageAmount) * domain.Env.PremiumFactor / 12))
+		return premium
 	}
-
-	return nil
 }
 
 // True if coverage on the item started in a previous year and the current

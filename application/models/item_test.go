@@ -825,38 +825,35 @@ func (ms *ModelSuite) TestItem_CalculateMonthlyPremium() {
 	f := CreateItemFixtures(ms.DB, FixturesConfig{ItemsPerPolicy: 2})
 
 	defaultPremium := f.Items[0]
+	defaultPremium.CoverageAmount = 30000
+	Must(ms.DB.Update(&defaultPremium))
 
 	categoryPremium := f.Items[1]
-	categoryPremium.CoverageAmount = 10000
+	categoryPremium.CoverageAmount = 30000
 	Must(ms.DB.Update(&categoryPremium))
 	f.ItemCategories[1].PremiumFactor = nulls.NewFloat64(0.03)
 	Must(ms.DB.Update(&f.ItemCategories[1]))
 
 	tests := []struct {
-		name    string
-		item    Item
-		wantNil bool
-		want    api.Currency
+		name string
+		item Item
+		want api.Currency
 	}{
 		{
-			name:    "default premium",
-			item:    defaultPremium,
-			wantNil: true,
+			name: "default premium",
+			item: defaultPremium,
+			want: 50,
 		},
 		{
 			name: "category premium",
 			item: categoryPremium,
-			want: 25,
+			want: 75,
 		},
 	}
 	for _, tt := range tests {
 		ms.T().Run(tt.name, func(t *testing.T) {
 			got := tt.item.CalculateMonthlyPremium(ms.DB)
-			if tt.wantNil {
-				ms.Nil(got)
-				return
-			}
-			ms.Equal(tt.want, *got)
+			ms.Equal(tt.want, got)
 		})
 	}
 }
