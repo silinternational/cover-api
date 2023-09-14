@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/silinternational/cover-api/api"
+	"github.com/silinternational/cover-api/domain"
 )
 
 func (ms *ModelSuite) TestItemCategories_Validate() {
@@ -59,4 +60,20 @@ func (ms *ModelSuite) TestItemCategories_Validate() {
 			}
 		})
 	}
+}
+
+func (ms *ModelSuite) TestItemCategory_ConvertToAPI() {
+	fixtures := CreateItemFixtures(ms.DB, FixturesConfig{DependentsPerPolicy: 1})
+	cat := fixtures.ItemCategories[0]
+	got := cat.ConvertToAPI(ms.DB)
+
+	ms.Equal(cat.ID, got.ID, "ID is not correct")
+	ms.Equal(cat.Name, got.Name, "Name is not correct")
+	ms.Equal(cat.HelpText, got.HelpText, "HelpText is not correct")
+	ms.Equal(cat.RiskCategory.ID, got.RiskCategory.ID, "RiskCategory.ID is not correct")
+	ms.Equal(cat.RequireMakeModel, got.RequireMakeModel, "RequireMakeModel is not correct")
+	ms.Equal(cat.BillingPeriod, got.BillingPeriod, "BillingPeriod is not correct")
+	ms.Equal(domain.PercentString(cat.PremiumFactor.Float64), got.PremiumFactor, "PremiumFactor is not correct")
+	ms.Equal(cat.CreatedAt, got.CreatedAt, "CreatedAt is not correct")
+	ms.Equal(cat.UpdatedAt, got.UpdatedAt, "UpdatedAt is not correct")
 }

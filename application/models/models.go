@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"os"
 	"reflect"
 	"strings"
 	"time"
@@ -24,8 +25,9 @@ import (
 	"github.com/silinternational/cover-api/log"
 )
 
-// DB is a connection to the database to be used throughout the application.
-var DB *pop.Connection
+// DB is a connection to the database to be used throughout the application. It must be initialized before
+// main() because Buffalo expects that. Specifically, the `app migrate` command uses `models.DB`.
+var DB = getDB()
 
 const tokenBytes = 32
 
@@ -160,22 +162,23 @@ type FieldUpdate struct {
 	NewValue  string
 }
 
-func Init() {
-	var err error
-	env := domain.Env.GoEnv
-	DB, err = pop.Connect(env)
-	if err != nil {
-		panic(fmt.Sprintf("error connecting to database ... %v", err))
-	}
-	pop.Debug = env == domain.EnvDevelopment
-
+func init() {
 	// Just make sure we can use the crypto/rand library on our system
-	if _, err = getRandomToken(); err != nil {
+	if _, err := getRandomToken(); err != nil {
 		panic(fmt.Errorf("error using crypto/rand ... %v", err))
 	}
-}
 
-func init() {
+	itemCategories := ItemCategories{}
+	if err := DB.Where("premium_factor IS NULL").All(&itemCategories); domain.IsOtherThanNoRows(err) {
+		panic(fmt.Sprintf("failed to query item_categories: %s", err))
+	}
+	for i := range itemCategories {
+		itemCategories[i].PremiumFactor = nulls.NewFloat64(domain.Env.PremiumFactor)
+		if err := DB.UpdateColumns(&itemCategories[i], "premium_factor", "updated_at"); err != nil {
+			panic(fmt.Sprintf("failed to set item_categories.premium_factor: %s", err))
+		}
+	}
+
 	// register custom validators for custom types
 	for tag, vFunc := range fieldValidators {
 		if err := mValidate.RegisterValidation(tag, vFunc, false); err != nil {
@@ -189,6 +192,16 @@ func init() {
 	mValidate.RegisterStructValidation(policyStructLevelValidation, Policy{})
 	mValidate.RegisterStructValidation(itemStructLevelValidation, Item{})
 	mValidate.RegisterStructValidation(notificationStructLevelValidation, Notification{})
+}
+
+func getDB() *pop.Connection {
+	env := os.Getenv("GO_ENV")
+	db, err := pop.Connect(env)
+	if err != nil {
+		panic(fmt.Sprintf("error connecting to database: %v", err))
+	}
+	pop.Debug = env == domain.EnvDevelopment
+	return db
 }
 
 func getRandomToken() (string, error) {

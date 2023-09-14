@@ -508,7 +508,7 @@ func (p *Policy) calculateAnnualPremium(tx *pop.Connection) api.Currency {
 	p.LoadItems(tx, false)
 	var premium api.Currency
 	for _, item := range p.Items {
-		premium += item.CalculateAnnualPremium()
+		premium += item.CalculateAnnualPremium(tx)
 	}
 	if int(premium) < domain.Env.PremiumMinimum {
 		return api.Currency(domain.Env.PremiumMinimum)
@@ -625,7 +625,7 @@ func (p *Policy) ProcessAnnualCoverage(tx *pop.Connection, year int) error {
 		if err := tx.UpdateColumns(&items[i], "paid_through_date", "updated_at"); err != nil {
 			return fmt.Errorf("failed to update paid_through_date for item %s: %w", items[i].ID, err)
 		}
-		totalAnnualPremium[items[i].RiskCategoryID] += items[i].CalculateAnnualPremium()
+		totalAnnualPremium[items[i].RiskCategoryID] += items[i].CalculateAnnualPremium(tx)
 	}
 
 	for id, amount := range totalAnnualPremium {
