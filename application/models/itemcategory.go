@@ -8,6 +8,7 @@ import (
 	"github.com/gobuffalo/pop/v6"
 
 	"github.com/silinternational/cover-api/domain"
+	"github.com/silinternational/cover-api/log"
 
 	"github.com/gobuffalo/validate/v3"
 	"github.com/gofrs/uuid"
@@ -79,7 +80,7 @@ func (i *ItemCategory) ConvertToAPI(tx *pop.Connection) api.ItemCategory {
 		HelpText:         i.HelpText,
 		RiskCategory:     i.RiskCategory.ConvertToAPI(),
 		RequireMakeModel: i.RequireMakeModel,
-		BillingPeriod:    i.BillingPeriod,
+		BillingPeriod:    i.getBillingPeriod(),
 		PremiumFactor:    domain.PercentString(i.PremiumFactor.Float64),
 		CreatedAt:        i.CreatedAt,
 		UpdatedAt:        i.UpdatedAt,
@@ -90,6 +91,14 @@ func (i *ItemCategory) LoadRiskCategory(tx *pop.Connection) {
 	if err := tx.Load(i, "RiskCategory"); err != nil {
 		panic("database error loading ItemCategory.RiskCategory, " + err.Error())
 	}
+}
+
+func (i *ItemCategory) getBillingPeriod() int {
+	b := i.BillingPeriod
+	if b != 1 && b != 12 {
+		log.Fatalf("invalid billing period found in item category %s", i.Name)
+	}
+	return b
 }
 
 func (i *ItemCategories) ConvertToAPI(tx *pop.Connection) api.ItemCategories {

@@ -21,9 +21,6 @@ import (
 	"github.com/silinternational/cover-api/log"
 )
 
-// minimum coverage amount - the minimum amount that would have a non-zero annual premium at the default rate of 2%
-const minimumCoverageAmount = 25
-
 var ValidItemCoverageStatuses = map[api.ItemCoverageStatus]struct{}{
 	api.ItemCoverageStatusDraft:    {},
 	api.ItemCoverageStatusPending:  {},
@@ -528,6 +525,8 @@ func isItemActionAllowed(actorIsAdmin bool, oldStatus api.ItemCoverageStatus, pe
 func (i *Item) SubmitForApproval(ctx context.Context) error {
 	tx := Tx(ctx)
 
+	minimumCoverageAmount := i.calculateMinimumCoverage(tx)
+
 	if i.CoverageAmount < minimumCoverageAmount {
 		err := fmt.Errorf("coverage_amount must be at least %s", api.Currency(minimumCoverageAmount).String())
 		return api.NewAppError(err, api.ErrorItemCoverageAmountTooLow, api.CategoryUser)
@@ -552,6 +551,12 @@ func (i *Item) SubmitForApproval(ctx context.Context) error {
 	emitEvent(e)
 
 	return nil
+}
+
+func (i *Item) calculateMinimumCoverage(tx *pop.Connection) int {
+	i.LoadCategory(tx, false)
+	billingPeriod := i.Category.getBillingPeriod()
+	return int(math.Round(0.5 / i.Category.PremiumFactor.Float64 / 12 * float64(billingPeriod)))
 }
 
 // Checks whether the item has a category that expects the make and model fields
@@ -751,7 +756,7 @@ func (i *Item) ConvertToAPI(tx *pop.Connection) api.Item {
 		StatusReason:          i.StatusReason,
 		CoverageStartDate:     i.CoverageStartDate.Format(domain.DateFormat),
 		CoverageEndDate:       coverageEndDate,
-		BillingPeriod:         i.Category.BillingPeriod,
+		BillingPeriod:         i.Category.getBillingPeriod(),
 		AnnualPremium:         i.CalculateAnnualPremium(tx),
 		MonthlyPremium:        i.CalculateMonthlyPremium(tx),
 		ProratedAnnualPremium: i.CalculateProratedPremium(tx, time.Now().UTC()),
