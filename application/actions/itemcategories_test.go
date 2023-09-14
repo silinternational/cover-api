@@ -31,6 +31,7 @@ func (as *ActionSuite) Test_ItemCategoriesList() {
 			Name:           fmt.Sprintf("Cat%v", i),
 			Status:         api.ItemCategoryStatusEnabled,
 			AutoApproveMax: 10,
+			BillingPeriod:  12,
 		}
 		models.MustCreate(as.DB, &cats[i])
 	}

@@ -555,13 +555,7 @@ func (i *Item) SubmitForApproval(ctx context.Context) error {
 
 func (i *Item) calculateMinimumCoverage(tx *pop.Connection) int {
 	i.LoadCategory(tx, false)
-	billingPeriod := i.Category.BillingPeriod
-	if billingPeriod < 1 {
-		billingPeriod = 1
-	}
-	if billingPeriod > 12 {
-		billingPeriod = 12
-	}
+	billingPeriod := i.Category.getBillingPeriod()
 	return int(math.Round(0.5 / i.Category.PremiumFactor.Float64 / 12 * float64(billingPeriod)))
 }
 
@@ -762,7 +756,7 @@ func (i *Item) ConvertToAPI(tx *pop.Connection) api.Item {
 		StatusReason:          i.StatusReason,
 		CoverageStartDate:     i.CoverageStartDate.Format(domain.DateFormat),
 		CoverageEndDate:       coverageEndDate,
-		BillingPeriod:         i.Category.BillingPeriod,
+		BillingPeriod:         i.Category.getBillingPeriod(),
 		AnnualPremium:         i.CalculateAnnualPremium(tx),
 		MonthlyPremium:        i.CalculateMonthlyPremium(tx),
 		ProratedAnnualPremium: i.CalculateProratedPremium(tx, time.Now().UTC()),
