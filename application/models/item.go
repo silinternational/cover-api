@@ -515,14 +515,7 @@ func isItemActionAllowed(actorIsAdmin bool, oldStatus api.ItemCoverageStatus, pe
 func (i *Item) SubmitForApproval(ctx context.Context) error {
 	tx := Tx(ctx)
 
-	billingPeriod := i.Category.BillingPeriod
-	var minimumCoverageAmount int
-	switch billingPeriod {
-	case 1:
-		minimumCoverageAmount = int(math.Round(0.005 / float64(*i.CalculateMonthlyPremium(tx))))
-	case 12:
-		minimumCoverageAmount = int(math.Round(0.005 / float64(i.CalculateAnnualPremium())))
-	}
+	minimumCoverageAmount := i.calculateMinimumCoverage(tx)
 
 	if i.CoverageAmount < minimumCoverageAmount {
 		err := fmt.Errorf("coverage_amount must be at least %s", api.Currency(minimumCoverageAmount).String())
@@ -550,6 +543,19 @@ func (i *Item) SubmitForApproval(ctx context.Context) error {
 	emitEvent(e)
 
 	return nil
+}
+
+func (i *Item) calculateMinimumCoverage(tx *pop.Connection) int {
+	i.Load(tx)
+	billingPeriod := i.Category.BillingPeriod
+	var minimumCoverageAmount int
+	switch billingPeriod {
+	case 1:
+		minimumCoverageAmount = int(math.Round(0.5 / i.Category.PremiumFactor.Float64 / 12))
+	case 12:
+		minimumCoverageAmount = int(math.Round(0.5 / i.Category.PremiumFactor.Float64))
+	}
+	return minimumCoverageAmount
 }
 
 // Checks whether the item has a category that expects the make and model fields
