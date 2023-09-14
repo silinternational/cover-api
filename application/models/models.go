@@ -185,7 +185,6 @@ func init() {
 			panic(fmt.Sprintf("failed to set item_categories.premium_factor: %s", err))
 		}
 	}
-}
 
 	// initialize model validation library
 	mValidate = validator.New()
