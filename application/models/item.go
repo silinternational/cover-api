@@ -545,7 +545,7 @@ func (i *Item) SubmitForApproval(ctx context.Context) error {
 }
 
 func (i *Item) calculateMinimumCoverage(tx *pop.Connection) int {
-	i.Load(tx)
+	i.LoadCategory(tx, false)
 	billingPeriod := i.Category.BillingPeriod
 	var minimumCoverageAmount int
 	switch billingPeriod {
