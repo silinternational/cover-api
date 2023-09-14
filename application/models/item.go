@@ -838,7 +838,7 @@ func (i *Items) ConvertToAPI(tx *pop.Connection) api.Items {
 // CalculateAnnualPremium returns the rounded product of the item's CoverageAmount and the category's
 // PremiumFactor
 func (i *Item) CalculateAnnualPremium(tx *pop.Connection) api.Currency {
-	i.Load(tx)
+	i.LoadCategory(tx, false)
 	if i.Category.PremiumFactor.Valid {
 		premium := api.Currency(math.Round(float64(i.CoverageAmount) * i.Category.PremiumFactor.Float64))
 		return premium
