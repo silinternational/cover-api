@@ -134,7 +134,8 @@ func (i *Item) Update(ctx context.Context) error {
 			return api.NewAppError(err, api.ErrorItemCoverageAmountCannotIncrease, api.CategoryUser)
 		}
 		if oldItem.CoverageAmount != i.CoverageAmount && !i.CoverageEndDate.Valid {
-			amount := i.calculatePremiumChange(time.Now().UTC(), oldItem.CalculateAnnualPremium(), i.CalculateAnnualPremium())
+			amount := i.calculatePremiumChange(time.Now().UTC(), oldItem.CalculateAnnualPremium(tx),
+				i.CalculateAnnualPremium(tx))
 			if err := i.CreateLedgerEntry(tx, LedgerEntryTypeCoverageChange, amount); err != nil {
 				return err
 			}
@@ -290,6 +291,7 @@ func (i *Item) FindByID(tx *pop.Connection, id uuid.UUID) error {
 // It also creates a corresponding credit ledger entry
 func (i *Item) SafeDeleteOrInactivate(ctx context.Context) error {
 	now := time.Now().UTC()
+	tx := Tx(ctx)
 	switch i.CoverageStatus {
 	case api.ItemCoverageStatusInactive, api.ItemCoverageStatusDenied:
 		return nil
@@ -303,10 +305,9 @@ func (i *Item) SafeDeleteOrInactivate(ctx context.Context) error {
 			return nil
 		}
 
-		return i.CreateLedgerEntry(Tx(ctx), LedgerEntryTypeCoverageRefund, i.calculateCancellationCredit(now))
+		return i.CreateLedgerEntry(tx, LedgerEntryTypeCoverageRefund, i.calculateCancellationCredit(tx, now))
 
 	case api.ItemCoverageStatusDraft, api.ItemCoverageStatusRevision, api.ItemCoverageStatusPending:
-		tx := Tx(ctx)
 		if i.isNewEnough() && i.canBeDeleted(tx) {
 			return i.Destroy(tx)
 		}
@@ -388,7 +389,7 @@ func (i *Item) cancelCoverageAfterClaim(tx *pop.Connection, reason string) error
 
 	now := time.Now().UTC()
 
-	amount := i.calculatePremiumChange(now, i.CalculateAnnualPremium(), 0)
+	amount := i.calculatePremiumChange(now, i.CalculateAnnualPremium(tx), 0)
 	if err := i.CreateLedgerEntry(tx, LedgerEntryTypeCoverageRefund, amount); err != nil {
 		return err
 	}
@@ -651,8 +652,9 @@ func (i *Item) Approve(ctx context.Context, doEmitEvent bool) error {
 		emitEvent(e)
 	}
 
-	amount := i.CalculateProratedPremium(time.Now().UTC())
-	return i.CreateLedgerEntry(Tx(ctx), LedgerEntryTypeNewCoverage, amount)
+	tx := Tx(ctx)
+	amount := i.CalculateProratedPremium(tx, time.Now().UTC())
+	return i.CreateLedgerEntry(tx, LedgerEntryTypeNewCoverage, amount)
 }
 
 // Deny takes the item from Pending coverage status to Denied.
@@ -704,6 +706,7 @@ func (i *Item) LoadPolicyMembers(tx *pop.Connection, reload bool) {
 	i.Policy.LoadMembers(tx, reload)
 }
 
+// TODO: split this into two functions (and add a `reload` parameter)
 // Load - a simple wrapper method for loading child objects
 func (i *Item) Load(tx *pop.Connection) {
 	if i.Category.ID == uuid.Nil {
@@ -741,9 +744,9 @@ func (i *Item) ConvertToAPI(tx *pop.Connection) api.Item {
 		CoverageStartDate:     i.CoverageStartDate.Format(domain.DateFormat),
 		CoverageEndDate:       coverageEndDate,
 		BillingPeriod:         i.Category.BillingPeriod,
-		AnnualPremium:         i.CalculateAnnualPremium(),
+		AnnualPremium:         i.CalculateAnnualPremium(tx),
 		MonthlyPremium:        i.CalculateMonthlyPremium(tx),
-		ProratedAnnualPremium: i.CalculateProratedPremium(time.Now().UTC()),
+		ProratedAnnualPremium: i.CalculateProratedPremium(tx, time.Now().UTC()),
 		CanBeDeleted:          i.canBeDeleted(tx),
 		CanBeUpdated:          i.canBeUpdated(tx),
 		CreatedAt:             i.CreatedAt,
@@ -833,14 +836,20 @@ func (i *Items) ConvertToAPI(tx *pop.Connection) api.Items {
 	return apiItems
 }
 
-// CalculateAnnualPremium returns the rounded product of the item's CoverageAmount and the PremiumFactor
-func (i *Item) CalculateAnnualPremium() api.Currency {
-	p := int(math.Round(float64(i.CoverageAmount) * domain.Env.PremiumFactor))
-	return api.Currency(p)
+// CalculateAnnualPremium returns the rounded product of the item's CoverageAmount and the category's
+// PremiumFactor
+func (i *Item) CalculateAnnualPremium(tx *pop.Connection) api.Currency {
+	i.Load(tx)
+	factor := domain.Env.PremiumFactor
+	if i.Category.PremiumFactor.Valid {
+		factor = i.Category.PremiumFactor.Float64
+	}
+	premium := api.Currency(math.Round(float64(i.CoverageAmount) * factor))
+	return premium
 }
 
-func (i *Item) CalculateProratedPremium(t time.Time) api.Currency {
-	p := domain.CalculatePartialYearValue(int(i.CalculateAnnualPremium()), t)
+func (i *Item) CalculateProratedPremium(tx *pop.Connection, t time.Time) api.Currency {
+	p := domain.CalculatePartialYearValue(int(i.CalculateAnnualPremium(tx)), t)
 	return api.Currency(p)
 }
 
@@ -863,13 +872,13 @@ func (i *Item) shouldGiveFullYearRefund(t time.Time) bool {
 	return i.CoverageStartDate.Year() < t.Year() && t.Month() == 1
 }
 
-func (i *Item) calculateCancellationCredit(t time.Time) api.Currency {
+func (i *Item) calculateCancellationCredit(tx *pop.Connection, t time.Time) api.Currency {
 	// If we're in December already, then no credit
 	if t.Month() == 12 {
 		return 0
 	}
 
-	premium := int(i.CalculateAnnualPremium())
+	premium := int(i.CalculateAnnualPremium(tx))
 
 	// If the coverage was from a previous year and today is still in January,
 	//   give a full year's refund.
@@ -1170,7 +1179,7 @@ func (i *Items) RepairItemsIncorrectlyRenewed(c buffalo.Context, date time.Time)
 
 		correctYear := item.CoverageEndDate.Time.Year()
 		incorrectYear := item.PaidThroughYear
-		annualPremium := item.CalculateAnnualPremium() // TODO: get the amount from the ledger entry, in case the coverage amount has changed
+		annualPremium := item.CalculateAnnualPremium(tx) // TODO: get the amount from the ledger entry, in case the coverage amount has changed
 		refund := annualPremium * api.Currency(incorrectYear-correctYear)
 
 		if err := item.CreateLedgerEntry(tx, LedgerEntryTypeCoverageRefund, -refund); err != nil {

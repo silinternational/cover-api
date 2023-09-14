@@ -168,6 +168,17 @@ func init() {
 		panic(fmt.Errorf("error using crypto/rand ... %v", err))
 	}
 
+	itemCategories := ItemCategories{}
+	if err := DB.Where("premium_factor IS NULL").All(&itemCategories); domain.IsOtherThanNoRows(err) {
+		panic(fmt.Sprintf("failed to query item_categories: %s", err))
+	}
+	for i := range itemCategories {
+		itemCategories[i].PremiumFactor = nulls.NewFloat64(domain.Env.PremiumFactor)
+		if err := DB.UpdateColumns(&itemCategories[i], "premium_factor", "updated_at"); err != nil {
+			panic(fmt.Sprintf("failed to set item_categories.premium_factor: %s", err))
+		}
+	}
+
 	// register custom validators for custom types
 	for tag, vFunc := range fieldValidators {
 		if err := mValidate.RegisterValidation(tag, vFunc, false); err != nil {
