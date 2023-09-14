@@ -1277,6 +1277,8 @@ func (ms *ModelSuite) TestItem_ConvertToAPI() {
 	ms.Equal(item.UpdatedAt, got.UpdatedAt, "UpdatedAt is not correct")
 	ms.Equal(item.Category.ConvertToAPI(ms.DB), got.Category, "Category is not correct")
 	ms.Equal(item.RiskCategory.ConvertToAPI(), got.RiskCategory, "RiskCategory is not correct")
+	ms.Equal(item.Category.BillingPeriod, got.BillingPeriod, "BillingPeriod is not correct")
+	ms.Equal(item.CalculateMonthlyPremium(ms.DB), got.MonthlyPremium, "MonthlyPremium is not correct")
 	ms.Equal(item.CalculateAnnualPremium(), got.AnnualPremium, "AnnualPremium is not correct")
 	ms.Equal(item.CalculateProratedPremium(time.Now().UTC()), got.ProratedAnnualPremium,
 		"ProratedAnnualPremium is not correct")
