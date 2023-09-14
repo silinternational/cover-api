@@ -8,11 +8,11 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"os"
 	"reflect"
 	"strings"
 	"time"
 
-	"github.com/go-playground/validator/v10"
 	"github.com/gobuffalo/events"
 	"github.com/gobuffalo/nulls"
 	"github.com/gobuffalo/pop/v6"
@@ -25,8 +25,9 @@ import (
 	"github.com/silinternational/cover-api/log"
 )
 
-// DB is a connection to the database to be used throughout the application.
-var DB *pop.Connection
+// DB is a connection to the database to be used throughout the application. It must be initialized before
+// main() because Buffalo expects that. Specifically, the `app migrate` command uses `models.DB`.
+var DB = getDB()
 
 const tokenBytes = 32
 
@@ -107,7 +108,7 @@ const (
 	FieldItemStatusReason      = "CoverageStatusReason"
 )
 
-var uuidNamespace uuid.UUID
+var uuidNamespace = uuid.FromStringOrNil(uuidNamespaceString)
 
 type Authable interface {
 	GetID() uuid.UUID
@@ -162,25 +163,14 @@ type FieldUpdate struct {
 }
 
 func init() {
-	var err error
-	env := domain.Env.GoEnv
-	DB, err = pop.Connect(env)
-	if err != nil {
-		panic(fmt.Sprintf("error connecting to database ... %v", err))
-	}
-	pop.Debug = env == domain.EnvDevelopment
-
 	// Just make sure we can use the crypto/rand library on our system
-	if _, err = getRandomToken(); err != nil {
+	if _, err := getRandomToken(); err != nil {
 		panic(fmt.Errorf("error using crypto/rand ... %v", err))
 	}
 
-	// initialize model validation library
-	mValidate = validator.New()
-
 	// register custom validators for custom types
 	for tag, vFunc := range fieldValidators {
-		if err = mValidate.RegisterValidation(tag, vFunc, false); err != nil {
+		if err := mValidate.RegisterValidation(tag, vFunc, false); err != nil {
 			panic(fmt.Errorf("failed to register validation for %s: %s", tag, err))
 		}
 	}
@@ -191,12 +181,16 @@ func init() {
 	mValidate.RegisterStructValidation(policyStructLevelValidation, Policy{})
 	mValidate.RegisterStructValidation(itemStructLevelValidation, Item{})
 	mValidate.RegisterStructValidation(notificationStructLevelValidation, Notification{})
+}
 
-	// get fixed IDs
-	riskCategoryStationaryID = uuid.FromStringOrNil(RiskCategoryStationaryIDString)
-	riskCategoryMobileID = uuid.FromStringOrNil(RiskCategoryMobileIDString)
-	householdEntityID = uuid.FromStringOrNil(HouseholdEntityIDString)
-	uuidNamespace = uuid.FromStringOrNil(uuidNamespaceString)
+func getDB() *pop.Connection {
+	env := os.Getenv("GO_ENV")
+	db, err := pop.Connect(env)
+	if err != nil {
+		panic(fmt.Sprintf("error connecting to database: %v", err))
+	}
+	pop.Debug = env == domain.EnvDevelopment
+	return db
 }
 
 func getRandomToken() (string, error) {
@@ -220,7 +214,6 @@ func CurrentUser(ctx context.Context) User {
 func Tx(ctx context.Context) *pop.Connection {
 	tx, ok := ctx.Value(domain.ContextKeyTx).(*pop.Connection)
 	if !ok {
-		log.Info("no transaction found in context, called from:", domain.GetFunctionName(2))
 		return DB
 	}
 	return tx

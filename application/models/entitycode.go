@@ -12,7 +12,7 @@ import (
 
 const HouseholdEntityIDString = "5f181e39-0a2a-49ac-8796-2f3a3de9fcbd"
 
-var householdEntityID uuid.UUID
+var householdEntityID = uuid.FromStringOrNil(HouseholdEntityIDString)
 
 type EntityCodes []EntityCode
 
