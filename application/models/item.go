@@ -266,8 +266,8 @@ func (i *Item) Compare(old Item) []FieldUpdate {
 
 	if i.PaidThroughDate != old.PaidThroughDate {
 		updates = append(updates, FieldUpdate{
-			OldValue:  old.PaidThroughDate.Format("2006-01-02"),
-			NewValue:  i.PaidThroughDate.Format("2006-01-02"),
+			OldValue:  old.PaidThroughDate.Format(domain.DateFormat),
+			NewValue:  i.PaidThroughDate.Format(domain.DateFormat),
 			FieldName: FieldItemPaidThroughDate,
 		})
 	}
