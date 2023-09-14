@@ -21,7 +21,7 @@ const Greetings_Placeholder = "[Greetings]"
 
 const mailTemplatePath = "mail/"
 
-//  Email templates
+// Email templates
 const (
 	MessageTemplateClaimReview1Steward    = "claim_review1_steward"
 	MessageTemplateClaimRevisionMember    = "claim_revision_member"
@@ -105,7 +105,7 @@ func (m MessageData) addItemData(tx *pop.Connection, item models.Item) {
 
 	m["itemURL"] = fmt.Sprintf("%s/policies/%s/items/%s", domain.Env.UIURL, item.PolicyID, item.ID)
 
-	item.Load(tx)
+	item.LoadCategory(tx, false)
 	item.LoadPolicy(tx, false)
 	m["item"] = item
 
@@ -123,8 +123,8 @@ func (m MessageData) addItemData(tx *pop.Connection, item models.Item) {
 	} else {
 		m["coverageEndDate"] = ""
 	}
-	m["annualPremium"] = "$" + item.CalculateAnnualPremium().String()
-	m["proratedPremium"] = "$" + item.CalculateProratedPremium(item.CoverageStartDate).String()
+	m["annualPremium"] = "$" + item.CalculateAnnualPremium(tx).String()
+	m["proratedPremium"] = "$" + item.CalculateProratedPremium(tx, item.CoverageStartDate).String()
 }
 
 func (m MessageData) addStewardData(tx *pop.Connection) {

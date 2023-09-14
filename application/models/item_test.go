@@ -373,11 +373,11 @@ func (ms *ModelSuite) TestItem_SubmitForApproval() {
 	itemMobileMissingModel.CoverageStatus = api.ItemCoverageStatusDraft
 
 	// set their coverage amounts to be helpful for the tests and set the dependent as needed
-	itemAutoApprove.Load(ms.DB)
+	itemAutoApprove.LoadCategory(ms.DB, false)
 	itemAutoApprove.CoverageAmount = itemAutoApprove.Category.AutoApproveMax - 1
 	ms.NoError(ms.DB.Update(&itemAutoApprove), "error updating item fixture for test")
 
-	itemManualApprove.Load(ms.DB)
+	itemManualApprove.LoadCategory(ms.DB, false)
 	itemManualApprove.CoverageAmount = itemManualApprove.Category.AutoApproveMax + 1
 	ms.NoError(ms.DB.Update(&itemManualApprove), "error updating item fixture for test")
 
@@ -410,12 +410,12 @@ func (ms *ModelSuite) TestItem_SubmitForApproval() {
 	corpPolicy := corpFixtures.Policies[0]
 	ConvertPolicyType(ms.DB, corpPolicy)
 	corpItemAutoApprove := corpPolicy.Items[0]
-	corpItemAutoApprove.Load(ms.DB)
+	corpItemAutoApprove.LoadCategory(ms.DB, true)
 	corpItemAutoApprove.CoverageAmount = corpItemAutoApprove.Category.AutoApproveMax
 	ms.NoError(ms.DB.Update(&corpItemAutoApprove))
 
 	corpItemManualApprove := corpPolicy.Items[1]
-	corpItemManualApprove.Load(ms.DB)
+	corpItemManualApprove.LoadCategory(ms.DB, true)
 	corpItemManualApprove.CoverageAmount = corpItemManualApprove.Category.AutoApproveMax + 1
 	ms.NoError(ms.DB.Update(&corpItemManualApprove))
 
@@ -551,8 +551,8 @@ func (ms *ModelSuite) TestItem_SafeDeleteOrInactivate() {
 
 	newApprovedItem := items[4]
 	ms.NoError(newApprovedItem.Approve(ctx, false))
-	ms.Greater(newApprovedItem.PaidThroughYear, 0,
-		"Approved item didn't get a paid_through_year value")
+	ms.Greater(newApprovedItem.PaidThroughDate, domain.ZeroDate(),
+		"Approved item didn't get a paid_through_date value")
 
 	newPendingItem := UpdateItemStatus(ms.DB, items[5], api.ItemCoverageStatusPending, "")
 
@@ -633,7 +633,7 @@ func (ms *ModelSuite) TestItem_SafeDeleteOrInactivate() {
 			}
 			ms.NoError(err, "error finding the item in the database")
 			ms.Equal(tt.wantStatus, dbItem.CoverageStatus, "incorrect status")
-			ms.Equal(0, dbItem.PaidThroughYear, "incorrect paid_through_year value")
+			ms.Equal(domain.ZeroDate(), dbItem.PaidThroughDate, "incorrect paid_through_date value")
 		})
 	}
 }
@@ -785,7 +785,7 @@ func (ms *ModelSuite) TestItem_calculateAnnualPremium() {
 	for _, tt := range tests {
 		ms.T().Run(tt.name, func(t *testing.T) {
 			item := Item{CoverageAmount: tt.coverage}
-			got := item.CalculateAnnualPremium()
+			got := item.CalculateAnnualPremium(ms.DB)
 			ms.Equal(api.Currency(tt.want), got)
 		})
 	}
@@ -815,8 +815,47 @@ func (ms *ModelSuite) TestItem_calculateProratedPremium() {
 	for _, tt := range tests {
 		ms.T().Run(tt.name, func(t *testing.T) {
 			item := Item{CoverageAmount: tt.coverage}
-			got := item.CalculateProratedPremium(now)
+			got := item.CalculateProratedPremium(ms.DB, now)
 			ms.Equal(api.Currency(tt.want), got)
+		})
+	}
+}
+
+func (ms *ModelSuite) TestItem_CalculateMonthlyPremium() {
+	f := CreateItemFixtures(ms.DB, FixturesConfig{ItemsPerPolicy: 2})
+
+	defaultPremium := f.Items[0]
+	defaultPremium.CoverageAmount = 30000
+	Must(ms.DB.Update(&defaultPremium))
+	f.ItemCategories[0].PremiumFactor = nulls.NewFloat64(0.02)
+	Must(ms.DB.Update(&f.ItemCategories[0]))
+
+	categoryPremium := f.Items[1]
+	categoryPremium.CoverageAmount = 30000
+	Must(ms.DB.Update(&categoryPremium))
+	f.ItemCategories[1].PremiumFactor = nulls.NewFloat64(0.03)
+	Must(ms.DB.Update(&f.ItemCategories[1]))
+
+	tests := []struct {
+		name string
+		item Item
+		want api.Currency
+	}{
+		{
+			name: "default premium",
+			item: defaultPremium,
+			want: 50,
+		},
+		{
+			name: "category premium",
+			item: categoryPremium,
+			want: 75,
+		},
+	}
+	for _, tt := range tests {
+		ms.T().Run(tt.name, func(t *testing.T) {
+			got := tt.item.CalculateMonthlyPremium(ms.DB)
+			ms.Equal(tt.want, got)
 		})
 	}
 }
@@ -881,7 +920,7 @@ func (ms *ModelSuite) TestItem_calculateCancellationCredit() {
 				CoverageAmount:    tt.coverage,
 				CoverageStartDate: tt.coverageStartDate,
 			}
-			got := item.calculateCancellationCredit(tt.testTime)
+			got := item.calculateCancellationCredit(ms.DB, tt.testTime)
 			ms.Equal(api.Currency(tt.want), got)
 		})
 	}
@@ -985,11 +1024,11 @@ func (ms *ModelSuite) TestItem_CreateLedgerEntry() {
 
 			var updatedItem Item
 			ms.NoError(ms.DB.Find(&updatedItem, tt.item.ID))
-			wantPaidThroughYear := 0
+			wantPaidThroughDate := domain.ZeroDate()
 			if le.Type == LedgerEntryTypeNewCoverage || le.Type == LedgerEntryTypeCoverageRenewal {
-				wantPaidThroughYear = le.DateSubmitted.Year()
+				wantPaidThroughDate = domain.EndOfYear(le.DateSubmitted.Year())
 			}
-			ms.Equal(wantPaidThroughYear, updatedItem.PaidThroughYear, "Item.PaidThroughYear is incorrect")
+			ms.Equal(wantPaidThroughDate, updatedItem.PaidThroughDate, "Item.PaidThroughDate is incorrect")
 		})
 	}
 }
@@ -1240,8 +1279,10 @@ func (ms *ModelSuite) TestItem_ConvertToAPI() {
 	ms.Equal(item.UpdatedAt, got.UpdatedAt, "UpdatedAt is not correct")
 	ms.Equal(item.Category.ConvertToAPI(ms.DB), got.Category, "Category is not correct")
 	ms.Equal(item.RiskCategory.ConvertToAPI(), got.RiskCategory, "RiskCategory is not correct")
-	ms.Equal(item.CalculateAnnualPremium(), got.AnnualPremium, "AnnualPremium is not correct")
-	ms.Equal(item.CalculateProratedPremium(time.Now().UTC()), got.ProratedAnnualPremium,
+	ms.Equal(item.Category.BillingPeriod, got.BillingPeriod, "BillingPeriod is not correct")
+	ms.Equal(item.CalculateMonthlyPremium(ms.DB), got.MonthlyPremium, "MonthlyPremium is not correct")
+	ms.Equal(item.CalculateAnnualPremium(ms.DB), got.AnnualPremium, "AnnualPremium is not correct")
+	ms.Equal(item.CalculateProratedPremium(ms.DB, time.Now().UTC()), got.ProratedAnnualPremium,
 		"ProratedAnnualPremium is not correct")
 	ms.Equal(item.PolicyDependentID.UUID, got.AccountablePerson.ID, "AccountablePerson ID is not correct")
 	ms.Equal(fixtures.PolicyDependents[0].GetName().String(), got.AccountablePerson.Name,
@@ -1411,17 +1452,17 @@ func (ms *ModelSuite) TestItem_FindItemsIncorrectlyRenewed() {
 
 	f := CreateItemFixtures(ms.DB, FixturesConfig{ItemsPerPolicy: 3})
 	incorrectItem := f.Items[0]
-	incorrectItem.PaidThroughYear = thisYear
+	incorrectItem.PaidThroughDate = domain.EndOfYear(thisYear)
 	incorrectItem.CoverageEndDate = nulls.NewTime(aDateLastYear)
 	Must(ms.DB.Update(&incorrectItem))
 
 	correctItem := f.Items[1]
-	correctItem.PaidThroughYear = lastYear
+	correctItem.PaidThroughDate = domain.EndOfYear(lastYear)
 	correctItem.CoverageEndDate = nulls.NewTime(aDateLastYear)
 	Must(ms.DB.Update(&correctItem))
 
 	incorrectLastYear := f.Items[2]
-	incorrectLastYear.PaidThroughYear = lastYear
+	incorrectLastYear.PaidThroughDate = domain.EndOfYear(lastYear)
 	incorrectLastYear.CoverageEndDate = nulls.NewTime(aDateTwoYearsAgo)
 	Must(ms.DB.Update(&incorrectLastYear))
 
@@ -1470,18 +1511,18 @@ func (ms *ModelSuite) TestItem_RepairItemsIncorrectlyRenewed() {
 
 	f := CreateItemFixtures(ms.DB, FixturesConfig{ItemsPerPolicy: 3})
 	incorrectItem := f.Items[0]
-	incorrectItem.PaidThroughYear = thisYear
+	incorrectItem.PaidThroughDate = domain.EndOfYear(thisYear)
 	incorrectItem.CoverageEndDate = nulls.NewTime(aDateLastYear)
 	incorrectItem.CoverageAmount = 10000
 	Must(ms.DB.Update(&incorrectItem))
 
 	correctItem := f.Items[1]
-	correctItem.PaidThroughYear = lastYear
+	correctItem.PaidThroughDate = domain.EndOfYear(lastYear)
 	correctItem.CoverageEndDate = nulls.NewTime(aDateLastYear)
 	Must(ms.DB.Update(&correctItem))
 
 	incorrectLastYear := f.Items[2]
-	incorrectLastYear.PaidThroughYear = lastYear
+	incorrectLastYear.PaidThroughDate = domain.EndOfYear(lastYear)
 	incorrectLastYear.CoverageEndDate = nulls.NewTime(aDateTwoYearsAgo)
 	incorrectLastYear.CoverageAmount = 20000
 	Must(ms.DB.Update(&incorrectLastYear))
@@ -1492,22 +1533,22 @@ func (ms *ModelSuite) TestItem_RepairItemsIncorrectlyRenewed() {
 		name                string
 		date                time.Time
 		wantItemIDs         []uuid.UUID
-		wantPaidThroughYear int
+		wantPaidThroughDate time.Time
 		wantRefundAmount    api.Currency
 	}{
 		{
 			name:                "this year has one incorrect item",
 			date:                now,
 			wantItemIDs:         []uuid.UUID{incorrectItem.ID},
-			wantPaidThroughYear: lastYear,
-			wantRefundAmount:    incorrectItem.CalculateAnnualPremium(),
+			wantPaidThroughDate: domain.EndOfYear(lastYear),
+			wantRefundAmount:    incorrectItem.CalculateAnnualPremium(ms.DB),
 		},
 		{
 			name:                "last year has one incorrect item",
 			date:                aDateLastYear,
 			wantItemIDs:         []uuid.UUID{incorrectLastYear.ID},
-			wantPaidThroughYear: lastYear - 1,
-			wantRefundAmount:    incorrectLastYear.CalculateAnnualPremium(),
+			wantPaidThroughDate: domain.EndOfYear(lastYear - 1),
+			wantRefundAmount:    incorrectLastYear.CalculateAnnualPremium(ms.DB),
 		},
 		{
 			name:        "no incorrect items",
@@ -1525,12 +1566,12 @@ func (ms *ModelSuite) TestItem_RepairItemsIncorrectlyRenewed() {
 			for i := range items {
 				gotIDs[i] = items[i].ID
 
-				ms.Equal(tt.wantPaidThroughYear, items[i].PaidThroughYear,
-					"PaidThroughYear is incorrect on items[%d]", i)
+				ms.Equal(tt.wantPaidThroughDate, items[i].PaidThroughDate,
+					"PaidThroughDate is incorrect on items[%d]", i)
 
 				var fromDB Item
 				Must(ms.DB.Find(&fromDB, items[i].ID))
-				ms.Equal(items[i].PaidThroughYear, fromDB.PaidThroughYear, "item wasn't saved correctly")
+				ms.Equal(items[i].PaidThroughDate, fromDB.PaidThroughDate, "item wasn't saved correctly")
 			}
 			ms.ElementsMatch(tt.wantItemIDs, gotIDs)
 
@@ -1549,7 +1590,7 @@ func (ms *ModelSuite) Test_CountItemsToRenew() {
 
 	f := CreateItemFixtures(ms.DB, FixturesConfig{ItemsPerPolicy: 5})
 	for i := range f.Items {
-		f.Items[i].PaidThroughYear = year - 1
+		f.Items[i].PaidThroughDate = domain.EndOfYear(year - 1)
 		UpdateItemStatus(ms.DB, f.Items[i], api.ItemCoverageStatusApproved, "")
 	}
 

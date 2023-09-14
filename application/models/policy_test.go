@@ -517,7 +517,8 @@ func (ms *ModelSuite) TestPolicy_calculateAnnualPremium() {
 		{
 			name:   "two items, above minimum",
 			policy: secondPolicy,
-			want:   f.Policies[1].Items[0].CalculateAnnualPremium() + f.Policies[1].Items[1].CalculateAnnualPremium(),
+			want: f.Policies[1].Items[0].CalculateAnnualPremium(ms.DB) +
+				f.Policies[1].Items[1].CalculateAnnualPremium(ms.DB),
 		},
 	}
 	for _, tt := range tests {
@@ -684,7 +685,7 @@ func (ms *ModelSuite) TestPolicy_ProcessAnnualCoverage() {
 
 	f := CreateItemFixtures(ms.DB, FixturesConfig{ItemsPerPolicy: 5})
 
-	f.Items[0].PaidThroughYear = year
+	f.Items[0].PaidThroughDate = domain.EndOfYear(year)
 	f.Items[2].RiskCategoryID = RiskCategoryMobileID()
 	for i := range f.Items {
 		UpdateItemStatus(ms.DB, f.Items[i], api.ItemCoverageStatusApproved, "")

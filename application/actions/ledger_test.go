@@ -314,7 +314,7 @@ func (as *ActionSuite) Test_LedgerAnnualProcess() {
 
 	f := models.CreateItemFixtures(as.DB, models.FixturesConfig{ItemsPerPolicy: 3})
 
-	f.Items[0].PaidThroughYear = year
+	f.Items[0].PaidThroughDate = domain.EndOfYear(year)
 	models.UpdateItemStatus(as.DB, f.Items[0], api.ItemCoverageStatusApproved, "")
 	models.UpdateItemStatus(as.DB, f.Items[1], api.ItemCoverageStatusApproved, "")
 
@@ -367,7 +367,7 @@ func (as *ActionSuite) Test_LedgerAnnualStatus() {
 
 	f := models.CreateItemFixtures(as.DB, models.FixturesConfig{ItemsPerPolicy: 3})
 
-	f.Items[0].PaidThroughYear = year
+	f.Items[0].PaidThroughDate = domain.EndOfYear(year)
 	models.UpdateItemStatus(as.DB, f.Items[0], api.ItemCoverageStatusApproved, "")
 	models.UpdateItemStatus(as.DB, f.Items[1], api.ItemCoverageStatusApproved, "")
 

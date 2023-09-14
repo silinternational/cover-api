@@ -49,10 +49,11 @@ type Item struct {
 	PolicyUserID      nulls.UUID             `db:"policy_user_id"`
 	Make              string                 `db:"make"`
 	Model             string                 `db:"model"`
+	Year              nulls.Int              `db:"year"`
 	SerialNumber      string                 `db:"serial_number"`
 	CoverageAmount    int                    `db:"coverage_amount" validate:"min=0"`
 	CoverageStatus    api.ItemCoverageStatus `db:"coverage_status" validate:"itemCoverageStatus"`
-	PaidThroughYear   int                    `db:"paid_through_year"`
+	PaidThroughDate   time.Time              `db:"paid_through_date"`
 	StatusChange      string                 `db:"status_change"`
 	CoverageStartDate time.Time              `db:"coverage_start_date"`
 	CoverageEndDate   nulls.Time             `db:"coverage_end_date"`
@@ -133,7 +134,8 @@ func (i *Item) Update(ctx context.Context) error {
 			return api.NewAppError(err, api.ErrorItemCoverageAmountCannotIncrease, api.CategoryUser)
 		}
 		if oldItem.CoverageAmount != i.CoverageAmount && !i.CoverageEndDate.Valid {
-			amount := i.calculatePremiumChange(time.Now().UTC(), oldItem.CalculateAnnualPremium(), i.CalculateAnnualPremium())
+			amount := i.calculatePremiumChange(time.Now().UTC(), oldItem.CalculateAnnualPremium(tx),
+				i.CalculateAnnualPremium(tx))
 			if err := i.CreateLedgerEntry(tx, LedgerEntryTypeCoverageChange, amount); err != nil {
 				return err
 			}
@@ -263,6 +265,14 @@ func (i *Item) Compare(old Item) []FieldUpdate {
 		})
 	}
 
+	if i.PaidThroughDate != old.PaidThroughDate {
+		updates = append(updates, FieldUpdate{
+			OldValue:  old.PaidThroughDate.Format(domain.DateFormat),
+			NewValue:  i.PaidThroughDate.Format(domain.DateFormat),
+			FieldName: FieldItemPaidThroughDate,
+		})
+	}
+
 	if i.StatusReason != old.StatusReason {
 		updates = append(updates, FieldUpdate{
 			OldValue:  old.StatusReason,
@@ -283,12 +293,13 @@ func (i *Item) FindByID(tx *pop.Connection, id uuid.UUID) error {
 }
 
 // SafeDeleteOrInactivate deletes the item if it is newish (less than 72 hours old)
-//  and if it has a Draft, Revision or Pending status.
-//  If the item's status is Denied or Inactive, it does nothing.
-//  Otherwise, it changes its status to Inactive.
-//  It also creates a corresponding credit ledger entry
+// and if it has a Draft, Revision or Pending status.
+// If the item's status is Denied or Inactive, it does nothing.
+// Otherwise, it changes its status to Inactive.
+// It also creates a corresponding credit ledger entry
 func (i *Item) SafeDeleteOrInactivate(ctx context.Context) error {
 	now := time.Now().UTC()
+	tx := Tx(ctx)
 	switch i.CoverageStatus {
 	case api.ItemCoverageStatusInactive, api.ItemCoverageStatusDenied:
 		return nil
@@ -297,15 +308,15 @@ func (i *Item) SafeDeleteOrInactivate(ctx context.Context) error {
 			return err
 		}
 
-		// Don't give a refund if coverage has not been paid through the end of the year
-		if i.PaidThroughYear < time.Now().UTC().Year() {
+		// Don't give a refund if premium has not been paid beyond today
+		// TODO: make sure this is correct for monthly billing
+		if i.PaidThroughDate.Before(time.Now()) {
 			return nil
 		}
 
-		return i.CreateLedgerEntry(Tx(ctx), LedgerEntryTypeCoverageRefund, i.calculateCancellationCredit(now))
+		return i.CreateLedgerEntry(tx, LedgerEntryTypeCoverageRefund, i.calculateCancellationCredit(tx, now))
 
 	case api.ItemCoverageStatusDraft, api.ItemCoverageStatusRevision, api.ItemCoverageStatusPending:
-		tx := Tx(ctx)
 		if i.isNewEnough() && i.canBeDeleted(tx) {
 			return i.Destroy(tx)
 		}
@@ -365,7 +376,7 @@ func (i *Item) ScheduleInactivation(ctx context.Context, t time.Time) error {
 }
 
 // cancelCoverageAfterClaim sets the item's CoverageEndDate to the current time and creates a corresponding
-//  credit ledger entry
+// credit ledger entry
 func (i *Item) cancelCoverageAfterClaim(tx *pop.Connection, reason string) error {
 	if i.CoverageStatus != api.ItemCoverageStatusApproved {
 		return errors.New("cannot cancel coverage on an item which is not approved")
@@ -387,7 +398,7 @@ func (i *Item) cancelCoverageAfterClaim(tx *pop.Connection, reason string) error
 
 	now := time.Now().UTC()
 
-	amount := i.calculatePremiumChange(now, i.CalculateAnnualPremium(), 0)
+	amount := i.calculatePremiumChange(now, i.CalculateAnnualPremium(tx), 0)
 	if err := i.CreateLedgerEntry(tx, LedgerEntryTypeCoverageRefund, amount); err != nil {
 		return err
 	}
@@ -478,8 +489,8 @@ func isItemTransitionValid(status1, status2 api.ItemCoverageStatus) bool {
 }
 
 // isItemActionAllowed does not check whether the actor is the owner of the item.
-//  Otherwise, it checks whether the item can be acted on using a certain action based on its
-//    current coverage status and "sub-resource" (e.g. submit, approve, ...)
+// Otherwise, it checks whether the item can be acted on using a certain action based on its
+// current coverage status and "sub-resource" (e.g. submit, approve, ...)
 func isItemActionAllowed(actorIsAdmin bool, oldStatus api.ItemCoverageStatus, perm Permission, sub SubResource) bool {
 	switch oldStatus {
 
@@ -524,8 +535,6 @@ func (i *Item) SubmitForApproval(ctx context.Context) error {
 
 	i.CoverageStatus = api.ItemCoverageStatusPending
 
-	i.Load(tx)
-
 	if i.canAutoApprove(tx) {
 		return i.AutoApprove(ctx)
 	}
@@ -546,22 +555,23 @@ func (i *Item) SubmitForApproval(ctx context.Context) error {
 }
 
 // Checks whether the item has a category that expects the make and model fields
-//   to be hydrated. Returns true if they are hydrated of if the item has
-//   a lenient category.
-// Assumes the item already has its Category loaded
+// to be hydrated. Returns true if they are hydrated or if the item has
+// a lenient category.
 func (i *Item) areFieldsValidForAutoApproval(tx *pop.Connection) bool {
+	i.LoadCategory(tx, false)
+
 	if !i.Category.RequireMakeModel {
 		return true
 	}
 	return i.Make != `` && i.Model != ``
 }
 
-// Assumes the item already has its Category loaded
 func (i *Item) canAutoApprove(tx *pop.Connection) bool {
 	if !i.areFieldsValidForAutoApproval(tx) {
 		return false
 	}
 
+	i.LoadCategory(tx, false)
 	if i.CoverageAmount > i.Category.AutoApproveMax {
 		return false
 	}
@@ -650,8 +660,9 @@ func (i *Item) Approve(ctx context.Context, doEmitEvent bool) error {
 		emitEvent(e)
 	}
 
-	amount := i.CalculateProratedPremium(time.Now().UTC())
-	return i.CreateLedgerEntry(Tx(ctx), LedgerEntryTypeNewCoverage, amount)
+	tx := Tx(ctx)
+	amount := i.CalculateProratedPremium(tx, time.Now().UTC())
+	return i.CreateLedgerEntry(tx, LedgerEntryTypeNewCoverage, amount)
 }
 
 // Deny takes the item from Pending coverage status to Denied.
@@ -703,17 +714,18 @@ func (i *Item) LoadPolicyMembers(tx *pop.Connection, reload bool) {
 	i.Policy.LoadMembers(tx, reload)
 }
 
-// Load - a simple wrapper method for loading child objects
-func (i *Item) Load(tx *pop.Connection) {
-	if i.Category.ID == uuid.Nil {
-		if err := tx.Load(i, "Category", "RiskCategory"); err != nil {
-			panic("error loading item child objects: " + err.Error())
+// LoadCategory - a simple wrapper method for loading the item category
+func (i *Item) LoadCategory(tx *pop.Connection, reload bool) {
+	if i.Category.ID == uuid.Nil || reload {
+		if err := tx.Load(i, "Category"); err != nil {
+			panic("error loading item category: " + err.Error())
 		}
 	}
 }
 
 func (i *Item) ConvertToAPI(tx *pop.Connection) api.Item {
-	i.Load(tx)
+	i.LoadCategory(tx, false)
+	i.LoadRiskCategory(tx, false)
 
 	var coverageEndDate *string
 	if i.CoverageEndDate.Valid {
@@ -739,8 +751,10 @@ func (i *Item) ConvertToAPI(tx *pop.Connection) api.Item {
 		StatusReason:          i.StatusReason,
 		CoverageStartDate:     i.CoverageStartDate.Format(domain.DateFormat),
 		CoverageEndDate:       coverageEndDate,
-		AnnualPremium:         i.CalculateAnnualPremium(),
-		ProratedAnnualPremium: i.CalculateProratedPremium(time.Now().UTC()),
+		BillingPeriod:         i.Category.BillingPeriod,
+		AnnualPremium:         i.CalculateAnnualPremium(tx),
+		MonthlyPremium:        i.CalculateMonthlyPremium(tx),
+		ProratedAnnualPremium: i.CalculateProratedPremium(tx, time.Now().UTC()),
 		CanBeDeleted:          i.canBeDeleted(tx),
 		CanBeUpdated:          i.canBeUpdated(tx),
 		CreatedAt:             i.CreatedAt,
@@ -788,8 +802,8 @@ func (i *Item) inactivateEnded(ctx context.Context) error {
 }
 
 // InactivateApprovedButEnded fetches all the items that have coverage_status=Approved
-//   and coverage_end_date before today and then
-//   saves them with coverage_status=Inactive
+// and coverage_end_date before today and then
+// saves them with coverage_status=Inactive
 func (i *Items) InactivateApprovedButEnded(ctx context.Context) error {
 	tx := Tx(ctx)
 
@@ -830,30 +844,49 @@ func (i *Items) ConvertToAPI(tx *pop.Connection) api.Items {
 	return apiItems
 }
 
-// CalculateAnnualPremium returns the rounded product of the item's CoverageAmount and the PremiumFactor
-func (i *Item) CalculateAnnualPremium() api.Currency {
-	p := int(math.Round(float64(i.CoverageAmount) * domain.Env.PremiumFactor))
+// CalculateAnnualPremium returns the rounded product of the item's CoverageAmount and the category's
+// PremiumFactor
+func (i *Item) CalculateAnnualPremium(tx *pop.Connection) api.Currency {
+	i.LoadCategory(tx, false)
+	factor := domain.Env.PremiumFactor
+	if i.Category.PremiumFactor.Valid {
+		factor = i.Category.PremiumFactor.Float64
+	}
+	premium := api.Currency(math.Round(float64(i.CoverageAmount) * factor))
+	return premium
+}
+
+func (i *Item) CalculateProratedPremium(tx *pop.Connection, t time.Time) api.Currency {
+	p := domain.CalculatePartialYearValue(int(i.CalculateAnnualPremium(tx)), t)
 	return api.Currency(p)
 }
 
-func (i *Item) CalculateProratedPremium(t time.Time) api.Currency {
-	p := domain.CalculatePartialYearValue(int(i.CalculateAnnualPremium()), t)
-	return api.Currency(p)
+// CalculateMonthlyPremium returns the rounded product of the item's CoverageAmount and the category's
+// PremiumFactor divided by 12
+func (i *Item) CalculateMonthlyPremium(tx *pop.Connection) api.Currency {
+	i.LoadCategory(tx, false)
+	if i.Category.PremiumFactor.Valid {
+		premium := api.Currency(math.Round(float64(i.CoverageAmount) * i.Category.PremiumFactor.Float64 / 12))
+		return premium
+	} else {
+		premium := api.Currency(math.Round(float64(i.CoverageAmount) * domain.Env.PremiumFactor / 12))
+		return premium
+	}
 }
 
 // True if coverage on the item started in a previous year and the current
-//  month is January.
+// month is January.
 func (i *Item) shouldGiveFullYearRefund(t time.Time) bool {
 	return i.CoverageStartDate.Year() < t.Year() && t.Month() == 1
 }
 
-func (i *Item) calculateCancellationCredit(t time.Time) api.Currency {
+func (i *Item) calculateCancellationCredit(tx *pop.Connection, t time.Time) api.Currency {
 	// If we're in December already, then no credit
 	if t.Month() == 12 {
 		return 0
 	}
 
-	premium := int(i.CalculateAnnualPremium())
+	premium := int(i.CalculateAnnualPremium(tx))
 
 	// If the coverage was from a previous year and today is still in January,
 	//   give a full year's refund.
@@ -982,16 +1015,16 @@ func (i *Item) CreateLedgerEntry(tx *pop.Connection, entryType LedgerEntryType, 
 		return err
 	}
 
-	oldPaidYear := i.PaidThroughYear
+	old := i.PaidThroughDate
 	switch le.Type {
 	case LedgerEntryTypeNewCoverage, LedgerEntryTypeCoverageRenewal:
-		i.PaidThroughYear = le.DateSubmitted.Year()
+		i.PaidThroughDate = domain.EndOfYear(le.DateSubmitted.Year())
 	case LedgerEntryTypeCoverageRefund:
-		i.PaidThroughYear = 0
+		i.PaidThroughDate = domain.ZeroDate()
 	}
 
-	if oldPaidYear != i.PaidThroughYear {
-		return appErrorFromDB(tx.UpdateColumns(i, "paid_through_year", "updated_at"), api.ErrorUpdateFailure)
+	if old != i.PaidThroughDate {
+		return appErrorFromDB(tx.UpdateColumns(i, "paid_through_date", "updated_at"), api.ErrorUpdateFailure)
 	}
 
 	return nil
@@ -1038,7 +1071,7 @@ func (i *Item) GetAccountablePerson(tx *pop.Connection) Person {
 }
 
 // GetAccountableMember gets either the accountable person if they are a User or
-//   the first member of the item's policy
+// the first member of the item's policy
 func (i *Item) GetAccountableMember(tx *pop.Connection) Person {
 	var person Person
 	if i.PolicyUserID.Valid {
@@ -1088,8 +1121,8 @@ func (i *Item) canBeUpdated(tx *pop.Connection) bool {
 }
 
 // ItemsWithRecentStatusChanges returns the RecentItems associated with
-//  items that have had their CoverageStatus changed recently.
-//  The slice is sorted by updated time with most recent first.
+// items that have had their CoverageStatus changed recently.
+// The slice is sorted by updated time with most recent first.
 func ItemsWithRecentStatusChanges(tx *pop.Connection) (api.RecentItems, error) {
 	var pHistories PolicyHistories
 
@@ -1131,7 +1164,8 @@ func (i *Items) FindItemsIncorrectlyRenewed(tx *pop.Connection, date time.Time) 
 	year := date.Year()
 	firstDayOfYear := time.Date(year, 1, 1, 0, 0, 0, 0, time.UTC)
 
-	err := tx.Where("paid_through_year >= ?", year).Where("coverage_end_date < ?", firstDayOfYear).All(i)
+	err := tx.Where("paid_through_date >= ?", domain.EndOfYear(year)).
+		Where("coverage_end_date < ?", firstDayOfYear).All(i)
 	if err != nil {
 		return appErrorFromDB(err, api.ErrorQueryFailure)
 	}
@@ -1152,16 +1186,16 @@ func (i *Items) RepairItemsIncorrectlyRenewed(c buffalo.Context, date time.Time)
 			return api.NewAppError(err, api.ErrorItemNeedsCoverageEndDate, api.CategoryInternal)
 		}
 
-		correctYear := item.CoverageEndDate.Time.Year()
-		incorrectYear := item.PaidThroughYear
-		annualPremium := item.CalculateAnnualPremium() // TODO: get the amount from the ledger entry, in case the coverage amount has changed
-		refund := annualPremium * api.Currency(incorrectYear-correctYear)
+		correctDate := item.CoverageEndDate.Time
+		incorrectDate := item.PaidThroughDate
+		annualPremium := item.CalculateAnnualPremium(tx) // TODO: get the amount from the ledger entry, in case the coverage amount has changed
+		refund := annualPremium * api.Currency(incorrectDate.Sub(correctDate)/(time.Hour*24*365))
 
 		if err := item.CreateLedgerEntry(tx, LedgerEntryTypeCoverageRefund, -refund); err != nil {
 			return err
 		}
 
-		(*i)[idx].PaidThroughYear = correctYear
+		(*i)[idx].PaidThroughDate = correctDate
 		if err := (*i)[idx].Update(c); err != nil {
 			return err
 		}
@@ -1172,7 +1206,7 @@ func (i *Items) RepairItemsIncorrectlyRenewed(c buffalo.Context, date time.Time)
 func CountItemsToRenew(tx *pop.Connection, year int) (int, error) {
 	var items Items
 	count, err := tx.Where("coverage_status = ?", api.ItemCoverageStatusApproved).
-		Where("paid_through_year < ?", year).
+		Where("paid_through_date < ?", domain.EndOfYear(year)).
 		Count(&items)
 	if err != nil {
 		return 0, appErrorFromDB(err, api.ErrorQueryFailure)
