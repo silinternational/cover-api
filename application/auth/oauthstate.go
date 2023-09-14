@@ -14,6 +14,7 @@ import (
 
 	"github.com/gorilla/sessions"
 	"github.com/markbates/goth"
+
 	"github.com/silinternational/cover-api/domain"
 )
 
@@ -27,7 +28,7 @@ var (
 
 var keySet = false
 
-func init() {
+func Init() {
 	key := []byte(domain.Env.SessionSecret)
 	keySet = len(key) != 0
 
