@@ -853,13 +853,16 @@ func (i *Items) ConvertToAPI(tx *pop.Connection) api.Items {
 // CalculateAnnualPremium returns the premium amount for the category's billing period:
 func (i *Item) CalculateBillingPremium(tx *pop.Connection) api.Currency {
 	i.LoadCategory(tx, false)
-	if i.Category.BillingPeriod == 1 {
+	billingPeriod := i.Category.getBillingPeriod()
+
+	if billingPeriod == 1 {
 		return i.CalculateMonthlyPremium(tx)
 	}
-	if i.Category.BillingPeriod == 12 {
+
+	if billingPeriod == 12 {
 		return i.CalculateAnnualPremium(tx)
 	}
-	fmt.Errorf("invalid billing period found on item %s", i.ID)
+
 	return 0
 }
 
