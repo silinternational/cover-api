@@ -35,10 +35,10 @@ type ItemCategory struct {
 	AutoApproveMax   int                    `db:"auto_approve_max" validate:"min=0"`
 	RequireMakeModel bool                   `db:"require_make_model"`
 	PremiumFactor    nulls.Float64          `db:"premium_factor"`
-	// BillingPeriod    int                    `db:"billing_Period"`
-	LegacyID  nulls.Int `db:"legacy_id"`
-	CreatedAt time.Time `db:"created_at"`
-	UpdatedAt time.Time `db:"updated_at"`
+	BillingPeriod    int                    `db:"billing_period"`
+	LegacyID         nulls.Int              `db:"legacy_id"`
+	CreatedAt        time.Time              `db:"created_at"`
+	UpdatedAt        time.Time              `db:"updated_at"`
 
 	RiskCategory RiskCategory `belongs_to:"risk_categories" fk_id:"RiskCategoryID" validate:"-"`
 }
@@ -79,6 +79,7 @@ func (i *ItemCategory) ConvertToAPI(tx *pop.Connection) api.ItemCategory {
 		HelpText:         i.HelpText,
 		RiskCategory:     i.RiskCategory.ConvertToAPI(),
 		RequireMakeModel: i.RequireMakeModel,
+		BillingPeriod:    i.BillingPeriod,
 		PremiumFactor:    i.PremiumFactor,
 		CreatedAt:        i.CreatedAt,
 		UpdatedAt:        i.UpdatedAt,
