@@ -35,7 +35,6 @@ func Test_ModelSuite(t *testing.T) {
 	ms := &ModelSuite{}
 	c, err := pop.Connect(domain.Env.GoEnv)
 	if err == nil {
-		DB = c
 		ms.DB = c
 	}
 	suite.Run(t, ms)

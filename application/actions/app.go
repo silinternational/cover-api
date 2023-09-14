@@ -43,7 +43,6 @@ import (
 	"github.com/gorilla/sessions"
 	"github.com/rs/cors"
 
-	"github.com/silinternational/cover-api/auth"
 	"github.com/silinternational/cover-api/job"
 	"github.com/silinternational/cover-api/log"
 
@@ -91,10 +90,6 @@ var app *buffalo.App
 // declared after it to never be called.
 func App() *buffalo.App {
 	if app == nil {
-		domain.Init()
-		auth.Init()
-		models.Init()
-
 		app = buffalo.New(buffalo.Options{
 			Env:    domain.Env.GoEnv,
 			Logger: logger.Logrus{FieldLogger: log.ErrLogger.LocalLog},

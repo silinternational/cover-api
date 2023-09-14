@@ -9,7 +9,7 @@ import (
 )
 
 // ErrLogger is an instance of ErrLogProxy, which can be used without access to the Buffalo context.
-var ErrLogger = ErrLogProxy{LocalLog: logrus.StandardLogger()}
+var ErrLogger ErrLogProxy
 
 // ErrLogProxy wraps a logrus logger with optional hooks for sending to remote loggers like Sentry
 type ErrLogProxy struct {

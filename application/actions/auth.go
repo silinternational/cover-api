@@ -363,3 +363,36 @@ func authDestroy(c buffalo.Context) error {
 func replaceNewLines(input string) string {
 	return strings.Replace(input, `\n`, "\n", -1)
 }
+
+func checkSamlConfig() {
+	if domain.Env.GoEnv == domain.EnvDevelopment || domain.Env.GoEnv == domain.EnvTest {
+		return
+	}
+	if domain.Env.SamlIdpEntityId == "" {
+		panic("required SAML variable SamlIdpEntityId is undefined")
+	}
+	if domain.Env.SamlSpEntityId == "" {
+		panic("required SAML variable SamlSpEntityId is undefined")
+	}
+	if domain.Env.SamlSsoURL == "" {
+		panic("required SAML variable SamlSsoURL is undefined")
+	}
+	if domain.Env.SamlSloURL == "" {
+		panic("required SAML variable SamlSloURL is undefined")
+	}
+	if domain.Env.SamlAudienceUri == "" {
+		panic("required SAML variable SamlAudienceUri is undefined")
+	}
+	if domain.Env.SamlAssertionConsumerServiceUrl == "" {
+		panic("required SAML variable SamlAssertionConsumerServiceUrl is undefined")
+	}
+	if domain.Env.SamlIdpCert == "" {
+		panic("required SAML variable SamlIdpCert is undefined")
+	}
+	if domain.Env.SamlSpCert == "" {
+		panic("required SAML variable SamlSpCert is undefined")
+	}
+	if domain.Env.SamlSpPrivateKey == "" {
+		panic("required SAML variable SamlSpPrivateKey is undefined")
+	}
+}
