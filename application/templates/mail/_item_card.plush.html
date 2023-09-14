@@ -44,14 +44,16 @@
 	) %>
 
 	<table style="padding: 0 0 1em 0;">
-		 <tr>
-			<th style="text-align: left; padding: 1em 1em 0 0;">Covered value</th>
+		<tr>
+			<th style="text-align: left; padding: 1em 1em 0 0;">Value</th>
+		</tr>
+		<tr>
 			<th style="text-align: left; padding-top: 1em;">Premium</th>
-		 </tr>
-		 <tr>
+		</tr>
+		<tr>
 			<td><%= coverageAmount %></td>
-			<td><%= premium %>/yr</td>
-		 </tr>
+			<td><%= premium %></td>
+		</tr>
 
 		<%= if (coverageStartDate != "") { %>
 		 <tr style="padding-top: 1em;">

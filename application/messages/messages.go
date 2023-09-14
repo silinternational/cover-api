@@ -123,8 +123,16 @@ func (m MessageData) addItemData(tx *pop.Connection, item models.Item) {
 	} else {
 		m["coverageEndDate"] = ""
 	}
-	m["annualPremium"] = "$" + item.CalculateAnnualPremium(tx).String()
-	m["proratedPremium"] = "$" + item.CalculateProratedPremium(tx, item.CoverageStartDate).String()
+
+	switch item.Category.BillingPeriod {
+	case 1:
+		m["premium"] = fmt.Sprintf("$%s per month", item.CalculateMonthlyPremium(tx).String())
+	case 12:
+		m["premium"] = fmt.Sprintf("$%s per year", item.CalculateAnnualPremium(tx).String())
+	default:
+		m["premium"] = "?"
+		log.Errorf("invalid billing period in item %s", item.ID)
+	}
 }
 
 func (m MessageData) addStewardData(tx *pop.Connection) {
