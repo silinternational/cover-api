@@ -97,6 +97,9 @@ type Item struct {
 	// risk category
 	RiskCategory RiskCategory `json:"risk_category"`
 
+	// billing period, expressed as a number of months
+	BillingPeriod int `json:"billing_period"`
+
 	// annual premium (0.01 USD)
 	AnnualPremium Currency `json:"annual_premium"`
 
