@@ -31,7 +31,8 @@ func (as *ActionSuite) Test_ItemsList() {
 
 	normalUser := fixtures.Policies[1].Members[0]
 
-	item2.Load(as.DB)
+	item2.LoadCategory(as.DB, false)
+	item2.LoadRiskCategory(as.DB, false)
 
 	tests := []struct {
 		name          string
