@@ -52,6 +52,9 @@ type ItemCategory struct {
 	// whether make and model are required in order for item coverage to be auto approved
 	RequireMakeModel bool `json:"require_make_model"`
 
+	// billing period, expressed as a number of months
+	BillingPeriod int `json:"billing_period"`
+
 	// the premium factor for this category
 	PremiumFactor string `json:"premium_factor"`
 }

@@ -308,7 +308,6 @@ func (i *Item) SafeDeleteOrInactivate(ctx context.Context) error {
 		return i.CreateLedgerEntry(tx, LedgerEntryTypeCoverageRefund, i.calculateCancellationCredit(tx, now))
 
 	case api.ItemCoverageStatusDraft, api.ItemCoverageStatusRevision, api.ItemCoverageStatusPending:
-		tx := tx
 		if i.isNewEnough() && i.canBeDeleted(tx) {
 			return i.Destroy(tx)
 		}
@@ -743,6 +742,7 @@ func (i *Item) ConvertToAPI(tx *pop.Connection) api.Item {
 		StatusReason:          i.StatusReason,
 		CoverageStartDate:     i.CoverageStartDate.Format(domain.DateFormat),
 		CoverageEndDate:       coverageEndDate,
+		BillingPeriod:         i.Category.BillingPeriod,
 		AnnualPremium:         i.CalculateAnnualPremium(tx),
 		MonthlyPremium:        i.CalculateMonthlyPremium(tx),
 		ProratedAnnualPremium: i.CalculateProratedPremium(tx, time.Now().UTC()),
@@ -839,13 +839,12 @@ func (i *Items) ConvertToAPI(tx *pop.Connection) api.Items {
 // PremiumFactor
 func (i *Item) CalculateAnnualPremium(tx *pop.Connection) api.Currency {
 	i.LoadCategory(tx, false)
+	factor := domain.Env.PremiumFactor
 	if i.Category.PremiumFactor.Valid {
-		premium := api.Currency(math.Round(float64(i.CoverageAmount) * i.Category.PremiumFactor.Float64))
-		return premium
-	} else {
-		premium := api.Currency(math.Round(float64(i.CoverageAmount) * domain.Env.PremiumFactor))
-		return premium
+		factor = i.Category.PremiumFactor.Float64
 	}
+	premium := api.Currency(math.Round(float64(i.CoverageAmount) * factor))
+	return premium
 }
 
 func (i *Item) CalculateProratedPremium(tx *pop.Connection, t time.Time) api.Currency {

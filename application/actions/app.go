@@ -93,7 +93,6 @@ func App() *buffalo.App {
 	if app == nil {
 		domain.Init()
 		auth.Init()
-		models.Init()
 
 		app = buffalo.New(buffalo.Options{
 			Env:    domain.Env.GoEnv,
