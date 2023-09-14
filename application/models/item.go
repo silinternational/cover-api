@@ -556,14 +556,13 @@ func (i *Item) SubmitForApproval(ctx context.Context) error {
 func (i *Item) calculateMinimumCoverage(tx *pop.Connection) int {
 	i.LoadCategory(tx, false)
 	billingPeriod := i.Category.BillingPeriod
-	var minimumCoverageAmount int
-	switch billingPeriod {
-	case 1:
-		minimumCoverageAmount = int(math.Round(0.5 / i.Category.PremiumFactor.Float64 / 12))
-	case 12:
-		minimumCoverageAmount = int(math.Round(0.5 / i.Category.PremiumFactor.Float64))
+	if billingPeriod < 1 {
+		billingPeriod = 1
 	}
-	return minimumCoverageAmount
+	if billingPeriod > 12 {
+		billingPeriod = 12
+	}
+	return int(math.Round(0.5 / i.Category.PremiumFactor.Float64 / 12 * float64(billingPeriod)))
 }
 
 // Checks whether the item has a category that expects the make and model fields
