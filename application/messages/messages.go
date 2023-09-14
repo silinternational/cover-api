@@ -123,9 +123,15 @@ func (m MessageData) addItemData(tx *pop.Connection, item models.Item) {
 	} else {
 		m["coverageEndDate"] = ""
 	}
-	m["premium"] = fmt.Sprintf("$%s/year", item.CalculateAnnualPremium().String())
-	if item.Category.BillingPeriod == 1 {
+
+	switch item.Category.BillingPeriod {
+	case 1:
 		m["premium"] = fmt.Sprintf("$%s/month", item.CalculateMonthlyPremium(tx).String())
+	case 12:
+		m["premium"] = fmt.Sprintf("$%s/year", item.CalculateAnnualPremium().String())
+	default:
+		m["premium"] = "?"
+		log.Errorf("invalid billing period in item %s", item.ID)
 	}
 }
 
