@@ -175,7 +175,7 @@ func Init() {
 	}
 
 	itemCategories := ItemCategories{}
-	if err := DB.Where("premium_factor IS NULL").All(&itemCategories); err != nil {
+	if err := DB.Where("premium_factor IS NULL").All(&itemCategories); domain.IsOtherThanNoRows(err) {
 		panic(fmt.Sprintf("failed to query item_categories: %s", err))
 	}
 	for i := range itemCategories {
