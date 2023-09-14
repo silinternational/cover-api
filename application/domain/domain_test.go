@@ -241,6 +241,30 @@ func (ts *TestSuite) Test_EndOfMonth() {
 	}
 }
 
+func (ts *TestSuite) Test_EndOfYear() {
+	tests := []struct {
+		name string
+		year int
+		want time.Time
+	}{
+		{
+			name: "1991",
+			year: 1991,
+			want: time.Date(1991, 12, 31, 0, 0, 0, 0, time.UTC),
+		},
+		{
+			name: "0",
+			year: 0,
+			want: time.Date(0, 12, 31, 0, 0, 0, 0, time.UTC),
+		},
+	}
+	for _, tt := range tests {
+		ts.T().Run(tt.name, func(t *testing.T) {
+			ts.Equal(tt.want, EndOfYear(tt.year))
+		})
+	}
+}
+
 func (ts *TestSuite) TestIsLeapYear() {
 	tests := []struct {
 		year int

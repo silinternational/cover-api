@@ -104,7 +104,7 @@ const (
 	FieldItemCoverageAmount    = "CoverageAmount"
 	FieldItemCoverageStatus    = "CoverageStatus"
 	FieldItemCoverageStartDate = "CoverageStartDate"
-	FieldItemPaidThroughYear   = "PaidThroughYear"
+	FieldItemPaidThroughDate   = "PaidThroughDate"
 	FieldItemStatusReason      = "CoverageStatusReason"
 )
 
