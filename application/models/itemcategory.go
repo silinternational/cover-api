@@ -80,7 +80,7 @@ func (i *ItemCategory) ConvertToAPI(tx *pop.Connection) api.ItemCategory {
 		RiskCategory:     i.RiskCategory.ConvertToAPI(),
 		RequireMakeModel: i.RequireMakeModel,
 		BillingPeriod:    i.BillingPeriod,
-		PremiumFactor:    i.PremiumFactor,
+		PremiumFactor:    domain.PercentString(i.PremiumFactor.Float64),
 		CreatedAt:        i.CreatedAt,
 		UpdatedAt:        i.UpdatedAt,
 	}

@@ -21,7 +21,7 @@ const Greetings_Placeholder = "[Greetings]"
 
 const mailTemplatePath = "mail/"
 
-//  Email templates
+// Email templates
 const (
 	MessageTemplateClaimReview1Steward    = "claim_review1_steward"
 	MessageTemplateClaimRevisionMember    = "claim_revision_member"
@@ -105,7 +105,7 @@ func (m MessageData) addItemData(tx *pop.Connection, item models.Item) {
 
 	m["itemURL"] = fmt.Sprintf("%s/policies/%s/items/%s", domain.Env.UIURL, item.PolicyID, item.ID)
 
-	item.Load(tx)
+	item.LoadCategory(tx, false)
 	item.LoadPolicy(tx, false)
 	m["item"] = item
 
@@ -128,7 +128,7 @@ func (m MessageData) addItemData(tx *pop.Connection, item models.Item) {
 	case 1:
 		m["premium"] = fmt.Sprintf("$%s per month", item.CalculateMonthlyPremium(tx).String())
 	case 12:
-		m["premium"] = fmt.Sprintf("$%s per year", item.CalculateAnnualPremium().String())
+		m["premium"] = fmt.Sprintf("$%s per year", item.CalculateAnnualPremium(tx).String())
 	default:
 		m["premium"] = "?"
 		log.Errorf("invalid billing period in item %s", item.ID)
