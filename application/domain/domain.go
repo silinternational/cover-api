@@ -417,6 +417,14 @@ func EndOfMonth(date time.Time) time.Time {
 	return date.AddDate(0, 1, -date.Day())
 }
 
+func EndOfYear(year int) time.Time {
+	return time.Date(year, 12, 31, 0, 0, 0, 0, time.UTC)
+}
+
+func ZeroDate() time.Time {
+	return time.Date(1, 1, 1, 0, 0, 0, 0, time.UTC)
+}
+
 // Returns a float as "dd%" (rounded and with no decimal places)
 // Note: this won't look right if the input is greater than 1
 func PercentString(d float64) string {

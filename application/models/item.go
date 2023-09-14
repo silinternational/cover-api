@@ -50,7 +50,7 @@ type Item struct {
 	SerialNumber      string                 `db:"serial_number"`
 	CoverageAmount    int                    `db:"coverage_amount" validate:"min=0"`
 	CoverageStatus    api.ItemCoverageStatus `db:"coverage_status" validate:"itemCoverageStatus"`
-	PaidThroughYear   int                    `db:"paid_through_year"`
+	PaidThroughDate   time.Time              `db:"paid_through_date"`
 	StatusChange      string                 `db:"status_change"`
 	CoverageStartDate time.Time              `db:"coverage_start_date"`
 	CoverageEndDate   nulls.Time             `db:"coverage_end_date"`
@@ -262,6 +262,14 @@ func (i *Item) Compare(old Item) []FieldUpdate {
 		})
 	}
 
+	if i.PaidThroughDate != old.PaidThroughDate {
+		updates = append(updates, FieldUpdate{
+			OldValue:  old.PaidThroughDate.Format(domain.DateFormat),
+			NewValue:  i.PaidThroughDate.Format(domain.DateFormat),
+			FieldName: FieldItemPaidThroughDate,
+		})
+	}
+
 	if i.StatusReason != old.StatusReason {
 		updates = append(updates, FieldUpdate{
 			OldValue:  old.StatusReason,
@@ -297,8 +305,9 @@ func (i *Item) SafeDeleteOrInactivate(ctx context.Context) error {
 			return err
 		}
 
-		// Don't give a refund if coverage has not been paid through the end of the year
-		if i.PaidThroughYear < time.Now().UTC().Year() {
+		// Don't give a refund if premium has not been paid beyond today
+		// TODO: make sure this is correct for monthly billing
+		if i.PaidThroughDate.Before(time.Now()) {
 			return nil
 		}
 
@@ -1018,16 +1027,16 @@ func (i *Item) CreateLedgerEntry(tx *pop.Connection, entryType LedgerEntryType, 
 		return err
 	}
 
-	oldPaidYear := i.PaidThroughYear
+	old := i.PaidThroughDate
 	switch le.Type {
 	case LedgerEntryTypeNewCoverage, LedgerEntryTypeCoverageRenewal:
-		i.PaidThroughYear = le.DateSubmitted.Year()
+		i.PaidThroughDate = domain.EndOfYear(le.DateSubmitted.Year())
 	case LedgerEntryTypeCoverageRefund:
-		i.PaidThroughYear = 0
+		i.PaidThroughDate = domain.ZeroDate()
 	}
 
-	if oldPaidYear != i.PaidThroughYear {
-		return appErrorFromDB(tx.UpdateColumns(i, "paid_through_year", "updated_at"), api.ErrorUpdateFailure)
+	if old != i.PaidThroughDate {
+		return appErrorFromDB(tx.UpdateColumns(i, "paid_through_date", "updated_at"), api.ErrorUpdateFailure)
 	}
 
 	return nil
@@ -1167,7 +1176,8 @@ func (i *Items) FindItemsIncorrectlyRenewed(tx *pop.Connection, date time.Time) 
 	year := date.Year()
 	firstDayOfYear := time.Date(year, 1, 1, 0, 0, 0, 0, time.UTC)
 
-	err := tx.Where("paid_through_year >= ?", year).Where("coverage_end_date < ?", firstDayOfYear).All(i)
+	err := tx.Where("paid_through_date >= ?", domain.EndOfYear(year)).
+		Where("coverage_end_date < ?", firstDayOfYear).All(i)
 	if err != nil {
 		return appErrorFromDB(err, api.ErrorQueryFailure)
 	}
@@ -1188,16 +1198,16 @@ func (i *Items) RepairItemsIncorrectlyRenewed(c buffalo.Context, date time.Time)
 			return api.NewAppError(err, api.ErrorItemNeedsCoverageEndDate, api.CategoryInternal)
 		}
 
-		correctYear := item.CoverageEndDate.Time.Year()
-		incorrectYear := item.PaidThroughYear
+		correctDate := item.CoverageEndDate.Time
+		incorrectDate := item.PaidThroughDate
 		annualPremium := item.CalculateAnnualPremium(tx) // TODO: get the amount from the ledger entry, in case the coverage amount has changed
-		refund := annualPremium * api.Currency(incorrectYear-correctYear)
+		refund := annualPremium * api.Currency(incorrectDate.Sub(correctDate)/(time.Hour*24*365))
 
 		if err := item.CreateLedgerEntry(tx, LedgerEntryTypeCoverageRefund, -refund); err != nil {
 			return err
 		}
 
-		(*i)[idx].PaidThroughYear = correctYear
+		(*i)[idx].PaidThroughDate = correctDate
 		if err := (*i)[idx].Update(c); err != nil {
 			return err
 		}
@@ -1208,7 +1218,7 @@ func (i *Items) RepairItemsIncorrectlyRenewed(c buffalo.Context, date time.Time)
 func CountItemsToRenew(tx *pop.Connection, year int) (int, error) {
 	var items Items
 	count, err := tx.Where("coverage_status = ?", api.ItemCoverageStatusApproved).
-		Where("paid_through_year < ?", year).
+		Where("paid_through_date < ?", domain.EndOfYear(year)).
 		Count(&items)
 	if err != nil {
 		return 0, appErrorFromDB(err, api.ErrorQueryFailure)

@@ -685,7 +685,7 @@ func (ms *ModelSuite) TestPolicy_ProcessAnnualCoverage() {
 
 	f := CreateItemFixtures(ms.DB, FixturesConfig{ItemsPerPolicy: 5})
 
-	f.Items[0].PaidThroughYear = year
+	f.Items[0].PaidThroughDate = domain.EndOfYear(year)
 	f.Items[2].RiskCategoryID = RiskCategoryMobileID()
 	for i := range f.Items {
 		UpdateItemStatus(ms.DB, f.Items[i], api.ItemCoverageStatusApproved, "")

@@ -1,0 +1,9 @@
+add_column("items","paid_through_date","date",{"default": "0001-01-01"})
+
+sql(`
+	UPDATE items
+	SET paid_through_date = make_date(paid_through_year,12,31)
+	WHERE paid_through_year > 0
+`)
+
+drop_column("items","paid_through_year")
