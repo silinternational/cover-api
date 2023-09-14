@@ -33,6 +33,7 @@ func Test_TestSuite(t *testing.T) {
 	ts := &TestSuite{}
 	c, err := pop.Connect(domain.Env.GoEnv)
 	if err == nil {
+		models.DB = c
 		ts.DB = c
 	}
 	suite.Run(t, ts)

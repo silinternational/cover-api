@@ -13,7 +13,6 @@ import (
 	"time"
 
 	"github.com/gobuffalo/buffalo"
-	"github.com/gobuffalo/envy"
 	mwi18n "github.com/gobuffalo/mw-i18n/v2"
 	"github.com/gofrs/uuid"
 	"github.com/kelseyhightower/envconfig"
@@ -129,8 +128,10 @@ const EnvStaging = "staging"
 const EnvTest = "test"
 
 // Env Holds the values of environment variables
-var Env struct {
-	GoEnv                      string `ignored:"true"`
+var Env = readEnv()
+
+type EnvStruct struct {
+	GoEnv                      string `default:"development" split_words:"true"`
 	ApiBaseURL                 string `required:"true" split_words:"true"`
 	AccessTokenLifetimeSeconds int    `default:"1166400" split_words:"true"` // 13.5 days
 	AppName                    string `default:"Cover" split_words:"true"`
@@ -212,9 +213,7 @@ var Env struct {
 	SandboxEmailAddress string `default:"" split_words:"true"`
 }
 
-func init() {
-	readEnv()
-
+func Init() {
 	AuthCallbackURL = Env.ApiBaseURL + "/auth/callback"
 
 	LogoutRedirectURL = Env.UIURL + "/logged-out"
@@ -229,25 +228,28 @@ func init() {
 }
 
 // readEnv loads environment data into `Env`
-func readEnv() {
-	err := envconfig.Process("", &Env)
+func readEnv() *EnvStruct {
+	env := &EnvStruct{}
+
+	err := envconfig.Process("", env)
 	if err != nil {
 		panic("error loading env vars: " + err.Error())
 	}
 
-	Env.PolicyMaxCoverage *= CurrencyFactor
-	Env.DependentAutoApproveMax *= CurrencyFactor
-	Env.PremiumMinimum *= CurrencyFactor
-	Env.RepairThresholdString = fmt.Sprintf("%.2g%%", Env.RepairThreshold*100)
-	Env.DeductibleMinimumString = fmt.Sprintf("%.2g%%", Env.Deductible*100)
+	checkSamlConfig(env)
+
+	env.PolicyMaxCoverage *= CurrencyFactor
+	env.DependentAutoApproveMax *= CurrencyFactor
+	env.PremiumMinimum *= CurrencyFactor
+	env.RepairThresholdString = fmt.Sprintf("%.2g%%", env.RepairThreshold*CurrencyFactor)
+	env.DeductibleMinimumString = fmt.Sprintf("%.2g%%", env.Deductible*CurrencyFactor)
 
 	//  Set an arbitrary but reasonable minimum lifetime for policy strikes
-	if Env.StrikeLifetimeMonths < 2 {
-		Env.StrikeLifetimeMonths = 2
+	if env.StrikeLifetimeMonths < 2 {
+		env.StrikeLifetimeMonths = 2
 	}
 
-	// Doing this separately to avoid needing two environment variables for the same thing
-	Env.GoEnv = envy.Get("GO_ENV", EnvDevelopment)
+	return env
 }
 
 // NewExtra Sets a new key-value pair in the `extras` entry of the context
@@ -467,4 +469,37 @@ func IsProduction() bool {
 		return true
 	}
 	return false
+}
+
+func checkSamlConfig(env *EnvStruct) {
+	if env.GoEnv == EnvDevelopment || env.GoEnv == EnvTest {
+		return
+	}
+	if env.SamlIdpEntityId == "" {
+		panic("required SAML variable SamlIdpEntityId is undefined")
+	}
+	if env.SamlSpEntityId == "" {
+		panic("required SAML variable SamlSpEntityId is undefined")
+	}
+	if env.SamlSsoURL == "" {
+		panic("required SAML variable SamlSsoURL is undefined")
+	}
+	if env.SamlSloURL == "" {
+		panic("required SAML variable SamlSloURL is undefined")
+	}
+	if env.SamlAudienceUri == "" {
+		panic("required SAML variable SamlAudienceUri is undefined")
+	}
+	if env.SamlAssertionConsumerServiceUrl == "" {
+		panic("required SAML variable SamlAssertionConsumerServiceUrl is undefined")
+	}
+	if env.SamlIdpCert == "" {
+		panic("required SAML variable SamlIdpCert is undefined")
+	}
+	if env.SamlSpCert == "" {
+		panic("required SAML variable SamlSpCert is undefined")
+	}
+	if env.SamlSpPrivateKey == "" {
+		panic("required SAML variable SamlSpPrivateKey is undefined")
+	}
 }
