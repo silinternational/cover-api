@@ -132,7 +132,7 @@ func (i *Item) Update(ctx context.Context) error {
 		}
 
 		i.LoadCategory(tx, false)
-		if i.Category.BillingPeriod == 12 {
+		if i.Category.getBillingPeriod() == 12 {
 			err := i.createPremiumAdjustment(tx, time.Now().UTC(), oldItem)
 			if err != nil {
 				return err
