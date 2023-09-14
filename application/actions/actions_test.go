@@ -45,7 +45,6 @@ func Test_ActionSuite(t *testing.T) {
 	}
 	c, err := pop.Connect("test")
 	if err == nil {
-		models.DB = c
 		as.DB = c
 	}
 	suite.Run(t, as)
