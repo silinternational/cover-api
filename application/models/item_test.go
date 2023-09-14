@@ -785,7 +785,7 @@ func (ms *ModelSuite) TestItem_calculateAnnualPremium() {
 	for _, tt := range tests {
 		ms.T().Run(tt.name, func(t *testing.T) {
 			item := Item{CoverageAmount: tt.coverage}
-			got := item.CalculateAnnualPremium()
+			got := item.CalculateAnnualPremium(ms.DB)
 			ms.Equal(api.Currency(tt.want), got)
 		})
 	}
@@ -815,7 +815,7 @@ func (ms *ModelSuite) TestItem_calculateProratedPremium() {
 	for _, tt := range tests {
 		ms.T().Run(tt.name, func(t *testing.T) {
 			item := Item{CoverageAmount: tt.coverage}
-			got := item.CalculateProratedPremium(now)
+			got := item.CalculateProratedPremium(ms.DB, now)
 			ms.Equal(api.Currency(tt.want), got)
 		})
 	}
@@ -920,7 +920,7 @@ func (ms *ModelSuite) TestItem_calculateCancellationCredit() {
 				CoverageAmount:    tt.coverage,
 				CoverageStartDate: tt.coverageStartDate,
 			}
-			got := item.calculateCancellationCredit(tt.testTime)
+			got := item.calculateCancellationCredit(ms.DB, tt.testTime)
 			ms.Equal(api.Currency(tt.want), got)
 		})
 	}
@@ -1279,8 +1279,8 @@ func (ms *ModelSuite) TestItem_ConvertToAPI() {
 	ms.Equal(item.UpdatedAt, got.UpdatedAt, "UpdatedAt is not correct")
 	ms.Equal(item.Category.ConvertToAPI(ms.DB), got.Category, "Category is not correct")
 	ms.Equal(item.RiskCategory.ConvertToAPI(), got.RiskCategory, "RiskCategory is not correct")
-	ms.Equal(item.CalculateAnnualPremium(), got.AnnualPremium, "AnnualPremium is not correct")
-	ms.Equal(item.CalculateProratedPremium(time.Now().UTC()), got.ProratedAnnualPremium,
+	ms.Equal(item.CalculateAnnualPremium(ms.DB), got.AnnualPremium, "AnnualPremium is not correct")
+	ms.Equal(item.CalculateProratedPremium(ms.DB, time.Now().UTC()), got.ProratedAnnualPremium,
 		"ProratedAnnualPremium is not correct")
 	ms.Equal(item.PolicyDependentID.UUID, got.AccountablePerson.ID, "AccountablePerson ID is not correct")
 	ms.Equal(fixtures.PolicyDependents[0].GetName().String(), got.AccountablePerson.Name,
@@ -1539,14 +1539,14 @@ func (ms *ModelSuite) TestItem_RepairItemsIncorrectlyRenewed() {
 			date:                now,
 			wantItemIDs:         []uuid.UUID{incorrectItem.ID},
 			wantPaidThroughYear: lastYear,
-			wantRefundAmount:    incorrectItem.CalculateAnnualPremium(),
+			wantRefundAmount:    incorrectItem.CalculateAnnualPremium(ms.DB),
 		},
 		{
 			name:                "last year has one incorrect item",
 			date:                aDateLastYear,
 			wantItemIDs:         []uuid.UUID{incorrectLastYear.ID},
 			wantPaidThroughYear: lastYear - 1,
-			wantRefundAmount:    incorrectLastYear.CalculateAnnualPremium(),
+			wantRefundAmount:    incorrectLastYear.CalculateAnnualPremium(ms.DB),
 		},
 		{
 			name:        "no incorrect items",

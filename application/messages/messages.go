@@ -123,8 +123,8 @@ func (m MessageData) addItemData(tx *pop.Connection, item models.Item) {
 	} else {
 		m["coverageEndDate"] = ""
 	}
-	m["annualPremium"] = "$" + item.CalculateAnnualPremium().String()
-	m["proratedPremium"] = "$" + item.CalculateProratedPremium(item.CoverageStartDate).String()
+	m["annualPremium"] = "$" + item.CalculateAnnualPremium(tx).String()
+	m["proratedPremium"] = "$" + item.CalculateProratedPremium(tx, item.CoverageStartDate).String()
 }
 
 func (m MessageData) addStewardData(tx *pop.Connection) {
