@@ -42,4 +42,4 @@ ENV ADDR=0.0.0.0
 
 EXPOSE 3000
 
-CMD /bin/app migrate; /bin/app
+CMD /bin/app migrate && /bin/app
