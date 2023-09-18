@@ -130,10 +130,10 @@ func (i *Item) Update(ctx context.Context) error {
 			err := errors.New("item coverage amount cannot be increased")
 			return api.NewAppError(err, api.ErrorItemCoverageAmountCannotIncrease, api.CategoryUser)
 		}
-		if oldItem.CoverageAmount != i.CoverageAmount && !i.CoverageEndDate.Valid {
-			amount := i.calculatePremiumChange(time.Now().UTC(), oldItem.CalculateAnnualPremium(tx),
-				i.CalculateAnnualPremium(tx))
-			if err := i.CreateLedgerEntry(tx, LedgerEntryTypeCoverageChange, amount); err != nil {
+
+		i.LoadCategory(tx, false)
+		if i.Category.getBillingPeriod() == domain.BillingPeriodAnnual {
+			if err := i.createPremiumAdjustment(tx, time.Now().UTC(), oldItem); err != nil {
 				return err
 			}
 		}
@@ -849,6 +849,22 @@ func (i *Items) ConvertToAPI(tx *pop.Connection) api.Items {
 	return apiItems
 }
 
+// CalculateAnnualPremium returns the premium amount for the category's billing period:
+func (i *Item) CalculateBillingPremium(tx *pop.Connection) api.Currency {
+	i.LoadCategory(tx, false)
+	billingPeriod := i.Category.getBillingPeriod()
+
+	switch billingPeriod {
+	case domain.BillingPeriodMonthly:
+		return i.CalculateMonthlyPremium(tx)
+	case domain.BillingPeriodAnnual:
+		return i.CalculateAnnualPremium(tx)
+	}
+
+	log.Fatalf("invalid billing period found in item category %s", i.Name)
+	return 0
+}
+
 // CalculateAnnualPremium returns the rounded product of the item's CoverageAmount and the category's
 // PremiumFactor
 func (i *Item) CalculateAnnualPremium(tx *pop.Connection) api.Currency {
@@ -867,7 +883,7 @@ func (i *Item) CalculateProratedPremium(tx *pop.Connection, t time.Time) api.Cur
 }
 
 // CalculateMonthlyPremium returns the rounded product of the item's CoverageAmount and the category's
-// PremiumFactor divided by 12
+// PremiumFactor divided by BillingPeriodAnnual
 func (i *Item) CalculateMonthlyPremium(tx *pop.Connection) api.Currency {
 	i.LoadCategory(tx, false)
 	if i.Category.PremiumFactor.Valid {
@@ -1217,4 +1233,17 @@ func CountItemsToRenew(tx *pop.Connection, year int) (int, error) {
 		return 0, appErrorFromDB(err, api.ErrorQueryFailure)
 	}
 	return count, nil
+}
+
+func (i *Item) createPremiumAdjustment(tx *pop.Connection, date time.Time, oldItem Item) error {
+	oldPremium := oldItem.CalculateBillingPremium(tx)
+	newPremium := i.CalculateBillingPremium(tx)
+
+	if oldPremium != newPremium && !i.CoverageEndDate.Valid {
+		amount := i.calculatePremiumChange(date, oldPremium, newPremium)
+		if err := i.CreateLedgerEntry(tx, LedgerEntryTypeCoverageChange, amount); err != nil {
+			return err
+		}
+	}
+	return nil
 }

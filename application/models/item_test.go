@@ -1655,3 +1655,32 @@ func (ms *ModelSuite) Test_CountItemsToRenew() {
 		})
 	}
 }
+
+func (ms *ModelSuite) TestItem_createPremiumAdjustment() {
+	f := CreateItemFixtures(ms.DB, FixturesConfig{ItemsPerPolicy: 1})
+
+	// March 15 is 20% into the year
+	mar15 := time.Date(2023, 3, 15, 0, 0, 0, 0, time.UTC)
+
+	f.ItemCategories[0].PremiumFactor = nulls.NewFloat64(0.02) // 2% premium factor
+	f.ItemCategories[0].BillingPeriod = 12
+	Must(ms.DB.Update(&f.ItemCategories[0]))
+
+	oldItem := f.Items[0]
+	oldItem.CoverageAmount = 1000 * domain.CurrencyFactor // $1000 before
+	Must(ms.DB.Update(&oldItem))
+
+	newItem := oldItem
+	newItem.CoverageAmount = oldItem.CoverageAmount / 2 // $500 after
+	Must(ms.DB.Update(&newItem))
+
+	err := newItem.createPremiumAdjustment(ms.DB, mar15, oldItem)
+	ms.NoError(err)
+
+	var le LedgerEntries
+	Must(ms.DB.Where("item_id = ?", newItem.ID).All(&le))
+	ms.Len(le, 1)
+
+	wantAmount := api.Currency(8 * domain.CurrencyFactor) // ($1000 - $500) * 2% * (1 - 20%) = $8
+	ms.Equal(wantAmount, le[0].Amount)
+}

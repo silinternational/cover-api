@@ -95,7 +95,7 @@ func (i *ItemCategory) LoadRiskCategory(tx *pop.Connection) {
 
 func (i *ItemCategory) getBillingPeriod() int {
 	b := i.BillingPeriod
-	if b != 1 && b != 12 {
+	if b != domain.BillingPeriodMonthly && b != domain.BillingPeriodAnnual {
 		log.Fatalf("invalid billing period found in item category %s", i.Name)
 	}
 	return b
