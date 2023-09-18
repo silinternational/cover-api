@@ -187,8 +187,6 @@ type EnvStruct struct {
 	DependentAutoApproveMax int `default:"4000" split_words:"true"`
 	PremiumMinimum          int `default:"25" split_words:"true"`
 
-	// PremiumFactor is multiplied by CoverageAmount to calculate the annual premium of an item
-	PremiumFactor           float64 `default:"0.02" split_words:"true"`
 	RepairThreshold         float64 `default:"0.7" split_words:"true"`
 	RepairThresholdString   string  `ignored:"true"`
 	Deductible              float64 `default:"0.05"`

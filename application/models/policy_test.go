@@ -493,7 +493,7 @@ func (ms *ModelSuite) TestPolicy_calculateAnnualPremium() {
 	f := CreateItemFixtures(ms.DB, FixturesConfig{NumberOfPolicies: 2})
 
 	secondItem := createItemFixture(ms.DB, f.Policies[1].ID, CreateCategoryFixtures(ms.DB, 1).ItemCategories[0].ID)
-	secondItem.CoverageAmount = int(float64(domain.Env.PremiumMinimum) / domain.Env.PremiumFactor)
+	secondItem.CoverageAmount = int(float64(domain.Env.PremiumMinimum) / 0.02)
 	ms.NoError(secondItem.Update(CreateTestContext(f.Users[0])))
 	f.Policies[1].LoadItems(ms.DB, true)
 
