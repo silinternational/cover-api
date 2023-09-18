@@ -35,7 +35,7 @@ type ItemCategory struct {
 	Status            api.ItemCategoryStatus `db:"status" validate:"itemCategoryStatus"`
 	AutoApproveMax    int                    `db:"auto_approve_max" validate:"min=0"`
 	RequireMakeModel  bool                   `db:"require_make_model"`
-	PremiumFactor     nulls.Float64          `db:"premium_factor"`
+	PremiumFactor     float64                `db:"premium_factor"`
 	PremiumFactorHigh float64                `db:"premium_factor_high"`
 	PremiumThreshold  nulls.Int              `db:"premium_threshold"`
 	BillingPeriod     int                    `db:"billing_period"`
@@ -103,10 +103,7 @@ func (i *ItemCategory) getBillingPeriod() int {
 }
 
 func (i *ItemCategory) getPremiumFactor(coverageAmount int) float64 {
-	if !i.PremiumFactor.Valid {
-		log.Fatalf("premium factor is not defined for category %s", i.ID)
-	}
-	p := i.PremiumFactor.Float64
+	p := i.PremiumFactor
 	if i.PremiumThreshold.Valid && coverageAmount > i.PremiumThreshold.Int {
 		p = i.PremiumFactorHigh
 	}

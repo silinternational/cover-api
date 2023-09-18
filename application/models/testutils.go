@@ -293,7 +293,7 @@ func CreateCategoryFixtures(tx *pop.Connection, n int) Fixtures {
 		categories[i].HelpText = randStr(40)
 		categories[i].Status = api.ItemCategoryStatusEnabled
 		categories[i].AutoApproveMax = 3000 * domain.CurrencyFactor //  $3,000
-		categories[i].PremiumFactor = nulls.NewFloat64(0.02)
+		categories[i].PremiumFactor = 0.02
 		categories[i].BillingPeriod = domain.BillingPeriodAnnual
 		MustCreate(tx, &categories[i])
 	}

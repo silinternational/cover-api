@@ -334,7 +334,6 @@ func PolicyLedgerTable(c context.Context, policy Policy, month, year int) (api.L
 	// TODO: hydrate LastChanged date field when we figure out what that should be based on
 	lTable := api.LedgerTable{
 		PremiumTotal:  policy.calculateAnnualPremium(tx),
-		PremiumRate:   domain.Env.PremiumFactor,
 		CoverageValue: policy.currentCoverageTotal(tx),
 		ReportMonth:   month,
 		ReportYear:    year,

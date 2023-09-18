@@ -527,7 +527,7 @@ func (ms *ModelSuite) TestItem_calculateMinimumCoverage() {
 	monthly := f.Items[1]
 	monthly.CoverageAmount = 10000
 	Must(ms.DB.Update(&monthly))
-	f.ItemCategories[1].PremiumFactor = nulls.NewFloat64(0.03)
+	f.ItemCategories[1].PremiumFactor = 0.03
 	f.ItemCategories[1].BillingPeriod = 1
 	Must(ms.DB.Update(&f.ItemCategories[1]))
 
@@ -864,13 +864,13 @@ func (ms *ModelSuite) TestItem_CalculateMonthlyPremium() {
 	defaultPremium := f.Items[0]
 	defaultPremium.CoverageAmount = 30000
 	Must(ms.DB.Update(&defaultPremium))
-	f.ItemCategories[0].PremiumFactor = nulls.NewFloat64(0.02)
+	f.ItemCategories[0].PremiumFactor = 0.02
 	Must(ms.DB.Update(&f.ItemCategories[0]))
 
 	categoryPremium := f.Items[1]
 	categoryPremium.CoverageAmount = 30000
 	Must(ms.DB.Update(&categoryPremium))
-	f.ItemCategories[1].PremiumFactor = nulls.NewFloat64(0.03)
+	f.ItemCategories[1].PremiumFactor = 0.03
 	Must(ms.DB.Update(&f.ItemCategories[1]))
 
 	tests := []struct {
@@ -1662,7 +1662,7 @@ func (ms *ModelSuite) TestItem_createPremiumAdjustment() {
 	// March 15 is 20% into the year
 	mar15 := time.Date(2023, 3, 15, 0, 0, 0, 0, time.UTC)
 
-	f.ItemCategories[0].PremiumFactor = nulls.NewFloat64(0.02) // 2% premium factor
+	f.ItemCategories[0].PremiumFactor = 0.02 // 2% premium factor
 	f.ItemCategories[0].BillingPeriod = 12
 	Must(ms.DB.Update(&f.ItemCategories[0]))
 
