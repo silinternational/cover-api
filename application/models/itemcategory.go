@@ -36,7 +36,7 @@ type ItemCategory struct {
 	AutoApproveMax    int                    `db:"auto_approve_max" validate:"min=0"`
 	RequireMakeModel  bool                   `db:"require_make_model"`
 	PremiumFactor     nulls.Float64          `db:"premium_factor"`
-	PremiumFactorHigh nulls.Float64          `db:"premium_factor_high"`
+	PremiumFactorHigh float64                `db:"premium_factor_high"`
 	PremiumThreshold  nulls.Int              `db:"premium_threshold"`
 	BillingPeriod     int                    `db:"billing_period"`
 	LegacyID          nulls.Int              `db:"legacy_id"`
@@ -83,7 +83,6 @@ func (i *ItemCategory) ConvertToAPI(tx *pop.Connection) api.ItemCategory {
 		RiskCategory:     i.RiskCategory.ConvertToAPI(),
 		RequireMakeModel: i.RequireMakeModel,
 		BillingPeriod:    i.getBillingPeriod(),
-		PremiumFactor:    domain.PercentString(i.PremiumFactor.Float64),
 		CreatedAt:        i.CreatedAt,
 		UpdatedAt:        i.UpdatedAt,
 	}
@@ -101,6 +100,17 @@ func (i *ItemCategory) getBillingPeriod() int {
 		log.Fatalf("invalid billing period found in item category %s", i.Name)
 	}
 	return b
+}
+
+func (i *ItemCategory) getPremiumFactor(coverageAmount int) float64 {
+	if !i.PremiumFactor.Valid {
+		log.Fatalf("premium factor is not defined for category %s", i.ID)
+	}
+	p := i.PremiumFactor.Float64
+	if i.PremiumThreshold.Valid && coverageAmount > i.PremiumThreshold.Int {
+		p = i.PremiumFactorHigh
+	}
+	return p
 }
 
 func (i *ItemCategories) ConvertToAPI(tx *pop.Connection) api.ItemCategories {

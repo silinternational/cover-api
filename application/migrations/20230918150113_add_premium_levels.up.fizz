@@ -1,2 +1,2 @@
-add_column("item_categories", "premium_factor_high", "real", {"null": true})
+add_column("item_categories", "premium_factor_high", "real", {"default": 0})
 add_column("item_categories", "premium_threshold", "int", {"null": true})

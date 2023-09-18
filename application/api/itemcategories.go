@@ -54,7 +54,4 @@ type ItemCategory struct {
 
 	// billing period, expressed as a number of months
 	BillingPeriod int `json:"billing_period"`
-
-	// the premium factor for this category
-	PremiumFactor string `json:"premium_factor"`
 }

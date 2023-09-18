@@ -556,7 +556,8 @@ func (i *Item) SubmitForApproval(ctx context.Context) error {
 func (i *Item) calculateMinimumCoverage(tx *pop.Connection) int {
 	i.LoadCategory(tx, false)
 	billingPeriod := i.Category.getBillingPeriod()
-	return int(math.Round(0.5 / i.Category.PremiumFactor.Float64 / 12 * float64(billingPeriod)))
+	premiumFactor := i.Category.getPremiumFactor(i.CoverageAmount)
+	return int(math.Round(0.5 / premiumFactor / 12 * float64(billingPeriod)))
 }
 
 // Checks whether the item has a category that expects the make and model fields
@@ -865,15 +866,11 @@ func (i *Item) CalculateBillingPremium(tx *pop.Connection) api.Currency {
 	return 0
 }
 
-// CalculateAnnualPremium returns the rounded product of the item's CoverageAmount and the category's
-// PremiumFactor
+// CalculateAnnualPremium returns the rounded product of the item's CoverageAmount and the category's PremiumFactor
 func (i *Item) CalculateAnnualPremium(tx *pop.Connection) api.Currency {
 	i.LoadCategory(tx, false)
-	factor := domain.Env.PremiumFactor
-	if i.Category.PremiumFactor.Valid {
-		factor = i.Category.PremiumFactor.Float64
-	}
-	premium := api.Currency(math.Round(float64(i.CoverageAmount) * factor))
+	premiumFactor := i.Category.getPremiumFactor(i.CoverageAmount)
+	premium := api.Currency(math.Round(float64(i.CoverageAmount) * premiumFactor))
 	return premium
 }
 
@@ -886,13 +883,8 @@ func (i *Item) CalculateProratedPremium(tx *pop.Connection, t time.Time) api.Cur
 // PremiumFactor divided by BillingPeriodAnnual
 func (i *Item) CalculateMonthlyPremium(tx *pop.Connection) api.Currency {
 	i.LoadCategory(tx, false)
-	if i.Category.PremiumFactor.Valid {
-		premium := api.Currency(math.Round(float64(i.CoverageAmount) * i.Category.PremiumFactor.Float64 / 12))
-		return premium
-	} else {
-		premium := api.Currency(math.Round(float64(i.CoverageAmount) * domain.Env.PremiumFactor / 12))
-		return premium
-	}
+	premiumFactor := i.Category.getPremiumFactor(i.CoverageAmount)
+	return api.Currency(math.Round(float64(i.CoverageAmount) * premiumFactor / 12))
 }
 
 // True if coverage on the item started in a previous year and the current
