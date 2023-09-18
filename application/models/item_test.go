@@ -801,58 +801,80 @@ func (ms *ModelSuite) TestItem_setAccountablePerson() {
 }
 
 func (ms *ModelSuite) TestItem_calculateAnnualPremium() {
-	domain.Env.PremiumFactor = 0.02
+	f := CreateItemFixtures(ms.DB, FixturesConfig{ItemsPerPolicy: 2})
+
+	one := f.Items[0]
+	one.CoverageAmount = 2000 * domain.CurrencyFactor
+	Must(ms.DB.Update(&one))
+	f.ItemCategories[0].PremiumFactor = 0.02
+	Must(ms.DB.Update(&f.ItemCategories[0]))
+
+	two := f.Items[1]
+	two.CoverageAmount = 2000*domain.CurrencyFactor - 1
+	Must(ms.DB.Update(&two))
+	f.ItemCategories[1].PremiumFactor = 0.02
+	Must(ms.DB.Update(&f.ItemCategories[1]))
 
 	tests := []struct {
-		name     string
-		coverage int
-		want     int
+		name string
+		item Item
+		want int
 	}{
 		{
-			name:     "even amount",
-			coverage: 200000,
-			want:     4000,
+			name: "even amount",
+			item: one,
+			want: 4000,
 		},
 		{
-			name:     "round up",
-			coverage: 199999,
-			want:     4000,
+			name: "round up",
+			item: two,
+			want: 4000,
 		},
 	}
 	for _, tt := range tests {
 		ms.T().Run(tt.name, func(t *testing.T) {
-			item := Item{CoverageAmount: tt.coverage}
-			got := item.CalculateAnnualPremium(ms.DB)
+			got := tt.item.CalculateAnnualPremium(ms.DB)
 			ms.Equal(api.Currency(tt.want), got)
 		})
 	}
 }
 
 func (ms *ModelSuite) TestItem_calculateProratedPremium() {
-	domain.Env.PremiumFactor = 0.02
+	f := CreateItemFixtures(ms.DB, FixturesConfig{ItemsPerPolicy: 2})
+
+	one := f.Items[0]
+	one.CoverageAmount = 2000 * domain.CurrencyFactor
+	Must(ms.DB.Update(&one))
+	f.ItemCategories[0].PremiumFactor = 0.02
+	Must(ms.DB.Update(&f.ItemCategories[0]))
+
+	two := f.Items[1]
+	two.CoverageAmount = 2000*domain.CurrencyFactor - 1
+	Must(ms.DB.Update(&two))
+	f.ItemCategories[1].PremiumFactor = 0.02
+	Must(ms.DB.Update(&f.ItemCategories[1]))
 
 	now := time.Date(1999, 3, 15, 0, 0, 0, 0, time.UTC)
 
 	tests := []struct {
-		name     string
-		coverage int
-		want     int
+		name string
+		item Item
+		want int
 	}{
 		{
-			name:     "even amount",
-			coverage: 200000,
-			want:     3200,
+			name: "even amount",
+			item: one,
+			want: 3200,
 		},
 		{
-			name:     "round up",
-			coverage: 199999,
-			want:     3200,
+			name: "round up",
+			item: two,
+			want: 3200,
 		},
 	}
 	for _, tt := range tests {
 		ms.T().Run(tt.name, func(t *testing.T) {
-			item := Item{CoverageAmount: tt.coverage}
-			got := item.CalculateProratedPremium(ms.DB, now)
+			got := tt.item.CalculateProratedPremium(ms.DB, now)
 			ms.Equal(api.Currency(tt.want), got)
 		})
 	}
@@ -898,9 +920,10 @@ func (ms *ModelSuite) TestItem_CalculateMonthlyPremium() {
 }
 
 func (ms *ModelSuite) TestItem_calculateCancellationCredit() {
-	domain.Env.PremiumFactor = 0.02
 	earlyJanuary := time.Date(2019, 1, 1, 1, 1, 1, 1, time.UTC)
 	midJanuary := time.Date(2019, 1, 11, 1, 1, 1, 1, time.UTC)
+
+	item := CreateItemFixtures(ms.DB, FixturesConfig{ItemsPerPolicy: 1}).Items[0]
 
 	tests := []struct {
 		name              string
@@ -953,10 +976,8 @@ func (ms *ModelSuite) TestItem_calculateCancellationCredit() {
 	}
 	for _, tt := range tests {
 		ms.T().Run(tt.name, func(t *testing.T) {
-			item := Item{
-				CoverageAmount:    tt.coverage,
-				CoverageStartDate: tt.coverageStartDate,
-			}
+			item.CoverageAmount = tt.coverage
+			item.CoverageStartDate = tt.coverageStartDate
 			got := item.calculateCancellationCredit(ms.DB, tt.testTime)
 			ms.Equal(api.Currency(tt.want), got)
 		})

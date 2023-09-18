@@ -603,7 +603,6 @@ func (ms *ModelSuite) TestPolicyLedgerTable() {
 			want: &api.LedgerTable{
 				PayoutTotal:     0,
 				PremiumTotal:    premiumTotal,
-				PremiumRate:     domain.Env.PremiumFactor,
 				NetTransactions: netTransactionsApril,
 				ReportMonth:     int(april.Month()),
 				ReportYear:      april.Year(),
@@ -639,7 +638,6 @@ func (ms *ModelSuite) TestPolicyLedgerTable() {
 
 			ms.Equal(tt.want.PayoutTotal, got.PayoutTotal, "incorrect PayoutTotal")
 			ms.Equal(tt.want.PremiumTotal, got.PremiumTotal, "incorrect PremiumTotal")
-			ms.Equal(tt.want.PremiumRate, got.PremiumRate, "incorrect PremiumRate")
 			ms.Equal(tt.want.NetTransactions, got.NetTransactions, "incorrect NetTransactions")
 			ms.Equal(tt.want.ReportMonth, got.ReportMonth, "incorrect ReportMonth")
 			ms.Equal(tt.want.ReportYear, got.ReportYear, "incorrect ReportYear")

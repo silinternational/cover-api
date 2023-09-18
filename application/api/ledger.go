@@ -40,7 +40,6 @@ type LedgerReportCreateInput struct {
 type LedgerTable struct {
 	LastChanged     time.Time `json:"last_changed"`
 	CoverageValue   Currency  `json:"coverage_value"`
-	PremiumRate     float64   `json:"premium_rate"`
 	PremiumTotal    Currency  `json:"premium_total"`
 	PayoutTotal     Currency  `json:"payout_total"`
 	NetTransactions Currency  `json:"net_transactions"`
