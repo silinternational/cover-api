@@ -28,18 +28,20 @@ type ItemCategories []ItemCategory
 
 // ItemCategory model
 type ItemCategory struct {
-	ID               uuid.UUID              `db:"id"`
-	RiskCategoryID   uuid.UUID              `db:"risk_category_id"`
-	Name             string                 `db:"name" validate:"required"`
-	HelpText         string                 `db:"help_text"`
-	Status           api.ItemCategoryStatus `db:"status" validate:"itemCategoryStatus"`
-	AutoApproveMax   int                    `db:"auto_approve_max" validate:"min=0"`
-	RequireMakeModel bool                   `db:"require_make_model"`
-	PremiumFactor    nulls.Float64          `db:"premium_factor"`
-	BillingPeriod    int                    `db:"billing_period"`
-	LegacyID         nulls.Int              `db:"legacy_id"`
-	CreatedAt        time.Time              `db:"created_at"`
-	UpdatedAt        time.Time              `db:"updated_at"`
+	ID                uuid.UUID              `db:"id"`
+	RiskCategoryID    uuid.UUID              `db:"risk_category_id"`
+	Name              string                 `db:"name" validate:"required"`
+	HelpText          string                 `db:"help_text"`
+	Status            api.ItemCategoryStatus `db:"status" validate:"itemCategoryStatus"`
+	AutoApproveMax    int                    `db:"auto_approve_max" validate:"min=0"`
+	RequireMakeModel  bool                   `db:"require_make_model"`
+	PremiumFactor     nulls.Float64          `db:"premium_factor"`
+	PremiumFactorHigh nulls.Float64          `db:"premium_factor_high"`
+	PremiumThreshold  nulls.Int              `db:"premium_threshold"`
+	BillingPeriod     int                    `db:"billing_period"`
+	LegacyID          nulls.Int              `db:"legacy_id"`
+	CreatedAt         time.Time              `db:"created_at"`
+	UpdatedAt         time.Time              `db:"updated_at"`
 
 	RiskCategory RiskCategory `belongs_to:"risk_categories" fk_id:"RiskCategoryID" validate:"-"`
 }
