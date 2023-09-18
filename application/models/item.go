@@ -395,9 +395,12 @@ func (i *Item) cancelCoverageAfterClaim(tx *pop.Connection, reason string) error
 
 	now := time.Now().UTC()
 
-	amount := i.calculatePremiumChange(now, i.CalculateAnnualPremium(tx), 0)
-	if err := i.CreateLedgerEntry(tx, LedgerEntryTypeCoverageRefund, amount); err != nil {
-		return err
+	i.LoadCategory(tx, false)
+	if i.Category.BillingPeriod == domain.BillingPeriodAnnual {
+		amount := i.calculatePremiumChange(now, i.CalculateAnnualPremium(tx), 0)
+		if err := i.CreateLedgerEntry(tx, LedgerEntryTypeCoverageRefund, amount); err != nil {
+			return err
+		}
 	}
 
 	if reason == "" {
@@ -1216,10 +1219,12 @@ func (i *Items) RepairItemsIncorrectlyRenewed(c buffalo.Context, date time.Time)
 	return nil
 }
 
-func CountItemsToRenew(tx *pop.Connection, year int) (int, error) {
+func CountItemsToRenew(tx *pop.Connection, date time.Time, billingPeriod int) (int, error) {
 	var items Items
 	count, err := tx.Where("coverage_status = ?", api.ItemCoverageStatusApproved).
-		Where("paid_through_date < ?", domain.EndOfYear(year)).
+		Where("paid_through_date < ?", date).
+		Join("item_categories ic", "ic.id = items.category_id").
+		Where("ic.billing_period = ?", billingPeriod).
 		Count(&items)
 	if err != nil {
 		return 0, appErrorFromDB(err, api.ErrorQueryFailure)

@@ -187,9 +187,9 @@ func ledgerAnnualRenewalStatus(c buffalo.Context) error {
 		return reportError(c, api.NewAppError(err, api.ErrorNotAuthorized, api.CategoryForbidden))
 	}
 
-	currentYear := time.Now().UTC().Year()
+	endOfYear := domain.EndOfYear(time.Now().UTC().Year())
 
-	itemsToRenew, err := models.CountItemsToRenew(models.Tx(c), currentYear)
+	itemsToRenew, err := models.CountItemsToRenew(models.Tx(c), endOfYear, domain.BillingPeriodAnnual)
 	if err != nil {
 		return err
 	}

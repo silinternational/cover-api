@@ -1644,33 +1644,59 @@ func (ms *ModelSuite) TestItem_RepairItemsIncorrectlyRenewed() {
 }
 
 func (ms *ModelSuite) Test_CountItemsToRenew() {
-	year := time.Now().UTC().Year()
+	now := time.Now().UTC()
+	year := now.Year()
+	lastMonth := now.AddDate(0, -1, 0)
+	endOfLastMonth := domain.EndOfMonth(lastMonth)
 
-	f := CreateItemFixtures(ms.DB, FixturesConfig{ItemsPerPolicy: 5})
-	for i := range f.Items {
-		f.Items[i].PaidThroughDate = domain.EndOfYear(year - 1)
-		UpdateItemStatus(ms.DB, f.Items[i], api.ItemCoverageStatusApproved, "")
+	f1 := CreateItemFixtures(ms.DB, FixturesConfig{ItemsPerPolicy: 5})
+	for i := range f1.Items {
+		f1.Items[i].PaidThroughDate = domain.EndOfYear(year - 1)
+		UpdateItemStatus(ms.DB, f1.Items[i], api.ItemCoverageStatusApproved, "")
+	}
+
+	f2 := CreateItemFixtures(ms.DB, FixturesConfig{ItemsPerPolicy: 3})
+	for i := range f2.Items {
+		f2.Items[i].PaidThroughDate = endOfLastMonth
+		UpdateItemStatus(ms.DB, f2.Items[i], api.ItemCoverageStatusApproved, "")
+		f2.ItemCategories[i].BillingPeriod = domain.BillingPeriodMonthly
+		Must(ms.DB.Update(&f2.ItemCategories[i]))
 	}
 
 	tests := []struct {
-		name string
-		year int
-		want int
+		name          string
+		date          time.Time
+		billingPeriod int
+		want          int
 	}{
 		{
-			name: "0 items",
-			year: year - 1,
-			want: 0,
+			name:          "annual, last year, 0 items",
+			date:          domain.EndOfYear(year - 1),
+			want:          0,
+			billingPeriod: domain.BillingPeriodAnnual,
 		},
 		{
-			name: "4 items",
-			year: year,
-			want: 5,
+			name:          "annual, this year, 5 items",
+			date:          domain.EndOfYear(year),
+			want:          5,
+			billingPeriod: domain.BillingPeriodAnnual,
+		},
+		{
+			name:          "monthly, last month, 0 items",
+			date:          lastMonth,
+			want:          0,
+			billingPeriod: domain.BillingPeriodMonthly,
+		},
+		{
+			name:          "monthly, this month, 3 items",
+			date:          now,
+			want:          3,
+			billingPeriod: domain.BillingPeriodMonthly,
 		},
 	}
 	for _, tt := range tests {
 		ms.T().Run(tt.name, func(t *testing.T) {
-			got, err := CountItemsToRenew(ms.DB, tt.year)
+			got, err := CountItemsToRenew(ms.DB, tt.date, tt.billingPeriod)
 			ms.NoError(err)
 			ms.Equal(tt.want, got)
 		})
