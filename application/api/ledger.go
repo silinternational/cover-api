@@ -118,7 +118,7 @@ type LedgerEntry struct {
 }
 
 // swagger:model
-type AnnualRenewalStatus struct {
+type RenewalStatus struct {
 	IsComplete     bool `json:"is_complete"`
 	ItemsToProcess int  `json:"items_to_process"`
 }
