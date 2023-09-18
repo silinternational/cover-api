@@ -74,6 +74,9 @@ const (
 )
 
 const (
+	BillingPeriodMonthly = 1
+	BillingPeriodAnnual  = 12
+
 	CurrencyFactor = 100
 	DateFormat     = "2006-01-02"
 

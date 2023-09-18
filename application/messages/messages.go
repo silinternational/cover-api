@@ -125,9 +125,9 @@ func (m MessageData) addItemData(tx *pop.Connection, item models.Item) {
 	}
 
 	switch item.Category.BillingPeriod {
-	case 1:
+	case domain.BillingPeriodMonthly:
 		m["premium"] = fmt.Sprintf("$%s per month", item.CalculateMonthlyPremium(tx).String())
-	case 12:
+	case domain.BillingPeriodAnnual:
 		m["premium"] = fmt.Sprintf("$%s per year", item.CalculateAnnualPremium(tx).String())
 	default:
 		m["premium"] = "?"

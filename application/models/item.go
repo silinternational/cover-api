@@ -132,9 +132,8 @@ func (i *Item) Update(ctx context.Context) error {
 		}
 
 		i.LoadCategory(tx, false)
-		if i.Category.getBillingPeriod() == 12 {
-			err := i.createPremiumAdjustment(tx, time.Now().UTC(), oldItem)
-			if err != nil {
+		if i.Category.getBillingPeriod() == domain.BillingPeriodAnnual {
+			if err := i.createPremiumAdjustment(tx, time.Now().UTC(), oldItem); err != nil {
 				return err
 			}
 		}
@@ -855,14 +854,14 @@ func (i *Item) CalculateBillingPremium(tx *pop.Connection) api.Currency {
 	i.LoadCategory(tx, false)
 	billingPeriod := i.Category.getBillingPeriod()
 
-	if billingPeriod == 1 {
+	switch billingPeriod {
+	case domain.BillingPeriodMonthly:
 		return i.CalculateMonthlyPremium(tx)
-	}
-
-	if billingPeriod == 12 {
+	case domain.BillingPeriodAnnual:
 		return i.CalculateAnnualPremium(tx)
 	}
 
+	log.Fatalf("invalid billing period found in item category %s", i.Name)
 	return 0
 }
 
@@ -884,7 +883,7 @@ func (i *Item) CalculateProratedPremium(tx *pop.Connection, t time.Time) api.Cur
 }
 
 // CalculateMonthlyPremium returns the rounded product of the item's CoverageAmount and the category's
-// PremiumFactor divided by 12
+// PremiumFactor divided by BillingPeriodAnnual
 func (i *Item) CalculateMonthlyPremium(tx *pop.Connection) api.Currency {
 	i.LoadCategory(tx, false)
 	if i.Category.PremiumFactor.Valid {
