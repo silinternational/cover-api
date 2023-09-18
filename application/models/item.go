@@ -395,9 +395,12 @@ func (i *Item) cancelCoverageAfterClaim(tx *pop.Connection, reason string) error
 
 	now := time.Now().UTC()
 
-	amount := i.calculatePremiumChange(now, i.CalculateAnnualPremium(tx), 0)
-	if err := i.CreateLedgerEntry(tx, LedgerEntryTypeCoverageRefund, amount); err != nil {
-		return err
+	i.LoadCategory(tx, false)
+	if i.Category.BillingPeriod == domain.BillingPeriodAnnual {
+		amount := i.calculatePremiumChange(now, i.CalculateAnnualPremium(tx), 0)
+		if err := i.CreateLedgerEntry(tx, LedgerEntryTypeCoverageRefund, amount); err != nil {
+			return err
+		}
 	}
 
 	if reason == "" {
