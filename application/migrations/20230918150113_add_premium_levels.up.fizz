@@ -1,5 +1,2 @@
 add_column("item_categories", "premium_factor_high", "real", {"default": 0})
 add_column("item_categories", "premium_threshold", "int", {"null": true})
-sql(`
-  ALTER TABLE "item_categories" ALTER "premium_factor" SET NOT NULL;
-`)

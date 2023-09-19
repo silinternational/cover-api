@@ -1,3 +1,2 @@
 drop_column("item_categories", "premium_factor_high")
 drop_column("item_categories", "premium_threshold")
-change_column("item_categories", "premium_factor", "real", {"null": true})
