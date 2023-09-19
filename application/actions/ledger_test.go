@@ -444,3 +444,112 @@ func (as *ActionSuite) createFixturesForLedger() models.Fixtures {
 
 	return f
 }
+
+func (as *ActionSuite) Test_LedgerMonthlyProcess() {
+	now := time.Now().UTC()
+
+	f := models.CreateItemFixtures(as.DB, models.FixturesConfig{ItemsPerPolicy: 3})
+
+	f.Items[0].PaidThroughDate = domain.EndOfMonth(now)
+	models.UpdateItemStatus(as.DB, f.Items[0], api.ItemCoverageStatusApproved, "")
+	models.UpdateItemStatus(as.DB, f.Items[1], api.ItemCoverageStatusApproved, "")
+
+	normalUser := f.Users[0]
+	stewardUser := models.CreateAdminUsers(as.DB)[models.AppRoleSteward]
+
+	tests := []struct {
+		name       string
+		actor      models.User
+		wantStatus int
+		wantInBody []string
+	}{
+		{
+			name:       "unauthenticated",
+			actor:      models.User{},
+			wantStatus: http.StatusUnauthorized,
+			wantInBody: []string{api.ErrorNotAuthorized.String()},
+		},
+		{
+			name:       "insufficient privileges",
+			actor:      normalUser,
+			wantStatus: http.StatusNotFound,
+			wantInBody: []string{`"key":"` + api.ErrorNotAuthorized.String()},
+		},
+		{
+			name:       "steward user good results",
+			actor:      stewardUser,
+			wantStatus: http.StatusNoContent,
+		},
+	}
+
+	for _, tt := range tests {
+		as.T().Run(tt.name, func(t *testing.T) {
+			req := as.JSON(ledgerReportPath + "/monthly")
+			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
+			res := req.Post(nil)
+
+			body := res.Body.String()
+			as.Equal(tt.wantStatus, res.Code, "incorrect status code returned, body: %s", body)
+
+			for _, s := range tt.wantInBody {
+				as.Contains(body, s)
+			}
+		})
+	}
+}
+
+func (as *ActionSuite) Test_LedgerMonthlyStatus() {
+	now := time.Now().UTC()
+
+	f := models.CreateItemFixtures(as.DB, models.FixturesConfig{ItemsPerPolicy: 3})
+
+	f.Items[0].PaidThroughDate = domain.EndOfMonth(now)
+	f.ItemCategories[1].BillingPeriod = domain.BillingPeriodMonthly
+	models.UpdateItemStatus(as.DB, f.Items[0], api.ItemCoverageStatusApproved, "")
+	models.UpdateItemStatus(as.DB, f.Items[1], api.ItemCoverageStatusApproved, "")
+	as.NoError(as.DB.Update(&f.ItemCategories[1]))
+
+	normalUser := f.Users[0]
+	stewardUser := models.CreateAdminUsers(as.DB)[models.AppRoleSteward]
+
+	tests := []struct {
+		name       string
+		actor      models.User
+		wantStatus int
+		wantInBody []string
+	}{
+		{
+			name:       "unauthenticated",
+			actor:      models.User{},
+			wantStatus: http.StatusUnauthorized,
+			wantInBody: []string{api.ErrorNotAuthorized.String()},
+		},
+		{
+			name:       "insufficient privileges",
+			actor:      normalUser,
+			wantStatus: http.StatusNotFound,
+			wantInBody: []string{`"key":"` + api.ErrorNotAuthorized.String()},
+		},
+		{
+			name:       "steward user good results",
+			actor:      stewardUser,
+			wantStatus: http.StatusOK,
+			wantInBody: []string{`"is_complete":false`, `"items_to_process":1`},
+		},
+	}
+
+	for _, tt := range tests {
+		as.T().Run(tt.name, func(t *testing.T) {
+			req := as.JSON(ledgerReportPath + "/monthly")
+			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
+			res := req.Get()
+
+			body := res.Body.String()
+			as.Equal(tt.wantStatus, res.Code, "incorrect status code returned, body: %s", body)
+
+			for _, s := range tt.wantInBody {
+				as.Contains(body, s)
+			}
+		})
+	}
+}

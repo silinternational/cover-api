@@ -179,7 +179,7 @@ func ledgerAnnualRenewalProcess(c buffalo.Context) error {
 //	  '200':
 //	    description: the status of the annual billing process
 //	    schema:
-//	      "$ref": "#/definitions/AnnualRenewalStatus"
+//	      "$ref": "#/definitions/RenewalStatus"
 func ledgerAnnualRenewalStatus(c buffalo.Context) error {
 	actor := models.CurrentUser(c)
 	if !actor.IsAdmin() {
@@ -194,7 +194,62 @@ func ledgerAnnualRenewalStatus(c buffalo.Context) error {
 		return err
 	}
 
-	status := api.AnnualRenewalStatus{
+	status := api.RenewalStatus{
+		IsComplete:     itemsToRenew == 0,
+		ItemsToProcess: itemsToRenew,
+	}
+	return renderOk(c, status)
+}
+
+// swagger:operation POST /ledger-reports/monthly Ledger LedgerMonthlyProcess
+// LedgerMonthlyProcess
+//
+// Process billing for current month's policy renewals.
+// ---
+//
+//	responses:
+//	  '204':
+//	    description: OK but no content in response
+func ledgerMonthlyRenewalProcess(c buffalo.Context) error {
+	actor := models.CurrentUser(c)
+	if !actor.IsAdmin() {
+		err := fmt.Errorf("user not allowed to process monthly batch data")
+		return reportError(c, api.NewAppError(err, api.ErrorNotAuthorized, api.CategoryForbidden))
+	}
+
+	if err := job.Submit(job.MonthlyRenewal, map[string]any{}); err != nil {
+		return reportError(c, api.NewAppError(err, api.ErrorFailedToSubmitJob, api.CategoryInternal))
+	}
+
+	return c.Render(http.StatusNoContent, nil)
+}
+
+// swagger:operation GET /ledger-reports/monthly Ledger LedgerMonthlyRenewalStatus
+// LedgerMonthlyRenewalStatus
+//
+// Get the status of the monthly billing process.
+// ---
+//
+//	responses:
+//	  '200':
+//	    description: the status of the monthly billing process
+//	    schema:
+//	      "$ref": "#/definitions/RenewalStatus"
+func ledgerMonthlyRenewalStatus(c buffalo.Context) error {
+	actor := models.CurrentUser(c)
+	if !actor.IsAdmin() {
+		err := fmt.Errorf("user not allowed to access monthly batch data")
+		return reportError(c, api.NewAppError(err, api.ErrorNotAuthorized, api.CategoryForbidden))
+	}
+
+	now := time.Now().UTC()
+
+	itemsToRenew, err := models.CountItemsToRenew(models.Tx(c), now, domain.BillingPeriodMonthly)
+	if err != nil {
+		return err
+	}
+
+	status := api.RenewalStatus{
 		IsComplete:     itemsToRenew == 0,
 		ItemsToProcess: itemsToRenew,
 	}

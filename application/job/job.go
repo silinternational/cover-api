@@ -21,6 +21,7 @@ const (
 const (
 	InactivateItems = "inactivate_items"
 	AnnualRenewal   = "annual_renewal"
+	MonthlyRenewal  = "monthly_renewal"
 )
 
 var w *worker.Worker
@@ -28,6 +29,7 @@ var w *worker.Worker
 var handlers = map[string]func(worker.Args) error{
 	InactivateItems: inactivateItemsHandler,
 	AnnualRenewal:   annualRenewalHandler,
+	MonthlyRenewal:  monthlyRenewalHandler,
 }
 
 // jobBuffaloContext is a buffalo context for jobs
