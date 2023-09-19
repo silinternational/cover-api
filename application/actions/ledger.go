@@ -204,7 +204,7 @@ func ledgerAnnualRenewalStatus(c buffalo.Context) error {
 // swagger:operation POST /ledger-reports/monthly Ledger LedgerMonthlyProcess
 // LedgerMonthlyProcess
 //
-// Process billing for current year's policy renewals.
+// Process billing for current month's policy renewals.
 // ---
 //
 //	responses:
