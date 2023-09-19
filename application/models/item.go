@@ -305,9 +305,9 @@ func (i *Item) SafeDeleteOrInactivate(ctx context.Context) error {
 			return err
 		}
 
-		// Don't give a refund if premium has not been paid beyond today
-		// TODO: make sure this is correct for monthly billing
-		if i.PaidThroughDate.Before(time.Now()) {
+		// Don't give a refund if premium has not been paid beyond today or if billed monthly
+		i.LoadCategory(tx, false)
+		if i.PaidThroughDate.Before(time.Now()) || i.Category.getBillingPeriod() == domain.BillingPeriodMonthly {
 			return nil
 		}
 
@@ -361,10 +361,12 @@ func (i *Item) ScheduleInactivation(ctx context.Context, t time.Time) error {
 	user := CurrentUser(ctx)
 	i.StatusChange = ItemStatusChangeInactivated + user.Name()
 
-	// If now it's January and the item was created before this year
-	//   set its CoverageEndDate to the current day.
+	tx := Tx(ctx)
+	i.LoadCategory(tx, false)
+
+	// If now it's January and the item was created before this year set its CoverageEndDate to the current day.
 	// Otherwise, set it to the end of the current month.
-	if i.shouldGiveFullYearRefund(t) {
+	if i.Category.BillingPeriod == domain.BillingPeriodAnnual && i.shouldGiveFullYearRefund(t) {
 		i.CoverageEndDate = nulls.NewTime(t)
 	} else {
 		i.CoverageEndDate = nulls.NewTime(domain.EndOfMonth(t))

@@ -561,7 +561,7 @@ func (ms *ModelSuite) TestItem_SafeDeleteOrInactivate() {
 
 	fixConfig := FixturesConfig{
 		NumberOfPolicies: 1,
-		ItemsPerPolicy:   9,
+		ItemsPerPolicy:   10,
 	}
 
 	fixtures := CreateItemFixtures(ms.DB, fixConfig)
