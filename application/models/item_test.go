@@ -1762,3 +1762,56 @@ func (ms *ModelSuite) TestItem_createPremiumAdjustment() {
 	wantAmount := api.Currency(8 * domain.CurrencyFactor) // ($1000 - $500) * 2% * (1 - 20%) = $8
 	ms.Equal(wantAmount, le[0].Amount)
 }
+
+func (ms *ModelSuite) TestItem_ScheduleInactivation() {
+	june11 := time.Date(2023, 6, 11, 0, 0, 0, 0, time.UTC)
+	jan3 := time.Date(2023, 1, 3, 0, 0, 0, 0, time.UTC)
+
+	f := CreateItemFixtures(ms.DB, FixturesConfig{ItemsPerPolicy: 2})
+
+	annual := f.Items[0]
+
+	monthly := f.Items[1]
+	f.ItemCategories[1].BillingPeriod = domain.BillingPeriodMonthly
+	Must(ms.DB.Update(&f.ItemCategories[1]))
+
+	ctx := CreateTestContext(f.Users[0])
+
+	tests := []struct {
+		name                string
+		item                Item
+		now                 time.Time
+		wantCoverageEndDate nulls.Time
+	}{
+		{
+			name:                "annual item, mid-year",
+			item:                annual,
+			now:                 june11,
+			wantCoverageEndDate: nulls.NewTime(domain.EndOfMonth(june11)),
+		},
+		{
+			name:                "annual item, early in the year",
+			item:                annual,
+			now:                 jan3,
+			wantCoverageEndDate: nulls.NewTime(jan3),
+		},
+		{
+			name:                "monthly item",
+			item:                monthly,
+			now:                 jan3,
+			wantCoverageEndDate: nulls.NewTime(domain.EndOfMonth(jan3)),
+		},
+	}
+	for _, tt := range tests {
+		ms.T().Run(tt.name, func(t *testing.T) {
+			err := tt.item.ScheduleInactivation(ctx, tt.now)
+			ms.NoError(err)
+
+			var dbItem Item
+			Must(ms.DB.Find(&dbItem, tt.item.ID))
+
+			ms.Contains(dbItem.StatusChange, ItemStatusChangeInactivated)
+			ms.Equal(tt.wantCoverageEndDate, dbItem.CoverageEndDate)
+		})
+	}
+}
