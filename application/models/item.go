@@ -360,7 +360,7 @@ func (i *Item) isNewEnough() bool {
 	return !i.CreatedAt.Before(cutOffDate)
 }
 
-// ScheduleInactivation sets the item's CoverageEndDate
+// ScheduleInactivation sets the item's StatusChange and CoverageEndDate
 func (i *Item) ScheduleInactivation(ctx context.Context, t time.Time) error {
 	user := CurrentUser(ctx)
 	i.StatusChange = ItemStatusChangeInactivated + user.Name()
@@ -368,8 +368,8 @@ func (i *Item) ScheduleInactivation(ctx context.Context, t time.Time) error {
 	tx := Tx(ctx)
 	i.LoadCategory(tx, false)
 
-	// If now it's January and the item was created before this year set its CoverageEndDate to the current day.
-	// Otherwise, set it to the end of the current month.
+	// If the item was created before this year, and it qualifies for a full-year refund, set
+	// its CoverageEndDate to the current day. Otherwise, set it to the end of the current month.
 	if i.Category.BillingPeriod == domain.BillingPeriodAnnual && i.shouldGiveFullYearRefund(t) {
 		i.CoverageEndDate = nulls.NewTime(t)
 	} else {
