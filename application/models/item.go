@@ -293,26 +293,13 @@ func (i *Item) FindByID(tx *pop.Connection, id uuid.UUID) error {
 // and if it has a Draft, Revision or Pending status.
 // If the item's status is Denied or Inactive, it does nothing.
 // Otherwise, it changes its status to Inactive.
-// It also creates a corresponding credit ledger entry
-func (i *Item) SafeDeleteOrInactivate(ctx context.Context) error {
-	now := time.Now().UTC()
+func (i *Item) SafeDeleteOrInactivate(ctx context.Context, now time.Time) error {
 	tx := Tx(ctx)
 	switch i.CoverageStatus {
 	case api.ItemCoverageStatusInactive, api.ItemCoverageStatusDenied:
 		return nil
 	case api.ItemCoverageStatusApproved:
-		if err := i.ScheduleInactivation(ctx, now); err != nil {
-			return err
-		}
-
-		// Don't give a refund if premium has not been paid beyond today or if billed monthly
-		i.LoadCategory(tx, false)
-		if i.PaidThroughDate.Before(time.Now()) || i.Category.getBillingPeriod() == domain.BillingPeriodMonthly {
-			return nil
-		}
-
-		return i.CreateLedgerEntry(tx, LedgerEntryTypeCoverageRefund, i.calculateCancellationCredit(tx, now))
-
+		return i.ScheduleInactivation(ctx, now)
 	case api.ItemCoverageStatusDraft, api.ItemCoverageStatusRevision, api.ItemCoverageStatusPending:
 		if i.isNewEnough() && i.canBeDeleted(tx) {
 			return i.Destroy(tx)
@@ -322,6 +309,23 @@ func (i *Item) SafeDeleteOrInactivate(ctx context.Context) error {
 		panic(`invalid item status in SafeDeleteOrInactivate`)
 	}
 	return nil
+}
+
+// CreateCancellationCredit creates a credit for the refund of annual coverage if the
+// premium has been charged for the year.
+func (i *Item) CreateCancellationCredit(tx *pop.Connection, now time.Time) error {
+	if i.PaidThroughDate.Before(now) {
+		return nil
+	}
+
+	i.LoadCategory(tx, false)
+	if i.Category.getBillingPeriod() == domain.BillingPeriodMonthly {
+		return nil
+	}
+
+	creditAmount := i.calculateCancellationCredit(tx, now)
+
+	return i.CreateLedgerEntry(tx, LedgerEntryTypeCoverageRefund, creditAmount)
 }
 
 // canBeDeleted checks for child records with restricted constraints and returns false if any are found

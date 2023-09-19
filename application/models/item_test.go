@@ -657,7 +657,7 @@ func (ms *ModelSuite) TestItem_SafeDeleteOrInactivate() {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := tt.item.SafeDeleteOrInactivate(ctx)
+			got := tt.item.SafeDeleteOrInactivate(ctx, now)
 			ms.NoError(got)
 
 			dbItem := Item{}
@@ -670,7 +670,59 @@ func (ms *ModelSuite) TestItem_SafeDeleteOrInactivate() {
 			}
 			ms.NoError(err, "error finding the item in the database")
 			ms.Equal(tt.wantStatus, dbItem.CoverageStatus, "incorrect status")
-			ms.Equal(domain.ZeroDate(), dbItem.PaidThroughDate, "incorrect paid_through_date value")
+		})
+	}
+}
+
+func (ms *ModelSuite) TestItem_CreateCancellationCredit() {
+	f := CreateItemFixtures(ms.DB, FixturesConfig{ItemsPerPolicy: 3})
+
+	now := time.Now().UTC()
+
+	noRefund := f.Items[0]
+	noRefund.PaidThroughDate = domain.ZeroDate()
+	Must(ms.DB.Update(&noRefund))
+
+	refund := f.Items[1]
+	refund.PaidThroughDate = domain.EndOfYear(now.Year())
+	Must(ms.DB.Update(&refund))
+
+	monthlyItem := f.Items[2]
+	monthlyItem.PaidThroughDate = domain.EndOfMonth(now)
+	Must(ms.DB.Update(&monthlyItem))
+	f.ItemCategories[2].BillingPeriod = domain.BillingPeriodMonthly
+	Must(ms.DB.Update(&f.ItemCategories[2]))
+
+	tests := []struct {
+		name              string
+		item              Item
+		wantLedgerEntries int
+	}{
+		{
+			name:              "annual item, no refund",
+			item:              noRefund,
+			wantLedgerEntries: 0,
+		},
+		{
+			name:              "annual item, create refund",
+			item:              refund,
+			wantLedgerEntries: 1,
+		},
+		{
+			name:              "monthly item",
+			item:              monthlyItem,
+			wantLedgerEntries: 0,
+		},
+	}
+
+	for _, tt := range tests {
+		ms.T().Run(tt.name, func(t *testing.T) {
+			err := tt.item.CreateCancellationCredit(ms.DB, now)
+			ms.NoError(err)
+
+			var le LedgerEntries
+			Must(ms.DB.Where("item_id = ?", tt.item.ID).All(&le))
+			ms.Equal(tt.wantLedgerEntries, len(le))
 		})
 	}
 }
