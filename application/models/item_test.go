@@ -528,7 +528,7 @@ func (ms *ModelSuite) TestItem_calculateMinimumCoverage() {
 	monthly.CoverageAmount = 10000
 	Must(ms.DB.Update(&monthly))
 	f.ItemCategories[1].PremiumFactor = nulls.NewFloat64(0.03)
-	f.ItemCategories[1].BillingPeriod = 1
+	f.ItemCategories[1].BillingPeriod = domain.BillingPeriodMonthly
 	Must(ms.DB.Update(&f.ItemCategories[1]))
 
 	tests := []struct {
