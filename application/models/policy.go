@@ -599,37 +599,49 @@ func (p *Policy) createInvite(tx *pop.Connection, invite api.PolicyUserInviteCre
 	return nil
 }
 
-// ProcessAnnualCoverage creates coverage renewal ledger entries for all items covered for the given year.
+// ProcessRenewals creates coverage renewal ledger entries for all items covered for the given period.
 // Does not create new records for items already processed.
-func (p *Policies) ProcessAnnualCoverage(tx *pop.Connection, year int) error {
+func (p *Policies) ProcessRenewals(tx *pop.Connection, date time.Time, billingPeriod int) error {
 	for _, pp := range *p {
-		if err := pp.ProcessAnnualCoverage(tx, year); err != nil {
+		if err := pp.ProcessRenewals(tx, date, billingPeriod); err != nil {
 			return fmt.Errorf("error processing annual coverage for policy %s: %w", pp.ID, err)
 		}
 	}
 	return nil
 }
 
-func (p *Policy) ProcessAnnualCoverage(tx *pop.Connection, year int) error {
+// ProcessRenewals creates coverage renewal ledger entries for all items covered for the given period.
+// Does not create new records for items already processed.
+func (p *Policy) ProcessRenewals(tx *pop.Connection, date time.Time, billingPeriod int) error {
 	var items Items
 	if err := tx.Where("coverage_status = ?", api.ItemCoverageStatusApproved).
-		Where("paid_through_date < ?", domain.EndOfYear(year)).
+		Where("paid_through_date < ?", date).
 		Where("policy_id  = ?", p.ID).
+		Join("item_categories ic", "items.category_id = ic.id").
+		Where("ic.billing_period = ?", billingPeriod).
 		All(&items); err != nil {
 		return appErrorFromDB(err, api.ErrorQueryFailure)
 	}
 
-	totalAnnualPremium := map[uuid.UUID]api.Currency{}
+	paidThroughDate := date
+	switch billingPeriod {
+	case domain.BillingPeriodAnnual:
+		paidThroughDate = domain.EndOfYear(date.Year())
+	case domain.BillingPeriodMonthly:
+		paidThroughDate = domain.EndOfMonth(date)
+	}
+
+	totalPremiumGroupedByRiskCategory := map[uuid.UUID]api.Currency{}
 	for i := range items {
-		items[i].PaidThroughDate = domain.EndOfYear(year)
+		items[i].PaidThroughDate = paidThroughDate
 		if err := tx.UpdateColumns(&items[i], "paid_through_date", "updated_at"); err != nil {
 			return fmt.Errorf("failed to update paid_through_date for item %s: %w", items[i].ID, err)
 		}
-		totalAnnualPremium[items[i].RiskCategoryID] += items[i].CalculateAnnualPremium(tx)
+		totalPremiumGroupedByRiskCategory[items[i].RiskCategoryID] += items[i].CalculateAnnualPremium(tx)
 	}
 
-	for id, amount := range totalAnnualPremium {
-		err := p.CreateRenewalLedgerEntry(tx, id, amount)
+	for riskCategoryID, amount := range totalPremiumGroupedByRiskCategory {
+		err := p.CreateRenewalLedgerEntry(tx, riskCategoryID, amount)
 		if err != nil {
 			return api.NewAppError(err, api.ErrorCreateRenewalEntry, api.CategoryInternal)
 		}
