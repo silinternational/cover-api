@@ -100,13 +100,14 @@ type Item struct {
 	// billing period, expressed as a number of months
 	BillingPeriod int `json:"billing_period"`
 
-	// annual premium (0.01 USD)
+	// Annual premium amount (In units of 0.01 USD)
 	AnnualPremium Currency `json:"annual_premium"`
 
-	// estimated annual premium prorated from now to the end of the year (0.01 USD)
+	// Estimated annual premium prorated from now to the end of the year. Does not apply to items with a
+	// category that is billed monthly. (In units of 0.01 USD)
 	ProratedAnnualPremium Currency `json:"prorated_annual_premium"`
 
-	// monthly premium (0.01 USD)
+	// Monthly premium amount (In units of 0.01 USD)
 	MonthlyPremium Currency `json:"monthly_premium"`
 
 	// Accountable person assigned to the policy item
