@@ -311,7 +311,12 @@ func (i *Item) SafeDeleteOrInactivate(ctx context.Context) error {
 			return nil
 		}
 
-		return i.CreateLedgerEntry(tx, LedgerEntryTypeCoverageRefund, i.calculateCancellationCredit(tx, now), now)
+		credit := i.calculateCancellationCredit(tx, now)
+		if err := i.CreateLedgerEntry(tx, LedgerEntryTypeCoverageRefund, credit, now); err != nil {
+			return err
+		}
+
+		return i.SetPaidThroughDate(tx, domain.ZeroDate())
 
 	case api.ItemCoverageStatusDraft, api.ItemCoverageStatusRevision, api.ItemCoverageStatusPending:
 		if i.isNewEnough() && i.canBeDeleted(tx) {
@@ -399,6 +404,9 @@ func (i *Item) cancelCoverageAfterClaim(tx *pop.Connection, reason string) error
 	if i.Category.BillingPeriod == domain.BillingPeriodAnnual {
 		amount := i.calculatePremiumChange(now, i.CalculateAnnualPremium(tx), 0)
 		if err := i.CreateLedgerEntry(tx, LedgerEntryTypeCoverageRefund, amount, now); err != nil {
+			return err
+		}
+		if err := i.SetPaidThroughDate(tx, domain.ZeroDate()); err != nil {
 			return err
 		}
 	}
@@ -678,7 +686,11 @@ func (i *Item) Approve(ctx context.Context, doEmitEvent bool) error {
 		amount = i.CalculateProratedPremium(tx, now)
 	}
 
-	return i.CreateLedgerEntry(tx, LedgerEntryTypeNewCoverage, amount, now)
+	if err := i.CreateLedgerEntry(tx, LedgerEntryTypeNewCoverage, amount, now); err != nil {
+		return err
+	}
+
+	return i.SetPaidThroughDate(tx, domain.EndOfYear(now.Year()))
 }
 
 // Deny takes the item from Pending coverage status to Denied.
@@ -1047,18 +1059,18 @@ func (i *Item) CreateLedgerEntry(tx *pop.Connection, entryType LedgerEntryType, 
 		return err
 	}
 
-	old := i.PaidThroughDate
-	switch le.Type {
-	case LedgerEntryTypeNewCoverage, LedgerEntryTypeCoverageRenewal:
-		i.PaidThroughDate = domain.EndOfYear(le.DateSubmitted.Year())
-	case LedgerEntryTypeCoverageRefund:
-		i.PaidThroughDate = domain.ZeroDate()
+	return nil
+}
+
+func (i *Item) SetPaidThroughDate(tx *pop.Connection, date time.Time) error {
+	if date == i.PaidThroughDate {
+		return nil
 	}
 
-	if old != i.PaidThroughDate {
-		return appErrorFromDB(tx.UpdateColumns(i, "paid_through_date", "updated_at"), api.ErrorUpdateFailure)
+	i.PaidThroughDate = date
+	if err := tx.UpdateColumns(i, "paid_through_date", "updated_at"); err != nil {
+		return appErrorFromDB(err, api.ErrorUpdateFailure)
 	}
-
 	return nil
 }
 
@@ -1220,11 +1232,15 @@ func (i *Items) RepairItemsIncorrectlyRenewed(c buffalo.Context, date time.Time)
 
 		correctDate := item.CoverageEndDate.Time
 		incorrectDate := item.PaidThroughDate
-		annualPremium := item.CalculateAnnualPremium(tx) // TODO: get the amount from the ledger entry, in case the coverage amount has changed
-		refund := annualPremium * api.Currency(incorrectDate.Sub(correctDate)/(time.Hour*24*365))
+		annualPremium := item.CalculateAnnualPremium(tx)                                          // TODO: get the amount from the ledger entry, in case the coverage amount has changed
+		refund := annualPremium * api.Currency(incorrectDate.Sub(correctDate)/(time.Hour*24*365)) // TODO: use CalculatePartialYearValue?
 
 		now := time.Now().UTC()
 		if err := item.CreateLedgerEntry(tx, LedgerEntryTypeCoverageRefund, -refund, now); err != nil {
+			return err
+		}
+
+		if err := item.SetPaidThroughDate(tx, domain.ZeroDate()); err != nil {
 			return err
 		}
 

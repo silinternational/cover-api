@@ -1060,14 +1060,64 @@ func (ms *ModelSuite) TestItem_CreateLedgerEntry() {
 
 			ms.Equal(time.Now().UTC().Truncate(domain.DurationDay), le.DateSubmitted,
 				"ledger entry submitted date should be the current time")
+		})
+	}
+}
+
+func (ms *ModelSuite) TestItem_SetPaidThroughDate() {
+	f := CreateItemFixtures(ms.DB, FixturesConfig{ItemsPerPolicy: 3})
+	yesterday := time.Now().UTC().AddDate(0, 0, -1).Truncate(24 * time.Hour)
+	now := time.Now().UTC().Truncate(24 * time.Hour)
+
+	zeroDateItem := f.Items[0]
+	zeroDateItem.PaidThroughDate = domain.ZeroDate()
+	Must(ms.DB.Update(&zeroDateItem))
+
+	yesterdayItem := f.Items[1]
+	yesterdayItem.PaidThroughDate = yesterday
+	Must(ms.DB.Update(&yesterdayItem))
+
+	tests := []struct {
+		name     string
+		item     Item
+		date     time.Time
+		wantDate time.Time
+	}{
+		{
+			name:     "starting as ZeroDate, no change",
+			item:     zeroDateItem,
+			date:     domain.ZeroDate(),
+			wantDate: domain.ZeroDate(),
+		},
+		{
+			name:     "starting as yesterday, no change",
+			item:     yesterdayItem,
+			date:     yesterday,
+			wantDate: yesterday,
+		},
+		{
+			name:     "starting as ZeroDate, changing to now",
+			item:     zeroDateItem,
+			date:     now,
+			wantDate: now,
+		},
+		{
+			name:     "starting as yesterday, changing to now",
+			item:     yesterdayItem,
+			date:     now,
+			wantDate: now,
+		},
+	}
+	for _, tt := range tests {
+		ms.T().Run(tt.name, func(t *testing.T) {
+			err := tt.item.SetPaidThroughDate(ms.DB, tt.date)
+			ms.NoError(err)
+
+			ms.Equal(tt.wantDate, tt.item.PaidThroughDate)
 
 			var updatedItem Item
 			ms.NoError(ms.DB.Find(&updatedItem, tt.item.ID))
-			wantPaidThroughDate := domain.ZeroDate()
-			if le.Type == LedgerEntryTypeNewCoverage || le.Type == LedgerEntryTypeCoverageRenewal {
-				wantPaidThroughDate = domain.EndOfYear(le.DateSubmitted.Year())
-			}
-			ms.Equal(wantPaidThroughDate, updatedItem.PaidThroughDate, "Item.PaidThroughDate is incorrect")
+			ms.Equal(tt.wantDate, updatedItem.PaidThroughDate)
 		})
 	}
 }
