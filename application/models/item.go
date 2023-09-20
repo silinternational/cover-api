@@ -680,17 +680,20 @@ func (i *Item) Approve(ctx context.Context, doEmitEvent bool) error {
 	tx := Tx(ctx)
 	i.LoadCategory(tx, false)
 	var amount api.Currency
+	var paidThroughDate time.Time
 	if i.Category.getBillingPeriod() == domain.BillingPeriodMonthly {
 		amount = i.CalculateMonthlyPremium(tx)
+		paidThroughDate = domain.EndOfMonth(now)
 	} else {
 		amount = i.CalculateProratedPremium(tx, now)
+		paidThroughDate = domain.EndOfYear(now.Year())
 	}
 
 	if err := i.CreateLedgerEntry(tx, LedgerEntryTypeNewCoverage, amount, now); err != nil {
 		return err
 	}
 
-	return i.SetPaidThroughDate(tx, domain.EndOfYear(now.Year()))
+	return i.SetPaidThroughDate(tx, paidThroughDate)
 }
 
 // Deny takes the item from Pending coverage status to Denied.
