@@ -188,8 +188,8 @@ func (c *Claim) Update(ctx context.Context) error {
 	return nil
 }
 
-// UpdateByUser ensures the Claim has an appropriate status for being modified by the user
-//  and then writes the Claim data to an existing database record.
+// UpdateByUser ensures the Claim has an appropriate status for being modified by the user and then writes the Claim
+// data to an existing database record.
 func (c *Claim) UpdateByUser(ctx context.Context) error {
 	user := CurrentUser(ctx)
 
@@ -217,8 +217,8 @@ func (c *Claim) UpdateByUser(ctx context.Context) error {
 	return c.Update(ctx)
 }
 
-// Delete ensures the claim does not have a status of approved, denied or paid and
-//   then deletes the claim's items and the claim itself.
+// Delete ensures the claim does not have a status of approved, denied or paid and then deletes the claim's items and
+// the claim itself.
 func (c *Claim) Delete(ctx context.Context) error {
 	tx := Tx(ctx)
 
@@ -247,8 +247,7 @@ func (c *Claim) Delete(ctx context.Context) error {
 	return nil
 }
 
-// IsRemovable determines whether the claim may be deleted
-//  It may not be if its status is approved, paid or denied.
+// IsRemovable determines whether the claim may be deleted. It may not be if its status is approved, paid or denied.
 func (c *Claim) IsRemovable() bool {
 	switch c.Status {
 	case api.ClaimStatusApproved, api.ClaimStatusPaid, api.ClaimStatusDenied:
@@ -414,8 +413,7 @@ func (c *Claim) AddItem(ctx context.Context, input api.ClaimItemCreateInput) (Cl
 	return claimItem, nil
 }
 
-// SubmitForApproval changes the status of the claim to either Review1 or Review2
-//   depending on its current status.
+// SubmitForApproval changes the status of the claim to either Review1 or Review2 depending on its current status.
 func (c *Claim) SubmitForApproval(ctx context.Context) error {
 	tx := Tx(ctx)
 	user := CurrentUser(ctx)
@@ -491,8 +489,7 @@ func (c *Claim) RequestRevision(ctx context.Context, message string) error {
 	return nil
 }
 
-// RequestReceipt changes the status of the claim to Receipt
-//   provided that the current status is Review1.
+// RequestReceipt changes the status of the claim to Receipt provided that the current status is Review1.
 func (c *Claim) RequestReceipt(ctx buffalo.Context, reason string) error {
 	oldStatus := c.Status
 	var eventType string
@@ -528,8 +525,8 @@ func (c *Claim) RequestReceipt(ctx buffalo.Context, reason string) error {
 	return nil
 }
 
-// Approve changes the status of the claim from either Review1, Review2 to Review3 or
-//  from Review3 to Approved. It also adds the ReviewerID and ReviewDate.
+// Approve changes the status of the claim from either Review1, Review2 to Review3 or from Review3 to Approved. It also
+// adds the ReviewerID and ReviewDate.
 func (c *Claim) Approve(ctx context.Context) error {
 	var eventType string
 
@@ -883,9 +880,8 @@ func (c *Claim) setReviewer(ctx context.Context) {
 	c.ReviewDate = nulls.NewTime(time.Now().UTC())
 }
 
-// ClaimsWithRecentStatusChanges returns the RecentClaims associated with
-//  claims that have had their Status changed recently.
-//  The slice is sorted by updated time with most recent first.
+// ClaimsWithRecentStatusChanges returns the RecentClaims associated with claims that have had their Status changed
+// recently. The slice is sorted by updated time with most recent first.
 func ClaimsWithRecentStatusChanges(tx *pop.Connection) (api.RecentClaims, error) {
 	var cHistories ClaimHistories
 
@@ -971,10 +967,8 @@ func (c *Claim) UpdateStatus(ctx context.Context, newStatus api.ClaimStatus) err
 	return nil
 }
 
-// Based on the claim's UpdatedAt field, unless there is a
-//   ClaimHistory for this claim that is for a Status Update where tne
-//   new field is Review1.  Uses the CreatedAt time of the earliest history
-//   with Status change to Review1.
+// Based on the claim's UpdatedAt field, unless there is a ClaimHistory for this claim that is for a Status Update where
+// the new field is Review1.  Uses the CreatedAt time of the earliest history with Status change to Review1.
 func (c *Claim) SubmittedAt(tx *pop.Connection) time.Time {
 	var histories ClaimHistories
 
@@ -1039,8 +1033,8 @@ func (c *Claim) Deductible(tx *pop.Connection) float64 {
 	return d
 }
 
-// StopItemCoverage sets the claim's items' statuses to `Inactive` and creates refund
-//   ledger entries for them.
+// StopItemCoverage sets the claim's items' statuses to `Inactive` and creates refund ledger entries for them.
+//
 // Returns an error if the claim's status or item's coverage status is not `Approved`
 func (c *Claim) StopItemCoverage(tx *pop.Connection) error {
 	if c.Status != api.ClaimStatusApproved {
