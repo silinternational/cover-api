@@ -1243,7 +1243,7 @@ func (i *Items) RepairItemsIncorrectlyRenewed(c buffalo.Context, date time.Time)
 			return err
 		}
 
-		if err := item.SetPaidThroughDate(tx, correctDate); err != nil {
+		if err := (*i)[idx].SetPaidThroughDate(tx, correctDate); err != nil {
 			return err
 		}
 	}
