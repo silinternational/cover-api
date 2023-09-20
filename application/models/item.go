@@ -669,7 +669,14 @@ func (i *Item) Approve(ctx context.Context, doEmitEvent bool) error {
 	}
 
 	tx := Tx(ctx)
-	amount := i.CalculateProratedPremium(tx, time.Now().UTC())
+	i.LoadCategory(tx, false)
+	var amount api.Currency
+	if i.Category.getBillingPeriod() == domain.BillingPeriodMonthly {
+		amount = i.CalculateMonthlyPremium(tx)
+	} else {
+		amount = i.CalculateProratedPremium(tx, time.Now().UTC())
+	}
+
 	return i.CreateLedgerEntry(tx, LedgerEntryTypeNewCoverage, amount)
 }
 
