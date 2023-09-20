@@ -311,7 +311,7 @@ func (i *Item) SafeDeleteOrInactivate(ctx context.Context) error {
 			return nil
 		}
 
-		return i.CreateLedgerEntry(tx, LedgerEntryTypeCoverageRefund, i.calculateCancellationCredit(tx, now))
+		return i.CreateLedgerEntry(tx, LedgerEntryTypeCoverageRefund, i.calculateCancellationCredit(tx, now), now)
 
 	case api.ItemCoverageStatusDraft, api.ItemCoverageStatusRevision, api.ItemCoverageStatusPending:
 		if i.isNewEnough() && i.canBeDeleted(tx) {
@@ -398,7 +398,7 @@ func (i *Item) cancelCoverageAfterClaim(tx *pop.Connection, reason string) error
 	i.LoadCategory(tx, false)
 	if i.Category.BillingPeriod == domain.BillingPeriodAnnual {
 		amount := i.calculatePremiumChange(now, i.CalculateAnnualPremium(tx), 0)
-		if err := i.CreateLedgerEntry(tx, LedgerEntryTypeCoverageRefund, amount); err != nil {
+		if err := i.CreateLedgerEntry(tx, LedgerEntryTypeCoverageRefund, amount, now); err != nil {
 			return err
 		}
 	}
@@ -646,7 +646,7 @@ func (i *Item) AutoApprove(ctx context.Context) error {
 // Approve takes the item from Pending coverage status to Approved.
 // It assumes that the item's current status has already been validated.
 // Only emits an event for an email notification if requested.
-// (No need to emit it following an auto-approval which has already emitted and event.)
+// (No need to emit it following an auto-approval which has already emitted an event.)
 func (i *Item) Approve(ctx context.Context, doEmitEvent bool) error {
 	i.CoverageStatus = api.ItemCoverageStatusApproved
 
@@ -668,16 +668,17 @@ func (i *Item) Approve(ctx context.Context, doEmitEvent bool) error {
 		emitEvent(e)
 	}
 
+	now := time.Now().UTC()
 	tx := Tx(ctx)
 	i.LoadCategory(tx, false)
 	var amount api.Currency
 	if i.Category.getBillingPeriod() == domain.BillingPeriodMonthly {
 		amount = i.CalculateMonthlyPremium(tx)
 	} else {
-		amount = i.CalculateProratedPremium(tx, time.Now().UTC())
+		amount = i.CalculateProratedPremium(tx, now)
 	}
 
-	return i.CreateLedgerEntry(tx, LedgerEntryTypeNewCoverage, amount)
+	return i.CreateLedgerEntry(tx, LedgerEntryTypeNewCoverage, amount, now)
 }
 
 // Deny takes the item from Pending coverage status to Denied.
@@ -1027,7 +1028,7 @@ func (i *Item) SetAccountablePerson(tx *pop.Connection, id uuid.UUID) error {
 
 // CreateLedgerEntry creates a ledger entry for the given type and amount. It makes any needed adjustments and negates
 // the amount before saving to the database.
-func (i *Item) CreateLedgerEntry(tx *pop.Connection, entryType LedgerEntryType, amount api.Currency) error {
+func (i *Item) CreateLedgerEntry(tx *pop.Connection, entryType LedgerEntryType, amount api.Currency, date time.Time) error {
 	adjustedAmount, err := adjustLedgerAmount(amount, entryType)
 	if err != nil {
 		return err
@@ -1038,7 +1039,7 @@ func (i *Item) CreateLedgerEntry(tx *pop.Connection, entryType LedgerEntryType, 
 	i.Policy.LoadEntityCode(tx, false)
 	name := i.GetAccountablePersonName(tx).String()
 
-	le := NewLedgerEntry(name, i.Policy, i, nil)
+	le := NewLedgerEntry(name, i.Policy, i, nil, date)
 	le.Type = entryType
 	le.Amount = -adjustedAmount
 
@@ -1222,7 +1223,8 @@ func (i *Items) RepairItemsIncorrectlyRenewed(c buffalo.Context, date time.Time)
 		annualPremium := item.CalculateAnnualPremium(tx) // TODO: get the amount from the ledger entry, in case the coverage amount has changed
 		refund := annualPremium * api.Currency(incorrectDate.Sub(correctDate)/(time.Hour*24*365))
 
-		if err := item.CreateLedgerEntry(tx, LedgerEntryTypeCoverageRefund, -refund); err != nil {
+		now := time.Now().UTC()
+		if err := item.CreateLedgerEntry(tx, LedgerEntryTypeCoverageRefund, -refund, now); err != nil {
 			return err
 		}
 
@@ -1253,7 +1255,7 @@ func (i *Item) createPremiumAdjustment(tx *pop.Connection, date time.Time, oldIt
 
 	if oldPremium != newPremium && !i.CoverageEndDate.Valid {
 		amount := i.calculatePremiumChange(date, oldPremium, newPremium)
-		if err := i.CreateLedgerEntry(tx, LedgerEntryTypeCoverageChange, amount); err != nil {
+		if err := i.CreateLedgerEntry(tx, LedgerEntryTypeCoverageChange, amount, date); err != nil {
 			return err
 		}
 	}

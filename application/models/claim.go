@@ -923,13 +923,15 @@ func (c *Claim) CreateLedgerEntry(tx *pop.Connection) error {
 	c.LoadPolicy(tx, false)
 	c.Policy.LoadEntityCode(tx, false)
 
+	now := time.Now().UTC()
+
 	for i := range c.ClaimItems {
 		c.ClaimItems[i].LoadItem(tx, false)
 		item := c.ClaimItems[i].Item
 		item.LoadRiskCategory(tx, false)
 		name := item.GetAccountablePersonName(tx).String()
 
-		le := NewLedgerEntry(name, c.Policy, &item, c)
+		le := NewLedgerEntry(name, c.Policy, &item, c, now)
 		le.Type = LedgerEntryTypeClaim
 		le.Amount = adjustedAmount
 

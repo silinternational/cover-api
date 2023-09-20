@@ -1013,6 +1013,8 @@ func (ms *ModelSuite) TestItem_CreateLedgerEntry() {
 		ms.NoError(item.Update(ctx))
 	}
 
+	now := time.Now().UTC()
+
 	tests := []struct {
 		name       string
 		item       Item
@@ -1044,7 +1046,7 @@ func (ms *ModelSuite) TestItem_CreateLedgerEntry() {
 	}
 	for _, tt := range tests {
 		ms.T().Run(tt.name, func(t *testing.T) {
-			err := tt.item.CreateLedgerEntry(ms.DB, tt.entryType, tt.amount)
+			err := tt.item.CreateLedgerEntry(ms.DB, tt.entryType, tt.amount, now)
 			ms.NoError(err)
 
 			var le LedgerEntry

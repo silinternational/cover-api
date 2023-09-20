@@ -440,7 +440,7 @@ func (as *ActionSuite) createFixturesForLedger() models.Fixtures {
 	}
 
 	// add an entry for the annual report
-	as.NoError(f.Items[2].CreateLedgerEntry(as.DB, models.LedgerEntryTypeCoverageRenewal, 1000))
+	as.NoError(f.Items[2].CreateLedgerEntry(as.DB, models.LedgerEntryTypeCoverageRenewal, 1000, now))
 
 	return f
 }

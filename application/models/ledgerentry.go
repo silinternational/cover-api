@@ -369,7 +369,7 @@ func (le *LedgerEntry) balanceDescription() string {
 
 // NewLedgerEntry creates a basic LedgerEntry with common fields completed.
 // Requires pre-hydration of policy.EntityCode. If item is not nil, item.RiskCategory must be hydrated.
-func NewLedgerEntry(accPersonName string, policy Policy, item *Item, claim *Claim) LedgerEntry {
+func NewLedgerEntry(accPersonName string, policy Policy, item *Item, claim *Claim, dateSubmitted time.Time) LedgerEntry {
 	costCenter := ""
 	if policy.Type == api.PolicyTypeTeam {
 		costCenter = policy.CostCenter + accountSeparator + policy.AccountDetail
@@ -378,7 +378,7 @@ func NewLedgerEntry(accPersonName string, policy Policy, item *Item, claim *Clai
 		PolicyID:      policy.ID,
 		PolicyType:    policy.Type,
 		EntityCode:    policy.EntityCode.Code,
-		DateSubmitted: time.Now().UTC(),
+		DateSubmitted: dateSubmitted,
 		AccountNumber: policy.Account,
 		IncomeAccount: policy.EntityCode.IncomeAccount,
 		CostCenter:    costCenter,
