@@ -1066,6 +1066,7 @@ func (i *Item) CreateLedgerEntry(tx *pop.Connection, entryType LedgerEntryType, 
 }
 
 func (i *Item) SetPaidThroughDate(tx *pop.Connection, date time.Time) error {
+	date = date.Truncate(24 * time.Hour)
 	if date == i.PaidThroughDate {
 		return nil
 	}
