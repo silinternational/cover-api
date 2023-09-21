@@ -541,6 +541,13 @@ func CreateRiskCategories(tx *pop.Connection) {
 		CostCenter: "STATIONARY",
 	}
 	MustCreate(tx, &riskCategoryStationary)
+
+	riskCategoryVehicle := RiskCategory{
+		ID:         RiskCategoryVehicleID(),
+		Name:       "vehicle",
+		CostCenter: "VEHICLE",
+	}
+	MustCreate(tx, &riskCategoryVehicle)
 }
 
 // CreatePolicyUserInviteFixtures generates any number of policies with one
