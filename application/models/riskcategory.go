@@ -13,11 +13,13 @@ import (
 const (
 	RiskCategoryMobileIDString     = "3be38915-7092-44f2-90ef-26f48214b34f"
 	RiskCategoryStationaryIDString = "7bed3c00-23cf-4282-b2b8-da89426cef2f"
+	RiskCategoryVehicleIDString    = "dce80e61-74f9-42f0-9cbd-d3eebe4a1ccc"
 )
 
 var (
 	riskCategoryMobileID     = uuid.FromStringOrNil(RiskCategoryMobileIDString)
 	riskCategoryStationaryID = uuid.FromStringOrNil(RiskCategoryStationaryIDString)
+	riskCategoryVehicleID    = uuid.FromStringOrNil(RiskCategoryVehicleIDString)
 )
 
 // RiskCategories is a slice of RiskCategory objects
@@ -55,6 +57,10 @@ func RiskCategoryMobileID() uuid.UUID {
 
 func RiskCategoryStationaryID() uuid.UUID {
 	return riskCategoryStationaryID
+}
+
+func RiskCategoryVehicleID() uuid.UUID {
+	return riskCategoryVehicleID
 }
 
 func (r *RiskCategory) ConvertToAPI() api.RiskCategory {

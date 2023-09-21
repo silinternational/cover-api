@@ -698,6 +698,7 @@ func (ms *ModelSuite) TestPolicy_ProcessAnnualCoverage() {
 		monthly.Items[i].PaidThroughDate = endOfLastMonth
 		UpdateItemStatus(ms.DB, monthly.Items[i], api.ItemCoverageStatusApproved, "")
 		monthly.ItemCategories[i].BillingPeriod = domain.BillingPeriodMonthly
+		monthly.ItemCategories[1].RiskCategoryID = riskCategoryVehicleID
 		Must(ms.DB.Update(&monthly.ItemCategories[i]))
 	}
 
