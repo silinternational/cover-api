@@ -293,26 +293,13 @@ func (i *Item) FindByID(tx *pop.Connection, id uuid.UUID) error {
 // and if it has a Draft, Revision or Pending status.
 // If the item's status is Denied or Inactive, it does nothing.
 // Otherwise, it changes its status to Inactive.
-// It also creates a corresponding credit ledger entry
-func (i *Item) SafeDeleteOrInactivate(ctx context.Context) error {
-	now := time.Now().UTC()
+func (i *Item) SafeDeleteOrInactivate(ctx context.Context, now time.Time) error {
 	tx := Tx(ctx)
 	switch i.CoverageStatus {
 	case api.ItemCoverageStatusInactive, api.ItemCoverageStatusDenied:
 		return nil
 	case api.ItemCoverageStatusApproved:
-		if err := i.ScheduleInactivation(ctx, now); err != nil {
-			return err
-		}
-
-		// Don't give a refund if premium has not been paid beyond today
-		// TODO: make sure this is correct for monthly billing
-		if i.PaidThroughDate.Before(time.Now()) {
-			return nil
-		}
-
-		return i.CreateLedgerEntry(tx, LedgerEntryTypeCoverageRefund, i.calculateCancellationCredit(tx, now))
-
+		return i.ScheduleInactivation(ctx, now)
 	case api.ItemCoverageStatusDraft, api.ItemCoverageStatusRevision, api.ItemCoverageStatusPending:
 		if i.isNewEnough() && i.canBeDeleted(tx) {
 			return i.Destroy(tx)
@@ -322,6 +309,23 @@ func (i *Item) SafeDeleteOrInactivate(ctx context.Context) error {
 		panic(`invalid item status in SafeDeleteOrInactivate`)
 	}
 	return nil
+}
+
+// CreateCancellationCredit creates a credit for the refund of annual coverage if the
+// premium has been charged for the year.
+func (i *Item) CreateCancellationCredit(tx *pop.Connection, now time.Time) error {
+	if i.PaidThroughDate.Before(now) {
+		return nil
+	}
+
+	i.LoadCategory(tx, false)
+	if i.Category.getBillingPeriod() == domain.BillingPeriodMonthly {
+		return nil
+	}
+
+	creditAmount := i.calculateCancellationCredit(tx, now)
+
+	return i.CreateLedgerEntry(tx, LedgerEntryTypeCoverageRefund, creditAmount)
 }
 
 // canBeDeleted checks for child records with restricted constraints and returns false if any are found
@@ -356,15 +360,17 @@ func (i *Item) isNewEnough() bool {
 	return !i.CreatedAt.Before(cutOffDate)
 }
 
-// ScheduleInactivation sets the item's CoverageEndDate
+// ScheduleInactivation sets the item's StatusChange and CoverageEndDate
 func (i *Item) ScheduleInactivation(ctx context.Context, t time.Time) error {
 	user := CurrentUser(ctx)
 	i.StatusChange = ItemStatusChangeInactivated + user.Name()
 
-	// If now it's January and the item was created before this year
-	//   set its CoverageEndDate to the current day.
-	// Otherwise, set it to the end of the current month.
-	if i.shouldGiveFullYearRefund(t) {
+	tx := Tx(ctx)
+	i.LoadCategory(tx, false)
+
+	// If the item was created before this year, and it qualifies for a full-year refund, set
+	// its CoverageEndDate to the current day. Otherwise, set it to the end of the current month.
+	if i.Category.BillingPeriod == domain.BillingPeriodAnnual && i.shouldGiveFullYearRefund(t) {
 		i.CoverageEndDate = nulls.NewTime(t)
 	} else {
 		i.CoverageEndDate = nulls.NewTime(domain.EndOfMonth(t))
