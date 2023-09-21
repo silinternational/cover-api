@@ -2,5 +2,5 @@ drop_column("risk_categories", "policy_max")
 sql(`
 	INSERT INTO risk_categories ("id", "name", "cost_center", "created_at", "updated_at")
 	VALUES
-		('dce80e61-74f9-42f0-9cbd-d3eebe4a1ccc', 'Vehicle', '', 'now', 'now'),
+		('dce80e61-74f9-42f0-9cbd-d3eebe4a1ccc', 'Vehicle', '', 'now', 'now');
 `)
