@@ -4,6 +4,7 @@ import (
 	"github.com/gobuffalo/buffalo"
 
 	"github.com/silinternational/cover-api/api"
+	"github.com/silinternational/cover-api/models"
 )
 
 // swagger:operation GET /config/claim-incident-types Config ClaimIncidentTypes
@@ -38,4 +39,28 @@ func claimIncidentTypes(c buffalo.Context) error {
 //	        "$ref": "#/definitions/Country"
 func countries(c buffalo.Context) error {
 	return renderOk(c, api.AllCountries)
+}
+
+// swagger:operation GET /config/risk-categories Config RiskCategoriesList
+// RiskCategoriesList
+//
+// list all the risk categories
+// ---
+//
+//	responses:
+//	  '200':
+//	    description: a list of Risk Categories
+//	    schema:
+//	      type: array
+//	      risks:
+//	        "$ref": "#/definitions/RiskCategory"
+func riskCategoriesList(c buffalo.Context) error {
+	tx := models.Tx(c)
+
+	var riskCategories models.RiskCategories
+	if err := riskCategories.All(tx); err != nil {
+		return reportError(c, err)
+	}
+
+	return renderOk(c, riskCategories.ConvertToAPI(tx))
 }

@@ -71,3 +71,15 @@ func (r *RiskCategory) ConvertToAPI() api.RiskCategory {
 		UpdatedAt: r.UpdatedAt,
 	}
 }
+
+func (rc *RiskCategories) All(tx *pop.Connection) error {
+	return appErrorFromDB(tx.All(rc), api.ErrorQueryFailure)
+}
+
+func (rc *RiskCategories) ConvertToAPI(tx *pop.Connection) any {
+	apiList := make(api.RiskCategories, len(*rc))
+	for i := range *rc {
+		apiList[i] = (*rc)[i].ConvertToAPI()
+	}
+	return apiList
+}
