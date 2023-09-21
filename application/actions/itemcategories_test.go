@@ -18,7 +18,6 @@ func (as *ActionSuite) Test_ItemCategoriesList() {
 
 	rc := models.RiskCategory{
 		Name:       "Stationary",
-		PolicyMax:  10000,
 		CostCenter: "STATIONARY",
 	}
 	models.MustCreate(as.DB, &rc)

@@ -27,7 +27,6 @@ type RiskCategories []RiskCategory
 type RiskCategory struct {
 	ID         uuid.UUID `db:"id"`
 	Name       string    `db:"name" validate:"required"`
-	PolicyMax  int       `db:"policy_max" validate:"required,min=0"`
 	CostCenter string    `db:"cost_center" validate:"required"`
 	CreatedAt  time.Time `db:"created_at"`
 	UpdatedAt  time.Time `db:"updated_at"`
@@ -62,7 +61,6 @@ func (r *RiskCategory) ConvertToAPI() api.RiskCategory {
 	return api.RiskCategory{
 		ID:        r.ID,
 		Name:      r.Name,
-		PolicyMax: r.PolicyMax,
 		CreatedAt: r.CreatedAt,
 		UpdatedAt: r.UpdatedAt,
 	}
