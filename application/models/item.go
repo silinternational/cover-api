@@ -72,7 +72,9 @@ func (i *Item) Validate(tx *pop.Connection) (*validate.Errors, error) {
 	return validateModel(i), nil
 }
 
-func (i *Item) CreateWithContext(ctx context.Context) error {
+// CreateWithHistory validates and stores the data as a new record in the database, assigning a new ID if needed.
+// Also creates a PolicyHistory record.
+func (i *Item) CreateWithHistory(ctx context.Context) error {
 	tx := Tx(ctx)
 
 	if err := i.Create(tx); err != nil {
@@ -86,6 +88,7 @@ func (i *Item) CreateWithContext(ctx context.Context) error {
 	return nil
 }
 
+// Create an Item but not a history record. Use CreateWithHistory if history is needed.
 func (i *Item) Create(tx *pop.Connection) error {
 	if _, ok := ValidItemCoverageStatuses[i.CoverageStatus]; !ok {
 		i.CoverageStatus = api.ItemCoverageStatusDraft
