@@ -384,7 +384,7 @@ func (ms *ModelSuite) Test_NewLedgerEntry() {
 	for _, tt := range tests {
 		ms.T().Run(tt.name, func(t *testing.T) {
 			accPersonName := "John Doe"
-			le := NewLedgerEntry(accPersonName, tt.policy, tt.item, tt.claim)
+			le := NewLedgerEntry(accPersonName, tt.policy, tt.item, tt.claim, time.Now().UTC())
 
 			ms.Equal(accPersonName, le.Name, "Name is incorrect")
 
@@ -442,13 +442,15 @@ func (ms *ModelSuite) TestLedgerEntry_getDescription() {
 	ms.NoError(teamPolicyItem.SetAccountablePerson(ms.DB, teamPolicy.Members[1].ID))
 	ms.NoError(ms.DB.Update(&teamPolicyItem), "error updating team policy item for test")
 
+	now := time.Now().UTC()
+
 	// Create new Ledger Entries for each policy
 	hhAccPersName := hhAccPerson.GetName().String()
-	hhEntry := NewLedgerEntry(hhAccPersName, hhPolicy, &hhPolicyItem, nil)
+	hhEntry := NewLedgerEntry(hhAccPersName, hhPolicy, &hhPolicyItem, nil, now)
 	hhEntry.Type = LedgerEntryTypeNewCoverage
 
 	teamAccPersName := teamAccPerson.GetName().String()
-	teamEntry := NewLedgerEntry(teamAccPersName, teamPolicy, &teamPolicyItem, nil)
+	teamEntry := NewLedgerEntry(teamAccPersName, teamPolicy, &teamPolicyItem, nil, now)
 	teamEntry.Type = LedgerEntryTypeCoverageRefund
 
 	tests := []struct {
@@ -502,13 +504,15 @@ func (ms *ModelSuite) TestLedgerEntry_getItemName() {
 	ms.NoError(teamPolicyItem.SetAccountablePerson(ms.DB, teamPolicy.Members[1].ID))
 	ms.NoError(ms.DB.Update(&teamPolicyItem), "error updating team policy item for test")
 
+	now := time.Now().UTC()
+
 	// Create new Ledger Entries for each policy
 	hhAccPersName := hhAccPerson.GetName().String()
-	hhEntry := NewLedgerEntry(hhAccPersName, hhPolicy, &hhPolicyItem, nil)
+	hhEntry := NewLedgerEntry(hhAccPersName, hhPolicy, &hhPolicyItem, nil, now)
 	hhEntry.Type = LedgerEntryTypeNewCoverage
 
 	teamAccPersName := teamAccPerson.GetName().String()
-	teamEntry := NewLedgerEntry(teamAccPersName, teamPolicy, &teamPolicyItem, nil)
+	teamEntry := NewLedgerEntry(teamAccPersName, teamPolicy, &teamPolicyItem, nil, now)
 	teamEntry.Type = LedgerEntryTypeCoverageRefund
 
 	tests := []struct {

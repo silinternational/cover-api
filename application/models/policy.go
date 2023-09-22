@@ -633,10 +633,7 @@ func (p *Policy) ProcessRenewals(tx *pop.Connection, date time.Time, billingPeri
 
 	totalPremiumGroupedByRiskCategory := map[uuid.UUID]api.Currency{}
 	for i := range items {
-		items[i].PaidThroughDate = paidThroughDate
-		if err := tx.UpdateColumns(&items[i], "paid_through_date", "updated_at"); err != nil {
-			return fmt.Errorf("failed to update paid_through_date for item %s: %w", items[i].ID, err)
-		}
+		items[i].SetPaidThroughDate(tx, paidThroughDate)
 		totalPremiumGroupedByRiskCategory[items[i].RiskCategoryID] += items[i].CalculateAnnualPremium(tx)
 	}
 
@@ -658,7 +655,9 @@ func (p *Policy) CreateRenewalLedgerEntry(tx *pop.Connection, riskCategoryID uui
 		return fmt.Errorf("failed to find risk category %s: %w", riskCategoryID, err)
 	}
 
-	le := NewLedgerEntry("", *p, nil, nil)
+	now := time.Now().UTC()
+
+	le := NewLedgerEntry("", *p, nil, nil, now)
 	le.Type = LedgerEntryTypeCoverageRenewal
 	le.Amount = -amount
 	le.EntityCode = p.EntityCode.Code
