@@ -531,7 +531,6 @@ func CreateRiskCategories(tx *pop.Connection) {
 	riskCategoryMobile := RiskCategory{
 		ID:         RiskCategoryMobileID(),
 		Name:       "mobile",
-		PolicyMax:  25000,
 		CostCenter: "MOBILE",
 	}
 	MustCreate(tx, &riskCategoryMobile)
@@ -539,10 +538,16 @@ func CreateRiskCategories(tx *pop.Connection) {
 	riskCategoryStationary := RiskCategory{
 		ID:         RiskCategoryStationaryID(),
 		Name:       "stationary",
-		PolicyMax:  25000,
 		CostCenter: "STATIONARY",
 	}
 	MustCreate(tx, &riskCategoryStationary)
+
+	riskCategoryVehicle := RiskCategory{
+		ID:         RiskCategoryVehicleID(),
+		Name:       "vehicle",
+		CostCenter: "VEHICLE",
+	}
+	MustCreate(tx, &riskCategoryVehicle)
 }
 
 // CreatePolicyUserInviteFixtures generates any number of policies with one

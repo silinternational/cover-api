@@ -505,6 +505,7 @@ func (as *ActionSuite) Test_LedgerMonthlyStatus() {
 
 	f.Items[0].PaidThroughDate = domain.EndOfMonth(now)
 	f.ItemCategories[1].BillingPeriod = domain.BillingPeriodMonthly
+	f.ItemCategories[1].RiskCategoryID = models.RiskCategoryVehicleID()
 	models.UpdateItemStatus(as.DB, f.Items[0], api.ItemCoverageStatusApproved, "")
 	models.UpdateItemStatus(as.DB, f.Items[1], api.ItemCoverageStatusApproved, "")
 	as.NoError(as.DB.Update(&f.ItemCategories[1]))

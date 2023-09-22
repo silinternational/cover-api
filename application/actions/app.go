@@ -204,7 +204,7 @@ func App() *buffalo.App {
 
 		// config
 		configGroup := app.Group("/config")
-		configGroup.Middleware.Skip(AuthZ, claimIncidentTypes, itemCategoriesList, entityCodesList, countries)
+		configGroup.Middleware.Skip(AuthZ, claimIncidentTypes, itemCategoriesList, countries)
 		configGroup.GET("/countries", countries)
 		configGroup.GET("/claim-incident-types", claimIncidentTypes)
 		configGroup.GET("/item-categories", itemCategoriesList)
@@ -216,6 +216,7 @@ func App() *buffalo.App {
 
 		// entity codes
 		entityCodesGroup := app.Group(entityCodesPath)
+		entityCodesGroup.Middleware.Skip(AuthZ, entityCodesList)
 		entityCodesGroup.GET("", entityCodesList)
 		entityCodesGroup.PUT(idRegex, entityCodesUpdate)
 		entityCodesGroup.GET(idRegex, entityCodesView)

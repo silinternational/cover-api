@@ -529,6 +529,7 @@ func (ms *ModelSuite) TestItem_calculateMinimumCoverage() {
 	Must(ms.DB.Update(&monthly))
 	f.ItemCategories[1].PremiumFactor = nulls.NewFloat64(0.03)
 	f.ItemCategories[1].BillingPeriod = domain.BillingPeriodMonthly
+	f.ItemCategories[1].RiskCategoryID = riskCategoryVehicleID
 	Must(ms.DB.Update(&f.ItemCategories[1]))
 
 	tests := []struct {
@@ -691,6 +692,7 @@ func (ms *ModelSuite) TestItem_CreateCancellationCredit() {
 	monthlyItem.PaidThroughDate = domain.EndOfMonth(now)
 	Must(ms.DB.Update(&monthlyItem))
 	f.ItemCategories[2].BillingPeriod = domain.BillingPeriodMonthly
+	f.ItemCategories[2].RiskCategoryID = riskCategoryVehicleID
 	Must(ms.DB.Update(&f.ItemCategories[2]))
 
 	tests := []struct {
@@ -1773,6 +1775,7 @@ func (ms *ModelSuite) TestItem_ScheduleInactivation() {
 
 	monthly := f.Items[1]
 	f.ItemCategories[1].BillingPeriod = domain.BillingPeriodMonthly
+	f.ItemCategories[1].RiskCategoryID = riskCategoryVehicleID
 	Must(ms.DB.Update(&f.ItemCategories[1]))
 
 	ctx := CreateTestContext(f.Users[0])

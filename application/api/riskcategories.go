@@ -21,9 +21,6 @@ type RiskCategory struct {
 	// risk category name
 	Name string `json:"name"`
 
-	// maximum coverage per policy (0.01 USD)
-	PolicyMax int `json:"policy_max"`
-
 	// financial cost center code used for crediting the transactions that use this risk category
 	CostCenter string `json:"cost_center"`
 
