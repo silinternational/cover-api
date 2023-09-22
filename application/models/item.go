@@ -114,7 +114,7 @@ func (i *Item) Update(ctx context.Context) error {
 		return appErr
 	}
 
-	if !i.canBeUpdated(tx) {
+	if i.hasOpenClaim(tx) {
 		err := errors.New("item cannot be updated because it has an active claim")
 		return api.NewAppError(err, api.ErrorItemHasActiveClaim, api.CategoryUser)
 	}
@@ -795,7 +795,7 @@ func (i *Item) ConvertToAPI(tx *pop.Connection) api.Item {
 		MonthlyPremium:        i.CalculateMonthlyPremium(tx),
 		ProratedAnnualPremium: i.CalculateProratedPremium(tx, time.Now().UTC()),
 		CanBeDeleted:          i.canBeDeleted(tx),
-		CanBeUpdated:          i.canBeUpdated(tx),
+		CanBeUpdated:          !i.hasOpenClaim(tx),
 		CreatedAt:             i.CreatedAt,
 		UpdatedAt:             i.UpdatedAt,
 	}
@@ -816,8 +816,8 @@ func (i *Item) ConvertToAPI(tx *pop.Connection) api.Item {
 func (i *Item) inactivateEnded(ctx context.Context) error {
 	tx := Tx(ctx)
 
-	if !i.canBeUpdated(tx) {
-		err := errors.New("item cannot be updated because it has an active claim")
+	if i.hasOpenClaim(tx) {
+		err := errors.New("item cannot be made inactive because it has an active claim")
 		return api.NewAppError(err, api.ErrorItemHasActiveClaim, api.CategoryUser)
 	}
 
@@ -1152,11 +1152,10 @@ func (i *Item) GetMakeModel() string {
 	return strings.TrimSpace(i.Make + " " + i.Model)
 }
 
-// canBeUpdated returns a value of true when the item can be updated, and returns false when there is an open
-// Claim on the item.
-func (i *Item) canBeUpdated(tx *pop.Connection) bool {
-	// SafeClaimStatuses are states in which related items can be edited, e.g. can change CoverageAmount
-	SafeClaimStatuses := []api.ClaimStatus{
+// hasOpenClaim returns a value of true when the item has an open Claim
+func (i *Item) hasOpenClaim(tx *pop.Connection) bool {
+	// closed states are those in which related items can be edited, e.g. can change CoverageAmount
+	closedClaimStatuses := []api.ClaimStatus{
 		api.ClaimStatusDraft,
 		api.ClaimStatusPaid,
 		api.ClaimStatusDenied,
@@ -1164,16 +1163,13 @@ func (i *Item) canBeUpdated(tx *pop.Connection) bool {
 
 	var claims Claims
 	n, err := tx.Where("claim_items.item_id = ?", i.ID).
-		Where("claims.status NOT IN (?)", SafeClaimStatuses).
+		Where("claims.status NOT IN (?)", closedClaimStatuses).
 		Join("claim_items", "claims.id = claim_items.claim_id").
 		Count(&claims)
 	if err != nil {
 		panic(err.Error())
 	}
-	if n > 0 {
-		return false
-	}
-	return true
+	return n > 0
 }
 
 // ItemsWithRecentStatusChanges returns the RecentItems associated with

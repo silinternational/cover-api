@@ -1436,7 +1436,7 @@ func (ms *ModelSuite) TestItem_ConvertToAPI() {
 	ms.True(got.CanBeDeleted, "CanBeDeleted is not correct")
 }
 
-func (ms *ModelSuite) TestItem_canBeUpdated() {
+func (ms *ModelSuite) TestItem_hasOpenClaim() {
 	fixtures := CreateItemFixtures(ms.DB, FixturesConfig{ClaimsPerPolicy: 2, ClaimItemsPerClaim: 1})
 
 	// both claims are on Policies[0].Items[0] since ClaimItemsPerClaim = 1
@@ -1451,19 +1451,19 @@ func (ms *ModelSuite) TestItem_canBeUpdated() {
 		want bool
 	}{
 		{
-			name: "no",
+			name: "true",
 			item: unsafeItem,
-			want: false,
+			want: true,
 		},
 		{
-			name: "yes",
+			name: "false",
 			item: safeItem,
-			want: true,
+			want: false,
 		},
 	}
 	for _, tt := range tests {
 		ms.T().Run(tt.name, func(t *testing.T) {
-			got := tt.item.canBeUpdated(ms.DB)
+			got := tt.item.hasOpenClaim(ms.DB)
 
 			ms.Equal(tt.want, got)
 		})
