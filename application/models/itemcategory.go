@@ -80,7 +80,7 @@ func (i *ItemCategory) ConvertToAPI(tx *pop.Connection) api.ItemCategory {
 		HelpText:         i.HelpText,
 		RiskCategory:     i.RiskCategory.ConvertToAPI(),
 		RequireMakeModel: i.RequireMakeModel,
-		BillingPeriod:    i.getBillingPeriod(),
+		BillingPeriod:    i.GetBillingPeriod(),
 		PremiumFactor:    domain.PercentString(i.PremiumFactor.Float64),
 		CreatedAt:        i.CreatedAt,
 		UpdatedAt:        i.UpdatedAt,
@@ -93,7 +93,7 @@ func (i *ItemCategory) LoadRiskCategory(tx *pop.Connection) {
 	}
 }
 
-func (i *ItemCategory) getBillingPeriod() int {
+func (i *ItemCategory) GetBillingPeriod() int {
 	b := i.BillingPeriod
 	if b != domain.BillingPeriodMonthly && b != domain.BillingPeriodAnnual {
 		log.Fatalf("invalid billing period found in item category %s", i.Name)
