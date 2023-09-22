@@ -114,9 +114,9 @@ func (c *Claim) Validate(tx *pop.Connection) (*validate.Errors, error) {
 	return validateModel(c), nil
 }
 
-// CreateWithContext stores the Claim data as a new record in the database.
+// CreateWithHistory stores the Claim data as a new record in the database. Also creates a ClaimHistory record.
 // If its status is not valid, it is created in Draft status.
-func (c *Claim) CreateWithContext(ctx context.Context) error {
+func (c *Claim) CreateWithHistory(ctx context.Context) error {
 	tx := Tx(ctx)
 
 	if err := c.Create(tx); err != nil {
@@ -130,7 +130,7 @@ func (c *Claim) CreateWithContext(ctx context.Context) error {
 	return nil
 }
 
-// Create a Claim but not a history record. Use CreateWithContext if history is needed.
+// Create a Claim but not a history record. Use CreateWithHistory if history is needed.
 func (c *Claim) Create(tx *pop.Connection) error {
 	c.ReferenceNumber = uniqueClaimReferenceNumber(tx)
 	if _, ok := ValidClaimStatus[c.Status]; !ok {
@@ -407,7 +407,7 @@ func (c *Claim) AddItem(ctx context.Context, input api.ClaimItemCreateInput) (Cl
 		return claimItem, err
 	}
 
-	if err = claimItem.CreateWithContext(ctx); err != nil {
+	if err = claimItem.CreateWithHistory(ctx); err != nil {
 		return ClaimItem{}, err
 	}
 

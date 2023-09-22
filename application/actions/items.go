@@ -75,7 +75,7 @@ func itemsCreate(c buffalo.Context) error {
 		return reportError(c, err)
 	}
 
-	if err := item.CreateWithContext(c); err != nil {
+	if err := item.CreateWithHistory(c); err != nil {
 		return reportError(c, err)
 	}
 
