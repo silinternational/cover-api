@@ -216,7 +216,7 @@ func App() *buffalo.App {
 
 		// entity codes
 		entityCodesGroup := app.Group(entityCodesPath)
-		configGroup.Middleware.Skip(AuthZ, entityCodesList)
+		entityCodesGroup.Middleware.Skip(AuthZ, entityCodesList)
 		entityCodesGroup.GET("", entityCodesList)
 		entityCodesGroup.PUT(idRegex, entityCodesUpdate)
 		entityCodesGroup.GET(idRegex, entityCodesView)
