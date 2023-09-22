@@ -68,6 +68,7 @@ func (ms *ModelSuite) TestItemCategory_ConvertToAPI() {
 	got := cat.ConvertToAPI(ms.DB)
 
 	ms.Equal(cat.ID, got.ID, "ID is not correct")
+	ms.Equal(cat.Key, got.Key, "Key is not correct")
 	ms.Equal(cat.Name, got.Name, "Name is not correct")
 	ms.Equal(cat.HelpText, got.HelpText, "HelpText is not correct")
 	ms.Equal(cat.RiskCategory.ID, got.RiskCategory.ID, "RiskCategory.ID is not correct")

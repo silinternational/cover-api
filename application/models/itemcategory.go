@@ -29,6 +29,7 @@ type ItemCategories []ItemCategory
 // ItemCategory model
 type ItemCategory struct {
 	ID               uuid.UUID              `db:"id"`
+	Key              string                 `db:"key"`
 	RiskCategoryID   uuid.UUID              `db:"risk_category_id"`
 	Name             string                 `db:"name" validate:"required"`
 	HelpText         string                 `db:"help_text"`
@@ -76,6 +77,7 @@ func (i *ItemCategory) ConvertToAPI(tx *pop.Connection) api.ItemCategory {
 	i.LoadRiskCategory(tx)
 	return api.ItemCategory{
 		ID:               i.ID,
+		Key:              i.Key,
 		Name:             i.Name,
 		HelpText:         i.HelpText,
 		RiskCategory:     i.RiskCategory.ConvertToAPI(),
