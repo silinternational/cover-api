@@ -1,1 +1,3 @@
 add_column("item_categories", "key", "string", {"default": ""})
+
+add_index("item_categories", "key", {"unique": true, "name": "item_categories_key_idx"})
