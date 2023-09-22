@@ -2,6 +2,7 @@ package actions
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/gobuffalo/buffalo"
 
@@ -298,7 +299,13 @@ func itemsDeny(c buffalo.Context) error {
 func itemsRemove(c buffalo.Context) error {
 	item := getReferencedItemFromCtx(c)
 
-	if err := item.SafeDeleteOrInactivate(c); err != nil {
+	now := time.Now().UTC()
+	if err := item.SafeDeleteOrInactivate(c, now); err != nil {
+		return reportError(c, err)
+	}
+
+	tx := models.Tx(c)
+	if err := item.CreateCancellationCredit(tx, now); err != nil {
 		return reportError(c, err)
 	}
 
