@@ -289,6 +289,7 @@ func CreateCategoryFixtures(tx *pop.Connection, n int) Fixtures {
 			categories[i].RequireMakeModel = true
 		}
 
+		categories[i].Key = randStr(10)
 		categories[i].Name = randStr(10)
 		categories[i].HelpText = randStr(40)
 		categories[i].Status = api.ItemCategoryStatusEnabled

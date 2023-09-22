@@ -30,6 +30,9 @@ type ItemCategory struct {
 	// swagger:strfmt uuid4
 	ID uuid.UUID `json:"id"`
 
+	// unique key for indexing icons or other UI data
+	Key string `json:"key"`
+
 	// risk category assigned to new items by default -- can be overridden by a user with sufficient permissions
 	RiskCategory RiskCategory `json:"risk_category"`
 

@@ -26,6 +26,7 @@ func (as *ActionSuite) Test_ItemCategoriesList() {
 	cats := make(models.ItemCategories, 3)
 	for i := range cats {
 		cats[i] = models.ItemCategory{
+			Key:            fmt.Sprintf("Key%v", i),
 			RiskCategoryID: rc.ID,
 			Name:           fmt.Sprintf("Cat%v", i),
 			Status:         api.ItemCategoryStatusEnabled,
