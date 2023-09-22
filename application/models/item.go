@@ -689,7 +689,7 @@ func (i *Item) Approve(ctx context.Context, doEmitEvent bool) error {
 	i.LoadCategory(tx, false)
 	var amount api.Currency
 	var paidThroughDate time.Time
-	if i.Category.getBillingPeriod() == domain.BillingPeriodMonthly {
+	if i.Category.GetBillingPeriod() == domain.BillingPeriodMonthly {
 		amount = i.CalculateMonthlyPremium(tx)
 		paidThroughDate = domain.EndOfMonth(now)
 	} else {
