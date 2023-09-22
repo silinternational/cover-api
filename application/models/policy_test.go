@@ -681,32 +681,72 @@ func (ms *ModelSuite) TestPolicies_Query() {
 }
 
 func (ms *ModelSuite) TestPolicy_ProcessAnnualCoverage() {
-	year := time.Now().UTC().Year()
+	now := time.Now().UTC()
+	year := now.Year()
+	endOfLastMonth := domain.EndOfMonth(now.AddDate(0, -1, 0))
 
-	f := CreateItemFixtures(ms.DB, FixturesConfig{ItemsPerPolicy: 5})
-
-	f.Items[0].PaidThroughDate = domain.EndOfYear(year)
-	f.Items[2].RiskCategoryID = RiskCategoryMobileID()
-	for i := range f.Items {
-		UpdateItemStatus(ms.DB, f.Items[i], api.ItemCoverageStatusApproved, "")
+	annual := CreateItemFixtures(ms.DB, FixturesConfig{ItemsPerPolicy: 5})
+	annual.Items[2].RiskCategoryID = RiskCategoryMobileID()
+	for i := range annual.Items {
+		annual.Items[i].PaidThroughDate = domain.EndOfYear(year - 1)
+		UpdateItemStatus(ms.DB, annual.Items[i], api.ItemCoverageStatusApproved, "")
 	}
 
-	err := f.Policies[0].ProcessAnnualCoverage(ms.DB, year)
-	ms.NoError(err)
+	monthly := CreateItemFixtures(ms.DB, FixturesConfig{ItemsPerPolicy: 3})
+	for i := range monthly.Items {
+		monthly.Items[i].RiskCategoryID = RiskCategoryMobileID()
+		monthly.Items[i].PaidThroughDate = endOfLastMonth
+		UpdateItemStatus(ms.DB, monthly.Items[i], api.ItemCoverageStatusApproved, "")
+		monthly.ItemCategories[i].BillingPeriod = domain.BillingPeriodMonthly
+		Must(ms.DB.Update(&monthly.ItemCategories[i]))
+	}
 
-	var l LedgerEntries
-	ms.NoError(l.FindRenewals(ms.DB, year))
+	tests := []struct {
+		name             string
+		policy           Policy
+		date             time.Time
+		billingPeriod    int
+		wantEntriesCount int
+		wantPaidThrough  time.Time
+	}{
+		{
+			name:             "annual",
+			policy:           annual.Policies[0],
+			date:             now,
+			billingPeriod:    domain.BillingPeriodAnnual,
+			wantEntriesCount: 2, // two risk categories
+			wantPaidThrough:  domain.EndOfYear(year),
+		},
+		{
+			name:             "monthly",
+			policy:           monthly.Policies[0],
+			date:             now,
+			billingPeriod:    domain.BillingPeriodMonthly,
+			wantEntriesCount: 1, // only one risk category
+			wantPaidThrough:  domain.EndOfMonth(now),
+		},
+	}
+	for _, tt := range tests {
+		ms.T().Run(tt.name, func(t *testing.T) {
+			ms.NoError(tt.policy.ProcessRenewals(ms.DB, tt.date, tt.billingPeriod))
 
-	// should be one for each risk category
-	ms.Equal(2, len(l))
+			var l LedgerEntries
+			Must(ms.DB.Where("policy_id = ?", tt.policy.ID).All(&l))
+			ms.Equal(tt.wantEntriesCount, len(l))
 
-	// do it again to make sure it doesn't make double ledger entries
-	err = f.Policies[0].ProcessAnnualCoverage(ms.DB, year)
-	ms.NoError(err)
+			var i Items
+			Must(ms.DB.Where("policy_id = ?", tt.policy.ID).All(&i))
+			for _, ii := range i {
+				ms.Equal(tt.wantPaidThrough, ii.PaidThroughDate)
+			}
 
-	var l2 LedgerEntries
-	ms.NoError(l2.FindRenewals(ms.DB, year))
-	ms.Equal(2, len(l2))
+			// do it again to make sure it doesn't make double ledger entries
+			ms.NoError(tt.policy.ProcessRenewals(ms.DB, tt.date, tt.billingPeriod))
+			var l2 LedgerEntries
+			Must(ms.DB.Where("policy_id = ?", tt.policy.ID).All(&l2))
+			ms.Equal(tt.wantEntriesCount, len(l2))
+		})
+	}
 }
 
 func (ms *ModelSuite) TestPolicy_currentCoverage() {
@@ -723,4 +763,45 @@ func (ms *ModelSuite) TestPolicy_currentCoverage() {
 
 	coverage := policy.currentCoverageTotal(ms.DB)
 	ms.Equal(api.Currency(totalCoverage), coverage, "incorrect Coverage for Policy")
+}
+
+func (ms *ModelSuite) TestPolicy_CreateRenewalLedgerEntry() {
+	f := CreateItemFixtures(ms.DB, FixturesConfig{ItemsPerPolicy: 1})
+	f.Items[0].RiskCategoryID = RiskCategoryMobileID()
+	UpdateItemStatus(ms.DB, f.Items[0], api.ItemCoverageStatusApproved, "")
+
+	tests := []struct {
+		name           string
+		policy         Policy
+		riskCategoryID uuid.UUID
+		amount         api.Currency
+	}{
+		{
+			name:           "mobile",
+			policy:         f.Policies[0],
+			riskCategoryID: RiskCategoryMobileID(),
+			amount:         1000,
+		},
+		{
+			name:           "stationary",
+			policy:         f.Policies[0],
+			riskCategoryID: RiskCategoryStationaryID(),
+			amount:         2000,
+		},
+	}
+	for _, tt := range tests {
+		ms.T().Run(tt.name, func(t *testing.T) {
+			ms.NoError(tt.policy.CreateRenewalLedgerEntry(ms.DB, tt.riskCategoryID, tt.amount))
+
+			var rc RiskCategory
+			Must(rc.FindByID(ms.DB, tt.riskCategoryID))
+
+			var l LedgerEntries
+			Must(ms.DB.Where("risk_category_name = ?", rc.Name).All(&l))
+			ms.Equal(1, len(l))
+			ms.Equal(-tt.amount, l[0].Amount)
+			ms.Equal(LedgerEntryTypeCoverageRenewal, l[0].Type)
+			ms.Equal(tt.policy.ID, l[0].PolicyID)
+		})
+	}
 }

@@ -427,7 +427,8 @@ func BeginningOfDay(date time.Time) time.Time {
 }
 
 func EndOfMonth(date time.Time) time.Time {
-	return date.AddDate(0, 1, -date.Day())
+	d := date.AddDate(0, 1, -date.Day())
+	return d.Truncate(time.Hour * 24)
 }
 
 func EndOfYear(year int) time.Time {
