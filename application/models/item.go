@@ -132,7 +132,7 @@ func (i *Item) Update(ctx context.Context) error {
 		}
 
 		i.LoadCategory(tx, false)
-		if i.Category.getBillingPeriod() == domain.BillingPeriodAnnual {
+		if i.Category.GetBillingPeriod() == domain.BillingPeriodAnnual {
 			if err := i.createPremiumAdjustment(tx, time.Now().UTC(), oldItem); err != nil {
 				return err
 			}
@@ -319,7 +319,7 @@ func (i *Item) CreateCancellationCredit(tx *pop.Connection, now time.Time) error
 	}
 
 	i.LoadCategory(tx, false)
-	if i.Category.getBillingPeriod() == domain.BillingPeriodMonthly {
+	if i.Category.GetBillingPeriod() == domain.BillingPeriodMonthly {
 		return nil
 	}
 
@@ -370,7 +370,7 @@ func (i *Item) ScheduleInactivation(ctx context.Context, t time.Time) error {
 
 	// If the item was created before this year, and it qualifies for a full-year refund, set
 	// its CoverageEndDate to the current day. Otherwise, set it to the end of the current month.
-	if i.Category.BillingPeriod == domain.BillingPeriodAnnual && i.shouldGiveFullYearRefund(t) {
+	if i.Category.GetBillingPeriod() == domain.BillingPeriodAnnual && i.shouldGiveFullYearRefund(t) {
 		i.CoverageEndDate = nulls.NewTime(t)
 	} else {
 		i.CoverageEndDate = nulls.NewTime(domain.EndOfMonth(t))
@@ -402,7 +402,7 @@ func (i *Item) cancelCoverageAfterClaim(tx *pop.Connection, reason string) error
 	now := time.Now().UTC()
 
 	i.LoadCategory(tx, false)
-	if i.Category.BillingPeriod == domain.BillingPeriodAnnual {
+	if i.Category.GetBillingPeriod() == domain.BillingPeriodAnnual {
 		amount := i.calculatePremiumChange(now, i.CalculateAnnualPremium(tx), 0)
 		if err := i.CreateLedgerEntry(tx, LedgerEntryTypeCoverageRefund, amount); err != nil {
 			return err
@@ -564,7 +564,7 @@ func (i *Item) SubmitForApproval(ctx context.Context) error {
 
 func (i *Item) calculateMinimumCoverage(tx *pop.Connection) int {
 	i.LoadCategory(tx, false)
-	billingPeriod := i.Category.getBillingPeriod()
+	billingPeriod := i.Category.GetBillingPeriod()
 	return int(math.Round(0.5 / i.Category.PremiumFactor.Float64 / 12 * float64(billingPeriod)))
 }
 
@@ -765,7 +765,7 @@ func (i *Item) ConvertToAPI(tx *pop.Connection) api.Item {
 		StatusReason:          i.StatusReason,
 		CoverageStartDate:     i.CoverageStartDate.Format(domain.DateFormat),
 		CoverageEndDate:       coverageEndDate,
-		BillingPeriod:         i.Category.getBillingPeriod(),
+		BillingPeriod:         i.Category.GetBillingPeriod(),
 		AnnualPremium:         i.CalculateAnnualPremium(tx),
 		MonthlyPremium:        i.CalculateMonthlyPremium(tx),
 		ProratedAnnualPremium: i.CalculateProratedPremium(tx, time.Now().UTC()),
@@ -861,7 +861,7 @@ func (i *Items) ConvertToAPI(tx *pop.Connection) api.Items {
 // CalculateAnnualPremium returns the premium amount for the category's billing period:
 func (i *Item) CalculateBillingPremium(tx *pop.Connection) api.Currency {
 	i.LoadCategory(tx, false)
-	billingPeriod := i.Category.getBillingPeriod()
+	billingPeriod := i.Category.GetBillingPeriod()
 
 	switch billingPeriod {
 	case domain.BillingPeriodMonthly:
