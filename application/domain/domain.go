@@ -236,7 +236,7 @@ func Init() {
 func loadConfigFromSSM() {
 	path := "/cover/" + Env.GoEnv
 
-	if err := ssmconfig.Process(path, Env); err != nil {
+	if err := ssmconfig.Process(path, &Env); err != nil {
 		log.Errorf("error loading config from AWS SSM Parameter Store: %s", err)
 	}
 }
