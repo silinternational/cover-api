@@ -784,6 +784,7 @@ func (i *Item) ConvertToAPI(tx *pop.Connection) api.Item {
 		Make:                  i.Make,
 		Model:                 i.Model,
 		SerialNumber:          i.SerialNumber,
+		Year:                  NullsIntToPointer(i.Year),
 		CoverageAmount:        i.CoverageAmount,
 		CoverageStatus:        i.CoverageStatus,
 		StatusChange:          i.StatusChange,
@@ -992,6 +993,7 @@ func NewItemFromApiInput(c buffalo.Context, input api.ItemCreate, policyID uuid.
 	item.Make = input.Make
 	item.Model = input.Model
 	item.SerialNumber = input.SerialNumber
+	item.Year = PointerToNullsInt(input.Year)
 	item.CoverageAmount = input.CoverageAmount
 	item.CoverageStatus = input.CoverageStatus
 

@@ -130,6 +130,7 @@ func itemsUpdate(c buffalo.Context) error {
 	item.Make = input.Make
 	item.Model = input.Model
 	item.SerialNumber = input.SerialNumber
+	item.Year = models.PointerToNullsInt(input.Year)
 	item.CoverageAmount = input.CoverageAmount
 
 	if input.RiskCategoryID != nil {

@@ -441,3 +441,18 @@ func GetHHID(staffID string) string {
 	}
 	return v.ID
 }
+
+func NullsIntToPointer(i nulls.Int) *int {
+	if i.Valid {
+		value := i.Int
+		return &value
+	}
+	return nil
+}
+
+func PointerToNullsInt(i *int) nulls.Int {
+	if i == nil {
+		return nulls.Int{}
+	}
+	return nulls.NewInt(*i)
+}

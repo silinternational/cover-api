@@ -56,7 +56,7 @@ type Item struct {
 	Model string `json:"model"`
 
 	// year
-	Year string `json:"year"`
+	Year *int `json:"year"`
 
 	// serial number
 	SerialNumber string `json:"serial_number"`
@@ -167,6 +167,9 @@ type ItemCreate struct {
 	// serial number
 	SerialNumber string `json:"serial_number"`
 
+	// year, numeric, optional. Omitting this field will erase the stored value.
+	Year *int `json:"year"`
+
 	// coverage amount (0.01 USD)
 	CoverageAmount int `json:"coverage_amount"`
 
@@ -227,6 +230,9 @@ type ItemUpdate struct {
 
 	// serial number
 	SerialNumber string `json:"serial_number"`
+
+	// year, numeric, optional. Omitting this field will erase the stored value.
+	Year *int `json:"year"`
 
 	// coverage amount (0.01 USD)
 	CoverageAmount int `json:"coverage_amount"`
