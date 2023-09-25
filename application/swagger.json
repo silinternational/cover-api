@@ -241,7 +241,7 @@
         }
       },
       "delete": {
-        "description": "Delete a claim and its claim items as long as it does not have a status of\napproved, denied or paid.",
+        "description": "Delete a claim and its claim items as long as it does not have a status of approved, denied or paid.",
         "tags": [
           "Claims"
         ],
@@ -720,7 +720,7 @@
         }
       },
       "delete": {
-        "description": "Delete a policy item if it is less than 72 hours old and has no associations.\nOtherwise, inactivate coverage on it.",
+        "description": "Delete a policy item if it is less than 72 hours old and has no associations. Otherwise, inactivate coverage on it.",
         "tags": [
           "PolicyItems"
         ],
@@ -923,7 +923,7 @@
           "200": {
             "description": "the status of the annual billing process",
             "schema": {
-              "$ref": "#/definitions/AnnualRenewalStatus"
+              "$ref": "#/definitions/RenewalStatus"
             }
           }
         }
@@ -935,6 +935,37 @@
         ],
         "summary": "LedgerAnnualProcess",
         "operationId": "LedgerAnnualProcess",
+        "responses": {
+          "204": {
+            "description": "OK but no content in response"
+          }
+        }
+      }
+    },
+    "/ledger-reports/monthly": {
+      "get": {
+        "description": "Get the status of the monthly billing process.",
+        "tags": [
+          "Ledger"
+        ],
+        "summary": "LedgerMonthlyRenewalStatus",
+        "operationId": "LedgerMonthlyRenewalStatus",
+        "responses": {
+          "200": {
+            "description": "the status of the monthly billing process",
+            "schema": {
+              "$ref": "#/definitions/RenewalStatus"
+            }
+          }
+        }
+      },
+      "post": {
+        "description": "Process billing for current month's policy renewals.",
+        "tags": [
+          "Ledger"
+        ],
+        "summary": "LedgerMonthlyProcess",
+        "operationId": "LedgerMonthlyProcess",
         "responses": {
           "204": {
             "description": "OK but no content in response"
@@ -1849,21 +1880,6 @@
       },
       "x-go-package": "github.com/silinternational/cover-api/api"
     },
-    "AnnualRenewalStatus": {
-      "type": "object",
-      "properties": {
-        "is_complete": {
-          "type": "boolean",
-          "x-go-name": "IsComplete"
-        },
-        "items_to_process": {
-          "type": "integer",
-          "format": "int64",
-          "x-go-name": "ItemsToProcess"
-        }
-      },
-      "x-go-package": "github.com/silinternational/cover-api/api"
-    },
     "AppError": {
       "description": "AppError holds information that is helpful in logging and reporting api errors",
       "type": "object",
@@ -2491,6 +2507,12 @@
         "annual_premium": {
           "$ref": "#/definitions/Currency"
         },
+        "billing_period": {
+          "description": "billing period, expressed as a number of months",
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "BillingPeriod"
+        },
         "can_be_deleted": {
           "description": "Can the item be deleted? Set to false if the item is in a state that prevents it from being deleted.",
           "type": "boolean",
@@ -2561,6 +2583,9 @@
           "type": "string",
           "x-go-name": "Model"
         },
+        "monthly_premium": {
+          "$ref": "#/definitions/Currency"
+        },
         "name": {
           "type": "string",
           "x-go-name": "Name"
@@ -2611,6 +2636,12 @@
     "ItemCategory": {
       "type": "object",
       "properties": {
+        "billing_period": {
+          "description": "billing period, expressed as a number of months",
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "BillingPeriod"
+        },
         "created_at": {
           "description": "date-time created",
           "type": "string",
@@ -2628,10 +2659,20 @@
           "format": "uuid4",
           "x-go-name": "ID"
         },
+        "key": {
+          "description": "unique key for indexing icons or other UI data",
+          "type": "string",
+          "x-go-name": "Key"
+        },
         "name": {
           "description": "name",
           "type": "string",
           "x-go-name": "Name"
+        },
+        "premium_factor": {
+          "description": "the premium factor for this category",
+          "type": "string",
+          "x-go-name": "PremiumFactor"
         },
         "require_make_model": {
           "description": "whether make and model are required in order for item coverage to be auto approved",
@@ -3602,6 +3643,21 @@
       },
       "x-go-package": "github.com/silinternational/cover-api/api"
     },
+    "RenewalStatus": {
+      "type": "object",
+      "properties": {
+        "is_complete": {
+          "type": "boolean",
+          "x-go-name": "IsComplete"
+        },
+        "items_to_process": {
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "ItemsToProcess"
+        }
+      },
+      "x-go-package": "github.com/silinternational/cover-api/api"
+    },
     "RepairResult": {
       "type": "object",
       "properties": {
@@ -3662,12 +3718,6 @@
           "description": "risk category name",
           "type": "string",
           "x-go-name": "Name"
-        },
-        "policy_max": {
-          "description": "maximum coverage per policy (0.01 USD)",
-          "type": "integer",
-          "format": "int64",
-          "x-go-name": "PolicyMax"
         },
         "updated_at": {
           "description": "updated date",
