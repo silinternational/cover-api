@@ -167,7 +167,7 @@ type ItemCreate struct {
 	// serial number
 	SerialNumber string `json:"serial_number"`
 
-	// year, numeric, optional. Omitting this field will erase the stored value.
+	// year, numeric, optional.
 	Year *int `json:"year"`
 
 	// coverage amount (0.01 USD)
