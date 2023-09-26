@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/gobuffalo/nulls"
 	"github.com/gofrs/uuid"
 
 	"github.com/silinternational/cover-api/api"
@@ -914,6 +915,7 @@ func (as *ActionSuite) Test_NewItemFromApiInput() {
 		Make:                "Minolta",
 		Model:               "Max",
 		SerialNumber:        "MM1234",
+		Year:                models.NullsIntToPointer(nulls.NewInt(1999)),
 		CoverageAmount:      101,
 		CoverageStatus:      api.ItemCoverageStatusDraft,
 		CoverageStartDate:   "2006-01-03",
@@ -1014,6 +1016,7 @@ func (as *ActionSuite) Test_NewItemFromApiInput() {
 			as.Equal(tt.input.Make, got.Make, "Make is not correct")
 			as.Equal(tt.input.Model, got.Model, "Model is not correct")
 			as.Equal(tt.input.SerialNumber, got.SerialNumber, "SerialNumber is not correct")
+			as.Equal(models.PointerToNullsInt(tt.input.Year), got.Year, "Year is not correct")
 			as.Equal(tt.input.CoverageAmount, got.CoverageAmount, "CoverageAmount is not correct")
 			as.Equal(tt.input.CoverageStatus, got.CoverageStatus, "CoverageStatus is not correct")
 			as.Equal("", got.StatusChange, "StatusChange is not correct")

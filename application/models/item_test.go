@@ -1410,6 +1410,7 @@ func (ms *ModelSuite) TestItem_ConvertToAPI() {
 	ms.Equal(item.PolicyID, got.PolicyID, "PolicyID is not correct")
 	ms.Equal(item.Make, got.Make, "Make is not correct")
 	ms.Equal(item.SerialNumber, got.SerialNumber, "SerialNumber is not correct")
+	ms.Equal(item.Year, PointerToNullsInt(got.Year), "Year is not correct")
 	ms.Equal(item.CoverageAmount, got.CoverageAmount, "CoverageAmount is not correct")
 	ms.Equal(item.CoverageStatus, got.CoverageStatus, "CoverageStatus is not correct")
 	ms.Equal(item.StatusChange, got.StatusChange, "StatusChange is not correct")
