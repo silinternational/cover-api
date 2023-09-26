@@ -2622,6 +2622,12 @@
           "type": "string",
           "format": "date-time",
           "x-go-name": "UpdatedAt"
+        },
+        "year": {
+          "description": "year",
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "Year"
         }
       },
       "x-go-package": "github.com/silinternational/cover-api/api"
@@ -2779,6 +2785,12 @@
           "description": "serial number",
           "type": "string",
           "x-go-name": "SerialNumber"
+        },
+        "year": {
+          "description": "year, numeric, optional.",
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "Year"
         }
       },
       "x-go-package": "github.com/silinternational/cover-api/api"
@@ -2856,6 +2868,12 @@
           "description": "serial number",
           "type": "string",
           "x-go-name": "SerialNumber"
+        },
+        "year": {
+          "description": "year, numeric, optional. Omitting this field will erase the stored value.",
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "Year"
         }
       },
       "x-go-package": "github.com/silinternational/cover-api/api"
