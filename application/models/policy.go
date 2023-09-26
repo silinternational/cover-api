@@ -688,7 +688,7 @@ func ImportPolicies(tx *pop.Connection, file io.Reader) error {
 	}
 
 	var vehicleCategory ItemCategory
-	if err := tx.Where("name ILIKE %vehicles%").First(&vehicleCategory); err != nil {
+	if err := tx.Where("name ILIKE '%vehicles%'").First(&vehicleCategory); err != nil {
 		err := fmt.Errorf("failed to find an item category for vehicles: %w", err)
 		return api.NewAppError(err, api.ErrorUnknown, api.CategoryInternal)
 	}
