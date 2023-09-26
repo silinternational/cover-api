@@ -282,7 +282,7 @@ INSERT INTO "item_categories" ("id", "risk_category_id", "name", "help_text",
 VALUES
 ('d4632d64-67b5-4795-a7de-66b95312fa7e',	'3be38915-7092-44f2-90ef-26f48214b34f',
 	'Computers, tablets, and phones',	'Includes printers, screens, peripherals, and extras',
-	'Enabled',	300000, true, 0.02, 12,	'2021-08-27 19:46:28',	'2021-08-27 19:46:28',	1, 'computer'),
+	'Enabled',	300000, true, 0.02, 12,	'2021-08-27 19:46:28',	'2021-08-27 19:46:28',	1, 'computers'),
 ('9c682e38-78fd-475b-9810-3a7f2e9f1fe4',	'7bed3c00-23cf-4282-b2b8-da89426cef2f',
 	'Clothing',	'-',
 	'Enabled',	300000, false, 0.02, 12,	'2021-08-27 19:46:28',	'2021-08-27 19:46:28',	10, 'clothing'),
