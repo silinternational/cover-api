@@ -281,6 +281,16 @@ func (i *Item) Compare(old Item) []FieldUpdate {
 		})
 	}
 
+	if i.Year != old.Year {
+		oldYearBytes, _ := old.Year.MarshalJSON()
+		newYearBytes, _ := i.Year.MarshalJSON()
+		updates = append(updates, FieldUpdate{
+			OldValue:  string(oldYearBytes),
+			NewValue:  string(newYearBytes),
+			FieldName: FieldItemStatusReason,
+		})
+	}
+
 	return updates
 }
 
