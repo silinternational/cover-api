@@ -761,7 +761,7 @@ func importPolicy(tx *pop.Connection, csvLine []string, catID uuid.UUID, now tim
 		return err
 	}
 
-	startDate, err := time.Parse("1/2/2006 3:04", csvLine[Start_Date])
+	startDate, err := time.Parse("1/2/2006 15:04", csvLine[Start_Date])
 	if err != nil {
 		return fmt.Errorf("invalid date %v: %w", csvLine[Start_Date], err)
 	}
