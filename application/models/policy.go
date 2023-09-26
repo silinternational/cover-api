@@ -794,16 +794,22 @@ func importPolicy(tx *pop.Connection, csvLine []string, catID uuid.UUID, now tim
 
 func parseCoveredValue(s string) (int, error) {
 	value, err := strconv.Atoi(s)
-	if err != nil || value < 1 || value > 100_000 {
-		return 0, fmt.Errorf("invalid covered value %v", value)
+	if err != nil {
+		return 0, fmt.Errorf("invalid covered value %q: %w", s, err)
+	}
+	if value < 1 || value > 100_000 {
+		return 0, fmt.Errorf("invalid covered value %d", value)
 	}
 	return value * domain.CurrencyFactor, nil
 }
 
 func parseVehicleYear(s string) (int, error) {
 	year, err := strconv.Atoi(s)
-	if err != nil || year < 0 || year > 2050 || (year >= 100 && year < 1913) {
-		return 0, fmt.Errorf("invalid vehicle year %v", year)
+	if err != nil {
+		return 0, fmt.Errorf("invalid vehicle year %q: %w", s, err)
+	}
+	if year < 0 || year > 2050 || (year >= 100 && year < 1913) {
+		return 0, fmt.Errorf("invalid vehicle year %d", year)
 	}
 	if year >= 50 && year <= 99 {
 		return year + 1900, nil
