@@ -794,7 +794,7 @@ func importPolicy(tx *pop.Connection, csvLine []string, catID uuid.UUID, now tim
 
 func parseCoveredValue(s string) (int, error) {
 	value, err := strconv.Atoi(s)
-	if err != nil || value < 1 || value > 50000 {
+	if err != nil || value < 1 || value > 100_000 {
 		return 0, fmt.Errorf("invalid covered value %v", value)
 	}
 	return value * domain.CurrencyFactor, nil
