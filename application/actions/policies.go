@@ -392,6 +392,12 @@ func policiesStrikeCreate(c buffalo.Context) error {
 //	    schema:
 //	      "$ref": "#/definitions/ImportResponse"
 func policiesImport(c buffalo.Context) error {
+	actor := models.CurrentUser(c)
+	if !actor.IsAdmin() {
+		err := fmt.Errorf("user is not allowed to import policies")
+		return reportError(c, api.NewAppError(err, api.ErrorNotAuthorized, api.CategoryForbidden))
+	}
+
 	tx := models.Tx(c)
 	f, err := c.File(fileFieldName)
 	if err != nil {
