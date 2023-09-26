@@ -306,7 +306,7 @@ VALUES
 	'Enabled',	300000, false, 0.02, 12,	'2021-08-27 19:46:28',	'2021-08-27 19:46:28',	6, 'home'),
 ('722c03e5-7852-44b9-b86a-af5d63b39d0e',	'7bed3c00-23cf-4282-b2b8-da89426cef2f',
 	'Field site electronics',	'Solar panels, power systems, antennae, and more',
-	'Enabled',	300000, false, 0.02, 12,	'2021-08-27 19:46:28',	'2021-08-27 19:46:28',	7, 'field'),
+	'Enabled',	300000, false, 0.02, 12,	'2021-08-27 19:46:28',	'2021-08-27 19:46:28',	7, 'electronics'),
 ('0f7aa101-bfdb-4a19-a182-c5ff1d16f6b2',	'7bed3c00-23cf-4282-b2b8-da89426cef2f',
 	'Books and media',	'Books, CDs, DVDs, and more',
 	'Enabled',	300000, false, 0.02, 12,	'2021-08-27 19:46:28',	'2021-08-27 19:46:28',	8, 'books'),
