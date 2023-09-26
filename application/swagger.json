@@ -2787,7 +2787,7 @@
           "x-go-name": "SerialNumber"
         },
         "year": {
-          "description": "year, numeric, optional. Omitting this field will erase the stored value.",
+          "description": "year, numeric, optional.",
           "type": "integer",
           "format": "int64",
           "x-go-name": "Year"
