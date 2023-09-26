@@ -372,6 +372,45 @@ func policiesStrikeCreate(c buffalo.Context) error {
 	return renderOk(c, strikes.ConvertToAPI(tx))
 }
 
+// swagger:operation POST /policies/{id}/imports Policies PoliciesImport
+// PoliciesImport
+//
+// Import policies and items from a CSV file. This endpoint is initially for importing vehicle information
+// from a legacy system. It may be removed at a later time, or it may be adapted for other types of data.
+// ---
+//
+//	consumes:
+//	  - multipart/form-data
+//	parameters:
+//	  - name: file
+//	    in: formData
+//	    type: file
+//	    description: file object
+//	responses:
+//	  '200':
+//	    description: uploaded File data
+//	    schema:
+//	      "$ref": "#/definitions/ImportResponse"
+func policiesImport(c buffalo.Context) error {
+	tx := models.Tx(c)
+	f, err := c.File(fileFieldName)
+	if err != nil {
+		err := fmt.Errorf("error getting uploaded file from context ... %v", err)
+		return reportError(c, api.NewAppError(err, api.ErrorReceivingFile, api.CategoryInternal))
+	}
+
+	if f.Size > int64(domain.MaxFileSize) {
+		err := fmt.Errorf("file upload size (%v) greater than max (%v)", f.Size, domain.MaxFileSize)
+		return reportError(c, api.NewAppError(err, api.ErrorStoreFileTooLarge, api.CategoryUser))
+	}
+
+	if err := models.ImportPolicies(tx, f); err != nil {
+		return reportError(c, err)
+	}
+
+	return renderOk(c, nil)
+}
+
 // getReferencedPolicyFromCtx pulls the models.Policy resource from context that was put there
 // by the AuthZ middleware
 func getReferencedPolicyFromCtx(c buffalo.Context) *models.Policy {

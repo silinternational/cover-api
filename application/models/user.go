@@ -65,7 +65,7 @@ type User struct {
 }
 
 // Validate gets run every time you call a "pop.Validate*" (pop.ValidateAndSave, pop.ValidateAndCreate, pop.ValidateAndUpdate) method.
-//  It first adds a UUID to the user if its UUID is empty
+// It first adds a UUID to the user if its UUID is empty
 func (u *User) Validate(tx *pop.Connection) (*validate.Errors, error) {
 	return validateModel(u), nil
 }
@@ -180,8 +180,7 @@ func (u *User) FindOrCreateFromAuthUser(tx *pop.Connection, authUser *auth.User)
 	return nil
 }
 
-// EmailOfChoice returns the user's EmailOverride value if it's not blank.
-//   Otherwise it returns the user's Email value.
+// EmailOfChoice returns the user's EmailOverride value if it's not blank. Otherwise it returns the user's Email value.
 func (u *User) EmailOfChoice() string {
 	if u.EmailOverride != "" {
 		return u.EmailOverride
@@ -356,7 +355,7 @@ func (u *User) CreateInitialPolicy(tx *pop.Connection, householdID string) error
 
 func (u *User) createInitialPolicyUser(tx *pop.Connection, householdID string) (bool, error) {
 	var policy Policy
-	err := tx.Where("household_id = ?", householdID).First(&policy)
+	err := policy.FindByHouseholdID(tx, householdID)
 	if domain.IsOtherThanNoRows(err) {
 		msg := fmt.Sprintf("error fetching policies with household id %s: %s", householdID, err.Error())
 		panic(msg)
