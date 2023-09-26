@@ -732,7 +732,7 @@ func importPolicy(tx *pop.Connection, csvLine []string, catID uuid.UUID, now tim
 		Country_Description
 	)
 
-	if len(csvLine) < 13 {
+	if len(csvLine) < 14 {
 		return errors.New("line contains too few columns")
 	}
 
