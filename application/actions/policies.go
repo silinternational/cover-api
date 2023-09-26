@@ -390,7 +390,7 @@ func policiesStrikeCreate(c buffalo.Context) error {
 //	  '200':
 //	    description: uploaded File data
 //	    schema:
-//	      "$ref": "#/definitions/ImportResponse"
+//	      "$ref": "#/definitions/PoliciesImportResponse"
 func policiesImport(c buffalo.Context) error {
 	actor := models.CurrentUser(c)
 	if !actor.IsAdmin() {
@@ -410,11 +410,12 @@ func policiesImport(c buffalo.Context) error {
 		return reportError(c, api.NewAppError(err, api.ErrorStoreFileTooLarge, api.CategoryUser))
 	}
 
-	if err := models.ImportPolicies(tx, f); err != nil {
+	response, err := models.ImportPolicies(tx, f)
+	if err != nil {
 		return reportError(c, err)
 	}
 
-	return renderOk(c, nil)
+	return renderOk(c, response)
 }
 
 // getReferencedPolicyFromCtx pulls the models.Policy resource from context that was put there

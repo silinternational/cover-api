@@ -870,7 +870,7 @@ func (ms *ModelSuite) Test_importPolicy() {
 	}
 	for _, tt := range tests {
 		ms.T().Run(tt.name, func(t *testing.T) {
-			err := importPolicy(ms.DB, tt.csvLine, catID, now)
+			_, _, err := importPolicy(ms.DB, tt.csvLine, catID, now)
 			if tt.wantErr != "" {
 				ms.Error(err)
 				ms.Contains(err.Error(), tt.wantErr)

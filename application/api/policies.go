@@ -137,3 +137,10 @@ type PolicyLedgerReportCreateInput struct {
 	// Report year, e.g. return the policy's ledger entries entered in that year.
 	Year int `json:"year"`
 }
+
+// swagger:model
+type PoliciesImportResponse struct {
+	LinesProcessed  int `json:"lines_processed"`
+	PoliciesCreated int `json:"policies_created"`
+	ItemsCreated    int `json:"items_created"`
+}

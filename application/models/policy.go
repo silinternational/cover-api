@@ -680,41 +680,46 @@ func (p *Policy) CreateRenewalLedgerEntry(tx *pop.Connection, riskCategoryID uui
 	return nil
 }
 
-func ImportPolicies(tx *pop.Connection, file io.Reader) error {
+func ImportPolicies(tx *pop.Connection, file io.Reader) (api.PoliciesImportResponse, error) {
+	var response api.PoliciesImportResponse
+
 	r := csv.NewReader(bufio.NewReader(file))
 	if _, err := r.Read(); err == io.EOF {
 		err := fmt.Errorf("empty policy CSV file: %w", err)
-		return api.NewAppError(err, api.ErrorUnknown, api.CategoryUser)
+		return response, api.NewAppError(err, api.ErrorUnknown, api.CategoryUser)
 	}
 
 	var vehicleCategory ItemCategory
 	if err := tx.Where("name ILIKE '%vehicles%'").First(&vehicleCategory); err != nil {
 		err := fmt.Errorf("failed to find an item category for vehicles: %w", err)
-		return api.NewAppError(err, api.ErrorUnknown, api.CategoryInternal)
+		return response, api.NewAppError(err, api.ErrorUnknown, api.CategoryInternal)
 	}
 
 	n := 0
-	for {
+	for ; ; n++ {
 		csvLine, err := r.Read()
 		if err == io.EOF {
 			break
 		}
 		if err != nil {
 			err := fmt.Errorf("failed to read from policy CSV file on line %v: %w", n, err)
-			return api.NewAppError(err, api.ErrorUnknown, api.CategoryUser)
+			return response, api.NewAppError(err, api.ErrorUnknown, api.CategoryUser)
 		}
 
-		err = importPolicy(tx, csvLine, vehicleCategory.ID, time.Now().UTC())
+		policiesCreated, itemsCreated, err := importPolicy(tx, csvLine, vehicleCategory.ID, time.Now().UTC())
 		if err != nil {
 			err := fmt.Errorf("error importing policy on CSV file line %v: %w", n, err)
-			return api.NewAppError(err, api.ErrorUnknown, api.CategoryUser)
+			return response, api.NewAppError(err, api.ErrorUnknown, api.CategoryUser)
 		}
+		response.PoliciesCreated += policiesCreated
+		response.ItemsCreated += itemsCreated
 	}
 
-	return nil
+	response.LinesProcessed = n
+	return response, nil
 }
 
-func importPolicy(tx *pop.Connection, csvLine []string, catID uuid.UUID, now time.Time) error {
+func importPolicy(tx *pop.Connection, csvLine []string, catID uuid.UUID, now time.Time) (int, int, error) {
 	const (
 		Account_Number = iota
 		Veh_Year
@@ -733,7 +738,7 @@ func importPolicy(tx *pop.Connection, csvLine []string, catID uuid.UUID, now tim
 	)
 
 	if len(csvLine) < 14 {
-		return errors.New("line contains too few columns")
+		return 0, 0, errors.New("line contains too few columns")
 	}
 
 	for i := range csvLine {
@@ -741,10 +746,11 @@ func importPolicy(tx *pop.Connection, csvLine []string, catID uuid.UUID, now tim
 	}
 
 	var p Policy
+	var policiesCreated int
 	err := p.FindByHouseholdID(tx, csvLine[Account_Number])
 	if err != nil {
 		if domain.IsOtherThanNoRows(err) {
-			return appErrorFromDB(err, api.ErrorQueryFailure)
+			return 0, 0, appErrorFromDB(err, api.ErrorQueryFailure)
 		}
 
 		p.Name = csvLine[NameCust] + " household"
@@ -752,23 +758,24 @@ func importPolicy(tx *pop.Connection, csvLine []string, catID uuid.UUID, now tim
 		p.HouseholdID = nulls.NewString(csvLine[Account_Number])
 		p.EntityCodeID = householdEntityID
 		if err := p.Create(tx); err != nil {
-			return appErrorFromDB(err, api.ErrorCreateFailure)
+			return 0, 0, appErrorFromDB(err, api.ErrorCreateFailure)
 		}
+		policiesCreated++
 	}
 
 	value, err := parseCoveredValue(csvLine[Covered_Value])
 	if err != nil {
-		return err
+		return 0, 0, err
 	}
 
 	startDate, err := time.Parse("1/2/2006 15:04", csvLine[Start_Date])
 	if err != nil {
-		return fmt.Errorf("invalid date %v: %w", csvLine[Start_Date], err)
+		return 0, 0, fmt.Errorf("invalid date %v: %w", csvLine[Start_Date], err)
 	}
 
 	year, err := parseVehicleYear(csvLine[Veh_Year])
 	if err != nil {
-		return err
+		return 0, 0, err
 	}
 
 	i := Item{
@@ -787,9 +794,9 @@ func importPolicy(tx *pop.Connection, csvLine []string, catID uuid.UUID, now tim
 		PaidThroughDate:   domain.EndOfMonth(now),
 	}
 	if err := i.Create(tx); err != nil {
-		return appErrorFromDB(err, api.ErrorCreateFailure)
+		return 0, 0, appErrorFromDB(err, api.ErrorCreateFailure)
 	}
-	return nil
+	return policiesCreated, 1, nil
 }
 
 func parseCoveredValue(s string) (int, error) {
