@@ -1,9 +1,14 @@
 package models
 
 import (
+	"bufio"
 	"context"
+	"encoding/csv"
 	"fmt"
+	"io"
 	"net/http"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gobuffalo/nulls"
@@ -118,6 +123,10 @@ func (p *Policy) GetID() uuid.UUID {
 
 func (p *Policy) FindByID(tx *pop.Connection, id uuid.UUID) error {
 	return tx.Find(p, id)
+}
+
+func (p *Policy) FindByHouseholdID(tx *pop.Connection, householdID string) error {
+	return tx.Where("household_id = ?", householdID).First(p)
 }
 
 // IsActorAllowedTo ensure the actor is either an admin, or a member of this policy to perform any permission
@@ -669,4 +678,151 @@ func (p *Policy) CreateRenewalLedgerEntry(tx *pop.Connection, riskCategoryID uui
 	}
 
 	return nil
+}
+
+func ImportPolicies(tx *pop.Connection, file io.Reader) (api.PoliciesImportResponse, error) {
+	var response api.PoliciesImportResponse
+
+	r := csv.NewReader(bufio.NewReader(file))
+	if _, err := r.Read(); err == io.EOF {
+		err := fmt.Errorf("empty policy CSV file: %w", err)
+		return response, api.NewAppError(err, api.ErrorUnknown, api.CategoryUser)
+	}
+
+	var vehicleCategory ItemCategory
+	if err := tx.Where("name ILIKE '%vehicles%'").First(&vehicleCategory); err != nil {
+		err := fmt.Errorf("failed to find an item category for vehicles: %w", err)
+		return response, api.NewAppError(err, api.ErrorUnknown, api.CategoryInternal)
+	}
+
+	n := 0
+	for ; ; n++ {
+		csvLine, err := r.Read()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			err := fmt.Errorf("failed to read from policy CSV file on line %v: %w", n, err)
+			return response, api.NewAppError(err, api.ErrorUnknown, api.CategoryUser)
+		}
+
+		policiesCreated, itemsCreated, err := importPolicy(tx, csvLine, vehicleCategory.ID, time.Now().UTC())
+		if err != nil {
+			err := fmt.Errorf("error importing policy on CSV file line %v: %w", n, err)
+			return response, api.NewAppError(err, api.ErrorUnknown, api.CategoryUser)
+		}
+		response.PoliciesCreated += policiesCreated
+		response.ItemsCreated += itemsCreated
+	}
+
+	response.LinesProcessed = n
+	return response, nil
+}
+
+func importPolicy(tx *pop.Connection, csvLine []string, catID uuid.UUID, now time.Time) (int, int, error) {
+	const (
+		Account_Number = iota
+		Veh_Year
+		Veh_Make
+		Veh_Model
+		CoverageID
+		VehicleID
+		Veh_VIN
+		Covered_Value
+		Monthly_Charge
+		Start_Date
+		End_Date
+		Country_Code_Id
+		NameCust
+		Country_Description
+	)
+
+	if len(csvLine) < 14 {
+		return 0, 0, errors.New("line contains too few columns")
+	}
+
+	for i := range csvLine {
+		csvLine[i] = strings.TrimSpace(csvLine[i])
+	}
+
+	var p Policy
+	var policiesCreated int
+	err := p.FindByHouseholdID(tx, csvLine[Account_Number])
+	if err != nil {
+		if domain.IsOtherThanNoRows(err) {
+			return 0, 0, appErrorFromDB(err, api.ErrorQueryFailure)
+		}
+
+		p.Name = csvLine[NameCust] + " household"
+		p.Type = api.PolicyTypeHousehold
+		p.HouseholdID = nulls.NewString(csvLine[Account_Number])
+		p.EntityCodeID = householdEntityID
+		if err := p.Create(tx); err != nil {
+			return 0, 0, appErrorFromDB(err, api.ErrorCreateFailure)
+		}
+		policiesCreated++
+	}
+
+	value, err := parseCoveredValue(csvLine[Covered_Value])
+	if err != nil {
+		return 0, 0, err
+	}
+
+	startDate, err := time.Parse("1/2/2006 15:04", csvLine[Start_Date])
+	if err != nil {
+		return 0, 0, fmt.Errorf("invalid date %v: %w", csvLine[Start_Date], err)
+	}
+
+	year, err := parseVehicleYear(csvLine[Veh_Year])
+	if err != nil {
+		return 0, 0, err
+	}
+
+	i := Item{
+		Name:              fmt.Sprintf("%s %s %s", csvLine[Veh_Year], csvLine[Veh_Make], csvLine[Veh_Model]),
+		CategoryID:        catID,
+		Country:           csvLine[Country_Description],
+		PolicyID:          p.ID,
+		Make:              csvLine[Veh_Make],
+		Model:             csvLine[Veh_Model],
+		SerialNumber:      csvLine[Veh_VIN],
+		CoverageAmount:    value,
+		CoverageStatus:    api.ItemCoverageStatusApproved,
+		CoverageStartDate: startDate,
+		RiskCategoryID:    riskCategoryVehicleID,
+		Year:              nulls.NewInt(year),
+		PaidThroughDate:   domain.EndOfMonth(now),
+	}
+	if err := i.Create(tx); err != nil {
+		return 0, 0, appErrorFromDB(err, api.ErrorCreateFailure)
+	}
+	return policiesCreated, 1, nil
+}
+
+func parseCoveredValue(s string) (int, error) {
+	value, err := strconv.Atoi(s)
+	if err != nil {
+		return 0, fmt.Errorf("invalid covered value %q: %w", s, err)
+	}
+	if value < 1 || value > 100_000 {
+		return 0, fmt.Errorf("invalid covered value %d", value)
+	}
+	return value * domain.CurrencyFactor, nil
+}
+
+func parseVehicleYear(s string) (int, error) {
+	year, err := strconv.Atoi(s)
+	if err != nil {
+		return 0, fmt.Errorf("invalid vehicle year %q: %w", s, err)
+	}
+	if year < 0 || year > 2050 || (year >= 100 && year < 1913) {
+		return 0, fmt.Errorf("invalid vehicle year %d", year)
+	}
+	if year >= 50 && year <= 99 {
+		return year + 1900, nil
+	}
+	if year < 50 {
+		return year + 2000, nil
+	}
+	return year, nil
 }

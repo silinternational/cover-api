@@ -233,8 +233,10 @@ func App() *buffalo.App {
 
 		// policies
 		policiesGroup := app.Group(policiesPath)
+		policiesGroup.Middleware.Skip(AuthZ, policiesImport)
 		policiesGroup.GET("/", policiesList)
 		policiesGroup.POST("/", policiesCreateTeam)
+		policiesGroup.POST("/import", policiesImport)
 		policiesGroup.GET(idRegex, policiesView)
 		policiesGroup.GET(idRegex+"/dependents", dependentsList)
 		policiesGroup.PUT(idRegex, policiesUpdate)

@@ -806,3 +806,209 @@ func (ms *ModelSuite) TestPolicy_CreateRenewalLedgerEntry() {
 		})
 	}
 }
+
+func (ms *ModelSuite) Test_importPolicy() {
+	catID := CreateCategoryFixtures(ms.DB, 1).ItemCategories[0].ID
+	policy := CreatePolicyFixtures(ms.DB, FixturesConfig{}).Policies[0]
+
+	line1 := []string{
+		"123456", "2001", "Toyota", "Camry", "1", "2", "JT4RN56S0F0075837", "8200", "15",
+		"6/8/2018 11:49", "NULL", "US", "Smith, John  ", "United States",
+	}
+	line2 := []string{
+		policy.HouseholdID.String, "2010", "Honda", "Civic", "3", "4", "2HGES15361H903843", "4500", "10",
+		"11/11/2011 11:11", "NULL", "CA", "Jameson, Rick", "Canada",
+	}
+	twelveColumns := line1[0:12]
+
+	now := time.Now().UTC()
+
+	tests := []struct {
+		name       string
+		csvLine    []string
+		wantErr    string
+		wantPolicy Policy
+		wantItem   Item
+	}{
+		{
+			name:    "not enough columns",
+			csvLine: twelveColumns,
+			wantErr: "too few columns",
+		},
+		{
+			name:    "create policy and item",
+			csvLine: line1,
+			wantPolicy: Policy{
+				Name:        "Smith, John household",
+				HouseholdID: nulls.NewString("123456"),
+			},
+			wantItem: Item{
+				Name:              "2001 Toyota Camry",
+				Country:           "United States",
+				Make:              "Toyota",
+				Model:             "Camry",
+				SerialNumber:      "JT4RN56S0F0075837",
+				CoverageAmount:    8200 * domain.CurrencyFactor,
+				CoverageStartDate: time.Date(2018, 6, 8, 0, 0, 0, 0, time.UTC),
+				Year:              nulls.NewInt(2001),
+			},
+		},
+		{
+			name:    "create item only",
+			csvLine: line2,
+			wantItem: Item{
+				Name:              "2010 Honda Civic",
+				Country:           "Canada",
+				Make:              "Honda",
+				Model:             "Civic",
+				SerialNumber:      "2HGES15361H903843",
+				CoverageAmount:    4500 * domain.CurrencyFactor,
+				CoverageStartDate: time.Date(2011, 11, 11, 0, 0, 0, 0, time.UTC),
+				Year:              nulls.NewInt(2010),
+			},
+		},
+	}
+	for _, tt := range tests {
+		ms.T().Run(tt.name, func(t *testing.T) {
+			_, _, err := importPolicy(ms.DB, tt.csvLine, catID, now)
+			if tt.wantErr != "" {
+				ms.Error(err)
+				ms.Contains(err.Error(), tt.wantErr)
+				return
+			}
+
+			ms.NoError(err)
+
+			var p Policy
+			if tt.wantPolicy.Name == "" {
+				p = policy
+			} else {
+				ms.NoError(p.FindByHouseholdID(ms.DB, tt.wantPolicy.HouseholdID.String))
+				ms.Equal(tt.wantPolicy.Name, p.Name)
+				ms.Equal(api.PolicyTypeHousehold, p.Type)
+				ms.Equal(tt.wantPolicy.HouseholdID, p.HouseholdID)
+				ms.Equal(householdEntityID, p.EntityCodeID)
+			}
+
+			var i Item
+			ms.NoError(ms.DB.Order("created_at DESC").First(&i))
+			ms.Equal(tt.wantItem.Name, i.Name)
+			ms.Equal(catID, i.CategoryID)
+			ms.Equal(tt.wantItem.Country, i.Country)
+			ms.Equal(p.ID, i.PolicyID)
+			ms.Equal(tt.wantItem.Make, i.Make)
+			ms.Equal(tt.wantItem.Model, i.Model)
+			ms.Equal(tt.wantItem.SerialNumber, i.SerialNumber)
+			ms.Equal(tt.wantItem.CoverageAmount, i.CoverageAmount)
+			ms.Equal(api.ItemCoverageStatusApproved, i.CoverageStatus)
+			ms.Equal(tt.wantItem.CoverageStartDate, i.CoverageStartDate)
+			ms.Equal(riskCategoryVehicleID, i.RiskCategoryID)
+			ms.Equal(tt.wantItem.Year, i.Year)
+			ms.Equal(domain.EndOfMonth(now), i.PaidThroughDate)
+		})
+	}
+}
+
+func (ms *ModelSuite) Test_parseCoveredValue() {
+	tests := []struct {
+		s       string
+		want    int
+		wantErr bool
+	}{
+		{
+			s:       "",
+			wantErr: true,
+		},
+		{
+			s:       "x",
+			wantErr: true,
+		},
+		{
+			s:       "-1",
+			wantErr: true,
+		},
+		{
+			s:       "0",
+			wantErr: true,
+		},
+		{
+			s:    "1",
+			want: 100,
+		},
+		{
+			s:    "100",
+			want: 10000,
+		},
+	}
+	for _, tt := range tests {
+		ms.T().Run(tt.s, func(t *testing.T) {
+			got, err := parseCoveredValue(tt.s)
+			if tt.wantErr {
+				ms.Error(err)
+				return
+			}
+
+			ms.Equal(tt.want, got)
+		})
+	}
+}
+
+func (ms *ModelSuite) Test_parseVehicleYear() {
+	tests := []struct {
+		s       string
+		want    int
+		wantErr bool
+	}{
+		{
+			s:       "",
+			wantErr: true,
+		},
+		{
+			s:       "x",
+			wantErr: true,
+		},
+		{
+			s:       "-1",
+			wantErr: true,
+		},
+		{
+			s:       "100",
+			wantErr: true,
+		},
+		{
+			s:       "1910",
+			wantErr: true,
+		},
+		{
+			s:       "2051",
+			wantErr: true,
+		},
+		{
+			s:    "50",
+			want: 1950,
+		},
+		{
+			s:    "99",
+			want: 1999,
+		},
+		{
+			s:    "0",
+			want: 2000,
+		},
+		{
+			s:    "49",
+			want: 2049,
+		},
+	}
+	for _, tt := range tests {
+		ms.T().Run(tt.s, func(t *testing.T) {
+			got, err := parseVehicleYear(tt.s)
+			if tt.wantErr {
+				ms.Error(err)
+				return
+			}
+
+			ms.Equal(tt.want, got)
+		})
+	}
+}
