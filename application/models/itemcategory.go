@@ -35,6 +35,8 @@ type ItemCategory struct {
 	HelpText         string                 `db:"help_text"`
 	Status           api.ItemCategoryStatus `db:"status" validate:"itemCategoryStatus"`
 	AutoApproveMax   int                    `db:"auto_approve_max" validate:"min=0"`
+	MinimumPremium   int                    `db:"minimum_premium" validate:"min=0"`
+	MinimumCoverage  int                    `db:"minimum_coverage" validate:"min=0"`
 	RequireMakeModel bool                   `db:"require_make_model"`
 	PremiumFactor    nulls.Float64          `db:"premium_factor"`
 	BillingPeriod    int                    `db:"billing_period"`

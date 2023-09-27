@@ -554,7 +554,7 @@ func isItemActionAllowed(actorIsAdmin bool, oldStatus api.ItemCoverageStatus, pe
 func (i *Item) SubmitForApproval(ctx context.Context) error {
 	tx := Tx(ctx)
 
-	minimumCoverageAmount := i.calculateMinimumCoverage(tx)
+	minimumCoverageAmount := i.getMinimumCoverage(tx)
 
 	if i.CoverageAmount < minimumCoverageAmount {
 		err := fmt.Errorf("coverage_amount must be at least %s", api.Currency(minimumCoverageAmount).String())
@@ -582,10 +582,9 @@ func (i *Item) SubmitForApproval(ctx context.Context) error {
 	return nil
 }
 
-func (i *Item) calculateMinimumCoverage(tx *pop.Connection) int {
+func (i *Item) getMinimumCoverage(tx *pop.Connection) int {
 	i.LoadCategory(tx, false)
-	billingPeriod := i.Category.GetBillingPeriod()
-	return int(math.Round(0.5 / i.Category.PremiumFactor.Float64 / 12 * float64(billingPeriod)))
+	return i.Category.MinimumCoverage
 }
 
 // Checks whether the item has a category that expects the make and model fields
@@ -911,15 +910,19 @@ func (i *Item) CalculateBillingPremium(tx *pop.Connection) api.Currency {
 }
 
 // CalculateAnnualPremium returns the rounded product of the item's CoverageAmount and the category's
-// PremiumFactor
+// PremiumFactor, with the category's minimum premium applied
 func (i *Item) CalculateAnnualPremium(tx *pop.Connection) api.Currency {
 	i.LoadCategory(tx, false)
 	factor := domain.Env.PremiumFactor
 	if i.Category.PremiumFactor.Valid {
 		factor = i.Category.PremiumFactor.Float64
 	}
-	premium := api.Currency(math.Round(float64(i.CoverageAmount) * factor))
-	return premium
+	premium := int(math.Round(float64(i.CoverageAmount) * factor))
+
+	if premium < i.Category.MinimumPremium {
+		premium = i.Category.MinimumPremium
+	}
+	return api.Currency(premium)
 }
 
 func (i *Item) CalculateProratedPremium(tx *pop.Connection, t time.Time) api.Currency {
@@ -928,16 +931,19 @@ func (i *Item) CalculateProratedPremium(tx *pop.Connection, t time.Time) api.Cur
 }
 
 // CalculateMonthlyPremium returns the rounded product of the item's CoverageAmount and the category's
-// PremiumFactor divided by BillingPeriodAnnual
+// PremiumFactor divided by BillingPeriodAnnual, with the category's minimum premium applied
 func (i *Item) CalculateMonthlyPremium(tx *pop.Connection) api.Currency {
 	i.LoadCategory(tx, false)
+	factor := domain.Env.PremiumFactor
 	if i.Category.PremiumFactor.Valid {
-		premium := api.Currency(math.Round(float64(i.CoverageAmount) * i.Category.PremiumFactor.Float64 / 12))
-		return premium
-	} else {
-		premium := api.Currency(math.Round(float64(i.CoverageAmount) * domain.Env.PremiumFactor / 12))
-		return premium
+		factor = i.Category.PremiumFactor.Float64
 	}
+	premium := int(math.Round(float64(i.CoverageAmount) * factor))
+
+	if premium < i.Category.MinimumPremium {
+		premium = i.Category.MinimumPremium
+	}
+	return api.Currency(premium / 12)
 }
 
 // True if coverage on the item started in a previous year and the current
