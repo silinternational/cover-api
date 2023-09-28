@@ -1311,7 +1311,7 @@ func (ms *ModelSuite) TestClaim_UpdateByUser() {
 	}
 }
 
-func (ms *ModelSuite) TestClaim_Deductible() {
+func (ms *ModelSuite) TestClaim_GetDeductibleRate() {
 	t := ms.T()
 
 	domain.Env.Deductible = .05
@@ -1381,7 +1381,7 @@ func (ms *ModelSuite) TestClaim_Deductible() {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := tt.claim.Deductible(ms.DB)
+			got := tt.claim.GetDeductibleRate(ms.DB)
 
 			ms.Equal(tt.want, got, "incorrect results")
 		})

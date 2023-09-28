@@ -83,7 +83,7 @@ func ClaimPreapprovedQueueMessage(tx *pop.Connection, claim models.Claim) {
 	claimItem.LoadItem(tx, false)
 
 	data["estimate"] = "$-"
-	data["deductible"] = domain.PercentString(claim.Deductible(tx))
+	data["deductible"] = domain.PercentString(claim.GetDeductibleRate(tx))
 	data["repairThreshold"] = domain.Env.RepairThresholdString
 
 	switch claimItem.PayoutOption {
@@ -127,7 +127,7 @@ func ClaimReceiptQueueMessage(tx *pop.Connection, claim models.Claim) {
 	data.addClaimData(tx, claim)
 
 	data["estimate"] = "$-"
-	data["deductible"] = domain.PercentString(claim.Deductible(tx))
+	data["deductible"] = domain.PercentString(claim.GetDeductibleRate(tx))
 
 	switch claimItem.PayoutOption {
 	case api.PayoutOptionRepair:

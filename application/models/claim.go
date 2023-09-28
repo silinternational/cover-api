@@ -1011,7 +1011,7 @@ func (c *Claim) calculatePayout(ctx context.Context) error {
 	return nil
 }
 
-func (c *Claim) Deductible(tx *pop.Connection) float64 {
+func (c *Claim) GetDeductibleRate(tx *pop.Connection) float64 {
 	cutOff := c.IncidentDate
 	if c.IncidentDate.IsZero() {
 		cutOff = c.CreatedAt
