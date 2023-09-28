@@ -256,7 +256,7 @@ func readEnv() *EnvStruct {
 	env.DependentAutoApproveMax *= CurrencyFactor
 	env.PremiumMinimum *= CurrencyFactor
 	env.RepairThresholdString = fmt.Sprintf("%.2g%%", env.RepairThreshold*100)
-	env.DeductibleString = fmt.Sprintf("%.2g%%", env.Deductible*100)
+	env.DeductibleMinimumString = fmt.Sprintf("%.2g%%", env.Deductible*100)
 
 	//  Set an arbitrary but reasonable minimum lifetime for policy strikes
 	if env.StrikeLifetimeMonths < 2 {
