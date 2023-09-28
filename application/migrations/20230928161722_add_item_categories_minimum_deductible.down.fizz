@@ -1,0 +1,1 @@
+drop_column("item_categories", "minimum_deductible")

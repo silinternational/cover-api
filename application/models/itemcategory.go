@@ -28,21 +28,22 @@ type ItemCategories []ItemCategory
 
 // ItemCategory model
 type ItemCategory struct {
-	ID               uuid.UUID              `db:"id"`
-	Key              string                 `db:"key"`
-	RiskCategoryID   uuid.UUID              `db:"risk_category_id"`
-	Name             string                 `db:"name" validate:"required"`
-	HelpText         string                 `db:"help_text"`
-	Status           api.ItemCategoryStatus `db:"status" validate:"itemCategoryStatus"`
-	AutoApproveMax   int                    `db:"auto_approve_max" validate:"min=0"`
-	MinimumPremium   int                    `db:"minimum_premium" validate:"min=0"`
-	MinimumCoverage  int                    `db:"minimum_coverage" validate:"min=0"`
-	RequireMakeModel bool                   `db:"require_make_model"`
-	PremiumFactor    nulls.Float64          `db:"premium_factor"`
-	BillingPeriod    int                    `db:"billing_period"`
-	LegacyID         nulls.Int              `db:"legacy_id"`
-	CreatedAt        time.Time              `db:"created_at"`
-	UpdatedAt        time.Time              `db:"updated_at"`
+	ID                uuid.UUID              `db:"id"`
+	Key               string                 `db:"key"`
+	RiskCategoryID    uuid.UUID              `db:"risk_category_id"`
+	Name              string                 `db:"name" validate:"required"`
+	HelpText          string                 `db:"help_text"`
+	Status            api.ItemCategoryStatus `db:"status" validate:"itemCategoryStatus"`
+	AutoApproveMax    int                    `db:"auto_approve_max" validate:"min=0"`
+	MinimumPremium    int                    `db:"minimum_premium" validate:"min=0"`
+	MinimumCoverage   int                    `db:"minimum_coverage" validate:"min=0"`
+	MinimumDeductible int                    `db:"minimum_deductible" validate:"min=0"`
+	RequireMakeModel  bool                   `db:"require_make_model"`
+	PremiumFactor     nulls.Float64          `db:"premium_factor"`
+	BillingPeriod     int                    `db:"billing_period"`
+	LegacyID          nulls.Int              `db:"legacy_id"`
+	CreatedAt         time.Time              `db:"created_at"`
+	UpdatedAt         time.Time              `db:"updated_at"`
 
 	RiskCategory RiskCategory `belongs_to:"risk_categories" fk_id:"RiskCategoryID" validate:"-"`
 }

@@ -429,7 +429,7 @@ func (c *ClaimItem) updatePayoutAmount(ctx context.Context) error {
 	c.LoadItem(tx, false)
 	c.LoadClaim(tx, false)
 
-	coverageAmount := c.Item.CoverageAmount
+	coverageAmount := float64(c.Item.CoverageAmount)
 
 	deductibleRate := c.Claim.GetDeductibleRate(tx)
 	maxValue := 0.0
@@ -449,10 +449,20 @@ func (c *ClaimItem) updatePayoutAmount(ctx context.Context) error {
 		maxValue = float64(c.FMV)
 	case api.PayoutOptionFixedFraction:
 		deductibleRate = domain.Env.EvacuationDeductible
-		maxValue = float64(coverageAmount)
+		maxValue = coverageAmount
 	}
 
-	payout := api.Currency(math.Round(math.Min(maxValue, float64(coverageAmount)) * (1.0 - deductibleRate)))
+	coverageAmount = math.Min(maxValue, coverageAmount)
+	deductibleAmount := math.Round(coverageAmount * deductibleRate)
+
+	c.LoadItem(tx, false)
+	c.Item.LoadCategory(tx, false)
+	minDeductibleAmount := float64(c.Item.Category.MinimumDeductible)
+	if deductibleAmount < minDeductibleAmount {
+		deductibleAmount = minDeductibleAmount
+	}
+
+	payout := api.Currency(math.Max(0, math.Round(coverageAmount-deductibleAmount)))
 	if c.PayoutAmount == payout {
 		return nil
 	}
