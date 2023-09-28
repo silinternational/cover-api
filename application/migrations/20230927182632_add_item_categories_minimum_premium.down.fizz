@@ -1,0 +1,2 @@
+drop_column("item_categories", "minimum_premium")
+drop_column("item_categories", "minimum_coverage")

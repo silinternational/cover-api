@@ -519,44 +519,6 @@ func (ms *ModelSuite) TestItem_SubmitForApproval() {
 	}
 }
 
-func (ms *ModelSuite) TestItem_calculateMinimumCoverage() {
-	f := CreateItemFixtures(ms.DB, FixturesConfig{ItemsPerPolicy: 2})
-
-	annual := f.Items[0]
-
-	monthly := f.Items[1]
-	monthly.CoverageAmount = 10000
-	Must(ms.DB.Update(&monthly))
-	f.ItemCategories[1].PremiumFactor = nulls.NewFloat64(0.03)
-	f.ItemCategories[1].BillingPeriod = domain.BillingPeriodMonthly
-	f.ItemCategories[1].RiskCategoryID = riskCategoryVehicleID
-	Must(ms.DB.Update(&f.ItemCategories[1]))
-
-	tests := []struct {
-		name string
-		item Item
-		want int
-	}{
-		{
-			name: "monthly",
-			item: monthly,
-			want: 1,
-		},
-		{
-			name: "annual",
-			item: annual,
-			want: 25,
-		},
-	}
-	for _, tt := range tests {
-		ms.T().Run(tt.name, func(t *testing.T) {
-			if got := tt.item.calculateMinimumCoverage(ms.DB); got != tt.want {
-				t.Errorf("calculateMinimumCoverage() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
 func (ms *ModelSuite) TestItem_SafeDeleteOrInactivate() {
 	t := ms.T()
 
