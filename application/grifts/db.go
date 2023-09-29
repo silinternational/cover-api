@@ -315,7 +315,7 @@ VALUES
 	'Enabled',	300000, true, 0.02, 12,	'2021-08-27 19:46:28',	'2021-08-27 19:46:28',	9, 'travel'),
 ('0619a0ba-785e-428d-858c-96d3bd56929a',	'dce80e61-74f9-42f0-9cbd-d3eebe4a1ccc',
 	'Cars and heavy vehicles',	'Coverage for cars and heavy vehicles does not include liability and is not intended to fulfill local regulations or compete with local insurance offerings.',
-	'Enabled',	8000000, true, 0.025, 1,	'2021-08-27 19:46:28',	'2021-08-27 19:46:28',	NULL, 'cars');
+	'Enabled',	8000000, true, 0.03, 6000,	'2021-08-27 19:46:28',	'2021-08-27 19:46:28',	NULL, 'cars');
 `
 	if err := tx.RawQuery(itemCategoriesSql).Exec(); err != nil {
 		panic("error loading item categories, " + err.Error())
