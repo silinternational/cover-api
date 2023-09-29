@@ -93,6 +93,7 @@ func App() *buffalo.App {
 	if app == nil {
 		domain.Init()
 		auth.Init()
+		models.PatchItemCategories()
 
 		app = buffalo.New(buffalo.Options{
 			Env:    domain.Env.GoEnv,
