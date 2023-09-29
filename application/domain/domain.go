@@ -191,8 +191,8 @@ type EnvStruct struct {
 	PremiumFactor         float64 `default:"0.02" split_words:"true"`
 	RepairThreshold       float64 `default:"0.7" split_words:"true"`
 	RepairThresholdString string  `ignored:"true"`
-	Deductible            float64 `default:"0.05"`
-	DeductibleString      string  `ignored:"true"`
+	DeductibleRate        float64 `envconfig:"deductible" default:"0.05"`
+	DeductibleRateString  string  `ignored:"true"`
 	DeductibleIncrease    float64 `default:"0.2"` // Additional deductible per strike
 	DeductibleMaximum     float64 `default:"0.45"`
 	EvacuationDeductible  float64 `default:"0.333333333" split_words:"true"`
@@ -256,7 +256,7 @@ func readEnv() *EnvStruct {
 	env.DependentAutoApproveMax *= CurrencyFactor
 	env.PremiumMinimum *= CurrencyFactor
 	env.RepairThresholdString = PercentString(env.RepairThreshold)
-	env.DeductibleString = PercentString(env.Deductible)
+	env.DeductibleRateString = PercentString(env.DeductibleRate)
 
 	//  Set an arbitrary but reasonable minimum lifetime for policy strikes
 	if env.StrikeLifetimeMonths < 2 {

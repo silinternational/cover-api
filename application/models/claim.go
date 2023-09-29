@@ -1023,12 +1023,12 @@ func (c *Claim) GetDeductibleRate(tx *pop.Connection) float64 {
 
 	if domain.IsOtherThanNoRows(err) {
 		log.Errorf("error retrieving recent strikes for claim %s: %s", c.ID.String(), err)
-		return domain.Env.Deductible
+		return domain.Env.DeductibleRate
 	}
 
 	extra := domain.Env.DeductibleIncrease * float64(len(strikes))
 
-	d := domain.Env.Deductible + extra
+	d := domain.Env.DeductibleRate + extra
 	if d >= domain.Env.DeductibleMaximum {
 		return domain.Env.DeductibleMaximum
 	}
