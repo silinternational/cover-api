@@ -458,9 +458,7 @@ func (c *ClaimItem) updatePayoutAmount(ctx context.Context) error {
 	c.LoadItem(tx, false)
 	c.Item.LoadCategory(tx, false)
 	minDeductibleAmount := float64(c.Item.Category.MinimumDeductible)
-	if deductibleAmount < minDeductibleAmount {
-		deductibleAmount = minDeductibleAmount
-	}
+	deductibleAmount = math.Max(deductibleAmount, minDeductibleAmount)
 
 	payout := api.Currency(math.Max(0, math.Round(coverageAmount-deductibleAmount)))
 	if c.PayoutAmount == payout {
