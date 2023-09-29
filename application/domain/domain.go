@@ -188,16 +188,16 @@ type EnvStruct struct {
 	PremiumMinimum          int `default:"25" split_words:"true"`
 
 	// PremiumFactor is multiplied by CoverageAmount to calculate the annual premium of an item
-	PremiumFactor           float64 `default:"0.02" split_words:"true"`
-	RepairThreshold         float64 `default:"0.7" split_words:"true"`
-	RepairThresholdString   string  `ignored:"true"`
-	Deductible              float64 `default:"0.05"`
-	DeductibleMinimumString string  `ignored:"true"`
-	DeductibleIncrease      float64 `default:"0.2"` // Additional deductible per strike
-	DeductibleMaximum       float64 `default:"0.45"`
-	EvacuationDeductible    float64 `default:"0.333333333" split_words:"true"`
-	StrikeLifetimeMonths    int     `default:"24" split_words:"true"`
-	VehiclePremiumFactor    float64 `default:"0.02" split_words:"true"` // TODO use actual rate
+	PremiumFactor         float64 `default:"0.02" split_words:"true"`
+	RepairThreshold       float64 `default:"0.7" split_words:"true"`
+	RepairThresholdString string  `ignored:"true"`
+	DeductibleRate        float64 `envconfig:"deductible" default:"0.05"`
+	DeductibleRateString  string  `ignored:"true"`
+	DeductibleIncrease    float64 `default:"0.2"` // Additional deductible per strike
+	DeductibleMaximum     float64 `default:"0.45"`
+	EvacuationDeductible  float64 `default:"0.333333333" split_words:"true"`
+	StrikeLifetimeMonths  int     `default:"24" split_words:"true"`
+	VehiclePremiumFactor  float64 `default:"0.02" split_words:"true"` // TODO use actual rate
 
 	FiscalStartMonth   int    `default:"1" split_words:"true"`
 	ExpenseAccount     string `required:"true" split_words:"true"`
@@ -255,8 +255,8 @@ func readEnv() *EnvStruct {
 	env.PolicyMaxCoverage *= CurrencyFactor
 	env.DependentAutoApproveMax *= CurrencyFactor
 	env.PremiumMinimum *= CurrencyFactor
-	env.RepairThresholdString = fmt.Sprintf("%.2g%%", env.RepairThreshold*100)
-	env.DeductibleMinimumString = fmt.Sprintf("%.2g%%", env.Deductible*100)
+	env.RepairThresholdString = PercentString(env.RepairThreshold)
+	env.DeductibleRateString = PercentString(env.DeductibleRate)
 
 	//  Set an arbitrary but reasonable minimum lifetime for policy strikes
 	if env.StrikeLifetimeMonths < 2 {

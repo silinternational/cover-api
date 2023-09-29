@@ -1311,10 +1311,10 @@ func (ms *ModelSuite) TestClaim_UpdateByUser() {
 	}
 }
 
-func (ms *ModelSuite) TestClaim_Deductible() {
+func (ms *ModelSuite) TestClaim_GetDeductibleRate() {
 	t := ms.T()
 
-	domain.Env.Deductible = .05
+	domain.Env.DeductibleRate = .05
 	domain.Env.DeductibleMaximum = .45
 	domain.Env.DeductibleIncrease = .2
 
@@ -1355,33 +1355,33 @@ func (ms *ModelSuite) TestClaim_Deductible() {
 		{
 			name:  "no strikes",
 			claim: policyNoStrikes.Claims[0],
-			want:  domain.Env.Deductible,
+			want:  domain.Env.DeductibleRate,
 		},
 		{
 			name:  "has one strike",
 			claim: policyOneStrike.Claims[0],
-			want:  domain.Env.Deductible + domain.Env.DeductibleIncrease,
+			want:  domain.Env.DeductibleRate + domain.Env.DeductibleIncrease,
 		},
 		{
 			name:  "has two strikes",
 			claim: policyTwoStrikes.Claims[0],
-			want:  domain.Env.Deductible + 2.0*domain.Env.DeductibleIncrease,
+			want:  domain.Env.DeductibleRate + 2.0*domain.Env.DeductibleIncrease,
 		},
 		{
 			name:  "has three strikes",
 			claim: policyThreeStrikes.Claims[0],
-			want:  domain.Env.Deductible + 2.0*domain.Env.DeductibleIncrease,
+			want:  domain.Env.DeductibleRate + 2.0*domain.Env.DeductibleIncrease,
 		},
 		{
 			name:  "has one strike plus an old one",
 			claim: policyHasOldStrikePlusOne.Claims[0],
-			want:  domain.Env.Deductible + domain.Env.DeductibleIncrease,
+			want:  domain.Env.DeductibleRate + domain.Env.DeductibleIncrease,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := tt.claim.Deductible(ms.DB)
+			got := tt.claim.GetDeductibleRate(ms.DB)
 
 			ms.Equal(tt.want, got, "incorrect results")
 		})

@@ -60,4 +60,7 @@ type ItemCategory struct {
 
 	// the premium factor for this category
 	PremiumFactor string `json:"premium_factor"`
+
+	// the minimum deductible amount (in units of 0.01 USD)
+	MinimumDeductible int `json:"minimum_deductible"`
 }

@@ -63,7 +63,7 @@ func newEmailMessageData() MessageData {
 
 	m["uiURL"] = domain.Env.UIURL
 	m["appName"] = domain.Env.AppName
-	m["premiumPercentage"] = fmt.Sprintf("%.2g%%", domain.Env.PremiumFactor*100)
+	m["premiumPercentage"] = domain.PercentString(domain.Env.PremiumFactor)
 	m["supportEmail"] = domain.Env.SupportEmail
 	m["supportURL"] = domain.Env.SupportURL
 	m["faqURL"] = domain.Env.FaqURL
@@ -89,8 +89,11 @@ func (m MessageData) addClaimData(tx *pop.Connection, claim models.Claim) {
 	item := claim.ClaimItems[0].Item
 	m.addItemData(tx, item)
 
+	item.LoadCategory(tx, false)
+	m["payoutOptionDescription"] = api.GetPayoutOptionDescription(claim.ClaimItems[0].PayoutOption,
+		api.Currency(item.Category.MinimumDeductible), claim.GetDeductibleRate(tx))
+
 	m["payoutOption"] = string(claim.ClaimItems[0].PayoutOption)
-	m["payoutOptionDescription"] = api.PayoutOptionDescriptions[claim.ClaimItems[0].PayoutOption]
 	m["payoutOptionLower"] = strings.ToLower(string(claim.ClaimItems[0].PayoutOption))
 	m["totalPayout"] = "$" + claim.TotalPayout.String()
 	m["submitted"] = domain.TimeBetween(time.Now().UTC(), claim.SubmittedAt(tx))

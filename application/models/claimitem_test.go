@@ -320,9 +320,11 @@ func (ms *ModelSuite) TestClaimItem_updatePayoutAmount() {
 		{PayoutOption: api.PayoutOptionRepair, FMV: 1500, RepairEstimate: 1000},
 		{PayoutOption: api.PayoutOptionRepair, FMV: 1000, RepairActual: 500},
 		{PayoutOption: api.PayoutOptionRepair, FMV: 900, RepairEstimate: 800},
+		{PayoutOption: api.PayoutOptionReplacement, FMV: 900, ReplaceEstimate: 900},
 	}
 
-	fixtures := CreateItemFixtures(ms.DB, FixturesConfig{ClaimsPerPolicy: len(params), ClaimItemsPerClaim: 1})
+	config := FixturesConfig{NumberOfPolicies: len(params), ClaimsPerPolicy: 1, ClaimItemsPerClaim: 1}
+	fixtures := CreateItemFixtures(ms.DB, config)
 
 	for i, p := range params {
 		UpdateClaimItems(ms.DB, fixtures.Claims[i], p)
@@ -335,6 +337,9 @@ func (ms *ModelSuite) TestClaimItem_updatePayoutAmount() {
 	ms.NoError(ms.DB.Update(&fixtures.Claims[3]))
 
 	fixtures.Claims[5] = UpdateClaimStatus(ms.DB, fixtures.Claims[5], api.ClaimStatusReview3, "")
+
+	fixtures.ItemCategories[7].MinimumDeductible = 500
+	Must(ms.DB.Update(&fixtures.ItemCategories[7]))
 
 	testCtx := CreateTestContext(fixtures.Users[0])
 
@@ -376,7 +381,12 @@ func (ms *ModelSuite) TestClaimItem_updatePayoutAmount() {
 		{
 			name:      "capped by FMV",
 			claimItem: fixtures.Claims[6].ClaimItems[0],
-			want:      599,
+			want:      598,
+		},
+		{
+			name:      "minimum deductible",
+			claimItem: fixtures.Claims[7].ClaimItems[0],
+			want:      400,
 		},
 	}
 	for _, tt := range tests {

@@ -28,21 +28,22 @@ type ItemCategories []ItemCategory
 
 // ItemCategory model
 type ItemCategory struct {
-	ID               uuid.UUID              `db:"id"`
-	Key              string                 `db:"key"`
-	RiskCategoryID   uuid.UUID              `db:"risk_category_id"`
-	Name             string                 `db:"name" validate:"required"`
-	HelpText         string                 `db:"help_text"`
-	Status           api.ItemCategoryStatus `db:"status" validate:"itemCategoryStatus"`
-	AutoApproveMax   int                    `db:"auto_approve_max" validate:"min=0"`
-	MinimumPremium   int                    `db:"minimum_premium" validate:"min=0"`
-	MinimumCoverage  int                    `db:"minimum_coverage" validate:"min=0"`
-	RequireMakeModel bool                   `db:"require_make_model"`
-	PremiumFactor    nulls.Float64          `db:"premium_factor"`
-	BillingPeriod    int                    `db:"billing_period"`
-	LegacyID         nulls.Int              `db:"legacy_id"`
-	CreatedAt        time.Time              `db:"created_at"`
-	UpdatedAt        time.Time              `db:"updated_at"`
+	ID                uuid.UUID              `db:"id"`
+	Key               string                 `db:"key"`
+	RiskCategoryID    uuid.UUID              `db:"risk_category_id"`
+	Name              string                 `db:"name" validate:"required"`
+	HelpText          string                 `db:"help_text"`
+	Status            api.ItemCategoryStatus `db:"status" validate:"itemCategoryStatus"`
+	AutoApproveMax    int                    `db:"auto_approve_max" validate:"min=0"`
+	MinimumPremium    int                    `db:"minimum_premium" validate:"min=0"`
+	MinimumCoverage   int                    `db:"minimum_coverage" validate:"min=0"`
+	MinimumDeductible int                    `db:"minimum_deductible" validate:"min=0"`
+	RequireMakeModel  bool                   `db:"require_make_model"`
+	PremiumFactor     nulls.Float64          `db:"premium_factor"`
+	BillingPeriod     int                    `db:"billing_period"`
+	LegacyID          nulls.Int              `db:"legacy_id"`
+	CreatedAt         time.Time              `db:"created_at"`
+	UpdatedAt         time.Time              `db:"updated_at"`
 
 	RiskCategory RiskCategory `belongs_to:"risk_categories" fk_id:"RiskCategoryID" validate:"-"`
 }
@@ -78,16 +79,17 @@ func (i *ItemCategory) FindByID(tx *pop.Connection, id uuid.UUID) error {
 func (i *ItemCategory) ConvertToAPI(tx *pop.Connection) api.ItemCategory {
 	i.LoadRiskCategory(tx)
 	return api.ItemCategory{
-		ID:               i.ID,
-		Key:              i.Key,
-		Name:             i.Name,
-		HelpText:         i.HelpText,
-		RiskCategory:     i.RiskCategory.ConvertToAPI(),
-		RequireMakeModel: i.RequireMakeModel,
-		BillingPeriod:    i.GetBillingPeriod(),
-		PremiumFactor:    domain.PercentString(i.PremiumFactor.Float64),
-		CreatedAt:        i.CreatedAt,
-		UpdatedAt:        i.UpdatedAt,
+		ID:                i.ID,
+		Key:               i.Key,
+		Name:              i.Name,
+		HelpText:          i.HelpText,
+		RiskCategory:      i.RiskCategory.ConvertToAPI(),
+		RequireMakeModel:  i.RequireMakeModel,
+		BillingPeriod:     i.GetBillingPeriod(),
+		PremiumFactor:     domain.PercentString(i.PremiumFactor.Float64),
+		MinimumDeductible: i.MinimumDeductible,
+		CreatedAt:         i.CreatedAt,
+		UpdatedAt:         i.UpdatedAt,
 	}
 }
 

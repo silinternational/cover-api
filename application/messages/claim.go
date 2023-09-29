@@ -11,8 +11,8 @@ import (
 	"github.com/silinternational/cover-api/models"
 )
 
-// ClaimReview1QueueMessage queues messages to the stewards to
-//  notify them that a claim has been submitted for preapproval
+// ClaimReview1QueueMessage queues messages to the stewards to notify them that a claim has been submitted for
+// preapproval
 func ClaimReview1QueueMessage(tx *pop.Connection, claim models.Claim) {
 	claim.LoadPolicyMembers(tx, false)
 	memberName := claim.Policy.Members[0].Name()
@@ -39,8 +39,8 @@ func ClaimReview1QueueMessage(tx *pop.Connection, claim models.Claim) {
 	notn.CreateNotificationUsersForStewards(tx)
 }
 
-// ClaimRevisionQueueMessage queues messages to the claim's members to
-//  notify them that revisions are required on their claim
+// ClaimRevisionQueueMessage queues messages to the claim's members to notify them that revisions are required on their
+// claim
 func ClaimRevisionQueueMessage(tx *pop.Connection, claim models.Claim) {
 	claim.LoadPolicyMembers(tx, false)
 
@@ -64,8 +64,8 @@ func ClaimRevisionQueueMessage(tx *pop.Connection, claim models.Claim) {
 	}
 }
 
-// ClaimPreapprovedQueueMessage queues messages to the claim's members to
-//  notify them that their claim has been preapproved and requires receipts
+// ClaimPreapprovedQueueMessage queues messages to the claim's members to notify them that their claim has been
+// preapproved and requires receipts
 func ClaimPreapprovedQueueMessage(tx *pop.Connection, claim models.Claim) {
 	claim.LoadPolicyMembers(tx, false)
 
@@ -83,7 +83,7 @@ func ClaimPreapprovedQueueMessage(tx *pop.Connection, claim models.Claim) {
 	claimItem.LoadItem(tx, false)
 
 	data["estimate"] = "$-"
-	data["deductible"] = domain.PercentString(claim.Deductible(tx))
+	data["deductible"] = domain.PercentString(claim.GetDeductibleRate(tx))
 	data["repairThreshold"] = domain.Env.RepairThresholdString
 
 	switch claimItem.PayoutOption {
@@ -111,7 +111,7 @@ func ClaimPreapprovedQueueMessage(tx *pop.Connection, claim models.Claim) {
 }
 
 // ClaimReceiptQueueMessage queues messages to the claim's members to
-//  notify them that their claim requires receipts (again)
+// notify them that their claim requires receipts (again)
 func ClaimReceiptQueueMessage(tx *pop.Connection, claim models.Claim) {
 	claim.LoadPolicyMembers(tx, false)
 	claim.LoadClaimItems(tx, false)
@@ -127,7 +127,7 @@ func ClaimReceiptQueueMessage(tx *pop.Connection, claim models.Claim) {
 	data.addClaimData(tx, claim)
 
 	data["estimate"] = "$-"
-	data["deductible"] = domain.PercentString(claim.Deductible(tx))
+	data["deductible"] = domain.PercentString(claim.GetDeductibleRate(tx))
 
 	switch claimItem.PayoutOption {
 	case api.PayoutOptionRepair:
@@ -155,7 +155,7 @@ func ClaimReceiptQueueMessage(tx *pop.Connection, claim models.Claim) {
 }
 
 // ClaimReview2QueueMessage queues messages to the stewards to
-//  notify them that a claim has been submitted to Review2 status
+// notify them that a claim has been submitted to Review2 status
 func ClaimReview2QueueMessage(tx *pop.Connection, claim models.Claim) {
 	claim.LoadPolicyMembers(tx, false)
 	memberName := claim.Policy.Members[0].Name()
@@ -182,7 +182,7 @@ func ClaimReview2QueueMessage(tx *pop.Connection, claim models.Claim) {
 }
 
 // ClaimReview3QueueMessage queues messages to the signators to
-//  notify them that a claim has been submitted to Review3 status
+// notify them that a claim has been submitted to Review3 status
 func ClaimReview3QueueMessage(tx *pop.Connection, claim models.Claim) {
 	claim.LoadPolicyMembers(tx, false)
 	memberName := claim.Policy.Members[0].Name()
@@ -211,8 +211,7 @@ func ClaimReview3QueueMessage(tx *pop.Connection, claim models.Claim) {
 	notn.CreateNotificationUsersForSignators(tx)
 }
 
-// ClaimApprovedQueueMessage queues messages to a claim's members to
-//  notify them that it has been approved
+// ClaimApprovedQueueMessage queues messages to a claim's members to notify them that it has been approved
 func ClaimApprovedQueueMessage(tx *pop.Connection, claim models.Claim) {
 	claim.LoadPolicyMembers(tx, false)
 
@@ -236,8 +235,7 @@ func ClaimApprovedQueueMessage(tx *pop.Connection, claim models.Claim) {
 	}
 }
 
-// ClaimDeniedQueueMessage queues messages to a claim's members to
-//  notify them that it has been denied
+// ClaimDeniedQueueMessage queues messages to a claim's members to notify them that it has been denied
 func ClaimDeniedQueueMessage(tx *pop.Connection, claim models.Claim) {
 	claim.LoadPolicyMembers(tx, false)
 
