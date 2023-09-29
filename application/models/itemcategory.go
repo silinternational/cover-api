@@ -79,16 +79,17 @@ func (i *ItemCategory) FindByID(tx *pop.Connection, id uuid.UUID) error {
 func (i *ItemCategory) ConvertToAPI(tx *pop.Connection) api.ItemCategory {
 	i.LoadRiskCategory(tx)
 	return api.ItemCategory{
-		ID:               i.ID,
-		Key:              i.Key,
-		Name:             i.Name,
-		HelpText:         i.HelpText,
-		RiskCategory:     i.RiskCategory.ConvertToAPI(),
-		RequireMakeModel: i.RequireMakeModel,
-		BillingPeriod:    i.GetBillingPeriod(),
-		PremiumFactor:    domain.PercentString(i.PremiumFactor.Float64),
-		CreatedAt:        i.CreatedAt,
-		UpdatedAt:        i.UpdatedAt,
+		ID:                i.ID,
+		Key:               i.Key,
+		Name:              i.Name,
+		HelpText:          i.HelpText,
+		RiskCategory:      i.RiskCategory.ConvertToAPI(),
+		RequireMakeModel:  i.RequireMakeModel,
+		BillingPeriod:     i.GetBillingPeriod(),
+		PremiumFactor:     domain.PercentString(i.PremiumFactor.Float64),
+		MinimumDeductible: i.MinimumDeductible,
+		CreatedAt:         i.CreatedAt,
+		UpdatedAt:         i.UpdatedAt,
 	}
 }
 
