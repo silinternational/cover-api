@@ -15,7 +15,6 @@ import (
 	"github.com/gobuffalo/buffalo"
 	mwi18n "github.com/gobuffalo/mw-i18n/v2"
 	"github.com/gofrs/uuid"
-	ssmconfig "github.com/ianlopshire/go-ssm-config"
 	"github.com/kelseyhightower/envconfig"
 
 	"github.com/silinternational/cover-api/log"
@@ -214,12 +213,10 @@ type EnvStruct struct {
 	UserWelcomeEmailPreviewText string `default:"" split_words:"true"`
 	UserWelcomeEmailEnding      string `default:"" split_words:"true"`
 
-	SandboxEmailAddress string `ssm:"sandbox_email_address" default:"" split_words:"true"`
+	SandboxEmailAddress string `default:"" split_words:"true"`
 }
 
 func Init() {
-	loadConfigFromSSM()
-
 	AuthCallbackURL = Env.ApiBaseURL + "/auth/callback"
 
 	LogoutRedirectURL = Env.UIURL + "/logged-out"
@@ -231,14 +228,6 @@ func Init() {
 		log.UsePretty(Env.GoEnv == EnvDevelopment),
 		log.UseRemote(Env.GoEnv != EnvTest),
 	)
-}
-
-func loadConfigFromSSM() {
-	path := "/cover/" + Env.GoEnv
-
-	if err := ssmconfig.Process(path, &Env); err != nil {
-		log.Errorf("error loading config from AWS SSM Parameter Store: %s", err)
-	}
 }
 
 // readEnv loads environment data into `Env`
