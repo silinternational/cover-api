@@ -21,6 +21,8 @@ import (
 	"github.com/silinternational/cover-api/log"
 )
 
+const MonthlyCutoffDay = 20
+
 var ValidItemCoverageStatuses = map[api.ItemCoverageStatus]struct{}{
 	api.ItemCoverageStatusDraft:    {},
 	api.ItemCoverageStatusPending:  {},
@@ -665,14 +667,12 @@ func (i *Item) AutoApprove(ctx context.Context) error {
 	emitEvent(e)
 
 	i.StatusChange = ItemStatusChangeAutoApproved
-	return i.Approve(ctx, true)
+	return i.Approve(ctx, time.Now().UTC())
 }
 
 // Approve takes the item from Pending coverage status to Approved.
 // It assumes that the item's current status has already been validated.
-// Only emits an event for an email notification if requested.
-// (No need to emit it following an auto-approval which has already emitted an event.)
-func (i *Item) Approve(ctx context.Context, doEmitEvent bool) error {
+func (i *Item) Approve(ctx context.Context, now time.Time) error {
 	i.CoverageStatus = api.ItemCoverageStatusApproved
 
 	if i.StatusChange != ItemStatusChangeAutoApproved {
@@ -684,33 +684,49 @@ func (i *Item) Approve(ctx context.Context, doEmitEvent bool) error {
 		return err
 	}
 
-	if doEmitEvent {
-		e := events.Event{
-			Kind:    domain.EventApiItemApproved,
-			Message: fmt.Sprintf("Item Approved: %s  ID: %s", i.Name, i.ID.String()),
-			Payload: events.Payload{domain.EventPayloadID: i.ID},
-		}
-		emitEvent(e)
+	e := events.Event{
+		Kind:    domain.EventApiItemApproved,
+		Message: fmt.Sprintf("Item Approved: %s  ID: %s", i.Name, i.ID.String()),
+		Payload: events.Payload{domain.EventPayloadID: i.ID},
 	}
+	emitEvent(e)
 
-	now := time.Now().UTC()
 	tx := Tx(ctx)
-	i.LoadCategory(tx, false)
-	var amount api.Currency
-	var paidThroughDate time.Time
-	if i.Category.GetBillingPeriod() == domain.BillingPeriodMonthly {
-		amount = i.CalculateMonthlyPremium(tx)
-		paidThroughDate = domain.EndOfMonth(now)
-	} else {
-		amount = i.CalculateProratedPremium(tx, now)
-		paidThroughDate = domain.EndOfYear(now.Year())
-	}
+	coverage := i.getInitialCoverage(tx, now)
 
-	if err := i.CreateLedgerEntry(tx, LedgerEntryTypeNewCoverage, amount, now); err != nil {
+	if err := i.CreateLedgerEntry(tx, LedgerEntryTypeNewCoverage, coverage.Premium, now); err != nil {
 		return err
 	}
 
-	return i.SetPaidThroughDate(tx, paidThroughDate)
+	i.CoverageStartDate = coverage.StartDate
+	if err := tx.UpdateColumns(i, "coverage_start_date", "updated_at"); err != nil {
+		return appErrorFromDB(err, api.ErrorUpdateFailure)
+	}
+
+	return i.SetPaidThroughDate(tx, coverage.EndDate)
+}
+
+func (i *Item) getInitialCoverage(tx *pop.Connection, now time.Time) CoveragePeriod {
+	var coverage CoveragePeriod
+
+	i.LoadCategory(tx, false)
+	if i.Category.GetBillingPeriod() == domain.BillingPeriodMonthly {
+		coverage.Premium = i.CalculateMonthlyPremium(tx)
+		if now.Day() < MonthlyCutoffDay {
+			coverage.StartDate = now
+			coverage.EndDate = domain.EndOfMonth(now)
+		} else {
+			oneMonthAhead := now.AddDate(0, 1, 0)
+			coverage.StartDate = domain.StartOfMonth(oneMonthAhead)
+			coverage.EndDate = domain.EndOfMonth(oneMonthAhead)
+		}
+	} else {
+		coverage.Premium = i.CalculateProratedPremium(tx, now)
+		coverage.StartDate = now
+		coverage.EndDate = domain.EndOfYear(now.Year())
+	}
+
+	return coverage
 }
 
 // Deny takes the item from Pending coverage status to Denied.
@@ -982,10 +998,6 @@ func (i *Item) calculatePremiumChange(t time.Time, oldPremium, newPremium api.Cu
 // NewItemFromApiInput creates a new `Item` from a `ItemCreate`.
 func NewItemFromApiInput(c buffalo.Context, input api.ItemCreate, policyID uuid.UUID) (Item, error) {
 	item := Item{}
-	if err := parseItemDates(input, &item); err != nil {
-		return item, err
-	}
-
 	tx := Tx(c)
 
 	var itemCat ItemCategory
@@ -1018,30 +1030,6 @@ func NewItemFromApiInput(c buffalo.Context, input api.ItemCreate, policyID uuid.
 	}
 
 	return item, nil
-}
-
-func parseItemDates(input api.ItemCreate, modelItem *Item) error {
-	start, err := time.Parse(domain.DateFormat, input.CoverageStartDate)
-	if err != nil {
-		err = errors.New("failed to parse item coverage start date, " + err.Error())
-		appErr := api.NewAppError(err, api.ErrorItemInvalidCoverageStartDate, api.CategoryUser)
-		return appErr
-	}
-	modelItem.CoverageStartDate = start
-
-	if input.CoverageEndDate != nil {
-		end, err := time.Parse(domain.DateFormat, *input.CoverageEndDate)
-		if err != nil {
-			err = errors.New("failed to parse item coverage end date, " + err.Error())
-			appErr := api.NewAppError(err, api.ErrorItemInvalidCoverageEndDate, api.CategoryUser)
-			return appErr
-		}
-		modelItem.CoverageEndDate = nulls.NewTime(end)
-	} else {
-		modelItem.CoverageEndDate = nulls.Time{}
-	}
-
-	return nil
 }
 
 // SetAccountablePerson sets the appropriate field to the given ID, but does not update the database

@@ -148,12 +148,11 @@ func (as *ActionSuite) Test_ItemsCreate() {
 		SerialNumber:        "MM1234",
 		CoverageAmount:      101,
 		CoverageStatus:      api.ItemCoverageStatusDraft,
-		CoverageStartDate:   "2006-01-03",
 		AccountablePersonID: policyCreator.ID,
 	}
 
-	badItemDate := goodItem
-	badItemDate.CoverageStartDate = "1/1/2020"
+	missingPerson := goodItem
+	missingPerson.AccountablePersonID = uuid.Nil
 
 	tests := []struct {
 		name       string
@@ -184,9 +183,9 @@ func (as *ActionSuite) Test_ItemsCreate() {
 			name:       "bad request",
 			actor:      policyCreator,
 			policy:     policy,
-			newItem:    badItemDate,
+			newItem:    missingPerson,
 			wantStatus: http.StatusBadRequest,
-			wantInBody: []string{api.ErrorItemInvalidCoverageStartDate.String()},
+			wantInBody: []string{api.ErrorItemNullAccountablePerson.String()},
 		},
 		{
 			name:       "ok",
@@ -291,7 +290,7 @@ func (as *ActionSuite) Test_ItemsSubmit() {
 				`"serial_number":"` + revisionItem.SerialNumber,
 				// keeps revisionItem coverage_amount
 				fmt.Sprintf(`"coverage_amount":%v`, revisionItem.CoverageAmount),
-				`"coverage_start_date":"` + revisionItem.CoverageStartDate.Format(domain.DateFormat) + `"`,
+				`"coverage_start_date":"` + time.Now().Format(domain.DateFormat) + `"`,
 				`"coverage_status":"` + string(api.ItemCoverageStatusApproved), // lower than auto-approve max
 				`"category":{"id":"` + iCatID.String(),
 				`"status_change":"` + models.ItemStatusChangeAutoApproved,
@@ -918,13 +917,8 @@ func (as *ActionSuite) Test_NewItemFromApiInput() {
 		Year:                models.NullsIntToPointer(nulls.NewInt(1999)),
 		CoverageAmount:      101,
 		CoverageStatus:      api.ItemCoverageStatusDraft,
-		CoverageStartDate:   "2006-01-03",
 		AccountablePersonID: user.ID,
 	}
-
-	itemWithBadCoverageStartDate := item
-	itemWithBadCoverageStartDate.Name = "Item with bad coverage start date"
-	itemWithBadCoverageStartDate.CoverageStartDate = "1/1/2020"
 
 	itemWithBadCategory := item
 	itemWithBadCategory.Name = "Item with bad category"
@@ -948,15 +942,6 @@ func (as *ActionSuite) Test_NewItemFromApiInput() {
 		wantErrCat  api.ErrorCategory
 		wantRiskCat uuid.UUID
 	}{
-		{
-			name:       itemWithBadCoverageStartDate.Name,
-			policy:     policy,
-			input:      itemWithBadCoverageStartDate,
-			user:       user,
-			wantErr:    "failed to parse item coverage start date",
-			wantErrKey: api.ErrorItemInvalidCoverageStartDate,
-			wantErrCat: api.CategoryUser,
-		},
 		{
 			name:       itemWithBadCategory.Name,
 			policy:     policy,

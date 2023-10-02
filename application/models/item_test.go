@@ -550,7 +550,7 @@ func (ms *ModelSuite) TestItem_SafeDeleteOrInactivate() {
 	newDraftItem := UpdateItemStatus(ms.DB, items[3], api.ItemCoverageStatusDraft, "")
 
 	newApprovedItem := items[4]
-	ms.NoError(newApprovedItem.Approve(ctx, false))
+	ms.NoError(newApprovedItem.Approve(ctx, now))
 	ms.Greater(newApprovedItem.PaidThroughDate, domain.ZeroDate(),
 		"Approved item didn't get a paid_through_date value")
 
@@ -633,6 +633,146 @@ func (ms *ModelSuite) TestItem_SafeDeleteOrInactivate() {
 			}
 			ms.NoError(err, "error finding the item in the database")
 			ms.Equal(tt.wantStatus, dbItem.CoverageStatus, "incorrect status")
+		})
+	}
+}
+
+func (ms *ModelSuite) TestItem_Approve() {
+	f := CreateItemFixtures(ms.DB, FixturesConfig{ItemsPerPolicy: 3})
+
+	annual := f.Items[0]
+	f.ItemCategories[0].BillingPeriod = domain.BillingPeriodAnnual
+	monthlyEarly := f.Items[1]
+	f.ItemCategories[1].BillingPeriod = domain.BillingPeriodMonthly
+	monthlyLate := f.Items[2]
+	f.ItemCategories[2].BillingPeriod = domain.BillingPeriodMonthly
+	Must(ms.DB.Update(&f.ItemCategories))
+
+	sep1 := time.Date(2023, 9, 1, 0, 0, 0, 0, time.UTC)
+	sep30 := time.Date(2023, 9, 30, 0, 0, 0, 0, time.UTC)
+	oct1 := time.Date(2023, 10, 1, 0, 0, 0, 0, time.UTC)
+	oct31 := time.Date(2023, 10, 31, 0, 0, 0, 0, time.UTC)
+
+	testContext := CreateTestContext(f.Users[0])
+
+	tests := []struct {
+		name          string
+		item          Item
+		now           time.Time
+		wantAmount    api.Currency
+		wantStartDate time.Time
+		wantEndDate   time.Time
+	}{
+		{
+			name:          "annual item",
+			item:          annual,
+			now:           sep30,
+			wantAmount:    annual.CalculateProratedPremium(ms.DB, sep30),
+			wantStartDate: sep30,
+			wantEndDate:   domain.EndOfYear(sep30.Year()),
+		},
+		{
+			name:          "monthlyEarly item",
+			item:          monthlyEarly,
+			now:           sep1,
+			wantAmount:    monthlyEarly.CalculateMonthlyPremium(ms.DB),
+			wantStartDate: sep1,
+			wantEndDate:   sep30,
+		},
+		{
+			name:          "monthlyLate item",
+			item:          monthlyLate,
+			now:           sep30,
+			wantAmount:    monthlyLate.CalculateMonthlyPremium(ms.DB),
+			wantStartDate: oct1,
+			wantEndDate:   oct31,
+		},
+	}
+
+	for _, tt := range tests {
+		ms.T().Run(tt.name, func(t *testing.T) {
+			eventDetected := false
+			deleteFn, err := RegisterEventDetector(domain.EventApiItemApproved, &eventDetected)
+			ms.NoError(err)
+			defer deleteFn()
+
+			ms.NoError(tt.item.Approve(testContext, tt.now))
+
+			var dbItem Item
+			ms.NoError(dbItem.FindByID(ms.DB, tt.item.ID))
+			ms.Equal(api.ItemCoverageStatusApproved, dbItem.CoverageStatus)
+			ms.Contains(dbItem.StatusChange, ItemStatusChangeApproved)
+			ms.Equal(tt.wantStartDate, dbItem.CoverageStartDate)
+			ms.Equal(tt.wantEndDate, dbItem.PaidThroughDate)
+
+			var le LedgerEntry
+			ms.NoError(ms.DB.Where("item_id = ?", tt.item.ID).Order("created_at DESC").First(&le))
+			ms.Equal(tt.wantAmount, -le.Amount)
+
+			time.Sleep(time.Millisecond * 10)
+			ms.True(eventDetected)
+		})
+	}
+}
+
+func (ms *ModelSuite) TestItem_getInitialCoverage() {
+	f := CreateItemFixtures(ms.DB, FixturesConfig{ItemsPerPolicy: 3})
+
+	annual := f.Items[0]
+	f.ItemCategories[0].BillingPeriod = domain.BillingPeriodAnnual
+	monthlyEarly := f.Items[1]
+	f.ItemCategories[1].BillingPeriod = domain.BillingPeriodMonthly
+	monthlyLate := f.Items[2]
+	f.ItemCategories[2].BillingPeriod = domain.BillingPeriodMonthly
+	Must(ms.DB.Update(&f.ItemCategories))
+
+	sep1 := time.Date(2023, 9, 1, 0, 0, 0, 0, time.UTC)
+	sep30 := time.Date(2023, 9, 30, 0, 0, 0, 0, time.UTC)
+	oct1 := time.Date(2023, 10, 1, 0, 0, 0, 0, time.UTC)
+	oct31 := time.Date(2023, 10, 31, 0, 0, 0, 0, time.UTC)
+
+	tests := []struct {
+		name string
+		item Item
+		now  time.Time
+		want CoveragePeriod
+	}{
+		{
+			name: "annual item",
+			item: annual,
+			now:  sep30,
+			want: CoveragePeriod{
+				Premium:   annual.CalculateProratedPremium(ms.DB, sep30),
+				StartDate: sep30,
+				EndDate:   domain.EndOfYear(sep30.Year()),
+			},
+		},
+		{
+			name: "monthlyEarly item",
+			item: monthlyEarly,
+			now:  sep1,
+			want: CoveragePeriod{
+				Premium:   monthlyEarly.CalculateMonthlyPremium(ms.DB),
+				StartDate: sep1,
+				EndDate:   sep30,
+			},
+		},
+		{
+			name: "monthlyLate item",
+			item: monthlyLate,
+			now:  sep30,
+			want: CoveragePeriod{
+				Premium:   monthlyLate.CalculateMonthlyPremium(ms.DB),
+				StartDate: oct1,
+				EndDate:   oct31,
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		ms.T().Run(tt.name, func(t *testing.T) {
+			got := tt.item.getInitialCoverage(ms.DB, tt.now)
+			ms.Equal(tt.want, got)
 		})
 	}
 }
@@ -1325,7 +1465,7 @@ func (ms *ModelSuite) TestItem_canBeDeleted() {
 	createClaimFixture(ms.DB, f.Policies[1], FixturesConfig{ClaimItemsPerClaim: 1})
 
 	hasLedgerEntry := f.Policies[2].Items[0]
-	ms.NoError(hasLedgerEntry.Approve(CreateTestContext(f.Policies[2].Members[0]), false))
+	ms.NoError(hasLedgerEntry.Approve(CreateTestContext(f.Policies[2].Members[0]), time.Now().UTC()))
 
 	tests := []struct {
 		name string

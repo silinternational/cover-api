@@ -593,7 +593,7 @@ func CreateLedgerFixtures(tx *pop.Connection, config FixturesConfig) Fixtures {
 	ctx := CreateTestContext(user)
 	f.LedgerEntries = make(LedgerEntries, len(f.Items))
 	for i := range f.Items {
-		Must(f.Items[i].Approve(ctx, false))
+		Must(f.Items[i].Approve(ctx, time.Now().UTC()))
 		Must(tx.Where("item_id = ?", f.Items[i].ID).First(&f.LedgerEntries[i]))
 	}
 	return f
