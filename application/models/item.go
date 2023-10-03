@@ -713,19 +713,19 @@ func (i *Item) getInitialCoverage(tx *pop.Connection, now time.Time) CoveragePer
 	if i.Category.GetBillingPeriod() == domain.BillingPeriodMonthly {
 		coverage.Premium = i.CalculateMonthlyPremium(tx)
 		if now.Day() < MonthlyCutoffDay {
-			coverage.StartDate = now
 			coverage.EndDate = domain.EndOfMonth(now)
 		} else {
 			oneMonthAhead := now.AddDate(0, 1, 0)
-			coverage.StartDate = domain.StartOfMonth(oneMonthAhead)
 			coverage.EndDate = domain.EndOfMonth(oneMonthAhead)
 		}
 	} else {
 		coverage.Premium = i.CalculateProratedPremium(tx, now)
-		coverage.StartDate = now
 		coverage.EndDate = domain.EndOfYear(now.Year())
 	}
 
+	// Coverage start date is the same regardless of billing, effectively giving free coverage
+	// in some cases. See CVR-729.
+	coverage.StartDate = now
 	return coverage
 }
 
