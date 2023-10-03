@@ -642,7 +642,9 @@ func (p *Policy) ProcessRenewals(tx *pop.Connection, date time.Time, billingPeri
 
 	totalPremiumGroupedByRiskCategory := map[uuid.UUID]api.Currency{}
 	for i := range items {
-		items[i].SetPaidThroughDate(tx, paidThroughDate)
+		if err := items[i].SetPaidThroughDate(tx, paidThroughDate); err != nil {
+			return err
+		}
 		totalPremiumGroupedByRiskCategory[items[i].RiskCategoryID] += items[i].CalculateAnnualPremium(tx)
 	}
 
