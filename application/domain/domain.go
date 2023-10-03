@@ -416,11 +416,6 @@ func BeginningOfDay(date time.Time) time.Time {
 	return time.Date(date.Year(), date.Month(), date.Day(), 0, 0, 0, 0, time.UTC)
 }
 
-func StartOfMonth(date time.Time) time.Time {
-	d := date.AddDate(0, 0, -date.Day()+1)
-	return d.Truncate(time.Hour * 24)
-}
-
 func EndOfMonth(date time.Time) time.Time {
 	d := date.AddDate(0, 1, -date.Day())
 	return d.Truncate(time.Hour * 24)
