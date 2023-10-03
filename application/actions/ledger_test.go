@@ -430,7 +430,7 @@ func (as *ActionSuite) createFixturesForLedger() models.Fixtures {
 		f.Items[i].Policy.LoadMembers(as.DB, false)
 		user := f.Items[i].Policy.Members[0]
 		ctx := models.CreateTestContext(user)
-		as.NoError(f.Items[i].Approve(ctx, false))
+		as.NoError(f.Items[i].Approve(ctx, now))
 
 		entry := models.LedgerEntry{}
 		as.NoError(as.DB.Where("item_id = ?", f.Items[i].ID).First(&entry))

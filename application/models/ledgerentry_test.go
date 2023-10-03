@@ -26,7 +26,7 @@ func (ms *ModelSuite) TestLedgerEntries_AllForMonth() {
 	datesEntered := []nulls.Time{nulls.NewTime(april), {}}
 
 	for i := range f.Items {
-		ms.NoError(f.Items[i].Approve(ctx, false))
+		ms.NoError(f.Items[i].Approve(ctx, time.Now().UTC()))
 
 		entry := LedgerEntry{}
 		ms.NoError(ms.DB.Where("item_id = ?", f.Items[i].ID).First(&entry))
@@ -552,7 +552,7 @@ func (ms *ModelSuite) TestLedgerEntries_Reconcile() {
 
 	itemEntries := make(LedgerEntries, len(f.Items))
 	for i := range f.Items {
-		ms.NoError(f.Items[i].Approve(ctx, false))
+		ms.NoError(f.Items[i].Approve(ctx, time.Now().UTC()))
 
 		ms.NoError(ms.DB.Where("item_id = ?", f.Items[i].ID).First(&itemEntries[i]))
 		itemEntries[i].DateSubmitted = datesSubmitted[i]

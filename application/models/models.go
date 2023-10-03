@@ -162,6 +162,12 @@ type FieldUpdate struct {
 	NewValue  string
 }
 
+type CoveragePeriod struct {
+	Premium   api.Currency
+	StartDate time.Time
+	EndDate   time.Time
+}
+
 func init() {
 	// Just make sure we can use the crypto/rand library on our system
 	if _, err := getRandomToken(); err != nil {

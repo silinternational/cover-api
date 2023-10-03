@@ -202,6 +202,45 @@ func (ts *TestSuite) Test_BeginningOfDay() {
 	}
 }
 
+func (ts *TestSuite) Test_StartOfMonth() {
+	tests := []struct {
+		name string
+		time time.Time
+		want time.Time
+	}{
+		{
+			name: "first of month",
+			time: time.Date(2020, 1, 1, 1, 1, 1, 1, time.UTC),
+			want: time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC),
+		},
+		{
+			name: "last of month",
+			time: time.Date(2020, 1, 31, 1, 1, 1, 1, time.UTC),
+			want: time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC),
+		},
+		{
+			name: "30-day month",
+			time: time.Date(2020, 4, 30, 1, 1, 1, 1, time.UTC),
+			want: time.Date(2020, 4, 1, 0, 0, 0, 0, time.UTC),
+		},
+		{
+			name: "29-day month",
+			time: time.Date(2020, 2, 29, 1, 1, 1, 1, time.UTC),
+			want: time.Date(2020, 2, 1, 0, 0, 0, 0, time.UTC),
+		},
+		{
+			name: "28-day month",
+			time: time.Date(2021, 2, 28, 1, 1, 1, 1, time.UTC),
+			want: time.Date(2021, 2, 1, 0, 0, 0, 0, time.UTC),
+		},
+	}
+	for _, tt := range tests {
+		ts.T().Run(tt.name, func(t *testing.T) {
+			ts.Equal(tt.want, StartOfMonth(tt.time))
+		})
+	}
+}
+
 func (ts *TestSuite) Test_EndOfMonth() {
 	tests := []struct {
 		name string
@@ -210,27 +249,27 @@ func (ts *TestSuite) Test_EndOfMonth() {
 	}{
 		{
 			name: "first of month",
-			time: time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC),
+			time: time.Date(2020, 1, 1, 1, 1, 1, 1, time.UTC),
 			want: time.Date(2020, 1, 31, 0, 0, 0, 0, time.UTC),
 		},
 		{
 			name: "last of month",
-			time: time.Date(2020, 1, 31, 0, 0, 0, 0, time.UTC),
+			time: time.Date(2020, 1, 31, 1, 1, 1, 1, time.UTC),
 			want: time.Date(2020, 1, 31, 0, 0, 0, 0, time.UTC),
 		},
 		{
 			name: "30-day month",
-			time: time.Date(2020, 4, 1, 0, 0, 0, 0, time.UTC),
+			time: time.Date(2020, 4, 1, 1, 1, 1, 1, time.UTC),
 			want: time.Date(2020, 4, 30, 0, 0, 0, 0, time.UTC),
 		},
 		{
 			name: "29-day month",
-			time: time.Date(2020, 2, 1, 0, 0, 0, 0, time.UTC),
+			time: time.Date(2020, 2, 1, 1, 1, 1, 1, time.UTC),
 			want: time.Date(2020, 2, 29, 0, 0, 0, 0, time.UTC),
 		},
 		{
 			name: "28-day month",
-			time: time.Date(2021, 2, 1, 0, 0, 0, 0, time.UTC),
+			time: time.Date(2021, 2, 1, 1, 1, 1, 1, time.UTC),
 			want: time.Date(2021, 2, 28, 0, 0, 0, 0, time.UTC),
 		},
 	}

@@ -85,8 +85,6 @@ const (
 	ErrorItemNullAccountablePerson        = ErrorKey("ErrorItemNullAccountablePerson")
 	ErrorItemCoverageAmountCannotIncrease = ErrorKey("ErrorItemCoverageAmountCannotIncrease")
 	ErrorItemCoverageAmountTooLow         = ErrorKey("ErrorItemCoverageAmountTooLow")
-	ErrorItemInvalidCoverageStartDate     = ErrorKey("ErrorItemInvalidCoverageStartDate")
-	ErrorItemInvalidCoverageEndDate       = ErrorKey("ErrorItemInvalidCoverageEndDate")
 	ErrorInvalidCategory                  = ErrorKey("ErrorInvalidCategory")
 	ErrorItemHasActiveClaim               = ErrorKey("ErrorItemHasActiveClaim")
 

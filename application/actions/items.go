@@ -236,7 +236,7 @@ func itemsApprove(c buffalo.Context) error {
 	tx := models.Tx(c)
 	item := getReferencedItemFromCtx(c)
 
-	if err := item.Approve(c, true); err != nil {
+	if err := item.Approve(c, time.Now().UTC()); err != nil {
 		return reportError(c, err)
 	}
 

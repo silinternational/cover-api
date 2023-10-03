@@ -1260,6 +1260,35 @@
         }
       }
     },
+    "/policies/{id}/imports": {
+      "post": {
+        "description": "Import policies and items from a CSV file. This endpoint is initially for importing vehicle information\nfrom a legacy system. It may be removed at a later time, or it may be adapted for other types of data.",
+        "consumes": [
+          "multipart/form-data"
+        ],
+        "tags": [
+          "Policies"
+        ],
+        "summary": "PoliciesImport",
+        "operationId": "PoliciesImport",
+        "parameters": [
+          {
+            "type": "file",
+            "description": "file object",
+            "name": "file",
+            "in": "formData"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "uploaded File data",
+            "schema": {
+              "$ref": "#/definitions/PoliciesImportResponse"
+            }
+          }
+        }
+      }
+    },
     "/policies/{id}/items": {
       "get": {
         "description": "gets the data for all the items on a Policy",
@@ -2670,6 +2699,12 @@
           "type": "string",
           "x-go-name": "Key"
         },
+        "minimum_deductible": {
+          "description": "the minimum deductible amount (in units of 0.01 USD)",
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "MinimumDeductible"
+        },
         "name": {
           "description": "name",
           "type": "string",
@@ -2735,17 +2770,6 @@
           "type": "integer",
           "format": "int64",
           "x-go-name": "CoverageAmount"
-        },
-        "coverage_end_date": {
-          "description": "date (yyyy-mm-dd) of item's coverage end date, optional",
-          "type": "string",
-          "format": "date-time",
-          "x-go-name": "CoverageEndDate"
-        },
-        "coverage_start_date": {
-          "description": "date (yyyy-mm-dd) of item's coverage start date",
-          "type": "string",
-          "x-go-name": "CoverageStartDate"
         },
         "coverage_status": {
           "$ref": "#/definitions/ItemCoverageStatus"
@@ -3251,6 +3275,27 @@
       "type": "array",
       "items": {
         "$ref": "#/definitions/Policy"
+      },
+      "x-go-package": "github.com/silinternational/cover-api/api"
+    },
+    "PoliciesImportResponse": {
+      "type": "object",
+      "properties": {
+        "items_created": {
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "ItemsCreated"
+        },
+        "lines_processed": {
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "LinesProcessed"
+        },
+        "policies_created": {
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "PoliciesCreated"
+        }
       },
       "x-go-package": "github.com/silinternational/cover-api/api"
     },
