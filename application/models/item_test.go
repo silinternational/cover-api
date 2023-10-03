@@ -650,7 +650,6 @@ func (ms *ModelSuite) TestItem_Approve() {
 
 	sep1 := time.Date(2023, 9, 1, 0, 0, 0, 0, time.UTC)
 	sep30 := time.Date(2023, 9, 30, 0, 0, 0, 0, time.UTC)
-	oct31 := time.Date(2023, 10, 31, 0, 0, 0, 0, time.UTC)
 
 	testContext := CreateTestContext(f.Users[0])
 
@@ -682,9 +681,9 @@ func (ms *ModelSuite) TestItem_Approve() {
 			name:          "monthlyLate item",
 			item:          monthlyLate,
 			now:           sep30,
-			wantAmount:    monthlyLate.CalculateMonthlyPremium(ms.DB),
+			wantAmount:    0,
 			wantStartDate: sep30,
-			wantEndDate:   oct31,
+			wantEndDate:   sep30,
 		},
 	}
 
@@ -725,9 +724,9 @@ func (ms *ModelSuite) TestItem_getInitialCoverage() {
 	f.ItemCategories[2].BillingPeriod = domain.BillingPeriodMonthly
 	Must(ms.DB.Update(&f.ItemCategories))
 
-	sep1 := time.Date(2023, 9, 1, 0, 0, 0, 0, time.UTC)
+	sep19 := time.Date(2023, 9, 19, 0, 0, 0, 0, time.UTC)
+	sep20 := time.Date(2023, 9, 20, 0, 0, 0, 0, time.UTC)
 	sep30 := time.Date(2023, 9, 30, 0, 0, 0, 0, time.UTC)
-	oct31 := time.Date(2023, 10, 31, 0, 0, 0, 0, time.UTC)
 
 	tests := []struct {
 		name string
@@ -748,21 +747,21 @@ func (ms *ModelSuite) TestItem_getInitialCoverage() {
 		{
 			name: "monthlyEarly item",
 			item: monthlyEarly,
-			now:  sep1,
+			now:  sep19,
 			want: CoveragePeriod{
 				Premium:   monthlyEarly.CalculateMonthlyPremium(ms.DB),
-				StartDate: sep1,
+				StartDate: sep19,
 				EndDate:   sep30,
 			},
 		},
 		{
 			name: "monthlyLate item",
 			item: monthlyLate,
-			now:  sep30,
+			now:  sep20,
 			want: CoveragePeriod{
-				Premium:   monthlyLate.CalculateMonthlyPremium(ms.DB),
-				StartDate: sep30,
-				EndDate:   oct31,
+				Premium:   0,
+				StartDate: sep20,
+				EndDate:   sep30,
 			},
 		},
 	}

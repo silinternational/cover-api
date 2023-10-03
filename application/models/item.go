@@ -711,13 +711,11 @@ func (i *Item) getInitialCoverage(tx *pop.Connection, now time.Time) CoveragePer
 
 	i.LoadCategory(tx, false)
 	if i.Category.GetBillingPeriod() == domain.BillingPeriodMonthly {
-		coverage.Premium = i.CalculateMonthlyPremium(tx)
+		// After the cutoff day, no premiums are billed until the next month. See CVR-730.
 		if now.Day() < MonthlyCutoffDay {
-			coverage.EndDate = domain.EndOfMonth(now)
-		} else {
-			oneMonthAhead := now.AddDate(0, 1, 0)
-			coverage.EndDate = domain.EndOfMonth(oneMonthAhead)
+			coverage.Premium = i.CalculateMonthlyPremium(tx)
 		}
+		coverage.EndDate = domain.EndOfMonth(now)
 	} else {
 		coverage.Premium = i.CalculateProratedPremium(tx, now)
 		coverage.EndDate = domain.EndOfYear(now.Year())
