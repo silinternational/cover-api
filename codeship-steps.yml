@@ -54,7 +54,7 @@
   - name: scan_develop
     service: deepfactor
     tag: develop
-    command: dfctl scan 369020531563.dkr.ecr.us-east-1.amazonaws.com/cover-prod:develop
+    command: dfctl scan 369020531563.dkr.ecr.us-east-1.amazonaws.com/cover-stg:develop
 
   - name: scan_latest
     service: deepfactor
