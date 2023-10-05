@@ -63,4 +63,8 @@ type ItemCategory struct {
 
 	// the minimum deductible amount (in units of 0.01 USD)
 	MinimumDeductible int `json:"minimum_deductible"`
+
+	// Minimum premium amount. Any premium bill that would be less than this amount will be charged
+	// this amount instead. (in units of 0.01 USD)
+	MinimumPremium int `json:"minimum_premium"`
 }

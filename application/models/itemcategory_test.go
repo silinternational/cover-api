@@ -76,6 +76,7 @@ func (ms *ModelSuite) TestItemCategory_ConvertToAPI() {
 	ms.Equal(cat.BillingPeriod, got.BillingPeriod, "BillingPeriod is not correct")
 	ms.Equal(domain.PercentString(cat.PremiumFactor.Float64), got.PremiumFactor, "PremiumFactor is not correct")
 	ms.Equal(cat.MinimumDeductible, got.MinimumDeductible, "MinimumDeductible is not correct")
+	ms.Equal(cat.MinimumPremium, got.MinimumPremium, "MinimumPremium is not correct")
 	ms.Equal(cat.CreatedAt, got.CreatedAt, "CreatedAt is not correct")
 	ms.Equal(cat.UpdatedAt, got.UpdatedAt, "UpdatedAt is not correct")
 }
