@@ -2705,6 +2705,12 @@
           "format": "int64",
           "x-go-name": "MinimumDeductible"
         },
+        "minimum_premium": {
+          "description": "Minimum premium amount. Any premium bill that would be less than this amount will be charged\nthis amount instead. (in units of 0.01 USD)",
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "MinimumPremium"
+        },
         "name": {
           "description": "name",
           "type": "string",

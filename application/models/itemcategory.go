@@ -88,6 +88,7 @@ func (i *ItemCategory) ConvertToAPI(tx *pop.Connection) api.ItemCategory {
 		BillingPeriod:     i.GetBillingPeriod(),
 		PremiumFactor:     domain.PercentString(i.PremiumFactor.Float64),
 		MinimumDeductible: i.MinimumDeductible,
+		MinimumPremium:    i.MinimumPremium,
 		CreatedAt:         i.CreatedAt,
 		UpdatedAt:         i.UpdatedAt,
 	}
