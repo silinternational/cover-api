@@ -83,3 +83,7 @@ minio:
     MINIO_ROOT_USER: abc123
     MINIO_ROOT_PASSWORD: abcd1234
 
+deepfactor:
+  # https://www.deepfactor.io/docs/deepfactor-release-notes/
+  image: public.ecr.aws/deepfactor/df/runtime:latest
+  encrypted_env_file: .env.encrypted
