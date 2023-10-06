@@ -85,5 +85,5 @@ minio:
 
 deepfactor:
   # https://www.deepfactor.io/docs/deepfactor-release-notes/
-  image: public.ecr.aws/deepfactor/df/runtime:latest
+  image: public.ecr.aws/deepfactor/df/runtime:3.3.3-2346
   encrypted_env_file: .env.encrypted
