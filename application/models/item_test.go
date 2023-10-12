@@ -986,6 +986,8 @@ func (ms *ModelSuite) TestItem_calculateProratedPremium() {
 
 	now := time.Date(1999, 3, 15, 0, 0, 0, 0, time.UTC)
 
+	item := Item{Category: ItemCategory{ID: domain.GetUUID(), MinimumPremium: 3000}}
+
 	tests := []struct {
 		name     string
 		coverage int
@@ -1001,10 +1003,15 @@ func (ms *ModelSuite) TestItem_calculateProratedPremium() {
 			coverage: 199999,
 			want:     3200,
 		},
+		{
+			name:     "lower than minimum",
+			coverage: 187450,
+			want:     3000,
+		},
 	}
 	for _, tt := range tests {
 		ms.T().Run(tt.name, func(t *testing.T) {
-			item := Item{CoverageAmount: tt.coverage}
+			item.CoverageAmount = tt.coverage
 			got := item.CalculateProratedPremium(ms.DB, now)
 			ms.Equal(api.Currency(tt.want), got)
 		})
