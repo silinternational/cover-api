@@ -365,7 +365,7 @@ func (ts *TestSuite) Test_IsProduction() {
 	}
 }
 
-func (ts *TestSuite) TestMin() {
+func (ts *TestSuite) TestMax() {
 	tests := []struct {
 		name string
 		a    int
@@ -376,13 +376,13 @@ func (ts *TestSuite) TestMin() {
 			name: "zero",
 			a:    0,
 			b:    1,
-			want: 0,
+			want: 1,
 		},
 		{
 			name: "negative",
 			a:    1,
 			b:    -1,
-			want: -1,
+			want: 1,
 		},
 		{
 			name: "equal",
@@ -393,7 +393,7 @@ func (ts *TestSuite) TestMin() {
 	}
 	for _, tt := range tests {
 		ts.T().Run(tt.name, func(t *testing.T) {
-			ts.Equal(tt.want, Min(tt.a, tt.b))
+			ts.Equal(tt.want, Max(tt.a, tt.b))
 		})
 	}
 }

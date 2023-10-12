@@ -519,7 +519,7 @@ func (p *Policy) calculateAnnualPremium(tx *pop.Connection) api.Currency {
 	for _, item := range p.Items {
 		premium += item.CalculateAnnualPremium(tx)
 	}
-	return api.Currency(domain.Min(int(premium), domain.Env.PremiumMinimum))
+	return api.Currency(domain.Max(int(premium), domain.Env.PremiumMinimum))
 }
 
 func (p *Policy) currentCoverageTotal(tx *pop.Connection) api.Currency {

@@ -933,7 +933,7 @@ func (i *Item) CalculateAnnualPremium(tx *pop.Connection) api.Currency {
 	}
 	premium := int(math.Round(float64(i.CoverageAmount) * factor))
 
-	return api.Currency(domain.Min(premium, i.Category.MinimumPremium))
+	return api.Currency(domain.Max(premium, i.Category.MinimumPremium))
 }
 
 func (i *Item) CalculateProratedPremium(tx *pop.Connection, t time.Time) api.Currency {
@@ -951,7 +951,7 @@ func (i *Item) CalculateMonthlyPremium(tx *pop.Connection) api.Currency {
 	}
 	premium := int(math.Round(float64(i.CoverageAmount) * factor))
 
-	premium = domain.Min(premium, i.Category.MinimumPremium)
+	premium = domain.Max(premium, i.Category.MinimumPremium)
 	return api.Currency(premium / 12)
 }
 

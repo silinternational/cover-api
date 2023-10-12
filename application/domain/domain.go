@@ -248,7 +248,7 @@ func readEnv() *EnvStruct {
 	env.DeductibleRateString = PercentString(env.DeductibleRate)
 
 	//  Set an arbitrary but reasonable minimum lifetime for policy strikes
-	env.StrikeLifetimeMonths = Min(2, env.StrikeLifetimeMonths)
+	env.StrikeLifetimeMonths = Max(2, env.StrikeLifetimeMonths)
 
 	return env
 }
@@ -515,8 +515,8 @@ func checkSamlConfig(env *EnvStruct) {
 }
 
 // TODO: replace this with the builtin function after upgrading to Go 1.21
-func Min(a, b int) int {
-	if a < b {
+func Max(a, b int) int {
+	if a > b {
 		return a
 	}
 	return b
