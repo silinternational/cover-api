@@ -364,3 +364,36 @@ func (ts *TestSuite) Test_IsProduction() {
 		})
 	}
 }
+
+func (ts *TestSuite) TestMin() {
+	tests := []struct {
+		name string
+		a    int
+		b    int
+		want int
+	}{
+		{
+			name: "zero",
+			a:    0,
+			b:    1,
+			want: 0,
+		},
+		{
+			name: "negative",
+			a:    1,
+			b:    -1,
+			want: -1,
+		},
+		{
+			name: "equal",
+			a:    2,
+			b:    2,
+			want: 2,
+		},
+	}
+	for _, tt := range tests {
+		ts.T().Run(tt.name, func(t *testing.T) {
+			ts.Equal(tt.want, Min(tt.a, tt.b))
+		})
+	}
+}

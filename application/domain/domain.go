@@ -248,9 +248,7 @@ func readEnv() *EnvStruct {
 	env.DeductibleRateString = PercentString(env.DeductibleRate)
 
 	//  Set an arbitrary but reasonable minimum lifetime for policy strikes
-	if env.StrikeLifetimeMonths < 2 {
-		env.StrikeLifetimeMonths = 2
-	}
+	env.StrikeLifetimeMonths = Min(2, env.StrikeLifetimeMonths)
 
 	return env
 }
@@ -514,4 +512,12 @@ func checkSamlConfig(env *EnvStruct) {
 	if env.SamlSpPrivateKey == "" {
 		panic("required SAML variable SamlSpPrivateKey is undefined")
 	}
+}
+
+// TODO: replace this with the builtin function after upgrading to Go 1.21
+func Min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
 }

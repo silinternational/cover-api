@@ -106,15 +106,9 @@ func CreateFileFixtures(tx *pop.Connection, n int, createdByID uuid.UUID) Fixtur
 // Uses FixturesConfig fields: NumberOfPolices, DependentsPerPolicy, UsersPerPolicy, ItemsPerPolicy, ClaimsPerPolicy,
 // ClaimItemsPerClaim, ClaimFilesPerClaim
 func CreateItemFixtures(tx *pop.Connection, config FixturesConfig) Fixtures {
-	if config.NumberOfPolicies < 1 {
-		config.NumberOfPolicies = 1
-	}
-	if config.ItemsPerPolicy < 1 {
-		config.ItemsPerPolicy = 1
-	}
-	if config.ItemsPerPolicy < config.ClaimsPerPolicy*config.ClaimItemsPerClaim {
-		config.ItemsPerPolicy = config.ClaimsPerPolicy * config.ClaimItemsPerClaim
-	}
+	config.NumberOfPolicies = domain.Min(1, config.NumberOfPolicies)
+	config.ItemsPerPolicy = domain.Min(1, config.ItemsPerPolicy)
+	config.ItemsPerPolicy = domain.Min(config.ItemsPerPolicy, config.ClaimsPerPolicy*config.ClaimItemsPerClaim)
 
 	fixtures := CreatePolicyFixtures(tx, config)
 	policies := fixtures.Policies
@@ -211,9 +205,7 @@ func UpdateClaimItems(tx *pop.Connection, claim Claim, params UpdateClaimItemsPa
 // createClaimFixture generates a Claim, a number of ClaimItems, and a number of ClaimFiles
 // Uses FixturesConfig fields: ClaimItemsPerClaim, ClaimFilesPerClaim
 func createClaimFixture(tx *pop.Connection, policy Policy, config FixturesConfig) Claim {
-	if config.ClaimItemsPerClaim < 1 {
-		config.ClaimItemsPerClaim = 1
-	}
+	config.ClaimItemsPerClaim = domain.Min(1, config.ClaimItemsPerClaim)
 
 	if len(policy.Items) < config.ClaimItemsPerClaim {
 		panic(fmt.Sprintf("policy fixture must have at least %d items, it only has %d",
@@ -357,12 +349,8 @@ func CreateUserFixtures(tx *pop.Connection, n int) Fixtures {
 // CreatePolicyFixtures generates any number of policy records and associated policy users
 // Uses FixturesConfig fields: NumberOfPolicies, DependentsPerPolicy, UsersPerPolicy
 func CreatePolicyFixtures(tx *pop.Connection, config FixturesConfig) Fixtures {
-	if config.NumberOfPolicies < 1 {
-		config.NumberOfPolicies = 1
-	}
-	if config.UsersPerPolicy < 1 {
-		config.UsersPerPolicy = 1
-	}
+	config.NumberOfPolicies = domain.Min(1, config.NumberOfPolicies)
+	config.UsersPerPolicy = domain.Min(1, config.UsersPerPolicy)
 
 	createHouseholdEntity(tx)
 	entCodes := make(EntityCodes, config.NumberOfEntityCodes)
@@ -414,15 +402,9 @@ func CreatePolicyFixtures(tx *pop.Connection, config FixturesConfig) Fixtures {
 // CreateTeamPolicyFixtures generates any number of policy records (of type Team) and associated policy users
 // Uses FixturesConfig fields: NumberOfPolicies, DependentsPerPolicy, UsersPerPolicy
 func CreateTeamPolicyFixtures(tx *pop.Connection, config FixturesConfig) Fixtures {
-	if config.NumberOfPolicies < 1 {
-		config.NumberOfPolicies = 1
-	}
-	if config.UsersPerPolicy < 1 {
-		config.UsersPerPolicy = 1
-	}
-	if config.NumberOfEntityCodes < 1 {
-		config.NumberOfEntityCodes = 1
-	}
+	config.NumberOfPolicies = domain.Min(1, config.NumberOfPolicies)
+	config.UsersPerPolicy = domain.Min(1, config.UsersPerPolicy)
+	config.NumberOfEntityCodes = domain.Min(1, config.NumberOfEntityCodes)
 
 	entCodes := make(EntityCodes, config.NumberOfEntityCodes)
 	for i := range entCodes {
