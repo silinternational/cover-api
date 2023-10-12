@@ -938,7 +938,9 @@ func (i *Item) CalculateAnnualPremium(tx *pop.Connection) api.Currency {
 
 func (i *Item) CalculateProratedPremium(tx *pop.Connection, t time.Time) api.Currency {
 	p := domain.CalculatePartialYearValue(int(i.CalculateAnnualPremium(tx)), t)
-	return api.Currency(p)
+
+	i.LoadCategory(tx, false)
+	return api.Currency(domain.Max(p, i.Category.MinimumPremium))
 }
 
 // CalculateMonthlyPremium returns the rounded product of the item's CoverageAmount and the category's
