@@ -244,6 +244,9 @@ func fieldByName(i any, name ...string) reflect.Value {
 	}
 	f := reflect.ValueOf(i).Elem().FieldByName(name[0])
 	if !f.IsValid() {
+		if len(name) < 2 {
+			return reflect.Value{}
+		}
 		return fieldByName(i, name[1:]...)
 	}
 	return f
