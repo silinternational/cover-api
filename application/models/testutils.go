@@ -7,13 +7,16 @@
 package models
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"math/rand"
+	"testing"
 	"time"
 
 	"github.com/gobuffalo/events"
 	"github.com/gobuffalo/pop/v6"
+	"github.com/stretchr/testify/require"
 
 	"github.com/silinternational/cover-api/storage"
 
@@ -205,8 +208,6 @@ func UpdateClaimItems(tx *pop.Connection, claim Claim, params UpdateClaimItemsPa
 // createClaimFixture generates a Claim, a number of ClaimItems, and a number of ClaimFiles
 // Uses FixturesConfig fields: ClaimItemsPerClaim, ClaimFilesPerClaim
 func createClaimFixture(tx *pop.Connection, policy Policy, config FixturesConfig) Claim {
-	config.ClaimItemsPerClaim = domain.Max(1, config.ClaimItemsPerClaim)
-
 	if len(policy.Items) < config.ClaimItemsPerClaim {
 		panic(fmt.Sprintf("policy fixture must have at least %d items, it only has %d",
 			config.ClaimItemsPerClaim, len(policy.Items)))
@@ -936,4 +937,16 @@ func Must(err error) {
 	if err != nil {
 		panic(err.Error())
 	}
+}
+
+// SameAppError verifies that the actual error contains an AppError and that the key and category match expected
+func SameAppError(t *testing.T, expected api.AppError, actual error) {
+	require.Error(t, actual, "error is nil")
+	var appErr *api.AppError
+	require.True(t, errors.As(actual, &appErr),
+		"error does not contain an api.AppError, message: %s", actual.Error())
+	require.Equal(t, expected.Key, appErr.Key,
+		"error key does not match, message: %s", actual.Error())
+	require.Equal(t, expected.Category, appErr.Category,
+		"error category does not match, message: %s", actual.Error())
 }

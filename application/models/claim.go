@@ -410,6 +410,14 @@ func (c *Claim) AddItem(ctx context.Context, input api.ClaimItemCreateInput) (Cl
 		return ClaimItem{}, err
 	}
 
+	if err = c.calculatePayout(ctx); err != nil {
+		return ClaimItem{}, err
+	}
+
+	if err = update(tx, c); err != nil {
+		return ClaimItem{}, err
+	}
+
 	return claimItem, nil
 }
 
