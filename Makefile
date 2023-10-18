@@ -1,4 +1,4 @@
-dev: buffalo adminer migrate grifts
+dev: killdebug buffalo adminer migrate grifts
 
 migrate: db
 	docker-compose run --rm buffalo whenavail db 5432 10 buffalo-pop pop migrate up
@@ -18,7 +18,7 @@ adminer:
 buffalo: db
 	docker-compose up -d buffalo
 
-debug: killbuffalo
+debug: killbuffalo killdebug rmdebug
 	docker-compose up -d debug
 	docker-compose logs -f debug
 
@@ -58,6 +58,12 @@ testenv: rmtestdb migratetestdb
 
 killbuffalo:
 	docker-compose kill buffalo
+
+killdebug:
+	docker-compose kill debug
+
+rmdebug:
+	docker-compose rm -f debug
 
 clean:
 	docker-compose kill
