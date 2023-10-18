@@ -81,26 +81,23 @@ func ClaimPreapprovedQueueMessage(tx *pop.Connection, claim models.Claim) {
 
 	claimItem := claim.ClaimItems[0]
 	claimItem.LoadItem(tx, false)
-
-	data["estimate"] = "$-"
-	data["repairThreshold"] = domain.Env.RepairThresholdString
-
-	deductibleRate := domain.PercentString(claim.GetDeductibleRate(tx))
 	claimItem.Item.LoadCategory(tx, false)
+
+	deductible := domain.PercentString(claim.GetDeductibleRate(tx))
 	if minimumDeductible := claimItem.Item.Category.MinimumDeductible; minimumDeductible > 0 {
-		data["deductible"] = fmt.Sprintf(
-			"%s (subject to %s minimum)",
-			deductibleRate,
-			api.Currency(minimumDeductible))
-	} else {
-		data["deductible"] = deductibleRate
+		deductible += fmt.Sprintf(" (subject to %s minimum)", api.Currency(minimumDeductible))
 	}
+	data["deductible"] = deductible
+
+	data["repairThreshold"] = domain.Env.RepairThresholdString
 
 	switch claimItem.PayoutOption {
 	case api.PayoutOptionRepair:
 		data["estimate"] = "$" + claimItem.RepairEstimate.String()
 	case api.PayoutOptionReplacement:
 		data["estimate"] = "$" + claimItem.ReplaceEstimate.String()
+	default:
+		data["estimate"] = "$-"
 	}
 
 	notn := models.Notification{
