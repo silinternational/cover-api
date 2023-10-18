@@ -86,9 +86,8 @@ func ClaimPreapprovedQueueMessage(tx *pop.Connection, claim models.Claim) {
 	data["repairThreshold"] = domain.Env.RepairThresholdString
 
 	deductibleRate := domain.PercentString(claim.GetDeductibleRate(tx))
-	claim.ClaimItems[0].LoadItem(tx, false)
-	claim.ClaimItems[0].Item.LoadCategory(tx, false)
-	if minimumDeductible := claim.ClaimItems[0].Item.Category.MinimumDeductible; minimumDeductible > 0 {
+	claimItem.Item.LoadCategory(tx, false)
+	if minimumDeductible := claimItem.Item.Category.MinimumDeductible; minimumDeductible > 0 {
 		data["deductible"] = fmt.Sprintf(
 			"%s (subject to %s minimum)",
 			deductibleRate,
