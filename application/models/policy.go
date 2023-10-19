@@ -683,13 +683,14 @@ func ImportPolicies(tx *pop.Connection, file io.Reader) (api.PoliciesImportRespo
 	var response api.PoliciesImportResponse
 
 	r := csv.NewReader(bufio.NewReader(file))
-	if _, err := r.Read(); err == io.EOF {
+	header, err := r.Read()
+	if err == io.EOF {
 		err := fmt.Errorf("empty policy CSV file: %w", err)
 		return response, api.NewAppError(err, api.ErrorUnknown, api.CategoryUser)
 	}
 
 	var vehicleCategory ItemCategory
-	if err := tx.Where("name ILIKE '%vehicles%'").First(&vehicleCategory); err != nil {
+	if err := tx.Where("risk_category_id = ?", riskCategoryVehicleID).First(&vehicleCategory); err != nil {
 		err := fmt.Errorf("failed to find an item category for vehicles: %w", err)
 		return response, api.NewAppError(err, api.ErrorUnknown, api.CategoryInternal)
 	}
@@ -705,7 +706,11 @@ func ImportPolicies(tx *pop.Connection, file io.Reader) (api.PoliciesImportRespo
 			return response, api.NewAppError(err, api.ErrorUnknown, api.CategoryUser)
 		}
 
-		policiesCreated, itemsCreated, err := importPolicy(tx, csvLine, vehicleCategory.ID, time.Now().UTC())
+		data := map[string]string{}
+		for i, value := range csvLine {
+			data[header[i]] = strings.TrimSpace(value)
+		}
+		policiesCreated, itemsCreated, err := importPolicy(tx, data, vehicleCategory.ID, time.Now().UTC())
 		if err != nil {
 			err := fmt.Errorf("error importing policy on CSV file line %v: %w", n, err)
 			return response, api.NewAppError(err, api.ErrorUnknown, api.CategoryUser)
@@ -718,43 +723,30 @@ func ImportPolicies(tx *pop.Connection, file io.Reader) (api.PoliciesImportRespo
 	return response, nil
 }
 
-func importPolicy(tx *pop.Connection, csvLine []string, catID uuid.UUID, now time.Time) (int, int, error) {
+func importPolicy(tx *pop.Connection, data map[string]string, catID uuid.UUID, now time.Time) (int, int, error) {
 	const (
-		Account_Number = iota
-		Veh_Year
-		Veh_Make
-		Veh_Model
-		CoverageID
-		VehicleID
-		Veh_VIN
-		Covered_Value
-		Monthly_Charge
-		Start_Date
-		End_Date
-		Country_Code_Id
-		NameCust
-		Country_Description
+		AccountNumber = "Account_Number"
+		Year          = "Veh_Year"
+		Make          = "Veh_Make"
+		Model         = "Veh_Model"
+		VIN           = "Veh_VIN"
+		CoveredValue  = "Covered_Value"
+		StartDate     = "Start_Date"
+		NameCust      = "NAMECUST"
+		Country       = "Country_Description"
 	)
-
-	if len(csvLine) < 14 {
-		return 0, 0, errors.New("line contains too few columns")
-	}
-
-	for i := range csvLine {
-		csvLine[i] = strings.TrimSpace(csvLine[i])
-	}
 
 	var p Policy
 	var policiesCreated int
-	err := p.FindByHouseholdID(tx, csvLine[Account_Number])
+	err := p.FindByHouseholdID(tx, data[AccountNumber])
 	if err != nil {
 		if domain.IsOtherThanNoRows(err) {
 			return 0, 0, appErrorFromDB(err, api.ErrorQueryFailure)
 		}
 
-		p.Name = csvLine[NameCust] + " household"
+		p.Name = data[NameCust] + " household"
 		p.Type = api.PolicyTypeHousehold
-		p.HouseholdID = nulls.NewString(csvLine[Account_Number])
+		p.HouseholdID = nulls.NewString(data[AccountNumber])
 		p.EntityCodeID = householdEntityID
 		if err := p.Create(tx); err != nil {
 			return 0, 0, appErrorFromDB(err, api.ErrorCreateFailure)
@@ -762,29 +754,29 @@ func importPolicy(tx *pop.Connection, csvLine []string, catID uuid.UUID, now tim
 		policiesCreated++
 	}
 
-	value, err := parseCoveredValue(csvLine[Covered_Value])
+	value, err := parseCoveredValue(data[CoveredValue])
 	if err != nil {
 		return 0, 0, err
 	}
 
-	startDate, err := time.Parse("1/2/2006 15:04", csvLine[Start_Date])
+	startDate, err := time.Parse("1/2/2006 15:04", data[StartDate])
 	if err != nil {
-		return 0, 0, fmt.Errorf("invalid date %v: %w", csvLine[Start_Date], err)
+		return 0, 0, fmt.Errorf("invalid date %v: %w", data[StartDate], err)
 	}
 
-	year, err := parseVehicleYear(csvLine[Veh_Year])
+	year, err := parseVehicleYear(data[Year])
 	if err != nil {
 		return 0, 0, err
 	}
 
 	i := Item{
-		Name:              fmt.Sprintf("%s %s %s", csvLine[Veh_Year], csvLine[Veh_Make], csvLine[Veh_Model]),
+		Name:              fmt.Sprintf("%s %s %s", data[Year], data[Make], data[Model]),
 		CategoryID:        catID,
-		Country:           csvLine[Country_Description],
+		Country:           data[Country],
 		PolicyID:          p.ID,
-		Make:              csvLine[Veh_Make],
-		Model:             csvLine[Veh_Model],
-		SerialNumber:      csvLine[Veh_VIN],
+		Make:              data[Make],
+		Model:             data[Model],
+		SerialNumber:      data[VIN],
 		CoverageAmount:    value,
 		CoverageStatus:    api.ItemCoverageStatusApproved,
 		CoverageStartDate: startDate,

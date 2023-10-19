@@ -3,6 +3,7 @@ package models
 import (
 	"fmt"
 	"net/url"
+	"strings"
 	"testing"
 	"time"
 
@@ -807,37 +808,78 @@ func (ms *ModelSuite) TestPolicy_CreateRenewalLedgerEntry() {
 	}
 }
 
+func (ms *ModelSuite) Test_ImportPolicies() {
+	vehicleCategory := CreateCategoryFixtures(ms.DB, 1).ItemCategories[0]
+	vehicleCategory.RiskCategoryID = riskCategoryVehicleID
+	Must(ms.DB.Update(&vehicleCategory))
+
+	createHouseholdEntity(ms.DB)
+
+	file := strings.NewReader(`Account_Number,Veh_Year,Veh_Make,Veh_Model,Coverage_Id,Vehicle_Id,Veh_VIN,Covered_Value,Monthly_Charge,Start_Date,End_Date,Country_Code_Id,NAMECUST,Country_Description
+200014,2001,TOYOTA,TOWNACE NOAH,18191,7979,4776,8200,15,6/8/2018 11:49,NULL,PG,"STEWART, JIMMY                                               ",Papua New Guinea`)
+
+	got, err := ImportPolicies(ms.DB, file)
+	ms.NoError(err)
+	want := api.PoliciesImportResponse{
+		LinesProcessed:  1,
+		PoliciesCreated: 1,
+		ItemsCreated:    1,
+	}
+	ms.Equal(want, got)
+
+	var newPolicy Policy
+	ms.NoError(ms.DB.Where("household_id = ?", 200014).First(&newPolicy))
+}
+
 func (ms *ModelSuite) Test_importPolicy() {
 	catID := CreateCategoryFixtures(ms.DB, 1).ItemCategories[0].ID
 	policy := CreatePolicyFixtures(ms.DB, FixturesConfig{}).Policies[0]
 
-	line1 := []string{
-		"123456", "2001", "Toyota", "Camry", "1", "2", "JT4RN56S0F0075837", "8200", "15",
-		"6/8/2018 11:49", "NULL", "US", "Smith, John  ", "United States",
+	line1 := map[string]string{
+		"Account_Number":      "123456",
+		"Veh_Year":            "2001",
+		"Veh_Make":            "Toyota",
+		"Veh_Model":           "Camry",
+		"Coverage_Id":         "1",
+		"Vehicle_Id":          "2",
+		"Veh_VIN":             "JT4RN56S0F0075837",
+		"Covered_Value":       "8200",
+		"Monthly_Charge":      "15",
+		"Start_Date":          "6/8/2018 11:49",
+		"End_Date":            "NULL",
+		"Country_Code_Id":     "US",
+		"NAMECUST":            "Smith, John",
+		"Country_Description": "United States",
 	}
-	line2 := []string{
-		policy.HouseholdID.String, "2010", "Honda", "Civic", "3", "4", "2HGES15361H903843", "4500", "10",
-		"11/11/2011 11:11", "NULL", "CA", "Jameson, Rick", "Canada",
+	line2 := map[string]string{
+		"Account_Number":      policy.HouseholdID.String,
+		"Veh_Year":            "2010",
+		"Veh_Make":            "Honda",
+		"Veh_Model":           "Civic",
+		"Coverage_Id":         "3",
+		"Vehicle_Id":          "4",
+		"Veh_VIN":             "2HGES15361H903843",
+		"Covered_Value":       "4500",
+		"Monthly_Charge":      "10",
+		"Start_Date":          "11/11/2011 11:11",
+		"End_Date":            "NULL",
+		"Country_Code_Id":     "CA",
+		"NAMECUST":            "Jameson, Rick",
+		"Country_Description": "Canada",
 	}
-	twelveColumns := line1[0:12]
 
 	now := time.Now().UTC()
 
 	tests := []struct {
 		name       string
-		csvLine    []string
+		data       map[string]string
 		wantErr    string
 		wantPolicy Policy
 		wantItem   Item
 	}{
 		{
-			name:    "not enough columns",
-			csvLine: twelveColumns,
-			wantErr: "too few columns",
-		},
-		{
-			name:    "create policy and item",
-			csvLine: line1,
+			name: "create policy and item",
+			data: line1,
 			wantPolicy: Policy{
 				Name:        "Smith, John household",
 				HouseholdID: nulls.NewString("123456"),
@@ -854,8 +896,8 @@ func (ms *ModelSuite) Test_importPolicy() {
 			},
 		},
 		{
-			name:    "create item only",
-			csvLine: line2,
+			name: "create item only",
+			data: line2,
 			wantItem: Item{
 				Name:              "2010 Honda Civic",
 				Country:           "Canada",
@@ -870,7 +912,7 @@ func (ms *ModelSuite) Test_importPolicy() {
 	}
 	for _, tt := range tests {
 		ms.T().Run(tt.name, func(t *testing.T) {
-			_, _, err := importPolicy(ms.DB, tt.csvLine, catID, now)
+			_, _, err := importPolicy(ms.DB, tt.data, catID, now)
 			if tt.wantErr != "" {
 				ms.Error(err)
 				ms.Contains(err.Error(), tt.wantErr)
