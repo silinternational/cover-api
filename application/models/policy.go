@@ -129,6 +129,15 @@ func (p *Policy) FindByHouseholdID(tx *pop.Connection, householdID string) error
 	return tx.Where("household_id = ?", householdID).First(p)
 }
 
+func (p *Policy) FindByTeamDetails(tx *pop.Connection, entityCode, account, costCenter, accountDetail string) error {
+	return tx.
+		Where("entity_code_id = ?", EntityCodeID(entityCode)).
+		Where("account = ?", account).
+		Where("cost_center = ?", costCenter).
+		Where("account_detail = ?", accountDetail).
+		First(p)
+}
+
 // IsActorAllowedTo ensure the actor is either an admin, or a member of this policy to perform any permission
 func (p *Policy) IsActorAllowedTo(tx *pop.Connection, actor User, perm Permission, sub SubResource, r *http.Request) bool {
 	if actor.IsAdmin() {
@@ -724,34 +733,75 @@ func ImportPolicies(tx *pop.Connection, file io.Reader) (api.PoliciesImportRespo
 }
 
 func importPolicy(tx *pop.Connection, data map[string]string, catID uuid.UUID, now time.Time) (int, int, error) {
+	// fields common to both policy types
 	const (
-		AccountNumber = "Account_Number"
-		Year          = "Veh_Year"
-		Make          = "Veh_Make"
-		Model         = "Veh_Model"
-		VIN           = "Veh_VIN"
-		CoveredValue  = "Covered_Value"
-		StartDate     = "Start_Date"
-		NameCust      = "NAMECUST"
-		Country       = "Country_Description"
+		Year         = "Veh_Year"
+		Make         = "Veh_Make"
+		Model        = "Veh_Model"
+		VIN          = "Veh_VIN"
+		CoveredValue = "Covered_Value"
+	)
+
+	// fields for household policies
+	const (
+		HouseholdID = "Account_Number"
+		StartDate   = "Start_Date"
+		NameCust    = "NAMECUST"
+		Country     = "Country_Description"
+	)
+
+	// fields for team policies
+	const (
+		Person        = "Person"
+		ItemName      = "Statement Name"
+		PolicyName    = "Policy Name"
+		Entity        = "Entity"
+		CostCenter    = "Cost Center"
+		Account       = "Account"
+		AccountDetail = "Ledger Entry Desc"
 	)
 
 	var p Policy
 	var policiesCreated int
-	err := p.FindByHouseholdID(tx, data[AccountNumber])
-	if err != nil {
-		if domain.IsOtherThanNoRows(err) {
-			return 0, 0, appErrorFromDB(err, api.ErrorQueryFailure)
-		}
 
-		p.Name = data[NameCust] + " household"
-		p.Type = api.PolicyTypeHousehold
-		p.HouseholdID = nulls.NewString(data[AccountNumber])
-		p.EntityCodeID = householdEntityID
-		if err := p.Create(tx); err != nil {
-			return 0, 0, appErrorFromDB(err, api.ErrorCreateFailure)
+	if data[HouseholdID] == "" {
+		err := p.FindByTeamDetails(tx, data[Entity], data[Account], data[CostCenter], data[AccountDetail])
+		if err != nil {
+			name := data[PolicyName]
+			if name == "" {
+				name = data[Entity] + " " + data[Account] + data[CostCenter]
+			}
+			p.Name = name
+			p.Type = api.PolicyTypeTeam
+			p.EntityCodeID = EntityCodeID(data[Entity])
+			p.Account = data[Account]
+			p.CostCenter = data[CostCenter]
+			p.AccountDetail = data[AccountDetail]
+
+			if err := p.Create(tx); err != nil {
+				return 0, 0, appErrorFromDB(err, api.ErrorCreateFailure)
+			}
+			policiesCreated++
+
+			// TODO: add accountable person
 		}
-		policiesCreated++
+	} else {
+		err := p.FindByHouseholdID(tx, data[HouseholdID])
+		if err != nil {
+			if domain.IsOtherThanNoRows(err) {
+				return 0, 0, appErrorFromDB(err, api.ErrorQueryFailure)
+			}
+
+			p.Name = data[NameCust] + " household"
+			p.Type = api.PolicyTypeHousehold
+			p.HouseholdID = nulls.NewString(data[HouseholdID])
+			p.EntityCodeID = householdEntityID
+
+			if err := p.Create(tx); err != nil {
+				return 0, 0, appErrorFromDB(err, api.ErrorCreateFailure)
+			}
+			policiesCreated++
+		}
 	}
 
 	value, err := parseCoveredValue(data[CoveredValue])
@@ -761,7 +811,7 @@ func importPolicy(tx *pop.Connection, data map[string]string, catID uuid.UUID, n
 
 	startDate, err := time.Parse("1/2/2006 15:04", data[StartDate])
 	if err != nil {
-		return 0, 0, fmt.Errorf("invalid date %v: %w", data[StartDate], err)
+		startDate = time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC)
 	}
 
 	year, err := parseVehicleYear(data[Year])
@@ -769,8 +819,13 @@ func importPolicy(tx *pop.Connection, data map[string]string, catID uuid.UUID, n
 		return 0, 0, err
 	}
 
+	itemName := data[ItemName]
+	if itemName == "" {
+		itemName = fmt.Sprintf("%s %s %s", data[Year], data[Make], data[Model])
+	}
+
 	i := Item{
-		Name:              fmt.Sprintf("%s %s %s", data[Year], data[Make], data[Model]),
+		Name:              itemName,
 		CategoryID:        catID,
 		Country:           data[Country],
 		PolicyID:          p.ID,

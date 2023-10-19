@@ -828,14 +828,16 @@ func (ms *ModelSuite) Test_ImportPolicies() {
 	ms.Equal(want, got)
 
 	var newPolicy Policy
-	ms.NoError(ms.DB.Where("household_id = ?", 200014).First(&newPolicy))
+	ms.NoError(ms.DB.Where("household_id = ?", "200014").First(&newPolicy))
 }
 
 func (ms *ModelSuite) Test_importPolicy() {
 	catID := CreateCategoryFixtures(ms.DB, 1).ItemCategories[0].ID
 	policy := CreatePolicyFixtures(ms.DB, FixturesConfig{}).Policies[0]
 
-	line1 := map[string]string{
+	teamEntityCode := CreateEntityFixture(ms.DB).Code
+
+	newHousehold := map[string]string{
 		"Account_Number":      "123456",
 		"Veh_Year":            "2001",
 		"Veh_Make":            "Toyota",
@@ -851,7 +853,7 @@ func (ms *ModelSuite) Test_importPolicy() {
 		"NAMECUST":            "Smith, John",
 		"Country_Description": "United States",
 	}
-	line2 := map[string]string{
+	existingHousehold := map[string]string{
 		"Account_Number":      policy.HouseholdID.String,
 		"Veh_Year":            "2010",
 		"Veh_Make":            "Honda",
@@ -867,6 +869,20 @@ func (ms *ModelSuite) Test_importPolicy() {
 		"NAMECUST":            "Jameson, Rick",
 		"Country_Description": "Canada",
 	}
+	newTeam := map[string]string{
+		"Veh_Make":          "Nissan",
+		"Veh_Model":         "Versa",
+		"Veh_Year":          "2016",
+		"Veh_VIN":           "1111",
+		"Person":            "Bono",
+		"Covered_Value":     "14500",
+		"Statement Name":    "2016 Nissan Versa Bono",
+		"Policy Name":       "XYZ Policy",
+		"Entity":            teamEntityCode,
+		"Cost Center":       "SVEH12",
+		"Account":           "63500",
+		"Ledger Entry Desc": "Bono Vehicle",
+	}
 
 	now := time.Now().UTC()
 
@@ -878,11 +894,13 @@ func (ms *ModelSuite) Test_importPolicy() {
 		wantItem   Item
 	}{
 		{
-			name: "create policy and item",
-			data: line1,
+			name: "create household policy and item",
+			data: newHousehold,
 			wantPolicy: Policy{
-				Name:        "Smith, John household",
-				HouseholdID: nulls.NewString("123456"),
+				Name:         "Smith, John household",
+				Type:         api.PolicyTypeHousehold,
+				EntityCodeID: householdEntityID,
+				HouseholdID:  nulls.NewString("123456"),
 			},
 			wantItem: Item{
 				Name:              "2001 Toyota Camry",
@@ -897,7 +915,7 @@ func (ms *ModelSuite) Test_importPolicy() {
 		},
 		{
 			name: "create item only",
-			data: line2,
+			data: existingHousehold,
 			wantItem: Item{
 				Name:              "2010 Honda Civic",
 				Country:           "Canada",
@@ -907,6 +925,27 @@ func (ms *ModelSuite) Test_importPolicy() {
 				CoverageAmount:    4500 * domain.CurrencyFactor,
 				CoverageStartDate: time.Date(2011, 11, 11, 0, 0, 0, 0, time.UTC),
 				Year:              nulls.NewInt(2010),
+			},
+		},
+		{
+			name: "create team policy and item",
+			data: newTeam,
+			wantPolicy: Policy{
+				Name:          "XYZ Policy",
+				Type:          api.PolicyTypeTeam,
+				EntityCodeID:  EntityCodeID(teamEntityCode),
+				CostCenter:    "SVEH12",
+				Account:       "63500",
+				AccountDetail: "Bono Vehicle",
+			},
+			wantItem: Item{
+				Name:              "2016 Nissan Versa Bono",
+				Make:              "Nissan",
+				Model:             "Versa",
+				Year:              nulls.NewInt(2016),
+				SerialNumber:      "1111",
+				CoverageAmount:    14500 * domain.CurrencyFactor,
+				CoverageStartDate: time.Date(time.Now().Year(), time.Now().Month(), 1, 0, 0, 0, 0, time.UTC),
 			},
 		},
 	}
@@ -925,11 +964,14 @@ func (ms *ModelSuite) Test_importPolicy() {
 			if tt.wantPolicy.Name == "" {
 				p = policy
 			} else {
-				ms.NoError(p.FindByHouseholdID(ms.DB, tt.wantPolicy.HouseholdID.String))
+				ms.NoError(ms.DB.Where("name = ?", tt.wantPolicy.Name).First(&p))
 				ms.Equal(tt.wantPolicy.Name, p.Name)
-				ms.Equal(api.PolicyTypeHousehold, p.Type)
+				ms.Equal(tt.wantPolicy.Type, p.Type)
 				ms.Equal(tt.wantPolicy.HouseholdID, p.HouseholdID)
-				ms.Equal(householdEntityID, p.EntityCodeID)
+				ms.Equal(tt.wantPolicy.EntityCodeID, p.EntityCodeID)
+				ms.Equal(tt.wantPolicy.CostCenter, p.CostCenter)
+				ms.Equal(tt.wantPolicy.Account, p.Account)
+				ms.Equal(tt.wantPolicy.AccountDetail, p.AccountDetail)
 			}
 
 			var i Item
