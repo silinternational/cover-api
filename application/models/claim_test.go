@@ -1525,7 +1525,7 @@ func (ms *ModelSuite) TestClaim_AddItem() {
 
 			if tt.wantErr != nil {
 				ms.Error(err, " did not return expected error")
-				SameAppError(ms.T(), *tt.wantErr, err)
+				AssertSameAppError(ms.T(), *tt.wantErr, err)
 				return
 			}
 			ms.NoError(err)

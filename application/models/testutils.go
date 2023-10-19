@@ -939,8 +939,8 @@ func Must(err error) {
 	}
 }
 
-// SameAppError verifies that the actual error contains an AppError and that the key and category match expected
-func SameAppError(t *testing.T, expected api.AppError, actual error) {
+// AssertSameAppError verifies that the actual error contains an AppError and that the key and category match expected
+func AssertSameAppError(t *testing.T, expected api.AppError, actual error) {
 	require.Error(t, actual, "error is nil")
 	var appErr *api.AppError
 	require.True(t, errors.As(actual, &appErr),
