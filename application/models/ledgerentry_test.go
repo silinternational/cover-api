@@ -343,7 +343,7 @@ func (ms *ModelSuite) TestLedgerEntry_balanceDescription() {
 }
 
 func (ms *ModelSuite) Test_NewLedgerEntry() {
-	f := CreateItemFixtures(ms.DB, FixturesConfig{NumberOfPolicies: 2, ClaimsPerPolicy: 1})
+	f := CreateItemFixtures(ms.DB, FixturesConfig{NumberOfPolicies: 2, ClaimsPerPolicy: 1, ClaimItemsPerClaim: 1})
 	householdPolicy := f.Policies[0]
 	householdPolicyItem := householdPolicy.Items[0]
 	ms.NoError(householdPolicyItem.SetAccountablePerson(ms.DB, f.Users[0].ID))
