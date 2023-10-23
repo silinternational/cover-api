@@ -757,14 +757,14 @@ func importPolicy(tx *pop.Connection, data map[string]string, catID uuid.UUID, n
 		Model        = "Veh_Model"
 		VIN          = "Veh_VIN"
 		CoveredValue = "Covered_Value"
+		StartDate    = "Start_Date"
+		Country      = "Country_Description"
 	)
 
 	// fields for household policies
 	const (
 		HouseholdID = "Account_Number"
-		StartDate   = "Start_Date"
 		NameCust    = "NAMECUST"
-		Country     = "Country_Description"
 	)
 
 	// fields for team policies
