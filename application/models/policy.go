@@ -130,12 +130,13 @@ func (p *Policy) FindByHouseholdID(tx *pop.Connection, householdID string) error
 }
 
 func (p *Policy) FindByTeamDetails(tx *pop.Connection, entityCode, account, costCenter, accountDetail string) error {
-	return tx.
+	err := tx.
 		Where("entity_code_id = ?", EntityCodeID(entityCode)).
 		Where("account = ?", account).
 		Where("cost_center = ?", costCenter).
 		Where("account_detail = ?", accountDetail).
 		First(p)
+	return appErrorFromDB(err, api.ErrorQueryFailure)
 }
 
 // IsActorAllowedTo ensure the actor is either an admin, or a member of this policy to perform any permission
@@ -783,6 +784,9 @@ func importPolicy(tx *pop.Connection, data map[string]string, catID uuid.UUID, n
 	if data[HouseholdID] == "" {
 		err := p.FindByTeamDetails(tx, data[Entity], data[Account], data[CostCenter], data[AccountDetail])
 		if err != nil {
+			if domain.IsOtherThanNoRows(err) {
+				return 0, 0, err
+			}
 			name := data[PolicyName]
 			if name == "" {
 				name = data[Entity] + " " + data[Account] + data[CostCenter]
