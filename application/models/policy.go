@@ -126,7 +126,8 @@ func (p *Policy) FindByID(tx *pop.Connection, id uuid.UUID) error {
 }
 
 func (p *Policy) FindByHouseholdID(tx *pop.Connection, householdID string) error {
-	return tx.Where("household_id = ?", householdID).First(p)
+	err := tx.Where("household_id = ?", householdID).First(p)
+	return appErrorFromDB(err, api.ErrorQueryFailure)
 }
 
 func (p *Policy) FindByTeamDetails(tx *pop.Connection, entityCode, account, costCenter, accountDetail string) error {
@@ -807,7 +808,7 @@ func importPolicy(tx *pop.Connection, data map[string]string, catID uuid.UUID, n
 		err := p.FindByHouseholdID(tx, data[HouseholdID])
 		if err != nil {
 			if domain.IsOtherThanNoRows(err) {
-				return 0, 0, appErrorFromDB(err, api.ErrorQueryFailure)
+				return 0, 0, err
 			}
 
 			p.Name = data[NameCust] + " household"
