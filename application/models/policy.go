@@ -721,7 +721,7 @@ func ImportPolicies(tx *pop.Connection, file io.Reader) (api.PoliciesImportRespo
 		return response, api.NewAppError(err, api.ErrorUnknown, api.CategoryInternal)
 	}
 
-	n := 0
+	n := 2 // first line of data is row 2 in the spreadsheet
 	for ; ; n++ {
 		csvLine, err := r.Read()
 		if err == io.EOF {
@@ -745,7 +745,7 @@ func ImportPolicies(tx *pop.Connection, file io.Reader) (api.PoliciesImportRespo
 		response.ItemsCreated += itemsCreated
 	}
 
-	response.LinesProcessed = n
+	response.LinesProcessed = n - 2
 	return response, nil
 }
 
