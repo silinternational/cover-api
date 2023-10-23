@@ -722,8 +722,7 @@ func ImportPolicies(tx *pop.Connection, file io.Reader) (api.PoliciesImportRespo
 		return response, api.NewAppError(err, api.ErrorUnknown, api.CategoryInternal)
 	}
 
-	n := 0
-	for ; ; n++ {
+	for n := 0; ; n++ {
 		csvLine, err := r.Read()
 		if err == io.EOF {
 			break
@@ -780,7 +779,6 @@ func importPolicy(tx *pop.Connection, data map[string]string, catID uuid.UUID, n
 	)
 
 	var p Policy
-	var policiesCreated int
 
 	if data[HouseholdID] == "" {
 		err := p.FindByTeamDetails(tx, data[Entity], data[Account], data[CostCenter], data[AccountDetail])
@@ -802,7 +800,6 @@ func importPolicy(tx *pop.Connection, data map[string]string, catID uuid.UUID, n
 			if err := p.Create(tx); err != nil {
 				return 0, 0, appErrorFromDB(err, api.ErrorCreateFailure)
 			}
-			policiesCreated++
 		}
 	} else {
 		err := p.FindByHouseholdID(tx, data[HouseholdID])
@@ -819,7 +816,6 @@ func importPolicy(tx *pop.Connection, data map[string]string, catID uuid.UUID, n
 			if err := p.Create(tx); err != nil {
 				return 0, 0, appErrorFromDB(err, api.ErrorCreateFailure)
 			}
-			policiesCreated++
 		}
 	}
 
@@ -877,7 +873,7 @@ func importPolicy(tx *pop.Connection, data map[string]string, catID uuid.UUID, n
 	if err := i.Create(tx); err != nil {
 		return 0, 0, appErrorFromDB(err, api.ErrorCreateFailure)
 	}
-	return policiesCreated, 1, nil
+	return 1, 1, nil
 }
 
 func parseCoveredValue(s string) (int, error) {
