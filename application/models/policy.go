@@ -859,7 +859,7 @@ func importPolicy(tx *pop.Connection, data map[string]string, catID uuid.UUID, n
 		CoverageStatus:    api.ItemCoverageStatusApproved,
 		CoverageStartDate: startDate,
 		RiskCategoryID:    riskCategoryVehicleID,
-		PaidThroughDate:   domain.EndOfMonth(now),
+		PaidThroughDate:   domain.EndOfMonth(now).AddDate(0, -1, 0),
 	}
 
 	if data[Year] != "" {
