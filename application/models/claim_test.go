@@ -1474,3 +1474,77 @@ func (ms *ModelSuite) TestClaim_StopItemCoverage() {
 		})
 	}
 }
+
+func (ms *ModelSuite) TestClaim_AddItem() {
+	fixConfig := FixturesConfig{
+		NumberOfPolicies:   2,
+		ItemsPerPolicy:     1,
+		ClaimsPerPolicy:    1,
+		ClaimItemsPerClaim: 0,
+	}
+
+	fixtures := CreateItemFixtures(ms.DB, fixConfig)
+	claim := fixtures.Claims[0]
+	itemID := fixtures.Items[0].ID
+	otherItemID := fixtures.Items[1].ID
+
+	tests := []struct {
+		name       string
+		claim      Claim
+		input      api.ClaimItemCreateInput
+		wantErr    *api.AppError
+		wantPayout api.Currency
+	}{
+		{
+			name:  "item not on the correct policy",
+			claim: claim,
+			input: api.ClaimItemCreateInput{
+				ItemID: otherItemID,
+			},
+			wantErr: &api.AppError{Category: api.CategoryNotFound, Key: api.ErrorClaimItemCreateInvalidInput},
+		},
+		{
+			name:  "good input",
+			claim: claim,
+			input: api.ClaimItemCreateInput{
+				ItemID:         itemID,
+				RepairEstimate: 100,
+				PayoutOption:   api.PayoutOptionRepair,
+				FMV:            1000,
+			},
+			wantErr:    nil,
+			wantPayout: 95,
+		},
+	}
+
+	for _, tt := range tests {
+		ms.T().Run(tt.name, func(t *testing.T) {
+			ctx := CreateTestContext(fixtures.Users[0])
+
+			got, err := tt.claim.AddItem(ctx, tt.input)
+
+			if tt.wantErr != nil {
+				ms.Error(err, " did not return expected error")
+				AssertSameAppError(ms.T(), *tt.wantErr, err)
+				return
+			}
+			ms.NoError(err)
+
+			ms.Equal(tt.input.ItemID, got.ItemID)
+			ms.Equal(tt.input.RepairEstimate, got.RepairEstimate)
+			ms.Equal(tt.input.PayoutOption, got.PayoutOption)
+			ms.Equal(tt.input.FMV, got.FMV)
+
+			var claimItemFromDB ClaimItem
+			Must(ms.DB.Find(&claimItemFromDB, got.ID))
+			ms.Equal(tt.input.ItemID, claimItemFromDB.ItemID)
+			ms.Equal(tt.input.RepairEstimate, claimItemFromDB.RepairEstimate)
+			ms.Equal(tt.input.PayoutOption, claimItemFromDB.PayoutOption)
+			ms.Equal(tt.input.FMV, claimItemFromDB.FMV)
+
+			var claimFromDB Claim
+			Must(ms.DB.Find(&claimFromDB, tt.claim.ID))
+			ms.Equal(tt.wantPayout, claimFromDB.TotalPayout)
+		})
+	}
+}
