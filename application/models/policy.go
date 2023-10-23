@@ -722,14 +722,14 @@ func ImportPolicies(tx *pop.Connection, file io.Reader) (api.PoliciesImportRespo
 		return response, api.NewAppError(err, api.ErrorUnknown, api.CategoryInternal)
 	}
 
-	n := 2 // first line of data is row 2 in the spreadsheet
+	n := 0
 	for ; ; n++ {
 		csvLine, err := r.Read()
 		if err == io.EOF {
 			break
 		}
 		if err != nil {
-			err := fmt.Errorf("failed to read from policy CSV file on line %v: %w", n, err)
+			err := fmt.Errorf("failed to read from policy CSV file on row %d: %w", n+2, err)
 			return response, api.NewAppError(err, api.ErrorUnknown, api.CategoryUser)
 		}
 
@@ -739,14 +739,14 @@ func ImportPolicies(tx *pop.Connection, file io.Reader) (api.PoliciesImportRespo
 		}
 		policiesCreated, itemsCreated, err := importPolicy(tx, data, vehicleCategory.ID, time.Now().UTC())
 		if err != nil {
-			err := fmt.Errorf("error importing policy on CSV file line %v: %w", n, err)
+			err := fmt.Errorf("error importing policy on row %d: %w", n+2, err)
 			return response, api.NewAppError(err, api.ErrorUnknown, api.CategoryUser)
 		}
 		response.PoliciesCreated += policiesCreated
 		response.ItemsCreated += itemsCreated
 	}
 
-	response.LinesProcessed = n - 2
+	response.LinesProcessed = n
 	return response, nil
 }
 
