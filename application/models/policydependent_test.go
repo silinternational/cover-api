@@ -105,3 +105,57 @@ func (ms *ModelSuite) TestPolicyDependent_ConvertToAPI() {
 	ms.Equal(dependent.Country, got.Country, "Country is not correct")
 	ms.Equal(dependent.ChildBirthYear, got.ChildBirthYear, "ChildBirthYear is not correct")
 }
+
+func (ms *ModelSuite) TestPolicyDependent_FindByName() {
+	fixtures := CreatePolicyFixtures(ms.DB, FixturesConfig{DependentsPerPolicy: 1})
+	depFixture := fixtures.PolicyDependents[0]
+
+	tests := []struct {
+		name    string
+		details PolicyDependent
+		wantDep PolicyDependent
+		wantErr *api.AppError
+	}{
+		{
+			name:    "not found",
+			details: PolicyDependent{Name: "joe"},
+			wantErr: &api.AppError{
+				Key:      api.ErrorNoRows,
+				Category: api.CategoryUser,
+			},
+		},
+		{
+			name: "found",
+			details: PolicyDependent{
+				PolicyID:       depFixture.PolicyID,
+				Name:           depFixture.Name,
+				Relationship:   depFixture.Relationship,
+				City:           depFixture.City,
+				State:          depFixture.State,
+				Country:        depFixture.Country,
+				ChildBirthYear: depFixture.ChildBirthYear,
+			},
+			wantDep: depFixture,
+		},
+	}
+	for _, tt := range tests {
+		ms.T().Run(tt.name, func(t *testing.T) {
+			err := tt.details.FindByName(ms.DB)
+			if tt.wantErr != nil {
+				ms.Error(err)
+				AssertSameAppError(ms.T(), *tt.wantErr, err)
+				return
+			}
+
+			ms.NoError(err)
+			ms.Equal(tt.wantDep.ID, tt.details.ID)
+			ms.Equal(tt.wantDep.PolicyID, tt.details.PolicyID)
+			ms.Equal(tt.wantDep.Name, tt.details.Name)
+			ms.Equal(tt.wantDep.Relationship, tt.details.Relationship)
+			ms.Equal(tt.wantDep.City, tt.details.City)
+			ms.Equal(tt.wantDep.State, tt.details.State)
+			ms.Equal(tt.wantDep.Country, tt.details.Country)
+			ms.Equal(tt.wantDep.ChildBirthYear, tt.details.ChildBirthYear)
+		})
+	}
+}

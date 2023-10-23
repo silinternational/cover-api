@@ -147,3 +147,8 @@ func (p *PolicyDependent) FixTeamRelationship(policy Policy) {
 		p.ChildBirthYear = 0
 	}
 }
+
+func (p *PolicyDependent) FindByName(tx *pop.Connection) error {
+	err := tx.Where("policy_id = ?", p.PolicyID).Where("name = ?", p.Name).First(p)
+	return appErrorFromDB(err, api.ErrorQueryFailure)
+}
