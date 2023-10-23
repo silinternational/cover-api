@@ -432,7 +432,8 @@ func (p *Policy) AddDependent(tx *pop.Connection, input api.PolicyDependentInput
 			return PolicyDependent{}, err
 		}
 	} else {
-		if dependent.Relationship == input.Relationship &&
+		if (dependent.Relationship == input.Relationship ||
+			dependent.Relationship == api.PolicyDependentRelationshipNone && input.Relationship == "") &&
 			dependent.Country == input.Country &&
 			dependent.ChildBirthYear == input.ChildBirthYear {
 			return dependent, nil
