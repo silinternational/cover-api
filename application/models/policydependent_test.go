@@ -108,39 +108,33 @@ func (ms *ModelSuite) TestPolicyDependent_ConvertToAPI() {
 
 func (ms *ModelSuite) TestPolicyDependent_FindByName() {
 	fixtures := CreatePolicyFixtures(ms.DB, FixturesConfig{DependentsPerPolicy: 1})
+	policyID := fixtures.Policies[0].ID
 	depFixture := fixtures.PolicyDependents[0]
 
 	tests := []struct {
-		name    string
-		details PolicyDependent
-		wantDep PolicyDependent
-		wantErr *api.AppError
+		name          string
+		dependentName string
+		wantDep       PolicyDependent
+		wantErr       *api.AppError
 	}{
 		{
-			name:    "not found",
-			details: PolicyDependent{Name: "joe"},
+			name:          "not found",
+			dependentName: "joe",
 			wantErr: &api.AppError{
 				Key:      api.ErrorNoRows,
 				Category: api.CategoryUser,
 			},
 		},
 		{
-			name: "found",
-			details: PolicyDependent{
-				PolicyID:       depFixture.PolicyID,
-				Name:           depFixture.Name,
-				Relationship:   depFixture.Relationship,
-				City:           depFixture.City,
-				State:          depFixture.State,
-				Country:        depFixture.Country,
-				ChildBirthYear: depFixture.ChildBirthYear,
-			},
-			wantDep: depFixture,
+			name:          "found",
+			dependentName: depFixture.Name,
+			wantDep:       depFixture,
 		},
 	}
 	for _, tt := range tests {
 		ms.T().Run(tt.name, func(t *testing.T) {
-			err := tt.details.FindByName(ms.DB)
+			var found PolicyDependent
+			err := found.FindByName(ms.DB, policyID, tt.dependentName)
 			if tt.wantErr != nil {
 				ms.Error(err)
 				AssertSameAppError(ms.T(), *tt.wantErr, err)
@@ -148,14 +142,14 @@ func (ms *ModelSuite) TestPolicyDependent_FindByName() {
 			}
 
 			ms.NoError(err)
-			ms.Equal(tt.wantDep.ID, tt.details.ID)
-			ms.Equal(tt.wantDep.PolicyID, tt.details.PolicyID)
-			ms.Equal(tt.wantDep.Name, tt.details.Name)
-			ms.Equal(tt.wantDep.Relationship, tt.details.Relationship)
-			ms.Equal(tt.wantDep.City, tt.details.City)
-			ms.Equal(tt.wantDep.State, tt.details.State)
-			ms.Equal(tt.wantDep.Country, tt.details.Country)
-			ms.Equal(tt.wantDep.ChildBirthYear, tt.details.ChildBirthYear)
+			ms.Equal(tt.wantDep.ID, found.ID)
+			ms.Equal(tt.wantDep.PolicyID, found.PolicyID)
+			ms.Equal(tt.wantDep.Name, found.Name)
+			ms.Equal(tt.wantDep.Relationship, found.Relationship)
+			ms.Equal(tt.wantDep.City, found.City)
+			ms.Equal(tt.wantDep.State, found.State)
+			ms.Equal(tt.wantDep.Country, found.Country)
+			ms.Equal(tt.wantDep.ChildBirthYear, found.ChildBirthYear)
 		})
 	}
 }

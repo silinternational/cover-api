@@ -148,7 +148,7 @@ func (p *PolicyDependent) FixTeamRelationship(policy Policy) {
 	}
 }
 
-func (p *PolicyDependent) FindByName(tx *pop.Connection) error {
-	err := tx.Where("policy_id = ?", p.PolicyID).Where("name = ?", p.Name).First(p)
+func (p *PolicyDependent) FindByName(tx *pop.Connection, policyID uuid.UUID, name string) error {
+	err := tx.Where("policy_id = ?", policyID).Where("name = ?", name).First(p)
 	return appErrorFromDB(err, api.ErrorQueryFailure)
 }
