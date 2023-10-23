@@ -426,8 +426,8 @@ func (p *Policy) AddDependent(tx *pop.Connection, input api.PolicyDependentInput
 
 	dependent.FixTeamRelationship(*p)
 
-	// If an identical record exists, use that one and don't create a duplicate
-	if err := dependent.FindByName(tx); err != nil {
+	// If a matching record exists, use that one and don't create a duplicate
+	if err := dependent.FindByName(tx, p.ID, input.Name); err != nil {
 		if domain.IsOtherThanNoRows(err) {
 			return PolicyDependent{}, err
 		}
@@ -797,8 +797,6 @@ func importPolicy(tx *pop.Connection, data map[string]string, catID uuid.UUID, n
 				return 0, 0, appErrorFromDB(err, api.ErrorCreateFailure)
 			}
 			policiesCreated++
-
-			// TODO: add accountable person
 		}
 	} else {
 		err := p.FindByHouseholdID(tx, data[HouseholdID])
@@ -819,6 +817,15 @@ func importPolicy(tx *pop.Connection, data map[string]string, catID uuid.UUID, n
 		}
 	}
 
+	var dependent PolicyDependent
+	if data[Person] != "" {
+		var err error
+		dependent, err = p.AddDependent(tx, api.PolicyDependentInput{Name: data[Person]})
+		if err != nil {
+			return 0, 0, err
+		}
+	}
+
 	value, err := parseCoveredValue(data[CoveredValue])
 	if err != nil {
 		return 0, 0, err
@@ -827,11 +834,6 @@ func importPolicy(tx *pop.Connection, data map[string]string, catID uuid.UUID, n
 	startDate, err := time.Parse("1/2/2006 15:04", data[StartDate])
 	if err != nil {
 		startDate = time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC)
-	}
-
-	year, err := parseVehicleYear(data[Year])
-	if err != nil {
-		return 0, 0, err
 	}
 
 	itemName := data[ItemName]
@@ -851,9 +853,21 @@ func importPolicy(tx *pop.Connection, data map[string]string, catID uuid.UUID, n
 		CoverageStatus:    api.ItemCoverageStatusApproved,
 		CoverageStartDate: startDate,
 		RiskCategoryID:    riskCategoryVehicleID,
-		Year:              nulls.NewInt(year),
 		PaidThroughDate:   domain.EndOfMonth(now),
 	}
+
+	if data[Year] != "" {
+		year, err := parseVehicleYear(data[Year])
+		if err != nil {
+			return 0, 0, err
+		}
+		i.Year = nulls.NewInt(year)
+	}
+
+	if !dependent.ID.IsNil() {
+		i.PolicyDependentID = nulls.NewUUID(dependent.ID)
+	}
+
 	if err := i.Create(tx); err != nil {
 		return 0, 0, appErrorFromDB(err, api.ErrorCreateFailure)
 	}

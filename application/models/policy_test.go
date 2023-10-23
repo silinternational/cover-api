@@ -963,6 +963,7 @@ func (ms *ModelSuite) Test_importPolicy() {
 		wantErr    string
 		wantPolicy Policy
 		wantItem   Item
+		wantPerson PolicyDependent
 	}{
 		{
 			name: "create household policy and item",
@@ -1018,6 +1019,9 @@ func (ms *ModelSuite) Test_importPolicy() {
 				CoverageAmount:    14500 * domain.CurrencyFactor,
 				CoverageStartDate: time.Date(time.Now().Year(), time.Now().Month(), 1, 0, 0, 0, 0, time.UTC),
 			},
+			wantPerson: PolicyDependent{
+				Name: "Bono",
+			},
 		},
 	}
 	for _, tt := range tests {
@@ -1060,6 +1064,11 @@ func (ms *ModelSuite) Test_importPolicy() {
 			ms.Equal(riskCategoryVehicleID, i.RiskCategoryID)
 			ms.Equal(tt.wantItem.Year, i.Year)
 			ms.Equal(domain.EndOfMonth(now), i.PaidThroughDate)
+
+			if tt.wantPerson.Name != "" {
+				var pd PolicyDependent
+				ms.NoError(pd.FindByName(ms.DB, p.ID, tt.wantPerson.Name))
+			}
 		})
 	}
 }
