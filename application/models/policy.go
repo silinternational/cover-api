@@ -875,6 +875,8 @@ func importPolicy(tx *pop.Connection, data map[string]string, catID uuid.UUID, n
 }
 
 func parseCoveredValue(s string) (int, error) {
+	s = strings.Trim(s, "$")
+	s = strings.ReplaceAll(s, ",", "")
 	value, err := strconv.Atoi(s)
 	if err != nil {
 		return 0, fmt.Errorf("invalid covered value %q: %w", s, err)
