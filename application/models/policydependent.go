@@ -28,7 +28,7 @@ type PolicyDependent struct {
 	Relationship   api.PolicyDependentRelationship `db:"relationship" validate:"policyDependentRelationship"`
 	City           string                          `db:"city"`
 	State          string                          `db:"state"`
-	Country        string                          `db:"country" validate:"required"`
+	Country        string                          `db:"country"`
 	ChildBirthYear int                             `db:"child_birth_year" validate:"policyDependentChildBirthYear,required_if=Relationship Child"`
 
 	CreatedAt time.Time `db:"created_at"`
