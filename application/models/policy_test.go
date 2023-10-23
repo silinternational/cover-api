@@ -318,6 +318,77 @@ func (ms *ModelSuite) TestPolicy_itemCoverageTotals() {
 	ms.Equal(want, gotTotal, "incorrect coverage grand total")
 }
 
+func (ms *ModelSuite) TestPolicy_AddDependent() {
+	fixtures := CreatePolicyFixtures(ms.DB, FixturesConfig{DependentsPerPolicy: 1})
+	policy := fixtures.Policies[0]
+	dependent := fixtures.PolicyDependents[0]
+
+	tests := []struct {
+		name    string
+		policy  Policy
+		input   api.PolicyDependentInput
+		want    PolicyDependent
+		wantErr *api.AppError
+	}{
+		{
+			name:    "incomplete",
+			policy:  policy,
+			input:   api.PolicyDependentInput{Name: "Simon"},
+			wantErr: &api.AppError{Category: api.CategoryUser, Key: api.ErrorValidation},
+		},
+		{
+			name:   "name conflict",
+			policy: policy,
+			input: api.PolicyDependentInput{
+				Name:           dependent.Name,
+				Country:        "Narnia",
+				Relationship:   dependent.Relationship,
+				ChildBirthYear: dependent.ChildBirthYear,
+			},
+			wantErr: &api.AppError{Category: api.CategoryUser, Key: api.ErrorPolicyDependentDuplicateName},
+		},
+		{
+			name:   "create new",
+			policy: policy,
+			input: api.PolicyDependentInput{
+				Name:         "Simon",
+				Country:      "USA",
+				Relationship: api.PolicyDependentRelationshipSpouse,
+			},
+		},
+		{
+			name:   "reuse existing",
+			policy: policy,
+			input: api.PolicyDependentInput{
+				Name:           dependent.Name,
+				Country:        dependent.Country,
+				Relationship:   dependent.Relationship,
+				ChildBirthYear: dependent.ChildBirthYear,
+			},
+			want: dependent,
+		},
+	}
+	for _, tt := range tests {
+		ms.T().Run(tt.name, func(t *testing.T) {
+			got, err := tt.policy.AddDependent(ms.DB, tt.input)
+			if tt.wantErr != nil {
+				ms.Error(err)
+				AssertSameAppError(ms.T(), *tt.wantErr, err)
+				return
+			}
+
+			ms.NoError(err)
+			ms.Equal(tt.input.Name, got.Name)
+			ms.Equal(tt.input.Country, got.Country)
+			ms.Equal(tt.input.Relationship, got.Relationship)
+
+			if !tt.want.ID.IsNil() {
+				ms.Equal(tt.want.ID, got.ID, "expected ID of existing dependent")
+			}
+		})
+	}
+}
+
 func (ms *ModelSuite) TestPolicy_Compare() {
 	e := CreateEntityFixture(ms.DB)
 

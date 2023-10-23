@@ -426,8 +426,23 @@ func (p *Policy) AddDependent(tx *pop.Connection, input api.PolicyDependentInput
 
 	dependent.FixTeamRelationship(*p)
 
+	// If an identical record exists, use that one and don't create a duplicate
+	if err := dependent.FindByName(tx); err != nil {
+		if domain.IsOtherThanNoRows(err) {
+			return PolicyDependent{}, err
+		}
+	} else {
+		if dependent.Relationship == input.Relationship &&
+			dependent.Country == input.Country &&
+			dependent.ChildBirthYear == input.ChildBirthYear {
+			return dependent, nil
+		}
+		err = errors.New("cannot create a new PolicyDependent with same Name as existing record")
+		return PolicyDependent{}, api.NewAppError(err, api.ErrorPolicyDependentDuplicateName, api.CategoryUser)
+	}
+
 	if err := dependent.Create(tx); err != nil {
-		return dependent, err
+		return PolicyDependent{}, err
 	}
 
 	return dependent, nil

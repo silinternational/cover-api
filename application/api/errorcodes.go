@@ -108,8 +108,9 @@ const (
 	ErrorPolicyHasNoHouseholdID               = ErrorKey("ErrorPolicyHasNoHouseholdID")
 
 	// PolicyDependent
-	ErrorPolicyDependentCreate = ErrorKey("ErrorPolicyDependentCreate")
-	ErrorPolicyDependentDelete = ErrorKey("ErrorPolicyDependentDelete")
+	ErrorPolicyDependentCreate        = ErrorKey("ErrorPolicyDependentCreate")
+	ErrorPolicyDependentDelete        = ErrorKey("ErrorPolicyDependentDelete")
+	ErrorPolicyDependentDuplicateName = ErrorKey("ErrorPolicyDependentDuplicateName")
 
 	// ClaimItem
 	ErrorClaimItemCreateInvalidInput     = ErrorKey("ErrorClaimItemCreateInvalidInput")
