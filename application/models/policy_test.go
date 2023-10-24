@@ -1063,7 +1063,7 @@ func (ms *ModelSuite) Test_importPolicy() {
 			ms.Equal(tt.wantItem.CoverageStartDate, i.CoverageStartDate)
 			ms.Equal(riskCategoryVehicleID, i.RiskCategoryID)
 			ms.Equal(tt.wantItem.Year, i.Year)
-			ms.Equal(domain.EndOfMonth(now), i.PaidThroughDate)
+			ms.Equal(domain.EndOfMonth(now).AddDate(0, -1, 0), i.PaidThroughDate)
 
 			if tt.wantPerson.Name != "" {
 				var pd PolicyDependent
