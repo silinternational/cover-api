@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/silinternational/cover-api/domain"
 	"github.com/silinternational/cover-api/models"
 
 	"github.com/gobuffalo/buffalo"
