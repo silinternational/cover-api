@@ -111,7 +111,8 @@ func CreateFileFixtures(tx *pop.Connection, n int, createdByID uuid.UUID) Fixtur
 func CreateItemFixtures(tx *pop.Connection, config FixturesConfig) Fixtures {
 	config.NumberOfPolicies = domain.Max(1, config.NumberOfPolicies)
 	config.ItemsPerPolicy = domain.Max(1, config.ItemsPerPolicy)
-	config.ItemsPerPolicy = domain.Max(config.ItemsPerPolicy, config.ClaimsPerPolicy*config.ClaimItemsPerClaim)
+	numberOfClaimItems := config.ClaimsPerPolicy * config.ClaimItemsPerClaim
+	config.ItemsPerPolicy = domain.Max(config.ItemsPerPolicy, numberOfClaimItems)
 
 	fixtures := CreatePolicyFixtures(tx, config)
 	policies := fixtures.Policies
