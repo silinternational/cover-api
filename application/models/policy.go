@@ -722,7 +722,8 @@ func ImportPolicies(tx *pop.Connection, file io.Reader) (api.PoliciesImportRespo
 		return response, api.NewAppError(err, api.ErrorUnknown, api.CategoryInternal)
 	}
 
-	for n := 0; ; n++ {
+	n := 0
+	for ; ; n++ {
 		csvLine, err := r.Read()
 		if err == io.EOF {
 			break
