@@ -43,7 +43,7 @@ func Test_ActionSuite(t *testing.T) {
 	as := &ActionSuite{
 		app: App(),
 	}
-	c, err := pop.Connect("test")
+	c, err := pop.Connect(domain.EnvTest)
 	if err == nil {
 		models.DB = c
 		as.DB = c
