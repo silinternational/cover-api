@@ -28,7 +28,7 @@ type PolicyDependent struct {
 	Relationship   api.PolicyDependentRelationship `db:"relationship" validate:"policyDependentRelationship"`
 	City           string                          `db:"city"`
 	State          string                          `db:"state"`
-	Country        string                          `db:"country" validate:"required"`
+	Country        string                          `db:"country"`
 	ChildBirthYear int                             `db:"child_birth_year" validate:"policyDependentChildBirthYear,required_if=Relationship Child"`
 
 	CreatedAt time.Time `db:"created_at"`
@@ -146,4 +146,9 @@ func (p *PolicyDependent) FixTeamRelationship(policy Policy) {
 		p.Relationship = api.PolicyDependentRelationshipNone
 		p.ChildBirthYear = 0
 	}
+}
+
+func (p *PolicyDependent) FindByName(tx *pop.Connection, policyID uuid.UUID, name string) error {
+	err := tx.Where("policy_id = ?", policyID).Where("name = ?", name).First(p)
+	return appErrorFromDB(err, api.ErrorQueryFailure)
 }

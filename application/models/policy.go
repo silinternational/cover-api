@@ -126,7 +126,18 @@ func (p *Policy) FindByID(tx *pop.Connection, id uuid.UUID) error {
 }
 
 func (p *Policy) FindByHouseholdID(tx *pop.Connection, householdID string) error {
-	return tx.Where("household_id = ?", householdID).First(p)
+	err := tx.Where("household_id = ?", householdID).First(p)
+	return appErrorFromDB(err, api.ErrorQueryFailure)
+}
+
+func (p *Policy) FindByTeamDetails(tx *pop.Connection, entityCode, account, costCenter, accountDetail string) error {
+	err := tx.
+		Where("entity_code_id = ?", EntityCodeID(entityCode)).
+		Where("account = ?", account).
+		Where("cost_center = ?", costCenter).
+		Where("account_detail = ?", accountDetail).
+		First(p)
+	return appErrorFromDB(err, api.ErrorQueryFailure)
 }
 
 // IsActorAllowedTo ensure the actor is either an admin, or a member of this policy to perform any permission
@@ -417,8 +428,24 @@ func (p *Policy) AddDependent(tx *pop.Connection, input api.PolicyDependentInput
 
 	dependent.FixTeamRelationship(*p)
 
+	// If a matching record exists, use that one and don't create a duplicate
+	if err := dependent.FindByName(tx, p.ID, input.Name); err != nil {
+		if domain.IsOtherThanNoRows(err) {
+			return PolicyDependent{}, err
+		}
+	} else {
+		if (dependent.Relationship == input.Relationship ||
+			dependent.Relationship == api.PolicyDependentRelationshipNone && input.Relationship == "") &&
+			dependent.Country == input.Country &&
+			dependent.ChildBirthYear == input.ChildBirthYear {
+			return dependent, nil
+		}
+		err = errors.New("cannot create a new PolicyDependent with same Name as existing record")
+		return PolicyDependent{}, api.NewAppError(err, api.ErrorPolicyDependentDuplicateName, api.CategoryUser)
+	}
+
 	if err := dependent.Create(tx); err != nil {
-		return dependent, err
+		return PolicyDependent{}, err
 	}
 
 	return dependent, nil
@@ -683,13 +710,14 @@ func ImportPolicies(tx *pop.Connection, file io.Reader) (api.PoliciesImportRespo
 	var response api.PoliciesImportResponse
 
 	r := csv.NewReader(bufio.NewReader(file))
-	if _, err := r.Read(); err == io.EOF {
+	header, err := r.Read()
+	if err == io.EOF {
 		err := fmt.Errorf("empty policy CSV file: %w", err)
 		return response, api.NewAppError(err, api.ErrorUnknown, api.CategoryUser)
 	}
 
 	var vehicleCategory ItemCategory
-	if err := tx.Where("name ILIKE '%vehicles%'").First(&vehicleCategory); err != nil {
+	if err := tx.Where("risk_category_id = ?", riskCategoryVehicleID).First(&vehicleCategory); err != nil {
 		err := fmt.Errorf("failed to find an item category for vehicles: %w", err)
 		return response, api.NewAppError(err, api.ErrorUnknown, api.CategoryInternal)
 	}
@@ -701,13 +729,17 @@ func ImportPolicies(tx *pop.Connection, file io.Reader) (api.PoliciesImportRespo
 			break
 		}
 		if err != nil {
-			err := fmt.Errorf("failed to read from policy CSV file on line %v: %w", n, err)
+			err := fmt.Errorf("failed to read from policy CSV file on row %d: %w", n+2, err)
 			return response, api.NewAppError(err, api.ErrorUnknown, api.CategoryUser)
 		}
 
-		policiesCreated, itemsCreated, err := importPolicy(tx, csvLine, vehicleCategory.ID, time.Now().UTC())
+		data := map[string]string{}
+		for i, value := range csvLine {
+			data[header[i]] = strings.TrimSpace(value)
+		}
+		policiesCreated, itemsCreated, err := importPolicy(tx, data, vehicleCategory.ID, time.Now().UTC())
 		if err != nil {
-			err := fmt.Errorf("error importing policy on CSV file line %v: %w", n, err)
+			err := fmt.Errorf("error importing policy on row %d: %w", n+2, err)
 			return response, api.NewAppError(err, api.ErrorUnknown, api.CategoryUser)
 		}
 		response.PoliciesCreated += policiesCreated
@@ -718,87 +750,136 @@ func ImportPolicies(tx *pop.Connection, file io.Reader) (api.PoliciesImportRespo
 	return response, nil
 }
 
-func importPolicy(tx *pop.Connection, csvLine []string, catID uuid.UUID, now time.Time) (int, int, error) {
+func importPolicy(tx *pop.Connection, data map[string]string, catID uuid.UUID, now time.Time) (int, int, error) {
+	// fields common to both policy types
 	const (
-		Account_Number = iota
-		Veh_Year
-		Veh_Make
-		Veh_Model
-		CoverageID
-		VehicleID
-		Veh_VIN
-		Covered_Value
-		Monthly_Charge
-		Start_Date
-		End_Date
-		Country_Code_Id
-		NameCust
-		Country_Description
+		Year         = "Veh_Year"
+		Make         = "Veh_Make"
+		Model        = "Veh_Model"
+		VIN          = "Veh_VIN"
+		CoveredValue = "Covered_Value"
+		StartDate    = "Start_Date"
+		Country      = "Country_Description"
 	)
 
-	if len(csvLine) < 14 {
-		return 0, 0, errors.New("line contains too few columns")
-	}
+	// fields for household policies
+	const (
+		HouseholdID = "Account_Number"
+		NameCust    = "NAMECUST"
+	)
 
-	for i := range csvLine {
-		csvLine[i] = strings.TrimSpace(csvLine[i])
-	}
+	// fields for team policies
+	const (
+		Person        = "Person"
+		ItemName      = "Statement Name"
+		PolicyName    = "Policy Name"
+		Entity        = "Entity"
+		CostCenter    = "Cost Center"
+		Account       = "Account"
+		AccountDetail = "Ledger Entry Desc"
+	)
 
 	var p Policy
-	var policiesCreated int
-	err := p.FindByHouseholdID(tx, csvLine[Account_Number])
-	if err != nil {
-		if domain.IsOtherThanNoRows(err) {
-			return 0, 0, appErrorFromDB(err, api.ErrorQueryFailure)
-		}
 
-		p.Name = csvLine[NameCust] + " household"
-		p.Type = api.PolicyTypeHousehold
-		p.HouseholdID = nulls.NewString(csvLine[Account_Number])
-		p.EntityCodeID = householdEntityID
-		if err := p.Create(tx); err != nil {
-			return 0, 0, appErrorFromDB(err, api.ErrorCreateFailure)
+	if data[HouseholdID] == "" {
+		err := p.FindByTeamDetails(tx, data[Entity], data[Account], data[CostCenter], data[AccountDetail])
+		if err != nil {
+			if domain.IsOtherThanNoRows(err) {
+				return 0, 0, err
+			}
+			name := data[PolicyName]
+			if name == "" {
+				name = data[Entity] + " " + data[Account] + data[CostCenter]
+			}
+			p.Name = name
+			p.Type = api.PolicyTypeTeam
+			p.EntityCodeID = EntityCodeID(data[Entity])
+			p.Account = data[Account]
+			p.CostCenter = data[CostCenter]
+			p.AccountDetail = data[AccountDetail]
+
+			if err := p.Create(tx); err != nil {
+				return 0, 0, appErrorFromDB(err, api.ErrorCreateFailure)
+			}
 		}
-		policiesCreated++
+	} else {
+		err := p.FindByHouseholdID(tx, data[HouseholdID])
+		if err != nil {
+			if domain.IsOtherThanNoRows(err) {
+				return 0, 0, err
+			}
+
+			p.Name = data[NameCust] + " household"
+			p.Type = api.PolicyTypeHousehold
+			p.HouseholdID = nulls.NewString(data[HouseholdID])
+			p.EntityCodeID = householdEntityID
+
+			if err := p.Create(tx); err != nil {
+				return 0, 0, appErrorFromDB(err, api.ErrorCreateFailure)
+			}
+		}
 	}
 
-	value, err := parseCoveredValue(csvLine[Covered_Value])
+	var dependent PolicyDependent
+	if data[Person] != "" {
+		var err error
+		dependent, err = p.AddDependent(tx, api.PolicyDependentInput{Name: data[Person]})
+		if err != nil {
+			return 0, 0, err
+		}
+	}
+
+	value, err := parseCoveredValue(data[CoveredValue])
 	if err != nil {
 		return 0, 0, err
 	}
 
-	startDate, err := time.Parse("1/2/2006 15:04", csvLine[Start_Date])
+	startDate, err := time.Parse("1/2/2006 15:04", data[StartDate])
 	if err != nil {
-		return 0, 0, fmt.Errorf("invalid date %v: %w", csvLine[Start_Date], err)
+		startDate = time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC)
 	}
 
-	year, err := parseVehicleYear(csvLine[Veh_Year])
-	if err != nil {
-		return 0, 0, err
+	itemName := data[ItemName]
+	if itemName == "" {
+		itemName = fmt.Sprintf("%s %s %s", data[Year], data[Make], data[Model])
 	}
 
 	i := Item{
-		Name:              fmt.Sprintf("%s %s %s", csvLine[Veh_Year], csvLine[Veh_Make], csvLine[Veh_Model]),
+		Name:              itemName,
 		CategoryID:        catID,
-		Country:           csvLine[Country_Description],
+		Country:           data[Country],
 		PolicyID:          p.ID,
-		Make:              csvLine[Veh_Make],
-		Model:             csvLine[Veh_Model],
-		SerialNumber:      csvLine[Veh_VIN],
+		Make:              data[Make],
+		Model:             data[Model],
+		SerialNumber:      data[VIN],
 		CoverageAmount:    value,
 		CoverageStatus:    api.ItemCoverageStatusApproved,
 		CoverageStartDate: startDate,
 		RiskCategoryID:    riskCategoryVehicleID,
-		Year:              nulls.NewInt(year),
-		PaidThroughDate:   domain.EndOfMonth(now),
+		PaidThroughDate:   domain.EndOfMonth(now).AddDate(0, -1, 0),
 	}
+
+	if data[Year] != "" {
+		year, err := parseVehicleYear(data[Year])
+		if err != nil {
+			return 0, 0, err
+		}
+		i.Year = nulls.NewInt(year)
+	}
+
+	if !dependent.ID.IsNil() {
+		i.PolicyDependentID = nulls.NewUUID(dependent.ID)
+	}
+
 	if err := i.Create(tx); err != nil {
 		return 0, 0, appErrorFromDB(err, api.ErrorCreateFailure)
 	}
-	return policiesCreated, 1, nil
+	return 1, 1, nil
 }
 
 func parseCoveredValue(s string) (int, error) {
+	s = strings.Trim(s, "$")
+	s = strings.ReplaceAll(s, ",", "")
 	value, err := strconv.Atoi(s)
 	if err != nil {
 		return 0, fmt.Errorf("invalid covered value %q: %w", s, err)

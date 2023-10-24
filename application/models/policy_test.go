@@ -3,6 +3,7 @@ package models
 import (
 	"fmt"
 	"net/url"
+	"strings"
 	"testing"
 	"time"
 
@@ -315,6 +316,77 @@ func (ms *ModelSuite) TestPolicy_itemCoverageTotals() {
 
 	want := coverageForPolicy + coverageForDep
 	ms.Equal(want, gotTotal, "incorrect coverage grand total")
+}
+
+func (ms *ModelSuite) TestPolicy_AddDependent() {
+	fixtures := CreatePolicyFixtures(ms.DB, FixturesConfig{DependentsPerPolicy: 1})
+	policy := fixtures.Policies[0]
+	dependent := fixtures.PolicyDependents[0]
+
+	tests := []struct {
+		name    string
+		policy  Policy
+		input   api.PolicyDependentInput
+		want    PolicyDependent
+		wantErr *api.AppError
+	}{
+		{
+			name:    "incomplete",
+			policy:  policy,
+			input:   api.PolicyDependentInput{Name: "Simon"},
+			wantErr: &api.AppError{Category: api.CategoryUser, Key: api.ErrorValidation},
+		},
+		{
+			name:   "name conflict",
+			policy: policy,
+			input: api.PolicyDependentInput{
+				Name:           dependent.Name,
+				Country:        "Narnia",
+				Relationship:   dependent.Relationship,
+				ChildBirthYear: dependent.ChildBirthYear,
+			},
+			wantErr: &api.AppError{Category: api.CategoryUser, Key: api.ErrorPolicyDependentDuplicateName},
+		},
+		{
+			name:   "create new",
+			policy: policy,
+			input: api.PolicyDependentInput{
+				Name:         "Simon",
+				Country:      "USA",
+				Relationship: api.PolicyDependentRelationshipSpouse,
+			},
+		},
+		{
+			name:   "reuse existing",
+			policy: policy,
+			input: api.PolicyDependentInput{
+				Name:           dependent.Name,
+				Country:        dependent.Country,
+				Relationship:   dependent.Relationship,
+				ChildBirthYear: dependent.ChildBirthYear,
+			},
+			want: dependent,
+		},
+	}
+	for _, tt := range tests {
+		ms.T().Run(tt.name, func(t *testing.T) {
+			got, err := tt.policy.AddDependent(ms.DB, tt.input)
+			if tt.wantErr != nil {
+				ms.Error(err)
+				AssertSameAppError(ms.T(), *tt.wantErr, err)
+				return
+			}
+
+			ms.NoError(err)
+			ms.Equal(tt.input.Name, got.Name)
+			ms.Equal(tt.input.Country, got.Country)
+			ms.Equal(tt.input.Relationship, got.Relationship)
+
+			if !tt.want.ID.IsNil() {
+				ms.Equal(tt.want.ID, got.ID, "expected ID of existing dependent")
+			}
+		})
+	}
 }
 
 func (ms *ModelSuite) TestPolicy_Compare() {
@@ -807,40 +879,100 @@ func (ms *ModelSuite) TestPolicy_CreateRenewalLedgerEntry() {
 	}
 }
 
+func (ms *ModelSuite) Test_ImportPolicies() {
+	vehicleCategory := CreateCategoryFixtures(ms.DB, 1).ItemCategories[0]
+	vehicleCategory.RiskCategoryID = riskCategoryVehicleID
+	Must(ms.DB.Update(&vehicleCategory))
+
+	createHouseholdEntity(ms.DB)
+
+	file := strings.NewReader(`Account_Number,Veh_Year,Veh_Make,Veh_Model,Coverage_Id,Vehicle_Id,Veh_VIN,Covered_Value,Monthly_Charge,Start_Date,End_Date,Country_Code_Id,NAMECUST,Country_Description
+200014,2001,TOYOTA,TOWNACE NOAH,18191,7979,4776,8200,15,6/8/2018 11:49,NULL,PG,"STEWART, JIMMY                                               ",Papua New Guinea`)
+
+	got, err := ImportPolicies(ms.DB, file)
+	ms.NoError(err)
+	want := api.PoliciesImportResponse{
+		LinesProcessed:  1,
+		PoliciesCreated: 1,
+		ItemsCreated:    1,
+	}
+	ms.Equal(want, got)
+
+	var newPolicy Policy
+	ms.NoError(ms.DB.Where("household_id = ?", "200014").First(&newPolicy))
+}
+
 func (ms *ModelSuite) Test_importPolicy() {
 	catID := CreateCategoryFixtures(ms.DB, 1).ItemCategories[0].ID
 	policy := CreatePolicyFixtures(ms.DB, FixturesConfig{}).Policies[0]
 
-	line1 := []string{
-		"123456", "2001", "Toyota", "Camry", "1", "2", "JT4RN56S0F0075837", "8200", "15",
-		"6/8/2018 11:49", "NULL", "US", "Smith, John  ", "United States",
+	teamEntityCode := CreateEntityFixture(ms.DB).Code
+
+	newHousehold := map[string]string{
+		"Account_Number":      "123456",
+		"Veh_Year":            "2001",
+		"Veh_Make":            "Toyota",
+		"Veh_Model":           "Camry",
+		"Coverage_Id":         "1",
+		"Vehicle_Id":          "2",
+		"Veh_VIN":             "JT4RN56S0F0075837",
+		"Covered_Value":       "8200",
+		"Monthly_Charge":      "15",
+		"Start_Date":          "6/8/2018 11:49",
+		"End_Date":            "NULL",
+		"Country_Code_Id":     "US",
+		"NAMECUST":            "Smith, John",
+		"Country_Description": "United States",
 	}
-	line2 := []string{
-		policy.HouseholdID.String, "2010", "Honda", "Civic", "3", "4", "2HGES15361H903843", "4500", "10",
-		"11/11/2011 11:11", "NULL", "CA", "Jameson, Rick", "Canada",
+	existingHousehold := map[string]string{
+		"Account_Number":      policy.HouseholdID.String,
+		"Veh_Year":            "2010",
+		"Veh_Make":            "Honda",
+		"Veh_Model":           "Civic",
+		"Coverage_Id":         "3",
+		"Vehicle_Id":          "4",
+		"Veh_VIN":             "2HGES15361H903843",
+		"Covered_Value":       "4500",
+		"Monthly_Charge":      "10",
+		"Start_Date":          "11/11/2011 11:11",
+		"End_Date":            "NULL",
+		"Country_Code_Id":     "CA",
+		"NAMECUST":            "Jameson, Rick",
+		"Country_Description": "Canada",
 	}
-	twelveColumns := line1[0:12]
+	newTeam := map[string]string{
+		"Veh_Make":          "Nissan",
+		"Veh_Model":         "Versa",
+		"Veh_Year":          "2016",
+		"Veh_VIN":           "1111",
+		"Person":            "Bono",
+		"Covered_Value":     "14500",
+		"Statement Name":    "2016 Nissan Versa Bono",
+		"Policy Name":       "XYZ Policy",
+		"Entity":            teamEntityCode,
+		"Cost Center":       "SVEH12",
+		"Account":           "63500",
+		"Ledger Entry Desc": "Bono Vehicle",
+	}
 
 	now := time.Now().UTC()
 
 	tests := []struct {
 		name       string
-		csvLine    []string
+		data       map[string]string
 		wantErr    string
 		wantPolicy Policy
 		wantItem   Item
+		wantPerson PolicyDependent
 	}{
 		{
-			name:    "not enough columns",
-			csvLine: twelveColumns,
-			wantErr: "too few columns",
-		},
-		{
-			name:    "create policy and item",
-			csvLine: line1,
+			name: "create household policy and item",
+			data: newHousehold,
 			wantPolicy: Policy{
-				Name:        "Smith, John household",
-				HouseholdID: nulls.NewString("123456"),
+				Name:         "Smith, John household",
+				Type:         api.PolicyTypeHousehold,
+				EntityCodeID: householdEntityID,
+				HouseholdID:  nulls.NewString("123456"),
 			},
 			wantItem: Item{
 				Name:              "2001 Toyota Camry",
@@ -854,8 +986,8 @@ func (ms *ModelSuite) Test_importPolicy() {
 			},
 		},
 		{
-			name:    "create item only",
-			csvLine: line2,
+			name: "create item only",
+			data: existingHousehold,
 			wantItem: Item{
 				Name:              "2010 Honda Civic",
 				Country:           "Canada",
@@ -867,10 +999,34 @@ func (ms *ModelSuite) Test_importPolicy() {
 				Year:              nulls.NewInt(2010),
 			},
 		},
+		{
+			name: "create team policy and item",
+			data: newTeam,
+			wantPolicy: Policy{
+				Name:          "XYZ Policy",
+				Type:          api.PolicyTypeTeam,
+				EntityCodeID:  EntityCodeID(teamEntityCode),
+				CostCenter:    "SVEH12",
+				Account:       "63500",
+				AccountDetail: "Bono Vehicle",
+			},
+			wantItem: Item{
+				Name:              "2016 Nissan Versa Bono",
+				Make:              "Nissan",
+				Model:             "Versa",
+				Year:              nulls.NewInt(2016),
+				SerialNumber:      "1111",
+				CoverageAmount:    14500 * domain.CurrencyFactor,
+				CoverageStartDate: time.Date(time.Now().Year(), time.Now().Month(), 1, 0, 0, 0, 0, time.UTC),
+			},
+			wantPerson: PolicyDependent{
+				Name: "Bono",
+			},
+		},
 	}
 	for _, tt := range tests {
 		ms.T().Run(tt.name, func(t *testing.T) {
-			_, _, err := importPolicy(ms.DB, tt.csvLine, catID, now)
+			_, _, err := importPolicy(ms.DB, tt.data, catID, now)
 			if tt.wantErr != "" {
 				ms.Error(err)
 				ms.Contains(err.Error(), tt.wantErr)
@@ -883,11 +1039,14 @@ func (ms *ModelSuite) Test_importPolicy() {
 			if tt.wantPolicy.Name == "" {
 				p = policy
 			} else {
-				ms.NoError(p.FindByHouseholdID(ms.DB, tt.wantPolicy.HouseholdID.String))
+				ms.NoError(ms.DB.Where("name = ?", tt.wantPolicy.Name).First(&p))
 				ms.Equal(tt.wantPolicy.Name, p.Name)
-				ms.Equal(api.PolicyTypeHousehold, p.Type)
+				ms.Equal(tt.wantPolicy.Type, p.Type)
 				ms.Equal(tt.wantPolicy.HouseholdID, p.HouseholdID)
-				ms.Equal(householdEntityID, p.EntityCodeID)
+				ms.Equal(tt.wantPolicy.EntityCodeID, p.EntityCodeID)
+				ms.Equal(tt.wantPolicy.CostCenter, p.CostCenter)
+				ms.Equal(tt.wantPolicy.Account, p.Account)
+				ms.Equal(tt.wantPolicy.AccountDetail, p.AccountDetail)
 			}
 
 			var i Item
@@ -904,7 +1063,12 @@ func (ms *ModelSuite) Test_importPolicy() {
 			ms.Equal(tt.wantItem.CoverageStartDate, i.CoverageStartDate)
 			ms.Equal(riskCategoryVehicleID, i.RiskCategoryID)
 			ms.Equal(tt.wantItem.Year, i.Year)
-			ms.Equal(domain.EndOfMonth(now), i.PaidThroughDate)
+			ms.Equal(domain.EndOfMonth(now).AddDate(0, -1, 0), i.PaidThroughDate)
+
+			if tt.wantPerson.Name != "" {
+				var pd PolicyDependent
+				ms.NoError(pd.FindByName(ms.DB, p.ID, tt.wantPerson.Name))
+			}
 		})
 	}
 }
