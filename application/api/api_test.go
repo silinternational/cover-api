@@ -151,6 +151,16 @@ func (ts *TestSuite) TestCurrency_String() {
 			c:    -100,
 			want: "-1.00",
 		},
+		{
+			name: "-100000",
+			c:    -100000,
+			want: "-1,000.00",
+		},
+		{
+			name: "100000",
+			c:    100000,
+			want: "1,000.00",
+		},
 	}
 	for _, tt := range tests {
 		ts.T().Run(tt.name, func(t *testing.T) {

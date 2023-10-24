@@ -2,13 +2,14 @@ package api
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
 	"regexp"
 	"strings"
 
 	"github.com/gobuffalo/buffalo"
 	"github.com/gobuffalo/pop/v6"
+	"golang.org/x/text/language"
+	"golang.org/x/text/message"
 
 	"github.com/silinternational/cover-api/domain"
 )
@@ -188,7 +189,8 @@ func keyToReadableString(key string) string {
 type Currency int
 
 func (c Currency) String() string {
-	return fmt.Sprintf("%0.2f", float32(c)/domain.CurrencyFactor)
+	p := message.NewPrinter(language.English)
+	return p.Sprintf("%0.2f", float32(c)/domain.CurrencyFactor)
 }
 
 // swagger:model
