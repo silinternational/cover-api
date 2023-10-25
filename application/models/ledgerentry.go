@@ -293,21 +293,16 @@ func (le *LedgerEntry) getDescription() string {
 	description := le.Type.Description(le.ClaimPayoutOption, le.Amount)
 
 	if le.PolicyName == "" {
-		return description
+		return description + " " + le.RiskCategoryName
 	}
 
 	description = fmt.Sprintf(`%s / %s`, description, le.PolicyName)
 
-	if le.PolicyType == api.PolicyTypeHousehold {
-		return description
+	if le.PolicyType == api.PolicyTypeHousehold || le.Name == "" {
+		return description + " " + le.RiskCategoryName
 	}
 
-	// For non-household policies
-	if le.Name == "" {
-		return description
-	}
-
-	return fmt.Sprintf(`%s (%s)`, description, le.Name)
+	return fmt.Sprintf(`%s (%s) %s`, description, le.Name, le.RiskCategoryName)
 }
 
 func (le *LedgerEntry) getItemName(tx *pop.Connection) string {

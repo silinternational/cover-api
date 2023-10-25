@@ -446,10 +446,12 @@ func (ms *ModelSuite) TestLedgerEntry_getDescription() {
 
 	// Create new Ledger Entries for each policy
 	hhAccPersName := hhAccPerson.GetName().String()
+	hhPolicyItem.LoadRiskCategory(ms.DB, false)
 	hhEntry := NewLedgerEntry(hhAccPersName, hhPolicy, &hhPolicyItem, nil, now)
 	hhEntry.Type = LedgerEntryTypeNewCoverage
 
 	teamAccPersName := teamAccPerson.GetName().String()
+	teamPolicyItem.LoadRiskCategory(ms.DB, false)
 	teamEntry := NewLedgerEntry(teamAccPersName, teamPolicy, &teamPolicyItem, nil, now)
 	teamEntry.Type = LedgerEntryTypeCoverageRefund
 
@@ -463,13 +465,15 @@ func (ms *ModelSuite) TestLedgerEntry_getDescription() {
 			name:  "household policy item",
 			entry: hhEntry,
 			item:  hhPolicyItem,
-			want:  fmt.Sprintf("%s / %s", `Coverage premium: Add`, hhPolicy.Name),
+			want: fmt.Sprintf("%s / %s %s", `Coverage premium: Add`, hhPolicy.Name,
+				hhPolicyItem.RiskCategory.Name),
 		},
 		{
 			name:  "team policy item",
 			entry: teamEntry,
 			item:  teamPolicyItem,
-			want:  fmt.Sprintf("%s / %s (%s)", `Coverage reimbursement: Remove`, teamPolicy.Name, teamAccPersName),
+			want: fmt.Sprintf("%s / %s (%s) %s", `Coverage reimbursement: Remove`, teamPolicy.Name,
+				teamAccPersName, teamPolicyItem.RiskCategory.Name),
 		},
 	}
 	for _, tt := range tests {
