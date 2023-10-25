@@ -343,7 +343,7 @@ func (ms *ModelSuite) TestLedgerEntry_balanceDescription() {
 }
 
 func (ms *ModelSuite) Test_NewLedgerEntry() {
-	f := CreateItemFixtures(ms.DB, FixturesConfig{NumberOfPolicies: 2, ClaimsPerPolicy: 1, ClaimItemsPerClaim: 1})
+	f := CreateItemFixtures(ms.DB, FixturesConfig{NumberOfPolicies: 3, ClaimsPerPolicy: 1, ClaimItemsPerClaim: 1})
 	householdPolicy := f.Policies[0]
 	householdPolicyItem := householdPolicy.Items[0]
 	ms.NoError(householdPolicyItem.SetAccountablePerson(ms.DB, f.Users[0].ID))
@@ -356,6 +356,9 @@ func (ms *ModelSuite) Test_NewLedgerEntry() {
 	teamPolicy := ConvertPolicyType(ms.DB, f.Policies[1])
 	teamPolicyItem := teamPolicy.Items[0]
 	ms.NoError(teamPolicyItem.SetAccountablePerson(ms.DB, f.Users[1].ID))
+
+	teamPolicy2 := ConvertPolicyType(ms.DB, f.Policies[2])
+	teamPolicy2.HouseholdID = nulls.String{String: "this should be ignored", Valid: false}
 
 	tests := []struct {
 		name      string
@@ -380,6 +383,10 @@ func (ms *ModelSuite) Test_NewLedgerEntry() {
 			name:   "policy only",
 			policy: teamPolicy,
 		},
+		{
+			name:   "policy - householdID set but not valid",
+			policy: teamPolicy2,
+		},
 	}
 	for _, tt := range tests {
 		ms.T().Run(tt.name, func(t *testing.T) {
@@ -396,9 +403,12 @@ func (ms *ModelSuite) Test_NewLedgerEntry() {
 				ms.Equal(tt.policy.CostCenter+accountSeparator+tt.policy.AccountDetail, le.CostCenter,
 					"CostCenter is incorrect")
 				ms.Equal(tt.policy.EntityCode.Code, le.EntityCode, "EntityCode is incorrect")
-			} else {
-				ms.Equal(tt.policy.HouseholdID.String, le.HouseholdID, "HouseholdID is incorrect")
 			}
+			wantHHID := ""
+			if tt.policy.HouseholdID.Valid {
+				wantHHID = tt.policy.HouseholdID.String
+			}
+			ms.Equal(wantHHID, le.HouseholdID, "HouseholdID is incorrect")
 
 			if tt.item == nil {
 				ms.False(le.ItemID.Valid, "ItemID is not nil")
