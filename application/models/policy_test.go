@@ -855,6 +855,8 @@ func (ms *ModelSuite) TestPolicy_CreateRenewalLedgerEntry() {
 	f.Items[0].RiskCategoryID = RiskCategoryMobileID()
 	UpdateItemStatus(ms.DB, f.Items[0], api.ItemCoverageStatusApproved, "")
 
+	yesterday := time.Now().UTC().Add(-24 * time.Hour).Truncate(24 * time.Hour)
+
 	tests := []struct {
 		name           string
 		policy         Policy
@@ -887,6 +889,7 @@ func (ms *ModelSuite) TestPolicy_CreateRenewalLedgerEntry() {
 			ms.Equal(-tt.amount, l[0].Amount)
 			ms.Equal(LedgerEntryTypeCoverageRenewal, l[0].Type)
 			ms.Equal(tt.policy.ID, l[0].PolicyID)
+			ms.Equal(yesterday, l[0].DateSubmitted)
 		})
 	}
 }
