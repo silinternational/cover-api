@@ -752,22 +752,28 @@ func (ms *ModelSuite) TestPolicies_Query() {
 	}
 }
 
-func (ms *ModelSuite) TestPolicy_ProcessAnnualCoverage() {
+func (ms *ModelSuite) TestPolicy_ProcessRenewals() {
 	now := time.Now().UTC()
 	year := now.Year()
 	endOfLastMonth := domain.EndOfMonth(now.AddDate(0, -1, 0))
 
-	annual := CreateItemFixtures(ms.DB, FixturesConfig{ItemsPerPolicy: 5})
+	const annualItems = 4
+	annual := CreateItemFixtures(ms.DB, FixturesConfig{ItemsPerPolicy: annualItems})
 	annual.Items[2].RiskCategoryID = RiskCategoryMobileID()
+	annual.Items[3].RiskCategoryID = RiskCategoryMobileID()
 	for i := range annual.Items {
 		annual.Items[i].PaidThroughDate = domain.EndOfYear(year - 1)
+		annual.Items[i].CoverageAmount = 1000
+
 		UpdateItemStatus(ms.DB, annual.Items[i], api.ItemCoverageStatusApproved, "")
 	}
 
-	monthly := CreateItemFixtures(ms.DB, FixturesConfig{ItemsPerPolicy: 3})
+	const monthlyItems = 3
+	monthly := CreateItemFixtures(ms.DB, FixturesConfig{ItemsPerPolicy: monthlyItems})
 	for i := range monthly.Items {
 		monthly.Items[i].RiskCategoryID = RiskCategoryMobileID()
 		monthly.Items[i].PaidThroughDate = endOfLastMonth
+		monthly.Items[i].CoverageAmount = 12_000
 		UpdateItemStatus(ms.DB, monthly.Items[i], api.ItemCoverageStatusApproved, "")
 		monthly.ItemCategories[i].BillingPeriod = domain.BillingPeriodMonthly
 		monthly.ItemCategories[1].RiskCategoryID = riskCategoryVehicleID
@@ -781,6 +787,7 @@ func (ms *ModelSuite) TestPolicy_ProcessAnnualCoverage() {
 		billingPeriod    int
 		wantEntriesCount int
 		wantPaidThrough  time.Time
+		wantAmount       api.Currency
 	}{
 		{
 			name:             "annual",
@@ -789,6 +796,7 @@ func (ms *ModelSuite) TestPolicy_ProcessAnnualCoverage() {
 			billingPeriod:    domain.BillingPeriodAnnual,
 			wantEntriesCount: 2, // two risk categories
 			wantPaidThrough:  domain.EndOfYear(year),
+			wantAmount:       -20 * annualItems / 2, // divide by the number of risk categories
 		},
 		{
 			name:             "monthly",
@@ -797,6 +805,7 @@ func (ms *ModelSuite) TestPolicy_ProcessAnnualCoverage() {
 			billingPeriod:    domain.BillingPeriodMonthly,
 			wantEntriesCount: 1, // only one risk category
 			wantPaidThrough:  domain.EndOfMonth(now),
+			wantAmount:       -20 * monthlyItems,
 		},
 	}
 	for _, tt := range tests {
@@ -818,6 +827,9 @@ func (ms *ModelSuite) TestPolicy_ProcessAnnualCoverage() {
 			var l2 LedgerEntries
 			Must(ms.DB.Where("policy_id = ?", tt.policy.ID).All(&l2))
 			ms.Equal(tt.wantEntriesCount, len(l2))
+			for i := range l2 {
+				ms.Equal(tt.wantAmount, l2[i].Amount)
+			}
 		})
 	}
 }
