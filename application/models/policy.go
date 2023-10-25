@@ -669,7 +669,7 @@ func (p *Policy) ProcessRenewals(tx *pop.Connection, date time.Time, billingPeri
 		if err := items[i].SetPaidThroughDate(tx, paidThroughDate); err != nil {
 			return err
 		}
-		totalPremiumGroupedByRiskCategory[items[i].RiskCategoryID] += items[i].CalculateAnnualPremium(tx)
+		totalPremiumGroupedByRiskCategory[items[i].RiskCategoryID] += items[i].CalculateBillingPremium(tx)
 	}
 
 	for riskCategoryID, amount := range totalPremiumGroupedByRiskCategory {
