@@ -690,9 +690,10 @@ func (p *Policy) CreateRenewalLedgerEntry(tx *pop.Connection, riskCategoryID uui
 		return fmt.Errorf("failed to find risk category %s: %w", riskCategoryID, err)
 	}
 
-	now := time.Now().UTC()
+	// predate the transaction so the monthly report doesn't omit these transactions if run on the same day
+	dateSubmitted := time.Now().UTC().Add(-24 * time.Hour).Truncate(24 * time.Hour)
 
-	le := NewLedgerEntry("", *p, nil, nil, now)
+	le := NewLedgerEntry("", *p, nil, nil, dateSubmitted)
 	le.Type = LedgerEntryTypeCoverageRenewal
 	le.Amount = -amount
 	le.EntityCode = p.EntityCode.Code
