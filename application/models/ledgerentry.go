@@ -377,10 +377,13 @@ func NewLedgerEntry(accPersonName string, policy Policy, item *Item, claim *Clai
 		AccountNumber: policy.Account,
 		IncomeAccount: policy.EntityCode.IncomeAccount,
 		CostCenter:    costCenter,
-		HouseholdID:   policy.HouseholdID.String,
 		Name:          accPersonName,
 		PolicyName:    policy.Name,
 	}
+	if policy.HouseholdID.Valid {
+		le.HouseholdID = policy.HouseholdID.String
+	}
+
 	if item != nil {
 		le.ItemID = nulls.NewUUID(item.ID)
 		le.RiskCategoryName = item.RiskCategory.Name
