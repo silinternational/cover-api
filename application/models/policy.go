@@ -388,13 +388,13 @@ func scopeSearchPolicies(searchText string) pop.ScopeFunc {
 	return func(q *pop.Query) *pop.Query {
 		return q.Where("policies.id IN ("+
 			"SELECT policies.id FROM policies "+
-			"    JOIN policy_users pu ON policies.id = pu.policy_id "+
-			"    JOIN users on users.id = pu.user_id "+
-			"    AND ("+
+			"    LEFT JOIN policy_users pu ON policies.id = pu.policy_id "+
+			"    LEFT JOIN users on users.id = pu.user_id "+
+			"    WHERE "+
 			"        CONCAT(users.first_name, ' ', users.last_name) ILIKE ? "+
 			"        OR policies.cost_center ILIKE ? OR policies.household_id ILIKE ? "+
 			"        OR policies.name ILIKE ?"+
-			"    ) "+
+			"    "+
 			")", searchText, searchText, searchText, searchText)
 	}
 }
