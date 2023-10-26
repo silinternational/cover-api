@@ -16,19 +16,13 @@ import (
 	"github.com/silinternational/cover-api/log"
 )
 
-var r *render.Engine
-
-func init() {
-	r = render.New(render.Options{
-		DefaultContentType: domain.ContentJson,
-	})
-
-	checkSamlConfig()
-}
+var r = render.New(render.Options{
+	DefaultContentType: domain.ContentJson,
+})
 
 // StrictBind hydrates a struct with values from a POST
 // REMEMBER the request body must have *exported* fields.
-//  Otherwise, this will give an empty result without an error.
+// Otherwise, this will give an empty result without an error.
 func StrictBind(c buffalo.Context, dest any) error {
 	dec := json.NewDecoder(c.Request().Body)
 	dec.DisallowUnknownFields()

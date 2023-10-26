@@ -12,7 +12,7 @@ import (
 )
 
 // Model validation tool
-var mValidate *validator.Validate
+var mValidate = validator.New()
 
 var fieldValidators = map[string]func(validator.FieldLevel) bool{
 	"appRole":                       validateAppRole,

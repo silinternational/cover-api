@@ -85,8 +85,6 @@ const (
 	ErrorItemNullAccountablePerson        = ErrorKey("ErrorItemNullAccountablePerson")
 	ErrorItemCoverageAmountCannotIncrease = ErrorKey("ErrorItemCoverageAmountCannotIncrease")
 	ErrorItemCoverageAmountTooLow         = ErrorKey("ErrorItemCoverageAmountTooLow")
-	ErrorItemInvalidCoverageStartDate     = ErrorKey("ErrorItemInvalidCoverageStartDate")
-	ErrorItemInvalidCoverageEndDate       = ErrorKey("ErrorItemInvalidCoverageEndDate")
 	ErrorInvalidCategory                  = ErrorKey("ErrorInvalidCategory")
 	ErrorItemHasActiveClaim               = ErrorKey("ErrorItemHasActiveClaim")
 
@@ -110,8 +108,9 @@ const (
 	ErrorPolicyHasNoHouseholdID               = ErrorKey("ErrorPolicyHasNoHouseholdID")
 
 	// PolicyDependent
-	ErrorPolicyDependentCreate = ErrorKey("ErrorPolicyDependentCreate")
-	ErrorPolicyDependentDelete = ErrorKey("ErrorPolicyDependentDelete")
+	ErrorPolicyDependentCreate        = ErrorKey("ErrorPolicyDependentCreate")
+	ErrorPolicyDependentDelete        = ErrorKey("ErrorPolicyDependentDelete")
+	ErrorPolicyDependentDuplicateName = ErrorKey("ErrorPolicyDependentDuplicateName")
 
 	// ClaimItem
 	ErrorClaimItemCreateInvalidInput     = ErrorKey("ErrorClaimItemCreateInvalidInput")

@@ -13,7 +13,6 @@ import (
 	"time"
 
 	"github.com/gobuffalo/buffalo"
-	"github.com/gobuffalo/envy"
 	mwi18n "github.com/gobuffalo/mw-i18n/v2"
 	"github.com/gofrs/uuid"
 	"github.com/kelseyhightower/envconfig"
@@ -74,6 +73,9 @@ const (
 )
 
 const (
+	BillingPeriodMonthly = 1
+	BillingPeriodAnnual  = 12
+
 	CurrencyFactor = 100
 	DateFormat     = "2006-01-02"
 
@@ -129,8 +131,10 @@ const EnvStaging = "staging"
 const EnvTest = "test"
 
 // Env Holds the values of environment variables
-var Env struct {
-	GoEnv                      string `ignored:"true"`
+var Env = readEnv()
+
+type EnvStruct struct {
+	GoEnv                      string `default:"development" split_words:"true"`
 	ApiBaseURL                 string `required:"true" split_words:"true"`
 	AccessTokenLifetimeSeconds int    `default:"1166400" split_words:"true"` // 13.5 days
 	AppName                    string `default:"Cover" split_words:"true"`
@@ -183,15 +187,16 @@ var Env struct {
 	PremiumMinimum          int `default:"25" split_words:"true"`
 
 	// PremiumFactor is multiplied by CoverageAmount to calculate the annual premium of an item
-	PremiumFactor           float64 `default:"0.02" split_words:"true"`
-	RepairThreshold         float64 `default:"0.7" split_words:"true"`
-	RepairThresholdString   string  `ignored:"true"`
-	Deductible              float64 `default:"0.05"`
-	DeductibleMinimumString string  `ignored:"true"`
-	DeductibleIncrease      float64 `default:"0.2"` // Additional deductible per strike
-	DeductibleMaximum       float64 `default:"0.45"`
-	EvacuationDeductible    float64 `default:"0.333333333" split_words:"true"`
-	StrikeLifetimeMonths    int     `default:"24" split_words:"true"`
+	PremiumFactor         float64 `default:"0.02" split_words:"true"`
+	RepairThreshold       float64 `default:"0.7" split_words:"true"`
+	RepairThresholdString string  `ignored:"true"`
+	DeductibleRate        float64 `envconfig:"deductible" default:"0.05"`
+	DeductibleRateString  string  `ignored:"true"`
+	DeductibleIncrease    float64 `default:"0.2"` // Additional deductible per strike
+	DeductibleMaximum     float64 `default:"0.45"`
+	EvacuationDeductible  float64 `default:"0.333333333" split_words:"true"`
+	StrikeLifetimeMonths  int     `default:"24" split_words:"true"`
+	VehiclePremiumFactor  float64 `default:"0.02" split_words:"true"` // TODO use actual rate
 
 	FiscalStartMonth   int    `default:"1" split_words:"true"`
 	ExpenseAccount     string `required:"true" split_words:"true"`
@@ -211,9 +216,7 @@ var Env struct {
 	SandboxEmailAddress string `default:"" split_words:"true"`
 }
 
-func init() {
-	readEnv()
-
+func Init() {
 	AuthCallbackURL = Env.ApiBaseURL + "/auth/callback"
 
 	LogoutRedirectURL = Env.UIURL + "/logged-out"
@@ -228,25 +231,26 @@ func init() {
 }
 
 // readEnv loads environment data into `Env`
-func readEnv() {
-	err := envconfig.Process("", &Env)
+func readEnv() *EnvStruct {
+	env := &EnvStruct{}
+
+	err := envconfig.Process("", env)
 	if err != nil {
 		panic("error loading env vars: " + err.Error())
 	}
 
-	Env.PolicyMaxCoverage *= CurrencyFactor
-	Env.DependentAutoApproveMax *= CurrencyFactor
-	Env.PremiumMinimum *= CurrencyFactor
-	Env.RepairThresholdString = fmt.Sprintf("%.2g%%", Env.RepairThreshold*100)
-	Env.DeductibleMinimumString = fmt.Sprintf("%.2g%%", Env.Deductible*100)
+	checkSamlConfig(env)
+
+	env.PolicyMaxCoverage *= CurrencyFactor
+	env.DependentAutoApproveMax *= CurrencyFactor
+	env.PremiumMinimum *= CurrencyFactor
+	env.RepairThresholdString = PercentString(env.RepairThreshold)
+	env.DeductibleRateString = PercentString(env.DeductibleRate)
 
 	//  Set an arbitrary but reasonable minimum lifetime for policy strikes
-	if Env.StrikeLifetimeMonths < 2 {
-		Env.StrikeLifetimeMonths = 2
-	}
+	env.StrikeLifetimeMonths = Max(2, env.StrikeLifetimeMonths)
 
-	// Doing this separately to avoid needing two environment variables for the same thing
-	Env.GoEnv = envy.Get("GO_ENV", EnvDevelopment)
+	return env
 }
 
 // NewExtra Sets a new key-value pair in the `extras` entry of the context
@@ -411,7 +415,16 @@ func BeginningOfDay(date time.Time) time.Time {
 }
 
 func EndOfMonth(date time.Time) time.Time {
-	return date.AddDate(0, 1, -date.Day())
+	d := date.AddDate(0, 1, -date.Day())
+	return d.Truncate(time.Hour * 24)
+}
+
+func EndOfYear(year int) time.Time {
+	return time.Date(year, 12, 31, 0, 0, 0, 0, time.UTC)
+}
+
+func ZeroDate() time.Time {
+	return time.Date(1, 1, 1, 0, 0, 0, 0, time.UTC)
 }
 
 // Returns a float as "dd%" (rounded and with no decimal places)
@@ -466,4 +479,45 @@ func IsProduction() bool {
 		return true
 	}
 	return false
+}
+
+func checkSamlConfig(env *EnvStruct) {
+	if env.GoEnv == EnvDevelopment || env.GoEnv == EnvTest {
+		return
+	}
+	if env.SamlIdpEntityId == "" {
+		panic("required SAML variable SamlIdpEntityId is undefined")
+	}
+	if env.SamlSpEntityId == "" {
+		panic("required SAML variable SamlSpEntityId is undefined")
+	}
+	if env.SamlSsoURL == "" {
+		panic("required SAML variable SamlSsoURL is undefined")
+	}
+	if env.SamlSloURL == "" {
+		panic("required SAML variable SamlSloURL is undefined")
+	}
+	if env.SamlAudienceUri == "" {
+		panic("required SAML variable SamlAudienceUri is undefined")
+	}
+	if env.SamlAssertionConsumerServiceUrl == "" {
+		panic("required SAML variable SamlAssertionConsumerServiceUrl is undefined")
+	}
+	if env.SamlIdpCert == "" {
+		panic("required SAML variable SamlIdpCert is undefined")
+	}
+	if env.SamlSpCert == "" {
+		panic("required SAML variable SamlSpCert is undefined")
+	}
+	if env.SamlSpPrivateKey == "" {
+		panic("required SAML variable SamlSpPrivateKey is undefined")
+	}
+}
+
+// TODO: replace this with the builtin function after upgrading to Go 1.21
+func Max(a, b int) int {
+	if a > b {
+		return a
+	}
+	return b
 }

@@ -1311,10 +1311,10 @@ func (ms *ModelSuite) TestClaim_UpdateByUser() {
 	}
 }
 
-func (ms *ModelSuite) TestClaim_Deductible() {
+func (ms *ModelSuite) TestClaim_GetDeductibleRate() {
 	t := ms.T()
 
-	domain.Env.Deductible = .05
+	domain.Env.DeductibleRate = .05
 	domain.Env.DeductibleMaximum = .45
 	domain.Env.DeductibleIncrease = .2
 
@@ -1355,33 +1355,33 @@ func (ms *ModelSuite) TestClaim_Deductible() {
 		{
 			name:  "no strikes",
 			claim: policyNoStrikes.Claims[0],
-			want:  domain.Env.Deductible,
+			want:  domain.Env.DeductibleRate,
 		},
 		{
 			name:  "has one strike",
 			claim: policyOneStrike.Claims[0],
-			want:  domain.Env.Deductible + domain.Env.DeductibleIncrease,
+			want:  domain.Env.DeductibleRate + domain.Env.DeductibleIncrease,
 		},
 		{
 			name:  "has two strikes",
 			claim: policyTwoStrikes.Claims[0],
-			want:  domain.Env.Deductible + 2.0*domain.Env.DeductibleIncrease,
+			want:  domain.Env.DeductibleRate + 2.0*domain.Env.DeductibleIncrease,
 		},
 		{
 			name:  "has three strikes",
 			claim: policyThreeStrikes.Claims[0],
-			want:  domain.Env.Deductible + 2.0*domain.Env.DeductibleIncrease,
+			want:  domain.Env.DeductibleRate + 2.0*domain.Env.DeductibleIncrease,
 		},
 		{
 			name:  "has one strike plus an old one",
 			claim: policyHasOldStrikePlusOne.Claims[0],
-			want:  domain.Env.Deductible + domain.Env.DeductibleIncrease,
+			want:  domain.Env.DeductibleRate + domain.Env.DeductibleIncrease,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := tt.claim.Deductible(ms.DB)
+			got := tt.claim.GetDeductibleRate(ms.DB)
 
 			ms.Equal(tt.want, got, "incorrect results")
 		})
@@ -1471,6 +1471,80 @@ func (ms *ModelSuite) TestClaim_StopItemCoverage() {
 			}
 
 			ms.Equal(tt.wantStatusMap, gotStatusMap, "incorrect Item Coverage Statuses")
+		})
+	}
+}
+
+func (ms *ModelSuite) TestClaim_AddItem() {
+	fixConfig := FixturesConfig{
+		NumberOfPolicies:   2,
+		ItemsPerPolicy:     1,
+		ClaimsPerPolicy:    1,
+		ClaimItemsPerClaim: 0,
+	}
+
+	fixtures := CreateItemFixtures(ms.DB, fixConfig)
+	claim := fixtures.Claims[0]
+	itemID := fixtures.Items[0].ID
+	otherItemID := fixtures.Items[1].ID
+
+	tests := []struct {
+		name       string
+		claim      Claim
+		input      api.ClaimItemCreateInput
+		wantErr    *api.AppError
+		wantPayout api.Currency
+	}{
+		{
+			name:  "item not on the correct policy",
+			claim: claim,
+			input: api.ClaimItemCreateInput{
+				ItemID: otherItemID,
+			},
+			wantErr: &api.AppError{Category: api.CategoryNotFound, Key: api.ErrorClaimItemCreateInvalidInput},
+		},
+		{
+			name:  "good input",
+			claim: claim,
+			input: api.ClaimItemCreateInput{
+				ItemID:         itemID,
+				RepairEstimate: 100,
+				PayoutOption:   api.PayoutOptionRepair,
+				FMV:            1000,
+			},
+			wantErr:    nil,
+			wantPayout: 95,
+		},
+	}
+
+	for _, tt := range tests {
+		ms.T().Run(tt.name, func(t *testing.T) {
+			ctx := CreateTestContext(fixtures.Users[0])
+
+			got, err := tt.claim.AddItem(ctx, tt.input)
+
+			if tt.wantErr != nil {
+				ms.Error(err, " did not return expected error")
+				AssertSameAppError(ms.T(), *tt.wantErr, err)
+				return
+			}
+			ms.NoError(err)
+
+			ms.Equal(tt.input.ItemID, got.ItemID)
+			ms.Equal(tt.input.RepairEstimate, got.RepairEstimate)
+			ms.Equal(tt.input.PayoutOption, got.PayoutOption)
+			ms.Equal(tt.input.FMV, got.FMV)
+
+			var claimItemFromDB ClaimItem
+			Must(ms.DB.Find(&claimItemFromDB, got.ID))
+			ms.Equal(tt.input.ItemID, claimItemFromDB.ItemID)
+			ms.Equal(tt.input.RepairEstimate, claimItemFromDB.RepairEstimate)
+			ms.Equal(tt.input.PayoutOption, claimItemFromDB.PayoutOption)
+			ms.Equal(tt.input.FMV, claimItemFromDB.FMV)
+
+			var claimFromDB Claim
+			Must(ms.DB.Find(&claimFromDB, tt.claim.ID))
+			ms.Equal(tt.wantPayout, claimFromDB.TotalPayout)
 		})
 	}
 }

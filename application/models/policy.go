@@ -1,9 +1,14 @@
 package models
 
 import (
+	"bufio"
 	"context"
+	"encoding/csv"
 	"fmt"
+	"io"
 	"net/http"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gobuffalo/nulls"
@@ -52,8 +57,8 @@ func (p *Policy) Validate(tx *pop.Connection) (*validate.Errors, error) {
 	return validateModel(p), nil
 }
 
-// CreateWithContext stores the Policy data as a new record in the database.
-func (p *Policy) CreateWithContext(ctx context.Context) error {
+// CreateWithHistory stores the Policy data as a new record in the database. Also creates a PolicyHistory record.
+func (p *Policy) CreateWithHistory(ctx context.Context) error {
 	tx := Tx(ctx)
 
 	if err := p.Create(tx); err != nil {
@@ -67,7 +72,7 @@ func (p *Policy) CreateWithContext(ctx context.Context) error {
 	return nil
 }
 
-// Create a Policy but not a history record. Use CreateWithContext if history is needed.
+// Create a Policy but not a history record. Use CreateWithHistory if history is needed.
 func (p *Policy) Create(tx *pop.Connection) error {
 	return create(tx, p)
 }
@@ -92,7 +97,7 @@ func (p *Policy) Update(ctx context.Context) error {
 }
 
 // CreateTeam creates a new Team type policy for the user.
-//   The EntityCodeID, CostCenter and Account must have non-blank values
+// The EntityCodeID, CostCenter and Account must have non-blank values
 func (p *Policy) CreateTeam(ctx context.Context) error {
 	tx := Tx(ctx)
 	actor := CurrentUser(ctx)
@@ -100,7 +105,7 @@ func (p *Policy) CreateTeam(ctx context.Context) error {
 	p.Type = api.PolicyTypeTeam
 	p.Email = actor.EmailOfChoice()
 
-	if err := p.CreateWithContext(ctx); err != nil {
+	if err := p.CreateWithHistory(ctx); err != nil {
 		return err
 	}
 
@@ -118,6 +123,21 @@ func (p *Policy) GetID() uuid.UUID {
 
 func (p *Policy) FindByID(tx *pop.Connection, id uuid.UUID) error {
 	return tx.Find(p, id)
+}
+
+func (p *Policy) FindByHouseholdID(tx *pop.Connection, householdID string) error {
+	err := tx.Where("household_id = ?", householdID).First(p)
+	return appErrorFromDB(err, api.ErrorQueryFailure)
+}
+
+func (p *Policy) FindByTeamDetails(tx *pop.Connection, entityCode, account, costCenter, accountDetail string) error {
+	err := tx.
+		Where("entity_code_id = ?", EntityCodeID(entityCode)).
+		Where("account = ?", account).
+		Where("cost_center = ?", costCenter).
+		Where("account_detail = ?", accountDetail).
+		First(p)
+	return appErrorFromDB(err, api.ErrorQueryFailure)
 }
 
 // IsActorAllowedTo ensure the actor is either an admin, or a member of this policy to perform any permission
@@ -173,8 +193,8 @@ func (p *Policy) isDependent(tx *pop.Connection, id uuid.UUID) bool {
 }
 
 // itemCoverageTotals returns a map with an entry for
-//  the policy ID with the total of all the items' coverage amounts as well as
-//  an entry for each dependant with the total of each of their items' coverage amounts
+// the policy ID with the total of all the items' coverage amounts as well as
+// an entry for each dependant with the total of each of their items' coverage amounts
 func (p *Policy) itemCoverageTotals(tx *pop.Connection) map[uuid.UUID]int {
 	p.LoadItems(tx, false)
 
@@ -251,7 +271,7 @@ func (p *Policy) LoadMembers(tx *pop.Connection, reload bool) {
 }
 
 // GetPolicyUserIDs loads the members of the Policy and also returns a list of the corresponding
-//  PolicyUser IDs
+// PolicyUser IDs
 func (p *Policy) GetPolicyUserIDs(tx *pop.Connection, reload bool) []uuid.UUID {
 	p.LoadMembers(tx, reload)
 	puIDS := make([]uuid.UUID, len(p.Members))
@@ -408,8 +428,24 @@ func (p *Policy) AddDependent(tx *pop.Connection, input api.PolicyDependentInput
 
 	dependent.FixTeamRelationship(*p)
 
+	// If a matching record exists, use that one and don't create a duplicate
+	if err := dependent.FindByName(tx, p.ID, input.Name); err != nil {
+		if domain.IsOtherThanNoRows(err) {
+			return PolicyDependent{}, err
+		}
+	} else {
+		if (dependent.Relationship == input.Relationship ||
+			dependent.Relationship == api.PolicyDependentRelationshipNone && input.Relationship == "") &&
+			dependent.Country == input.Country &&
+			dependent.ChildBirthYear == input.ChildBirthYear {
+			return dependent, nil
+		}
+		err = errors.New("cannot create a new PolicyDependent with same Name as existing record")
+		return PolicyDependent{}, api.NewAppError(err, api.ErrorPolicyDependentDuplicateName, api.CategoryUser)
+	}
+
 	if err := dependent.Create(tx); err != nil {
-		return dependent, err
+		return PolicyDependent{}, err
 	}
 
 	return dependent, nil
@@ -423,7 +459,7 @@ func (p *Policy) AddClaim(ctx context.Context, input api.ClaimCreateInput) (Clai
 	claim := ConvertClaimCreateInput(input)
 	claim.PolicyID = p.ID
 
-	if err := claim.CreateWithContext(ctx); err != nil {
+	if err := claim.CreateWithHistory(ctx); err != nil {
 		return Claim{}, err
 	}
 
@@ -508,12 +544,9 @@ func (p *Policy) calculateAnnualPremium(tx *pop.Connection) api.Currency {
 	p.LoadItems(tx, false)
 	var premium api.Currency
 	for _, item := range p.Items {
-		premium += item.CalculateAnnualPremium()
+		premium += item.CalculateAnnualPremium(tx)
 	}
-	if int(premium) < domain.Env.PremiumMinimum {
-		return api.Currency(domain.Env.PremiumMinimum)
-	}
-	return premium
+	return api.Currency(domain.Max(int(premium), domain.Env.PremiumMinimum))
 }
 
 func (p *Policy) currentCoverageTotal(tx *pop.Connection) api.Currency {
@@ -599,37 +632,48 @@ func (p *Policy) createInvite(tx *pop.Connection, invite api.PolicyUserInviteCre
 	return nil
 }
 
-// ProcessAnnualCoverage creates coverage renewal ledger entries for all items covered for the given year.
+// ProcessRenewals creates coverage renewal ledger entries for all items covered for the given period.
 // Does not create new records for items already processed.
-func (p *Policies) ProcessAnnualCoverage(tx *pop.Connection, year int) error {
+func (p *Policies) ProcessRenewals(tx *pop.Connection, date time.Time, billingPeriod int) error {
 	for _, pp := range *p {
-		if err := pp.ProcessAnnualCoverage(tx, year); err != nil {
+		if err := pp.ProcessRenewals(tx, date, billingPeriod); err != nil {
 			return fmt.Errorf("error processing annual coverage for policy %s: %w", pp.ID, err)
 		}
 	}
 	return nil
 }
 
-func (p *Policy) ProcessAnnualCoverage(tx *pop.Connection, year int) error {
+// ProcessRenewals creates coverage renewal ledger entries for all items covered for the given period.
+// Does not create new records for items already processed.
+func (p *Policy) ProcessRenewals(tx *pop.Connection, date time.Time, billingPeriod int) error {
 	var items Items
 	if err := tx.Where("coverage_status = ?", api.ItemCoverageStatusApproved).
-		Where("paid_through_year < ?", year).
+		Where("paid_through_date < ?", date).
 		Where("policy_id  = ?", p.ID).
+		Join("item_categories ic", "items.category_id = ic.id").
+		Where("ic.billing_period = ?", billingPeriod).
 		All(&items); err != nil {
 		return appErrorFromDB(err, api.ErrorQueryFailure)
 	}
 
-	totalAnnualPremium := map[uuid.UUID]api.Currency{}
-	for i := range items {
-		items[i].PaidThroughYear = year
-		if err := tx.UpdateColumns(&items[i], "paid_through_year", "updated_at"); err != nil {
-			return fmt.Errorf("failed to update paid_through_year for item %s: %w", items[i].ID, err)
-		}
-		totalAnnualPremium[items[i].RiskCategoryID] += items[i].CalculateAnnualPremium()
+	paidThroughDate := date
+	switch billingPeriod {
+	case domain.BillingPeriodAnnual:
+		paidThroughDate = domain.EndOfYear(date.Year())
+	case domain.BillingPeriodMonthly:
+		paidThroughDate = domain.EndOfMonth(date)
 	}
 
-	for id, amount := range totalAnnualPremium {
-		err := p.CreateRenewalLedgerEntry(tx, id, amount)
+	totalPremiumGroupedByRiskCategory := map[uuid.UUID]api.Currency{}
+	for i := range items {
+		if err := items[i].SetPaidThroughDate(tx, paidThroughDate); err != nil {
+			return err
+		}
+		totalPremiumGroupedByRiskCategory[items[i].RiskCategoryID] += items[i].CalculateBillingPremium(tx)
+	}
+
+	for riskCategoryID, amount := range totalPremiumGroupedByRiskCategory {
+		err := p.CreateRenewalLedgerEntry(tx, riskCategoryID, amount)
 		if err != nil {
 			return api.NewAppError(err, api.ErrorCreateRenewalEntry, api.CategoryInternal)
 		}
@@ -646,7 +690,10 @@ func (p *Policy) CreateRenewalLedgerEntry(tx *pop.Connection, riskCategoryID uui
 		return fmt.Errorf("failed to find risk category %s: %w", riskCategoryID, err)
 	}
 
-	le := NewLedgerEntry("", *p, nil, nil)
+	// predate the transaction so the monthly report doesn't omit these transactions if run on the same day
+	dateSubmitted := time.Now().UTC().Add(-24 * time.Hour).Truncate(24 * time.Hour)
+
+	le := NewLedgerEntry("", *p, nil, nil, dateSubmitted)
 	le.Type = LedgerEntryTypeCoverageRenewal
 	le.Amount = -amount
 	le.EntityCode = p.EntityCode.Code
@@ -658,4 +705,208 @@ func (p *Policy) CreateRenewalLedgerEntry(tx *pop.Connection, riskCategoryID uui
 	}
 
 	return nil
+}
+
+func ImportPolicies(tx *pop.Connection, file io.Reader) (api.PoliciesImportResponse, error) {
+	var response api.PoliciesImportResponse
+
+	r := csv.NewReader(bufio.NewReader(file))
+	header, err := r.Read()
+	if err == io.EOF {
+		err := fmt.Errorf("empty policy CSV file: %w", err)
+		return response, api.NewAppError(err, api.ErrorUnknown, api.CategoryUser)
+	}
+
+	var vehicleCategory ItemCategory
+	if err := tx.Where("risk_category_id = ?", riskCategoryVehicleID).First(&vehicleCategory); err != nil {
+		err := fmt.Errorf("failed to find an item category for vehicles: %w", err)
+		return response, api.NewAppError(err, api.ErrorUnknown, api.CategoryInternal)
+	}
+
+	n := 0
+	for ; ; n++ {
+		csvLine, err := r.Read()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			err := fmt.Errorf("failed to read from policy CSV file on row %d: %w", n+2, err)
+			return response, api.NewAppError(err, api.ErrorUnknown, api.CategoryUser)
+		}
+
+		data := map[string]string{}
+		for i, value := range csvLine {
+			data[header[i]] = strings.TrimSpace(value)
+		}
+		policiesCreated, itemsCreated, err := importPolicy(tx, data, vehicleCategory.ID, time.Now().UTC())
+		if err != nil {
+			err := fmt.Errorf("error importing policy on row %d: %w", n+2, err)
+			return response, api.NewAppError(err, api.ErrorUnknown, api.CategoryUser)
+		}
+		response.PoliciesCreated += policiesCreated
+		response.ItemsCreated += itemsCreated
+	}
+
+	response.LinesProcessed = n
+	return response, nil
+}
+
+func importPolicy(tx *pop.Connection, data map[string]string, catID uuid.UUID, now time.Time) (int, int, error) {
+	// fields common to both policy types
+	const (
+		Year         = "Veh_Year"
+		Make         = "Veh_Make"
+		Model        = "Veh_Model"
+		VIN          = "Veh_VIN"
+		CoveredValue = "Covered_Value"
+		StartDate    = "Start_Date"
+		Country      = "Country_Description"
+	)
+
+	// fields for household policies
+	const (
+		HouseholdID = "Account_Number"
+		NameCust    = "NAMECUST"
+	)
+
+	// fields for team policies
+	const (
+		Person        = "Person"
+		ItemName      = "Statement Name"
+		PolicyName    = "Policy Name"
+		Entity        = "Entity"
+		CostCenter    = "Cost Center"
+		Account       = "Account"
+		AccountDetail = "Ledger Entry Desc"
+	)
+
+	var p Policy
+	var policiesCreated int
+
+	if data[HouseholdID] == "" {
+		err := p.FindByTeamDetails(tx, data[Entity], data[Account], data[CostCenter], data[AccountDetail])
+		if err != nil {
+			if domain.IsOtherThanNoRows(err) {
+				return 0, 0, err
+			}
+			name := data[PolicyName]
+			if name == "" {
+				name = data[Entity] + " " + data[Account] + data[CostCenter]
+			}
+			p.Name = name
+			p.Type = api.PolicyTypeTeam
+			p.EntityCodeID = EntityCodeID(data[Entity])
+			p.Account = data[Account]
+			p.CostCenter = data[CostCenter]
+			p.AccountDetail = data[AccountDetail]
+
+			if err := p.Create(tx); err != nil {
+				return 0, 0, appErrorFromDB(err, api.ErrorCreateFailure)
+			}
+			policiesCreated++
+		}
+	} else {
+		err := p.FindByHouseholdID(tx, data[HouseholdID])
+		if err != nil {
+			if domain.IsOtherThanNoRows(err) {
+				return 0, 0, err
+			}
+
+			p.Name = data[NameCust] + " household"
+			p.Type = api.PolicyTypeHousehold
+			p.HouseholdID = nulls.NewString(data[HouseholdID])
+			p.EntityCodeID = householdEntityID
+
+			if err := p.Create(tx); err != nil {
+				return 0, 0, appErrorFromDB(err, api.ErrorCreateFailure)
+			}
+			policiesCreated++
+		}
+	}
+
+	var dependent PolicyDependent
+	if data[Person] != "" {
+		var err error
+		dependent, err = p.AddDependent(tx, api.PolicyDependentInput{Name: data[Person]})
+		if err != nil {
+			return 0, 0, err
+		}
+	}
+
+	value, err := parseCoveredValue(data[CoveredValue])
+	if err != nil {
+		return 0, 0, err
+	}
+
+	startDate, err := time.Parse("1/2/2006 15:04", data[StartDate])
+	if err != nil {
+		startDate = time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC)
+	}
+
+	itemName := data[ItemName]
+	if itemName == "" {
+		itemName = fmt.Sprintf("%s %s %s", data[Year], data[Make], data[Model])
+	}
+
+	i := Item{
+		Name:              itemName,
+		CategoryID:        catID,
+		Country:           data[Country],
+		PolicyID:          p.ID,
+		Make:              data[Make],
+		Model:             data[Model],
+		SerialNumber:      data[VIN],
+		CoverageAmount:    value,
+		CoverageStatus:    api.ItemCoverageStatusApproved,
+		CoverageStartDate: startDate,
+		RiskCategoryID:    riskCategoryVehicleID,
+		PaidThroughDate:   domain.EndOfMonth(now).AddDate(0, -1, 0),
+	}
+
+	if data[Year] != "" {
+		year, err := parseVehicleYear(data[Year])
+		if err != nil {
+			return 0, 0, err
+		}
+		i.Year = nulls.NewInt(year)
+	}
+
+	if !dependent.ID.IsNil() {
+		i.PolicyDependentID = nulls.NewUUID(dependent.ID)
+	}
+
+	if err := i.Create(tx); err != nil {
+		return 0, 0, appErrorFromDB(err, api.ErrorCreateFailure)
+	}
+	return policiesCreated, 1, nil
+}
+
+func parseCoveredValue(s string) (int, error) {
+	s = strings.Trim(s, "$")
+	s = strings.ReplaceAll(s, ",", "")
+	value, err := strconv.Atoi(s)
+	if err != nil {
+		return 0, fmt.Errorf("invalid covered value %q: %w", s, err)
+	}
+	if value < 1 || value > 100_000 {
+		return 0, fmt.Errorf("invalid covered value %d", value)
+	}
+	return value * domain.CurrencyFactor, nil
+}
+
+func parseVehicleYear(s string) (int, error) {
+	year, err := strconv.Atoi(s)
+	if err != nil {
+		return 0, fmt.Errorf("invalid vehicle year %q: %w", s, err)
+	}
+	if year < 0 || year > 2050 || (year >= 100 && year < 1913) {
+		return 0, fmt.Errorf("invalid vehicle year %d", year)
+	}
+	if year >= 50 && year <= 99 {
+		return year + 1900, nil
+	}
+	if year < 50 {
+		return year + 2000, nil
+	}
+	return year, nil
 }

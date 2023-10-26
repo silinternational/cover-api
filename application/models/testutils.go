@@ -7,13 +7,16 @@
 package models
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"math/rand"
+	"testing"
 	"time"
 
 	"github.com/gobuffalo/events"
 	"github.com/gobuffalo/pop/v6"
+	"github.com/stretchr/testify/require"
 
 	"github.com/silinternational/cover-api/storage"
 
@@ -81,7 +84,7 @@ func CreateTestContext(user User) buffalo.Context {
 }
 
 // CreateFileFixtures generates any number of file records for testing
-//  all owned by the same user.
+// all owned by the same user.
 func CreateFileFixtures(tx *pop.Connection, n int, createdByID uuid.UUID) Fixtures {
 	_ = storage.CreateS3Bucket()
 	files := make(Files, n)
@@ -106,15 +109,10 @@ func CreateFileFixtures(tx *pop.Connection, n int, createdByID uuid.UUID) Fixtur
 // Uses FixturesConfig fields: NumberOfPolices, DependentsPerPolicy, UsersPerPolicy, ItemsPerPolicy, ClaimsPerPolicy,
 // ClaimItemsPerClaim, ClaimFilesPerClaim
 func CreateItemFixtures(tx *pop.Connection, config FixturesConfig) Fixtures {
-	if config.NumberOfPolicies < 1 {
-		config.NumberOfPolicies = 1
-	}
-	if config.ItemsPerPolicy < 1 {
-		config.ItemsPerPolicy = 1
-	}
-	if config.ItemsPerPolicy < config.ClaimsPerPolicy*config.ClaimItemsPerClaim {
-		config.ItemsPerPolicy = config.ClaimsPerPolicy * config.ClaimItemsPerClaim
-	}
+	config.NumberOfPolicies = domain.Max(1, config.NumberOfPolicies)
+	config.ItemsPerPolicy = domain.Max(1, config.ItemsPerPolicy)
+	numberOfClaimItems := config.ClaimsPerPolicy * config.ClaimItemsPerClaim
+	config.ItemsPerPolicy = domain.Max(config.ItemsPerPolicy, numberOfClaimItems)
 
 	fixtures := CreatePolicyFixtures(tx, config)
 	policies := fixtures.Policies
@@ -211,10 +209,6 @@ func UpdateClaimItems(tx *pop.Connection, claim Claim, params UpdateClaimItemsPa
 // createClaimFixture generates a Claim, a number of ClaimItems, and a number of ClaimFiles
 // Uses FixturesConfig fields: ClaimItemsPerClaim, ClaimFilesPerClaim
 func createClaimFixture(tx *pop.Connection, policy Policy, config FixturesConfig) Claim {
-	if config.ClaimItemsPerClaim < 1 {
-		config.ClaimItemsPerClaim = 1
-	}
-
 	if len(policy.Items) < config.ClaimItemsPerClaim {
 		panic(fmt.Sprintf("policy fixture must have at least %d items, it only has %d",
 			config.ClaimItemsPerClaim, len(policy.Items)))
@@ -274,7 +268,7 @@ func createClaimFixture(tx *pop.Connection, policy Policy, config FixturesConfig
 }
 
 // CreateCategoryFixtures generates any number of category records for testing
-//   even indexed categories are Stationary and odd indexed ones are Mobile
+// even indexed categories are Stationary and odd indexed ones are Mobile
 func CreateCategoryFixtures(tx *pop.Connection, n int) Fixtures {
 	CreateRiskCategories(tx)
 
@@ -289,10 +283,14 @@ func CreateCategoryFixtures(tx *pop.Connection, n int) Fixtures {
 			categories[i].RequireMakeModel = true
 		}
 
+		categories[i].Key = randStr(10)
 		categories[i].Name = randStr(10)
 		categories[i].HelpText = randStr(40)
 		categories[i].Status = api.ItemCategoryStatusEnabled
 		categories[i].AutoApproveMax = 3000 * domain.CurrencyFactor //  $3,000
+		categories[i].PremiumFactor = nulls.NewFloat64(0.02)
+		categories[i].BillingPeriod = domain.BillingPeriodAnnual
+		categories[i].MinimumDeductible = 1
 		MustCreate(tx, &categories[i])
 	}
 
@@ -353,12 +351,8 @@ func CreateUserFixtures(tx *pop.Connection, n int) Fixtures {
 // CreatePolicyFixtures generates any number of policy records and associated policy users
 // Uses FixturesConfig fields: NumberOfPolicies, DependentsPerPolicy, UsersPerPolicy
 func CreatePolicyFixtures(tx *pop.Connection, config FixturesConfig) Fixtures {
-	if config.NumberOfPolicies < 1 {
-		config.NumberOfPolicies = 1
-	}
-	if config.UsersPerPolicy < 1 {
-		config.UsersPerPolicy = 1
-	}
+	config.NumberOfPolicies = domain.Max(1, config.NumberOfPolicies)
+	config.UsersPerPolicy = domain.Max(1, config.UsersPerPolicy)
 
 	createHouseholdEntity(tx)
 	entCodes := make(EntityCodes, config.NumberOfEntityCodes)
@@ -410,15 +404,9 @@ func CreatePolicyFixtures(tx *pop.Connection, config FixturesConfig) Fixtures {
 // CreateTeamPolicyFixtures generates any number of policy records (of type Team) and associated policy users
 // Uses FixturesConfig fields: NumberOfPolicies, DependentsPerPolicy, UsersPerPolicy
 func CreateTeamPolicyFixtures(tx *pop.Connection, config FixturesConfig) Fixtures {
-	if config.NumberOfPolicies < 1 {
-		config.NumberOfPolicies = 1
-	}
-	if config.UsersPerPolicy < 1 {
-		config.UsersPerPolicy = 1
-	}
-	if config.NumberOfEntityCodes < 1 {
-		config.NumberOfEntityCodes = 1
-	}
+	config.NumberOfPolicies = domain.Max(1, config.NumberOfPolicies)
+	config.UsersPerPolicy = domain.Max(1, config.UsersPerPolicy)
+	config.NumberOfEntityCodes = domain.Max(1, config.NumberOfEntityCodes)
 
 	entCodes := make(EntityCodes, config.NumberOfEntityCodes)
 	for i := range entCodes {
@@ -529,7 +517,6 @@ func CreateRiskCategories(tx *pop.Connection) {
 	riskCategoryMobile := RiskCategory{
 		ID:         RiskCategoryMobileID(),
 		Name:       "mobile",
-		PolicyMax:  25000,
 		CostCenter: "MOBILE",
 	}
 	MustCreate(tx, &riskCategoryMobile)
@@ -537,14 +524,20 @@ func CreateRiskCategories(tx *pop.Connection) {
 	riskCategoryStationary := RiskCategory{
 		ID:         RiskCategoryStationaryID(),
 		Name:       "stationary",
-		PolicyMax:  25000,
 		CostCenter: "STATIONARY",
 	}
 	MustCreate(tx, &riskCategoryStationary)
+
+	riskCategoryVehicle := RiskCategory{
+		ID:         RiskCategoryVehicleID(),
+		Name:       "vehicle",
+		CostCenter: "VEHICLE",
+	}
+	MustCreate(tx, &riskCategoryVehicle)
 }
 
 // CreatePolicyUserInviteFixtures generates any number of policies with one
-//  primary member and one policy user invite records
+// primary member and one policy user invite records
 func CreatePolicyUserInviteFixtures(tx *pop.Connection, policies Policies, n int) Fixtures {
 	if len(policies) == 0 {
 		config := FixturesConfig{
@@ -584,7 +577,7 @@ func CreateLedgerFixtures(tx *pop.Connection, config FixturesConfig) Fixtures {
 	ctx := CreateTestContext(user)
 	f.LedgerEntries = make(LedgerEntries, len(f.Items))
 	for i := range f.Items {
-		Must(f.Items[i].Approve(ctx, false))
+		Must(f.Items[i].Approve(ctx, time.Now().UTC()))
 		Must(tx.Where("item_id = ?", f.Items[i].ID).First(&f.LedgerEntries[i]))
 	}
 	return f
@@ -701,11 +694,11 @@ func RegisterEventDetector(kind string, detected *bool) (events.DeleteFn, error)
 }
 
 // CreatePolicyHistoryFixtures generates a Policy with three Items each with
-//   four PolicyHistory entries as follows
-//	 CoverageStatus/Create  [not included because not update]
-//	 Name/Update [not included because not on CoverageStatus field]
-//	 CoverageStatus/Update [could be included, if date is recent]
-//	 CoverageStatus/Update [could be included, if date is recent]
+// four PolicyHistory entries as follows:
+// - CoverageStatus/Create  [not included because not update]
+// - Name/Update [not included because not on CoverageStatus field]
+// - CoverageStatus/Update [could be included, if date is recent]
+// - CoverageStatus/Update [could be included, if date is recent]
 func CreatePolicyHistoryFixtures_RecentItemStatusChanges(tx *pop.Connection) Fixtures {
 	config := FixturesConfig{
 		NumberOfPolicies: 1,
@@ -797,11 +790,11 @@ func CreatePolicyHistoryFixtures_RecentItemStatusChanges(tx *pop.Connection) Fix
 }
 
 // CreateClaimHistoryFixtures generates a Policy with three Claims each
-//   with four ClaimHistory entries as follows
-//	 Status/Create  [not included as "recent" because not update]
-//	 ReferenceNumber/Update [not included as "recent" because not on Status field]
-//	 Status/Update [could be included, if date is recent]
-//	 Status/Update [could be included, if date is recent]
+// with four ClaimHistory entries as follows:
+// - Status/Create  [not included as "recent" because not update]
+// - ReferenceNumber/Update [not included as "recent" because not on Status field]
+// - Status/Update [could be included, if date is recent]
+// - Status/Update [could be included, if date is recent]
 func CreateClaimHistoryFixtures_RecentClaimStatusChanges(tx *pop.Connection) Fixtures {
 	config := FixturesConfig{
 		NumberOfPolicies:   1,
@@ -945,4 +938,16 @@ func Must(err error) {
 	if err != nil {
 		panic(err.Error())
 	}
+}
+
+// AssertSameAppError verifies that the actual error contains an AppError and that the key and category match expected
+func AssertSameAppError(t *testing.T, expected api.AppError, actual error) {
+	require.Error(t, actual, "error is nil")
+	var appErr *api.AppError
+	require.True(t, errors.As(actual, &appErr),
+		"error does not contain an api.AppError, message: %s", actual.Error())
+	require.Equal(t, expected.Key, appErr.Key,
+		"error key does not match, message: %s", actual.Error())
+	require.Equal(t, expected.Category, appErr.Category,
+		"error category does not match, message: %s", actual.Error())
 }

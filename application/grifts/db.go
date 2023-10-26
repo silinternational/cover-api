@@ -277,30 +277,59 @@ func createPolicyFixtures(tx *pop.Connection, fixUsers []*models.User, entityCod
 
 func createCategories(tx *pop.Connection) ([]uuid.UUID, error) {
 	const itemCategoriesSql = `
-INSERT INTO "item_categories" ("id", "risk_category_id", "name", "help_text",
-	"status", "auto_approve_max", "created_at", "updated_at", "legacy_id", "require_make_model") VALUES
-('d4632d64-67b5-4795-a7de-66b95312fa7e',	'3be38915-7092-44f2-90ef-26f48214b34f',	'Computers, tablets, and phones',	'Includes printers, screens, peripherals, and extras',
-    'Enabled',	300000,	'2021-08-27 19:46:28',	'2021-08-27 19:46:28',	1, true),
-('9c682e38-78fd-475b-9810-3a7f2e9f1fe4',	'7bed3c00-23cf-4282-b2b8-da89426cef2f',	'Clothing',	'-',
-    'Enabled',	300000,	'2021-08-27 19:46:28',	'2021-08-27 19:46:28',	10, false),
-('4b06f087-3fb0-4345-82e8-803645962db0',	'3be38915-7092-44f2-90ef-26f48214b34f',	'Medical',	'Eyewear, insulin pumps, CPAP, prosthetics, and more',
-    'Enabled',	300000,	'2021-08-27 19:46:28',	'2021-08-27 19:46:28',	11, true),
-('61081c4d-b6e3-47c5-aca7-373fa7d30896',	'3be38915-7092-44f2-90ef-26f48214b34f',	'Photography and recording',	'Includes video, audio, peripherals, and extras',
-    'Enabled',	300000,	'2021-08-27 19:46:28',	'2021-08-27 19:46:28',	2, true),
-('863a3306-78f9-4aca-add5-0abda3a1ef02',	'3be38915-7092-44f2-90ef-26f48214b34f',	'Other',	'-',
-    'Enabled',	300000,	'2021-08-27 19:46:28',	'2021-08-27 19:46:28',	3, true),
-('faa39da0-981e-4fcf-92fc-2c047fd21f15',	'3be38915-7092-44f2-90ef-26f48214b34f',	'Musical instruments',	'Includes peripherals and extras',
-    'Enabled',	300000,	'2021-08-27 19:46:28',	'2021-08-27 19:46:28',	4, true),
-('660629ef-ff63-4ace-8263-993897de7d6b',	'7bed3c00-23cf-4282-b2b8-da89426cef2f',	'Appliances and home electronics',	'Washing machines, ovens, theater equipment, and more',
-    'Enabled',	300000,	'2021-08-27 19:46:28',	'2021-08-27 19:46:28',	5, false),
-('aa304ce5-be3d-45eb-929e-b4575973c0d3',	'7bed3c00-23cf-4282-b2b8-da89426cef2f',	'Home goods',	'Furniture, kitchenware, decorations, linens, and more',
-    'Enabled',	300000,	'2021-08-27 19:46:28',	'2021-08-27 19:46:28',	6, false),
-('722c03e5-7852-44b9-b86a-af5d63b39d0e',	'7bed3c00-23cf-4282-b2b8-da89426cef2f',	'Field site electronics',	'Solar panels, power systems, antennae, and more',
-    'Enabled',	300000,	'2021-08-27 19:46:28',	'2021-08-27 19:46:28',	7, false),
-('0f7aa101-bfdb-4a19-a182-c5ff1d16f6b2',	'7bed3c00-23cf-4282-b2b8-da89426cef2f',	'Books and media',	'Books, CDs, DVDs, and more',
-    'Enabled',	300000,	'2021-08-27 19:46:28',	'2021-08-27 19:46:28',	8, false),
-('036e5315-18ca-4404-8435-72a695f2c9a7',	'3be38915-7092-44f2-90ef-26f48214b34f',	'Travel and recreation',	'Includes suitcases, travel bags, cycling, skating, sports. No motorized vehicles.',
-    'Enabled',	300000,	'2021-08-27 19:46:28',	'2021-08-27 19:46:28',	9, true);
+INSERT INTO "item_categories" ("id", "risk_category_id",
+	"name", "help_text",
+	"status", "auto_approve_max", "require_make_model", "premium_factor", "billing_period", "created_at", "updated_at",
+	"legacy_id", "key", "minimum_deductible", "minimum_premium", "minimum_coverage")
+VALUES
+('d4632d64-67b5-4795-a7de-66b95312fa7e',	'3be38915-7092-44f2-90ef-26f48214b34f',
+	'Computers, tablets, and phones',	'Includes printers, screens, peripherals, and extras',
+	'Enabled',	300000, true, 0.02, 12,	'2021-08-27 19:46:28',	'2021-08-27 19:46:28',
+	1, 'computers', 1, 1, 25),
+('9c682e38-78fd-475b-9810-3a7f2e9f1fe4',	'7bed3c00-23cf-4282-b2b8-da89426cef2f',
+	'Clothing',	'-',
+	'Enabled',	300000, false, 0.02, 12,	'2021-08-27 19:46:28',	'2021-08-27 19:46:28',
+	10, 'clothing', 1, 1, 25),
+('4b06f087-3fb0-4345-82e8-803645962db0',	'3be38915-7092-44f2-90ef-26f48214b34f',
+	'Medical',	'Eyewear, insulin pumps, CPAP, prosthetics, and more',
+	'Enabled',	300000, true, 0.02, 12,	'2021-08-27 19:46:28',	'2021-08-27 19:46:28',
+	11, 'medical', 1, 1, 25),
+('61081c4d-b6e3-47c5-aca7-373fa7d30896',	'3be38915-7092-44f2-90ef-26f48214b34f',
+	'Photography and recording',	'Includes video, audio, peripherals, and extras',
+	'Enabled',	300000, true, 0.02, 12,	'2021-08-27 19:46:28',	'2021-08-27 19:46:28',
+	2, 'photography', 1, 1, 25),
+('863a3306-78f9-4aca-add5-0abda3a1ef02',	'3be38915-7092-44f2-90ef-26f48214b34f',
+	'Other',	'-',
+	'Enabled',	300000, true, 0.02, 12,	'2021-08-27 19:46:28',	'2021-08-27 19:46:28',
+	3, 'other', 1, 1, 25),
+('faa39da0-981e-4fcf-92fc-2c047fd21f15',	'3be38915-7092-44f2-90ef-26f48214b34f',
+	'Musical instruments',	'Includes peripherals and extras',
+	'Enabled',	300000, true, 0.02, 12,	'2021-08-27 19:46:28',	'2021-08-27 19:46:28',
+	4, 'musical', 1, 1, 25),
+('660629ef-ff63-4ace-8263-993897de7d6b',	'7bed3c00-23cf-4282-b2b8-da89426cef2f',
+	'Appliances and home electronics',	'Washing machines, ovens, theater equipment, and more',
+	'Enabled',	300000, false, 0.02, 12,	'2021-08-27 19:46:28',	'2021-08-27 19:46:28',
+	5, 'appliances', 1, 1, 25),
+('aa304ce5-be3d-45eb-929e-b4575973c0d3',	'7bed3c00-23cf-4282-b2b8-da89426cef2f',
+	'Home goods',	'Furniture, kitchenware, decorations, linens, and more',
+	'Enabled',	300000, false, 0.02, 12,	'2021-08-27 19:46:28',	'2021-08-27 19:46:28',
+	6, 'home', 1, 1, 25),
+('722c03e5-7852-44b9-b86a-af5d63b39d0e',	'7bed3c00-23cf-4282-b2b8-da89426cef2f',
+	'Field site electronics',	'Solar panels, power systems, antennae, and more',
+	'Enabled',	300000, false, 0.02, 12,	'2021-08-27 19:46:28',	'2021-08-27 19:46:28',
+	7, 'electronics', 1, 1, 25),
+('0f7aa101-bfdb-4a19-a182-c5ff1d16f6b2',	'7bed3c00-23cf-4282-b2b8-da89426cef2f',
+	'Books and media',	'Books, CDs, DVDs, and more',
+	'Enabled',	300000, false, 0.02, 12,	'2021-08-27 19:46:28',	'2021-08-27 19:46:28',
+	8, 'books', 1, 1, 25),
+('036e5315-18ca-4404-8435-72a695f2c9a7',	'3be38915-7092-44f2-90ef-26f48214b34f',
+	'Travel and recreation',	'Includes suitcases, travel bags, cycling, skating, sports. No motorized vehicles.',
+	'Enabled',	300000, true, 0.02, 12,	'2021-08-27 19:46:28',	'2021-08-27 19:46:28',
+	9, 'travel', 1, 1, 25),
+('0619a0ba-785e-428d-858c-96d3bd56929a',	'dce80e61-74f9-42f0-9cbd-d3eebe4a1ccc',
+	'Motorized vehicles',	'Coverage for motorized vehicles does not include liability and is not intended to fulfill local regulations or compete with local insurance offerings.',
+	'Enabled',	5000000, true, 0.03, 1,	'2021-08-27 19:46:28',	'2021-08-27 19:46:28',
+	NULL, 'cars', 5000, 6000, 200);
 `
 	if err := tx.RawQuery(itemCategoriesSql).Exec(); err != nil {
 		panic("error loading item categories, " + err.Error())
@@ -375,7 +404,7 @@ func createItemFixtures(tx *pop.Connection, fixPolicies []*models.Policy, users 
 			SerialNumber:      fmt.Sprintf("ISN-%d", i),
 			CoverageAmount:    50 * (i + 1) * domain.CurrencyFactor, // increments of $50 starting at $50
 			CoverageStatus:    api.ItemCoverageStatusApproved,
-			PaidThroughYear:   time.Now().UTC().Year(),
+			PaidThroughDate:   domain.EndOfYear(time.Now().UTC().Year()),
 			CoverageStartDate: time.Now().UTC().Add(time.Hour * time.Duration((i+1)*-40)),
 		}
 
@@ -459,20 +488,22 @@ func createClaimFixtures(tx *pop.Connection, fixPolicies []*models.Policy, items
 }
 
 func createLedgerEntryFixtures(tx *pop.Connection, items []*models.Item, claims []*models.Claim) error {
+	now := time.Now().UTC()
+
 	// Two entries for Team Policies
-	if err := items[0].CreateLedgerEntry(tx, models.LedgerEntryTypeNewCoverage, 1021); err != nil {
+	if err := items[0].CreateLedgerEntry(tx, models.LedgerEntryTypeNewCoverage, 1021, now); err != nil {
 		return err
 	}
 
-	if err := items[2].CreateLedgerEntry(tx, models.LedgerEntryTypeCoverageChange, 519); err != nil {
+	if err := items[2].CreateLedgerEntry(tx, models.LedgerEntryTypeCoverageChange, 519, now); err != nil {
 		return err
 	}
 
 	// Two entries for Household Policies
-	if err := items[4].CreateLedgerEntry(tx, models.LedgerEntryTypeNewCoverage, 9876); err != nil {
+	if err := items[4].CreateLedgerEntry(tx, models.LedgerEntryTypeNewCoverage, 9876, now); err != nil {
 		return err
 	}
-	if err := items[5].CreateLedgerEntry(tx, models.LedgerEntryTypeCoverageChange, 1234); err != nil {
+	if err := items[5].CreateLedgerEntry(tx, models.LedgerEntryTypeCoverageChange, 1234, now); err != nil {
 		return err
 	}
 

@@ -210,33 +210,57 @@ func (ts *TestSuite) Test_EndOfMonth() {
 	}{
 		{
 			name: "first of month",
-			time: time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC),
+			time: time.Date(2020, 1, 1, 1, 1, 1, 1, time.UTC),
 			want: time.Date(2020, 1, 31, 0, 0, 0, 0, time.UTC),
 		},
 		{
 			name: "last of month",
-			time: time.Date(2020, 1, 31, 0, 0, 0, 0, time.UTC),
+			time: time.Date(2020, 1, 31, 1, 1, 1, 1, time.UTC),
 			want: time.Date(2020, 1, 31, 0, 0, 0, 0, time.UTC),
 		},
 		{
 			name: "30-day month",
-			time: time.Date(2020, 4, 1, 0, 0, 0, 0, time.UTC),
+			time: time.Date(2020, 4, 1, 1, 1, 1, 1, time.UTC),
 			want: time.Date(2020, 4, 30, 0, 0, 0, 0, time.UTC),
 		},
 		{
 			name: "29-day month",
-			time: time.Date(2020, 2, 1, 0, 0, 0, 0, time.UTC),
+			time: time.Date(2020, 2, 1, 1, 1, 1, 1, time.UTC),
 			want: time.Date(2020, 2, 29, 0, 0, 0, 0, time.UTC),
 		},
 		{
 			name: "28-day month",
-			time: time.Date(2021, 2, 1, 0, 0, 0, 0, time.UTC),
+			time: time.Date(2021, 2, 1, 1, 1, 1, 1, time.UTC),
 			want: time.Date(2021, 2, 28, 0, 0, 0, 0, time.UTC),
 		},
 	}
 	for _, tt := range tests {
 		ts.T().Run(tt.name, func(t *testing.T) {
 			ts.Equal(tt.want, EndOfMonth(tt.time))
+		})
+	}
+}
+
+func (ts *TestSuite) Test_EndOfYear() {
+	tests := []struct {
+		name string
+		year int
+		want time.Time
+	}{
+		{
+			name: "1991",
+			year: 1991,
+			want: time.Date(1991, 12, 31, 0, 0, 0, 0, time.UTC),
+		},
+		{
+			name: "0",
+			year: 0,
+			want: time.Date(0, 12, 31, 0, 0, 0, 0, time.UTC),
+		},
+	}
+	for _, tt := range tests {
+		ts.T().Run(tt.name, func(t *testing.T) {
+			ts.Equal(tt.want, EndOfYear(tt.year))
 		})
 	}
 }
@@ -337,6 +361,39 @@ func (ts *TestSuite) Test_IsProduction() {
 
 			got := IsProduction()
 			ts.Equal(tt.want, got)
+		})
+	}
+}
+
+func (ts *TestSuite) TestMax() {
+	tests := []struct {
+		name string
+		a    int
+		b    int
+		want int
+	}{
+		{
+			name: "zero",
+			a:    0,
+			b:    1,
+			want: 1,
+		},
+		{
+			name: "negative",
+			a:    1,
+			b:    -1,
+			want: 1,
+		},
+		{
+			name: "equal",
+			a:    2,
+			b:    2,
+			want: 2,
+		},
+	}
+	for _, tt := range tests {
+		ts.T().Run(tt.name, func(t *testing.T) {
+			ts.Equal(tt.want, Max(tt.a, tt.b))
 		})
 	}
 }

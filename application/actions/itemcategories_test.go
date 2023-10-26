@@ -18,7 +18,6 @@ func (as *ActionSuite) Test_ItemCategoriesList() {
 
 	rc := models.RiskCategory{
 		Name:       "Stationary",
-		PolicyMax:  10000,
 		CostCenter: "STATIONARY",
 	}
 	models.MustCreate(as.DB, &rc)
@@ -27,10 +26,12 @@ func (as *ActionSuite) Test_ItemCategoriesList() {
 	cats := make(models.ItemCategories, 3)
 	for i := range cats {
 		cats[i] = models.ItemCategory{
+			Key:            fmt.Sprintf("Key%v", i),
 			RiskCategoryID: rc.ID,
 			Name:           fmt.Sprintf("Cat%v", i),
 			Status:         api.ItemCategoryStatusEnabled,
 			AutoApproveMax: 10,
+			BillingPeriod:  domain.BillingPeriodAnnual,
 		}
 		models.MustCreate(as.DB, &cats[i])
 	}

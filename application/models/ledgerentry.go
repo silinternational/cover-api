@@ -293,21 +293,16 @@ func (le *LedgerEntry) getDescription() string {
 	description := le.Type.Description(le.ClaimPayoutOption, le.Amount)
 
 	if le.PolicyName == "" {
-		return description
+		return description + " " + le.RiskCategoryName
 	}
 
 	description = fmt.Sprintf(`%s / %s`, description, le.PolicyName)
 
-	if le.PolicyType == api.PolicyTypeHousehold {
-		return description
+	if le.PolicyType == api.PolicyTypeHousehold || le.Name == "" {
+		return description + " " + le.RiskCategoryName
 	}
 
-	// For non-household policies
-	if le.Name == "" {
-		return description
-	}
-
-	return fmt.Sprintf(`%s (%s)`, description, le.Name)
+	return fmt.Sprintf(`%s (%s) %s`, description, le.Name, le.RiskCategoryName)
 }
 
 func (le *LedgerEntry) getItemName(tx *pop.Connection) string {
@@ -369,7 +364,7 @@ func (le *LedgerEntry) balanceDescription() string {
 
 // NewLedgerEntry creates a basic LedgerEntry with common fields completed.
 // Requires pre-hydration of policy.EntityCode. If item is not nil, item.RiskCategory must be hydrated.
-func NewLedgerEntry(accPersonName string, policy Policy, item *Item, claim *Claim) LedgerEntry {
+func NewLedgerEntry(accPersonName string, policy Policy, item *Item, claim *Claim, dateSubmitted time.Time) LedgerEntry {
 	costCenter := ""
 	if policy.Type == api.PolicyTypeTeam {
 		costCenter = policy.CostCenter + accountSeparator + policy.AccountDetail
@@ -378,7 +373,7 @@ func NewLedgerEntry(accPersonName string, policy Policy, item *Item, claim *Clai
 		PolicyID:      policy.ID,
 		PolicyType:    policy.Type,
 		EntityCode:    policy.EntityCode.Code,
-		DateSubmitted: time.Now().UTC(),
+		DateSubmitted: dateSubmitted,
 		AccountNumber: policy.Account,
 		IncomeAccount: policy.EntityCode.IncomeAccount,
 		CostCenter:    costCenter,

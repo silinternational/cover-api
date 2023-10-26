@@ -55,6 +55,9 @@ type Item struct {
 	// model
 	Model string `json:"model"`
 
+	// year
+	Year *int `json:"year"`
+
 	// serial number
 	SerialNumber string `json:"serial_number"`
 
@@ -94,11 +97,18 @@ type Item struct {
 	// risk category
 	RiskCategory RiskCategory `json:"risk_category"`
 
-	// annual premium (0.01 USD)
+	// billing period, expressed as a number of months
+	BillingPeriod int `json:"billing_period"`
+
+	// Annual premium amount (In units of 0.01 USD)
 	AnnualPremium Currency `json:"annual_premium"`
 
-	// estimated annual premium prorated from now to the end of the year (0.01 USD)
+	// Estimated annual premium prorated from now to the end of the year. Does not apply to items with a
+	// category that is billed monthly. (In units of 0.01 USD)
 	ProratedAnnualPremium Currency `json:"prorated_annual_premium"`
+
+	// Monthly premium amount (In units of 0.01 USD)
+	MonthlyPremium Currency `json:"monthly_premium"`
 
 	// Accountable person assigned to the policy item
 	AccountablePerson AccountablePerson `json:"accountable_person"`
@@ -157,19 +167,14 @@ type ItemCreate struct {
 	// serial number
 	SerialNumber string `json:"serial_number"`
 
+	// year, numeric, optional.
+	Year *int `json:"year"`
+
 	// coverage amount (0.01 USD)
 	CoverageAmount int `json:"coverage_amount"`
 
 	// coverage status
 	CoverageStatus ItemCoverageStatus `json:"coverage_status"`
-
-	// date (yyyy-mm-dd) of item's coverage start date
-	CoverageStartDate string `json:"coverage_start_date"`
-
-	// date (yyyy-mm-dd) of item's coverage end date, optional
-	//
-	// swagger:strfmt date-time
-	CoverageEndDate *string `json:"coverage_end_date"`
 
 	// Accountable person ID. Can be either a policy dependent ID or a user ID
 	//
@@ -217,6 +222,9 @@ type ItemUpdate struct {
 
 	// serial number
 	SerialNumber string `json:"serial_number"`
+
+	// year, numeric, optional. Omitting this field will erase the stored value.
+	Year *int `json:"year"`
 
 	// coverage amount (0.01 USD)
 	CoverageAmount int `json:"coverage_amount"`

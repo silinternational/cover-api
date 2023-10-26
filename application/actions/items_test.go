@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/gobuffalo/nulls"
 	"github.com/gofrs/uuid"
 
 	"github.com/silinternational/cover-api/api"
@@ -31,7 +32,8 @@ func (as *ActionSuite) Test_ItemsList() {
 
 	normalUser := fixtures.Policies[1].Members[0]
 
-	item2.Load(as.DB)
+	item2.LoadCategory(as.DB, false)
+	item2.LoadRiskCategory(as.DB, false)
 
 	tests := []struct {
 		name          string
@@ -146,12 +148,11 @@ func (as *ActionSuite) Test_ItemsCreate() {
 		SerialNumber:        "MM1234",
 		CoverageAmount:      101,
 		CoverageStatus:      api.ItemCoverageStatusDraft,
-		CoverageStartDate:   "2006-01-03",
 		AccountablePersonID: policyCreator.ID,
 	}
 
-	badItemDate := goodItem
-	badItemDate.CoverageStartDate = "1/1/2020"
+	missingPerson := goodItem
+	missingPerson.AccountablePersonID = uuid.Nil
 
 	tests := []struct {
 		name       string
@@ -182,9 +183,9 @@ func (as *ActionSuite) Test_ItemsCreate() {
 			name:       "bad request",
 			actor:      policyCreator,
 			policy:     policy,
-			newItem:    badItemDate,
+			newItem:    missingPerson,
 			wantStatus: http.StatusBadRequest,
-			wantInBody: []string{api.ErrorItemInvalidCoverageStartDate.String()},
+			wantInBody: []string{api.ErrorItemNullAccountablePerson.String()},
 		},
 		{
 			name:       "ok",
@@ -289,7 +290,7 @@ func (as *ActionSuite) Test_ItemsSubmit() {
 				`"serial_number":"` + revisionItem.SerialNumber,
 				// keeps revisionItem coverage_amount
 				fmt.Sprintf(`"coverage_amount":%v`, revisionItem.CoverageAmount),
-				`"coverage_start_date":"` + revisionItem.CoverageStartDate.Format(domain.DateFormat) + `"`,
+				`"coverage_start_date":"` + time.Now().Format(domain.DateFormat) + `"`,
 				`"coverage_status":"` + string(api.ItemCoverageStatusApproved), // lower than auto-approve max
 				`"category":{"id":"` + iCatID.String(),
 				`"status_change":"` + models.ItemStatusChangeAutoApproved,
@@ -913,15 +914,11 @@ func (as *ActionSuite) Test_NewItemFromApiInput() {
 		Make:                "Minolta",
 		Model:               "Max",
 		SerialNumber:        "MM1234",
+		Year:                models.NullsIntToPointer(nulls.NewInt(1999)),
 		CoverageAmount:      101,
 		CoverageStatus:      api.ItemCoverageStatusDraft,
-		CoverageStartDate:   "2006-01-03",
 		AccountablePersonID: user.ID,
 	}
-
-	itemWithBadCoverageStartDate := item
-	itemWithBadCoverageStartDate.Name = "Item with bad coverage start date"
-	itemWithBadCoverageStartDate.CoverageStartDate = "1/1/2020"
 
 	itemWithBadCategory := item
 	itemWithBadCategory.Name = "Item with bad category"
@@ -945,15 +942,6 @@ func (as *ActionSuite) Test_NewItemFromApiInput() {
 		wantErrCat  api.ErrorCategory
 		wantRiskCat uuid.UUID
 	}{
-		{
-			name:       itemWithBadCoverageStartDate.Name,
-			policy:     policy,
-			input:      itemWithBadCoverageStartDate,
-			user:       user,
-			wantErr:    "failed to parse item coverage start date",
-			wantErrKey: api.ErrorItemInvalidCoverageStartDate,
-			wantErrCat: api.CategoryUser,
-		},
 		{
 			name:       itemWithBadCategory.Name,
 			policy:     policy,
@@ -1013,6 +1001,7 @@ func (as *ActionSuite) Test_NewItemFromApiInput() {
 			as.Equal(tt.input.Make, got.Make, "Make is not correct")
 			as.Equal(tt.input.Model, got.Model, "Model is not correct")
 			as.Equal(tt.input.SerialNumber, got.SerialNumber, "SerialNumber is not correct")
+			as.Equal(models.PointerToNullsInt(tt.input.Year), got.Year, "Year is not correct")
 			as.Equal(tt.input.CoverageAmount, got.CoverageAmount, "CoverageAmount is not correct")
 			as.Equal(tt.input.CoverageStatus, got.CoverageStatus, "CoverageStatus is not correct")
 			as.Equal("", got.StatusChange, "StatusChange is not correct")

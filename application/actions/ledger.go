@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/gobuffalo/buffalo"
+
 	"github.com/silinternational/cover-api/fin"
 	"github.com/silinternational/cover-api/job"
 
@@ -15,19 +16,18 @@ import (
 )
 
 // swagger:operation GET /ledger-reports LedgerReport LedgerReportList
-//
 // LedgerReportList
 //
 // Return a list of ledger reports that are not associated with a policy
-//
 // ---
-// responses:
-//   '200':
-//     description: LedgerReport list
-//     schema:
-//       type: array
-//       items:
-//         "$ref": "#/definitions/LedgerReport"
+//
+//	responses:
+//	  '200':
+//	    description: LedgerReport list
+//	    schema:
+//	      type: array
+//	      items:
+//	        "$ref": "#/definitions/LedgerReport"
 func ledgerReportList(c buffalo.Context) error {
 	var list models.LedgerReports
 
@@ -40,23 +40,22 @@ func ledgerReportList(c buffalo.Context) error {
 }
 
 // swagger:operation GET /ledger-reports/{id} LedgerReport LedgerReportView
-//
 // LedgerReportView
 //
 // Return the ledger report specified by `id`. The returned object contains metadata and a File object pointing to
 // a CSV file suitable for use with Sage Accounting.
-//
 // ---
-// parameters:
-// - name: id
-//   in: path
-//   required: true
-//   description: specifies the ID of the report to view
-// responses:
-//   '200':
-//     description: the requested LedgerReport
-//     schema:
-//       "$ref": "#/definitions/LedgerReport"
+//
+//	parameters:
+//	- name: id
+//	  in: path
+//	  required: true
+//	  description: specifies the ID of the report to view
+//	responses:
+//	  '200':
+//	    description: the requested LedgerReport
+//	    schema:
+//	      "$ref": "#/definitions/LedgerReport"
 func ledgerReportView(c buffalo.Context) error {
 	tx := models.Tx(c)
 
@@ -65,7 +64,6 @@ func ledgerReportView(c buffalo.Context) error {
 }
 
 // swagger:operation POST /ledger-reports LedgerReport LedgerReportCreate
-//
 // LedgerReportCreate
 //
 // Create and return a report on the ledger entries as specified by the input object. The returned object
@@ -74,20 +72,20 @@ func ledgerReportView(c buffalo.Context) error {
 // ### Report types:
 // + `monthly` - Return all ledger entries not yet reconciled, up to the beginning of the given day (0:00 UTC).
 // + `annual` - Return the billing detail for given year's policy renewals.
-//
 // ---
-// parameters:
-//   - name: input
-//     in: body
-//     description: LedgerReportCreateInput object
-//     required: true
-//     schema:
-//       "$ref": "#/definitions/LedgerReportCreateInput"
-// responses:
-//   '200':
-//     description: the requested LedgerReport
-//     schema:
-//       "$ref": "#/definitions/LedgerReport"
+//
+//	parameters:
+//	  - name: input
+//	    in: body
+//	    description: LedgerReportCreateInput object
+//	    required: true
+//	    schema:
+//	      "$ref": "#/definitions/LedgerReportCreateInput"
+//	responses:
+//	  '200':
+//	    description: the requested LedgerReport
+//	    schema:
+//	      "$ref": "#/definitions/LedgerReport"
 func ledgerReportCreate(c buffalo.Context) error {
 	var input api.LedgerReportCreateInput
 	if err := StrictBind(c, &input); err != nil {
@@ -121,23 +119,22 @@ func ledgerReportCreate(c buffalo.Context) error {
 }
 
 // swagger:operation PUT /ledger-reports/{id} LedgerReport LedgerReportReconcile
-//
 // LedgerReportReconcile
 //
 // Mark ledger entries in the report reconciled as of today. Call this only after all transactions in the report
 // have been fully loaded into the accounting record.
-//
 // ---
-// parameters:
-// - name: id
-//   in: path
-//   required: true
-//   description: specifies the ID of the report to reconcile
-// responses:
-//   '200':
-//     description: the requested LedgerReport
-//     schema:
-//       "$ref": "#/definitions/LedgerReport"
+//
+//	parameters:
+//	- name: id
+//	  in: path
+//	  required: true
+//	  description: specifies the ID of the report to reconcile
+//	responses:
+//	  '200':
+//	    description: the requested LedgerReport
+//	    schema:
+//	      "$ref": "#/definitions/LedgerReport"
 func ledgerReportReconcile(c buffalo.Context) error {
 	tx := models.Tx(c)
 
@@ -150,15 +147,14 @@ func ledgerReportReconcile(c buffalo.Context) error {
 }
 
 // swagger:operation POST /ledger-reports/annual Ledger LedgerAnnualProcess
-//
 // LedgerAnnualProcess
 //
 // Process billing for current year's policy renewals.
-//
 // ---
-// responses:
-//   '204':
-//     description: OK but no content in response
+//
+//	responses:
+//	  '204':
+//	    description: OK but no content in response
 func ledgerAnnualRenewalProcess(c buffalo.Context) error {
 	actor := models.CurrentUser(c)
 	if !actor.IsAdmin() {
@@ -174,17 +170,16 @@ func ledgerAnnualRenewalProcess(c buffalo.Context) error {
 }
 
 // swagger:operation GET /ledger-reports/annual Ledger LedgerAnnualRenewalStatus
-//
 // LedgerAnnualRenewalStatus
 //
 // Get the status of the annual billing process.
-//
 // ---
-// responses:
-//   '200':
-//     description: the status of the annual billing process
-//     schema:
-//       "$ref": "#/definitions/AnnualRenewalStatus"
+//
+//	responses:
+//	  '200':
+//	    description: the status of the annual billing process
+//	    schema:
+//	      "$ref": "#/definitions/RenewalStatus"
 func ledgerAnnualRenewalStatus(c buffalo.Context) error {
 	actor := models.CurrentUser(c)
 	if !actor.IsAdmin() {
@@ -192,14 +187,69 @@ func ledgerAnnualRenewalStatus(c buffalo.Context) error {
 		return reportError(c, api.NewAppError(err, api.ErrorNotAuthorized, api.CategoryForbidden))
 	}
 
-	currentYear := time.Now().UTC().Year()
+	endOfYear := domain.EndOfYear(time.Now().UTC().Year())
 
-	itemsToRenew, err := models.CountItemsToRenew(models.Tx(c), currentYear)
+	itemsToRenew, err := models.CountItemsToRenew(models.Tx(c), endOfYear, domain.BillingPeriodAnnual)
 	if err != nil {
 		return err
 	}
 
-	status := api.AnnualRenewalStatus{
+	status := api.RenewalStatus{
+		IsComplete:     itemsToRenew == 0,
+		ItemsToProcess: itemsToRenew,
+	}
+	return renderOk(c, status)
+}
+
+// swagger:operation POST /ledger-reports/monthly Ledger LedgerMonthlyProcess
+// LedgerMonthlyProcess
+//
+// Process billing for current month's policy renewals.
+// ---
+//
+//	responses:
+//	  '204':
+//	    description: OK but no content in response
+func ledgerMonthlyRenewalProcess(c buffalo.Context) error {
+	actor := models.CurrentUser(c)
+	if !actor.IsAdmin() {
+		err := fmt.Errorf("user not allowed to process monthly batch data")
+		return reportError(c, api.NewAppError(err, api.ErrorNotAuthorized, api.CategoryForbidden))
+	}
+
+	if err := job.Submit(job.MonthlyRenewal, map[string]any{}); err != nil {
+		return reportError(c, api.NewAppError(err, api.ErrorFailedToSubmitJob, api.CategoryInternal))
+	}
+
+	return c.Render(http.StatusNoContent, nil)
+}
+
+// swagger:operation GET /ledger-reports/monthly Ledger LedgerMonthlyRenewalStatus
+// LedgerMonthlyRenewalStatus
+//
+// Get the status of the monthly billing process.
+// ---
+//
+//	responses:
+//	  '200':
+//	    description: the status of the monthly billing process
+//	    schema:
+//	      "$ref": "#/definitions/RenewalStatus"
+func ledgerMonthlyRenewalStatus(c buffalo.Context) error {
+	actor := models.CurrentUser(c)
+	if !actor.IsAdmin() {
+		err := fmt.Errorf("user not allowed to access monthly batch data")
+		return reportError(c, api.NewAppError(err, api.ErrorNotAuthorized, api.CategoryForbidden))
+	}
+
+	now := time.Now().UTC()
+
+	itemsToRenew, err := models.CountItemsToRenew(models.Tx(c), now, domain.BillingPeriodMonthly)
+	if err != nil {
+		return err
+	}
+
+	status := api.RenewalStatus{
 		IsComplete:     itemsToRenew == 0,
 		ItemsToProcess: itemsToRenew,
 	}

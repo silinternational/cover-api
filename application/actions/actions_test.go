@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/silinternational/cover-api/domain"
 	"github.com/silinternational/cover-api/models"
 
 	"github.com/gobuffalo/buffalo"
@@ -43,8 +44,9 @@ func Test_ActionSuite(t *testing.T) {
 	as := &ActionSuite{
 		app: App(),
 	}
-	c, err := pop.Connect("test")
+	c, err := pop.Connect(domain.EnvTest)
 	if err == nil {
+		models.DB = c
 		as.DB = c
 	}
 	suite.Run(t, as)

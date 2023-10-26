@@ -58,8 +58,9 @@ func (c *ClaimItem) Validate(tx *pop.Connection) (*validate.Errors, error) {
 	return validateModel(c), nil
 }
 
-// CreateWithContext validates and stores the data as a new record in the database, assigning a new ID if needed.
-func (c *ClaimItem) CreateWithContext(ctx context.Context) error {
+// CreateWithHistory validates and stores the data as a new record in the database, assigning a new ID if needed.
+// Also creates a ClaimHistory record.
+func (c *ClaimItem) CreateWithHistory(ctx context.Context) error {
 	tx := Tx(ctx)
 
 	if err := c.Create(tx); err != nil {
@@ -73,7 +74,7 @@ func (c *ClaimItem) CreateWithContext(ctx context.Context) error {
 	return nil
 }
 
-// Create a ClaimItem but not a history record. Use CreateWithContext if history is needed.
+// Create a ClaimItem but not a history record. Use CreateWithHistory if history is needed.
 func (c *ClaimItem) Create(tx *pop.Connection) error {
 	return create(tx, c)
 }
@@ -428,9 +429,9 @@ func (c *ClaimItem) updatePayoutAmount(ctx context.Context) error {
 	c.LoadItem(tx, false)
 	c.LoadClaim(tx, false)
 
-	coverageAmount := c.Item.CoverageAmount
+	coverageAmount := float64(c.Item.CoverageAmount)
 
-	deductible := c.Claim.Deductible(tx)
+	deductibleRate := c.Claim.GetDeductibleRate(tx)
 	maxValue := 0.0
 	switch c.PayoutOption {
 	case api.PayoutOptionRepair:
@@ -447,11 +448,19 @@ func (c *ClaimItem) updatePayoutAmount(ctx context.Context) error {
 	case api.PayoutOptionFMV:
 		maxValue = float64(c.FMV)
 	case api.PayoutOptionFixedFraction:
-		deductible = domain.Env.EvacuationDeductible
-		maxValue = float64(coverageAmount)
+		deductibleRate = domain.Env.EvacuationDeductible
+		maxValue = coverageAmount
 	}
 
-	payout := api.Currency(math.Round(math.Min(maxValue, float64(coverageAmount)) * (1.0 - deductible)))
+	coverageAmount = math.Min(maxValue, coverageAmount)
+	deductibleAmount := math.Round(coverageAmount * deductibleRate)
+
+	c.LoadItem(tx, false)
+	c.Item.LoadCategory(tx, false)
+	minDeductibleAmount := float64(c.Item.Category.MinimumDeductible)
+	deductibleAmount = math.Max(deductibleAmount, minDeductibleAmount)
+
+	payout := api.Currency(math.Max(0, math.Round(coverageAmount-deductibleAmount)))
 	if c.PayoutAmount == payout {
 		return nil
 	}

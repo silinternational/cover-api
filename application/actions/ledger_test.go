@@ -314,7 +314,7 @@ func (as *ActionSuite) Test_LedgerAnnualProcess() {
 
 	f := models.CreateItemFixtures(as.DB, models.FixturesConfig{ItemsPerPolicy: 3})
 
-	f.Items[0].PaidThroughYear = year
+	f.Items[0].PaidThroughDate = domain.EndOfYear(year)
 	models.UpdateItemStatus(as.DB, f.Items[0], api.ItemCoverageStatusApproved, "")
 	models.UpdateItemStatus(as.DB, f.Items[1], api.ItemCoverageStatusApproved, "")
 
@@ -367,7 +367,7 @@ func (as *ActionSuite) Test_LedgerAnnualStatus() {
 
 	f := models.CreateItemFixtures(as.DB, models.FixturesConfig{ItemsPerPolicy: 3})
 
-	f.Items[0].PaidThroughYear = year
+	f.Items[0].PaidThroughDate = domain.EndOfYear(year)
 	models.UpdateItemStatus(as.DB, f.Items[0], api.ItemCoverageStatusApproved, "")
 	models.UpdateItemStatus(as.DB, f.Items[1], api.ItemCoverageStatusApproved, "")
 
@@ -430,7 +430,7 @@ func (as *ActionSuite) createFixturesForLedger() models.Fixtures {
 		f.Items[i].Policy.LoadMembers(as.DB, false)
 		user := f.Items[i].Policy.Members[0]
 		ctx := models.CreateTestContext(user)
-		as.NoError(f.Items[i].Approve(ctx, false))
+		as.NoError(f.Items[i].Approve(ctx, now))
 
 		entry := models.LedgerEntry{}
 		as.NoError(as.DB.Where("item_id = ?", f.Items[i].ID).First(&entry))
@@ -440,7 +440,118 @@ func (as *ActionSuite) createFixturesForLedger() models.Fixtures {
 	}
 
 	// add an entry for the annual report
-	as.NoError(f.Items[2].CreateLedgerEntry(as.DB, models.LedgerEntryTypeCoverageRenewal, 1000))
+	as.NoError(f.Items[2].CreateLedgerEntry(as.DB, models.LedgerEntryTypeCoverageRenewal, 1000, now))
+	as.NoError(f.Items[2].SetPaidThroughDate(as.DB, domain.EndOfYear(now.Year())))
 
 	return f
+}
+
+func (as *ActionSuite) Test_LedgerMonthlyProcess() {
+	now := time.Now().UTC()
+
+	f := models.CreateItemFixtures(as.DB, models.FixturesConfig{ItemsPerPolicy: 3})
+
+	f.Items[0].PaidThroughDate = domain.EndOfMonth(now)
+	models.UpdateItemStatus(as.DB, f.Items[0], api.ItemCoverageStatusApproved, "")
+	models.UpdateItemStatus(as.DB, f.Items[1], api.ItemCoverageStatusApproved, "")
+
+	normalUser := f.Users[0]
+	stewardUser := models.CreateAdminUsers(as.DB)[models.AppRoleSteward]
+
+	tests := []struct {
+		name       string
+		actor      models.User
+		wantStatus int
+		wantInBody []string
+	}{
+		{
+			name:       "unauthenticated",
+			actor:      models.User{},
+			wantStatus: http.StatusUnauthorized,
+			wantInBody: []string{api.ErrorNotAuthorized.String()},
+		},
+		{
+			name:       "insufficient privileges",
+			actor:      normalUser,
+			wantStatus: http.StatusNotFound,
+			wantInBody: []string{`"key":"` + api.ErrorNotAuthorized.String()},
+		},
+		{
+			name:       "steward user good results",
+			actor:      stewardUser,
+			wantStatus: http.StatusNoContent,
+		},
+	}
+
+	for _, tt := range tests {
+		as.T().Run(tt.name, func(t *testing.T) {
+			req := as.JSON(ledgerReportPath + "/monthly")
+			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
+			res := req.Post(nil)
+
+			body := res.Body.String()
+			as.Equal(tt.wantStatus, res.Code, "incorrect status code returned, body: %s", body)
+
+			for _, s := range tt.wantInBody {
+				as.Contains(body, s)
+			}
+		})
+	}
+}
+
+func (as *ActionSuite) Test_LedgerMonthlyStatus() {
+	now := time.Now().UTC()
+
+	f := models.CreateItemFixtures(as.DB, models.FixturesConfig{ItemsPerPolicy: 3})
+
+	f.Items[0].PaidThroughDate = domain.EndOfMonth(now)
+	f.ItemCategories[1].BillingPeriod = domain.BillingPeriodMonthly
+	f.ItemCategories[1].RiskCategoryID = models.RiskCategoryVehicleID()
+	models.UpdateItemStatus(as.DB, f.Items[0], api.ItemCoverageStatusApproved, "")
+	models.UpdateItemStatus(as.DB, f.Items[1], api.ItemCoverageStatusApproved, "")
+	as.NoError(as.DB.Update(&f.ItemCategories[1]))
+
+	normalUser := f.Users[0]
+	stewardUser := models.CreateAdminUsers(as.DB)[models.AppRoleSteward]
+
+	tests := []struct {
+		name       string
+		actor      models.User
+		wantStatus int
+		wantInBody []string
+	}{
+		{
+			name:       "unauthenticated",
+			actor:      models.User{},
+			wantStatus: http.StatusUnauthorized,
+			wantInBody: []string{api.ErrorNotAuthorized.String()},
+		},
+		{
+			name:       "insufficient privileges",
+			actor:      normalUser,
+			wantStatus: http.StatusNotFound,
+			wantInBody: []string{`"key":"` + api.ErrorNotAuthorized.String()},
+		},
+		{
+			name:       "steward user good results",
+			actor:      stewardUser,
+			wantStatus: http.StatusOK,
+			wantInBody: []string{`"is_complete":false`, `"items_to_process":1`},
+		},
+	}
+
+	for _, tt := range tests {
+		as.T().Run(tt.name, func(t *testing.T) {
+			req := as.JSON(ledgerReportPath + "/monthly")
+			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
+			res := req.Get()
+
+			body := res.Body.String()
+			as.Equal(tt.wantStatus, res.Code, "incorrect status code returned, body: %s", body)
+
+			for _, s := range tt.wantInBody {
+				as.Contains(body, s)
+			}
+		})
+	}
 }

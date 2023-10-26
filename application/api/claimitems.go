@@ -23,18 +23,6 @@ const (
 	PayoutOptionFixedFraction = PayoutOption("FixedFraction")
 )
 
-// PayoutOptionDescriptions are used for user-facing descriptions of each of the PayoutOption values
-var PayoutOptionDescriptions = map[PayoutOption]string{
-	PayoutOptionRepair: fmt.Sprintf("Payout is the item's covered value, the repair cost, or %s of the "+
-		"item's fair market value, whichever is less, minus a %s deductible",
-		domain.Env.RepairThresholdString, domain.Env.DeductibleMinimumString),
-	PayoutOptionReplacement: fmt.Sprintf("Payout is the item's covered value or the replacement cost, "+
-		"whichever is less, minus a %s deductible.", domain.Env.DeductibleMinimumString),
-	PayoutOptionFMV: fmt.Sprintf("Payout is the item's fair market value minus a %s deductible.",
-		domain.Env.DeductibleMinimumString),
-	PayoutOptionFixedFraction: "Payout is a fixed portion of the item's covered value.",
-}
-
 // swagger:model
 type ClaimItems []ClaimItem
 
@@ -160,4 +148,30 @@ type ClaimItemUpdateInput struct {
 
 	// fair market value (0.01 USD)
 	FMV Currency `json:"fmv"`
+}
+
+// GetPayoutOptionDescription provides a user-facing description for the given PayoutOption and minimum deductible
+func GetPayoutOptionDescription(option PayoutOption, minimumDeductible Currency, deductibleRate float64) string {
+	minString := ""
+	if minimumDeductible > 0 {
+		minString = fmt.Sprintf(", subject to a minimum deductible of $%s", minimumDeductible)
+	}
+
+	rate := domain.PercentString(deductibleRate)
+
+	switch option {
+	case PayoutOptionRepair:
+		return fmt.Sprintf("Payout is the item's covered value, the repair cost, or %s of the item's fair market value, whichever is less, minus a %s deductible%s.",
+			domain.Env.RepairThresholdString, rate, minString)
+	case PayoutOptionReplacement:
+		return fmt.Sprintf("Payout is the item's covered value or the replacement cost, whichever is less, minus a %s deductible%s.",
+			rate, minString)
+	case PayoutOptionFMV:
+		return fmt.Sprintf("Payout is the item's fair market value minus a %s deductible%s.",
+			rate, minString)
+	case PayoutOptionFixedFraction:
+		return "Payout is a fixed portion of the item's covered value."
+	default:
+		return ""
+	}
 }

@@ -75,7 +75,7 @@ Buffalo's conventions, however there are several additional folders for other bi
     only do what is necessary to accept requests, validate them, and call methods on models or other components.
  
  - `config/` - Buffalo config related stuff, used by the `buffalo` command line application when generating models, 
-   migrations, etc. This is not used by the Translation Friends API itself though.
+   migrations, etc. This is not used by the Cover API itself though.
    
  - `domain/` - Business domain level code. We define constants, some types, and many helper functions here. This 
    `domain` package helps avoid circular dependencies so for example both `actions` and `models` packages can include

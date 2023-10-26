@@ -1,0 +1,8 @@
+add_column("item_categories", "key", "string", {"default": ""})
+
+sql(`
+	UPDATE item_categories
+	SET key = lower(substring(name FROM 1 FOR 5))
+`)
+
+add_index("item_categories", "key", {"unique": true, "name": "item_categories_key_idx"})

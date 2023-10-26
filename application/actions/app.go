@@ -1,32 +1,31 @@
 // Cover API
 //
-// Terms Of Service:
+//	Terms Of Service:
+//	  there are no TOS at this moment, use at your own risk we take no responsibility
 //
-// there are no TOS at this moment, use at your own risk we take no responsibility
+//	 Schemes: https
+//	 Host: localhost
+//	 BasePath: /
+//	 Version: 0.0.1
+//	 License: MIT http://opensource.org/licenses/MIT
 //
-//  Schemes: https
-//  Host: localhost
-//  BasePath: /
-//  Version: 0.0.1
-//  License: MIT http://opensource.org/licenses/MIT
+//	 Consumes:
+//	 - application/json
 //
-//  Consumes:
-//  - application/json
+//	 Produces:
+//	 - application/json
 //
-//  Produces:
-//  - application/json
+//	 Security:
+//	 - oauth2:
 //
-//  Security:
-//  - oauth2:
-//
-//  SecurityDefinitions:
-//  oauth2:
-//      type: oauth2
-//      authorizationUrl: /auth/login
-//      tokenUrl: /auth/token
-//      scopes:
-//        all: scopes are not used at this time
-//      flow: implicit
+//	 SecurityDefinitions:
+//	 oauth2:
+//	   type: oauth2
+//	   authorizationUrl: /auth/login
+//	   tokenUrl: /auth/token
+//	   flow: implicit
+//	   scopes:
+//	     all: scopes are not used at this time
 //
 // swagger:meta
 package actions
@@ -44,6 +43,7 @@ import (
 	"github.com/gorilla/sessions"
 	"github.com/rs/cors"
 
+	"github.com/silinternational/cover-api/auth"
 	"github.com/silinternational/cover-api/job"
 	"github.com/silinternational/cover-api/log"
 
@@ -91,6 +91,10 @@ var app *buffalo.App
 // declared after it to never be called.
 func App() *buffalo.App {
 	if app == nil {
+		domain.Init()
+		auth.Init()
+		models.PatchItemCategories()
+
 		app = buffalo.New(buffalo.Options{
 			Env:    domain.Env.GoEnv,
 			Logger: logger.Logrus{FieldLogger: log.ErrLogger.LocalLog},
@@ -164,12 +168,15 @@ func App() *buffalo.App {
 		ledgerReportGroup := app.Group(ledgerReportPath)
 		// AuthZ is implemented in the handlers
 		ledgerReportGroup.Middleware.Skip(AuthZ, ledgerAnnualRenewalStatus, ledgerAnnualRenewalProcess)
+		ledgerReportGroup.Middleware.Skip(AuthZ, ledgerMonthlyRenewalStatus, ledgerMonthlyRenewalProcess)
 		ledgerReportGroup.GET("/", ledgerReportList)
 		ledgerReportGroup.GET(idRegex, ledgerReportView)
 		ledgerReportGroup.POST("/", ledgerReportCreate)
 		ledgerReportGroup.PUT(idRegex, ledgerReportReconcile)
 		ledgerReportGroup.GET("/annual", ledgerAnnualRenewalStatus)
 		ledgerReportGroup.POST("/annual", ledgerAnnualRenewalProcess)
+		ledgerReportGroup.GET("/monthly", ledgerMonthlyRenewalStatus)
+		ledgerReportGroup.POST("/monthly", ledgerMonthlyRenewalProcess)
 
 		stewardGroup := app.Group(stewardPath)
 		stewardGroup.Middleware.Skip(AuthZ, stewardListRecentObjects) // AuthZ is implemented in the handler
@@ -198,7 +205,7 @@ func App() *buffalo.App {
 
 		// config
 		configGroup := app.Group("/config")
-		configGroup.Middleware.Skip(AuthZ, claimIncidentTypes, itemCategoriesList, entityCodesList, countries)
+		configGroup.Middleware.Skip(AuthZ, claimIncidentTypes, itemCategoriesList, countries)
 		configGroup.GET("/countries", countries)
 		configGroup.GET("/claim-incident-types", claimIncidentTypes)
 		configGroup.GET("/item-categories", itemCategoriesList)
@@ -210,6 +217,7 @@ func App() *buffalo.App {
 
 		// entity codes
 		entityCodesGroup := app.Group(entityCodesPath)
+		entityCodesGroup.Middleware.Skip(AuthZ, entityCodesList)
 		entityCodesGroup.GET("", entityCodesList)
 		entityCodesGroup.PUT(idRegex, entityCodesUpdate)
 		entityCodesGroup.GET(idRegex, entityCodesView)
@@ -226,8 +234,10 @@ func App() *buffalo.App {
 
 		// policies
 		policiesGroup := app.Group(policiesPath)
+		policiesGroup.Middleware.Skip(AuthZ, policiesImport)
 		policiesGroup.GET("/", policiesList)
 		policiesGroup.POST("/", policiesCreateTeam)
+		policiesGroup.POST("/import", policiesImport)
 		policiesGroup.GET(idRegex, policiesView)
 		policiesGroup.GET(idRegex+"/dependents", dependentsList)
 		policiesGroup.PUT(idRegex, policiesUpdate)

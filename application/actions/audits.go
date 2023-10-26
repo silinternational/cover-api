@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/gobuffalo/buffalo"
+
 	"github.com/silinternational/cover-api/api"
 	"github.com/silinternational/cover-api/domain"
 	"github.com/silinternational/cover-api/models"
@@ -16,27 +17,26 @@ import (
 const MaxResultSize = 1000
 
 // swagger:operation POST /audits Audits AuditRun
-//
-// AuditsRun
-//
-// Run an audit
-//
-// ### Audit types:
-// + `renewal` - Return all items that were incorrectly renewed and billed for another year of coverage.
-//
 // ---
-// parameters:
-//   - name: input
-//     in: body
-//     description: parameters for the Audit Run
-//     required: true
-//     schema:
-//       "$ref": "#/definitions/AuditRunInput"
-// responses:
-//   '200':
-//     description: the audit result
-//     schema:
-//       "$ref": "#/definitions/AuditResult"
+//
+//	summary: AuditsRun
+//	description: |-
+//	  Run an audit
+//
+//	  ### Audit types:
+//	  + `renewal` - Return all items that were incorrectly renewed and billed for another year of coverage.
+//	parameters:
+//	  - name: input
+//	    in: body
+//	    description: parameters for the Audit Run
+//	    required: true
+//	    schema:
+//	      "$ref": "#/definitions/AuditRunInput"
+//	responses:
+//	  '200':
+//	    description: the audit result
+//	    schema:
+//	      "$ref": "#/definitions/AuditResult"
 func auditRun(c buffalo.Context) error {
 	actor := models.CurrentUser(c)
 	if !actor.IsAdmin() {

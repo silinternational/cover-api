@@ -59,20 +59,19 @@ var samlConfig = saml.Config{
 }
 
 // swagger:operation POST /auth/login Authentication AuthLogin
-//
 // AuthLogin
 //
 // Start the SAML login process
-//
 // ---
-// parameters:
-// - name: client-id
-//   in: query
-//   required: true
-//   description: the user's client id
-// responses:
-//   '200':
-//     description: returns a "RedirectURL" key with the saml idp url that has a saml request
+//
+//	parameters:
+//	- name: client-id
+//	  in: query
+//	  required: true
+//	  description: the user's client id
+//	responses:
+//	  '200':
+//	    description: returns a "RedirectURL" key with the saml idp url that has a saml request
 func authRequest(c buffalo.Context) error {
 	// Push the Client ID into the Session
 	clientID := c.Param(ClientIDParam)
@@ -288,20 +287,19 @@ func getLoginSuccessRedirectURL(authUser auth.User, returnTo string) string {
 }
 
 // swagger:operation GET /auth/logout Authentication AuthLogout
-//
 // AuthLogout
 //
 // Logout of application
-//
 // ---
-// parameters:
-// - name: token
-//   in: query
-//   required: true
-//   description: the user's bearer token
-// responses:
-//   '302':
-//     description: redirect to UI
+//
+//	parameters:
+//	- name: token
+//	  in: query
+//	  required: true
+//	  description: the user's bearer token
+//	responses:
+//	  '302':
+//	    description: redirect to UI
 func authDestroy(c buffalo.Context) error {
 	tokenParam := c.Param(LogoutToken)
 	if tokenParam == "" {
@@ -364,37 +362,4 @@ func authDestroy(c buffalo.Context) error {
 
 func replaceNewLines(input string) string {
 	return strings.Replace(input, `\n`, "\n", -1)
-}
-
-func checkSamlConfig() {
-	if domain.Env.GoEnv == domain.EnvDevelopment || domain.Env.GoEnv == domain.EnvTest {
-		return
-	}
-	if domain.Env.SamlIdpEntityId == "" {
-		panic("required SAML variable SamlIdpEntityId is undefined")
-	}
-	if domain.Env.SamlSpEntityId == "" {
-		panic("required SAML variable SamlSpEntityId is undefined")
-	}
-	if domain.Env.SamlSsoURL == "" {
-		panic("required SAML variable SamlSsoURL is undefined")
-	}
-	if domain.Env.SamlSloURL == "" {
-		panic("required SAML variable SamlSloURL is undefined")
-	}
-	if domain.Env.SamlAudienceUri == "" {
-		panic("required SAML variable SamlAudienceUri is undefined")
-	}
-	if domain.Env.SamlAssertionConsumerServiceUrl == "" {
-		panic("required SAML variable SamlAssertionConsumerServiceUrl is undefined")
-	}
-	if domain.Env.SamlIdpCert == "" {
-		panic("required SAML variable SamlIdpCert is undefined")
-	}
-	if domain.Env.SamlSpCert == "" {
-		panic("required SAML variable SamlSpCert is undefined")
-	}
-	if domain.Env.SamlSpPrivateKey == "" {
-		panic("required SAML variable SamlSpPrivateKey is undefined")
-	}
 }

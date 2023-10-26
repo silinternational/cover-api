@@ -1,0 +1,2 @@
+add_column("item_categories", "minimum_premium", "int", {"default": 1})
+add_column("item_categories", "minimum_coverage", "int", {"default": 25})

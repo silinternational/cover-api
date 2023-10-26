@@ -10,17 +10,16 @@ import (
 )
 
 // swagger:operation GET /steward/recent Steward ListRecentObjects
-//
 // ListRecentObjects
 //
 // gets Items and Claims that have recently had their coverage_status/status changed
-//
 // ---
-// responses:
-//   '200':
-//     description: a list of Items and a list of Claims which each have the time when their status was last changed.
-//     schema:
-//       "$ref": "#/definitions/RecentObjects"
+//
+//	responses:
+//	  '200':
+//	    description: a list of Items and a list of Claims which each have the time when their status was last changed.
+//	    schema:
+//	      "$ref": "#/definitions/RecentObjects"
 func stewardListRecentObjects(c buffalo.Context) error {
 	actor := models.CurrentUser(c)
 	if !actor.IsAdmin() {

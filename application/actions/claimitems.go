@@ -10,28 +10,27 @@ import (
 )
 
 // swagger:operation PUT /claim-items/{id} ClaimItems ClaimItemsUpdate
-//
 // ClaimItemsUpdate
 //
 // update a claim item
-//
 // ---
-// parameters:
-// - name: id
-//   in: path
-//   required: true
-//   description: claim item ID
-// - name: claim item input
-//   in: body
-//   description: claim item update input object
-//   required: true
-//   schema:
-//     "$ref": "#/definitions/ClaimItemUpdateInput"
-// responses:
-//   '200':
-//     description: the updated ClaimItem
-//     schema:
-//       "$ref": "#/definitions/ClaimItem"
+//
+//	parameters:
+//	- name: id
+//	  in: path
+//	  required: true
+//	  description: claim item ID
+//	- name: claim item input
+//	  in: body
+//	  description: claim item update input object
+//	  required: true
+//	  schema:
+//	    "$ref": "#/definitions/ClaimItemUpdateInput"
+//	responses:
+//	  '200':
+//	    description: the updated ClaimItem
+//	    schema:
+//	      "$ref": "#/definitions/ClaimItem"
 func claimItemsUpdate(c buffalo.Context) error {
 	tx := models.Tx(c)
 	claimItem := getReferencedClaimItemFromCtx(c)

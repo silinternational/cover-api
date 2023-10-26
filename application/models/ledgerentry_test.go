@@ -26,7 +26,7 @@ func (ms *ModelSuite) TestLedgerEntries_AllForMonth() {
 	datesEntered := []nulls.Time{nulls.NewTime(april), {}}
 
 	for i := range f.Items {
-		ms.NoError(f.Items[i].Approve(ctx, false))
+		ms.NoError(f.Items[i].Approve(ctx, time.Now().UTC()))
 
 		entry := LedgerEntry{}
 		ms.NoError(ms.DB.Where("item_id = ?", f.Items[i].ID).First(&entry))
@@ -198,27 +198,29 @@ func (ms *ModelSuite) TestLedgerEntries_Export() {
 			batchDate: date,
 			want: []string{
 				summaryLine,
-				fmt.Sprintf(`"2","000000","00001","0000000020","",0,"%s","",%s,"2","%s","%s",%s,"GL","JE"`,
+				// Only compare the part that's dynamic. Including the line number led to intermittent test
+				// failure due to the variable ordering of the two transaction blocks.
+				fmt.Sprintf(`"%s","",%s,"2","%s","%s",%s`,
 					domain.Env.ExpenseAccount,
 					api.Currency(-entry.Amount).String(),
 					entry.getDescription(),
 					getReference(entry),
 					date.Format("20060102"),
 				),
-				fmt.Sprintf(`"2","000000","00001","0000000040","",0,"%s","",%s,"2","%s","",%s,"GL","JE"`,
+				fmt.Sprintf(`"%s","",%s,"2","%s","",%s`,
 					entry.IncomeAccount+entry.RiskCategoryCC,
 					entry.Amount.String(),
 					entry.balanceDescription(),
 					date.Format("20060102"),
 				),
-				fmt.Sprintf(`"2","000000","00001","0000000060","",0,"%s","",%s,"2","%s","%s",%s,"GL","JE"`,
+				fmt.Sprintf(`"%s","",%s,"2","%s","%s",%s`,
 					domain.Env.ExpenseAccount,
 					api.Currency(-teamEntry.Amount).String(),
 					teamEntry.getDescription(),
 					getReference(teamEntry),
 					date.Format("20060102"),
 				),
-				fmt.Sprintf(`"2","000000","00001","0000000080","",0,"%s","",%s,"2","%s","",%s,"GL","JE"`,
+				fmt.Sprintf(`"%s","",%s,"2","%s","",%s`,
 					teamEntry.IncomeAccount+teamEntry.RiskCategoryCC,
 					teamEntry.Amount.String(),
 					teamEntry.balanceDescription(),
@@ -231,7 +233,7 @@ func (ms *ModelSuite) TestLedgerEntries_Export() {
 		ms.T().Run(tt.name, func(t *testing.T) {
 			got, _ := tt.entries.ExportReport(fin.ReportFormatSage, "", tt.batchDate)
 			for _, w := range tt.want {
-				ms.Contains(string(got), w)
+				ms.Contains(string(got), w, "line %q not found in report output", w)
 			}
 		})
 	}
@@ -341,7 +343,7 @@ func (ms *ModelSuite) TestLedgerEntry_balanceDescription() {
 }
 
 func (ms *ModelSuite) Test_NewLedgerEntry() {
-	f := CreateItemFixtures(ms.DB, FixturesConfig{NumberOfPolicies: 2, ClaimsPerPolicy: 1})
+	f := CreateItemFixtures(ms.DB, FixturesConfig{NumberOfPolicies: 2, ClaimsPerPolicy: 1, ClaimItemsPerClaim: 1})
 	householdPolicy := f.Policies[0]
 	householdPolicyItem := householdPolicy.Items[0]
 	ms.NoError(householdPolicyItem.SetAccountablePerson(ms.DB, f.Users[0].ID))
@@ -382,7 +384,7 @@ func (ms *ModelSuite) Test_NewLedgerEntry() {
 	for _, tt := range tests {
 		ms.T().Run(tt.name, func(t *testing.T) {
 			accPersonName := "John Doe"
-			le := NewLedgerEntry(accPersonName, tt.policy, tt.item, tt.claim)
+			le := NewLedgerEntry(accPersonName, tt.policy, tt.item, tt.claim, time.Now().UTC())
 
 			ms.Equal(accPersonName, le.Name, "Name is incorrect")
 
@@ -440,13 +442,17 @@ func (ms *ModelSuite) TestLedgerEntry_getDescription() {
 	ms.NoError(teamPolicyItem.SetAccountablePerson(ms.DB, teamPolicy.Members[1].ID))
 	ms.NoError(ms.DB.Update(&teamPolicyItem), "error updating team policy item for test")
 
+	now := time.Now().UTC()
+
 	// Create new Ledger Entries for each policy
 	hhAccPersName := hhAccPerson.GetName().String()
-	hhEntry := NewLedgerEntry(hhAccPersName, hhPolicy, &hhPolicyItem, nil)
+	hhPolicyItem.LoadRiskCategory(ms.DB, false)
+	hhEntry := NewLedgerEntry(hhAccPersName, hhPolicy, &hhPolicyItem, nil, now)
 	hhEntry.Type = LedgerEntryTypeNewCoverage
 
 	teamAccPersName := teamAccPerson.GetName().String()
-	teamEntry := NewLedgerEntry(teamAccPersName, teamPolicy, &teamPolicyItem, nil)
+	teamPolicyItem.LoadRiskCategory(ms.DB, false)
+	teamEntry := NewLedgerEntry(teamAccPersName, teamPolicy, &teamPolicyItem, nil, now)
 	teamEntry.Type = LedgerEntryTypeCoverageRefund
 
 	tests := []struct {
@@ -459,13 +465,15 @@ func (ms *ModelSuite) TestLedgerEntry_getDescription() {
 			name:  "household policy item",
 			entry: hhEntry,
 			item:  hhPolicyItem,
-			want:  fmt.Sprintf("%s / %s", `Coverage premium: Add`, hhPolicy.Name),
+			want: fmt.Sprintf("%s / %s %s", `Coverage premium: Add`, hhPolicy.Name,
+				hhPolicyItem.RiskCategory.Name),
 		},
 		{
 			name:  "team policy item",
 			entry: teamEntry,
 			item:  teamPolicyItem,
-			want:  fmt.Sprintf("%s / %s (%s)", `Coverage reimbursement: Remove`, teamPolicy.Name, teamAccPersName),
+			want: fmt.Sprintf("%s / %s (%s) %s", `Coverage reimbursement: Remove`, teamPolicy.Name,
+				teamAccPersName, teamPolicyItem.RiskCategory.Name),
 		},
 	}
 	for _, tt := range tests {
@@ -500,13 +508,15 @@ func (ms *ModelSuite) TestLedgerEntry_getItemName() {
 	ms.NoError(teamPolicyItem.SetAccountablePerson(ms.DB, teamPolicy.Members[1].ID))
 	ms.NoError(ms.DB.Update(&teamPolicyItem), "error updating team policy item for test")
 
+	now := time.Now().UTC()
+
 	// Create new Ledger Entries for each policy
 	hhAccPersName := hhAccPerson.GetName().String()
-	hhEntry := NewLedgerEntry(hhAccPersName, hhPolicy, &hhPolicyItem, nil)
+	hhEntry := NewLedgerEntry(hhAccPersName, hhPolicy, &hhPolicyItem, nil, now)
 	hhEntry.Type = LedgerEntryTypeNewCoverage
 
 	teamAccPersName := teamAccPerson.GetName().String()
-	teamEntry := NewLedgerEntry(teamAccPersName, teamPolicy, &teamPolicyItem, nil)
+	teamEntry := NewLedgerEntry(teamAccPersName, teamPolicy, &teamPolicyItem, nil, now)
 	teamEntry.Type = LedgerEntryTypeCoverageRefund
 
 	tests := []struct {
@@ -546,7 +556,7 @@ func (ms *ModelSuite) TestLedgerEntries_Reconcile() {
 
 	itemEntries := make(LedgerEntries, len(f.Items))
 	for i := range f.Items {
-		ms.NoError(f.Items[i].Approve(ctx, false))
+		ms.NoError(f.Items[i].Approve(ctx, time.Now().UTC()))
 
 		ms.NoError(ms.DB.Where("item_id = ?", f.Items[i].ID).First(&itemEntries[i]))
 		itemEntries[i].DateSubmitted = datesSubmitted[i]

@@ -23,36 +23,35 @@ const (
 )
 
 // swagger:operation GET /policies Policies PoliciesList
-//
 // PoliciesList
 //
 // Get the data for all the user's Policies if the user is not an admin. If called by an admin, returns all Policies
 // in the system, limited by query parameters.
-//
 // ---
-// parameters:
-// - name: limit
-//   in: query
-//   required: false
-//   description: number of records to return, minimum 1, maximum 50, default 10
-// - name: search
-//   in: query
-//   required: false
-//   description: search text to find across fields (name, household_id, cost_center, and all members' first and last names)
-// - name: filter
-//   in: query
-//   required: false
-//   description: comma-separated list of search pairs like "field:text". Presently, only meta-field 'active' is supported
-// responses:
-//   '200':
-//     description: all policies
-//     schema:
-//       type: object
-//       properties:
-//         meta:
-//           "$ref": "#/definitions/Meta"
-//         data:
-//           "$ref": "#/definitions/Policies"
+//
+//	parameters:
+//	- name: limit
+//	  in: query
+//	  required: false
+//	  description: number of records to return, minimum 1, maximum 50, default 10
+//	- name: search
+//	  in: query
+//	  required: false
+//	  description: search text to find across fields (name, household_id, cost_center, and all members' first and last names)
+//	- name: filter
+//	  in: query
+//	  required: false
+//	  description: comma-separated list of search pairs like "field:text". Presently, only meta-field 'active' is supported
+//	responses:
+//	  '200':
+//	    description: all policies
+//	    schema:
+//	      type: object
+//	      properties:
+//	        meta:
+//	          "$ref": "#/definitions/Meta"
+//	        data:
+//	          "$ref": "#/definitions/Policies"
 func policiesList(c buffalo.Context) error {
 	user := models.CurrentUser(c)
 
@@ -95,17 +94,16 @@ func policiesListCustomer(c buffalo.Context) error {
 }
 
 // swagger:operation GET /policies/{id} Policies PoliciesView
-//
 // PoliciesView
 //
 // gets the data for a specific policy
-//
 // ---
-// responses:
-//   '200':
-//     description: a policy
-//     schema:
-//       "$ref": "#/definitions/Policy"
+//
+//	responses:
+//	  '200':
+//	    description: a policy
+//	    schema:
+//	      "$ref": "#/definitions/Policy"
 func policiesView(c buffalo.Context) error {
 	policy := getReferencedPolicyFromCtx(c)
 
@@ -113,24 +111,23 @@ func policiesView(c buffalo.Context) error {
 }
 
 // swagger:operation POST /policies Policies PoliciesCreateTeam
-//
 // PoliciesCreateTeam
 //
 // create a new Policy with type Team
-//
 // ---
-// parameters:
-//   - name: policy input
-//     in: body
-//     description: policy create input object
-//     required: true
-//     schema:
-//       "$ref": "#/definitions/PolicyCreate"
-// responses:
-//   '200':
-//     description: the new Policy
-//     schema:
-//       "$ref": "#/definitions/Policy"
+//
+//	parameters:
+//	  - name: policy input
+//	    in: body
+//	    description: policy create input object
+//	    required: true
+//	    schema:
+//	      "$ref": "#/definitions/PolicyCreate"
+//	responses:
+//	  '200':
+//	    description: the new Policy
+//	    schema:
+//	      "$ref": "#/definitions/Policy"
 func policiesCreateTeam(c buffalo.Context) error {
 	var input api.PolicyCreate
 	if err := StrictBind(c, &input); err != nil {
@@ -155,28 +152,27 @@ func policiesCreateTeam(c buffalo.Context) error {
 }
 
 // swagger:operation PUT /policies/{id} Policies PoliciesUpdate
-//
 // PoliciesUpdate
 //
 // update a policy
-//
 // ---
-// parameters:
-//   - name: id
-//     in: path
-//     required: true
-//     description: policy ID
-//   - name: policy update input
-//     in: body
-//     description: policy update input object
-//     required: true
-//     schema:
-//       "$ref": "#/definitions/PolicyUpdate"
-// responses:
-//   '200':
-//     description: updated Policy
-//     schema:
-//       "$ref": "#/definitions/Policy"
+//
+//	parameters:
+//	  - name: id
+//	    in: path
+//	    required: true
+//	    description: policy ID
+//	  - name: policy update input
+//	    in: body
+//	    description: policy update input object
+//	    required: true
+//	    schema:
+//	      "$ref": "#/definitions/PolicyUpdate"
+//	responses:
+//	  '200':
+//	    description: updated Policy
+//	    schema:
+//	      "$ref": "#/definitions/Policy"
 func policiesUpdate(c buffalo.Context) error {
 	tx := models.Tx(c)
 	policy := getReferencedPolicyFromCtx(c)
@@ -213,33 +209,32 @@ func policiesUpdate(c buffalo.Context) error {
 }
 
 // swagger:operation POST /policies/{id}/ledger-reports PolicyLedgerReport PolicyLedgerReportCreate
-//
 // PolicyLedgerReportCreate
 //
 // Create and return a report on the ledger entries of a policy as specified by the input object.
 // The returned object contains metadata and a File object pointing to a CSV file.
 // If no ledger entries are found with a `date_entered` value that matches the requested
-//  Type, Year and (if applicable) Month, then a 204 is returned.
-//
+// Type, Year and (if applicable) Month, then a 204 is returned.
 // ---
-// parameters:
-//   - name: id
-//     in: path
-//     required: true
-//     description: policy ID
-//   - name: input
-//     in: body
-//     description: PolicyLedgerReportCreateInput object
-//     required: true
-//     schema:
-//       "$ref": "#/definitions/PolicyLedgerReportCreateInput"
-// responses:
-//   '200':
-//     description: the requested LedgerReport for the Policy
-//     schema:
-//       type: array
-//       items:
-//         "$ref": "#/definitions/LedgerReport"
+//
+//	parameters:
+//	  - name: id
+//	    in: path
+//	    required: true
+//	    description: policy ID
+//	  - name: input
+//	    in: body
+//	    description: PolicyLedgerReportCreateInput object
+//	    required: true
+//	    schema:
+//	      "$ref": "#/definitions/PolicyLedgerReportCreateInput"
+//	responses:
+//	  '200':
+//	    description: the requested LedgerReport for the Policy
+//	    schema:
+//	      type: array
+//	      items:
+//	        "$ref": "#/definitions/LedgerReport"
 func policiesLedgerReportCreate(c buffalo.Context) error {
 	tx := models.Tx(c)
 	policy := getReferencedPolicyFromCtx(c)
@@ -266,32 +261,31 @@ func policiesLedgerReportCreate(c buffalo.Context) error {
 }
 
 // swagger:operation GET /policies/{id}/ledger-reports PolicyLedgerReport PolicyLedgerTableView
-//
 // PolicyLedgerTableView
 //
 // Return data regarding the ledger entries of a policy for a particular month.
 // If no ledger entries are found with a `date_entered` value that matches the requested
-//  Year and Month, then a 204 is returned.
-//
+// Year and Month, then a 204 is returned.
 // ---
-// parameters:
-//   - name: id
-//     in: path
-//     required: true
-//     description: policy ID
-//   - name: month
-//     in: query
-//     required: true
-//     description: the month (number) within which the ledger entries were entered into the accounting system
-//   - name: year
-//     in: query
-//     required: true
-//     description: the year within which the ledger entries were entered into the accounting system
-// responses:
-//   '200':
-//     description: the requested LedgerTable for the Policy
-//     schema:
-//       "$ref": "#/definitions/LedgerTable"
+//
+//	parameters:
+//	  - name: id
+//	    in: path
+//	    required: true
+//	    description: policy ID
+//	  - name: month
+//	    in: query
+//	    required: true
+//	    description: the month (number) within which the ledger entries were entered into the accounting system
+//	  - name: year
+//	    in: query
+//	    required: true
+//	    description: the year within which the ledger entries were entered into the accounting system
+//	responses:
+//	  '200':
+//	    description: the requested LedgerTable for the Policy
+//	    schema:
+//	      "$ref": "#/definitions/LedgerTable"
 func policiesLedgerTableView(c buffalo.Context) error {
 	policy := getReferencedPolicyFromCtx(c)
 
@@ -326,30 +320,29 @@ func policiesLedgerTableView(c buffalo.Context) error {
 }
 
 // swagger:operation POST /policies/{id}/strikes PolicyStrike PolicyStrikeCreate
-//
 // PolicyStrikeCreate
 //
 // Create a strike on the policy and return its recent strikes
-//
 // ---
-// parameters:
-//   - name: id
-//     in: path
-//     required: true
-//     description: policy ID
-//   - name: input
-//     in: body
-//     description: StrikeInput object
-//     required: true
-//     schema:
-//       "$ref": "#/definitions/StrikeInput"
-// responses:
-//   '200':
-//     description: the Strikes for the Policy that are still in force
-//     schema:
-//       type: array
-//       items:
-//         "$ref": "#/definitions/Strike"
+//
+//	parameters:
+//	  - name: id
+//	    in: path
+//	    required: true
+//	    description: policy ID
+//	  - name: input
+//	    in: body
+//	    description: StrikeInput object
+//	    required: true
+//	    schema:
+//	      "$ref": "#/definitions/StrikeInput"
+//	responses:
+//	  '200':
+//	    description: the Strikes for the Policy that are still in force
+//	    schema:
+//	      type: array
+//	      items:
+//	        "$ref": "#/definitions/Strike"
 func policiesStrikeCreate(c buffalo.Context) error {
 	tx := models.Tx(c)
 	policy := getReferencedPolicyFromCtx(c)
@@ -377,6 +370,52 @@ func policiesStrikeCreate(c buffalo.Context) error {
 	}
 
 	return renderOk(c, strikes.ConvertToAPI(tx))
+}
+
+// swagger:operation POST /policies/{id}/imports Policies PoliciesImport
+// PoliciesImport
+//
+// Import policies and items from a CSV file. This endpoint is initially for importing vehicle information
+// from a legacy system. It may be removed at a later time, or it may be adapted for other types of data.
+// ---
+//
+//	consumes:
+//	  - multipart/form-data
+//	parameters:
+//	  - name: file
+//	    in: formData
+//	    type: file
+//	    description: file object
+//	responses:
+//	  '200':
+//	    description: uploaded File data
+//	    schema:
+//	      "$ref": "#/definitions/PoliciesImportResponse"
+func policiesImport(c buffalo.Context) error {
+	actor := models.CurrentUser(c)
+	if !actor.IsAdmin() {
+		err := fmt.Errorf("user is not allowed to import policies")
+		return reportError(c, api.NewAppError(err, api.ErrorNotAuthorized, api.CategoryForbidden))
+	}
+
+	tx := models.Tx(c)
+	f, err := c.File(fileFieldName)
+	if err != nil {
+		err := fmt.Errorf("error getting uploaded file from context ... %v", err)
+		return reportError(c, api.NewAppError(err, api.ErrorReceivingFile, api.CategoryInternal))
+	}
+
+	if f.Size > int64(domain.MaxFileSize) {
+		err := fmt.Errorf("file upload size (%v) greater than max (%v)", f.Size, domain.MaxFileSize)
+		return reportError(c, api.NewAppError(err, api.ErrorStoreFileTooLarge, api.CategoryUser))
+	}
+
+	response, err := models.ImportPolicies(tx, f)
+	if err != nil {
+		return reportError(c, err)
+	}
+
+	return renderOk(c, response)
 }
 
 // getReferencedPolicyFromCtx pulls the models.Policy resource from context that was put there

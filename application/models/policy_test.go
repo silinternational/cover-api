@@ -3,6 +3,7 @@ package models
 import (
 	"fmt"
 	"net/url"
+	"strings"
 	"testing"
 	"time"
 
@@ -317,6 +318,77 @@ func (ms *ModelSuite) TestPolicy_itemCoverageTotals() {
 	ms.Equal(want, gotTotal, "incorrect coverage grand total")
 }
 
+func (ms *ModelSuite) TestPolicy_AddDependent() {
+	fixtures := CreatePolicyFixtures(ms.DB, FixturesConfig{DependentsPerPolicy: 1})
+	policy := fixtures.Policies[0]
+	dependent := fixtures.PolicyDependents[0]
+
+	tests := []struct {
+		name    string
+		policy  Policy
+		input   api.PolicyDependentInput
+		want    PolicyDependent
+		wantErr *api.AppError
+	}{
+		{
+			name:    "incomplete",
+			policy:  policy,
+			input:   api.PolicyDependentInput{Name: "Simon"},
+			wantErr: &api.AppError{Category: api.CategoryUser, Key: api.ErrorValidation},
+		},
+		{
+			name:   "name conflict",
+			policy: policy,
+			input: api.PolicyDependentInput{
+				Name:           dependent.Name,
+				Country:        "Narnia",
+				Relationship:   dependent.Relationship,
+				ChildBirthYear: dependent.ChildBirthYear,
+			},
+			wantErr: &api.AppError{Category: api.CategoryUser, Key: api.ErrorPolicyDependentDuplicateName},
+		},
+		{
+			name:   "create new",
+			policy: policy,
+			input: api.PolicyDependentInput{
+				Name:         "Simon",
+				Country:      "USA",
+				Relationship: api.PolicyDependentRelationshipSpouse,
+			},
+		},
+		{
+			name:   "reuse existing",
+			policy: policy,
+			input: api.PolicyDependentInput{
+				Name:           dependent.Name,
+				Country:        dependent.Country,
+				Relationship:   dependent.Relationship,
+				ChildBirthYear: dependent.ChildBirthYear,
+			},
+			want: dependent,
+		},
+	}
+	for _, tt := range tests {
+		ms.T().Run(tt.name, func(t *testing.T) {
+			got, err := tt.policy.AddDependent(ms.DB, tt.input)
+			if tt.wantErr != nil {
+				ms.Error(err)
+				AssertSameAppError(ms.T(), *tt.wantErr, err)
+				return
+			}
+
+			ms.NoError(err)
+			ms.Equal(tt.input.Name, got.Name)
+			ms.Equal(tt.input.Country, got.Country)
+			ms.Equal(tt.input.Relationship, got.Relationship)
+
+			if !tt.want.ID.IsNil() {
+				ms.Equal(tt.want.ID, got.ID, "expected ID of existing dependent")
+			}
+		})
+	}
+}
+
 func (ms *ModelSuite) TestPolicy_Compare() {
 	e := CreateEntityFixture(ms.DB)
 
@@ -517,7 +589,8 @@ func (ms *ModelSuite) TestPolicy_calculateAnnualPremium() {
 		{
 			name:   "two items, above minimum",
 			policy: secondPolicy,
-			want:   f.Policies[1].Items[0].CalculateAnnualPremium() + f.Policies[1].Items[1].CalculateAnnualPremium(),
+			want: f.Policies[1].Items[0].CalculateAnnualPremium(ms.DB) +
+				f.Policies[1].Items[1].CalculateAnnualPremium(ms.DB),
 		},
 	}
 	for _, tt := range tests {
@@ -679,33 +752,86 @@ func (ms *ModelSuite) TestPolicies_Query() {
 	}
 }
 
-func (ms *ModelSuite) TestPolicy_ProcessAnnualCoverage() {
-	year := time.Now().UTC().Year()
+func (ms *ModelSuite) TestPolicy_ProcessRenewals() {
+	now := time.Now().UTC()
+	year := now.Year()
+	endOfLastMonth := domain.EndOfMonth(now.AddDate(0, -1, 0))
 
-	f := CreateItemFixtures(ms.DB, FixturesConfig{ItemsPerPolicy: 5})
+	const annualItems = 4
+	annual := CreateItemFixtures(ms.DB, FixturesConfig{ItemsPerPolicy: annualItems})
+	annual.Items[2].RiskCategoryID = RiskCategoryMobileID()
+	annual.Items[3].RiskCategoryID = RiskCategoryMobileID()
+	for i := range annual.Items {
+		annual.Items[i].PaidThroughDate = domain.EndOfYear(year - 1)
+		annual.Items[i].CoverageAmount = 1000
 
-	f.Items[0].PaidThroughYear = year
-	f.Items[2].RiskCategoryID = RiskCategoryMobileID()
-	for i := range f.Items {
-		UpdateItemStatus(ms.DB, f.Items[i], api.ItemCoverageStatusApproved, "")
+		UpdateItemStatus(ms.DB, annual.Items[i], api.ItemCoverageStatusApproved, "")
 	}
 
-	err := f.Policies[0].ProcessAnnualCoverage(ms.DB, year)
-	ms.NoError(err)
+	const monthlyItems = 3
+	monthly := CreateItemFixtures(ms.DB, FixturesConfig{ItemsPerPolicy: monthlyItems})
+	for i := range monthly.Items {
+		monthly.Items[i].RiskCategoryID = RiskCategoryMobileID()
+		monthly.Items[i].PaidThroughDate = endOfLastMonth
+		monthly.Items[i].CoverageAmount = 12_000
+		UpdateItemStatus(ms.DB, monthly.Items[i], api.ItemCoverageStatusApproved, "")
+		monthly.ItemCategories[i].BillingPeriod = domain.BillingPeriodMonthly
+		monthly.ItemCategories[1].RiskCategoryID = riskCategoryVehicleID
+		Must(ms.DB.Update(&monthly.ItemCategories[i]))
+	}
 
-	var l LedgerEntries
-	ms.NoError(l.FindRenewals(ms.DB, year))
+	tests := []struct {
+		name             string
+		policy           Policy
+		date             time.Time
+		billingPeriod    int
+		wantEntriesCount int
+		wantPaidThrough  time.Time
+		wantAmount       api.Currency
+	}{
+		{
+			name:             "annual",
+			policy:           annual.Policies[0],
+			date:             now,
+			billingPeriod:    domain.BillingPeriodAnnual,
+			wantEntriesCount: 2, // two risk categories
+			wantPaidThrough:  domain.EndOfYear(year),
+			wantAmount:       -20 * annualItems / 2, // divide by the number of risk categories
+		},
+		{
+			name:             "monthly",
+			policy:           monthly.Policies[0],
+			date:             now,
+			billingPeriod:    domain.BillingPeriodMonthly,
+			wantEntriesCount: 1, // only one risk category
+			wantPaidThrough:  domain.EndOfMonth(now),
+			wantAmount:       -20 * monthlyItems,
+		},
+	}
+	for _, tt := range tests {
+		ms.T().Run(tt.name, func(t *testing.T) {
+			ms.NoError(tt.policy.ProcessRenewals(ms.DB, tt.date, tt.billingPeriod))
 
-	// should be one for each risk category
-	ms.Equal(2, len(l))
+			var l LedgerEntries
+			Must(ms.DB.Where("policy_id = ?", tt.policy.ID).All(&l))
+			ms.Equal(tt.wantEntriesCount, len(l))
 
-	// do it again to make sure it doesn't make double ledger entries
-	err = f.Policies[0].ProcessAnnualCoverage(ms.DB, year)
-	ms.NoError(err)
+			var i Items
+			Must(ms.DB.Where("policy_id = ?", tt.policy.ID).All(&i))
+			for _, ii := range i {
+				ms.Equal(tt.wantPaidThrough, ii.PaidThroughDate)
+			}
 
-	var l2 LedgerEntries
-	ms.NoError(l2.FindRenewals(ms.DB, year))
-	ms.Equal(2, len(l2))
+			// do it again to make sure it doesn't make double ledger entries
+			ms.NoError(tt.policy.ProcessRenewals(ms.DB, tt.date, tt.billingPeriod))
+			var l2 LedgerEntries
+			Must(ms.DB.Where("policy_id = ?", tt.policy.ID).All(&l2))
+			ms.Equal(tt.wantEntriesCount, len(l2))
+			for i := range l2 {
+				ms.Equal(tt.wantAmount, l2[i].Amount)
+			}
+		})
+	}
 }
 
 func (ms *ModelSuite) TestPolicy_currentCoverage() {
@@ -722,4 +848,346 @@ func (ms *ModelSuite) TestPolicy_currentCoverage() {
 
 	coverage := policy.currentCoverageTotal(ms.DB)
 	ms.Equal(api.Currency(totalCoverage), coverage, "incorrect Coverage for Policy")
+}
+
+func (ms *ModelSuite) TestPolicy_CreateRenewalLedgerEntry() {
+	f := CreateItemFixtures(ms.DB, FixturesConfig{ItemsPerPolicy: 1})
+	f.Items[0].RiskCategoryID = RiskCategoryMobileID()
+	UpdateItemStatus(ms.DB, f.Items[0], api.ItemCoverageStatusApproved, "")
+
+	yesterday := time.Now().UTC().Add(-24 * time.Hour).Truncate(24 * time.Hour)
+
+	tests := []struct {
+		name           string
+		policy         Policy
+		riskCategoryID uuid.UUID
+		amount         api.Currency
+	}{
+		{
+			name:           "mobile",
+			policy:         f.Policies[0],
+			riskCategoryID: RiskCategoryMobileID(),
+			amount:         1000,
+		},
+		{
+			name:           "stationary",
+			policy:         f.Policies[0],
+			riskCategoryID: RiskCategoryStationaryID(),
+			amount:         2000,
+		},
+	}
+	for _, tt := range tests {
+		ms.T().Run(tt.name, func(t *testing.T) {
+			ms.NoError(tt.policy.CreateRenewalLedgerEntry(ms.DB, tt.riskCategoryID, tt.amount))
+
+			var rc RiskCategory
+			Must(rc.FindByID(ms.DB, tt.riskCategoryID))
+
+			var l LedgerEntries
+			Must(ms.DB.Where("risk_category_name = ?", rc.Name).All(&l))
+			ms.Equal(1, len(l))
+			ms.Equal(-tt.amount, l[0].Amount)
+			ms.Equal(LedgerEntryTypeCoverageRenewal, l[0].Type)
+			ms.Equal(tt.policy.ID, l[0].PolicyID)
+			ms.Equal(yesterday, l[0].DateSubmitted)
+		})
+	}
+}
+
+func (ms *ModelSuite) Test_ImportPolicies() {
+	vehicleCategory := CreateCategoryFixtures(ms.DB, 1).ItemCategories[0]
+	vehicleCategory.RiskCategoryID = riskCategoryVehicleID
+	Must(ms.DB.Update(&vehicleCategory))
+
+	createHouseholdEntity(ms.DB)
+
+	file := strings.NewReader(`Account_Number,Veh_Year,Veh_Make,Veh_Model,Coverage_Id,Vehicle_Id,Veh_VIN,Covered_Value,Monthly_Charge,Start_Date,End_Date,Country_Code_Id,NAMECUST,Country_Description
+200014,2001,TOYOTA,TOWNACE NOAH,18191,7979,4776,8200,15,6/8/2018 11:49,NULL,PG,"STEWART, JIMMY                                               ",Papua New Guinea`)
+
+	got, err := ImportPolicies(ms.DB, file)
+	ms.NoError(err)
+	want := api.PoliciesImportResponse{
+		LinesProcessed:  1,
+		PoliciesCreated: 1,
+		ItemsCreated:    1,
+	}
+	ms.Equal(want, got)
+
+	var newPolicy Policy
+	ms.NoError(ms.DB.Where("household_id = ?", "200014").First(&newPolicy))
+}
+
+func (ms *ModelSuite) Test_importPolicy() {
+	catID := CreateCategoryFixtures(ms.DB, 1).ItemCategories[0].ID
+	policy := CreatePolicyFixtures(ms.DB, FixturesConfig{}).Policies[0]
+
+	teamEntityCode := CreateEntityFixture(ms.DB).Code
+
+	newHousehold := map[string]string{
+		"Account_Number":      "123456",
+		"Veh_Year":            "2001",
+		"Veh_Make":            "Toyota",
+		"Veh_Model":           "Camry",
+		"Coverage_Id":         "1",
+		"Vehicle_Id":          "2",
+		"Veh_VIN":             "JT4RN56S0F0075837",
+		"Covered_Value":       "8200",
+		"Monthly_Charge":      "15",
+		"Start_Date":          "6/8/2018 11:49",
+		"End_Date":            "NULL",
+		"Country_Code_Id":     "US",
+		"NAMECUST":            "Smith, John",
+		"Country_Description": "United States",
+	}
+	existingHousehold := map[string]string{
+		"Account_Number":      policy.HouseholdID.String,
+		"Veh_Year":            "2010",
+		"Veh_Make":            "Honda",
+		"Veh_Model":           "Civic",
+		"Coverage_Id":         "3",
+		"Vehicle_Id":          "4",
+		"Veh_VIN":             "2HGES15361H903843",
+		"Covered_Value":       "4500",
+		"Monthly_Charge":      "10",
+		"Start_Date":          "11/11/2011 11:11",
+		"End_Date":            "NULL",
+		"Country_Code_Id":     "CA",
+		"NAMECUST":            "Jameson, Rick",
+		"Country_Description": "Canada",
+	}
+	newTeam := map[string]string{
+		"Veh_Make":          "Nissan",
+		"Veh_Model":         "Versa",
+		"Veh_Year":          "2016",
+		"Veh_VIN":           "1111",
+		"Person":            "Bono",
+		"Covered_Value":     "14500",
+		"Statement Name":    "2016 Nissan Versa Bono",
+		"Policy Name":       "XYZ Policy",
+		"Entity":            teamEntityCode,
+		"Cost Center":       "SVEH12",
+		"Account":           "63500",
+		"Ledger Entry Desc": "Bono Vehicle",
+	}
+
+	now := time.Now().UTC()
+
+	tests := []struct {
+		name       string
+		data       map[string]string
+		wantErr    string
+		wantPolicy Policy
+		wantItem   Item
+		wantPerson PolicyDependent
+	}{
+		{
+			name: "create household policy and item",
+			data: newHousehold,
+			wantPolicy: Policy{
+				Name:         "Smith, John household",
+				Type:         api.PolicyTypeHousehold,
+				EntityCodeID: householdEntityID,
+				HouseholdID:  nulls.NewString("123456"),
+			},
+			wantItem: Item{
+				Name:              "2001 Toyota Camry",
+				Country:           "United States",
+				Make:              "Toyota",
+				Model:             "Camry",
+				SerialNumber:      "JT4RN56S0F0075837",
+				CoverageAmount:    8200 * domain.CurrencyFactor,
+				CoverageStartDate: time.Date(2018, 6, 8, 0, 0, 0, 0, time.UTC),
+				Year:              nulls.NewInt(2001),
+			},
+		},
+		{
+			name: "create item only",
+			data: existingHousehold,
+			wantItem: Item{
+				Name:              "2010 Honda Civic",
+				Country:           "Canada",
+				Make:              "Honda",
+				Model:             "Civic",
+				SerialNumber:      "2HGES15361H903843",
+				CoverageAmount:    4500 * domain.CurrencyFactor,
+				CoverageStartDate: time.Date(2011, 11, 11, 0, 0, 0, 0, time.UTC),
+				Year:              nulls.NewInt(2010),
+			},
+		},
+		{
+			name: "create team policy and item",
+			data: newTeam,
+			wantPolicy: Policy{
+				Name:          "XYZ Policy",
+				Type:          api.PolicyTypeTeam,
+				EntityCodeID:  EntityCodeID(teamEntityCode),
+				CostCenter:    "SVEH12",
+				Account:       "63500",
+				AccountDetail: "Bono Vehicle",
+			},
+			wantItem: Item{
+				Name:              "2016 Nissan Versa Bono",
+				Make:              "Nissan",
+				Model:             "Versa",
+				Year:              nulls.NewInt(2016),
+				SerialNumber:      "1111",
+				CoverageAmount:    14500 * domain.CurrencyFactor,
+				CoverageStartDate: time.Date(time.Now().Year(), time.Now().Month(), 1, 0, 0, 0, 0, time.UTC),
+			},
+			wantPerson: PolicyDependent{
+				Name: "Bono",
+			},
+		},
+	}
+	for _, tt := range tests {
+		ms.T().Run(tt.name, func(t *testing.T) {
+			_, _, err := importPolicy(ms.DB, tt.data, catID, now)
+			if tt.wantErr != "" {
+				ms.Error(err)
+				ms.Contains(err.Error(), tt.wantErr)
+				return
+			}
+
+			ms.NoError(err)
+
+			var p Policy
+			if tt.wantPolicy.Name == "" {
+				p = policy
+			} else {
+				ms.NoError(ms.DB.Where("name = ?", tt.wantPolicy.Name).First(&p))
+				ms.Equal(tt.wantPolicy.Name, p.Name)
+				ms.Equal(tt.wantPolicy.Type, p.Type)
+				ms.Equal(tt.wantPolicy.HouseholdID, p.HouseholdID)
+				ms.Equal(tt.wantPolicy.EntityCodeID, p.EntityCodeID)
+				ms.Equal(tt.wantPolicy.CostCenter, p.CostCenter)
+				ms.Equal(tt.wantPolicy.Account, p.Account)
+				ms.Equal(tt.wantPolicy.AccountDetail, p.AccountDetail)
+			}
+
+			var i Item
+			ms.NoError(ms.DB.Order("created_at DESC").First(&i))
+			ms.Equal(tt.wantItem.Name, i.Name)
+			ms.Equal(catID, i.CategoryID)
+			ms.Equal(tt.wantItem.Country, i.Country)
+			ms.Equal(p.ID, i.PolicyID)
+			ms.Equal(tt.wantItem.Make, i.Make)
+			ms.Equal(tt.wantItem.Model, i.Model)
+			ms.Equal(tt.wantItem.SerialNumber, i.SerialNumber)
+			ms.Equal(tt.wantItem.CoverageAmount, i.CoverageAmount)
+			ms.Equal(api.ItemCoverageStatusApproved, i.CoverageStatus)
+			ms.Equal(tt.wantItem.CoverageStartDate, i.CoverageStartDate)
+			ms.Equal(riskCategoryVehicleID, i.RiskCategoryID)
+			ms.Equal(tt.wantItem.Year, i.Year)
+			ms.Equal(domain.EndOfMonth(now).AddDate(0, -1, 0), i.PaidThroughDate)
+
+			if tt.wantPerson.Name != "" {
+				var pd PolicyDependent
+				ms.NoError(pd.FindByName(ms.DB, p.ID, tt.wantPerson.Name))
+			}
+		})
+	}
+}
+
+func (ms *ModelSuite) Test_parseCoveredValue() {
+	tests := []struct {
+		s       string
+		want    int
+		wantErr bool
+	}{
+		{
+			s:       "",
+			wantErr: true,
+		},
+		{
+			s:       "x",
+			wantErr: true,
+		},
+		{
+			s:       "-1",
+			wantErr: true,
+		},
+		{
+			s:       "0",
+			wantErr: true,
+		},
+		{
+			s:    "1",
+			want: 100,
+		},
+		{
+			s:    "100",
+			want: 10000,
+		},
+	}
+	for _, tt := range tests {
+		ms.T().Run(tt.s, func(t *testing.T) {
+			got, err := parseCoveredValue(tt.s)
+			if tt.wantErr {
+				ms.Error(err)
+				return
+			}
+
+			ms.Equal(tt.want, got)
+		})
+	}
+}
+
+func (ms *ModelSuite) Test_parseVehicleYear() {
+	tests := []struct {
+		s       string
+		want    int
+		wantErr bool
+	}{
+		{
+			s:       "",
+			wantErr: true,
+		},
+		{
+			s:       "x",
+			wantErr: true,
+		},
+		{
+			s:       "-1",
+			wantErr: true,
+		},
+		{
+			s:       "100",
+			wantErr: true,
+		},
+		{
+			s:       "1910",
+			wantErr: true,
+		},
+		{
+			s:       "2051",
+			wantErr: true,
+		},
+		{
+			s:    "50",
+			want: 1950,
+		},
+		{
+			s:    "99",
+			want: 1999,
+		},
+		{
+			s:    "0",
+			want: 2000,
+		},
+		{
+			s:    "49",
+			want: 2049,
+		},
+	}
+	for _, tt := range tests {
+		ms.T().Run(tt.s, func(t *testing.T) {
+			got, err := parseVehicleYear(tt.s)
+			if tt.wantErr {
+				ms.Error(err)
+				return
+			}
+
+			ms.Equal(tt.want, got)
+		})
+	}
 }

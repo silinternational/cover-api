@@ -8,7 +8,6 @@ require (
 	github.com/go-playground/validator/v10 v10.11.2
 	github.com/gobuffalo/buffalo v1.1.0
 	github.com/gobuffalo/buffalo-pop/v3 v3.0.7
-	github.com/gobuffalo/envy v1.10.2
 	github.com/gobuffalo/events v1.4.3
 	github.com/gobuffalo/grift v1.5.2
 	github.com/gobuffalo/httptest v1.5.2
@@ -49,6 +48,7 @@ require (
 	github.com/go-playground/locales v0.14.1 // indirect
 	github.com/go-playground/universal-translator v0.18.1 // indirect
 	github.com/go-sql-driver/mysql v1.7.0 // indirect
+	github.com/gobuffalo/envy v1.10.2 // indirect
 	github.com/gobuffalo/fizz v1.14.4 // indirect
 	github.com/gobuffalo/flect v1.0.2 // indirect
 	github.com/gobuffalo/github_flavored_markdown v1.1.4 // indirect

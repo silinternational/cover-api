@@ -30,6 +30,9 @@ type ItemCategory struct {
 	// swagger:strfmt uuid4
 	ID uuid.UUID `json:"id"`
 
+	// unique key for indexing icons or other UI data
+	Key string `json:"key"`
+
 	// risk category assigned to new items by default -- can be overridden by a user with sufficient permissions
 	RiskCategory RiskCategory `json:"risk_category"`
 
@@ -51,4 +54,17 @@ type ItemCategory struct {
 
 	// whether make and model are required in order for item coverage to be auto approved
 	RequireMakeModel bool `json:"require_make_model"`
+
+	// billing period, expressed as a number of months
+	BillingPeriod int `json:"billing_period"`
+
+	// the premium factor for this category
+	PremiumFactor string `json:"premium_factor"`
+
+	// the minimum deductible amount (in units of 0.01 USD)
+	MinimumDeductible int `json:"minimum_deductible"`
+
+	// Minimum premium amount. Any premium bill that would be less than this amount will be charged
+	// this amount instead. (in units of 0.01 USD)
+	MinimumPremium int `json:"minimum_premium"`
 }
