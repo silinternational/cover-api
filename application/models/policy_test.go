@@ -665,6 +665,13 @@ func (ms *ModelSuite) TestPolicies_Query() {
 	f.Policies[3].Members[0].FirstName = "John"
 	ms.NoError(ms.DB.Update(&f.Policies[3].Members[0]))
 
+	// create a policy with no users
+	f2 := CreatePolicyFixtures(ms.DB, FixturesConfig{NumberOfPolicies: 1})
+	f2.Policies[0].Name = "ABC123"
+	Must(ms.DB.Update(&f2.Policies[0]))
+	f2.PolicyUsers[0].PolicyID = corpPolicy.ID
+	Must(ms.DB.Update(&f2.PolicyUsers[0]))
+
 	tests := []struct {
 		name                 string
 		query                string
@@ -706,6 +713,11 @@ func (ms *ModelSuite) TestPolicies_Query() {
 			wantNumberOfPolicies: 1,
 		},
 		{
+			name:                 "policy with no users",
+			query:                "search=" + "ABC",
+			wantNumberOfPolicies: 1,
+		},
+		{
 			name:                 "cost center",
 			query:                "search=" + corpPolicy.CostCenter,
 			wantNumberOfPolicies: 1,
@@ -733,7 +745,7 @@ func (ms *ModelSuite) TestPolicies_Query() {
 		{
 			name:                 "only inactive",
 			query:                "filter=active:false",
-			wantNumberOfPolicies: 4,
+			wantNumberOfPolicies: 5,
 		},
 	}
 	for _, tt := range tests {
