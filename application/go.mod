@@ -30,7 +30,7 @@ require (
 	github.com/russellhaering/goxmldsig v1.3.0
 	github.com/sirupsen/logrus v1.9.0
 	github.com/stretchr/testify v1.8.2
-	golang.org/x/image v0.6.0
+	golang.org/x/image v0.10.0
 	jaytaylor.com/html2text v0.0.0-20211105163654-bc68cce691ba
 )
 
