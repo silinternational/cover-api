@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	netSuiteHeader                 = `"SystemSubsidiary","GroupID","TransactionID","TransactionDate","Description","DebitAccount","CreditAccount","InterCoAccount","Amount","Currency","Reference"\n`
+	netSuiteHeader                 = `"SystemSubsidiary","GroupID","TransactionID","TransactionDate","Description","DebitAccount","CreditAccount","InterCoAccount","Amount","Currency","Reference"` + "\n"
 	netSuiteTransactionRowTemplate = `MAP,,%d,%s,"%s","%s","%s",,%s,USD,"%s"` + "\n"
 )
 
