@@ -51,30 +51,22 @@ func TestNetSuite_Export(t *testing.T) {
 	n.AppendToBatch("bar", t2)
 
 	transaction1Row := fmt.Sprintf(netSuiteTransactionRowTemplate,
-		"MAP",                             // SystemSubsidiary
-		"",                                // GroupID, left blank
 		n.rowID+1,                         // TransactionID
 		t1.Date.Format("01/02/2006"),      // TransactionDate
 		t1.Description,                    // Description
 		n.getDebitAccount(t1),             // DebitAccount
 		n.getCreditAccount(t1),            // CreditAccount
-		"",                                // InterCoAccount, left blank
 		api.Currency(-t1.Amount).String(), // Amount
-		"USD",                             // Currency
 		fmt.Sprintf("%d / %s", n.rowID+1, n.getReference(t1)),
 	)
 
 	transaction2Row := fmt.Sprintf(netSuiteTransactionRowTemplate,
-		"MAP",                             // SystemSubsidiary
-		"",                                // GroupID, left blank
 		n.rowID+2,                         // TransactionID
 		t2.Date.Format("01/02/2006"),      // TransactionDate
 		t2.Description,                    // Description
 		n.getDebitAccount(t2),             // DebitAccount
 		n.getCreditAccount(t2),            // CreditAccount
-		"",                                // InterCoAccount, left blank
 		api.Currency(-t2.Amount).String(), // Amount
-		"USD",                             // Currency
 		fmt.Sprintf("%d / %s", n.rowID+2, n.getReference(t2)),
 	)
 

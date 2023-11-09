@@ -13,7 +13,7 @@ import (
 
 const (
 	netSuiteHeader                 = `"SystemSubsidiary","GroupID","TransactionID","TransactionDate","Description","DebitAccount","CreditAccount","InterCoAccount","Amount","Currency","Reference"\n`
-	netSuiteTransactionRowTemplate = `%s,%s,%d,"%s",%s,"%s","%s","%s","%s","%s",%s` + "\n"
+	netSuiteTransactionRowTemplate = `USA,,%d,%s,"%s","%s","%s",,%s,USD,"%s"` + "\n"
 )
 
 type NetSuite struct {
@@ -128,16 +128,12 @@ func (n *NetSuite) transactionRow(t Transaction) []byte {
 
 	str := fmt.Sprintf(
 		netSuiteTransactionRowTemplate,
-		"MAP",                            // SystemSubsidiary
-		"",                               // GroupID, left blank
 		n.rowID,                          // TransactionID
 		t.Date.Format("01/02/2006"),      // TransactionDate
 		t.Description,                    // Description
 		n.getDebitAccount(t),             // DebitAccount
 		n.getCreditAccount(t),            // CreditAccount
-		"",                               // InterCoAccount, left blank
 		api.Currency(-t.Amount).String(), // Amount
-		"USD",                            // Currency
 		ref,                              // Reference
 	)
 	return []byte(str)
