@@ -13,7 +13,7 @@ import (
 
 const (
 	netSuiteHeader                 = `"SystemSubsidiary","GroupID","TransactionID","TransactionDate","Description","DebitAccount","CreditAccount","InterCoAccount","Amount","Currency","Reference"\n`
-	netSuiteTransactionRowTemplate = `USA,,%d,%s,"%s","%s","%s",,%s,USD,"%s"` + "\n"
+	netSuiteTransactionRowTemplate = `MAP,,%d,%s,"%s","%s","%s",,%s,USD,"%s"` + "\n"
 )
 
 type NetSuite struct {
