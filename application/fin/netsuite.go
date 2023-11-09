@@ -12,8 +12,8 @@ import (
 )
 
 const (
-	netSuiteHeader                 = `"TRANSID","ACCTID","TRANSAMT","TRANSDESC", "EntityAccount", "SuiteKey","TRANSREF","TRANSDATE"` + "\n"
-	netSuiteTransactionRowTemplate = `%d,"%s",%s,"%s","%s","%s","%s",%s` + "\n"
+	netSuiteHeader                 = `"SystemSubsidiary","GroupID","TransactionID","TransactionDate","Description","DebitAccount","CreditAccount","InterCoAccount","Amount","Currency","Reference"`
+	netSuiteTransactionRowTemplate = `%s,%s,%d,"%s",%s,"%s","%s","%s","%s","%s",%s` + "\n"
 )
 
 type NetSuite struct {
@@ -87,7 +87,11 @@ func (n *NetSuite) generateCSV(transactions Transactions) []byte {
 	return buf.Bytes()
 }
 
-func (n *NetSuite) getAccount(t Transaction) string {
+func (n *NetSuite) getCreditAccount(t Transaction) string {
+	return fmt.Sprintf("%s%s", t.AccountNumber, t.CostCenter)
+}
+
+func (n *NetSuite) getDebitAccount(t Transaction) string {
 	if t.Account != "" {
 		return t.Account
 	}
@@ -115,16 +119,26 @@ func (n *NetSuite) getReference(t Transaction) string {
 
 func (n *NetSuite) transactionRow(t Transaction) []byte {
 	n.rowID++
+
+	// Prefix reference with transaction ID, which isn't available until now
+	ref := n.getReference(t)
+	if ref != "" {
+		ref = fmt.Sprintf("%d / %s", n.rowID, ref)
+	}
+
 	str := fmt.Sprintf(
 		netSuiteTransactionRowTemplate,
-		n.rowID,
-		n.getAccount(t),
-		api.Currency(-t.Amount).String(),
-		t.Description,
-		t.AccountNumber,
-		t.CostCenter,
-		n.getReference(t),
-		t.Date.Format("20060102"),
+		"MAP",                            // SystemSubsidiary
+		"",                               // GroupID, left blank
+		n.rowID,                          // TransactionID
+		t.Date.Format("01/02/2006"),      // TransactionDate
+		t.Description,                    // Description
+		n.getDebitAccount(t),             // DebitAccount
+		n.getCreditAccount(t),            // CreditAccount
+		"",                               // InterCoAccount, left blank
+		api.Currency(-t.Amount).String(), // Amount
+		"USD",                            // Currency
+		ref,                              // Reference
 	)
 	return []byte(str)
 }
