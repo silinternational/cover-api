@@ -61,7 +61,7 @@ func TestNetSuite_Export(t *testing.T) {
 		"",                                // InterCoAccount, left blank
 		api.Currency(-t1.Amount).String(), // Amount
 		"USD",                             // Currency
-		n.getReference(t1),
+		fmt.Sprintf("%d / %s", n.rowID+1, n.getReference(t1)),
 	)
 
 	transaction2Row := fmt.Sprintf(netSuiteTransactionRowTemplate,
@@ -75,7 +75,7 @@ func TestNetSuite_Export(t *testing.T) {
 		"",                                // InterCoAccount, left blank
 		api.Currency(-t2.Amount).String(), // Amount
 		"USD",                             // Currency
-		n.getReference(t2),
+		fmt.Sprintf("%d / %s", n.rowID+2, n.getReference(t2)),
 	)
 
 	got, gotType := n.RenderBatch()
@@ -108,8 +108,10 @@ func TestNetSuite_Export(t *testing.T) {
 		}
 
 		// don't try to compare the row number since we can't guarantee the transaction batch ordering
-		_, want, _ := strings.Cut(row, ",")
-
-		require.Contains(t, string(body), want)
+		id := strings.Split(row, ",")[2]
+		want := strings.Split(row, id)
+		for _, w := range want {
+			require.Contains(t, string(body), w)
+		}
 	}
 }
