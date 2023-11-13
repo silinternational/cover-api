@@ -107,12 +107,6 @@ func (n *NetSuite) getReference(t Transaction) string {
 func (n *NetSuite) transactionRow(t Transaction, creditAccount string) []byte {
 	n.rowID++
 
-	// Prefix reference with transaction ID, which isn't available until now
-	ref := n.getReference(t)
-	if ref != "" {
-		ref = fmt.Sprintf("%d / %s", n.rowID, ref)
-	}
-
 	str := fmt.Sprintf(
 		netSuiteTransactionRowTemplate,
 		n.rowID,                          // TransactionID
@@ -122,7 +116,7 @@ func (n *NetSuite) transactionRow(t Transaction, creditAccount string) []byte {
 		creditAccount,                    // CreditAccount
 		t.CostCenter,                     // InterCoAccount
 		api.Currency(-t.Amount).String(), // Amount
-		ref,                              // Reference
+		n.getReference(t),                // Reference
 	)
 	return []byte(str)
 }

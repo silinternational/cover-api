@@ -58,7 +58,7 @@ func TestNetSuite_Export(t *testing.T) {
 		s1.Account,                        // CreditAccount
 		t1.CostCenter,                     // InterCoAccount
 		api.Currency(-t1.Amount).String(), // Amount
-		fmt.Sprintf("%d / %s", n.rowID+1, n.getReference(t1)),
+		n.getReference(t1),
 	)
 
 	transaction2Row := fmt.Sprintf(netSuiteTransactionRowTemplate,
@@ -69,7 +69,7 @@ func TestNetSuite_Export(t *testing.T) {
 		s2.Account,                        // CreditAccount
 		t2.CostCenter,                     // InterCoAccount
 		api.Currency(-t2.Amount).String(), // Amount
-		fmt.Sprintf("%d / %s", n.rowID+2, n.getReference(t2)),
+		n.getReference(t2),
 	)
 
 	want := netSuiteHeader + transaction1Row + transaction2Row
