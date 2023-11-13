@@ -65,9 +65,11 @@ func (n *NetSuite) RenderBatch() ([]byte, string) {
 		block := n.TransactionBlocks[name]
 		last := len(block) - 1
 
-		// TODO clean this up when Sage report is removed
 		creditAccount := block[last].Account
 
+		// TODO clean this up when Sage report is removed
+		// Last row is a summary row. Can't remove it completely
+		// as it is being used by Sage, so removing it here
 		for _, transaction := range block[:last] {
 			buf.Write(n.transactionRow(transaction, creditAccount))
 		}
