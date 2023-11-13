@@ -1,11 +1,7 @@
 package fin
 
 import (
-	"archive/zip"
-	"bytes"
 	"fmt"
-	"io"
-	"strings"
 	"testing"
 	"time"
 
@@ -45,17 +41,22 @@ func TestNetSuite_Export(t *testing.T) {
 		Date:              now,
 		Description:       "transaction description",
 	}
+	s1 := Transaction{Account: "summaryONE", Amount: t1.Amount}
+	s2 := Transaction{Account: "summaryTWO", Amount: t2.Amount}
 
 	n := newNetSuiteReport("journal description", "", now)
 	n.AppendToBatch("", t1)
+	n.AppendToBatch("", s1)
 	n.AppendToBatch("bar", t2)
+	n.AppendToBatch("bar", s2)
 
 	transaction1Row := fmt.Sprintf(netSuiteTransactionRowTemplate,
 		n.rowID+1,                         // TransactionID
 		t1.Date.Format("01/02/2006"),      // TransactionDate
 		t1.Description,                    // Description
 		n.getDebitAccount(t1),             // DebitAccount
-		n.getCreditAccount(t1),            // CreditAccount
+		s1.Account,                        // CreditAccount
+		t1.CostCenter,                     // InterCoAccount
 		api.Currency(-t1.Amount).String(), // Amount
 		fmt.Sprintf("%d / %s", n.rowID+1, n.getReference(t1)),
 	)
@@ -65,45 +66,15 @@ func TestNetSuite_Export(t *testing.T) {
 		t2.Date.Format("01/02/2006"),      // TransactionDate
 		t2.Description,                    // Description
 		n.getDebitAccount(t2),             // DebitAccount
-		n.getCreditAccount(t2),            // CreditAccount
+		s2.Account,                        // CreditAccount
+		t2.CostCenter,                     // InterCoAccount
 		api.Currency(-t2.Amount).String(), // Amount
 		fmt.Sprintf("%d / %s", n.rowID+2, n.getReference(t2)),
 	)
 
+	want := netSuiteHeader + transaction1Row + transaction2Row
+
 	got, gotType := n.RenderBatch()
-	require.Equal(t, domain.ContentZip, gotType)
-
-	reader := bytes.NewReader(got)
-	r, err := zip.NewReader(reader, int64(len(got)))
-	require.NoError(t, err)
-
-	files := r.File
-	require.Equal(t, 2, len(files))
-
-	for _, f := range files {
-		date := n.date.Format(domain.DateFormat)
-		name := f.Name[:len(f.Name)-4]
-		require.True(t, strings.HasSuffix(name, date))
-
-		name = name[:len(name)-len(date)-1]
-		require.Contains(t, n.TransactionBlocks, name)
-
-		contents, err := f.Open()
-		require.NoError(t, err)
-
-		body, err := io.ReadAll(contents)
-		require.NoError(t, err)
-
-		row := transaction1Row
-		if name == "bar" {
-			row = transaction2Row
-		}
-
-		// don't try to compare the row number since we can't guarantee the transaction batch ordering
-		id := strings.Split(row, ",")[2]
-		want := strings.Split(row, id)
-		for _, w := range want {
-			require.Contains(t, string(body), w)
-		}
-	}
+	require.Equal(t, want, string(got))
+	require.Equal(t, domain.ContentCSV, gotType)
 }

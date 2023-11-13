@@ -1,10 +1,8 @@
 package fin
 
 import (
-	"archive/zip"
 	"bytes"
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/silinternational/cover-api/api"
@@ -13,7 +11,7 @@ import (
 
 const (
 	netSuiteHeader                 = `"SystemSubsidiary","GroupID","TransactionID","TransactionDate","Description","DebitAccount","CreditAccount","InterCoAccount","Amount","Currency","Reference","ExchangeRate"` + "\n"
-	netSuiteTransactionRowTemplate = `MAP,,%d,%s,"%s","%s","%s",,%s,USD,"%s",` + "\n"
+	netSuiteTransactionRowTemplate = `MAP,,%d,%s,"%s","%s","%s",%s,%s,USD,"%s",` + "\n"
 )
 
 type NetSuite struct {
@@ -22,8 +20,9 @@ type NetSuite struct {
 	JournalDescription string
 	TransactionBlocks  TransactionBlocks
 
-	date  time.Time
-	rowID int64
+	date       time.Time
+	rowID      int64
+	blockNames []string
 }
 
 func newNetSuiteReport(batchDesc, reportType string, date time.Time) *NetSuite {
@@ -42,53 +41,39 @@ func newNetSuiteReport(batchDesc, reportType string, date time.Time) *NetSuite {
 		TransactionBlocks:  make(TransactionBlocks),
 		date:               date,
 		rowID:              rowID,
+		blockNames:         []string{},
 	}
 }
 
 func (n *NetSuite) AppendToBatch(block string, t Transaction) {
-	if t.Amount != 0 {
-		n.TransactionBlocks[block] = append(n.TransactionBlocks[block], t)
+	if t.Amount == 0 {
+		return
 	}
+
+	if _, ok := n.TransactionBlocks[block]; !ok {
+		n.blockNames = append(n.blockNames, block)
+	}
+
+	n.TransactionBlocks[block] = append(n.TransactionBlocks[block], t)
 }
 
 func (n *NetSuite) RenderBatch() ([]byte, string) {
-	// Create a buffer to write our archive to.
-	buff := new(bytes.Buffer)
-
-	// Create a new zip archive.
-	w := zip.NewWriter(buff)
-
-	for blockName, block := range n.TransactionBlocks {
-		f, err := w.Create(fmt.Sprintf("%s_%s.csv", blockName, n.date.Format(domain.DateFormat)))
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		contents := n.generateCSV(block)
-		if _, err = f.Write(contents); err != nil {
-			log.Fatal(err)
-		}
-	}
-
-	if err := w.Close(); err != nil {
-		log.Fatal(err)
-	}
-
-	return buff.Bytes(), domain.ContentZip
-}
-
-func (n *NetSuite) generateCSV(transactions Transactions) []byte {
 	var buf bytes.Buffer
 	buf.Write([]byte(netSuiteHeader))
-	for _, transaction := range transactions {
-		buf.Write(n.transactionRow(transaction))
+
+	for _, name := range n.blockNames {
+		block := n.TransactionBlocks[name]
+		last := len(block) - 1
+
+		// TODO clean this up when Sage report is removed
+		creditAccount := block[last].Account
+
+		for _, transaction := range block[:last] {
+			buf.Write(n.transactionRow(transaction, creditAccount))
+		}
 	}
 
-	return buf.Bytes()
-}
-
-func (n *NetSuite) getCreditAccount(t Transaction) string {
-	return fmt.Sprintf("%s%s", t.AccountNumber, t.CostCenter)
+	return buf.Bytes(), domain.ContentCSV
 }
 
 func (n *NetSuite) getDebitAccount(t Transaction) string {
@@ -97,7 +82,7 @@ func (n *NetSuite) getDebitAccount(t Transaction) string {
 	}
 
 	if t.PolicyType == api.PolicyTypeHousehold {
-		return t.HouseholdID
+		return t.HouseholdID + "_C"
 	}
 
 	return t.EntityCode
@@ -117,7 +102,7 @@ func (n *NetSuite) getReference(t Transaction) string {
 	return t.PolicyName
 }
 
-func (n *NetSuite) transactionRow(t Transaction) []byte {
+func (n *NetSuite) transactionRow(t Transaction, creditAccount string) []byte {
 	n.rowID++
 
 	// Prefix reference with transaction ID, which isn't available until now
@@ -132,7 +117,8 @@ func (n *NetSuite) transactionRow(t Transaction) []byte {
 		t.Date.Format("01/02/2006"),      // TransactionDate
 		t.Description,                    // Description
 		n.getDebitAccount(t),             // DebitAccount
-		n.getCreditAccount(t),            // CreditAccount
+		creditAccount,                    // CreditAccount
+		t.CostCenter,                     // InterCoAccount
 		api.Currency(-t.Amount).String(), // Amount
 		ref,                              // Reference
 	)
