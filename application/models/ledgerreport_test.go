@@ -194,7 +194,7 @@ func (ms *ModelSuite) TestNewLedgerReport() {
 				File:          File{},
 				LedgerEntries: nil,
 			},
-			wantContentType: domain.ContentZip,
+			wantContentType: domain.ContentCSV,
 		},
 	}
 	for _, tt := range tests {
