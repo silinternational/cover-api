@@ -394,3 +394,17 @@ func (lr *LedgerReport) Reconcile(ctx context.Context) error {
 	lr.LoadLedgerEntries(tx, true)
 	return nil
 }
+
+// IsSafeToRenewAnnual returns true if the current time and the state of the database are such that it is safe to
+// initiate the annual renewal process.
+func IsSafeToRenewAnnual(tx *pop.Connection, now time.Time) bool {
+	// TODO: return false if the current year's renewals have been reconciled
+	return now.Month() < 3
+}
+
+// IsSafeToRenewAnnual returns true if the current time and the state of the database are such that it is safe to
+// initiate the monthly renewal process.
+func IsSafeToRenewMonthly(tx *pop.Connection, now time.Time) bool {
+	// TODO: return false if the current month's renewals have been reconciled
+	return now.Day() >= MonthlyCutoffDay
+}
