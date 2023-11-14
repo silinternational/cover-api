@@ -187,7 +187,8 @@ func ledgerAnnualRenewalStatus(c buffalo.Context) error {
 		return reportError(c, api.NewAppError(err, api.ErrorNotAuthorized, api.CategoryForbidden))
 	}
 
-	endOfYear := domain.EndOfYear(time.Now().UTC().Year())
+	now := time.Now().UTC()
+	endOfYear := domain.EndOfYear(now.Year())
 
 	itemsToRenew, err := models.CountItemsToRenew(models.Tx(c), endOfYear, domain.BillingPeriodAnnual)
 	if err != nil {
@@ -197,6 +198,7 @@ func ledgerAnnualRenewalStatus(c buffalo.Context) error {
 	status := api.RenewalStatus{
 		IsComplete:     itemsToRenew == 0,
 		ItemsToProcess: itemsToRenew,
+		SafeToProcess:  now.Month() < 3,
 	}
 	return renderOk(c, status)
 }
@@ -252,6 +254,7 @@ func ledgerMonthlyRenewalStatus(c buffalo.Context) error {
 	status := api.RenewalStatus{
 		IsComplete:     itemsToRenew == 0,
 		ItemsToProcess: itemsToRenew,
+		SafeToProcess:  now.Day() >= models.MonthlyCutoffDay,
 	}
 	return renderOk(c, status)
 }

@@ -3716,13 +3716,20 @@
       "type": "object",
       "properties": {
         "is_complete": {
+          "description": "is the process job complete? (i.e. is the process not running?)",
           "type": "boolean",
           "x-go-name": "IsComplete"
         },
         "items_to_process": {
+          "description": "how many items are available to process?",
           "type": "integer",
           "format": "int64",
           "x-go-name": "ItemsToProcess"
+        },
+        "safe_to_process": {
+          "description": "is it safe to allow the user to initiate a process job?",
+          "type": "boolean",
+          "x-go-name": "SafeToProcess"
         }
       },
       "x-go-package": "github.com/silinternational/cover-api/api"
