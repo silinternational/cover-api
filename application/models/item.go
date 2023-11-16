@@ -21,6 +21,8 @@ import (
 	"github.com/silinternational/cover-api/log"
 )
 
+// MonthlyCutoffDay is the day of the month before which monthly-billed coverage can be added for the current month.
+// On this day or later, coverage billing begins on the first of the next month.
 const MonthlyCutoffDay = 20
 
 var ValidItemCoverageStatuses = map[api.ItemCoverageStatus]struct{}{
