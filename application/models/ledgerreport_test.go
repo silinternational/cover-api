@@ -194,7 +194,7 @@ func (ms *ModelSuite) TestNewLedgerReport() {
 				File:          File{},
 				LedgerEntries: nil,
 			},
-			wantContentType: domain.ContentZip,
+			wantContentType: domain.ContentCSV,
 		},
 	}
 	for _, tt := range tests {
@@ -648,6 +648,71 @@ func (ms *ModelSuite) TestPolicyLedgerTable() {
 				ms.Equal(tt.wantStatuses[i].statusBefore, e.StatusBefore, "incorrect statusBefore")
 				ms.Equal(tt.wantStatuses[i].statusAfter, e.StatusAfter, "incorrect statusAfter")
 			}
+		})
+	}
+}
+
+func (ms *ModelSuite) Test_isSafeToRenewAnnual() {
+	tests := []struct {
+		name string
+		now  time.Time
+		want bool
+	}{
+		{
+			name: "January",
+			now:  time.Date(2020, 1, 31, 0, 0, 0, 0, time.UTC),
+			want: true,
+		},
+		{
+			name: "February",
+			now:  time.Date(2020, 2, 29, 0, 0, 0, 0, time.UTC),
+			want: true,
+		},
+		{
+			name: "March",
+			now:  time.Date(2020, 3, 31, 0, 0, 0, 0, time.UTC),
+			want: false,
+		},
+	}
+	for _, tt := range tests {
+		ms.T().Run(tt.name, func(t *testing.T) {
+			got := IsSafeToRenewAnnual(ms.DB, tt.now)
+			ms.Equal(tt.want, got)
+		})
+	}
+}
+
+func (ms *ModelSuite) Test_isSafeToRenewMonthly() {
+	tests := []struct {
+		name string
+		now  time.Time
+		want bool
+	}{
+		{
+			name: "1st of the month",
+			now:  time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC),
+			want: false,
+		},
+		{
+			name: "19th of the month",
+			now:  time.Date(2020, 1, 19, 0, 0, 0, 0, time.UTC),
+			want: false,
+		},
+		{
+			name: "20th of the month",
+			now:  time.Date(2020, 1, 20, 0, 0, 0, 0, time.UTC),
+			want: true,
+		},
+		{
+			name: "31st of the month",
+			now:  time.Date(2020, 1, 31, 0, 0, 0, 0, time.UTC),
+			want: true,
+		},
+	}
+	for _, tt := range tests {
+		ms.T().Run(tt.name, func(t *testing.T) {
+			got := IsSafeToRenewMonthly(ms.DB, tt.now)
+			ms.Equal(tt.want, got)
 		})
 	}
 }

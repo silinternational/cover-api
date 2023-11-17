@@ -119,6 +119,12 @@ type LedgerEntry struct {
 
 // swagger:model
 type RenewalStatus struct {
-	IsComplete     bool `json:"is_complete"`
-	ItemsToProcess int  `json:"items_to_process"`
+	// is the process job complete? (i.e. is the process not running?)
+	IsComplete bool `json:"is_complete"`
+
+	// how many items are available to process?
+	ItemsToProcess int `json:"items_to_process"`
+
+	// is it safe to allow the user to initiate a process job?
+	SafeToProcess bool `json:"safe_to_process"`
 }

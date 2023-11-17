@@ -362,7 +362,7 @@ func (as *ActionSuite) Test_LedgerAnnualProcess() {
 	}
 }
 
-func (as *ActionSuite) Test_LedgerAnnualStatus() {
+func (as *ActionSuite) Test_LedgerAnnualRenewalStatus() {
 	year := time.Now().UTC().Year()
 
 	f := models.CreateItemFixtures(as.DB, models.FixturesConfig{ItemsPerPolicy: 3})
@@ -378,25 +378,29 @@ func (as *ActionSuite) Test_LedgerAnnualStatus() {
 		name       string
 		actor      models.User
 		wantStatus int
-		wantInBody []string
+		wantError  api.ErrorKey
+		want       api.RenewalStatus
 	}{
 		{
 			name:       "unauthenticated",
 			actor:      models.User{},
 			wantStatus: http.StatusUnauthorized,
-			wantInBody: []string{api.ErrorNotAuthorized.String()},
+			wantError:  api.ErrorNotAuthorized,
 		},
 		{
 			name:       "insufficient privileges",
 			actor:      normalUser,
 			wantStatus: http.StatusNotFound,
-			wantInBody: []string{`"key":"` + api.ErrorNotAuthorized.String()},
+			wantError:  api.ErrorNotAuthorized,
 		},
 		{
 			name:       "steward user good results",
 			actor:      stewardUser,
 			wantStatus: http.StatusOK,
-			wantInBody: []string{`"is_complete":false`, `"items_to_process":1`},
+			want: api.RenewalStatus{
+				IsComplete:     false,
+				ItemsToProcess: 1,
+			},
 		},
 	}
 
@@ -405,12 +409,18 @@ func (as *ActionSuite) Test_LedgerAnnualStatus() {
 			req := as.JSON(ledgerReportPath + "/annual")
 			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
 			res := req.Get()
+			body := res.Body.Bytes()
 
-			body := res.Body.String()
-			as.Equal(tt.wantStatus, res.Code, "incorrect status code returned, body: %s", body)
-
-			for _, s := range tt.wantInBody {
-				as.Contains(body, s)
+			as.Equal(tt.wantStatus, res.Code, "incorrect status code returned: %d\n%s", res.Code, body)
+			if tt.wantStatus != http.StatusOK {
+				var err api.AppError
+				as.NoError(as.decodeBody(body, &err), "response data is not as expected")
+				as.Equal(tt.wantError, err.Key, "error key is incorrect")
+			} else {
+				var auditResult api.RenewalStatus
+				as.NoError(as.decodeBody(body, &auditResult), "response data is not as expected")
+				as.Equal(tt.want.IsComplete, auditResult.IsComplete, "IsComplete is incorrect")
+				as.Equal(tt.want.ItemsToProcess, auditResult.ItemsToProcess, "ItemsToProcess is incorrect")
 			}
 		})
 	}

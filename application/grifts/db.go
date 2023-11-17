@@ -328,7 +328,7 @@ VALUES
 	9, 'travel', 1, 1, 25),
 ('0619a0ba-785e-428d-858c-96d3bd56929a',	'dce80e61-74f9-42f0-9cbd-d3eebe4a1ccc',
 	'Motorized vehicles',	'Coverage for motorized vehicles does not include liability and is not intended to fulfill local regulations or compete with local insurance offerings.',
-	'Enabled',	5000000, true, 0.03, 1,	'2021-08-27 19:46:28',	'2021-08-27 19:46:28',
+	'Enabled',	0, true, 0.03, 1,	'2023-09-21 04:24:00',	'2023-10-30 03:45:00',
 	NULL, 'cars', 5000, 6000, 200);
 `
 	if err := tx.RawQuery(itemCategoriesSql).Exec(); err != nil {
