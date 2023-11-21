@@ -38,6 +38,8 @@ type Policy struct {
 	Type PolicyType `json:"type"`
 
 	// Household ID for billing
+	//
+	// swagger:strfmt string
 	HouseholdID nulls.String `json:"household_id"`
 
 	// Cost center for billing
