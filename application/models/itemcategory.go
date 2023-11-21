@@ -78,6 +78,11 @@ func (i *ItemCategory) FindByID(tx *pop.Connection, id uuid.UUID) error {
 
 func (i *ItemCategory) ConvertToAPI(tx *pop.Connection) api.ItemCategory {
 	i.LoadRiskCategory(tx)
+
+	var premiumFactor string
+	if i.PremiumFactor.Valid {
+		premiumFactor = domain.PercentString(i.PremiumFactor.Float64)
+	}
 	return api.ItemCategory{
 		ID:                i.ID,
 		Key:               i.Key,
@@ -86,7 +91,7 @@ func (i *ItemCategory) ConvertToAPI(tx *pop.Connection) api.ItemCategory {
 		RiskCategory:      i.RiskCategory.ConvertToAPI(),
 		RequireMakeModel:  i.RequireMakeModel,
 		BillingPeriod:     i.GetBillingPeriod(),
-		PremiumFactor:     domain.PercentString(i.PremiumFactor.Float64),
+		PremiumFactor:     premiumFactor,
 		MinimumDeductible: i.MinimumDeductible,
 		MinimumPremium:    i.MinimumPremium,
 		CreatedAt:         i.CreatedAt,

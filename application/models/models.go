@@ -467,3 +467,24 @@ func PointerToNullsInt(i *int) nulls.Int {
 	}
 	return nulls.NewInt(*i)
 }
+
+func NullsStringToString(ns nulls.String) string {
+	if ns.Valid {
+		return ns.String
+	}
+	return "NULL"
+}
+
+func NullsTimeToString(nt nulls.Time) string {
+	if nt.Valid {
+		return nt.Time.String()
+	}
+	return "NULL"
+}
+
+func NullsUUIDToString(nu nulls.UUID) string {
+	if nu.Valid {
+		return nu.UUID.String()
+	}
+	return "NULL"
+}

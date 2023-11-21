@@ -102,8 +102,11 @@ func (n *Notification) CreateNotificationUser(tx *pop.Connection, userID nulls.U
 	}
 
 	if err := notnUser.Create(tx); err != nil {
-		panic(fmt.Sprintf("error creating new NotificationUser with UserID %s: %s",
-			userID.UUID, err.Error()))
+		id := "NULL"
+		if userID.Valid {
+			id = userID.UUID.String()
+		}
+		panic(fmt.Sprintf("error creating new NotificationUser with UserID %s: %s", id, err.Error()))
 	}
 }
 

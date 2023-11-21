@@ -1405,12 +1405,12 @@ func (ms *ModelSuite) TestItem_Compare() {
 				{
 					FieldName: FieldItemPolicyDependentID,
 					OldValue:  oldItem.PolicyDependentID.UUID.String(),
-					NewValue:  newItem.PolicyDependentID.UUID.String(),
+					NewValue:  "NULL",
 				},
 				{
 					FieldName: FieldItemPolicyUserID,
 					OldValue:  oldItem.PolicyUserID.UUID.String(),
-					NewValue:  newItem.PolicyUserID.UUID.String(),
+					NewValue:  "NULL",
 				},
 				{
 					FieldName: FieldItemMake,

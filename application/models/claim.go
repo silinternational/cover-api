@@ -557,7 +557,7 @@ func (c *Claim) Approve(ctx context.Context) error {
 		c.StatusChange = ClaimStatusChangeReview3 + user.Name()
 		eventType = domain.EventApiClaimReview3
 	case api.ClaimStatusReview3:
-		if user.ID == c.ReviewerID.UUID {
+		if c.ReviewerID.Valid && user.ID == c.ReviewerID.UUID {
 			err := fmt.Errorf("different approver required for final approval")
 			appErr := api.NewAppError(err, api.ErrorClaimInvalidApprover, api.CategoryUser)
 			return appErr
@@ -806,24 +806,24 @@ func (c *Claim) Compare(old Claim) []FieldUpdate {
 
 	if c.ReviewDate != old.ReviewDate {
 		updates = append(updates, FieldUpdate{
-			OldValue:  old.ReviewDate.Time.String(),
-			NewValue:  c.ReviewDate.Time.String(),
+			OldValue:  NullsTimeToString(old.ReviewDate),
+			NewValue:  NullsTimeToString(c.ReviewDate),
 			FieldName: FieldClaimReviewDate,
 		})
 	}
 
 	if c.ReviewerID != old.ReviewerID {
 		updates = append(updates, FieldUpdate{
-			OldValue:  old.ReviewerID.UUID.String(),
-			NewValue:  c.ReviewerID.UUID.String(),
+			OldValue:  NullsUUIDToString(old.ReviewerID),
+			NewValue:  NullsUUIDToString(c.ReviewerID),
 			FieldName: FieldClaimReviewerID,
 		})
 	}
 
 	if c.PaymentDate != old.PaymentDate {
 		updates = append(updates, FieldUpdate{
-			OldValue:  old.PaymentDate.Time.String(),
-			NewValue:  c.PaymentDate.Time.String(),
+			OldValue:  NullsTimeToString(old.PaymentDate),
+			NewValue:  NullsTimeToString(c.PaymentDate),
 			FieldName: FieldClaimPaymentDate,
 		})
 	}

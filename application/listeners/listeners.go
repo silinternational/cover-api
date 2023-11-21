@@ -83,7 +83,10 @@ func getID(p events.Payload) (uuid.UUID, error) {
 	case uuid.UUID:
 		return id, nil
 	case nulls.UUID:
-		return id.UUID, nil
+		if id.Valid {
+			return id.UUID, nil
+		}
+		return uuid.UUID{}, fmt.Errorf("id is not valid")
 	default:
 		return uuid.UUID{}, fmt.Errorf("id not a valid type: %T", id)
 	}

@@ -207,16 +207,16 @@ func (i *Item) Compare(old Item) []FieldUpdate {
 
 	if i.PolicyDependentID != old.PolicyDependentID {
 		updates = append(updates, FieldUpdate{
-			OldValue:  old.PolicyDependentID.UUID.String(),
-			NewValue:  i.PolicyDependentID.UUID.String(),
+			OldValue:  NullsUUIDToString(old.PolicyDependentID),
+			NewValue:  NullsUUIDToString(i.PolicyDependentID),
 			FieldName: FieldItemPolicyDependentID,
 		})
 	}
 
 	if i.PolicyUserID != old.PolicyUserID {
 		updates = append(updates, FieldUpdate{
-			OldValue:  old.PolicyUserID.UUID.String(),
-			NewValue:  i.PolicyUserID.UUID.String(),
+			OldValue:  NullsUUIDToString(old.PolicyUserID),
+			NewValue:  NullsUUIDToString(i.PolicyUserID),
 			FieldName: FieldItemPolicyUserID,
 		})
 	}
@@ -1189,6 +1189,9 @@ func ItemsWithRecentStatusChanges(tx *pop.Connection) (api.RecentItems, error) {
 	items := make(api.RecentItems, len(pHistories))
 	for i, next := range pHistories {
 		var item Item
+		if !next.ItemID.Valid {
+			continue
+		}
 		if err := item.FindByID(tx, next.ItemID.UUID); err != nil {
 			panic("error finding item by ID: " + err.Error())
 		}
