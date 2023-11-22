@@ -3,6 +3,7 @@ package api
 import (
 	"time"
 
+	"github.com/gobuffalo/nulls"
 	"github.com/gofrs/uuid"
 )
 
@@ -37,7 +38,9 @@ type Policy struct {
 	Type PolicyType `json:"type"`
 
 	// Household ID for billing
-	HouseholdID string `json:"household_id"`
+	//
+	// swagger:strfmt string
+	HouseholdID nulls.String `json:"household_id"`
 
 	// Cost center for billing
 	CostCenter string `json:"cost_center"`

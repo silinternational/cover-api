@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/gobuffalo/nulls"
 	"github.com/gofrs/uuid"
 
 	"github.com/silinternational/cover-api/domain"
@@ -79,12 +80,12 @@ type ClaimItem struct {
 	// review date
 	//
 	// swagger:strfmt date-time
-	ReviewDate time.Time `json:"review_date,omitempty"`
+	ReviewDate nulls.Time `json:"review_date,omitempty"`
 
 	// reviewer User ID
 	//
 	// swagger:strfmt uuid4
-	ReviewerID uuid.UUID `json:"reviewer_id,omitempty"`
+	ReviewerID nulls.UUID `json:"reviewer_id,omitempty"`
 
 	// date-time created
 	//

@@ -257,7 +257,7 @@ func authCallback(c buffalo.Context) error {
 	authUser.AccessTokenExpiresAt = uat.ExpiresAt.UTC().Unix()
 
 	// set person on log context
-	log.SetUser(c, user.StaffID.String, user.GetName().String(), user.Email)
+	log.SetUser(c, authUser.StaffID, user.GetName().String(), user.Email)
 
 	return c.Redirect(302, getLoginSuccessRedirectURL(*authUser, returnTo))
 }

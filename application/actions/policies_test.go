@@ -407,7 +407,7 @@ func (as *ActionSuite) Test_PoliciesUpdate() {
 			}
 			var policy api.Policy
 			as.NoError(json.Unmarshal([]byte(body), &policy))
-			as.Equal(*tt.update.HouseholdID, policy.HouseholdID)
+			as.Equal(*tt.update.HouseholdID, policy.HouseholdID.String)
 		})
 	}
 }
@@ -627,7 +627,6 @@ func (as *ActionSuite) Test_PoliciesInviteMember() {
 }
 
 func (as *ActionSuite) Test_PolicyLedgerReportCreate() {
-
 	f0 := models.CreatePolicyFixtures(as.DB, models.FixturesConfig{})
 	otherUser := f0.Users[0]
 
@@ -716,7 +715,6 @@ func (as *ActionSuite) Test_PolicyLedgerReportCreate() {
 }
 
 func (as *ActionSuite) Test_PolicyLedgerReportView() {
-
 	f0 := models.CreatePolicyFixtures(as.DB, models.FixturesConfig{})
 	otherUser := f0.Users[0]
 
@@ -808,7 +806,6 @@ func (as *ActionSuite) Test_PolicyLedgerReportView() {
 }
 
 func (as *ActionSuite) Test_PolicyStrikesCreate() {
-
 	f := models.CreatePolicyFixtures(as.DB, models.FixturesConfig{NumberOfPolicies: 2})
 	policyOneStrike := f.Policies[0]
 	policyNoStrikes := f.Policies[1]

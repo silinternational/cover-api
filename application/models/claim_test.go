@@ -925,17 +925,17 @@ func (ms *ModelSuite) TestClaim_Compare() {
 				},
 				{
 					FieldName: FieldClaimReviewDate,
-					OldValue:  oldClaim.ReviewDate.Time.String(),
+					OldValue:  "NULL",
 					NewValue:  newClaim.ReviewDate.Time.String(),
 				},
 				{
 					FieldName: FieldClaimReviewerID,
-					OldValue:  oldClaim.ReviewerID.UUID.String(),
+					OldValue:  "NULL",
 					NewValue:  newClaim.ReviewerID.UUID.String(),
 				},
 				{
 					FieldName: FieldClaimPaymentDate,
-					OldValue:  oldClaim.PaymentDate.Time.String(),
+					OldValue:  "NULL",
 					NewValue:  newClaim.PaymentDate.Time.String(),
 				},
 				{

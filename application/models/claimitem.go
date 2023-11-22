@@ -207,8 +207,8 @@ func (c *ClaimItem) ConvertToAPI(tx *pop.Connection) api.ClaimItem {
 		PayoutAmount:    c.PayoutAmount,
 		CoverageAmount:  c.CoverageAmount,
 		FMV:             c.FMV,
-		ReviewDate:      c.Claim.ReviewDate.Time,
-		ReviewerID:      c.Claim.ReviewerID.UUID,
+		ReviewDate:      c.Claim.ReviewDate,
+		ReviewerID:      c.Claim.ReviewerID,
 		CreatedAt:       c.CreatedAt,
 		UpdatedAt:       c.UpdatedAt,
 	}
