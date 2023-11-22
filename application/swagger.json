@@ -3228,6 +3228,20 @@
       },
       "x-go-package": "github.com/silinternational/cover-api/api"
     },
+    "NullString": {
+      "description": "var s NullString\nerr := db.QueryRow(\"SELECT name FROM foo WHERE id=?\", id).Scan(\u0026s)\n...\nif s.Valid {\nuse s.String\n} else {\nNULL value\n}",
+      "type": "object",
+      "title": "NullString represents a string that may be null.\nNullString implements the Scanner interface so\nit can be used as a scan destination:",
+      "properties": {
+        "String": {
+          "type": "string"
+        },
+        "Valid": {
+          "type": "boolean"
+        }
+      },
+      "x-go-package": "database/sql"
+    },
     "Paginator": {
       "description": "Paginator is a type used to represent the pagination of records\nfrom the database.",
       "type": "object",
@@ -3342,6 +3356,7 @@
         "household_id": {
           "description": "Household ID for billing",
           "type": "string",
+          "format": "string",
           "x-go-name": "HouseholdID"
         },
         "id": {
@@ -3855,6 +3870,24 @@
         "$ref": "#/definitions/Strike"
       },
       "x-go-package": "github.com/silinternational/cover-api/api"
+    },
+    "String": {
+      "description": "String replaces sql.NullString with an implementation\nthat supports proper JSON encoding/decoding.",
+      "$ref": "#/definitions/NullString"
+    },
+    "Time": {
+      "description": "Time replaces sql.NullTime with an implementation\nthat supports proper JSON encoding/decoding.",
+      "type": "object",
+      "properties": {
+        "Time": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "Valid": {
+          "type": "boolean"
+        }
+      },
+      "x-go-package": "github.com/gobuffalo/nulls"
     },
     "UUID": {
       "description": "UUID can be used with the standard sql package to represent a\nUUID value that can be NULL in the database",

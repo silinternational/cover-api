@@ -302,7 +302,7 @@ func (p *Policy) ConvertToAPI(tx *pop.Connection, hydrate bool) api.Policy {
 		ID:            p.ID,
 		Name:          p.Name,
 		Type:          p.Type,
-		HouseholdID:   p.HouseholdID.String,
+		HouseholdID:   p.HouseholdID,
 		CostCenter:    p.CostCenter,
 		Account:       p.Account,
 		AccountDetail: p.AccountDetail,
@@ -512,8 +512,8 @@ func (p *Policy) Compare(old Policy) []FieldUpdate {
 
 	if p.HouseholdID != old.HouseholdID {
 		updates = append(updates, FieldUpdate{
-			OldValue:  old.HouseholdID.String,
-			NewValue:  p.HouseholdID.String,
+			OldValue:  NullsStringToString(old.HouseholdID),
+			NewValue:  NullsStringToString(p.HouseholdID),
 			FieldName: "HouseholdID",
 		})
 	}
