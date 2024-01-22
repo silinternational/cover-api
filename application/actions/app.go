@@ -31,7 +31,6 @@
 package actions
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/gobuffalo/buffalo"
@@ -109,8 +108,6 @@ func App() *buffalo.App {
 			SessionName:  "_cover_api_session",
 			SessionStore: cookieStore(),
 		})
-
-		app.Use(hstsMiddleware)
 
 		var err error
 		domain.T, err = i18n.New(locales.FS(), "en")
@@ -288,12 +285,4 @@ func cookieStore() sessions.Store {
 	}
 
 	return store
-}
-
-func hstsMiddleware(next buffalo.Handler) buffalo.Handler {
-	return func(c buffalo.Context) error {
-		headerValue := fmt.Sprintf("max-age=%d", domain.Env.HstsMaxAge)
-		c.Response().Header().Add("Strict-Transport-Security", headerValue)
-		return next(c)
-	}
 }
