@@ -33,6 +33,7 @@ jobs:
 
   build-and-deploy:
     name: Build and Deploy
+    if: github.ref_name == 'main' || github.ref_name == 'develop'
     needs:
       - test
     outputs:
@@ -67,7 +68,6 @@ jobs:
         run: dfctl scan ${{ steps.build-image.outputs.image }}
 
       - name: Configure AWS credentials
-        if: github.ref_name == 'main' || github.ref_name == 'develop'
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -75,12 +75,10 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Login to AWS ECR
-        if: github.ref_name == 'main' || github.ref_name == 'develop'
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
       - name: Push Images to AWS
-        if: github.ref_name == 'main' || github.ref_name == 'develop'
         id: push-image
         env:
           BASE_IMAGE_WITH_TAG: ${{ steps.build-image.outputs.image }}
@@ -95,13 +93,11 @@ jobs:
           echo "image_to_deploy=$REGISTRY/$IMAGE_NAME-$ENVIRONMENT" >> $GITHUB_OUTPUT
 
       - name: Install ecs-deploy
-        if: github.ref_name == 'main' || github.ref_name == 'develop'
         run: |
           curl -o /usr/local/bin/ecs-deploy https://raw.githubusercontent.com/silinternational/ecs-deploy/master/ecs-deploy
           chmod +x /usr/local/bin/ecs-deploy
 
       - name: Deploy to ECS
-        if: github.ref_name == 'main' || github.ref_name == 'develop'
         id: deploy-image
         env:
           AWS_DEFAULT_REGION: ${{ vars.AWS_REGION }}
