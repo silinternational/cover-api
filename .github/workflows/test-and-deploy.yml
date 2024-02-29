@@ -95,7 +95,7 @@ jobs:
           curl -o /usr/local/bin/ecs-deploy https://raw.githubusercontent.com/silinternational/ecs-deploy/master/ecs-deploy
           chmod +x /usr/local/bin/ecs-deploy
 
-      - name: Deploy to Web
+      - name: Deploy to ECS
         id: deploy-image
         env:
           AWS_DEFAULT_REGION: ${{ vars.AWS_REGION }}
