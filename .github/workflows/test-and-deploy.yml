@@ -1,0 +1,127 @@
+name: Test and Deploy
+
+on:
+  push:
+
+env:
+  BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
+  IMAGE_NAME: cover
+  AWS_REGION: ${{ vars.AWS_REGION }}
+  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  S3_PATH: ""
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run unit tests
+        run: docker-compose -f actions-services.yml run --rm app ./run-tests.sh
+
+  apidocs:
+    name: Update api docs
+    if: github.head_ref == 'develop' || github.ref_name == 'develop'
+    runs-on: ubuntu-latest
+    env:
+      S3_PATH: ${{ vars.S3_PATH }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Update api docs
+        run: docker-compose -f actions-services.yml run --rm docs ./build-push-api-docs.sh
+
+  build-and-deploy:
+    name: Build and Deploy
+    if: github.head_ref == 'main' || github.ref_name == 'main' || github.head_ref == 'develop' || github.ref_name == 'develop'
+    needs:
+      - test
+    outputs:
+      image-stg: ${{ steps.push-image-stg.outputs.image_to_deploy }}
+      image-prod: ${{ steps.push-image-prod.outputs.image_to_deploy }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Get Unix timestamp
+        id: timestamp
+        run: echo "timestamp=$(date +'%s')" >> $GITHUB_OUTPUT
+
+      - name: Build Image
+        id: build-image
+        run: |
+          docker build -t $IMAGE_NAME:$BRANCH_NAME application
+          echo "image=$IMAGE_NAME:$BRANCH_NAME" >> $GITHUB_OUTPUT
+
+      - name: Install dfctl
+        run: curl https://repo.deepfactor.io/install-dfctl.sh | sh --
+
+      - name: Deepfactor Scan
+        env:
+          DF_RUN_TOKEN: ${{ secrets.DF_RUN_TOKEN }}
+        run: dfctl scan ${{ steps.build-image.outputs.image }}
+
+      - name: Configure AWS credentials
+        if: env.BRANCH_NAME == 'develop' || env.BRANCH_NAME == 'main'
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to AWS ECR
+        if: env.BRANCH_NAME == 'develop' || env.BRANCH_NAME == 'main'
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Push Staging Images to AWS
+        if: env.BRANCH_NAME == 'develop'
+        id: push-image-stg
+        env:
+          BASE_IMAGE_WITH_TAG: ${{ steps.build-image.outputs.image }}
+          REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          TAG: ${{ steps.timestamp.outputs.timestamp }}
+        run: |
+          docker tag $BASE_IMAGE_WITH_TAG $REGISTRY/$IMAGE_NAME-stg:$TAG
+          docker push $REGISTRY/$IMAGE_NAME-stg:$TAG
+          docker tag $BASE_IMAGE_WITH_TAG $REGISTRY/$IMAGE_NAME-stg:$BRANCH_NAME
+          docker push $REGISTRY/$IMAGE_NAME-stg:$BRANCH_NAME
+          echo "image_to_deploy=$REGISTRY/$IMAGE_NAME-stg" >> $GITHUB_OUTPUT
+
+      - name: Push Production Images to AWS
+        if: env.BRANCH_NAME == 'main'
+        id: push-image-prod
+        env:
+          BASE_IMAGE_WITH_TAG: ${{ steps.build-image.outputs.image }}
+          REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          TAG: ${{ steps.timestamp.outputs.timestamp }}
+        run: |
+          docker tag $BASE_IMAGE_WITH_TAG $REGISTRY/$IMAGE_NAME-prod:$TAG
+          docker push $REGISTRY/$IMAGE_NAME-prod:$TAG
+          docker tag $BASE_IMAGE_WITH_TAG $REGISTRY/$IMAGE_NAME-prod:latest
+          docker push $REGISTRY/$IMAGE_NAME-prod:latest
+          echo "image_to_deploy=$REGISTRY/$IMAGE_NAME-prod" >> $GITHUB_OUTPUT
+
+      - name: Install ecs-deploy
+        if: env.BRANCH_NAME == 'main' || env.BRANCH_NAME == 'develop'
+        run: |
+          curl -o /usr/local/bin/ecs-deploy https://raw.githubusercontent.com/silinternational/ecs-deploy/master/ecs-deploy
+          chmod +x /usr/local/bin/ecs-deploy
+
+      - name: Deploy Staging Web
+        if: env.BRANCH_NAME == 'develop'
+        id: deploy-image-stg
+        env:
+          AWS_DEFAULT_REGION: ${{ vars.AWS_REGION }}
+          CI_TIMESTAMP: ${{ steps.timestamp.outputs.timestamp }}
+          IMAGE: ${{ steps.push-image-stg.outputs.image_to_deploy }}
+        run: ecs-deploy -c appsdev-stg -n cover-api -i $IMAGE -e CI_TIMESTAMP -t 300 --max-definitions 10
+
+      - name: Deploy Production Web
+        if: env.BRANCH_NAME == 'main'
+        id: deploy-image-prod
+        env:
+          AWS_DEFAULT_REGION: ${{ vars.AWS_REGION }}
+          CI_TIMESTAMP: ${{ steps.timestamp.outputs.timestamp }}
+          IMAGE: ${{ steps.push-image-prod.outputs.image_to_deploy }}
+        run: ecs-deploy -c appsdev-prod -n cover-api -i $IMAGE -e CI_TIMESTAMP -t 300 --max-definitions 10
