@@ -2,7 +2,6 @@ version: "3"
 
 services:
   app:
-    image: tester
     build:
       context: application
       dockerfile: Dockerfile-dev
@@ -48,7 +47,6 @@ services:
       POSTGRES_DB: cover_test
 
   docs:
-    image: apidocs
     build:
       context: application
       dockerfile: Dockerfile-api-docs
