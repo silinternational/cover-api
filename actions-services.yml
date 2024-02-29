@@ -6,8 +6,6 @@ services:
     build:
       context: application
       dockerfile: Dockerfile-dev
-    cached: true
-    default_cache_branch: "develop"
     depends_on:
       - testdb
       - minio
@@ -25,7 +23,7 @@ services:
       AWS_SECRET_ACCESS_KEY: abcd1234
       AWS_REGION: us-east-1
       AWS_S3_ENDPOINT: http://minio:9000
-      AWS_S3_DISABLE_SSL: true
+      AWS_S3_DISABLE_SSL: 1
       AWS_S3_BUCKET: cover-test-bucket
       EMAIL_FROM_ADDRESS: no_reply@example.com
       EMAIL_SERVICE: dummy
@@ -41,7 +39,6 @@ services:
       EXPENSE_ACCOUNT: ABC12345
       CLAIM_INCOME_ACCOUNT: XYZ23456
     working_dir: /cover
-    command: true
 
   testdb:
     image: postgres:11.6
