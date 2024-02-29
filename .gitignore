@@ -12,9 +12,9 @@
 *.out
 
 # Local env files
-.env
-codeship.env
-local.env
+*.env
+!test.env
+!*example.env
 
 # Local email testing files
 application/emailtester/*.go
