@@ -6,6 +6,8 @@ ARG GITHUB_SHA
 
 ENV GOPROXY=http://proxy.golang.org
 
+WORKDIR /app
+
 # Install buffalo
 RUN go install github.com/gobuffalo/cli/cmd/buffalo@latest
 
