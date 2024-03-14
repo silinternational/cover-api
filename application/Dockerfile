@@ -2,7 +2,7 @@
 # https://docs.docker.com/engine/userguide/eng-image/multistage-build/
 FROM gobuffalo/buffalo:v0.18.8 as builder
 
-ARG ci_commit_id
+ARG GITHUB_SHA
 
 WORKDIR /src
 
@@ -22,7 +22,7 @@ RUN go mod download
 
 COPY . .
 
-RUN sh -c "echo $ci_commit_id > domain/commit.txt"
+RUN sh -c "echo $GITHUB_SHA > domain/commit.txt"
 RUN cat domain/commit.txt
 
 RUN buffalo build --static -o /bin/app
