@@ -1,21 +1,25 @@
-FROM gobuffalo/buffalo:v0.18.8
+FROM golang:1.22
+
+ENV REFRESHED_AT=2024-03-13
+
+EXPOSE 3000
+
+ENV GOPROXY=https://proxy.golang.org
+
+# Installing buffalo binary
+RUN go install github.com/gobuffalo/cli/cmd/buffalo@latest
+RUN go install github.com/gobuffalo/buffalo-pop/v3@latest
 
 # Set file permissions so non-root user can access them -- necessary if USER user is enabled below
 # RUN chmod -R o=,g=rwX $GOPATH/pkg
 
 RUN apt-get update && apt-get install -y \
-    nano \
-    curl \
-    netcat \
+    netcat-traditional \
+    postgresql \
     && apt-get clean
 
-# Install the desired version of NodeJS
-RUN npm cache clean -f && \
-    npm install -g n && \
-    n 16
-
-RUN curl -fo /usr/local/bin/whenavail https://raw.githubusercontent.com/silinternational/whenavail-script/1.0.2/whenavail \
-     && chmod a+x /usr/local/bin/whenavail
+ADD https://raw.githubusercontent.com/silinternational/whenavail-script/1.0.2/whenavail /usr/local/bin/whenavail
+RUN chmod a+x /usr/local/bin/whenavail
 
 RUN mkdir -p /cover
 WORKDIR /cover
