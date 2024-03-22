@@ -2,8 +2,6 @@ module github.com/silinternational/cover-api
 
 go 1.22
 
-toolchain go1.22.1
-
 require (
 	github.com/aws/aws-sdk-go v1.50.38
 	github.com/getsentry/sentry-go v0.27.0

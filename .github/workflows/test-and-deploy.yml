@@ -21,16 +21,16 @@ jobs:
       - name: Run unit tests
         run: docker-compose -f actions-services.yml run --rm app ./run-tests.sh
 
-#  apidocs:
-#    name: Update api docs
-#    if: github.ref_name == 'develop'
-#    runs-on: ubuntu-latest
-#    env:
-#      S3_PATH: ${{ vars.S3_PATH }}
-#    steps:
-#      - uses: actions/checkout@v4
-#      - name: Update api docs
-#        run: docker-compose -f actions-services.yml run --rm docs ./build-push-api-docs.sh
+  apidocs:
+    name: Update api docs
+    if: github.ref_name == 'develop'
+    runs-on: ubuntu-latest
+    env:
+      S3_PATH: ${{ vars.S3_PATH }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Update api docs
+        run: docker-compose -f actions-services.yml run --rm docs ./build-push-api-docs.sh
 
   build-and-deploy:
     name: Build and Deploy
