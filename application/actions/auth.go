@@ -198,20 +198,18 @@ func authCallback(c buffalo.Context) error {
 
 	authResp := sp.AuthCallback(c)
 	if authResp.Error != nil {
-		return reportErrorAndClearSession(c, &api.AppError{
-			HttpStatus: http.StatusInternalServerError,
-			Key:        api.ErrorAuthProvidersCallback,
-			Message:    authResp.Error.Error(),
-		})
+		err = fmt.Errorf("auth response error: %w", authResp.Error)
+		return reportErrorAndClearSession(c, api.NewAppError(err, api.ErrorAuthProvidersCallback, api.CategoryInternal))
 	}
 
 	returnTo := getOrSetReturnTo(c)
 
 	if authResp.AuthUser == nil {
+		err = errors.New("nil authResp.AuthUser")
 		return reportErrorAndClearSession(c, &api.AppError{
 			HttpStatus: http.StatusFound,
 			Key:        api.ErrorAuthProvidersCallback,
-			Message:    "nil authResp.AuthUser",
+			Err:        errors.New("nil authResp.AuthUser"),
 		})
 	}
 
