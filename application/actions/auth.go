@@ -52,7 +52,6 @@ var samlConfig = saml.Config{
 	AudienceURI:                 domain.Env.SamlAudienceUri,
 	AssertionConsumerServiceURL: domain.Env.SamlAssertionConsumerServiceUrl,
 	IDPPublicCert:               replaceNewLines(domain.Env.SamlIdpCert),
-	IDPPublicCert2:              replaceNewLines(domain.Env.SamlIdpCert2),
 	SPPublicCert:                replaceNewLines(domain.Env.SamlSpCert),
 	SPPrivateKey:                replaceNewLines(domain.Env.SamlSpPrivateKey),
 	SignRequest:                 domain.Env.SamlSignRequest,

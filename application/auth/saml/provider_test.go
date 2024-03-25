@@ -3,8 +3,6 @@ package saml
 import (
 	"crypto/rsa"
 	"testing"
-
-	"github.com/stretchr/testify/require"
 )
 
 const ValidPublicCert = `-----BEGIN CERTIFICATE-----
@@ -32,31 +30,7 @@ pUfaD83aE5UMDjOTOFbOXdQec8HG2kPjqjhP27nL+oyWfstG32xtv7Q1nxD+iJ+H
 0qeiX3/RTnJ+l878FpEK8LjuzYBcctqj8Ioqu9oUE2U2xMDQeXzG55v9l6UyT1Hu
 yfJxr9o/f6YzQyuyuf7gO/X57PEF/t/EByTFDlnZLzq9nE45xPHX7mv/ASczw1QT
 UVj3mPQU2/GgAW62CgKpXZE=
------END CERTIFICATE-----
-`
-
-const SecondCert = `-----BEGIN CERTIFICATE-----
-MIIDazCCAlOgAwIBAgIULV8VPL5gGECCxuZnTXQN3TcytGowDQYJKoZIhvcNAQEL
-BQAwRTELMAkGA1UEBhMCVVMxEzARBgNVBAgMClNvbWUtU3RhdGUxITAfBgNVBAoM
-GEludGVybmV0IFdpZGdpdHMgUHR5IEx0ZDAeFw0yNDAzMjIyMDI2MDVaFw0zNDAz
-MjIyMDI2MDVaMEUxCzAJBgNVBAYTAlVTMRMwEQYDVQQIDApTb21lLVN0YXRlMSEw
-HwYDVQQKDBhJbnRlcm5ldCBXaWRnaXRzIFB0eSBMdGQwggEiMA0GCSqGSIb3DQEB
-AQUAA4IBDwAwggEKAoIBAQCsr42RpTPVK2atVQAfpNTK3Xyj89RLWwWQUymi0Y0j
-wcWbOV0pdc/ZSb1eprzooqc81/AWSOWLlEo5vCyekfZ3F9JHTLrxBKv4dctVQsi3
-/HrslDw+zMdgRfuA9cpnjkNBucdGRLeJ2gp9pUQspQiP3lR10hhVn5zknGnCiHKP
-xxx3u2YjfXDiLetYqTkfKTA7h3c23c8vV7pd5BDmdX9b2XFPujgm5Pf66ZG450cF
-bUDRs+ydEeGpRYo4PMXil2NXzqYkSybDn2tlHYkVUs5A5GrPTQ7pkxOA9WVhbwuh
-VhYtIpHldsIYgKvOr2iBxxse9/NHjx4kzhUOcLsTI2K3AgMBAAGjUzBRMB0GA1Ud
-DgQWBBRZj3iBmao7xhZGJLxzOtyS2UgPsjAfBgNVHSMEGDAWgBRZj3iBmao7xhZG
-JLxzOtyS2UgPsjAPBgNVHRMBAf8EBTADAQH/MA0GCSqGSIb3DQEBCwUAA4IBAQAB
-JzKHgu0EjsGG0ICVoGJY/1GCUTD7oVZDV+Ro7j/phXjH3ZMXibuWkuNbBVczZf8J
-qgMi++7+XpxzNPF5nedKlYq1K+ZyKkbvZBkZY5A+DPoz0TePGq2OtnCE9GLL6ld6
-SEOYP5y/D4g+uPwjzfGPqBaM7PjjFFGeiH5BidjiilpjM0P37/vXkR9kUYDnrlA2
-+ANTSu5eoVmYlUv4gKQ5vKsh5IhBOzvDS8AXqNY6HgBOecAK3RXA1TLVr5UxKPRs
-OftCTVTLmdYC15lzwAInwaQRib0OgdqJCCQXWvE16QmG/oQeMNMQmoRTuu1IvA0R
-IG1Ah1s3rZxffDk6+qrJ
------END CERTIFICATE-----
-`
+-----END CERTIFICATE-----`
 
 const ValidBase64Key = `MIIEXTCCAsWgAwIBAgIJAM6I9eCQdTglMA0GCSqGSIb3DQEBCwUAMEUxCzAJBgNVBAYTAkFVMRMwEQYDVQQIDApTb21lLVN0YXRlMSEwHwYDVQQKDBhJbnRlcm5ldCBXaWRnaXRzIFB0eSBMdGQwHhcNMTkwODEzMTQ1MDE1WhcNMjkwODEyMTQ1MDE1WjBFMQswCQYDVQQGEwJBVTETMBEGA1UECAwKU29tZS1TdGF0ZTEhMB8GA1UECgwYSW50ZXJuZXQgV2lkZ2l0cyBQdHkgTHRkMIIBojANBgkqhkiG9w0BAQEFAAOCAY8AMIIBigKCAYEA2Bf0H/hW/P8FbuTnuSVGTX+12ORmW3jhMokTefEd/cysfxXycuIaQ3oK4WFoxlHhwkkdrmabB4b/LsJyn9g40tVi9TRKnD7RzR3gCvIAEb7ldX2B78/0VtQnzcUAt91qo84AOHk7kY5R8fRhtP23n49F0Wk5QGczcVf9fC7td2hKAKbXQskIeylIElwNC8j9q/QIE1pHlc1/vHZmKuE6pPqazto8sJkcVXD7Yqel7kmhYFrR9GUnbS6/HHB4oQ4MInI+kHgBmYM3ctVe2Dsvdj4eGEbxiYYY11ynj5jofuiib0FrZWUNwoYDJSLEavl5Rwsn5i2pBxmGXHNez5se8qrAPQnKGBsUYn13102CnIwTKPlMUlYq0JKUKd20bxtgTqOgHffSL2BGEj8ojqBIUU/ewkjz+fD+yVujDjp/Lx9jZ0WKuUYZiuTUAeWFKyp9UQdl4xhzFFMkeseZHg4wQGPqFTc8KKZ27IWmygF4J5SVSDv7hbd90bVPwvVEvzuRAgMBAAGjUDBOMB0GA1UdDgQWBBQQliE+bg7SY3M68U03oo5YZohhvjAfBgNVHSMEGDAWgBQQliE+bg7SY3M68U03oo5YZohhvjAMBgNVHRMEBTADAQH/MA0GCSqGSIb3DQEBCwUAA4IBgQCIXJBtUo6NZWIqVXMcgSN/79VnrtdNR53FMyehO/BnS/OCD78V6nhsdIXlXQFvamgbTb0+HLIjicrta3rIwl03pIAzD8kKkeYntkD7hhnBI30CDxeDhTOWo+pi8JlPLl9KIY6kk5Yt777CZzLe2bhTKBZiL+ybKbbppFZmpLj9QeIRsgyb63ufq1XGVjeXtlHjeE1KJUva367oTNJ2wasgbumCAOAHmQ/dweO+WxeNrjSAMyc1MFtHnuR+8XLiSh3xjA2mG0oMYxAroOpWVqHmrHfsCBvDoMoBo2AkyezFpUfaD83aE5UMDjOTOFbOXdQec8HG2kPjqjhP27nL+oyWfstG32xtv7Q1nxD+iJ+H0qeiX3/RTnJ+l878FpEK8LjuzYBcctqj8Ioqu9oUE2U2xMDQeXzG55v9l6UyT1HuyfJxr9o/f6YzQyuyuf7gO/X57PEF/t/EByTFDlnZLzq9nE45xPHX7mv/ASczw1QTUVj3mPQU2/GgAW62CgKpXZE=`
 
@@ -144,57 +118,37 @@ func TestNew(t *testing.T) {
 }
 
 func Test_getCertStore(t *testing.T) {
+	type args struct {
+		cert string
+	}
 	tests := []struct {
-		name      string
-		certs     []string
-		wantErr   bool
-		wantCerts int
+		name    string
+		args    args
+		wantErr bool
 	}{
 		{
-			name:      "expect error",
-			certs:     []string{""},
-			wantErr:   true,
-			wantCerts: 0,
+			name:    "expect error",
+			args:    args{cert: ""},
+			wantErr: true,
 		},
 		{
-			name:      "expect error 2",
-			certs:     []string{"asdf1234 not a valid cert"},
-			wantErr:   true,
-			wantCerts: 0,
+			name:    "expect error 2",
+			args:    args{cert: "asdf1234 not a valid cert"},
+			wantErr: true,
 		},
 		{
-			name:      "no error",
-			certs:     []string{ValidPublicCert},
-			wantErr:   false,
-			wantCerts: 1,
-		},
-		{
-			name:      "raw base64",
-			certs:     []string{ValidBase64Key},
-			wantErr:   false,
-			wantCerts: 1,
-		},
-		{
-			name:      "two certs",
-			certs:     []string{ValidPublicCert, SecondCert},
-			wantErr:   false,
-			wantCerts: 2,
-		},
-		{
-			name:      "empty cert",
-			certs:     []string{ValidPublicCert, ""},
-			wantErr:   false,
-			wantCerts: 1,
+			name:    "no error",
+			args:    args{cert: ValidPublicCert},
+			wantErr: false,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			cs, err := getCertStore(tt.certs...)
+			_, err := getCertStore(tt.args.cert)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("getCertStore() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			require.Len(t, cs.Roots, tt.wantCerts)
 		})
 	}
 }
