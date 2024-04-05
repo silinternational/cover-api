@@ -114,3 +114,13 @@ func (as *ActionSuite) decodeBody(body []byte, v any) error {
 	decoder.DisallowUnknownFields()
 	return decoder.Decode(v)
 }
+
+func (as *ActionSuite) Test_robots() {
+	req := as.JSON("/robots.txt")
+	res := req.Get()
+	body := res.Body.Bytes()
+
+	as.Equal(http.StatusOK, res.Code, "incorrect status code returned: %d\n%s", res.Code, body)
+	as.True(strings.HasPrefix(string(body), "User-agent"),
+		"incorrect response body:\n%s", body)
+}
