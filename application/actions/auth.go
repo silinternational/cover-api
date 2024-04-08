@@ -205,7 +205,6 @@ func authCallback(c buffalo.Context) error {
 	returnTo := getOrSetReturnTo(c)
 
 	if authResp.AuthUser == nil {
-		err = errors.New("nil authResp.AuthUser")
 		return reportErrorAndClearSession(c, &api.AppError{
 			HttpStatus: http.StatusFound,
 			Key:        api.ErrorAuthProvidersCallback,
