@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/gobuffalo/buffalo"
+	"github.com/labstack/echo/v4"
 
 	"github.com/silinternational/cover-api/api"
 	"github.com/silinternational/cover-api/domain"
@@ -30,7 +30,7 @@ import (
 //	      type: array
 //	      items:
 //	        "$ref": "#/definitions/PolicyDependents"
-func dependentsList(c buffalo.Context) error {
+func dependentsList(c echo.Context) error {
 	policy := getReferencedPolicyFromCtx(c)
 
 	tx := models.Tx(c)
@@ -61,7 +61,7 @@ func dependentsList(c buffalo.Context) error {
 //	    description: the new PolicyDependent
 //	    schema:
 //	      "$ref": "#/definitions/PolicyDependent"
-func dependentsCreate(c buffalo.Context) error {
+func dependentsCreate(c echo.Context) error {
 	policy := getReferencedPolicyFromCtx(c)
 
 	var input api.PolicyDependentInput
@@ -102,7 +102,7 @@ func dependentsCreate(c buffalo.Context) error {
 //	    description: the updated PolicyDependent
 //	    schema:
 //	      "$ref": "#/definitions/PolicyDependent"
-func dependentsUpdate(c buffalo.Context) error {
+func dependentsUpdate(c echo.Context) error {
 	tx := models.Tx(c)
 	dependent := getReferencedDependentFromCtx(c)
 
@@ -121,7 +121,7 @@ func dependentsUpdate(c buffalo.Context) error {
 	}
 
 	output := dependent.ConvertToAPI()
-	return c.Render(http.StatusOK, r.JSON(output))
+	return c.JSON(http.StatusOK, output)
 }
 
 // swagger:operation DELETE /policy-dependents/{id} PolicyDependents PolicyDependentsDelete
@@ -138,7 +138,7 @@ func dependentsUpdate(c buffalo.Context) error {
 //	responses:
 //	  '204':
 //	    description: OK but no content in response
-func dependentsDelete(c buffalo.Context) error {
+func dependentsDelete(c echo.Context) error {
 	tx := models.Tx(c)
 	dependent := getReferencedDependentFromCtx(c)
 
@@ -156,13 +156,13 @@ func dependentsDelete(c buffalo.Context) error {
 	if err := dependent.Destroy(tx); err != nil {
 		return reportError(c, err)
 	}
-	return c.Render(http.StatusNoContent, nil)
+	return c.JSON(http.StatusNoContent, nil)
 }
 
 // getReferencedDependentFromCtx pulls the models.PolicyDependent resource from context that was put there
 // by the AuthZ middleware
-func getReferencedDependentFromCtx(c buffalo.Context) *models.PolicyDependent {
-	dep, ok := c.Value(domain.TypePolicyDependent).(*models.PolicyDependent)
+func getReferencedDependentFromCtx(c echo.Context) *models.PolicyDependent {
+	dep, ok := c.Get(domain.TypePolicyDependent).(*models.PolicyDependent)
 	if !ok {
 		panic("policy dependent not found in context")
 	}

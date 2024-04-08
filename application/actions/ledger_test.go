@@ -54,23 +54,19 @@ func (as *ActionSuite) Test_LedgerReportList() {
 
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
-			req := as.JSON(ledgerReportPath)
-			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
-			res := req.Get()
-
-			body := res.Body.String()
-			as.Equal(tt.wantStatus, res.Code, "incorrect status code returned, body: %s", body)
+			body, status := as.request("GET", ledgerReportPath, tt.actor.Email, nil)
+			as.Equal(tt.wantStatus, status, "incorrect status code returned, body: %s", body)
 
 			for _, s := range tt.wantInBody {
-				as.Contains(body, s)
+				as.Contains(string(body), s)
 			}
 
-			if res.Code != http.StatusOK {
+			if status != http.StatusOK {
 				return
 			}
 
 			var reports []api.LedgerReport
-			as.NoError(json.Unmarshal([]byte(body), &reports))
+			as.NoError(json.Unmarshal(body, &reports))
 			as.Equal(tt.wantReports, len(reports))
 		})
 	}
@@ -139,23 +135,20 @@ func (as *ActionSuite) Test_LedgerReportView() {
 
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
-			req := as.JSON(fmt.Sprintf("%s/%s", ledgerReportPath, tt.lrID))
-			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
-			res := req.Get()
-
-			body := res.Body.String()
-			as.Equal(tt.wantStatus, res.Code, "incorrect status code returned, body: %s", body)
+			path := fmt.Sprintf(fmt.Sprintf("%s/%s", ledgerReportPath, tt.lrID))
+			body, status := as.request("GET", path, tt.actor.Email, nil)
+			as.Equal(tt.wantStatus, status, "incorrect status code returned, body: %s", body)
 
 			for _, s := range tt.wantInBody {
-				as.Contains(body, s)
+				as.Contains(string(body), s)
 			}
 
-			if res.Code != http.StatusOK {
+			if status != http.StatusOK {
 				return
 			}
 
 			var report api.LedgerReport
-			as.NoError(json.Unmarshal([]byte(body), &report))
+			as.NoError(json.Unmarshal(body, &report))
 			as.Equal(tt.lrID, report.ID)
 		})
 	}
@@ -208,26 +201,22 @@ func (as *ActionSuite) Test_LedgerReportCreate() {
 
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
-			req := as.JSON(ledgerReportPath)
-			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
-			res := req.Post(api.LedgerReportCreateInput{
+			body, status := as.request("POST", ledgerReportPath, tt.actor.Email, api.LedgerReportCreateInput{
 				Type: tt.reportType,
 				Date: time.Now().UTC().Format(domain.DateFormat),
 			})
-
-			body := res.Body.String()
-			as.Equal(tt.wantStatus, res.Code, "incorrect status code returned, body: %s", body)
+			as.Equal(tt.wantStatus, status, "incorrect status code returned, body: %s", body)
 
 			for _, s := range tt.wantInBody {
-				as.Contains(body, s)
+				as.Contains(string(body), s)
 			}
 
-			if res.Code != http.StatusOK {
+			if status != http.StatusOK {
 				return
 			}
 
 			var report api.LedgerReport
-			as.NoError(json.Unmarshal([]byte(body), &report))
+			as.NoError(json.Unmarshal(body, &report))
 			as.Equal(tt.reportType, report.Type)
 		})
 	}
@@ -280,23 +269,20 @@ func (as *ActionSuite) Test_LedgerReportReconcile() {
 
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
-			req := as.JSON(fmt.Sprintf("%s/%s", ledgerReportPath, lr.ID))
-			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
-			res := req.Put(nil)
-
-			body := res.Body.String()
-			as.Equal(tt.wantStatus, res.Code, "incorrect status code returned, body: %s", body)
+			path := fmt.Sprintf(fmt.Sprintf("%s/%s", ledgerReportPath, lr.ID))
+			body, status := as.request("PUT", path, tt.actor.Email, nil)
+			as.Equal(tt.wantStatus, status, "incorrect status code returned, body: %s", body)
 
 			for _, s := range tt.wantInBody {
-				as.Contains(body, s)
+				as.Contains(string(body), s)
 			}
 
-			if res.Code != http.StatusOK {
+			if status != http.StatusOK {
 				return
 			}
 
 			var report api.LedgerReport
-			as.NoError(json.Unmarshal([]byte(body), &report))
+			as.NoError(json.Unmarshal(body, &report))
 			as.Equal(lr.ID, report.ID)
 
 			var le models.LedgerEntries
@@ -348,15 +334,12 @@ func (as *ActionSuite) Test_LedgerAnnualProcess() {
 
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
-			req := as.JSON(ledgerReportPath + "/annual")
-			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
-			res := req.Post(nil)
-
-			body := res.Body.String()
-			as.Equal(tt.wantStatus, res.Code, "incorrect status code returned, body: %s", body)
+			path := ledgerReportPath + "/annual"
+			body, status := as.request("POST", path, tt.actor.Email, nil)
+			as.Equal(tt.wantStatus, status, "incorrect status code returned, body: %s", body)
 
 			for _, s := range tt.wantInBody {
-				as.Contains(body, s)
+				as.Contains(string(body), s)
 			}
 		})
 	}
@@ -406,12 +389,10 @@ func (as *ActionSuite) Test_LedgerAnnualRenewalStatus() {
 
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
-			req := as.JSON(ledgerReportPath + "/annual")
-			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
-			res := req.Get()
-			body := res.Body.Bytes()
+			path := ledgerReportPath + "/annual"
+			body, status := as.request("GET", path, tt.actor.Email, nil)
 
-			as.Equal(tt.wantStatus, res.Code, "incorrect status code returned: %d\n%s", res.Code, body)
+			as.Equal(tt.wantStatus, status, "incorrect status code returned: %d\n%s", status, body)
 			if tt.wantStatus != http.StatusOK {
 				var err api.AppError
 				as.NoError(as.decodeBody(body, &err), "response data is not as expected")
@@ -495,15 +476,12 @@ func (as *ActionSuite) Test_LedgerMonthlyProcess() {
 
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
-			req := as.JSON(ledgerReportPath + "/monthly")
-			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
-			res := req.Post(nil)
-
-			body := res.Body.String()
-			as.Equal(tt.wantStatus, res.Code, "incorrect status code returned, body: %s", body)
+			path := ledgerReportPath + "/monthly"
+			body, status := as.request("POST", path, tt.actor.Email, nil)
+			as.Equal(tt.wantStatus, status, "incorrect status code returned, body: %s", body)
 
 			for _, s := range tt.wantInBody {
-				as.Contains(body, s)
+				as.Contains(string(body), s)
 			}
 		})
 	}
@@ -552,15 +530,12 @@ func (as *ActionSuite) Test_LedgerMonthlyStatus() {
 
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
-			req := as.JSON(ledgerReportPath + "/monthly")
-			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
-			res := req.Get()
-
-			body := res.Body.String()
-			as.Equal(tt.wantStatus, res.Code, "incorrect status code returned, body: %s", body)
+			path := ledgerReportPath + "/monthly"
+			body, status := as.request("GET", path, tt.actor.Email, nil)
+			as.Equal(tt.wantStatus, status, "incorrect status code returned, body: %s", body)
 
 			for _, s := range tt.wantInBody {
-				as.Contains(body, s)
+				as.Contains(string(body), s)
 			}
 		})
 	}

@@ -6,8 +6,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/gobuffalo/buffalo"
 	"github.com/gobuffalo/nulls"
+	"github.com/labstack/echo/v4"
 
 	"github.com/silinternational/cover-api/api"
 	"github.com/silinternational/cover-api/domain"
@@ -52,7 +52,7 @@ const (
 //	          "$ref": "#/definitions/Meta"
 //	        data:
 //	          "$ref": "#/definitions/Policies"
-func policiesList(c buffalo.Context) error {
+func policiesList(c echo.Context) error {
 	user := models.CurrentUser(c)
 
 	if user.IsAdmin() {
@@ -62,11 +62,11 @@ func policiesList(c buffalo.Context) error {
 	return policiesListCustomer(c)
 }
 
-func policiesListAdmin(c buffalo.Context) error {
+func policiesListAdmin(c echo.Context) error {
 	tx := models.Tx(c)
 	var policies models.Policies
 
-	qp := api.NewQueryParams(c.Params())
+	qp := api.NewQueryParams(c.QueryParams())
 	p, err := policies.Query(tx, qp)
 	if err != nil {
 		return reportError(c, err)
@@ -80,7 +80,7 @@ func policiesListAdmin(c buffalo.Context) error {
 	return renderOk(c, response)
 }
 
-func policiesListCustomer(c buffalo.Context) error {
+func policiesListCustomer(c echo.Context) error {
 	tx := models.Tx(c)
 	user := models.CurrentUser(c)
 
@@ -104,7 +104,7 @@ func policiesListCustomer(c buffalo.Context) error {
 //	    description: a policy
 //	    schema:
 //	      "$ref": "#/definitions/Policy"
-func policiesView(c buffalo.Context) error {
+func policiesView(c echo.Context) error {
 	policy := getReferencedPolicyFromCtx(c)
 
 	return renderOk(c, policy.ConvertToAPI(models.Tx(c), true))
@@ -128,7 +128,7 @@ func policiesView(c buffalo.Context) error {
 //	    description: the new Policy
 //	    schema:
 //	      "$ref": "#/definitions/Policy"
-func policiesCreateTeam(c buffalo.Context) error {
+func policiesCreateTeam(c echo.Context) error {
 	var input api.PolicyCreate
 	if err := StrictBind(c, &input); err != nil {
 		return reportError(c, err)
@@ -173,7 +173,7 @@ func policiesCreateTeam(c buffalo.Context) error {
 //	    description: updated Policy
 //	    schema:
 //	      "$ref": "#/definitions/Policy"
-func policiesUpdate(c buffalo.Context) error {
+func policiesUpdate(c echo.Context) error {
 	tx := models.Tx(c)
 	policy := getReferencedPolicyFromCtx(c)
 
@@ -235,7 +235,7 @@ func policiesUpdate(c buffalo.Context) error {
 //	      type: array
 //	      items:
 //	        "$ref": "#/definitions/LedgerReport"
-func policiesLedgerReportCreate(c buffalo.Context) error {
+func policiesLedgerReportCreate(c echo.Context) error {
 	tx := models.Tx(c)
 	policy := getReferencedPolicyFromCtx(c)
 
@@ -250,7 +250,7 @@ func policiesLedgerReportCreate(c buffalo.Context) error {
 	}
 
 	if len(report.LedgerEntries) == 0 {
-		return c.Render(http.StatusNoContent, nil)
+		return c.JSON(http.StatusNoContent, nil)
 	}
 
 	if err = report.Create(tx); err != nil {
@@ -286,10 +286,10 @@ func policiesLedgerReportCreate(c buffalo.Context) error {
 //	    description: the requested LedgerTable for the Policy
 //	    schema:
 //	      "$ref": "#/definitions/LedgerTable"
-func policiesLedgerTableView(c buffalo.Context) error {
+func policiesLedgerTableView(c echo.Context) error {
 	policy := getReferencedPolicyFromCtx(c)
 
-	m := c.Param(MonthParam)
+	m := c.QueryParam(MonthParam)
 	month, err := strconv.Atoi(m)
 	if err != nil {
 		appErr := api.AppError{
@@ -300,7 +300,7 @@ func policiesLedgerTableView(c buffalo.Context) error {
 		return reportError(c, &appErr)
 	}
 
-	y := c.Param(YearParam)
+	y := c.QueryParam(YearParam)
 	year, err := strconv.Atoi(y)
 	if err != nil {
 		appErr := api.AppError{
@@ -343,7 +343,7 @@ func policiesLedgerTableView(c buffalo.Context) error {
 //	      type: array
 //	      items:
 //	        "$ref": "#/definitions/Strike"
-func policiesStrikeCreate(c buffalo.Context) error {
+func policiesStrikeCreate(c echo.Context) error {
 	tx := models.Tx(c)
 	policy := getReferencedPolicyFromCtx(c)
 
@@ -391,37 +391,40 @@ func policiesStrikeCreate(c buffalo.Context) error {
 //	    description: uploaded File data
 //	    schema:
 //	      "$ref": "#/definitions/PoliciesImportResponse"
-func policiesImport(c buffalo.Context) error {
+func policiesImport(c echo.Context) error {
 	actor := models.CurrentUser(c)
 	if !actor.IsAdmin() {
 		err := fmt.Errorf("user is not allowed to import policies")
 		return reportError(c, api.NewAppError(err, api.ErrorNotAuthorized, api.CategoryForbidden))
 	}
 
-	tx := models.Tx(c)
-	f, err := c.File(fileFieldName)
-	if err != nil {
-		err := fmt.Errorf("error getting uploaded file from context ... %v", err)
-		return reportError(c, api.NewAppError(err, api.ErrorReceivingFile, api.CategoryInternal))
-	}
+	// FIXME
+	//tx := models.Tx(c)
+	//f, err := c.File(fileFieldName)
+	//if err != nil {
+	//	err := fmt.Errorf("error getting uploaded file from context ... %v", err)
+	//	return reportError(c, api.NewAppError(err, api.ErrorReceivingFile, api.CategoryInternal))
+	//}
+	//
+	//if f.Size > int64(domain.MaxFileSize) {
+	//	err := fmt.Errorf("file upload size (%v) greater than max (%v)", f.Size, domain.MaxFileSize)
+	//	return reportError(c, api.NewAppError(err, api.ErrorStoreFileTooLarge, api.CategoryUser))
+	//}
+	//
+	//response, err := models.ImportPolicies(tx, f)
+	//if err != nil {
+	//	return reportError(c, err)
+	//}
+	//
+	//return renderOk(c, response)
 
-	if f.Size > int64(domain.MaxFileSize) {
-		err := fmt.Errorf("file upload size (%v) greater than max (%v)", f.Size, domain.MaxFileSize)
-		return reportError(c, api.NewAppError(err, api.ErrorStoreFileTooLarge, api.CategoryUser))
-	}
-
-	response, err := models.ImportPolicies(tx, f)
-	if err != nil {
-		return reportError(c, err)
-	}
-
-	return renderOk(c, response)
+	return renderOk(c, nil)
 }
 
 // getReferencedPolicyFromCtx pulls the models.Policy resource from context that was put there
 // by the AuthZ middleware
-func getReferencedPolicyFromCtx(c buffalo.Context) *models.Policy {
-	policy, ok := c.Value(domain.TypePolicy).(*models.Policy)
+func getReferencedPolicyFromCtx(c echo.Context) *models.Policy {
+	policy, ok := c.Get(domain.TypePolicy).(*models.Policy)
 	if !ok {
 		panic("policy not found in context")
 	}

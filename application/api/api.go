@@ -7,8 +7,8 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/gobuffalo/buffalo"
 	"github.com/gobuffalo/pop/v6"
+	"github.com/labstack/echo/v4"
 
 	"github.com/silinternational/cover-api/domain"
 )
@@ -125,18 +125,19 @@ func (a *AppError) SetHttpStatusFromCategory() {
 
 // LoadTranslatedMessage assigns the error message by translating the Key into a user-friendly string, either
 // from a list of translated strings (see errors.en) or by breaking down the Key into individual words
-func (a *AppError) LoadTranslatedMessage(c buffalo.Context) {
+func (a *AppError) LoadTranslatedMessage(c echo.Context) {
 	key := a.Key
 
 	if a.HttpStatus == http.StatusInternalServerError {
 		key = ErrorGenericInternalServer
 	}
 
-	msgID := "Error." + key.String()
-	a.Message = domain.T.Translate(c, msgID, a.Extras)
-	if a.Message == msgID {
-		a.Message = keyToReadableString(a.Key.String())
-	}
+	// FIXME: implement translations using a different library
+	// msgID := "Error." + key.String()
+	// a.Message = domain.T.Translate(c, msgID, a.Extras)
+	// if a.Message == msgID {
+	a.Message = keyToReadableString(key.String())
+	//}
 }
 
 // keyToReadableString takes a key like ErrorSomethingSomethingOther and returns Error something something other

@@ -1,18 +1,17 @@
 package models
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"net/http"
 	"time"
 
-	"github.com/gobuffalo/buffalo"
 	"github.com/gobuffalo/events"
 	"github.com/gobuffalo/nulls"
 	"github.com/gobuffalo/pop/v6"
 	"github.com/gobuffalo/validate/v3"
 	"github.com/gofrs/uuid"
+	"github.com/labstack/echo/v4"
 
 	"github.com/silinternational/cover-api/api"
 	"github.com/silinternational/cover-api/domain"
@@ -116,7 +115,7 @@ func (c *Claim) Validate(tx *pop.Connection) (*validate.Errors, error) {
 
 // CreateWithHistory stores the Claim data as a new record in the database. Also creates a ClaimHistory record.
 // If its status is not valid, it is created in Draft status.
-func (c *Claim) CreateWithHistory(ctx context.Context) error {
+func (c *Claim) CreateWithHistory(ctx echo.Context) error {
 	tx := Tx(ctx)
 
 	if err := c.Create(tx); err != nil {
@@ -141,7 +140,7 @@ func (c *Claim) Create(tx *pop.Connection) error {
 }
 
 // Update writes the Claim data to an existing database record.
-func (c *Claim) Update(ctx context.Context) error {
+func (c *Claim) Update(ctx echo.Context) error {
 	tx := Tx(ctx)
 
 	var oldClaim Claim
@@ -190,7 +189,7 @@ func (c *Claim) Update(ctx context.Context) error {
 
 // UpdateByUser ensures the Claim has an appropriate status for being modified by the user and then writes the Claim
 // data to an existing database record.
-func (c *Claim) UpdateByUser(ctx context.Context) error {
+func (c *Claim) UpdateByUser(ctx echo.Context) error {
 	user := CurrentUser(ctx)
 
 	// If the user edits something, it should take it off of the steward's list of things to review and
@@ -219,7 +218,7 @@ func (c *Claim) UpdateByUser(ctx context.Context) error {
 
 // Delete ensures the claim does not have a status of approved, denied or paid and then deletes the claim's items and
 // the claim itself.
-func (c *Claim) Delete(ctx context.Context) error {
+func (c *Claim) Delete(ctx echo.Context) error {
 	tx := Tx(ctx)
 
 	var oldClaim Claim
@@ -377,7 +376,7 @@ func isClaimTransitionValid(status1, status2 api.ClaimStatus) (bool, error) {
 	return false, nil
 }
 
-func (c *Claim) AddItem(ctx context.Context, input api.ClaimItemCreateInput) (ClaimItem, error) {
+func (c *Claim) AddItem(ctx echo.Context, input api.ClaimItemCreateInput) (ClaimItem, error) {
 	tx := Tx(ctx)
 	if c == nil {
 		panic("claim is nil in AddItem")
@@ -422,7 +421,7 @@ func (c *Claim) AddItem(ctx context.Context, input api.ClaimItemCreateInput) (Cl
 }
 
 // SubmitForApproval changes the status of the claim to either Review1 or Review2 depending on its current status.
-func (c *Claim) SubmitForApproval(ctx context.Context) error {
+func (c *Claim) SubmitForApproval(ctx echo.Context) error {
 	tx := Tx(ctx)
 	user := CurrentUser(ctx)
 
@@ -475,7 +474,7 @@ func (c *Claim) SubmitForApproval(ctx context.Context) error {
 }
 
 // RequestRevision changes the status of the claim to Revision
-func (c *Claim) RequestRevision(ctx context.Context, message string) error {
+func (c *Claim) RequestRevision(ctx echo.Context, message string) error {
 	user := CurrentUser(ctx)
 
 	c.Status = api.ClaimStatusRevision
@@ -498,7 +497,7 @@ func (c *Claim) RequestRevision(ctx context.Context, message string) error {
 }
 
 // RequestReceipt changes the status of the claim to Receipt provided that the current status is Review1.
-func (c *Claim) RequestReceipt(ctx buffalo.Context, reason string) error {
+func (c *Claim) RequestReceipt(ctx echo.Context, reason string) error {
 	oldStatus := c.Status
 	var eventType string
 
@@ -535,7 +534,7 @@ func (c *Claim) RequestReceipt(ctx buffalo.Context, reason string) error {
 
 // Approve changes the status of the claim from either Review1, Review2 to Review3 or from Review3 to Approved. It also
 // adds the ReviewerID and ReviewDate.
-func (c *Claim) Approve(ctx context.Context) error {
+func (c *Claim) Approve(ctx echo.Context) error {
 	var eventType string
 
 	user := CurrentUser(ctx)
@@ -591,7 +590,7 @@ func (c *Claim) Approve(ctx context.Context) error {
 }
 
 // Deny changes the status of the claim to Denied and adds the ReviewerID and ReviewDate.
-func (c *Claim) Deny(ctx context.Context, message string) error {
+func (c *Claim) Deny(ctx echo.Context, message string) error {
 	oldStatus := c.Status
 
 	if oldStatus != api.ClaimStatusReview1 && oldStatus != api.ClaimStatusReview2 &&
@@ -871,7 +870,7 @@ func (c *Claim) Compare(old Claim) []FieldUpdate {
 	return updates
 }
 
-func (c *Claim) NewHistory(ctx context.Context, action string, fieldUpdate FieldUpdate) ClaimHistory {
+func (c *Claim) NewHistory(ctx echo.Context, action string, fieldUpdate FieldUpdate) ClaimHistory {
 	return ClaimHistory{
 		Action:    action,
 		ClaimID:   c.ID,
@@ -882,7 +881,7 @@ func (c *Claim) NewHistory(ctx context.Context, action string, fieldUpdate Field
 	}
 }
 
-func (c *Claim) setReviewer(ctx context.Context) {
+func (c *Claim) setReviewer(ctx echo.Context) {
 	actor := CurrentUser(ctx)
 	c.ReviewerID = nulls.NewUUID(actor.ID)
 	c.ReviewDate = nulls.NewTime(time.Now().UTC())
@@ -954,7 +953,7 @@ func (c *Claim) CreateLedgerEntry(tx *pop.Connection) error {
 	return nil
 }
 
-func (c *Claim) UpdateStatus(ctx context.Context, newStatus api.ClaimStatus) error {
+func (c *Claim) UpdateStatus(ctx echo.Context, newStatus api.ClaimStatus) error {
 	if newStatus == c.Status {
 		return nil
 	}
@@ -1001,7 +1000,7 @@ func (c *Claim) SubmittedAt(tx *pop.Connection) time.Time {
 	return histories[0].CreatedAt
 }
 
-func (c *Claim) calculatePayout(ctx context.Context) error {
+func (c *Claim) calculatePayout(ctx echo.Context) error {
 	switch c.Status {
 	case api.ClaimStatusPaid, api.ClaimStatusDenied, api.ClaimStatusApproved:
 		return nil

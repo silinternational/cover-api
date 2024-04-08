@@ -1,12 +1,16 @@
 package job
 
 import (
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"runtime/debug"
+	"strings"
 	"time"
 
 	"github.com/gobuffalo/buffalo"
 	"github.com/gobuffalo/buffalo/worker"
+	"github.com/labstack/echo/v4"
 
 	"github.com/silinternational/cover-api/domain"
 	"github.com/silinternational/cover-api/log"
@@ -49,10 +53,10 @@ func (j *jobBuffaloContext) Set(key string, val any) {
 }
 
 // createJobContext creates an empty context
-func createJobContext() buffalo.Context {
-	ctx := &jobBuffaloContext{
-		params: map[any]any{},
-	}
+func createJobContext() echo.Context {
+	req := httptest.NewRequest(http.MethodGet, "/", strings.NewReader(""))
+	rec := httptest.NewRecorder()
+	ctx := echo.New().NewContext(req, rec) // TODO: make sure this works
 
 	user := models.GetServiceUser(models.DB)
 	ctx.Set(domain.ContextKeyCurrentUser, user)

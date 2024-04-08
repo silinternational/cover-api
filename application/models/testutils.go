@@ -11,11 +11,15 @@ import (
 	"fmt"
 	"log"
 	"math/rand"
+	"net/http"
+	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/gobuffalo/events"
 	"github.com/gobuffalo/pop/v6"
+	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/require"
 
 	"github.com/silinternational/cover-api/storage"
@@ -75,11 +79,16 @@ func (b *TestBuffaloContext) Set(key string, val any) {
 }
 
 // CreateTestContext sets the domain.ContextKeyCurrentUser to the user param in the TestBuffaloContext
-func CreateTestContext(user User) buffalo.Context {
-	ctx := &TestBuffaloContext{
-		params: map[any]any{},
-	}
+func CreateTestContext(user User) echo.Context {
+	ctx := testContext()
 	ctx.Set(domain.ContextKeyCurrentUser, user)
+	return ctx
+}
+
+func testContext() echo.Context {
+	req := httptest.NewRequest(http.MethodGet, "/", strings.NewReader(""))
+	rec := httptest.NewRecorder()
+	ctx := echo.New().NewContext(req, rec)
 	return ctx
 }
 

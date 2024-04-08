@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/gobuffalo/buffalo"
+	"github.com/labstack/echo/v4"
 
 	"github.com/silinternational/cover-api/api"
 	"github.com/silinternational/cover-api/domain"
@@ -29,7 +29,7 @@ import (
 //	      type: array
 //	      items:
 //	        "$ref": "#/definitions/Item"
-func itemsList(c buffalo.Context) error {
+func itemsList(c echo.Context) error {
 	tx := models.Tx(c)
 
 	policy := getReferencedPolicyFromCtx(c)
@@ -61,7 +61,7 @@ func itemsList(c buffalo.Context) error {
 //	    description: new Item
 //	    schema:
 //	      "$ref": "#/definitions/Item"
-func itemsCreate(c buffalo.Context) error {
+func itemsCreate(c echo.Context) error {
 	tx := models.Tx(c)
 	policy := getReferencedPolicyFromCtx(c)
 
@@ -81,7 +81,7 @@ func itemsCreate(c buffalo.Context) error {
 
 	output := item.ConvertToAPI(tx)
 
-	return c.Render(http.StatusOK, r.JSON(output))
+	return c.JSON(http.StatusOK, output)
 }
 
 // swagger:operation PUT /items/{id} PolicyItems PolicyItemsUpdate
@@ -106,7 +106,7 @@ func itemsCreate(c buffalo.Context) error {
 //	    description: updated Item
 //	    schema:
 //	      "$ref": "#/definitions/Item"
-func itemsUpdate(c buffalo.Context) error {
+func itemsUpdate(c echo.Context) error {
 	tx := models.Tx(c)
 	item := getReferencedItemFromCtx(c)
 
@@ -146,7 +146,7 @@ func itemsUpdate(c buffalo.Context) error {
 	}
 
 	output := item.ConvertToAPI(tx)
-	return c.Render(http.StatusOK, r.JSON(output))
+	return c.JSON(http.StatusOK, output)
 }
 
 // swagger:operation POST /items/{id}/submit PolicyItems PolicyItemsSubmit
@@ -165,7 +165,7 @@ func itemsUpdate(c buffalo.Context) error {
 //	    description: submitted Item
 //	    schema:
 //	      "$ref": "#/definitions/Item"
-func itemsSubmit(c buffalo.Context) error {
+func itemsSubmit(c echo.Context) error {
 	tx := models.Tx(c)
 	item := getReferencedItemFromCtx(c)
 
@@ -174,7 +174,7 @@ func itemsSubmit(c buffalo.Context) error {
 	}
 
 	output := item.ConvertToAPI(tx)
-	return c.Render(http.StatusOK, r.JSON(output))
+	return c.JSON(http.StatusOK, output)
 }
 
 // swagger:operation POST /items/{id}/revision PolicyItems PolicyItemsRevision
@@ -199,7 +199,7 @@ func itemsSubmit(c buffalo.Context) error {
 //	    description: Policy Item
 //	    schema:
 //	      "$ref": "#/definitions/Item"
-func itemsRevision(c buffalo.Context) error {
+func itemsRevision(c echo.Context) error {
 	tx := models.Tx(c)
 	item := getReferencedItemFromCtx(c)
 
@@ -213,7 +213,7 @@ func itemsRevision(c buffalo.Context) error {
 	}
 
 	output := item.ConvertToAPI(tx)
-	return c.Render(http.StatusOK, r.JSON(output))
+	return c.JSON(http.StatusOK, output)
 }
 
 // swagger:operation POST /items/{id}/approve PolicyItems PolicyItemsApprove
@@ -232,7 +232,7 @@ func itemsRevision(c buffalo.Context) error {
 //	    description: approved Item
 //	    schema:
 //	      "$ref": "#/definitions/Item"
-func itemsApprove(c buffalo.Context) error {
+func itemsApprove(c echo.Context) error {
 	tx := models.Tx(c)
 	item := getReferencedItemFromCtx(c)
 
@@ -241,7 +241,7 @@ func itemsApprove(c buffalo.Context) error {
 	}
 
 	output := item.ConvertToAPI(tx)
-	return c.Render(http.StatusOK, r.JSON(output))
+	return c.JSON(http.StatusOK, output)
 }
 
 // swagger:operation POST /items/{id}/deny PolicyItems PolicyItemsDeny
@@ -266,7 +266,7 @@ func itemsApprove(c buffalo.Context) error {
 //	    description: denied Item
 //	    schema:
 //	      "$ref": "#/definitions/Item"
-func itemsDeny(c buffalo.Context) error {
+func itemsDeny(c echo.Context) error {
 	tx := models.Tx(c)
 	item := getReferencedItemFromCtx(c)
 
@@ -280,7 +280,7 @@ func itemsDeny(c buffalo.Context) error {
 	}
 
 	output := item.ConvertToAPI(tx)
-	return c.Render(http.StatusOK, r.JSON(output))
+	return c.JSON(http.StatusOK, output)
 }
 
 // swagger:operation DELETE /items/{id} PolicyItems PolicyItemsRemove
@@ -297,7 +297,7 @@ func itemsDeny(c buffalo.Context) error {
 //	responses:
 //	  '204':
 //	    description: OK but no content in response
-func itemsRemove(c buffalo.Context) error {
+func itemsRemove(c echo.Context) error {
 	item := getReferencedItemFromCtx(c)
 
 	now := time.Now().UTC()
@@ -310,13 +310,13 @@ func itemsRemove(c buffalo.Context) error {
 		return reportError(c, err)
 	}
 
-	return c.Render(http.StatusNoContent, nil)
+	return c.JSON(http.StatusNoContent, nil)
 }
 
 // getReferencedItemFromCtx pulls the models.Item resource from context that was put there
 // by the AuthZ middleware
-func getReferencedItemFromCtx(c buffalo.Context) *models.Item {
-	item, ok := c.Value(domain.TypeItem).(*models.Item)
+func getReferencedItemFromCtx(c echo.Context) *models.Item {
+	item, ok := c.Get(domain.TypeItem).(*models.Item)
 	if !ok {
 		panic("item not found in context")
 	}

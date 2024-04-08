@@ -8,8 +8,7 @@ import (
 )
 
 func (as *ActionSuite) Test_HomeHandler() {
-	res := as.JSON("/").Get()
-
-	as.Equal(http.StatusOK, res.Code)
-	as.Contains(res.Body.String(), fmt.Sprintf("Welcome to %s API", domain.Env.AppName))
+	body, status := as.request("GET", "/", "", nil)
+	as.Equal(http.StatusOK, status)
+	as.Contains(string(body), fmt.Sprintf("Welcome to %s API", domain.Env.AppName))
 }

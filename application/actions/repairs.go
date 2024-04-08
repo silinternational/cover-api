@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/gobuffalo/buffalo"
+	"github.com/labstack/echo/v4"
 
 	"github.com/silinternational/cover-api/api"
 	"github.com/silinternational/cover-api/domain"
@@ -33,7 +33,7 @@ import (
 //	    description: the repair result
 //	    schema:
 //	      "$ref": "#/definitions/RepairResult"
-func repairsRun(c buffalo.Context) error {
+func repairsRun(c echo.Context) error {
 	actor := models.CurrentUser(c)
 	if !actor.IsAdmin() {
 		err := fmt.Errorf("user not allowed to run repair")
@@ -67,7 +67,7 @@ func repairsRun(c buffalo.Context) error {
 	return renderOk(c, result)
 }
 
-func runRenewalRepair(c buffalo.Context, date time.Time) (api.RepairResult, error) {
+func runRenewalRepair(c echo.Context, date time.Time) (api.RepairResult, error) {
 	tx := models.Tx(c)
 
 	var result api.RepairResult

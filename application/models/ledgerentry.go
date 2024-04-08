@@ -1,7 +1,6 @@
 package models
 
 import (
-	"context"
 	"fmt"
 	"strings"
 	"time"
@@ -9,6 +8,7 @@ import (
 	"github.com/gobuffalo/nulls"
 	"github.com/gobuffalo/pop/v6"
 	"github.com/gofrs/uuid"
+	"github.com/labstack/echo/v4"
 
 	"github.com/silinternational/cover-api/api"
 	"github.com/silinternational/cover-api/domain"
@@ -157,7 +157,7 @@ func (le *LedgerEntries) ExportForPolicy() ([]byte, string) {
 type TransactionBlocks map[string]LedgerEntries // keyed by account
 
 // NewReport creates a new LedgerReport with the current LedgerEntries
-func (le *LedgerEntries) NewReport(ctx context.Context, reportFormat, reportType string, date time.Time) LedgerReport {
+func (le *LedgerEntries) NewReport(ctx echo.Context, reportFormat, reportType string, date time.Time) LedgerReport {
 	report := LedgerReport{
 		Date: date,
 		Type: reportType,
@@ -254,7 +254,7 @@ func (le *LedgerEntries) MakeBlocks() TransactionBlocks {
 
 // Reconcile marks each LedgerEntry as "entered" into the accounting system, and makes any
 // necessary updates to the referenced objects, such as setting Claim status to Paid.
-func (le *LedgerEntries) Reconcile(ctx context.Context) error {
+func (le *LedgerEntries) Reconcile(ctx echo.Context) error {
 	now := time.Now().UTC()
 	for _, e := range *le {
 		if err := e.Reconcile(ctx, now); err != nil {
@@ -266,7 +266,7 @@ func (le *LedgerEntries) Reconcile(ctx context.Context) error {
 
 // Reconcile marks the LedgerEntry as "entered" into the accounting system, and makes any
 // necessary updates to the referenced objects, such as setting Claim status to Paid.
-func (le *LedgerEntry) Reconcile(ctx context.Context, now time.Time) error {
+func (le *LedgerEntry) Reconcile(ctx echo.Context, now time.Time) error {
 	tx := Tx(ctx)
 
 	le.DateEntered = nulls.NewTime(now)

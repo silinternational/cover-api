@@ -3,7 +3,7 @@ package actions
 import (
 	"fmt"
 
-	"github.com/gobuffalo/buffalo"
+	"github.com/labstack/echo/v4"
 
 	"github.com/silinternational/cover-api/api"
 	"github.com/silinternational/cover-api/models"
@@ -20,7 +20,7 @@ import (
 //	    description: a list of Items and a list of Claims which each have the time when their status was last changed.
 //	    schema:
 //	      "$ref": "#/definitions/RecentObjects"
-func stewardListRecentObjects(c buffalo.Context) error {
+func stewardListRecentObjects(c echo.Context) error {
 	actor := models.CurrentUser(c)
 	if !actor.IsAdmin() {
 		err := fmt.Errorf("actor not allowed to perform that action on this resource")

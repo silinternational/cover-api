@@ -8,7 +8,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/gobuffalo/buffalo"
+	"github.com/labstack/echo/v4"
 	saml2 "github.com/russellhaering/gosaml2"
 	"github.com/russellhaering/gosaml2/types"
 	dsig "github.com/russellhaering/goxmldsig"
@@ -96,16 +96,16 @@ func (p *Provider) initSAMLServiceProvider() error {
 }
 
 // AuthRequest returns the URL for the authentication end-point
-func (p *Provider) AuthRequest(c buffalo.Context) (string, error) {
+func (p *Provider) AuthRequest(c echo.Context) (string, error) {
 	return p.SamlProvider.BuildAuthURL("")
 }
 
 // AuthCallback gets information about the user from the saml assertion.
-func (p *Provider) AuthCallback(c buffalo.Context) auth.Response {
+func (p *Provider) AuthCallback(c echo.Context) auth.Response {
 	resp := auth.Response{}
 
 	// check if this is not a saml response and redirect
-	samlResp := c.Param("SAMLResponse")
+	samlResp := c.QueryParam("SAMLResponse")
 	if samlResp == "" {
 		resp.RedirectURL, resp.Error = p.SamlProvider.BuildAuthURL("")
 		return resp
@@ -122,7 +122,7 @@ func (p *Provider) AuthCallback(c buffalo.Context) auth.Response {
 	return resp
 }
 
-func (p *Provider) Logout(c buffalo.Context) auth.Response {
+func (p *Provider) Logout(c echo.Context) auth.Response {
 	resp := auth.Response{}
 	err := auth.Logout(c.Response(), c.Request())
 	if err != nil {

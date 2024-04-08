@@ -1,7 +1,7 @@
 package actions
 
 import (
-	"github.com/gobuffalo/buffalo"
+	"github.com/labstack/echo/v4"
 
 	"github.com/silinternational/cover-api/api"
 	"github.com/silinternational/cover-api/domain"
@@ -21,7 +21,7 @@ import (
 //	      type: array
 //	      items:
 //	        "$ref": "#/definitions/EntityCode"
-func entityCodesList(c buffalo.Context) error {
+func entityCodesList(c echo.Context) error {
 	tx := models.Tx(c)
 	actor := models.CurrentUser(c)
 	var entityCodes models.EntityCodes
@@ -53,7 +53,7 @@ func entityCodesList(c buffalo.Context) error {
 //	   description: an Entity Code record
 //	   schema:
 //	     "$ref": "#/definitions/EntityCode"
-func entityCodesView(c buffalo.Context) error {
+func entityCodesView(c echo.Context) error {
 	e := getReferencedEntityCodeFromCtx(c)
 	return renderEntityCode(c, *e)
 }
@@ -80,7 +80,7 @@ func entityCodesView(c buffalo.Context) error {
 //	   description: an Entity Code record
 //	   schema:
 //	     "$ref": "#/definitions/EntityCode"
-func entityCodesUpdate(c buffalo.Context) error {
+func entityCodesUpdate(c echo.Context) error {
 	e := getReferencedEntityCodeFromCtx(c)
 	var input api.EntityCodeInput
 	if err := StrictBind(c, &input); err != nil {
@@ -110,7 +110,7 @@ func entityCodesUpdate(c buffalo.Context) error {
 //	   description: an Entity Code record
 //	   schema:
 //	     "$ref": "#/definitions/EntityCode"
-func entityCodesCreate(c buffalo.Context) error {
+func entityCodesCreate(c echo.Context) error {
 	var input api.EntityCodeCreateInput
 	if err := StrictBind(c, &input); err != nil {
 		return reportError(c, err)
@@ -125,15 +125,15 @@ func entityCodesCreate(c buffalo.Context) error {
 
 // getReferencedEntityCodeFromCtx pulls the models.EntityCode resource from context that was put there
 // by the AuthZ middleware
-func getReferencedEntityCodeFromCtx(c buffalo.Context) *models.EntityCode {
-	entityCode, ok := c.Value(domain.TypeEntityCode).(*models.EntityCode)
+func getReferencedEntityCodeFromCtx(c echo.Context) *models.EntityCode {
+	entityCode, ok := c.Get(domain.TypeEntityCode).(*models.EntityCode)
 	if !ok {
 		panic("entityCode not found in context")
 	}
 	return entityCode
 }
 
-func renderEntityCode(c buffalo.Context, e models.EntityCode) error {
+func renderEntityCode(c echo.Context, e models.EntityCode) error {
 	tx := models.Tx(c)
 	user := models.CurrentUser(c)
 	return renderOk(c, e.ConvertToAPI(tx, user.IsAdmin()))

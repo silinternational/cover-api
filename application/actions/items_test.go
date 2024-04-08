@@ -92,13 +92,9 @@ func (as *ActionSuite) Test_ItemsList() {
 
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
-			req := as.JSON("/%s/%s/%s", domain.TypePolicy, tt.policy.ID.String(), domain.TypeItem)
-			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
-			req.Headers["content-type"] = domain.ContentJson
-			res := req.Get()
-
-			body := res.Body.String()
-			as.Equal(tt.wantStatus, res.Code, "incorrect status code returned, body: %s", body)
+			path := fmt.Sprintf("/%s/%s/%s", domain.TypePolicy, tt.policy.ID.String(), domain.TypeItem)
+			body, status := as.request("GET", path, tt.actor.Email, nil)
+			as.Equal(tt.wantStatus, status, "incorrect status code returned, body: %s", body)
 
 			as.verifyResponseData(tt.wantInBody, body, "Items List")
 
@@ -106,12 +102,12 @@ func (as *ActionSuite) Test_ItemsList() {
 				as.NotContains(body, tt.notWantInBody)
 			}
 
-			if res.Code != http.StatusOK {
+			if status != http.StatusOK {
 				return
 			}
 
 			var items api.Items
-			err := json.Unmarshal([]byte(body), &items)
+			err := json.Unmarshal(body, &items)
 			as.NoError(err)
 			as.Equal(tt.wantCount, len(items), "incorrect count of items")
 		})
@@ -199,22 +195,18 @@ func (as *ActionSuite) Test_ItemsCreate() {
 
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
-			req := as.JSON("/%s/%s/%s", domain.TypePolicy, tt.policy.ID.String(), domain.TypeItem)
-			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
-			req.Headers["content-type"] = domain.ContentJson
-			res := req.Post(tt.newItem)
-
-			body := res.Body.String()
-			as.Equal(tt.wantStatus, res.Code, "incorrect status code returned, body: %s", body)
+			path := fmt.Sprintf("/%s/%s/%s", domain.TypePolicy, tt.policy.ID.String(), domain.TypeItem)
+			body, status := as.request("POST", path, tt.actor.Email, tt.newItem)
+			as.Equal(tt.wantStatus, status, "incorrect status code returned, body: %s", body)
 
 			as.verifyResponseData(tt.wantInBody, body, "Items Create")
 
-			if res.Code != http.StatusOK {
+			if status != http.StatusOK {
 				return
 			}
 
 			var apiItem api.Item
-			err := json.Unmarshal([]byte(body), &apiItem)
+			err := json.Unmarshal(body, &apiItem)
 			as.NoError(err)
 
 			var item models.Item
@@ -300,17 +292,13 @@ func (as *ActionSuite) Test_ItemsSubmit() {
 
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
-			req := as.JSON("/%s/%s/%s", domain.TypeItem, tt.oldItem.ID.String(), api.ResourceSubmit)
-			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
-			req.Headers["content-type"] = domain.ContentJson
-			res := req.Post(nil)
-
-			body := res.Body.String()
-			as.Equal(tt.wantStatus, res.Code, "incorrect status code returned, body: %s", body)
+			path := fmt.Sprintf("/%s/%s/%s", domain.TypeItem, tt.oldItem.ID.String(), api.ResourceSubmit)
+			body, status := as.request("POST", path, tt.actor.Email, nil)
+			as.Equal(tt.wantStatus, status, "incorrect status code returned, body: %s", body)
 
 			as.verifyResponseData(tt.wantInBody, body, "")
 
-			if res.Code != http.StatusOK {
+			if status != http.StatusOK {
 				return
 			}
 
@@ -414,17 +402,13 @@ func (as *ActionSuite) Test_ItemsRevision() {
 
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
-			req := as.JSON("/%s/%s/%s", domain.TypeItem, tt.oldItem.ID.String(), api.ResourceRevision)
-			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
-			req.Headers["content-type"] = domain.ContentJson
-			res := req.Post(api.ItemStatusInput{StatusReason: tt.reason})
-
-			body := res.Body.String()
-			as.Equal(tt.wantStatus, res.Code, "incorrect status code returned, body: %s", body)
+			path := fmt.Sprintf("/%s/%s/%s", domain.TypeItem, tt.oldItem.ID.String(), api.ResourceRevision)
+			body, status := as.request("POST", path, tt.actor.Email, api.ItemStatusInput{StatusReason: tt.reason})
+			as.Equal(tt.wantStatus, status, "incorrect status code returned, body: %s", body)
 
 			as.verifyResponseData(tt.wantInBody, body, "Items Revision")
 
-			if res.Code != http.StatusOK {
+			if status != http.StatusOK {
 				return
 			}
 
@@ -504,17 +488,13 @@ func (as *ActionSuite) Test_ItemsApprove() {
 
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
-			req := as.JSON("/%s/%s/%s", domain.TypeItem, tt.oldItem.ID.String(), api.ResourceApprove)
-			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
-			req.Headers["content-type"] = domain.ContentJson
-			res := req.Post(nil)
-
-			body := res.Body.String()
-			as.Equal(tt.wantStatus, res.Code, "incorrect status code returned, body: %s", body)
+			path := fmt.Sprintf("/%s/%s/%s", domain.TypeItem, tt.oldItem.ID.String(), api.ResourceApprove)
+			body, status := as.request("POST", path, tt.actor.Email, nil)
+			as.Equal(tt.wantStatus, status, "incorrect status code returned, body: %s", body)
 
 			as.verifyResponseData(tt.wantInBody, body, "Items Approve")
 
-			if res.Code != http.StatusOK {
+			if status != http.StatusOK {
 				return
 			}
 
@@ -606,18 +586,14 @@ func (as *ActionSuite) Test_ItemsDeny() {
 
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
-			req := as.JSON("/%s/%s/%s", domain.TypeItem, tt.oldItem.ID.String(), api.ResourceDeny)
-			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
-			req.Headers["content-type"] = domain.ContentJson
+			path := fmt.Sprintf("/%s/%s/%s", domain.TypeItem, tt.oldItem.ID.String(), api.ResourceDeny)
 
-			res := req.Post(api.ItemStatusInput{StatusReason: tt.reason})
-
-			body := res.Body.String()
-			as.Equal(tt.wantStatus, res.Code, "incorrect status code returned, body: %s", body)
+			body, status := as.request("POST", path, tt.actor.Email, api.ItemStatusInput{StatusReason: tt.reason})
+			as.Equal(tt.wantStatus, status, "incorrect status code returned, body: %s", body)
 
 			as.verifyResponseData(tt.wantInBody, body, "Items Deny")
 
-			if res.Code != http.StatusOK {
+			if status != http.StatusOK {
 				return
 			}
 
@@ -746,22 +722,18 @@ func (as *ActionSuite) Test_ItemsUpdate() {
 
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
-			req := as.JSON("/items/%s", tt.oldItem.ID.String())
-			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
-			req.Headers["content-type"] = domain.ContentJson
-			res := req.Put(tt.newItem)
-
-			body := res.Body.String()
-			as.Equal(tt.wantStatus, res.Code, "incorrect status code returned, body: %s", body)
+			path := fmt.Sprintf("/items/%s", tt.oldItem.ID.String())
+			body, status := as.request("PUT", path, tt.actor.Email, tt.newItem)
+			as.Equal(tt.wantStatus, status, "incorrect status code returned, body: %s", body)
 
 			as.verifyResponseData(tt.wantInBody, body, "")
 
-			if res.Code != http.StatusOK {
+			if status != http.StatusOK {
 				return
 			}
 
 			var apiItem api.Item
-			err := json.Unmarshal([]byte(body), &apiItem)
+			err := json.Unmarshal(body, &apiItem)
 			as.NoError(err)
 
 			var item models.Item
@@ -861,15 +833,11 @@ func (as *ActionSuite) Test_ItemsRemove() {
 
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
-			req := as.JSON("/%s/%s", domain.TypeItem, tt.item.ID.String())
-			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
-			req.Headers["content-type"] = domain.ContentJson
-			res := req.Delete()
+			path := fmt.Sprintf("/%s/%s", domain.TypeItem, tt.item.ID.String())
+			body, status := as.request("DELETE", path, tt.actor.Email, nil)
+			as.Equal(tt.wantHTTPStatus, status, "incorrect status code returned, body: %s", body)
 
-			body := res.Body.String()
-			as.Equal(tt.wantHTTPStatus, res.Code, "incorrect status code returned, body: %s", body)
-
-			if res.Code != http.StatusNoContent {
+			if status != http.StatusNoContent {
 				as.verifyResponseData(tt.wantInBody, body, "")
 				return
 			}

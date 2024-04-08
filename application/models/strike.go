@@ -1,13 +1,13 @@
 package models
 
 import (
-	"context"
 	"net/http"
 	"time"
 
 	"github.com/gobuffalo/pop/v6"
 	"github.com/gobuffalo/validate/v3"
 	"github.com/gofrs/uuid"
+	"github.com/labstack/echo/v4"
 
 	"github.com/silinternational/cover-api/api"
 	"github.com/silinternational/cover-api/domain"
@@ -34,7 +34,7 @@ func (s *Strike) Create(tx *pop.Connection) error {
 	return create(tx, s)
 }
 
-func (s *Strike) Update(ctx context.Context) error {
+func (s *Strike) Update(ctx echo.Context) error {
 	return update(Tx(ctx), s)
 }
 

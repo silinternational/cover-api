@@ -12,10 +12,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/gobuffalo/buffalo"
 	mwi18n "github.com/gobuffalo/mw-i18n/v2"
 	"github.com/gofrs/uuid"
 	"github.com/kelseyhightower/envconfig"
+	"github.com/labstack/echo/v4"
 
 	"github.com/silinternational/cover-api/log"
 )
@@ -135,7 +135,7 @@ var Env = readEnv()
 
 type EnvStruct struct {
 	GoEnv                      string `default:"development" split_words:"true"`
-	ApiBaseURL                 string `required:"true" split_words:"true"`
+	ApiBaseURL                 string `default:"localhost" split_words:"true"`
 	AccessTokenLifetimeSeconds int    `default:"1166400" split_words:"true"` // 13.5 days
 	AppName                    string `default:"Cover" split_words:"true"`
 	LogLevel                   string `default:"debug" split_words:"true"`
@@ -145,7 +145,7 @@ type EnvStruct struct {
 	ListenerDelayMilliseconds int `default:"1000" split_words:"true"`
 	ListenerMaxRetries        int `default:"10" split_words:"true"`
 
-	SessionSecret string `required:"true" split_words:"true"`
+	SessionSecret string `default:"abc123" split_words:"true"`
 	UIURL         string `default:"http://missing.ui.url"`
 
 	SamlSpEntityId                  string `default:"" split_words:"true"`
@@ -171,7 +171,7 @@ type EnvStruct struct {
 	AwsS3ACL            string `default:"private" split_words:"true"`
 	AwsS3UrlLifeMinutes int    `default:"10" split_words:"true"`
 
-	EmailFromAddress string `required:"true" split_words:"true"`
+	EmailFromAddress string `default:"no_reply@example.com" split_words:"true"`
 	EmailService     string `default:"ses" split_words:"true"`
 	SupportEmail     string `default:"" split_words:"true"`
 	SupportURL       string `default:"" split_words:"true"`
@@ -198,8 +198,8 @@ type EnvStruct struct {
 	VehiclePremiumFactor  float64 `default:"0.02" split_words:"true"` // TODO use actual rate
 
 	FiscalStartMonth   int    `default:"1" split_words:"true"`
-	ExpenseAccount     string `required:"true" split_words:"true"`
-	ClaimIncomeAccount string `required:"true" split_words:"true"`
+	ExpenseAccount     string `default:"abc123" split_words:"true"`
+	ClaimIncomeAccount string `default:"000000" split_words:"true"`
 
 	// For local development only, TLS can be disabled
 	DisableTLS bool `default:"false" split_words:"true"`
@@ -253,7 +253,7 @@ func readEnv() *EnvStruct {
 }
 
 // NewExtra Sets a new key-value pair in the `extras` entry of the context
-func NewExtra(c buffalo.Context, key string, e any) {
+func NewExtra(c echo.Context, key string, e any) {
 	extras := getExtras(c)
 
 	extrasLock.Lock()
@@ -263,8 +263,8 @@ func NewExtra(c buffalo.Context, key string, e any) {
 	c.Set(ContextKeyExtras, extras)
 }
 
-func getExtras(c buffalo.Context) map[string]any {
-	extras, _ := c.Value(ContextKeyExtras).(map[string]any)
+func getExtras(c echo.Context) map[string]any {
+	extras, _ := c.Get(ContextKeyExtras).(map[string]any)
 	if extras == nil {
 		extras = map[string]any{}
 	}

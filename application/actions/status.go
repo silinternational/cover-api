@@ -3,7 +3,7 @@ package actions
 import (
 	"net/http"
 
-	"github.com/gobuffalo/buffalo"
+	"github.com/labstack/echo/v4"
 )
 
 // swagger:operation GET /status Status Status
@@ -15,6 +15,6 @@ import (
 //	responses:
 //	  '204':
 //	    description: app status is good
-func statusHandler(c buffalo.Context) error {
-	return c.Render(http.StatusNoContent, nil)
+func statusHandler(c echo.Context) error {
+	return c.JSON(http.StatusNoContent, nil)
 }

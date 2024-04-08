@@ -1,7 +1,6 @@
 package actions
 
 import (
-	"fmt"
 	"net/http"
 	"testing"
 
@@ -64,19 +63,15 @@ func (as *ActionSuite) Test_StewardListRecent() {
 
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
-			req := as.JSON(stewardPath + "/" + api.ResourceRecent)
-			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
-			req.Headers["content-type"] = domain.ContentJson
-			res := req.Get()
-
-			body := res.Body.String()
-			as.Equal(tt.wantStatus, res.Code, "incorrect status code returned, body: %s", body)
+			path := stewardPath + "/" + api.ResourceRecent
+			body, status := as.request("GET", path, tt.actor.Email, nil)
+			as.Equal(tt.wantStatus, status, "incorrect status code returned, body: %s", body)
 
 			if tt.notWantInBody != "" {
 				as.NotContains(body, tt.notWantInBody)
 			}
 
-			if res.Code != http.StatusOK {
+			if status != http.StatusOK {
 				return
 			}
 

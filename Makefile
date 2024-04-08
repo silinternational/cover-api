@@ -1,13 +1,13 @@
-dev: killdebug buffalo adminer migrate grifts
+dev: killdebug app adminer migrate grifts
 
 migrate: db
-	docker-compose run --rm buffalo whenavail db 5432 10 buffalo-pop pop migrate up
+	docker-compose run --rm app whenavail db 5432 10 buffalo-pop pop migrate up
 
 grifts: db
-	docker-compose run --rm buffalo /bin/bash -c "buffalo task db:seed && buffalo task minio:seed"
+	docker-compose run --rm app /bin/bash -c "buffalo task db:seed && buffalo task minio:seed"
 
 migratestatus: db
-	docker-compose run --rm buffalo buffalo-pop pop migrate status
+	docker-compose run --rm app buffalo-pop pop migrate status
 
 migratetestdb: testdb
 	docker-compose run --rm test whenavail testdb 5432 10 buffalo-pop pop migrate up
@@ -15,10 +15,10 @@ migratetestdb: testdb
 adminer:
 	docker-compose up -d adminer
 
-buffalo: db
-	docker-compose up -d buffalo
+app: db
+	docker-compose up -d app
 
-debug: killbuffalo killdebug rmdebug
+debug: killapp killdebug rmdebug
 	docker-compose up -d debug
 	docker-compose logs -f debug
 
@@ -29,12 +29,12 @@ swaggerspec:
 	docker-compose run --rm swagger swagger generate spec -m -o swagger.json
 
 bounce: db
-	docker-compose kill buffalo
-	docker-compose rm buffalo
-	docker-compose up -d buffalo
+	docker-compose kill app
+	docker-compose rm app
+	docker-compose up -d app
 
 logs:
-	docker-compose logs buffalo
+	docker-compose logs app
 
 minio:
 	docker-compose up -d minio
@@ -48,16 +48,16 @@ testdb:
 rmtestdb:
 	docker-compose kill testdb && docker-compose rm -f testdb
 
-test: testdb minio
+test: testdb migratetestdb minio
 	rm -f application/migrations/schema.sql
-	docker-compose run --rm test whenavail testdb 5432 10 buffalo test
+	docker-compose run --rm test whenavail testdb 5432 10 go test -p 1 -tags development ./...
 
 testenv: rmtestdb migratetestdb
 	@echo "\n\nIf minio hasn't been initialized, run buffalo task minio:seed\n"
 	docker-compose run --rm test bash
 
-killbuffalo:
-	docker-compose kill buffalo
+killapp:
+	docker-compose kill app
 
 killdebug:
 	docker-compose kill debug

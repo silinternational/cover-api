@@ -3,8 +3,9 @@ package actions
 import (
 	"errors"
 	"fmt"
+	"net/http"
 
-	"github.com/gobuffalo/buffalo"
+	"github.com/labstack/echo/v4"
 
 	"github.com/silinternational/cover-api/api"
 	"github.com/silinternational/cover-api/domain"
@@ -12,8 +13,12 @@ import (
 	"github.com/silinternational/cover-api/models"
 )
 
-func AuthN(next buffalo.Handler) buffalo.Handler {
-	return func(c buffalo.Context) error {
+func AuthN(next echo.HandlerFunc) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		if AuthnSkipper(c) {
+			return next(c)
+		}
+
 		bearerToken := domain.GetBearerTokenFromRequest(c.Request())
 		if bearerToken == "" {
 			err := errors.New("no bearer token provided")
@@ -44,8 +49,26 @@ func AuthN(next buffalo.Handler) buffalo.Handler {
 		c.Set(domain.ContextKeyCurrentUser, user)
 
 		// set person on log context
-		log.SetUser(c, user.ID.String(), user.GetName().String(), user.Email)
+		log.SetUser(c.Request().Context(), user.ID.String(), user.GetName().String(), user.Email)
 
 		return next(c)
 	}
+}
+
+func AuthnSkipper(c echo.Context) bool {
+	if c.Request().Method == http.MethodOptions {
+		return true
+	}
+	skipURLs := map[string]struct{}{
+		"/":              {},
+		"/auth/callback": {},
+		"/auth/login":    {},
+		"/auth/logout":   {},
+		"/robots.txt":    {},
+		"/status":        {},
+	}
+	if _, ok := skipURLs[c.Path()]; ok {
+		return true
+	}
+	return false
 }

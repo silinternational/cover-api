@@ -3,8 +3,8 @@ package actions
 import (
 	"net/http"
 
-	"github.com/gobuffalo/buffalo"
 	"github.com/gobuffalo/nulls"
+	"github.com/labstack/echo/v4"
 
 	"github.com/silinternational/cover-api/api"
 	"github.com/silinternational/cover-api/domain"
@@ -24,7 +24,7 @@ import (
 //	      type: array
 //	      items:
 //	        "$ref": "#/definitions/User"
-func usersList(c buffalo.Context) error {
+func usersList(c echo.Context) error {
 	var users models.Users
 	tx := models.Tx(c)
 	if err := users.GetAll(tx); err != nil {
@@ -52,7 +52,7 @@ func usersList(c buffalo.Context) error {
 //	    description: a user
 //	    schema:
 //	      "$ref": "#/definitions/User"
-func usersView(c buffalo.Context) error {
+func usersView(c echo.Context) error {
 	user := getReferencedUserFromCtx(c)
 	return renderUser(c, *user)
 }
@@ -68,7 +68,7 @@ func usersView(c buffalo.Context) error {
 //	    description: authenticated user
 //	    schema:
 //	      "$ref": "#/definitions/User"
-func usersMe(c buffalo.Context) error {
+func usersMe(c echo.Context) error {
 	return renderUser(c, models.CurrentUser(c))
 }
 
@@ -90,7 +90,7 @@ func usersMe(c buffalo.Context) error {
 //	    description: updated User
 //	    schema:
 //	      "$ref": "#/definitions/User"
-func usersMeUpdate(c buffalo.Context) error {
+func usersMeUpdate(c echo.Context) error {
 	tx := models.Tx(c)
 	user := models.CurrentUser(c)
 
@@ -130,7 +130,7 @@ func usersMeUpdate(c buffalo.Context) error {
 //	    description: the User
 //	    schema:
 //	      "$ref": "#/definitions/User"
-func usersMeFilesAttach(c buffalo.Context) error {
+func usersMeFilesAttach(c echo.Context) error {
 	var input api.UserFileAttachInput
 	if err := StrictBind(c, &input); err != nil {
 		return reportError(c, err)
@@ -156,7 +156,7 @@ func usersMeFilesAttach(c buffalo.Context) error {
 //	responses:
 //	  '204':
 //	    description: OK but no content in response
-func usersMeFilesDelete(c buffalo.Context) error {
+func usersMeFilesDelete(c echo.Context) error {
 	tx := models.Tx(c)
 
 	user := models.CurrentUser(c)
@@ -167,10 +167,10 @@ func usersMeFilesDelete(c buffalo.Context) error {
 	user.PhotoFileID = nulls.UUID{}
 	user.Update(tx)
 
-	return c.Render(http.StatusNoContent, nil)
+	return c.JSON(http.StatusNoContent, nil)
 }
 
-func renderUser(c buffalo.Context, user models.User) error {
+func renderUser(c echo.Context, user models.User) error {
 	tx := models.Tx(c)
 	return renderOk(c, user.ConvertToAPI(tx, true))
 }
@@ -178,8 +178,8 @@ func renderUser(c buffalo.Context, user models.User) error {
 // getReferencedUserFromCtx pulls the models.User resource from context that was put there
 // by the AuthZ middleware based on a url pattern of /users/{id}. This is NOT the authenticated
 // API caller
-func getReferencedUserFromCtx(c buffalo.Context) *models.User {
-	user, ok := c.Value(domain.TypeUser).(*models.User)
+func getReferencedUserFromCtx(c echo.Context) *models.User {
+	user, ok := c.Get(domain.TypeUser).(*models.User)
 	if !ok {
 		panic("user not found in context")
 	}

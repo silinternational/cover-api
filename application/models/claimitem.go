@@ -1,7 +1,6 @@
 package models
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"math"
@@ -12,6 +11,7 @@ import (
 	"github.com/gobuffalo/pop/v6"
 	"github.com/gobuffalo/validate/v3"
 	"github.com/gofrs/uuid"
+	"github.com/labstack/echo/v4"
 
 	"github.com/silinternational/cover-api/api"
 	"github.com/silinternational/cover-api/domain"
@@ -60,7 +60,7 @@ func (c *ClaimItem) Validate(tx *pop.Connection) (*validate.Errors, error) {
 
 // CreateWithHistory validates and stores the data as a new record in the database, assigning a new ID if needed.
 // Also creates a ClaimHistory record.
-func (c *ClaimItem) CreateWithHistory(ctx context.Context) error {
+func (c *ClaimItem) CreateWithHistory(ctx echo.Context) error {
 	tx := Tx(ctx)
 
 	if err := c.Create(tx); err != nil {
@@ -80,7 +80,7 @@ func (c *ClaimItem) Create(tx *pop.Connection) error {
 }
 
 // Update saves any changes to the database
-func (c *ClaimItem) Update(ctx context.Context) error {
+func (c *ClaimItem) Update(ctx echo.Context) error {
 	tx := Tx(ctx)
 	c.LoadClaim(tx, false)
 
@@ -110,7 +110,7 @@ func (c *ClaimItem) Update(ctx context.Context) error {
 	return update(tx, c)
 }
 
-func (c *ClaimItem) getUpdates(ctx context.Context) ([]FieldUpdate, error) {
+func (c *ClaimItem) getUpdates(ctx echo.Context) ([]FieldUpdate, error) {
 	tx := Tx(ctx)
 
 	var oldClaimItem ClaimItem
@@ -123,7 +123,7 @@ func (c *ClaimItem) getUpdates(ctx context.Context) ([]FieldUpdate, error) {
 
 // If a customer edits something other than ReceiptActual or ReplaceActual, it should take the claim off
 // of the steward's list of things to review and also force the user to resubmit it.
-func (c *ClaimItem) revertToDraftIfEdited(ctx context.Context, updates []FieldUpdate) error {
+func (c *ClaimItem) revertToDraftIfEdited(ctx echo.Context, updates []FieldUpdate) error {
 	user := CurrentUser(ctx)
 	if user.IsAdmin() {
 		return nil
@@ -412,7 +412,7 @@ func (c *ClaimItem) GetLocation() Location {
 }
 
 // NewHistory makes a new ClaimHistory object based on the current ClaimItem.
-func (c *ClaimItem) NewHistory(ctx context.Context, action string, fieldUpdate FieldUpdate) ClaimHistory {
+func (c *ClaimItem) NewHistory(ctx echo.Context, action string, fieldUpdate FieldUpdate) ClaimHistory {
 	return ClaimHistory{
 		Action:      action,
 		ClaimID:     c.ClaimID,
@@ -424,7 +424,7 @@ func (c *ClaimItem) NewHistory(ctx context.Context, action string, fieldUpdate F
 	}
 }
 
-func (c *ClaimItem) updatePayoutAmount(ctx context.Context) error {
+func (c *ClaimItem) updatePayoutAmount(ctx echo.Context) error {
 	tx := Tx(ctx)
 	c.LoadItem(tx, false)
 	c.LoadClaim(tx, false)

@@ -1,10 +1,10 @@
 package actions
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strings"
 	"testing"
 	"time"
 
@@ -72,25 +72,22 @@ func (as *ActionSuite) Test_ClaimsList() {
 
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
-			req := as.JSON("/claims" + tt.queryString)
-			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
-			req.Headers["content-type"] = domain.ContentJson
-			res := req.Get()
+			path := "/claims" + tt.queryString
+			body, status := as.request("GET", path, tt.actor.Email, nil)
 
-			body := res.Body.String()
-			as.Equal(tt.wantStatus, res.Code, "incorrect status code returned, body: %s", body)
+			as.Equal(tt.wantStatus, status, "incorrect status code returned, body: %s", body)
 			if tt.wantInBody != "" {
-				as.Contains(body, tt.wantInBody)
+				as.Contains(string(body), tt.wantInBody)
 			}
 			if tt.notWantInBody != "" {
-				as.NotContains(body, tt.notWantInBody)
+				as.NotContains(string(body), tt.notWantInBody)
 			}
 
-			if res.Code != http.StatusOK {
+			if status != http.StatusOK {
 				return
 			}
 			var responseObject api.Claims
-			as.NoError(json.Unmarshal([]byte(body), &responseObject))
+			as.NoError(json.Unmarshal(body, &responseObject))
 			as.Len(responseObject, tt.wantClaims, "incorrect # of claims, %+v", responseObject)
 			for _, c := range responseObject {
 				as.Len(c.Items, fixConfig.ItemsPerPolicy)
@@ -148,27 +145,23 @@ func (as *ActionSuite) Test_PoliciesClaimsList() {
 
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
-			url := fmt.Sprintf("%s/%s%s", policiesPath, policy.ID, claimsPath)
-			req := as.JSON(url)
-			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
-			req.Headers["content-type"] = domain.ContentJson
-			res := req.Get()
+			path := fmt.Sprintf("%s/%s%s", policiesPath, policy.ID, claimsPath)
+			body, status := as.request("GET", path, tt.actor.Email, nil)
 
-			body := res.Body.String()
-			as.Equal(tt.wantStatus, res.Code, "incorrect status code returned, body: %s", body)
+			as.Equal(tt.wantStatus, status, "incorrect status code returned, body: %s", body)
 			if tt.wantInBody != "" {
-				as.Contains(body, tt.wantInBody)
+				as.Contains(string(body), tt.wantInBody)
 			}
 			if tt.notWantInBody != "" {
 				as.NotContains(body, tt.notWantInBody)
 			}
 
-			if res.Code != http.StatusOK {
+			if status != http.StatusOK {
 				return
 			}
 
 			var responseObject api.Claims
-			reader := strings.NewReader(body)
+			reader := bytes.NewReader(body)
 			decoder := json.NewDecoder(reader)
 			decoder.DisallowUnknownFields()
 			as.NoError(decoder.Decode(&responseObject))
@@ -231,25 +224,22 @@ func (as *ActionSuite) Test_ClaimsView() {
 
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
-			req := as.JSON("/claims/" + tt.claim.ID.String())
-			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
-			req.Headers["content-type"] = domain.ContentJson
-			res := req.Get()
+			path := "/claims/" + tt.claim.ID.String()
+			body, status := as.request("GET", path, tt.actor.Email, nil)
 
-			body := res.Body.String()
-			as.Equal(tt.wantStatus, res.Code, "incorrect status code returned, body: %s", body)
+			as.Equal(tt.wantStatus, status, "incorrect status code returned, body: %s", body)
 			if tt.wantInBody != "" {
-				as.Contains(body, tt.wantInBody, "did not find expected string")
+				as.Contains(string(body), tt.wantInBody, "did not find expected string")
 			}
 			if tt.notWantInBody != "" {
-				as.NotContains(body, tt.notWantInBody, "found unexpected string")
+				as.NotContains(string(body), tt.notWantInBody, "found unexpected string")
 			}
 
-			if res.Code != http.StatusOK {
+			if status != http.StatusOK {
 				return
 			}
 			var responseObject api.Claim
-			as.NoError(json.Unmarshal([]byte(body), &responseObject))
+			as.NoError(json.Unmarshal(body, &responseObject))
 			as.Equal(tt.claim.ID, responseObject.ID, "incorrect object in response", responseObject)
 		})
 	}
@@ -344,25 +334,22 @@ func (as *ActionSuite) Test_ClaimsUpdate() {
 
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
-			req := as.JSON("/claims/" + tt.claim.ID.String())
-			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
-			req.Headers["content-type"] = domain.ContentJson
-			res := req.Put(tt.input)
+			path := "/claims/" + tt.claim.ID.String()
+			body, status := as.request("PUT", path, tt.actor.Email, tt.input)
 
-			body := res.Body.String()
-			as.Equal(tt.wantStatus, res.Code, "incorrect status code returned, body: %s", body)
+			as.Equal(tt.wantStatus, status, "incorrect status code returned, body: %s", body)
 			if tt.wantInBody != "" {
-				as.Contains(body, tt.wantInBody, "did not find expected string")
+				as.Contains(string(body), tt.wantInBody, "did not find expected string")
 			}
 			if tt.notWantInBody != "" {
-				as.NotContains(body, tt.notWantInBody, "found unexpected string")
+				as.NotContains(string(body), tt.notWantInBody, "found unexpected string")
 			}
 
-			if res.Code != http.StatusOK {
+			if status != http.StatusOK {
 				return
 			}
 			var responseObject api.Claim
-			as.NoError(json.Unmarshal([]byte(body), &responseObject))
+			as.NoError(json.Unmarshal(body, &responseObject))
 			as.Equal(tt.claim.ID, responseObject.ID, "incorrect object in response", responseObject)
 
 			updatedClaim := models.Claim{}
@@ -456,13 +443,9 @@ func (as *ActionSuite) Test_ClaimsCreate() {
 
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
-			req := as.JSON(fmt.Sprintf("/policies/%s/claims", tt.policy.ID))
-			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
-			req.Headers["content-type"] = domain.ContentJson
-			res := req.Post(tt.input)
-
-			body := res.Body.String()
-			as.Equal(tt.wantStatus, res.Code, "incorrect status code returned, body: %s", body)
+			path := fmt.Sprintf("/policies/%s/claims", tt.policy.ID)
+			body, status := as.request("POST", path, tt.actor.Email, tt.input)
+			as.Equal(tt.wantStatus, status, "incorrect status code returned, body: %s", body)
 
 			as.verifyResponseData(tt.wantInBody, body, "Create Claim fields")
 
@@ -470,11 +453,11 @@ func (as *ActionSuite) Test_ClaimsCreate() {
 				as.NotContains(body, tt.notWantInBody)
 			}
 
-			if res.Code != http.StatusOK {
+			if status != http.StatusOK {
 				return
 			}
 			var respObj api.Claim
-			as.NoError(json.Unmarshal([]byte(body), &respObj))
+			as.NoError(json.Unmarshal(body, &respObj))
 
 			as.Equal(tt.input.IncidentDescription, respObj.IncidentDescription,
 				"response object is not correct, %+v", respObj)
@@ -572,14 +555,9 @@ func (as *ActionSuite) Test_ClaimsItemsCreate() {
 
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
-			req := as.JSON(fmt.Sprintf("/%s/%s/%s", domain.TypeClaim, tt.claim.ID, domain.TypeItem))
-			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
-			req.Headers["content-type"] = domain.ContentJson
-
-			res := req.Post(tt.input)
-
-			body := res.Body.String()
-			as.Equal(tt.wantStatus, res.Code, "incorrect status code returned, body: %s", body)
+			path := fmt.Sprintf("/%s/%s/%s", domain.TypeClaim, tt.claim.ID, domain.TypeItem)
+			body, status := as.request("POST", path, tt.actor.Email, tt.input)
+			as.Equal(tt.wantStatus, status, "incorrect status code returned, body: %s", body)
 
 			as.verifyResponseData(tt.wantInBody, body, "CreateItem Claim fields")
 
@@ -587,11 +565,11 @@ func (as *ActionSuite) Test_ClaimsItemsCreate() {
 				as.NotContains(body, tt.notWantInBody)
 			}
 
-			if res.Code != http.StatusOK {
+			if status != http.StatusOK {
 				return
 			}
 			var respObj api.ClaimItem
-			as.NoError(json.Unmarshal([]byte(body), &respObj))
+			as.NoError(json.Unmarshal(body, &respObj))
 
 			as.Equal(tt.input.PayoutOption, respObj.PayoutOption,
 				"response object is not correct, %+v", respObj)
@@ -659,17 +637,13 @@ func (as *ActionSuite) Test_ClaimsSubmit() {
 
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
-			req := as.JSON("/%s/%s/%s", domain.TypeClaim, tt.oldClaim.ID.String(), api.ResourceSubmit)
-			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
-			req.Headers["content-type"] = domain.ContentJson
-			res := req.Post(nil)
+			path := fmt.Sprintf("/%s/%s/%s", domain.TypeClaim, tt.oldClaim.ID.String(), api.ResourceSubmit)
+			body, status := as.request("POST", path, tt.actor.Email, nil)
 
-			body := res.Body.String()
-			as.Equal(tt.wantStatus, res.Code, "incorrect status code returned, body: %s", body)
-
+			as.Equal(tt.wantStatus, status, "incorrect status code returned, body: %s", body)
 			as.verifyResponseData(tt.wantInBody, body, "")
 
-			if res.Code != http.StatusOK {
+			if status != http.StatusOK {
 				return
 			}
 
@@ -736,19 +710,14 @@ func (as *ActionSuite) Test_ClaimsRequestRevision() {
 
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
-			req := as.JSON("/%s/%s/%s",
-				domain.TypeClaim, tt.oldClaim.ID.String(), api.ResourceRevision)
-			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
-			req.Headers["content-type"] = domain.ContentJson
+			path := fmt.Sprintf("/%s/%s/%s", domain.TypeClaim, tt.oldClaim.ID.String(), api.ResourceRevision)
 			const message = "change all of it"
-			res := req.Post(api.ClaimStatusInput{StatusReason: message})
-
-			body := res.Body.String()
-			as.Equal(tt.wantStatus, res.Code, "incorrect status code returned, body: %s", body)
+			body, status := as.request("POST", path, tt.actor.Email, api.ClaimStatusInput{StatusReason: message})
+			as.Equal(tt.wantStatus, status, "incorrect status code returned, body: %s", body)
 
 			as.verifyResponseData(tt.wantInBody, body, "")
 
-			if res.Code != http.StatusOK {
+			if status != http.StatusOK {
 				return
 			}
 
@@ -816,18 +785,14 @@ func (as *ActionSuite) Test_ClaimsPreapprove() {
 
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
-			req := as.JSON("/%s/%s/%s",
+			path := fmt.Sprintf("/%s/%s/%s",
 				domain.TypeClaim, tt.oldClaim.ID.String(), api.ResourcePreapprove)
-			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
-			req.Headers["content-type"] = domain.ContentJson
-			res := req.Post(nil)
-
-			body := res.Body.String()
-			as.Equal(tt.wantStatus, res.Code, "incorrect status code returned, body: %s", body)
+			body, status := as.request("POST", path, tt.actor.Email, nil)
+			as.Equal(tt.wantStatus, status, "incorrect status code returned, body: %s", body)
 
 			as.verifyResponseData(tt.wantInBody, body, "")
 
-			if res.Code != http.StatusOK {
+			if status != http.StatusOK {
 				return
 			}
 
@@ -898,18 +863,14 @@ func (as *ActionSuite) Test_ClaimsReceipt() {
 
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
-			req := as.JSON("/%s/%s/%s",
+			path := fmt.Sprintf("/%s/%s/%s",
 				domain.TypeClaim, tt.oldClaim.ID.String(), api.ResourceReceipt)
-			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
-			req.Headers["content-type"] = domain.ContentJson
-			res := req.Post(api.ClaimStatusInput{StatusReason: tt.reason})
-
-			body := res.Body.String()
-			as.Equal(tt.wantStatus, res.Code, "incorrect status code returned, body: %s", body)
+			body, status := as.request("POST", path, tt.actor.Email, api.ClaimStatusInput{StatusReason: tt.reason})
+			as.Equal(tt.wantStatus, status, "incorrect status code returned, body: %s", body)
 
 			as.verifyResponseData(tt.wantInBody, body, "")
 
-			if res.Code != http.StatusOK {
+			if status != http.StatusOK {
 				return
 			}
 
@@ -1032,18 +993,14 @@ func (as *ActionSuite) Test_ClaimsApprove() {
 
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
-			req := as.JSON("/%s/%s/%s",
+			path := fmt.Sprintf("/%s/%s/%s",
 				domain.TypeClaim, tt.oldClaim.ID.String(), api.ResourceApprove)
-			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
-			req.Headers["content-type"] = domain.ContentJson
-			res := req.Post(nil)
-
-			body := res.Body.String()
-			as.Equal(tt.wantStatus, res.Code, "incorrect status code returned, body: %s", body)
+			body, status := as.request("POST", path, tt.actor.Email, nil)
+			as.Equal(tt.wantStatus, status, "incorrect status code returned, body: %s", body)
 
 			as.verifyResponseData(tt.wantInBody, body, "")
 
-			if res.Code != http.StatusOK {
+			if status != http.StatusOK {
 				return
 			}
 
@@ -1142,19 +1099,15 @@ func (as *ActionSuite) Test_ClaimsDeny() {
 
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
-			req := as.JSON("/%s/%s/%s",
+			path := fmt.Sprintf("/%s/%s/%s",
 				domain.TypeClaim, tt.oldClaim.ID.String(), api.ResourceDeny)
-			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
-			req.Headers["content-type"] = domain.ContentJson
 			const message = "change all of it"
-			res := req.Post(api.ClaimStatusInput{StatusReason: message})
-
-			body := res.Body.String()
-			as.Equal(tt.wantStatus, res.Code, "incorrect status code returned, body: %s", body)
+			body, status := as.request("POST", path, tt.actor.Email, api.ClaimStatusInput{StatusReason: message})
+			as.Equal(tt.wantStatus, status, "incorrect status code returned, body: %s", body)
 
 			as.verifyResponseData(tt.wantInBody, body, "")
 
-			if res.Code != http.StatusOK {
+			if status != http.StatusOK {
 				return
 			}
 
@@ -1222,14 +1175,10 @@ func (as *ActionSuite) Test_ClaimsRemove() {
 
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
-			req := as.JSON("/%s/%s",
+			path := fmt.Sprintf("/%s/%s",
 				domain.TypeClaim, tt.claim.ID.String())
-			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
-			req.Headers["content-type"] = domain.ContentJson
-			res := req.Delete()
-
-			body := res.Body.String()
-			as.Equal(tt.wantStatus, res.Code, "incorrect status code returned, body: %s", body)
+			body, status := as.request("DELETE", path, tt.actor.Email, nil)
+			as.Equal(tt.wantStatus, status, "incorrect status code returned, body: %s", body)
 
 			if len(tt.wantInBody) > 0 {
 				as.verifyResponseData(tt.wantInBody, body, "")

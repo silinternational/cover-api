@@ -85,18 +85,13 @@ func (as *ActionSuite) Test_ClaimFilesAttach() {
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
 			claimID := tt.claim.ID
-			req := as.JSON("/%s/%s/%s",
-				domain.TypeClaim, claimID.String(), domain.TypeFile)
-			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
-			req.Headers["content-type"] = domain.ContentJson
-			res := req.Post(tt.request)
-
-			body := res.Body.String()
-			as.Equal(tt.wantStatus, res.Code, "incorrect status code returned, body: %s", body)
+			path := fmt.Sprintf("/%s/%s/%s", domain.TypeClaim, claimID.String(), domain.TypeFile)
+			body, status := as.request("POST", path, tt.actor.Email, tt.request)
+			as.Equal(tt.wantStatus, status, "incorrect status code returned, body: %s", body)
 
 			as.verifyResponseData([]string{tt.wantInBody}, body, "")
 
-			if res.Code != http.StatusOK {
+			if status != http.StatusOK {
 				return
 			}
 
@@ -160,15 +155,11 @@ func (as *ActionSuite) Test_ClaimFilesDelete() {
 	}
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
-			req := as.JSON("/%s/%s", domain.TypeClaimFile, tt.id.String())
-			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
-			req.Headers["content-type"] = domain.ContentJson
-			res := req.Delete()
+			path := fmt.Sprintf("/%s/%s", domain.TypeClaimFile, tt.id.String())
+			body, status := as.request("DELETE", path, tt.actor.Email, nil)
+			as.Equal(tt.wantStatus, status, "incorrect status code returned, body: %s", body)
 
-			body := res.Body.String()
-			as.Equal(tt.wantStatus, res.Code, "incorrect status code returned, body: %s", body)
-
-			if res.Code != http.StatusNoContent {
+			if status != http.StatusNoContent {
 				as.verifyResponseData([]string{tt.wantInBody}, body, "")
 				return
 			}

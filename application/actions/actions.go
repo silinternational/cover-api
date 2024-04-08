@@ -7,9 +7,8 @@ import (
 	"net"
 	"net/http"
 
-	"github.com/gobuffalo/buffalo"
 	"github.com/gobuffalo/buffalo/render"
-	"github.com/gofrs/uuid"
+	"github.com/labstack/echo/v4"
 
 	"github.com/silinternational/cover-api/api"
 	"github.com/silinternational/cover-api/domain"
@@ -23,7 +22,7 @@ var r = render.New(render.Options{
 // StrictBind hydrates a struct with values from a POST
 // REMEMBER the request body must have *exported* fields.
 // Otherwise, this will give an empty result without an error.
-func StrictBind(c buffalo.Context, dest any) error {
+func StrictBind(c echo.Context, dest any) error {
 	dec := json.NewDecoder(c.Request().Body)
 	dec.DisallowUnknownFields()
 	if err := dec.Decode(dest); err != nil {
@@ -32,9 +31,9 @@ func StrictBind(c buffalo.Context, dest any) error {
 	return nil
 }
 
-// reportError logs an error with details and renders the error with buffalo.Render.
-// If the HTTP status code provided is in the 300 family, buffalo.Redirect is used instead.
-func reportError(c buffalo.Context, err error) error {
+// reportError logs an error with details and renders the error with echo.Render.
+// If the HTTP status code provided is in the 300 family, echo.Redirect is used instead.
+func reportError(c echo.Context, err error) error {
 	var appErr *api.AppError
 	if !errors.As(err, &appErr) {
 		appErr = appErrorFromErr(err)
@@ -56,7 +55,7 @@ func reportError(c buffalo.Context, err error) error {
 	address, _ := getClientIPAddress(c)
 	appErr.Extras[domain.ExtrasIP] = address
 
-	entry := log.WithContext(c).WithFields(appErr.Extras)
+	entry := log.WithContext(c.Request().Context()).WithFields(appErr.Extras)
 	switch appErr.Category {
 	case api.CategoryUnauthorized, api.CategoryUser:
 		entry.Warning(err)
@@ -79,13 +78,14 @@ func reportError(c buffalo.Context, err error) error {
 		}
 		return c.Redirect(appErr.HttpStatus, appErr.RedirectURL)
 	}
-	return c.Render(appErr.HttpStatus, r.JSON(appErr))
+	return c.JSON(appErr.HttpStatus, appErr)
 }
 
-// reportErrorAndClearSession logs an error with details, clears the session, and renders the error with buffalo.Render.
-// If the HTTP status code provided is in the 300 family, buffalo.Redirect is used instead.
-func reportErrorAndClearSession(c buffalo.Context, err error) error {
-	c.Session().Clear()
+// reportErrorAndClearSession logs an error with details, clears the session, and renders the error with echo.Render.
+// If the HTTP status code provided is in the 300 family, echo.Redirect is used instead.
+func reportErrorAndClearSession(c echo.Context, err error) error {
+	// FIXME
+	// c.Session().Clear()
 	return reportError(c, err)
 }
 
@@ -97,37 +97,26 @@ func appErrorFromErr(err error) *api.AppError {
 	}
 }
 
-func getExtras(c buffalo.Context) map[string]any {
-	extras, _ := c.Value(domain.ContextKeyExtras).(map[string]any)
+func getExtras(c echo.Context) map[string]any {
+	extras, _ := c.Get(domain.ContextKeyExtras).(map[string]any)
 	if extras == nil {
 		extras = map[string]any{}
 	}
 	return extras
 }
 
-func newExtra(c buffalo.Context, key string, e any) {
+func newExtra(c echo.Context, key string, e any) {
 	extras := getExtras(c)
 	extras[key] = e
 	c.Set(domain.ContextKeyExtras, extras)
 }
 
-func renderOk(c buffalo.Context, v any) error {
-	return c.Render(http.StatusOK, r.JSON(v))
-}
-
-func getUUIDFromParam(c buffalo.Context, param string) (uuid.UUID, error) {
-	s := c.Param(param)
-	id := uuid.FromStringOrNil(s)
-	if id == uuid.Nil {
-		newExtra(c, param, s)
-		err := fmt.Errorf("invalid %s provided: '%s'", param, s)
-		return uuid.UUID{}, api.NewAppError(err, api.ErrorMustBeAValidUUID, api.CategoryUser)
-	}
-	return id, nil
+func renderOk(c echo.Context, v any) error {
+	return c.JSON(http.StatusOK, v)
 }
 
 // getClientIPAddress gets the client IP address from CF-Connecting-IP or RemoteAddr
-func getClientIPAddress(c buffalo.Context) (net.IP, error) {
+func getClientIPAddress(c echo.Context) (net.IP, error) {
 	req := c.Request()
 
 	// https://developers.cloudflare.com/fundamentals/get-started/reference/http-request-headers/#cf-connecting-ip
@@ -148,9 +137,9 @@ func getClientIPAddress(c buffalo.Context) (net.IP, error) {
 	return userIP, nil
 }
 
-func robots(c buffalo.Context) error {
+func robots(c echo.Context) error {
 	const body = `User-agent: *
 Disallow: /
 `
-	return c.Render(200, r.String(body))
+	return c.String(http.StatusOK, body)
 }

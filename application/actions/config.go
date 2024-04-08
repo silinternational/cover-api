@@ -1,7 +1,7 @@
 package actions
 
 import (
-	"github.com/gobuffalo/buffalo"
+	"github.com/labstack/echo/v4"
 
 	"github.com/silinternational/cover-api/api"
 )
@@ -19,7 +19,7 @@ import (
 //	      type: array
 //	      items:
 //	        "$ref": "#/definitions/ClaimIncidentTypeStruct"
-func claimIncidentTypes(c buffalo.Context) error {
+func claimIncidentTypes(c echo.Context) error {
 	return renderOk(c, api.AllClaimIncidentTypes)
 }
 
@@ -36,6 +36,6 @@ func claimIncidentTypes(c buffalo.Context) error {
 //	      type: array
 //	      items:
 //	        "$ref": "#/definitions/Country"
-func countries(c buffalo.Context) error {
+func countries(c echo.Context) error {
 	return renderOk(c, api.AllCountries)
 }

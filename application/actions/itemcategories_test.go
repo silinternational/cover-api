@@ -45,15 +45,12 @@ func (as *ActionSuite) Test_ItemCategoriesList() {
 	}
 	models.MustCreate(as.DB, &disabled)
 
-	req := as.JSON("/config/item-categories")
-	req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", fixtures.Policies[0].Members[0].Email)
-	req.Headers["content-type"] = domain.ContentJson
-	res := req.Get()
+	path := "/config/item-categories"
+	body, status := as.request("GET", path, fixtures.Policies[0].Members[0].Email, nil)
 
-	body := res.Body.String()
-	as.Equal(http.StatusOK, res.Code, "incorrect status code returned, body: %s", body)
+	as.Equal(http.StatusOK, status, "incorrect status code returned, body: %s", body)
 	for i := range cats {
-		as.Contains(body, cats[i].ID.String())
+		as.Contains(string(body), cats[i].ID.String())
 	}
 
 	as.NotContains(body, disabled.ID.String())

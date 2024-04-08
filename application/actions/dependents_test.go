@@ -70,25 +70,21 @@ func (as *ActionSuite) Test_DependentsList() {
 
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
-			req := as.JSON("/policies/" + tt.policy.ID.String() + "/dependents")
-			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
-			req.Headers["content-type"] = domain.ContentJson
-			res := req.Get()
-
-			body := res.Body.String()
-			as.Equal(tt.wantStatus, res.Code, "incorrect status code returned, body: %s", body)
+			path := fmt.Sprintf("/policies/%s/dependents", tt.policy.ID.String())
+			body, status := as.request("GET", path, tt.actor.Email, nil)
+			as.Equal(tt.wantStatus, status, "incorrect status code returned, body: %s", body)
 			if tt.wantInBody != "" {
-				as.Contains(body, tt.wantInBody)
+				as.Contains(string(body), tt.wantInBody)
 			}
 			if tt.notWantInBody != "" {
 				as.NotContains(body, tt.notWantInBody)
 			}
 
-			if res.Code != http.StatusOK {
+			if status != http.StatusOK {
 				return
 			}
 			var dependents api.PolicyDependents
-			err := json.Unmarshal([]byte(body), &dependents)
+			err := json.Unmarshal(body, &dependents)
 			as.NoError(err)
 			as.Equal(tt.wantCount, len(dependents))
 		})
@@ -212,25 +208,21 @@ func (as *ActionSuite) Test_DependentsCreate() {
 
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
-			req := as.JSON("/policies/" + tt.policy.ID.String() + "/dependents")
-			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
-			req.Headers["content-type"] = domain.ContentJson
-			res := req.Post(tt.reqBody)
-
-			body := res.Body.String()
-			as.Equal(tt.wantStatus, res.Code, "incorrect status code returned, body: %s", body)
+			path := fmt.Sprintf("/policies/%s/dependents", tt.policy.ID.String())
+			body, status := as.request("POST", path, tt.actor.Email, tt.reqBody)
+			as.Equal(tt.wantStatus, status, "incorrect status code returned, body: %s", body)
 			if tt.wantInBody != "" {
-				as.Contains(body, tt.wantInBody)
+				as.Contains(string(body), tt.wantInBody)
 			}
 			if tt.notWantInBody != "" {
 				as.NotContains(body, tt.notWantInBody)
 			}
 
-			if res.Code != http.StatusOK {
+			if status != http.StatusOK {
 				return
 			}
 			var dependent api.PolicyDependent
-			err := json.Unmarshal([]byte(body), &dependent)
+			err := json.Unmarshal(body, &dependent)
 			as.NoError(err)
 
 			var allDependents models.PolicyDependents
@@ -344,22 +336,18 @@ func (as *ActionSuite) Test_DependentsUpdate() {
 
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
-			req := as.JSON("/%s/%s", domain.TypePolicyDependent, tt.oldDep.ID)
-			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
-			req.Headers["content-type"] = domain.ContentJson
-			res := req.Put(tt.input)
-
-			body := res.Body.String()
-			as.Equal(tt.wantStatus, res.Code, "incorrect status code returned, body: %s", body)
+			path := fmt.Sprintf("/%s/%s", domain.TypePolicyDependent, tt.oldDep.ID)
+			body, status := as.request("PUT", path, tt.actor.Email, tt.input)
+			as.Equal(tt.wantStatus, status, "incorrect status code returned, body: %s", body)
 
 			as.verifyResponseData(tt.wantInBody, body, "")
 
-			if res.Code != http.StatusOK {
+			if status != http.StatusOK {
 				return
 			}
 
 			var apiDep api.PolicyDependent
-			err := json.Unmarshal([]byte(body), &apiDep)
+			err := json.Unmarshal(body, &apiDep)
 			as.NoError(err)
 
 			var dependent models.PolicyDependent
@@ -433,15 +421,11 @@ func (as *ActionSuite) Test_DependentsDelete() {
 
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
-			req := as.JSON("/%s/%s", domain.TypePolicyDependent, tt.oldDep.ID)
-			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
-			req.Headers["content-type"] = domain.ContentJson
-			res := req.Delete()
+			path := fmt.Sprintf("/%s/%s", domain.TypePolicyDependent, tt.oldDep.ID)
+			body, status := as.request("DELETE", path, tt.actor.Email, nil)
+			as.Equal(tt.wantStatus, status, "incorrect status code returned, body: %s", body)
 
-			body := res.Body.String()
-			as.Equal(tt.wantStatus, res.Code, "incorrect status code returned, body: %s", body)
-
-			if res.Code != http.StatusNoContent {
+			if status != http.StatusNoContent {
 				as.verifyResponseData(tt.wantInBody, body, "")
 				return
 			}

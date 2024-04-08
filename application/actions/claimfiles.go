@@ -3,7 +3,7 @@ package actions
 import (
 	"net/http"
 
-	"github.com/gobuffalo/buffalo"
+	"github.com/labstack/echo/v4"
 
 	"github.com/silinternational/cover-api/api"
 	"github.com/silinternational/cover-api/domain"
@@ -32,7 +32,7 @@ import (
 //	    description: the new ClaimFile
 //	    schema:
 //	      "$ref": "#/definitions/ClaimFile"
-func claimFilesAttach(c buffalo.Context) error {
+func claimFilesAttach(c echo.Context) error {
 	var input api.ClaimFileAttachInput
 	if err := StrictBind(c, &input); err != nil {
 		return reportError(c, err)
@@ -63,17 +63,17 @@ func claimFilesAttach(c buffalo.Context) error {
 //	responses:
 //	  '204':
 //	    description: OK but no content in response
-func claimFilesDelete(c buffalo.Context) error {
+func claimFilesDelete(c echo.Context) error {
 	tx := models.Tx(c)
 	cFile := getReferencedClaimFileFromCtx(c)
 	cFile.Destroy(tx)
-	return c.Render(http.StatusNoContent, nil)
+	return c.JSON(http.StatusNoContent, nil)
 }
 
 // getReferencedClaimFileFromCtx pulls the models.ClaimFile resource from context that was put there
 // by the AuthZ middleware
-func getReferencedClaimFileFromCtx(c buffalo.Context) *models.ClaimFile {
-	file, ok := c.Value(domain.TypeClaimFile).(*models.ClaimFile)
+func getReferencedClaimFileFromCtx(c echo.Context) *models.ClaimFile {
+	file, ok := c.Get(domain.TypeClaimFile).(*models.ClaimFile)
 	if !ok {
 		panic("claim file not found in context")
 	}

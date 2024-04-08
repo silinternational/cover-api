@@ -1,7 +1,6 @@
 package models
 
 import (
-	"context"
 	"crypto/rand"
 	"encoding/base64"
 	"encoding/json"
@@ -19,6 +18,7 @@ import (
 	"github.com/gofrs/uuid"
 	"github.com/jackc/pgconn"
 	"github.com/jackc/pgerrcode"
+	"github.com/labstack/echo/v4"
 
 	"github.com/silinternational/cover-api/api"
 	"github.com/silinternational/cover-api/domain"
@@ -224,14 +224,14 @@ func getRandomToken() (string, error) {
 }
 
 // CurrentUser retrieves the current user from the context.
-func CurrentUser(ctx context.Context) User {
-	user, _ := ctx.Value(domain.ContextKeyCurrentUser).(User)
+func CurrentUser(c echo.Context) User {
+	user, _ := c.Get(domain.ContextKeyCurrentUser).(User)
 	return user
 }
 
 // Tx retrieves the database transaction from the context
-func Tx(ctx context.Context) *pop.Connection {
-	tx, ok := ctx.Value(domain.ContextKeyTx).(*pop.Connection)
+func Tx(c echo.Context) *pop.Connection {
+	tx, ok := c.Get(domain.ContextKeyTx).(*pop.Connection)
 	if !ok {
 		return DB
 	}

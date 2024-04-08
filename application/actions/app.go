@@ -31,29 +31,25 @@
 package actions
 
 import (
+	"errors"
 	"net/http"
+	"os"
 
-	"github.com/gobuffalo/buffalo"
-	"github.com/gobuffalo/buffalo-pop/v3/pop/popmw"
-	"github.com/gobuffalo/logger"
-	contenttype "github.com/gobuffalo/mw-contenttype"
-	i18n "github.com/gobuffalo/mw-i18n/v2"
-	paramlogger "github.com/gobuffalo/mw-paramlogger"
+	"github.com/gobuffalo/pop/v6"
 	"github.com/gorilla/sessions"
-	"github.com/rs/cors"
-
-	"github.com/silinternational/cover-api/auth"
-	"github.com/silinternational/cover-api/job"
-	"github.com/silinternational/cover-api/log"
+	"github.com/labstack/echo-contrib/session"
+	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 
 	"github.com/silinternational/cover-api/api"
+	"github.com/silinternational/cover-api/auth"
 	"github.com/silinternational/cover-api/domain"
 	"github.com/silinternational/cover-api/listeners"
-	"github.com/silinternational/cover-api/locales"
+	"github.com/silinternational/cover-api/log"
 	"github.com/silinternational/cover-api/models"
 )
 
-const idRegex = `/{id:[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[1-5][a-fA-F0-9]{3}-[8|9|aA|bB][a-fA-F0-9]{3}-[a-fA-F0-9]{12}}`
+const idParam = `/:id`
 
 const (
 	auditsPath          = "/audits"
@@ -73,67 +69,53 @@ const (
 	strikesPath         = "/" + domain.TypeStrike
 )
 
-var app *buffalo.App
+var app *echo.Echo
 
-// App is where all routes and middleware for buffalo
-// should be defined. This is the nerve center of your
-// application.
-//
-// Routing, middleware, groups, etc... are declared TOP -> DOWN.
-// This means if you add a middleware to `app` *after* declaring a
-// group, that group will NOT have that new middleware. The same
-// is true of resource declarations as well.
-//
-// It also means that routes are checked in the order they are declared.
-// `ServeFiles` is a CATCH-ALL route, so it should always be
-// placed last in the route declarations, as it will prevent routes
-// declared after it to never be called.
-func App() *buffalo.App {
+func App() *echo.Echo {
 	if app == nil {
 		domain.Init()
 		auth.Init()
 		models.PatchItemCategories()
 
-		app = buffalo.New(buffalo.Options{
-			Env:    domain.Env.GoEnv,
-			Logger: logger.Logrus{FieldLogger: log.ErrLogger.LocalLog},
-			PreWares: []buffalo.PreWare{
-				cors.New(cors.Options{
-					AllowCredentials: true,
-					AllowedOrigins:   []string{domain.Env.UIURL},
-					AllowedMethods:   []string{"HEAD", "GET", "POST", "PUT", "PATCH", "DELETE"},
-					AllowedHeaders:   []string{"*"},
-				}).Handler,
-			},
-			SessionName:  "_cover_api_session",
-			SessionStore: cookieStore(),
-		})
+		app = echo.New()
+		/*
+			buffalo.Options{
+					Env:    domain.Env.GoEnv,
+					Logger: logger.Logrus{FieldLogger: log.ErrLogger.LocalLog},
+					PreWares: []buffalo.PreWare{
+						cors.New(cors.Options{
+							AllowCredentials: true,
+							AllowedOrigins:   []string{domain.Env.UIURL},
+							AllowedMethods:   []string{"HEAD", "GET", "POST", "PUT", "PATCH", "DELETE"},
+							AllowedHeaders:   []string{"*"},
+						}).Handler,
+					},
+					SessionName:  "_cover_api_session",
+					SessionStore: cookieStore(),
+				}
+		*/
 
-		var err error
-		domain.T, err = i18n.New(locales.FS(), "en")
-		if err != nil {
-			_ = app.Stop(err)
+		// Logger Middleware
+		app.Use(middleware.Logger())
+
+		// Recover Middleware
+		app.Use(middleware.Recover())
+
+		// Session Middleware
+		app.Use(session.Middleware(sessions.NewCookieStore([]byte(os.Getenv("SESSION_SECRET")))))
+
+		// DB Transaction Middleware
+		app.Use(GetTxMiddleware(models.DB))
+
+		if os.Getenv("GO_ENV") == "development" {
+			app.Debug = true
 		}
-		app.Use(domain.T.Middleware())
-
-		registerCustomErrorHandler(app)
 
 		// Initialize and attach service providers to context
 		app.Use(log.SentryMiddleware)
 
-		// Log request parameters (filters apply).
-		app.Use(paramlogger.ParameterLogger)
-
 		// Add authentication and authorization middleware
 		app.Use(AuthN, AuthZ)
-		app.Middleware.Skip(AuthN, HomeHandler, statusHandler)
-		app.Middleware.Skip(AuthZ, HomeHandler, statusHandler, uploadHandler)
-
-		// Set the request content type to JSON
-		app.Use(contenttype.Set(domain.ContentJson))
-
-		// Wraps each request in a transaction.
-		app.Use(popmw.Transaction(models.DB))
 
 		app.GET("/", HomeHandler)
 		app.GET("/status", statusHandler)
@@ -142,135 +124,127 @@ func App() *buffalo.App {
 
 		// users
 		usersGroup := app.Group(usersPath)
-		usersGroup.GET("/", usersList)
-		usersGroup.Middleware.Skip(AuthZ, usersMe, usersMeUpdate, usersMeFilesAttach, usersMeFilesDelete)
+		usersGroup.GET("", usersList)
 		usersGroup.GET("/me", usersMe)
 		usersGroup.PUT("/me", usersMeUpdate)
 		usersGroup.POST("/me/files", usersMeFilesAttach)
 		usersGroup.DELETE("/me/files", usersMeFilesDelete)
-		usersGroup.GET(idRegex, usersView)
+		usersGroup.GET(idParam, usersView)
 
 		auditsGroup := app.Group(auditsPath)
-		auditsGroup.Middleware.Skip(AuthZ, auditRun) // AuthZ is implemented in the handler
-		auditsGroup.POST("/", auditRun)
+		auditsGroup.POST("", auditRun)
 
-		auth := app.Group("/auth")
-		auth.Middleware.Skip(AuthN, authRequest, authCallback, authDestroy)
-		auth.Middleware.Skip(AuthZ, authRequest, authCallback, authDestroy)
-		auth.POST("/login", authRequest)
-		auth.POST("/callback", authCallback)
-		auth.GET("/logout", authDestroy)
+		authGroup := app.Group("/auth")
+		authGroup.POST("/login", authRequest)
+		authGroup.POST("/callback", authCallback)
+		authGroup.GET("/logout", authDestroy)
 
 		// accounting ledger
 		ledgerReportGroup := app.Group(ledgerReportPath)
 		// AuthZ is implemented in the handlers
-		ledgerReportGroup.Middleware.Skip(AuthZ, ledgerAnnualRenewalStatus, ledgerAnnualRenewalProcess)
-		ledgerReportGroup.Middleware.Skip(AuthZ, ledgerMonthlyRenewalStatus, ledgerMonthlyRenewalProcess)
-		ledgerReportGroup.GET("/", ledgerReportList)
-		ledgerReportGroup.GET(idRegex, ledgerReportView)
-		ledgerReportGroup.POST("/", ledgerReportCreate)
-		ledgerReportGroup.PUT(idRegex, ledgerReportReconcile)
+		ledgerReportGroup.GET("", ledgerReportList)
+		ledgerReportGroup.GET(idParam, ledgerReportView)
+		ledgerReportGroup.POST("", ledgerReportCreate)
+		ledgerReportGroup.PUT(idParam, ledgerReportReconcile)
 		ledgerReportGroup.GET("/annual", ledgerAnnualRenewalStatus)
 		ledgerReportGroup.POST("/annual", ledgerAnnualRenewalProcess)
 		ledgerReportGroup.GET("/monthly", ledgerMonthlyRenewalStatus)
 		ledgerReportGroup.POST("/monthly", ledgerMonthlyRenewalProcess)
 
-		stewardGroup := app.Group(stewardPath)
-		stewardGroup.Middleware.Skip(AuthZ, stewardListRecentObjects) // AuthZ is implemented in the handler
-		stewardGroup.GET("/"+api.ResourceRecent, stewardListRecentObjects)
+		app.GET(stewardPath+"/"+api.ResourceRecent, stewardListRecentObjects)
 
 		// claims
 		claimsGroup := app.Group(claimsPath)
-		claimsGroup.GET("/", claimsList)
-		claimsGroup.GET(idRegex, claimsView)
-		claimsGroup.PUT(idRegex, claimsUpdate)
-		claimsGroup.DELETE(idRegex, claimsRemove)
-		claimsGroup.POST(idRegex+filesPath, claimFilesAttach)
-		claimsGroup.POST(idRegex+itemsPath, claimsItemsCreate)
-		claimsGroup.POST(idRegex+"/"+api.ResourceSubmit, claimsSubmit)
-		claimsGroup.POST(idRegex+"/"+api.ResourceRevision, claimsRequestRevision)
-		claimsGroup.POST(idRegex+"/"+api.ResourcePreapprove, claimsPreapprove)
-		claimsGroup.POST(idRegex+"/"+api.ResourceReceipt, claimsRequestReceipt)
-		claimsGroup.POST(idRegex+"/"+api.ResourceApprove, claimsApprove)
-		claimsGroup.POST(idRegex+"/"+api.ResourceDeny, claimsDeny)
+		claimsGroup.GET("", claimsList)
+		claimsGroup.GET(idParam, claimsView)
+		claimsGroup.PUT(idParam, claimsUpdate)
+		claimsGroup.DELETE(idParam, claimsRemove)
+		claimsGroup.POST(idParam+filesPath, claimFilesAttach)
+		claimsGroup.POST(idParam+itemsPath, claimsItemsCreate)
+		claimsGroup.POST(idParam+"/"+api.ResourceSubmit, claimsSubmit)
+		claimsGroup.POST(idParam+"/"+api.ResourceRevision, claimsRequestRevision)
+		claimsGroup.POST(idParam+"/"+api.ResourcePreapprove, claimsPreapprove)
+		claimsGroup.POST(idParam+"/"+api.ResourceReceipt, claimsRequestReceipt)
+		claimsGroup.POST(idParam+"/"+api.ResourceApprove, claimsApprove)
+		claimsGroup.POST(idParam+"/"+api.ResourceDeny, claimsDeny)
 
 		claimFilesGroup := app.Group(claimFilesPath)
-		claimFilesGroup.DELETE(idRegex, claimFilesDelete)
+		claimFilesGroup.DELETE(idParam, claimFilesDelete)
 
 		claimItemsGroup := app.Group(claimItemsPath)
-		claimItemsGroup.PUT(idRegex, claimItemsUpdate)
+		claimItemsGroup.PUT(idParam, claimItemsUpdate)
 
 		// config
 		configGroup := app.Group("/config")
-		configGroup.Middleware.Skip(AuthZ, claimIncidentTypes, itemCategoriesList, countries)
 		configGroup.GET("/countries", countries)
 		configGroup.GET("/claim-incident-types", claimIncidentTypes)
 		configGroup.GET("/item-categories", itemCategoriesList)
 
 		// dependent
 		depsGroup := app.Group(policyDependentPath)
-		depsGroup.PUT(idRegex, dependentsUpdate)
-		depsGroup.DELETE(idRegex, dependentsDelete)
+		depsGroup.PUT(idParam, dependentsUpdate)
+		depsGroup.DELETE(idParam, dependentsDelete)
 
 		// entity codes
 		entityCodesGroup := app.Group(entityCodesPath)
-		entityCodesGroup.Middleware.Skip(AuthZ, entityCodesList)
 		entityCodesGroup.GET("", entityCodesList)
-		entityCodesGroup.PUT(idRegex, entityCodesUpdate)
-		entityCodesGroup.GET(idRegex, entityCodesView)
+		entityCodesGroup.PUT(idParam, entityCodesUpdate)
+		entityCodesGroup.GET(idParam, entityCodesView)
 		entityCodesGroup.POST("", entityCodesCreate)
 
 		// item
 		itemsGroup := app.Group(itemsPath)
-		itemsGroup.POST(idRegex+"/"+api.ResourceSubmit, itemsSubmit)
-		itemsGroup.POST(idRegex+"/"+api.ResourceRevision, itemsRevision)
-		itemsGroup.POST(idRegex+"/"+api.ResourceApprove, itemsApprove)
-		itemsGroup.POST(idRegex+"/"+api.ResourceDeny, itemsDeny)
-		itemsGroup.PUT(idRegex, itemsUpdate)
-		itemsGroup.DELETE(idRegex, itemsRemove)
+		itemsGroup.POST(idParam+"/"+api.ResourceSubmit, itemsSubmit)
+		itemsGroup.POST(idParam+"/"+api.ResourceRevision, itemsRevision)
+		itemsGroup.POST(idParam+"/"+api.ResourceApprove, itemsApprove)
+		itemsGroup.POST(idParam+"/"+api.ResourceDeny, itemsDeny)
+		itemsGroup.PUT(idParam, itemsUpdate)
+		itemsGroup.DELETE(idParam, itemsRemove)
 
 		// policies
 		policiesGroup := app.Group(policiesPath)
-		policiesGroup.Middleware.Skip(AuthZ, policiesImport)
-		policiesGroup.GET("/", policiesList)
-		policiesGroup.POST("/", policiesCreateTeam)
+		policiesGroup.GET("", policiesList)
+		policiesGroup.POST("", policiesCreateTeam)
 		policiesGroup.POST("/import", policiesImport)
-		policiesGroup.GET(idRegex, policiesView)
-		policiesGroup.GET(idRegex+"/dependents", dependentsList)
-		policiesGroup.PUT(idRegex, policiesUpdate)
-		policiesGroup.POST(idRegex+"/dependents", dependentsCreate)
-		policiesGroup.GET(idRegex+itemsPath, itemsList)
-		policiesGroup.POST(idRegex+itemsPath, itemsCreate)
-		policiesGroup.GET(idRegex+claimsPath, policiesClaimsList)
-		policiesGroup.POST(idRegex+claimsPath, claimsCreate)
-		policiesGroup.GET(idRegex+"/members", policiesListMembers)
-		policiesGroup.POST(idRegex+"/members", policiesInviteMember)
-		policiesGroup.POST(idRegex+"/ledger-reports", policiesLedgerReportCreate)
-		policiesGroup.GET(idRegex+"/ledger-reports", policiesLedgerTableView)
-		policiesGroup.POST(idRegex+"/"+api.ResourceStrikes, policiesStrikeCreate)
+		policiesGroup.GET(idParam, policiesView)
+		policiesGroup.GET(idParam+"/dependents", dependentsList)
+		policiesGroup.PUT(idParam, policiesUpdate)
+		policiesGroup.POST(idParam+"/dependents", dependentsCreate)
+		policiesGroup.GET(idParam+itemsPath, itemsList)
+		policiesGroup.POST(idParam+itemsPath, itemsCreate)
+		policiesGroup.GET(idParam+claimsPath, policiesClaimsList)
+		policiesGroup.POST(idParam+claimsPath, claimsCreate)
+		policiesGroup.GET(idParam+"/members", policiesListMembers)
+		policiesGroup.POST(idParam+"/members", policiesInviteMember)
+		policiesGroup.POST(idParam+"/ledger-reports", policiesLedgerReportCreate)
+		policiesGroup.GET(idParam+"/ledger-reports", policiesLedgerTableView)
+		policiesGroup.POST(idParam+"/"+api.ResourceStrikes, policiesStrikeCreate)
 
 		// policy-members
 		policyMembersGroup := app.Group(policyMemberPath)
-		policyMembersGroup.DELETE(idRegex, policiesMembersDelete)
+		policyMembersGroup.DELETE(idParam, policiesMembersDelete)
 
 		// repairs
 		repairsGroup := app.Group(repairsPath)
-		repairsGroup.Middleware.Skip(AuthZ, repairsRun) // AuthZ is implemented in the handler
-		repairsGroup.POST("/", repairsRun)
+		repairsGroup.POST("", repairsRun)
 
 		// strikes
 		strikesGroup := app.Group(strikesPath)
-		strikesGroup.PUT(idRegex, strikesUpdate)
-		strikesGroup.DELETE(idRegex, strikesDelete)
+		strikesGroup.PUT(idParam, strikesUpdate)
+		strikesGroup.DELETE(idParam, strikesDelete)
 
 		// robots
 		app.GET("/robots.txt", robots)
-		app.Middleware.Skip(AuthZ, robots)
-		app.Middleware.Skip(AuthN, robots)
 
 		listeners.RegisterListener()
 
-		job.Init(&app.Worker)
+		routes := app.Routes()
+		for _, r := range routes {
+			log.Debugf("%s %s\n", r.Method, r.Path)
+		}
+
+		// FIXME
+		// job.Init(&app.Worker)
 	}
 
 	return app
@@ -290,4 +264,42 @@ func cookieStore() sessions.Store {
 	}
 
 	return store
+}
+
+func GetTxMiddleware(tx *pop.Connection) echo.MiddlewareFunc {
+	errNotOK := errors.New("http error, rolling back transaction")
+
+	return func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			if tx == nil {
+				// TODO: should this return an error?
+				return next(c)
+			}
+			err := tx.Transaction(func(tx *pop.Connection) error {
+				const key = "tx"
+				c.Set(key, tx)
+
+				if err := next(c); err != nil {
+					return err
+				}
+
+				// If the status is not a "success", roll back transaction by returning an error
+				res := c.Response()
+
+				// let 200s and 300s through
+				if res.Status < 200 || res.Status >= 400 {
+					return errNotOK
+				}
+
+				return nil
+			})
+			if err != nil {
+				if errors.Is(err, errNotOK) {
+					return nil
+				}
+				return err
+			}
+			return nil
+		}
+	}
 }

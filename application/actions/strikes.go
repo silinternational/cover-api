@@ -3,7 +3,7 @@ package actions
 import (
 	"net/http"
 
-	"github.com/gobuffalo/buffalo"
+	"github.com/labstack/echo/v4"
 
 	"github.com/silinternational/cover-api/api"
 	"github.com/silinternational/cover-api/domain"
@@ -32,7 +32,7 @@ import (
 //	    description: updated Strike
 //	    schema:
 //	      "$ref": "#/definitions/Strike"
-func strikesUpdate(c buffalo.Context) error {
+func strikesUpdate(c echo.Context) error {
 	strike := getReferencedStrikeFromCtx(c)
 
 	var input api.StrikeInput
@@ -47,7 +47,7 @@ func strikesUpdate(c buffalo.Context) error {
 	}
 
 	output := strike.ConvertToAPI()
-	return c.Render(http.StatusOK, r.JSON(output))
+	return c.JSON(http.StatusOK, output)
 }
 
 // swagger:operation DELETE /strikes/{id} Strikes StrikesDelete
@@ -64,20 +64,20 @@ func strikesUpdate(c buffalo.Context) error {
 //	responses:
 //	  '204':
 //	    description: OK but no content in response
-func strikesDelete(c buffalo.Context) error {
+func strikesDelete(c echo.Context) error {
 	strike := getReferencedStrikeFromCtx(c)
 
 	if err := strike.Destroy(models.Tx(c)); err != nil {
 		return reportError(c, err)
 	}
 
-	return c.Render(http.StatusNoContent, nil)
+	return c.JSON(http.StatusNoContent, nil)
 }
 
 // getReferencedStrikeFromCtx pulls the models.Strike resource from context that was put there
 // by the AuthZ middleware
-func getReferencedStrikeFromCtx(c buffalo.Context) *models.Strike {
-	strike, ok := c.Value(domain.TypeStrike).(*models.Strike)
+func getReferencedStrikeFromCtx(c echo.Context) *models.Strike {
+	strike, ok := c.Get(domain.TypeStrike).(*models.Strike)
 	if !ok {
 		panic("strike not found in context")
 	}

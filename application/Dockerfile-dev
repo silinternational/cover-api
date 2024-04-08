@@ -13,6 +13,10 @@ RUN go install github.com/gobuffalo/buffalo-pop/v3@latest
 # Set file permissions so non-root user can access them -- necessary if USER user is enabled below
 # RUN chmod -R o=,g=rwX $GOPATH/pkg
 
+EXPOSE 3000
+
+ENV GOPROXY=https://proxy.golang.org
+
 RUN apt-get update && apt-get install -y \
     netcat-traditional \
     postgresql \
@@ -36,19 +40,21 @@ COPY go.sum go.sum
 RUN go mod download
 
 # additional deps needed for running tests
-RUN go get github.com/gobuffalo/suite/v3 \
-  github.com/gobuffalo/httptest \
-  github.com/markbates/grift \
+RUN go get github.com/markbates/grift \
   github.com/stretchr/testify \
   github.com/gorilla/pat \
   github.com/gorilla/context
 
 # install dlv for debugging
-RUN go install github.com/go-delve/delve/cmd/dlv@v1.9.0
+RUN go install github.com/go-delve/delve/cmd/dlv@v1.22.1
 
 ADD . .
 
 RUN printf "t() {\n go test -v -tags development ./\$1 -testify.m \$2 \n}\n" >> ~/.bashrc
+
+# TODO: remove these
+RUN go install github.com/gobuffalo/cli/cmd/buffalo@latest
+RUN go install github.com/gobuffalo/buffalo-pop/v3@latest
 
 EXPOSE 6060
 CMD ["buffalo", "dev"]

@@ -5,16 +5,19 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/gobuffalo/buffalo"
 	"github.com/gofrs/uuid"
+	"github.com/labstack/echo/v4"
 
 	"github.com/silinternational/cover-api/api"
 	"github.com/silinternational/cover-api/domain"
 	"github.com/silinternational/cover-api/models"
 )
 
-func AuthZ(next buffalo.Handler) buffalo.Handler {
-	return func(c buffalo.Context) error {
+func AuthZ(next echo.HandlerFunc) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		if AuthzSkipper(c) {
+			return next(c)
+		}
 		authableResources := map[string]models.Authable{
 			domain.TypeClaim:           &models.Claim{},
 			domain.TypeClaimFile:       &models.ClaimFile{},
@@ -29,7 +32,7 @@ func AuthZ(next buffalo.Handler) buffalo.Handler {
 			domain.TypeUser:            &models.User{},
 		}
 
-		actor, ok := c.Value(domain.ContextKeyCurrentUser).(models.User)
+		actor, ok := c.Get(domain.ContextKeyCurrentUser).(models.User)
 		if !ok {
 			err := fmt.Errorf("actor must be authenticated to proceed")
 			return reportError(c, api.NewAppError(err, api.ErrorNotAuthorized, api.CategoryUnauthorized))
@@ -151,4 +154,36 @@ func getPathParts(path string) []string {
 	pathParts := strings.Split(cleanPath, "/")
 
 	return pathParts
+}
+
+func AuthzSkipper(c echo.Context) bool {
+	if c.Request().Method == http.MethodOptions {
+		return true
+	}
+	skipURLs := map[string]struct{}{
+		"/":                            {},
+		auditsPath:                     {},
+		"/auth/callback":               {},
+		"/auth/login":                  {},
+		"/auth/logout":                 {},
+		"/config/claim-incident-types": {},
+		"/config/countries":            {},
+		"/config/item-categories":      {},
+		ledgerReportPath + "/annual":   {},
+		ledgerReportPath + "/monthly":  {},
+		policiesPath + "/import":       {},
+		repairsPath:                    {},
+		"/robots.txt":                  {},
+		"/status":                      {},
+		stewardPath:                    {},
+		stewardPath + "/recent":        {},
+		"/upload":                      {},
+		usersPath + "/me":              {},
+		usersPath + "/me/files":        {},
+	}
+	path := c.Path()
+	if _, ok := skipURLs[path]; ok {
+		return true
+	}
+	return false
 }

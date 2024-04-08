@@ -5,12 +5,10 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/silinternational/cover-api/domain"
 	"github.com/silinternational/cover-api/models"
 )
 
 func (as *ActionSuite) TestPolicyMember_Delete() {
-
 	f := models.CreateItemFixtures(as.DB, models.FixturesConfig{NumberOfPolicies: 4, ItemsPerPolicy: 2, UsersPerPolicy: 2})
 	owner := f.Users[0]
 	otherUser := f.Users[4]
@@ -44,19 +42,14 @@ func (as *ActionSuite) TestPolicyMember_Delete() {
 	}
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
-			req := as.JSON(fmt.Sprintf("%s/%s", policyMemberPath, tt.polUserID))
-			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
-			req.Headers["content-type"] = domain.ContentJson
-			res := req.Delete()
+			path := fmt.Sprintf("%s/%s", policyMemberPath, tt.polUserID)
+			body, status := as.request("DELETE", path, tt.actor.Email, nil)
+			as.Equal(tt.wantStatus, status, "incorrect status code returned, body: %s", body)
 
-			body := res.Body.String()
-			as.Equal(tt.wantStatus, res.Code, "incorrect status code returned, body: %s", body)
-
-			if res.Code == http.StatusNoContent {
+			if status == http.StatusNoContent {
 				return
 			}
-			as.Contains(body, tt.wantInBody, "string is missing from body")
-
+			as.Contains(string(body), tt.wantInBody, "string is missing from body")
 		})
 	}
 }

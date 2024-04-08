@@ -11,7 +11,6 @@ import (
 )
 
 func (as *ActionSuite) Test_StrikesUpdate() {
-
 	f := models.CreatePolicyFixtures(as.DB, models.FixturesConfig{NumberOfPolicies: 2})
 	policyTwoStrikes := f.Policies[0]
 	normalUser := f.Users[0]
@@ -56,22 +55,18 @@ func (as *ActionSuite) Test_StrikesUpdate() {
 
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
-			req := as.JSON("%s/%s", strikesPath, tt.strike.ID.String())
-			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
-			res := req.Put(api.StrikeInput{Description: newDescription})
-
-			body := res.Body.String()
-			as.Equal(tt.wantStatus, res.Code, "incorrect status code returned, body: %s", body)
+			path := fmt.Sprintf("%s/%s", strikesPath, tt.strike.ID.String())
+			body, status := as.request("PUT", path, tt.actor.Email, api.StrikeInput{Description: newDescription})
+			as.Equal(tt.wantStatus, status, "incorrect status code returned, body: %s", body)
 
 			for _, s := range tt.wantInBody {
-				as.Contains(body, s)
+				as.Contains(string(body), s)
 			}
 		})
 	}
 }
 
 func (as *ActionSuite) Test_StrikesDelete() {
-
 	f := models.CreatePolicyFixtures(as.DB, models.FixturesConfig{NumberOfPolicies: 2})
 	normalUser := f.Users[0]
 	stewardUser := models.CreateAdminUsers(as.DB)[models.AppRoleSteward]
@@ -109,19 +104,16 @@ func (as *ActionSuite) Test_StrikesDelete() {
 
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
-			req := as.JSON("%s/%s", strikesPath, tt.strike.ID.String())
-			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
-			res := req.Delete()
-
-			body := res.Body.String()
-			as.Equal(tt.wantStatus, res.Code, "incorrect status code returned, body: %s", body)
+			path := fmt.Sprintf("%s/%s", strikesPath, tt.strike.ID.String())
+			body, status := as.request("DELETE", path, tt.actor.Email, nil)
+			as.Equal(tt.wantStatus, status, "incorrect status code returned, body: %s", body)
 
 			if tt.wantStatus == http.StatusNoContent {
 				return
 			}
 
 			for _, s := range tt.wantInBody {
-				as.Contains(body, s)
+				as.Contains(string(body), s)
 			}
 		})
 	}

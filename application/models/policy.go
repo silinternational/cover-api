@@ -2,7 +2,6 @@ package models
 
 import (
 	"bufio"
-	"context"
 	"encoding/csv"
 	"fmt"
 	"io"
@@ -15,6 +14,7 @@ import (
 	"github.com/gobuffalo/pop/v6"
 	"github.com/gobuffalo/validate/v3"
 	"github.com/gofrs/uuid"
+	"github.com/labstack/echo/v4"
 	"github.com/pkg/errors"
 
 	"github.com/silinternational/cover-api/api"
@@ -58,7 +58,7 @@ func (p *Policy) Validate(tx *pop.Connection) (*validate.Errors, error) {
 }
 
 // CreateWithHistory stores the Policy data as a new record in the database. Also creates a PolicyHistory record.
-func (p *Policy) CreateWithHistory(ctx context.Context) error {
+func (p *Policy) CreateWithHistory(ctx echo.Context) error {
 	tx := Tx(ctx)
 
 	if err := p.Create(tx); err != nil {
@@ -78,7 +78,7 @@ func (p *Policy) Create(tx *pop.Connection) error {
 }
 
 // Update writes the Policy data to an existing database record.
-func (p *Policy) Update(ctx context.Context) error {
+func (p *Policy) Update(ctx echo.Context) error {
 	tx := Tx(ctx)
 	var oldPolicy Policy
 	if err := oldPolicy.FindByID(tx, p.ID); err != nil {
@@ -98,7 +98,7 @@ func (p *Policy) Update(ctx context.Context) error {
 
 // CreateTeam creates a new Team type policy for the user.
 // The EntityCodeID, CostCenter and Account must have non-blank values
-func (p *Policy) CreateTeam(ctx context.Context) error {
+func (p *Policy) CreateTeam(ctx echo.Context) error {
 	tx := Tx(ctx)
 	actor := CurrentUser(ctx)
 
@@ -451,7 +451,7 @@ func (p *Policy) AddDependent(tx *pop.Connection, input api.PolicyDependentInput
 	return dependent, nil
 }
 
-func (p *Policy) AddClaim(ctx context.Context, input api.ClaimCreateInput) (Claim, error) {
+func (p *Policy) AddClaim(ctx echo.Context, input api.ClaimCreateInput) (Claim, error) {
 	if p == nil {
 		return Claim{}, errors.New("policy is nil in AddClaim")
 	}
@@ -529,7 +529,7 @@ func (p *Policy) Compare(old Policy) []FieldUpdate {
 	return updates
 }
 
-func (p *Policy) NewHistory(ctx context.Context, action string, fieldUpdate FieldUpdate) PolicyHistory {
+func (p *Policy) NewHistory(ctx echo.Context, action string, fieldUpdate FieldUpdate) PolicyHistory {
 	return PolicyHistory{
 		Action:    action,
 		PolicyID:  p.ID,

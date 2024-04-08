@@ -5,10 +5,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gobuffalo/buffalo"
 	"github.com/gobuffalo/nulls"
 	"github.com/gobuffalo/pop/v6"
 	"github.com/gofrs/uuid"
+	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
@@ -48,7 +48,7 @@ func (ms *ModelSuite) Test_CurrentUser() {
 
 	tests := []struct {
 		name     string
-		context  buffalo.Context
+		context  echo.Context
 		wantUser User
 	}{
 		{
@@ -58,7 +58,7 @@ func (ms *ModelSuite) Test_CurrentUser() {
 		},
 		{
 			name:     "empty context",
-			context:  &TestBuffaloContext{params: map[any]any{}},
+			context:  testContext(),
 			wantUser: User{},
 		},
 	}

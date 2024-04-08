@@ -1,7 +1,7 @@
 package actions
 
 import (
-	"github.com/gobuffalo/buffalo"
+	"github.com/labstack/echo/v4"
 
 	"github.com/silinternational/cover-api/models"
 )
@@ -19,7 +19,7 @@ import (
 //	      type: array
 //	      items:
 //	        "$ref": "#/definitions/ItemCategory"
-func itemCategoriesList(c buffalo.Context) error {
+func itemCategoriesList(c echo.Context) error {
 	tx := models.Tx(c)
 
 	var itemCategories models.ItemCategories

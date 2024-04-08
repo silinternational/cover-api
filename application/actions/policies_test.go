@@ -1,10 +1,10 @@
 package actions
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strings"
 	"testing"
 	"time"
 
@@ -72,7 +72,7 @@ func (as *ActionSuite) Test_PoliciesList() {
 		{
 			name:        "admin with username search",
 			actor:       appAdmin,
-			queryString: "?search=john bunyan",
+			queryString: "?search=john%20bunyan",
 			wantCount:   1,
 			wantStatus:  http.StatusOK,
 		},
@@ -88,21 +88,17 @@ func (as *ActionSuite) Test_PoliciesList() {
 
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
-			req := as.JSON("/policies" + tt.queryString)
-			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
-			req.Headers["content-type"] = domain.ContentJson
-			res := req.Get()
-
-			body := res.Body.String()
-			as.Equal(tt.wantStatus, res.Code, "incorrect status code returned, body: %s", body)
+			path := "/policies" + tt.queryString
+			body, status := as.request("GET", path, tt.actor.Email, nil)
+			as.Equal(tt.wantStatus, status, "incorrect status code returned, body: %s", body)
 			if tt.wantInBody != "" {
-				as.Contains(body, tt.wantInBody)
+				as.Contains(string(body), tt.wantInBody)
 			}
 			if tt.notWantInBody != "" {
 				as.NotContains(body, tt.notWantInBody)
 			}
 
-			if res.Code != http.StatusOK {
+			if status != http.StatusOK {
 				return
 			}
 
@@ -110,7 +106,7 @@ func (as *ActionSuite) Test_PoliciesList() {
 				Meta api.Meta     `json:"meta"`
 				Data api.Policies `json:"data"`
 			}
-			dec := json.NewDecoder(strings.NewReader(body))
+			dec := json.NewDecoder(bytes.NewReader(body))
 			dec.DisallowUnknownFields()
 			err := dec.Decode(&response)
 
@@ -215,25 +211,21 @@ func (as *ActionSuite) Test_PoliciesView() {
 
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
-			req := as.JSON("/policies/" + tt.policyID.String())
-			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
-			req.Headers["content-type"] = domain.ContentJson
-			res := req.Get()
-
-			body := res.Body.String()
-			as.Equal(tt.wantStatus, res.Code, "incorrect status code returned, body: %s", body)
+			path := "/policies/" + tt.policyID.String()
+			body, status := as.request("GET", path, tt.actor.Email, nil)
+			as.Equal(tt.wantStatus, status, "incorrect status code returned, body: %s", body)
 			for _, w := range tt.wantInBody {
-				as.Contains(body, w, "string is missing from body")
+				as.Contains(string(body), w, "string is missing from body")
 			}
 			if tt.notWantInBody != "" {
 				as.NotContains(body, tt.notWantInBody)
 			}
 
-			if res.Code != http.StatusOK {
+			if status != http.StatusOK {
 				return
 			}
 			var policy api.Policy
-			dec := json.NewDecoder(strings.NewReader(body))
+			dec := json.NewDecoder(bytes.NewReader(body))
 			dec.DisallowUnknownFields()
 			err := dec.Decode(&policy)
 			as.NoError(err)
@@ -293,25 +285,20 @@ func (as *ActionSuite) Test_PoliciesCreateTeam() {
 
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
-			req := as.JSON("/policies")
-			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
-			req.Headers["content-type"] = domain.ContentJson
-			res := req.Post(tt.input)
-
-			body := res.Body.String()
-			as.Equal(tt.wantStatus, res.Code, "incorrect status code returned, body: %s", body)
+			body, status := as.request("POST", "/policies", tt.actor.Email, tt.input)
+			as.Equal(tt.wantStatus, status, "incorrect status code returned, body: %s", body)
 			if tt.wantInBody != "" {
-				as.Contains(body, tt.wantInBody)
+				as.Contains(string(body), tt.wantInBody)
 			}
 			if tt.notWantInBody != "" {
 				as.NotContains(body, tt.notWantInBody)
 			}
 
-			if res.Code != http.StatusOK {
+			if status != http.StatusOK {
 				return
 			}
 			var policy api.Policy
-			as.NoError(json.Unmarshal([]byte(body), &policy))
+			as.NoError(json.Unmarshal(body, &policy))
 			as.Equal(tt.input.CostCenter, policy.CostCenter)
 			as.Equal(tt.input.Account, policy.Account)
 			as.Equal(tt.input.EntityCode, policy.EntityCode.Code)
@@ -388,25 +375,21 @@ func (as *ActionSuite) Test_PoliciesUpdate() {
 
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
-			req := as.JSON("/policies/" + tt.policy.ID.String())
-			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
-			req.Headers["content-type"] = domain.ContentJson
-			res := req.Put(tt.update)
-
-			body := res.Body.String()
-			as.Equal(tt.wantStatus, res.Code, "incorrect status code returned, body: %s", body)
+			path := "/policies/" + tt.policy.ID.String()
+			body, status := as.request("PUT", path, tt.actor.Email, tt.update)
+			as.Equal(tt.wantStatus, status, "incorrect status code returned, body: %s", body)
 			if tt.wantInBody != "" {
-				as.Contains(body, tt.wantInBody)
+				as.Contains(string(body), tt.wantInBody)
 			}
 			if tt.notWantInBody != "" {
 				as.NotContains(body, tt.notWantInBody)
 			}
 
-			if res.Code != http.StatusOK {
+			if status != http.StatusOK {
 				return
 			}
 			var policy api.Policy
-			as.NoError(json.Unmarshal([]byte(body), &policy))
+			as.NoError(json.Unmarshal(body, &policy))
 			as.Equal(*tt.update.HouseholdID, policy.HouseholdID.String)
 		})
 	}
@@ -494,7 +477,7 @@ func (as *ActionSuite) Test_PoliciesListMembers() {
 			actor:         normalUser,
 			policyID:      "abc123",
 			wantCount:     fixConfig.UsersPerPolicy,
-			wantStatus:    http.StatusNotFound,
+			wantStatus:    http.StatusBadRequest,
 			wantInBody:    "",
 			notWantInBody: normalUser.ID.String(),
 		},
@@ -502,25 +485,21 @@ func (as *ActionSuite) Test_PoliciesListMembers() {
 
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
-			req := as.JSON("/policies/" + tt.policyID + "/members")
-			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
-			req.Headers["content-type"] = domain.ContentJson
-			res := req.Get()
-
-			body := res.Body.String()
-			as.Equal(tt.wantStatus, res.Code, "incorrect status code returned, body: %s", body)
+			path := fmt.Sprintf("/policies/%s/members", tt.policyID)
+			body, status := as.request("GET", path, tt.actor.Email, nil)
+			as.Equal(tt.wantStatus, status, "incorrect status code returned, body: %s", body)
 			if tt.wantInBody != "" {
-				as.Contains(body, tt.wantInBody)
+				as.Contains(string(body), tt.wantInBody)
 			}
 			if tt.notWantInBody != "" {
 				as.NotContains(body, tt.notWantInBody)
 			}
 
-			if res.Code != http.StatusOK {
+			if status != http.StatusOK {
 				return
 			}
 			var members api.PolicyMembers
-			err := json.Unmarshal([]byte(body), &members)
+			err := json.Unmarshal(body, &members)
 			as.NoError(err)
 			as.Equal(tt.wantCount, len(members))
 		})
@@ -615,12 +594,10 @@ func (as *ActionSuite) Test_PoliciesInviteMember() {
 				Name:  tt.inviteeName,
 			}
 
-			req := as.JSON("/policies/" + tt.policyID.String() + "/members")
-			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
-			req.Headers["content-type"] = domain.ContentJson
-			res := req.Post(input)
+			path := fmt.Sprintf("/policies/%s/members", tt.policyID.String())
+			body, status := as.request("POST", path, tt.actor.Email, input)
 
-			as.Equal(tt.wantStatus, res.Code, "http status code not as expected")
+			as.Equal(tt.wantStatus, status, "incorrect status code returned, body: %s", body)
 			as.Equal(tt.wantEventTriggered, createInviteEventDetected, "event detection not as expected")
 		})
 	}
@@ -688,27 +665,24 @@ func (as *ActionSuite) Test_PolicyLedgerReportCreate() {
 
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
-			req := as.JSON("%s/%s/ledger-reports", policiesPath, policy.ID.String())
-			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
-			res := req.Post(api.PolicyLedgerReportCreateInput{
+			path := fmt.Sprintf("%s/%s/ledger-reports", policiesPath, policy.ID.String())
+			body, status := as.request("POST", path, tt.actor.Email, api.PolicyLedgerReportCreateInput{
 				Month: tt.month,
 				Year:  tt.year,
 				Type:  tt.reportType,
 			})
-
-			body := res.Body.String()
-			as.Equal(tt.wantStatus, res.Code, "incorrect status code returned, body: %s", body)
+			as.Equal(tt.wantStatus, status, "incorrect status code returned, body: %s", body)
 
 			for _, s := range tt.wantInBody {
-				as.Contains(body, s)
+				as.Contains(string(body), s)
 			}
 
-			if res.Code != http.StatusOK {
+			if status != http.StatusOK {
 				return
 			}
 
 			var report api.LedgerReport
-			as.NoError(json.Unmarshal([]byte(body), &report))
+			as.NoError(json.Unmarshal(body, &report))
 			as.Equal(tt.reportType, report.Type)
 		})
 	}
@@ -782,23 +756,20 @@ func (as *ActionSuite) Test_PolicyLedgerReportView() {
 
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
-			req := as.JSON("%s/%s/ledger-reports?month=%d&year=%d", policiesPath, policy.ID.String(), tt.month, tt.year)
-			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
-			res := req.Get()
-
-			body := res.Body.String()
-			as.Equal(tt.wantStatus, res.Code, "incorrect status code returned, body: %s", body)
+			path := fmt.Sprintf("%s/%s/ledger-reports?month=%d&year=%d", policiesPath, policy.ID.String(), tt.month, tt.year)
+			body, status := as.request("GET", path, tt.actor.Email, nil)
+			as.Equal(tt.wantStatus, status, "incorrect status code returned, body: %s", body)
 
 			for _, s := range tt.wantInBody {
-				as.Contains(body, s)
+				as.Contains(string(body), s)
 			}
 
-			if res.Code != http.StatusOK {
+			if status != http.StatusOK {
 				return
 			}
 
 			var table api.LedgerTable
-			as.NoError(json.Unmarshal([]byte(body), &table))
+			as.NoError(json.Unmarshal(body, &table))
 			as.Equal(tt.month, table.ReportMonth, "incorrect ReportMonth")
 			as.Equal(tt.year, table.ReportYear, "incorrect ReportYear")
 		})
@@ -857,15 +828,12 @@ func (as *ActionSuite) Test_PolicyStrikesCreate() {
 
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
-			req := as.JSON("%s/%s/%s", policiesPath, tt.policy.ID.String(), api.ResourceStrikes)
-			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
-			res := req.Post(api.StrikeInput{Description: "New Strike"})
-
-			body := res.Body.String()
-			as.Equal(tt.wantStatus, res.Code, "incorrect status code returned, body: %s", body)
+			path := fmt.Sprintf("%s/%s/%s", policiesPath, tt.policy.ID.String(), api.ResourceStrikes)
+			body, status := as.request("POST", path, tt.actor.Email, api.StrikeInput{Description: "New Strike"})
+			as.Equal(tt.wantStatus, status, "incorrect status code returned, body: %s", body)
 
 			for _, s := range tt.wantInBody {
-				as.Contains(body, s)
+				as.Contains(string(body), s)
 			}
 		})
 	}

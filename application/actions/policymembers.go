@@ -3,7 +3,7 @@ package actions
 import (
 	"net/http"
 
-	"github.com/gobuffalo/buffalo"
+	"github.com/labstack/echo/v4"
 
 	"github.com/silinternational/cover-api/api"
 	"github.com/silinternational/cover-api/domain"
@@ -28,7 +28,7 @@ import (
 //	      type: array
 //	      items:
 //	        "$ref": "#/definitions/PolicyMember"
-func policiesListMembers(c buffalo.Context) error {
+func policiesListMembers(c echo.Context) error {
 	tx := models.Tx(c)
 	policy := getReferencedPolicyFromCtx(c)
 
@@ -59,7 +59,7 @@ func policiesListMembers(c buffalo.Context) error {
 //	    description: success, no content
 //	  '400':
 //	   description: bad request, check the error and fix your code
-func policiesInviteMember(c buffalo.Context) error {
+func policiesInviteMember(c echo.Context) error {
 	tx := models.Tx(c)
 	policy := getReferencedPolicyFromCtx(c)
 
@@ -79,7 +79,7 @@ func policiesInviteMember(c buffalo.Context) error {
 	} else {
 		// make sure user is not already a member of this policy
 		if policy.MemberHasEmail(tx, invite.Email) {
-			return c.Render(http.StatusNoContent, nil)
+			return c.JSON(http.StatusNoContent, nil)
 		}
 
 		err = policy.NewTeamInvite(tx, invite, cUser)
@@ -89,7 +89,7 @@ func policiesInviteMember(c buffalo.Context) error {
 		return reportError(c, err)
 	}
 
-	return c.Render(http.StatusNoContent, nil)
+	return c.JSON(http.StatusNoContent, nil)
 }
 
 // swagger:operation DELETE /policy-members/{id} PolicyMembers PolicyMembersDelete
@@ -107,21 +107,20 @@ func policiesInviteMember(c buffalo.Context) error {
 //	responses:
 //	  '204':
 //	    description: OK but no content in response
-func policiesMembersDelete(c buffalo.Context) error {
+func policiesMembersDelete(c echo.Context) error {
 	policyUser := getReferencedPolicyMemberFromCtx(c)
 
 	if err := policyUser.Delete(c); err != nil {
 		return reportError(c, err)
 	}
 
-	return c.Render(http.StatusNoContent, nil)
-
+	return c.JSON(http.StatusNoContent, nil)
 }
 
 // getReferencedPolicyMemberFromCtx pulls the models.PolicyUser resource from context that was put there
 // by the AuthZ middleware
-func getReferencedPolicyMemberFromCtx(c buffalo.Context) *models.PolicyUser {
-	policyUser, ok := c.Value(domain.TypePolicyMember).(*models.PolicyUser)
+func getReferencedPolicyMemberFromCtx(c echo.Context) *models.PolicyUser {
+	policyUser, ok := c.Get(domain.TypePolicyMember).(*models.PolicyUser)
 	if !ok {
 		panic("policy user not found in context")
 	}

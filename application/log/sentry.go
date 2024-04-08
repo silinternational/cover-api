@@ -6,8 +6,7 @@ import (
 	"os"
 
 	"github.com/getsentry/sentry-go"
-	_ "github.com/getsentry/sentry-go"
-	"github.com/gobuffalo/buffalo"
+	"github.com/labstack/echo/v4"
 	"github.com/sirupsen/logrus"
 )
 
@@ -27,8 +26,8 @@ type SentryHook struct {
 	hub *sentry.Hub
 }
 
-func SentryMiddleware(next buffalo.Handler) buffalo.Handler {
-	return func(c buffalo.Context) error {
+func SentryMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
+	return func(c echo.Context) error {
 		hub := sentry.NewHub(sentry.CurrentHub().Client(), sentry.NewScope())
 		c.Set(ContextKeySentryHub, hub)
 		return next(c)
@@ -51,7 +50,7 @@ func (s *SentryHook) Fire(entry *logrus.Entry) error {
 		Level:   mapLogrusToSentryLevel[entry.Level],
 		Message: entry.Message,
 	}
-	if c, ok := entry.Context.(buffalo.Context); ok {
+	if c, ok := entry.Context.(echo.Context); ok {
 		event.Request = sentry.NewRequest(c.Request())
 	}
 

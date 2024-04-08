@@ -75,23 +75,18 @@ func (as *ActionSuite) Test_usersMe() {
 
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
-			req := as.JSON("/users/me")
-			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.token)
+			body, status := as.request("GET", "/users/me", tt.token, nil)
 
-			res := req.Get()
-
-			as.Require().Equal(tt.wantStatus, res.Code, "incorrect status code returned: %d", res.Code)
+			as.Equal(tt.wantStatus, status, "incorrect status code returned, body: %s", body)
 			if tt.wantStatus != http.StatusOK {
 				return
 			}
 
-			body := res.Body.String()
-
 			if tt.wantPhotoID != uuid.Nil {
 				want := `"photo_file":{"id":"` + tt.wantPhotoID.String()
-				as.Contains(body, want, "didn't get the photo file in the response")
+				as.Contains(string(body), want, "didn't get the photo file in the response")
 				want = `"photo_file_id":"` + tt.wantPhotoID.String()
-				as.Contains(body, want, "didn't get the photo ID in the response")
+				as.Contains(string(body), want, "didn't get the photo ID in the response")
 			}
 
 			as.verifyResponseData(tt.wantInBody, body, "Users Me fields")
@@ -167,22 +162,17 @@ func (as *ActionSuite) Test_UsersMeUpdate() {
 
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
-			req := as.JSON("/users/me")
-			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
-			req.Headers["content-type"] = domain.ContentJson
-			res := req.Put(tt.input)
-
-			body := res.Body.String()
-			as.Equal(tt.wantStatus, res.Code, "incorrect status code returned, body: %s", body)
+			body, status := as.request("PUT", "/users/me", tt.actor.Email, tt.input)
+			as.Equal(tt.wantStatus, status, "incorrect status code returned, body: %s", body)
 
 			as.verifyResponseData(tt.wantInBody, body, "")
 
-			if res.Code != http.StatusOK {
+			if status != http.StatusOK {
 				return
 			}
 
 			var apiUser api.User
-			err := json.Unmarshal([]byte(body), &apiUser)
+			err := json.Unmarshal(body, &apiUser)
 			as.NoError(err)
 
 			var user models.User
@@ -258,17 +248,12 @@ func (as *ActionSuite) Test_UsersMeFilesAttach() {
 	}
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
-			req := as.JSON("/users/me/files")
-			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
-			req.Headers["content-type"] = domain.ContentJson
-			res := req.Post(tt.input)
-
-			body := res.Body.String()
-			as.Equal(tt.wantStatus, res.Code, "incorrect status code returned, body: %s", body)
+			body, status := as.request("POST", "/users/me/files", tt.actor.Email, tt.input)
+			as.Equal(tt.wantStatus, status, "incorrect status code returned, body: %s", body)
 
 			as.verifyResponseData([]string{tt.wantInBody}, body, "")
 
-			if res.Code != http.StatusOK {
+			if status != http.StatusOK {
 				return
 			}
 
@@ -306,13 +291,9 @@ func (as *ActionSuite) Test_UsersMeFilesDelete() {
 	}
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
-			req := as.JSON("/users/me/files")
-			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", currentUser.Email)
-			req.Headers["content-type"] = domain.ContentJson
-			res := req.Delete()
+			body, status := as.request("DELETE", "/users/me/files", currentUser.Email, nil)
 
-			body := res.Body.String()
-			as.Equal(http.StatusNoContent, res.Code, "incorrect status code returned, body: %s", body)
+			as.Equal(http.StatusNoContent, status, "incorrect status code returned, body: %s", body)
 		})
 	}
 }

@@ -1,7 +1,6 @@
 package actions
 
 import (
-	"fmt"
 	"net/http"
 	"testing"
 	"time"
@@ -53,13 +52,9 @@ func (as *ActionSuite) Test_repairsRun() {
 	}
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
-			req := as.JSON(repairsPath)
-			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
-			req.Headers["content-type"] = domain.ContentJson
-			res := req.Post(tt.input)
-			body := res.Body.Bytes()
+			body, status := as.request("POST", repairsPath, tt.actor.Email, tt.input)
 
-			as.Equal(tt.wantStatus, res.Code, "incorrect status code returned: %d\n%s", res.Code, body)
+			as.Equal(tt.wantStatus, status, "incorrect status code returned: %d\n%s", status, body)
 			if tt.wantStatus != http.StatusOK {
 				var err api.AppError
 				as.NoError(as.decodeBody(body, &err), "response data is not as expected")

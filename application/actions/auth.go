@@ -8,10 +8,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gobuffalo/buffalo"
-	"github.com/gobuffalo/buffalo/render"
 	"github.com/gobuffalo/pop/v6"
 	"github.com/gofrs/uuid"
+	"github.com/labstack/echo/v4"
 
 	"github.com/silinternational/cover-api/api"
 	"github.com/silinternational/cover-api/auth"
@@ -73,9 +72,9 @@ var samlConfig = saml.Config{
 //	responses:
 //	  '200':
 //	    description: returns a "RedirectURL" key with the saml idp url that has a saml request
-func authRequest(c buffalo.Context) error {
+func authRequest(c echo.Context) error {
 	// Push the Client ID into the Session
-	clientID := c.Param(ClientIDParam)
+	clientID := c.QueryParam(ClientIDParam)
 	if clientID == "" {
 		appErr := api.AppError{
 			HttpStatus: http.StatusBadRequest,
@@ -85,11 +84,14 @@ func authRequest(c buffalo.Context) error {
 		return reportErrorAndClearSession(c, &appErr)
 	}
 
-	c.Session().Set(ClientIDSessionKey, clientID)
+	err := sessionSetValue(c, ClientIDSessionKey, clientID)
+	if err != nil {
+		return err
+	}
 
 	getOrSetReturnTo(c)
 
-	inviteCode := c.Param(InviteCodeParam)
+	inviteCode := c.QueryParam(InviteCodeParam)
 	if inviteCode != "" {
 		if appErr := validateInviteOnLogin(c, inviteCode); appErr != nil {
 			return reportErrorAndClearSession(c, appErr)
@@ -121,32 +123,34 @@ func authRequest(c buffalo.Context) error {
 	}
 
 	// Reply with a 200 and leave it to the UI to do the redirect
-	return c.Render(http.StatusOK, render.JSON(authRedirect))
+	return c.JSON(http.StatusOK, authRedirect)
 }
 
-func getOrSetReturnTo(c buffalo.Context) string {
-	returnTo := c.Param(ReturnToParam)
+func getOrSetReturnTo(c echo.Context) string {
+	returnTo := c.QueryParam(ReturnToParam)
 
 	if returnTo == "" {
-		var ok bool
-		returnTo, ok = c.Session().Get(ReturnToSessionKey).(string)
-		if !ok {
+		var err error
+		returnTo, err = sessionGetString(c, ReturnToSessionKey)
+		if err != nil {
 			returnTo = domain.DefaultUIPath
 		}
 
 		return returnTo
 	}
 
-	c.Session().Set(ReturnToSessionKey, returnTo)
+	if err := sessionSetValue(c, ReturnToSessionKey, returnTo); err != nil {
+		log.Errorf("failed to set %s in session: %s", ReturnToSessionKey, err)
+	}
 
 	return returnTo
 }
 
 // check for valid matching invite and save the code to the Session
-func validateInviteOnLogin(c buffalo.Context, inviteCode string) *api.AppError {
+func validateInviteOnLogin(c echo.Context, inviteCode string) *api.AppError {
 	appErr := api.AppError{Key: api.ErrorProcessingAuthInviteCode}
 
-	tx, ok := c.Value(domain.ContextKeyTx).(*pop.Connection)
+	tx, ok := c.Get(domain.ContextKeyTx).(*pop.Connection)
 	if !ok {
 		appErr.HttpStatus = http.StatusInternalServerError
 		appErr.DebugMsg = "bad context database connection"
@@ -171,14 +175,16 @@ func validateInviteOnLogin(c buffalo.Context, inviteCode string) *api.AppError {
 		return &appErr
 	}
 
-	c.Session().Set(InviteCodeSessionKey, inviteCode)
+	if err = sessionSetValue(c, InviteCodeSessionKey, inviteCode); err != nil {
+		log.Errorf("failed to set %s in session: %s", InviteCodeSessionKey, err)
+	}
 
 	return nil
 }
 
-func authCallback(c buffalo.Context) error {
-	clientID, ok := c.Session().Get(ClientIDSessionKey).(string)
-	if !ok {
+func authCallback(c echo.Context) error {
+	clientID, err := sessionGetString(c, ClientIDSessionKey)
+	if err != nil {
 		appError := api.AppError{
 			Key:        api.ErrorMissingSessionKey,
 			DebugMsg:   ClientIDSessionKey + " session entry is required to complete login",
@@ -225,8 +231,8 @@ func authCallback(c buffalo.Context) error {
 		})
 	}
 
-	inviteCode, ok := c.Session().Get(InviteCodeSessionKey).(string)
-	if ok {
+	inviteCode, err := sessionGetString(c, InviteCodeSessionKey)
+	if err == nil {
 		invite := models.PolicyUserInvite{}
 		if err := invite.Accept(tx, inviteCode, user); err != nil {
 			return reportErrorAndClearSession(c, err)
@@ -234,7 +240,9 @@ func authCallback(c buffalo.Context) error {
 	}
 
 	// login was success, clear session so new login can be initiated if needed
-	c.Session().Clear()
+	if err = clearSession(c); err != nil {
+		return reportError(c, appErrorFromErr(err))
+	}
 
 	isNew := false
 	if time.Since(user.CreatedAt) < time.Duration(time.Second*30) {
@@ -255,7 +263,7 @@ func authCallback(c buffalo.Context) error {
 	authUser.AccessTokenExpiresAt = uat.ExpiresAt.UTC().Unix()
 
 	// set person on log context
-	log.SetUser(c, authUser.StaffID, user.GetName().String(), user.Email)
+	log.SetUser(c.Request().Context(), authUser.StaffID, user.GetName().String(), user.Email)
 
 	return c.Redirect(302, getLoginSuccessRedirectURL(*authUser, returnTo))
 }
@@ -298,8 +306,8 @@ func getLoginSuccessRedirectURL(authUser auth.User, returnTo string) string {
 //	responses:
 //	  '302':
 //	    description: redirect to UI
-func authDestroy(c buffalo.Context) error {
-	tokenParam := c.Param(LogoutToken)
+func authDestroy(c echo.Context) error {
+	tokenParam := c.QueryParam(LogoutToken)
 	if tokenParam == "" {
 		return reportErrorAndClearSession(c, &api.AppError{
 			HttpStatus: http.StatusBadRequest,
@@ -324,7 +332,7 @@ func authDestroy(c buffalo.Context) error {
 	}
 
 	// set person on log context
-	log.SetUser(c, authUser.ID.String(), authUser.GetName().String(), authUser.Email)
+	log.SetUser(c.Request().Context(), authUser.ID.String(), authUser.GetName().String(), authUser.Email)
 
 	sp, err := saml.New(samlConfig)
 	if err != nil {
@@ -351,7 +359,9 @@ func authDestroy(c buffalo.Context) error {
 		if appErr := uat.DeleteByBearerToken(tx, tokenParam); appErr != nil {
 			return reportErrorAndClearSession(c, appErr)
 		}
-		c.Session().Clear()
+		if err = clearSession(c); err != nil {
+			return reportError(c, appErrorFromErr(err))
+		}
 		redirectURL = authResp.RedirectURL
 	}
 

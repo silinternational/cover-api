@@ -1,7 +1,6 @@
 package models
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"net/http"
@@ -11,6 +10,7 @@ import (
 	"github.com/gobuffalo/pop/v6"
 	"github.com/gobuffalo/validate/v3"
 	"github.com/gofrs/uuid"
+	"github.com/labstack/echo/v4"
 
 	"github.com/silinternational/cover-api/api"
 	"github.com/silinternational/cover-api/domain"
@@ -74,8 +74,8 @@ func (p *PolicyUser) FindByPolicyAndUserIDs(tx *pop.Connection, policyID, userID
 }
 
 // Delete removes a policy member if there is an additional PolicyUser for the related policy and
-//  nulls out the PolicyUserID on all related items
-func (p *PolicyUser) Delete(ctx context.Context) error {
+// nulls out the PolicyUserID on all related items
+func (p *PolicyUser) Delete(ctx echo.Context) error {
 	tx := Tx(ctx)
 
 	var pUsers PolicyUsers

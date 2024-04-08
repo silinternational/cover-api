@@ -1,7 +1,6 @@
 package models
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"net/http"
@@ -11,6 +10,7 @@ import (
 	"github.com/gobuffalo/pop/v6"
 	"github.com/gobuffalo/validate/v3"
 	"github.com/gofrs/uuid"
+	"github.com/labstack/echo/v4"
 
 	"github.com/silinternational/cover-api/api"
 	"github.com/silinternational/cover-api/domain"
@@ -166,7 +166,7 @@ func (lr *LedgerReport) LoadPolicy(tx *pop.Connection, reload bool) {
 }
 
 // NewLedgerReport creates a new report by querying the database according to the requested report type
-func NewLedgerReport(ctx context.Context, reportFormat, reportType string, date time.Time) (LedgerReport, error) {
+func NewLedgerReport(ctx echo.Context, reportFormat, reportType string, date time.Time) (LedgerReport, error) {
 	tx := Tx(ctx)
 
 	report := LedgerReport{Type: reportType}
@@ -205,7 +205,7 @@ func NewLedgerReport(ctx context.Context, reportFormat, reportType string, date 
 // NewPolicyLedgerReport creates a new report for one policy by querying the database according
 // to the requested report type and the month and year of the request.
 // If no ledger entries are found, it returns an empty LedgerReport.
-func NewPolicyLedgerReport(ctx context.Context, policy Policy, reportType string, month, year int) (LedgerReport, error) {
+func NewPolicyLedgerReport(ctx echo.Context, policy Policy, reportType string, month, year int) (LedgerReport, error) {
 	tx := Tx(ctx)
 
 	report := LedgerReport{Type: reportType, PolicyID: nulls.NewUUID(policy.ID)}
@@ -312,7 +312,7 @@ func newAnnualPolicyLedgerReport(tx *pop.Connection, lEntries *LedgerEntries, lR
 	return nil
 }
 
-func PolicyLedgerTable(c context.Context, policy Policy, month, year int) (api.LedgerTable, error) {
+func PolicyLedgerTable(c echo.Context, policy Policy, month, year int) (api.LedgerTable, error) {
 	tx := Tx(c)
 
 	if err := validateMonthYearForReport(month, year); err != nil {
@@ -385,7 +385,7 @@ func PolicyLedgerTable(c context.Context, policy Policy, month, year int) (api.L
 	return lTable, nil
 }
 
-func (lr *LedgerReport) Reconcile(ctx context.Context) error {
+func (lr *LedgerReport) Reconcile(ctx echo.Context) error {
 	tx := Tx(ctx)
 	lr.LoadLedgerEntries(tx, false)
 	if err := lr.LedgerEntries.Reconcile(ctx); err != nil {

@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/gobuffalo/buffalo"
+	"github.com/labstack/echo/v4"
 
 	"github.com/silinternational/cover-api/api"
 	"github.com/silinternational/cover-api/domain"
@@ -33,11 +33,11 @@ import (
 //	      type: array
 //	      items:
 //	        "$ref": "#/definitions/Claim"
-func claimsList(c buffalo.Context) error {
+func claimsList(c echo.Context) error {
 	user := models.CurrentUser(c)
 
 	if user.IsAdmin() {
-		statusParam := c.Param("status")
+		statusParam := c.QueryParam("status")
 		var statusList []string
 		if statusParam != "" {
 			statusList = strings.Split(statusParam, ",")
@@ -52,7 +52,7 @@ func claimsList(c buffalo.Context) error {
 	return claimsListCustomer(c)
 }
 
-func claimsListAdmin(c buffalo.Context, statuses []api.ClaimStatus) error {
+func claimsListAdmin(c echo.Context, statuses []api.ClaimStatus) error {
 	tx := models.Tx(c)
 	var claims models.Claims
 
@@ -63,7 +63,7 @@ func claimsListAdmin(c buffalo.Context, statuses []api.ClaimStatus) error {
 	return renderOk(c, claims.ConvertToAPI(tx))
 }
 
-func claimsListCustomer(c buffalo.Context) error {
+func claimsListCustomer(c echo.Context) error {
 	tx := models.Tx(c)
 	currentUser := models.CurrentUser(c)
 	claims := currentUser.MyClaims(tx)
@@ -83,7 +83,7 @@ func claimsListCustomer(c buffalo.Context) error {
 //	      type: array
 //	      items:
 //	        "$ref": "#/definitions/Claim"
-func policiesClaimsList(c buffalo.Context) error {
+func policiesClaimsList(c echo.Context) error {
 	policy := getReferencedPolicyFromCtx(c)
 
 	tx := models.Tx(c)
@@ -109,7 +109,7 @@ func policiesClaimsList(c buffalo.Context) error {
 //	    description: a Claim
 //	    schema:
 //	      "$ref": "#/definitions/Claim"
-func claimsView(c buffalo.Context) error {
+func claimsView(c echo.Context) error {
 	tx := models.Tx(c)
 	claim := getReferencedClaimFromCtx(c)
 	return renderOk(c, claim.ConvertToAPI(tx))
@@ -137,7 +137,7 @@ func claimsView(c buffalo.Context) error {
 //	    description: a Claim
 //	    schema:
 //	      "$ref": "#/definitions/Claim"
-func claimsUpdate(c buffalo.Context) error {
+func claimsUpdate(c echo.Context) error {
 	tx := models.Tx(c)
 	claim := getReferencedClaimFromCtx(c)
 
@@ -179,7 +179,7 @@ func claimsUpdate(c buffalo.Context) error {
 //	    description: the new Claim
 //	    schema:
 //	      "$ref": "#/definitions/Claim"
-func claimsCreate(c buffalo.Context) error {
+func claimsCreate(c echo.Context) error {
 	policy := getReferencedPolicyFromCtx(c)
 
 	var input api.ClaimCreateInput
@@ -214,7 +214,7 @@ func claimsCreate(c buffalo.Context) error {
 //	    description: submitted Claim
 //	    schema:
 //	      "$ref": "#/definitions/Claim"
-func claimsSubmit(c buffalo.Context) error {
+func claimsSubmit(c echo.Context) error {
 	tx := models.Tx(c)
 	claim := getReferencedClaimFromCtx(c)
 
@@ -223,7 +223,7 @@ func claimsSubmit(c buffalo.Context) error {
 	}
 
 	output := claim.ConvertToAPI(tx)
-	return c.Render(http.StatusOK, r.JSON(output))
+	return c.JSON(http.StatusOK, output)
 }
 
 // swagger:operation DELETE /claims/{id} Claims ClaimsRemove
@@ -240,14 +240,13 @@ func claimsSubmit(c buffalo.Context) error {
 //	responses:
 //	  '204':
 //	    description: OK but no content in response
-func claimsRemove(c buffalo.Context) error {
+func claimsRemove(c echo.Context) error {
 	claim := getReferencedClaimFromCtx(c)
 
 	if err := claim.Delete(c); err != nil {
 		return reportError(c, err)
 	}
-
-	return c.Render(http.StatusNoContent, nil)
+	return c.JSON(http.StatusNoContent, nil)
 }
 
 // swagger:operation POST /claims/{id}/revision Claims ClaimsRequestRevision
@@ -272,7 +271,7 @@ func claimsRemove(c buffalo.Context) error {
 //	    description: Claim in focus
 //	    schema:
 //	      "$ref": "#/definitions/Claim"
-func claimsRequestRevision(c buffalo.Context) error {
+func claimsRequestRevision(c echo.Context) error {
 	tx := models.Tx(c)
 	claim := getReferencedClaimFromCtx(c)
 
@@ -286,7 +285,7 @@ func claimsRequestRevision(c buffalo.Context) error {
 	}
 
 	output := claim.ConvertToAPI(tx)
-	return c.Render(http.StatusOK, r.JSON(output))
+	return c.JSON(http.StatusOK, output)
 }
 
 // swagger:operation POST /claims/{id}/preapprove Claims ClaimsPreapprove
@@ -305,7 +304,7 @@ func claimsRequestRevision(c buffalo.Context) error {
 //	    description: Claim in focus
 //	    schema:
 //	      "$ref": "#/definitions/Claim"
-func claimsPreapprove(c buffalo.Context) error {
+func claimsPreapprove(c echo.Context) error {
 	tx := models.Tx(c)
 	claim := getReferencedClaimFromCtx(c)
 
@@ -314,7 +313,7 @@ func claimsPreapprove(c buffalo.Context) error {
 	}
 
 	output := claim.ConvertToAPI(tx)
-	return c.Render(http.StatusOK, r.JSON(output))
+	return c.JSON(http.StatusOK, output)
 }
 
 // swagger:operation POST /claims/{id}/receipt Claims ClaimsFixReceipt
@@ -340,7 +339,7 @@ func claimsPreapprove(c buffalo.Context) error {
 //	    description: Claim in focus
 //	    schema:
 //	      "$ref": "#/definitions/Claim"
-func claimsRequestReceipt(c buffalo.Context) error {
+func claimsRequestReceipt(c echo.Context) error {
 	tx := models.Tx(c)
 	claim := getReferencedClaimFromCtx(c)
 
@@ -354,7 +353,7 @@ func claimsRequestReceipt(c buffalo.Context) error {
 	}
 
 	output := claim.ConvertToAPI(tx)
-	return c.Render(http.StatusOK, r.JSON(output))
+	return c.JSON(http.StatusOK, output)
 }
 
 // swagger:operation POST /claims/{id}/approve Claims ClaimsApprove
@@ -373,7 +372,7 @@ func claimsRequestReceipt(c buffalo.Context) error {
 //	    description: Claim in focus
 //	    schema:
 //	      "$ref": "#/definitions/Claim"
-func claimsApprove(c buffalo.Context) error {
+func claimsApprove(c echo.Context) error {
 	tx := models.Tx(c)
 
 	claim := getReferencedClaimFromCtx(c)
@@ -383,7 +382,7 @@ func claimsApprove(c buffalo.Context) error {
 	}
 
 	output := claim.ConvertToAPI(tx)
-	return c.Render(http.StatusOK, r.JSON(output))
+	return c.JSON(http.StatusOK, output)
 }
 
 // swagger:operation POST /claims/{id}/deny Claims ClaimsDeny
@@ -408,7 +407,7 @@ func claimsApprove(c buffalo.Context) error {
 //	    description: Claim in focus
 //	    schema:
 //	      "$ref": "#/definitions/Claim"
-func claimsDeny(c buffalo.Context) error {
+func claimsDeny(c echo.Context) error {
 	tx := models.Tx(c)
 
 	claim := getReferencedClaimFromCtx(c)
@@ -423,7 +422,7 @@ func claimsDeny(c buffalo.Context) error {
 	}
 
 	output := claim.ConvertToAPI(tx)
-	return c.Render(http.StatusOK, r.JSON(output))
+	return c.JSON(http.StatusOK, output)
 }
 
 // swagger:operation POST /claims/{id}/items Claims ClaimsItemsCreate
@@ -448,7 +447,7 @@ func claimsDeny(c buffalo.Context) error {
 //	    description: the new ClaimItem
 //	    schema:
 //	      "$ref": "#/definitions/ClaimItem"
-func claimsItemsCreate(c buffalo.Context) error {
+func claimsItemsCreate(c echo.Context) error {
 	claim := getReferencedClaimFromCtx(c)
 
 	var input api.ClaimItemCreateInput
@@ -467,8 +466,8 @@ func claimsItemsCreate(c buffalo.Context) error {
 
 // getReferencedClaimFromCtx pulls the models.Claim resource from context that was put there
 // by the AuthZ middleware
-func getReferencedClaimFromCtx(c buffalo.Context) *models.Claim {
-	claim, ok := c.Value(domain.TypeClaim).(*models.Claim)
+func getReferencedClaimFromCtx(c echo.Context) *models.Claim {
+	claim, ok := c.Get(domain.TypeClaim).(*models.Claim)
 	if !ok {
 		panic("claim not found in context")
 	}

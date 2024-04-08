@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/gobuffalo/buffalo"
+	"github.com/labstack/echo/v4"
 
 	"github.com/silinternational/cover-api/api"
 	"github.com/silinternational/cover-api/domain"
@@ -37,7 +37,7 @@ const MaxResultSize = 1000
 //	    description: the audit result
 //	    schema:
 //	      "$ref": "#/definitions/AuditResult"
-func auditRun(c buffalo.Context) error {
+func auditRun(c echo.Context) error {
 	actor := models.CurrentUser(c)
 	if !actor.IsAdmin() {
 		err := fmt.Errorf("user not allowed to run audit")
@@ -71,7 +71,7 @@ func auditRun(c buffalo.Context) error {
 	return renderOk(c, result)
 }
 
-func runRenewalAudit(c buffalo.Context, date time.Time) (api.AuditResult, error) {
+func runRenewalAudit(c echo.Context, date time.Time) (api.AuditResult, error) {
 	tx := models.Tx(c)
 
 	var result api.AuditResult

@@ -2,12 +2,10 @@ package actions
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"testing"
 
 	"github.com/silinternational/cover-api/api"
-	"github.com/silinternational/cover-api/domain"
 	"github.com/silinternational/cover-api/models"
 )
 
@@ -117,23 +115,20 @@ func (as *ActionSuite) Test_ClaimItemsUpdate() {
 
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
-			req := as.JSON(claimItemsPath + "/" + tt.claimItem.ID.String())
-			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
-			req.Headers["content-type"] = domain.ContentJson
-			res := req.Put(tt.input)
+			path := claimItemsPath + "/" + tt.claimItem.ID.String()
+			body, status := as.request("PUT", path, tt.actor.Email, tt.input)
 
-			body := res.Body.String()
-			as.Equal(tt.wantStatus, res.Code, "incorrect status code returned, body: %s", body)
+			as.Equal(tt.wantStatus, status, "incorrect status code returned, body: %s", body)
 			if tt.wantInBody != "" {
-				as.Contains(body, tt.wantInBody, "did not find expected string")
+				as.Contains(string(body), tt.wantInBody, "did not find expected string")
 			}
 
-			if res.Code != http.StatusOK {
+			if status != http.StatusOK {
 				return
 			}
 
 			var responseObject api.ClaimItem
-			as.NoError(json.Unmarshal([]byte(body), &responseObject))
+			as.NoError(json.Unmarshal(body, &responseObject))
 			as.Equal(tt.claimItem.ItemID, responseObject.ItemID, "incorrect object in response: %v", responseObject)
 
 			updatedClaimItem := models.ClaimItem{}

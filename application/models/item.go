@@ -1,7 +1,6 @@
 package models
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"math"
@@ -9,12 +8,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gobuffalo/buffalo"
 	"github.com/gobuffalo/events"
 	"github.com/gobuffalo/nulls"
 	"github.com/gobuffalo/pop/v6"
 	"github.com/gobuffalo/validate/v3"
 	"github.com/gofrs/uuid"
+	"github.com/labstack/echo/v4"
 
 	"github.com/silinternational/cover-api/api"
 	"github.com/silinternational/cover-api/domain"
@@ -78,7 +77,7 @@ func (i *Item) Validate(tx *pop.Connection) (*validate.Errors, error) {
 
 // CreateWithHistory validates and stores the data as a new record in the database, assigning a new ID if needed.
 // Also creates a PolicyHistory record.
-func (i *Item) CreateWithHistory(ctx context.Context) error {
+func (i *Item) CreateWithHistory(ctx echo.Context) error {
 	tx := Tx(ctx)
 
 	if err := i.Create(tx); err != nil {
@@ -105,7 +104,7 @@ func (i *Item) Create(tx *pop.Connection) error {
 	return create(tx, i)
 }
 
-func (i *Item) Update(ctx context.Context) error {
+func (i *Item) Update(ctx echo.Context) error {
 	tx := Tx(ctx)
 	var oldItem Item
 	if err := oldItem.FindByID(tx, i.ID); err != nil {
@@ -310,7 +309,7 @@ func (i *Item) FindByID(tx *pop.Connection, id uuid.UUID) error {
 // and if it has a Draft, Revision or Pending status.
 // If the item's status is Denied or Inactive, it does nothing.
 // Otherwise, it changes its status to Inactive.
-func (i *Item) SafeDeleteOrInactivate(ctx context.Context, now time.Time) error {
+func (i *Item) SafeDeleteOrInactivate(ctx echo.Context, now time.Time) error {
 	tx := Tx(ctx)
 	switch i.CoverageStatus {
 	case api.ItemCoverageStatusInactive, api.ItemCoverageStatusDenied:
@@ -382,7 +381,7 @@ func (i *Item) isNewEnough() bool {
 }
 
 // ScheduleInactivation sets the item's StatusChange and CoverageEndDate
-func (i *Item) ScheduleInactivation(ctx context.Context, t time.Time) error {
+func (i *Item) ScheduleInactivation(ctx echo.Context, t time.Time) error {
 	user := CurrentUser(ctx)
 	i.StatusChange = ItemStatusChangeInactivated + user.Name()
 
@@ -445,7 +444,7 @@ func (i *Item) cancelCoverageAfterClaim(tx *pop.Connection, reason string) error
 	return tx.Update(i)
 }
 
-func (i *Item) Inactivate(ctx context.Context) error {
+func (i *Item) Inactivate(ctx echo.Context) error {
 	i.CoverageStatus = api.ItemCoverageStatusInactive
 	return i.Update(ctx)
 }
@@ -555,7 +554,7 @@ func isItemActionAllowed(actorIsAdmin bool, oldStatus api.ItemCoverageStatus, pe
 
 // SubmitForApproval takes the item from Draft or Revision status to Pending or Approved status.
 // It assumes that the item's current status has already been validated.
-func (i *Item) SubmitForApproval(ctx context.Context) error {
+func (i *Item) SubmitForApproval(ctx echo.Context) error {
 	tx := Tx(ctx)
 
 	minimumCoverageAmount := i.getMinimumCoverage(tx)
@@ -637,7 +636,7 @@ func (i *Item) canAutoApprove(tx *pop.Connection) bool {
 
 // Revision takes the item from Pending coverage status to Revision.
 // It assumes that the item's current status has already been validated.
-func (i *Item) Revision(ctx context.Context, reason string) error {
+func (i *Item) Revision(ctx echo.Context, reason string) error {
 	i.CoverageStatus = api.ItemCoverageStatusRevision
 	i.StatusReason = reason
 
@@ -660,7 +659,7 @@ func (i *Item) Revision(ctx context.Context, reason string) error {
 
 // AutoApprove fires an event and marks the item as `Approved`
 // It assumes that the item's current status has already been validated.
-func (i *Item) AutoApprove(ctx context.Context) error {
+func (i *Item) AutoApprove(ctx echo.Context) error {
 	e := events.Event{
 		Kind:    domain.EventApiItemAutoApproved,
 		Message: fmt.Sprintf("Item AutoApproved: %s  ID: %s", i.Name, i.ID.String()),
@@ -674,7 +673,7 @@ func (i *Item) AutoApprove(ctx context.Context) error {
 
 // Approve takes the item from Pending coverage status to Approved.
 // It assumes that the item's current status has already been validated.
-func (i *Item) Approve(ctx context.Context, now time.Time) error {
+func (i *Item) Approve(ctx echo.Context, now time.Time) error {
 	i.CoverageStatus = api.ItemCoverageStatusApproved
 
 	if i.StatusChange != ItemStatusChangeAutoApproved {
@@ -731,7 +730,7 @@ func (i *Item) getInitialCoverage(tx *pop.Connection, now time.Time) CoveragePer
 
 // Deny takes the item from Pending coverage status to Denied.
 // It assumes that the item's current status has already been validated.
-func (i *Item) Deny(ctx context.Context, reason string) error {
+func (i *Item) Deny(ctx echo.Context, reason string) error {
 	i.CoverageStatus = api.ItemCoverageStatusDenied
 	i.StatusReason = reason
 
@@ -839,7 +838,7 @@ func (i *Item) ConvertToAPI(tx *pop.Connection) api.Item {
 // This function is only intended to be used for items that have been active
 // but are now scheduled to become inactive.
 // As such, any credit ledger entries should have already been created.
-func (i *Item) inactivateEnded(ctx context.Context) error {
+func (i *Item) inactivateEnded(ctx echo.Context) error {
 	tx := Tx(ctx)
 
 	if i.hasOpenClaim(tx) {
@@ -869,7 +868,7 @@ func (i *Item) inactivateEnded(ctx context.Context) error {
 // InactivateApprovedButEnded fetches all the items that have coverage_status=Approved
 // and coverage_end_date before today and then
 // saves them with coverage_status=Inactive
-func (i *Items) InactivateApprovedButEnded(ctx context.Context) error {
+func (i *Items) InactivateApprovedButEnded(ctx echo.Context) error {
 	tx := Tx(ctx)
 
 	user := CurrentUser(ctx)
@@ -993,7 +992,7 @@ func (i *Item) calculatePremiumChange(t time.Time, oldPremium, newPremium api.Cu
 }
 
 // NewItemFromApiInput creates a new `Item` from a `ItemCreate`.
-func NewItemFromApiInput(c buffalo.Context, input api.ItemCreate, policyID uuid.UUID) (Item, error) {
+func NewItemFromApiInput(c echo.Context, input api.ItemCreate, policyID uuid.UUID) (Item, error) {
 	item := Item{}
 	tx := Tx(c)
 
@@ -1204,7 +1203,7 @@ func ItemsWithRecentStatusChanges(tx *pop.Connection) (api.RecentItems, error) {
 }
 
 // NewHistory returns a new PolicyHistory template object, not yet added to the database.
-func (i *Item) NewHistory(ctx context.Context, action string, fieldUpdate FieldUpdate) PolicyHistory {
+func (i *Item) NewHistory(ctx echo.Context, action string, fieldUpdate FieldUpdate) PolicyHistory {
 	return PolicyHistory{
 		Action:    action,
 		PolicyID:  i.PolicyID,
@@ -1232,7 +1231,7 @@ func (i *Items) FindItemsIncorrectlyRenewed(tx *pop.Connection, date time.Time) 
 
 // RepairItemsIncorrectlyRenewed repairs items that were incorrectly renewed for another year of coverage. These are
 // identified as items that are marked as paid through the year but have an earlier coverage_end_date.
-func (i *Items) RepairItemsIncorrectlyRenewed(c buffalo.Context, date time.Time) error {
+func (i *Items) RepairItemsIncorrectlyRenewed(c echo.Context, date time.Time) error {
 	tx := Tx(c)
 	if err := i.FindItemsIncorrectlyRenewed(tx, date); err != nil {
 		return err

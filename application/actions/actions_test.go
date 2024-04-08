@@ -4,18 +4,23 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
+	"net/http/httptest"
+	"os"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/labstack/echo-contrib/session"
 
 	"github.com/silinternational/cover-api/domain"
 	"github.com/silinternational/cover-api/models"
 
 	"github.com/gobuffalo/buffalo"
-	"github.com/gobuffalo/httptest"
 	"github.com/gobuffalo/pop/v6"
 	"github.com/gorilla/sessions"
+	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
@@ -25,19 +30,26 @@ var futureDate = time.Date(2222, 12, 31, 12, 59, 59, 59, time.UTC)
 type ActionSuite struct {
 	suite.Suite
 	*require.Assertions
-	app     *buffalo.App
+	app     *echo.Echo
 	DB      *pop.Connection
 	Session *buffalo.Session
 }
 
-// HTML creates an httptest.Request with HTML content type.
-func (as *ActionSuite) HTML(u string, args ...any) *httptest.Request {
-	return httptest.New(as.app).HTML(u, args...)
-}
+func (as *ActionSuite) request(method, path, token string, input any) ([]byte, int) {
+	var r io.Reader
+	if input != nil {
+		j, _ := json.Marshal(&input)
+		r = bytes.NewReader(j)
+	}
+	req := httptest.NewRequest(method, path, r)
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+	req.Header.Set(echo.HeaderAuthorization, "Bearer "+token)
 
-// JSON creates an httptest.JSON request
-func (as *ActionSuite) JSON(u string, args ...any) *httptest.JSON {
-	return httptest.New(as.app).JSON(u, args...)
+	res := httptest.NewRecorder()
+	app.ServeHTTP(res, req)
+	body, err := io.ReadAll(res.Body)
+	as.NoError(err)
+	return body, res.Code
 }
 
 func Test_ActionSuite(t *testing.T) {
@@ -56,21 +68,17 @@ func Test_ActionSuite(t *testing.T) {
 func (as *ActionSuite) SetupTest() {
 	as.Assertions = require.New(as.T())
 
-	as.app.SessionStore = newSessionStore()
-	s, _ := as.app.SessionStore.New(nil, as.app.SessionName)
-	as.Session = &buffalo.Session{
-		Session: s,
-	}
-
 	models.DestroyAll()
 	models.InsertTestData()
+
+	as.app.Use(session.Middleware(sessions.NewCookieStore([]byte(os.Getenv("SESSION_SECRET")))))
 }
 
-func (as *ActionSuite) verifyResponseData(wantData []string, body string, msg string) {
+func (as *ActionSuite) verifyResponseData(wantData []string, body []byte, msg string) {
 	var b bytes.Buffer
-	as.NoError(json.Indent(&b, []byte(body), "", "    "))
+	as.NoError(json.Indent(&b, body, "", "    "))
 	for _, w := range wantData {
-		if !strings.Contains(body, w) {
+		if !strings.Contains(string(body), w) {
 			as.Fail(fmt.Sprintf("%s response data is not correct\nwanted: %s\nin body:\n%s\n", msg, w, b.String()))
 		}
 	}
@@ -116,11 +124,8 @@ func (as *ActionSuite) decodeBody(body []byte, v any) error {
 }
 
 func (as *ActionSuite) Test_robots() {
-	req := as.JSON("/robots.txt")
-	res := req.Get()
-	body := res.Body.Bytes()
-
-	as.Equal(http.StatusOK, res.Code, "incorrect status code returned: %d\n%s", res.Code, body)
+	body, status := as.request("GET", "/robots.txt", "", nil)
+	as.Equal(http.StatusOK, status, "incorrect status code returned: %d\n%s", status, body)
 	as.True(strings.HasPrefix(string(body), "User-agent"),
 		"incorrect response body:\n%s", body)
 }

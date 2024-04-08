@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/gobuffalo/buffalo"
+	"github.com/labstack/echo/v4"
 
 	"github.com/silinternational/cover-api/fin"
 	"github.com/silinternational/cover-api/job"
@@ -28,7 +28,7 @@ import (
 //	      type: array
 //	      items:
 //	        "$ref": "#/definitions/LedgerReport"
-func ledgerReportList(c buffalo.Context) error {
+func ledgerReportList(c echo.Context) error {
 	var list models.LedgerReports
 
 	tx := models.Tx(c)
@@ -56,7 +56,7 @@ func ledgerReportList(c buffalo.Context) error {
 //	    description: the requested LedgerReport
 //	    schema:
 //	      "$ref": "#/definitions/LedgerReport"
-func ledgerReportView(c buffalo.Context) error {
+func ledgerReportView(c echo.Context) error {
 	tx := models.Tx(c)
 
 	ledgerReport := getReferencedLedgerReportFromCtx(c)
@@ -86,7 +86,7 @@ func ledgerReportView(c buffalo.Context) error {
 //	    description: the requested LedgerReport
 //	    schema:
 //	      "$ref": "#/definitions/LedgerReport"
-func ledgerReportCreate(c buffalo.Context) error {
+func ledgerReportCreate(c echo.Context) error {
 	var input api.LedgerReportCreateInput
 	if err := StrictBind(c, &input); err != nil {
 		return reportError(c, err)
@@ -135,7 +135,7 @@ func ledgerReportCreate(c buffalo.Context) error {
 //	    description: the requested LedgerReport
 //	    schema:
 //	      "$ref": "#/definitions/LedgerReport"
-func ledgerReportReconcile(c buffalo.Context) error {
+func ledgerReportReconcile(c echo.Context) error {
 	tx := models.Tx(c)
 
 	ledgerReport := getReferencedLedgerReportFromCtx(c)
@@ -155,7 +155,7 @@ func ledgerReportReconcile(c buffalo.Context) error {
 //	responses:
 //	  '204':
 //	    description: OK but no content in response
-func ledgerAnnualRenewalProcess(c buffalo.Context) error {
+func ledgerAnnualRenewalProcess(c echo.Context) error {
 	actor := models.CurrentUser(c)
 	if !actor.IsAdmin() {
 		err := fmt.Errorf("user not allowed to process annual batch data")
@@ -166,7 +166,7 @@ func ledgerAnnualRenewalProcess(c buffalo.Context) error {
 		return reportError(c, api.NewAppError(err, api.ErrorFailedToSubmitJob, api.CategoryInternal))
 	}
 
-	return c.Render(http.StatusNoContent, nil)
+	return c.JSON(http.StatusNoContent, nil)
 }
 
 // swagger:operation GET /ledger-reports/annual Ledger LedgerAnnualRenewalStatus
@@ -180,7 +180,7 @@ func ledgerAnnualRenewalProcess(c buffalo.Context) error {
 //	    description: the status of the annual billing process
 //	    schema:
 //	      "$ref": "#/definitions/RenewalStatus"
-func ledgerAnnualRenewalStatus(c buffalo.Context) error {
+func ledgerAnnualRenewalStatus(c echo.Context) error {
 	actor := models.CurrentUser(c)
 	if !actor.IsAdmin() {
 		err := fmt.Errorf("user not allowed to access annual batch data")
@@ -214,7 +214,7 @@ func ledgerAnnualRenewalStatus(c buffalo.Context) error {
 //	responses:
 //	  '204':
 //	    description: OK but no content in response
-func ledgerMonthlyRenewalProcess(c buffalo.Context) error {
+func ledgerMonthlyRenewalProcess(c echo.Context) error {
 	actor := models.CurrentUser(c)
 	if !actor.IsAdmin() {
 		err := fmt.Errorf("user not allowed to process monthly batch data")
@@ -225,7 +225,7 @@ func ledgerMonthlyRenewalProcess(c buffalo.Context) error {
 		return reportError(c, api.NewAppError(err, api.ErrorFailedToSubmitJob, api.CategoryInternal))
 	}
 
-	return c.Render(http.StatusNoContent, nil)
+	return c.JSON(http.StatusNoContent, nil)
 }
 
 // swagger:operation GET /ledger-reports/monthly Ledger LedgerMonthlyRenewalStatus
@@ -239,7 +239,7 @@ func ledgerMonthlyRenewalProcess(c buffalo.Context) error {
 //	    description: the status of the monthly billing process
 //	    schema:
 //	      "$ref": "#/definitions/RenewalStatus"
-func ledgerMonthlyRenewalStatus(c buffalo.Context) error {
+func ledgerMonthlyRenewalStatus(c echo.Context) error {
 	actor := models.CurrentUser(c)
 	if !actor.IsAdmin() {
 		err := fmt.Errorf("user not allowed to access monthly batch data")
@@ -263,8 +263,8 @@ func ledgerMonthlyRenewalStatus(c buffalo.Context) error {
 	return renderOk(c, status)
 }
 
-func getReferencedLedgerReportFromCtx(c buffalo.Context) *models.LedgerReport {
-	lr, ok := c.Value(domain.TypeLedgerReport).(*models.LedgerReport)
+func getReferencedLedgerReportFromCtx(c echo.Context) *models.LedgerReport {
+	lr, ok := c.Get(domain.TypeLedgerReport).(*models.LedgerReport)
 	if !ok {
 		panic("LedgerReport not found in context")
 	}

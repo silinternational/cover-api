@@ -44,12 +44,8 @@ func (as *ActionSuite) Test_entityCodesList() {
 		},
 	}
 	for _, tt := range tests {
-		req := as.JSON(entityCodesPath)
-		req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
-		res := req.Get()
-		body := res.Body.Bytes()
-
-		as.Equal(tt.wantStatus, res.Code, "incorrect status code returned: %d\n%s", res.Code, body)
+		body, status := as.request("GET", entityCodesPath, tt.actor.Email, nil)
+		as.Equal(tt.wantStatus, status, "incorrect status code returned: %d\n%s", status, body)
 		if tt.wantError != "" {
 			var err api.AppError
 			as.NoError(as.decodeBody(body, &err), "response data is not as expected")
@@ -111,17 +107,14 @@ func (as *ActionSuite) Test_entityCodesUpdate() {
 		},
 	}
 	for _, tt := range tests {
-		req := as.JSON("%s/%s", entityCodesPath, inactiveCode.ID)
-		req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
+		path := fmt.Sprintf("%s/%s", entityCodesPath, inactiveCode.ID)
 		input := api.EntityCodeInput{
 			Active:        true,
 			IncomeAccount: "newacct",
 			ParentEntity:  activeCode.Code,
 		}
-		res := req.Put(input)
-		body := res.Body.Bytes()
-
-		as.Equal(tt.wantStatus, res.Code, "incorrect status code returned: %d\n%s", res.Code, body)
+		body, status := as.request("PUT", path, tt.actor.Email, input)
+		as.Equal(tt.wantStatus, status, "incorrect status code returned: %d\n%s", status, body)
 		if tt.wantError != "" {
 			var err api.AppError
 			as.NoError(as.decodeBody(body, &err), "response data is not as expected", body)
@@ -173,12 +166,9 @@ func (as *ActionSuite) Test_entityCodesView() {
 		},
 	}
 	for _, tt := range tests {
-		req := as.JSON("%s/%s", entityCodesPath, inactiveCode.ID)
-		req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
-		res := req.Get()
-		body := res.Body.Bytes()
-
-		as.Equal(tt.wantStatus, res.Code, "incorrect status code returned: %d\n%s", res.Code, body)
+		path := fmt.Sprintf("%s/%s", entityCodesPath, inactiveCode.ID)
+		body, status := as.request("GET", path, tt.actor.Email, nil)
+		as.Equal(tt.wantStatus, status, "incorrect status code returned: %d\n%s", status, body)
 		if tt.wantError != "" {
 			var err api.AppError
 			as.NoError(as.decodeBody(body, &err), "response data is not as expected", body)
@@ -234,12 +224,8 @@ func (as *ActionSuite) Test_entityCodesCreate() {
 		ParentEntity:  "XYZ",
 	}
 	for _, tt := range tests {
-		req := as.JSON("%s", entityCodesPath)
-		req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
-		res := req.Post(input)
-		body := res.Body.Bytes()
-
-		as.Equal(tt.wantStatus, res.Code, "incorrect status code returned: %d\n%s", res.Code, body)
+		body, status := as.request("POST", entityCodesPath, tt.actor.Email, input)
+		as.Equal(tt.wantStatus, status, "incorrect status code returned: %d\n%s", status, body)
 		if tt.wantError != "" {
 			var err api.AppError
 			as.NoError(as.decodeBody(body, &err), "response data is not as expected", body)

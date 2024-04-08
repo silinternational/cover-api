@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"runtime/debug"
 
-	"github.com/gobuffalo/buffalo"
+	"github.com/labstack/echo/v4"
 
 	"github.com/silinternational/cover-api/api"
 	"github.com/silinternational/cover-api/domain"
@@ -22,13 +22,14 @@ var httpErrorCodes = map[int]api.ErrorKey{
 	http.StatusUnprocessableEntity: api.ErrorUnprocessableEntity,
 }
 
-func registerCustomErrorHandler(app *buffalo.App) {
-	for i := 400; i < 600; i++ {
-		app.ErrorHandlers[i] = customErrorHandler
-	}
-}
+// FIXME
+//func registerCustomErrorHandler(app *buffalo.App) {
+//	for i := 400; i < 600; i++ {
+//		app.ErrorHandlers[i] = customErrorHandler
+//	}
+//}
 
-func customErrorHandler(status int, origErr error, c buffalo.Context) error {
+func customErrorHandler(status int, origErr error, c echo.Context) error {
 	c.Logger().Error(origErr)
 	c.Response().WriteHeader(status)
 	c.Response().Header().Set("content-type", domain.ContentJson)

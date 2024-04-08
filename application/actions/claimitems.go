@@ -1,8 +1,8 @@
 package actions
 
 import (
-	"github.com/gobuffalo/buffalo"
 	"github.com/gobuffalo/nulls"
+	"github.com/labstack/echo/v4"
 
 	"github.com/silinternational/cover-api/api"
 	"github.com/silinternational/cover-api/domain"
@@ -31,7 +31,7 @@ import (
 //	    description: the updated ClaimItem
 //	    schema:
 //	      "$ref": "#/definitions/ClaimItem"
-func claimItemsUpdate(c buffalo.Context) error {
+func claimItemsUpdate(c echo.Context) error {
 	tx := models.Tx(c)
 	claimItem := getReferencedClaimItemFromCtx(c)
 
@@ -59,8 +59,8 @@ func claimItemsUpdate(c buffalo.Context) error {
 
 // getReferencedClaimItemFromCtx pulls the models.ClaimItem resource from context that was put there
 // by the AuthZ middleware
-func getReferencedClaimItemFromCtx(c buffalo.Context) *models.ClaimItem {
-	claimItem, ok := c.Value(domain.TypeClaimItem).(*models.ClaimItem)
+func getReferencedClaimItemFromCtx(c echo.Context) *models.ClaimItem {
+	claimItem, ok := c.Get(domain.TypeClaimItem).(*models.ClaimItem)
 	if !ok {
 		panic("claim item not found in context")
 	}
