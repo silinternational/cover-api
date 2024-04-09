@@ -1,17 +1,15 @@
-# This is a multi-stage Dockerfile and requires >= Docker 17.05
-# https://docs.docker.com/engine/userguide/eng-image/multistage-build/
-FROM gobuffalo/buffalo:v0.18.8 as builder
+FROM golang:1.22 as builder
 
-ARG ci_commit_id
+ENV REFRESHED_AT=2024-03-13
 
-WORKDIR /src
+ARG GITHUB_SHA
 
-ENV GOPROXY http://proxy.golang.org
+ENV GOPROXY=http://proxy.golang.org
 
-# Install the desired version of NodeJS
-RUN npm cache clean -f && \
-    npm install -g n && \
-    n 16
+WORKDIR /app
+
+# Install buffalo
+RUN go install github.com/gobuffalo/cli/cmd/buffalo@latest
 
 # Copy the Go Modules manifests
 COPY go.mod go.mod
@@ -22,7 +20,7 @@ RUN go mod download
 
 COPY . .
 
-RUN sh -c "echo $ci_commit_id > domain/commit.txt"
+RUN sh -c "echo $GITHUB_SHA > domain/commit.txt"
 RUN cat domain/commit.txt
 
 RUN buffalo build --static -o /bin/app

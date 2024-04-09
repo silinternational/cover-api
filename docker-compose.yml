@@ -56,6 +56,7 @@ services:
       dockerfile: Dockerfile-dev
     volumes:
       - ./application:/cover
+      - go-build:/root/.cache/go-build
     env_file:
       - ./test.env
     environment:

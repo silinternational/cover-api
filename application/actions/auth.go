@@ -1,6 +1,7 @@
 package actions
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -197,11 +198,8 @@ func authCallback(c buffalo.Context) error {
 
 	authResp := sp.AuthCallback(c)
 	if authResp.Error != nil {
-		return reportErrorAndClearSession(c, &api.AppError{
-			HttpStatus: http.StatusInternalServerError,
-			Key:        api.ErrorAuthProvidersCallback,
-			Message:    authResp.Error.Error(),
-		})
+		err = fmt.Errorf("auth response error: %w", authResp.Error)
+		return reportErrorAndClearSession(c, api.NewAppError(err, api.ErrorAuthProvidersCallback, api.CategoryInternal))
 	}
 
 	returnTo := getOrSetReturnTo(c)
@@ -210,7 +208,7 @@ func authCallback(c buffalo.Context) error {
 		return reportErrorAndClearSession(c, &api.AppError{
 			HttpStatus: http.StatusFound,
 			Key:        api.ErrorAuthProvidersCallback,
-			Message:    "nil authResp.AuthUser",
+			Err:        errors.New("nil authResp.AuthUser"),
 		})
 	}
 

@@ -263,6 +263,11 @@ func App() *buffalo.App {
 		strikesGroup.PUT(idRegex, strikesUpdate)
 		strikesGroup.DELETE(idRegex, strikesDelete)
 
+		// robots
+		app.GET("/robots.txt", robots)
+		app.Middleware.Skip(AuthZ, robots)
+		app.Middleware.Skip(AuthN, robots)
+
 		listeners.RegisterListener()
 
 		job.Init(&app.Worker)

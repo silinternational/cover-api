@@ -147,3 +147,10 @@ func getClientIPAddress(c buffalo.Context) (net.IP, error) {
 
 	return userIP, nil
 }
+
+func robots(c buffalo.Context) error {
+	const body = `User-agent: *
+Disallow: /
+`
+	return c.Render(200, r.String(body))
+}
