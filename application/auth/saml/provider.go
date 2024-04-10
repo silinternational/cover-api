@@ -68,7 +68,7 @@ func New(config Config) (*Provider, error) {
 }
 
 func (p *Provider) initSAMLServiceProvider() error {
-	idpCertStore, err := getCertStore(p.Config.SPPublicCert, p.Config.IDPPublicCert2)
+	idpCertStore, err := getCertStore(p.Config.IDPPublicCert, p.Config.IDPPublicCert2)
 	if err != nil {
 		return fmt.Errorf("error in initSAMLServiceProvider: %w", err)
 	}
