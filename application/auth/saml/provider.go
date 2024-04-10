@@ -35,6 +35,7 @@ type Config struct {
 	AudienceURI                 string            `json:"AudienceURI"`
 	AssertionConsumerServiceURL string            `json:"AssertionConsumerServiceURL"`
 	IDPPublicCert               string            `json:"IDPPublicCert"`
+	IDPPublicCert2              string            `json:"IDPPublicCert2"`
 	SPPublicCert                string            `json:"SPPublicCert"`
 	SPPrivateKey                string            `json:"SPPrivateKey"`
 	SignRequest                 bool              `json:"SignRequest"`
@@ -67,7 +68,7 @@ func New(config Config) (*Provider, error) {
 }
 
 func (p *Provider) initSAMLServiceProvider() error {
-	idpCertStore, err := getCertStore(p.Config.IDPPublicCert)
+	idpCertStore, err := getCertStore(p.Config.SPPublicCert, p.Config.IDPPublicCert2)
 	if err != nil {
 		return fmt.Errorf("error in initSAMLServiceProvider: %w", err)
 	}
@@ -155,26 +156,32 @@ func getSAMLAttributeFirstValue(attrName string, attributes []types.Attribute) s
 	return ""
 }
 
-func getCertStore(cert string) (dsig.MemoryX509CertificateStore, error) {
+func getCertStore(certs ...string) (dsig.MemoryX509CertificateStore, error) {
 	certStore := dsig.MemoryX509CertificateStore{
 		Roots: []*x509.Certificate{},
 	}
 
-	if cert == "" {
+	if len(certs) < 1 || certs[0] == "" {
 		return certStore, errors.New("a valid PEM or base64 encoded certificate is required")
 	}
 
-	certData, err := decodeKey(cert, "CERTIFICATE")
-	if err != nil {
-		return certStore, fmt.Errorf("error decoding cert from string: %s", err)
-	}
+	for _, cert := range certs {
+		if cert == "" {
+			continue
+		}
 
-	idpCert, err := x509.ParseCertificate(certData)
-	if err != nil {
-		return certStore, fmt.Errorf("error parsing cert: %s", err)
-	}
+		certData, err := decodeKey(cert, "CERTIFICATE")
+		if err != nil {
+			return certStore, fmt.Errorf("error decoding cert from string %q: %s", cert, err)
+		}
 
-	certStore.Roots = append(certStore.Roots, idpCert)
+		idpCert, err := x509.ParseCertificate(certData)
+		if err != nil {
+			return certStore, fmt.Errorf("error parsing cert: %s", err)
+		}
+
+		certStore.Roots = append(certStore.Roots, idpCert)
+	}
 
 	return certStore, nil
 }

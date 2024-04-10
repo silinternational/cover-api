@@ -152,6 +152,7 @@ type EnvStruct struct {
 	SamlAudienceUri                 string `default:"" split_words:"true"`
 	SamlIdpEntityId                 string `default:"" split_words:"true"`
 	SamlIdpCert                     string `default:"" split_words:"true"`
+	SamlIdpCert2                    string `default:"" split_words:"true"`
 	SamlSpCert                      string `default:"" split_words:"true"`
 	SamlSpPrivateKey                string `default:"" split_words:"true"`
 	SamlAssertionConsumerServiceUrl string `default:"" split_words:"true"`
