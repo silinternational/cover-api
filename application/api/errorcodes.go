@@ -69,6 +69,7 @@ const (
 	// File
 	ErrorFileAlreadyLinked       = ErrorKey("ErrorFileAlreadyLinked")
 	ErrorFilenameRequired        = ErrorKey("ErrorFilenameRequired")
+	ErrorOpeningFile             = ErrorKey("ErrorOpeningFile")
 	ErrorReceivingFile           = ErrorKey("ErrorReceivingFile")
 	ErrorStoreFileBadContentType = ErrorKey("ErrorStoreFileBadContentType")
 	ErrorStoreFileTooLarge       = ErrorKey("ErrorStoreFileTooLarge")

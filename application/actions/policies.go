@@ -398,27 +398,30 @@ func policiesImport(c echo.Context) error {
 		return reportError(c, api.NewAppError(err, api.ErrorNotAuthorized, api.CategoryForbidden))
 	}
 
-	// FIXME
-	//tx := models.Tx(c)
-	//f, err := c.File(fileFieldName)
-	//if err != nil {
-	//	err := fmt.Errorf("error getting uploaded file from context ... %v", err)
-	//	return reportError(c, api.NewAppError(err, api.ErrorReceivingFile, api.CategoryInternal))
-	//}
-	//
-	//if f.Size > int64(domain.MaxFileSize) {
-	//	err := fmt.Errorf("file upload size (%v) greater than max (%v)", f.Size, domain.MaxFileSize)
-	//	return reportError(c, api.NewAppError(err, api.ErrorStoreFileTooLarge, api.CategoryUser))
-	//}
-	//
-	//response, err := models.ImportPolicies(tx, f)
-	//if err != nil {
-	//	return reportError(c, err)
-	//}
-	//
-	//return renderOk(c, response)
+	tx := models.Tx(c)
+	f, err := c.FormFile(fileFieldName)
+	if err != nil {
+		err := fmt.Errorf("error getting uploaded file from context ... %v", err)
+		return reportError(c, api.NewAppError(err, api.ErrorReceivingFile, api.CategoryInternal))
+	}
 
-	return renderOk(c, nil)
+	if f.Size > int64(domain.MaxFileSize) {
+		err := fmt.Errorf("file upload size (%v) greater than max (%v)", f.Size, domain.MaxFileSize)
+		return reportError(c, api.NewAppError(err, api.ErrorStoreFileTooLarge, api.CategoryUser))
+	}
+
+	file, err := f.Open()
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	response, err := models.ImportPolicies(tx, file)
+	if err != nil {
+		return reportError(c, err)
+	}
+
+	return renderOk(c, response)
 }
 
 // getReferencedPolicyFromCtx pulls the models.Policy resource from context that was put there
