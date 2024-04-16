@@ -52,19 +52,17 @@ jobs:
           *) echo "environment=stg" >> $GITHUB_OUTPUT ;;
           esac
 
-      - name: Build and export
-        uses: docker/build-push-action@v5
-        with:
-          context: ./application
-          tags: "${{ env.IMAGE_NAME }}:${{ env.BRANCH_NAME }}"
-          outputs: type=docker,dest=/tmp/image
+      - name: Build Image
+        id: build-image
+        run: |
+          docker build -t $IMAGE_NAME:$BRANCH_NAME application
+          echo "image=$IMAGE_NAME:$BRANCH_NAME" >> $GITHUB_OUTPUT
 
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: image
-          path: /tmp/image
-          retention-days: 1
+#      - name: Install dfctl
+#        run: curl https://repo.deepfactor.io/install-dfctl.sh | sh --
+#
+#      - name: Deepfactor Scan
+#        run: dfctl scan ${{ steps.build-image.outputs.image }}
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
