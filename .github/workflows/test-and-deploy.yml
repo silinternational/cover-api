@@ -4,7 +4,7 @@ on:
   push:
 
 env:
-  BRANCH_NAME: ${{ github.ref_name }}
+  BRANCH_NAME: deepfactor #${{ github.ref_name }}
   IMAGE_NAME: cover
   DF_RUN_TOKEN: ${{ secrets.DF_RUN_TOKEN }}
   AWS_REGION: ${{ vars.AWS_REGION }}
