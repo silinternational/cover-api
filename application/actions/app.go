@@ -82,18 +82,17 @@ func App() *echo.Echo {
 			buffalo.Options{
 					Env:    domain.Env.GoEnv,
 					Logger: logger.Logrus{FieldLogger: log.ErrLogger.LocalLog},
-					PreWares: []buffalo.PreWare{
-						cors.New(cors.Options{
-							AllowCredentials: true,
-							AllowedOrigins:   []string{domain.Env.UIURL},
-							AllowedMethods:   []string{"HEAD", "GET", "POST", "PUT", "PATCH", "DELETE"},
-							AllowedHeaders:   []string{"*"},
-						}).Handler,
-					},
 					SessionName:  "_cover_api_session",
 					SessionStore: cookieStore(),
 				}
 		*/
+
+		app.Use(middleware.CORSWithConfig(middleware.CORSConfig{
+			AllowCredentials: true,
+			AllowOrigins:     []string{domain.Env.UIURL},
+			AllowMethods:     []string{"HEAD", "GET", "POST", "PUT", "PATCH", "DELETE"},
+			AllowHeaders:     []string{"Authorization", "Content-Type"},
+		}))
 
 		// Logger Middleware
 		app.Use(middleware.Logger())
@@ -250,6 +249,7 @@ func App() *echo.Echo {
 	return app
 }
 
+// DELETE?
 func cookieStore() sessions.Store {
 	store := sessions.NewCookieStore([]byte(domain.Env.SessionSecret))
 

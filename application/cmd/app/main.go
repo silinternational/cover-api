@@ -1,9 +1,7 @@
 package main
 
 import (
-	"errors"
 	"fmt"
-	"net/http"
 	"runtime"
 	"strings"
 
@@ -28,18 +26,21 @@ func main() {
 	log.Info("Buffalo build info:", buffalo.Build())
 	log.Info("Commit hash:", strings.TrimSpace(domain.Commit))
 
-	const (
-		certFile = "cert.pem"
-		keyFile  = "key.pem"
-	)
+	// FIXME
+	//const (
+	//	certFile = "cert.pem"
+	//	keyFile  = "key.pem"
+	//)
+	//
+	//if err := generateCert(certFile, keyFile); err != nil {
+	//	log.Fatalf("failed to generate cert: %s", err)
+	//}
+	//
+	//if err := app.StartTLS(fmt.Sprintf(":%d", domain.Env.Port), certFile, keyFile); err != nil {
+	//	if !errors.Is(err, http.ErrServerClosed) {
+	//		log.Fatal(err)
+	//	}
+	//}
 
-	if err := generateCert(certFile, keyFile); err != nil {
-		log.Fatalf("failed to generate cert: %s", err)
-	}
-
-	if err := app.StartTLS(fmt.Sprintf(":%d", domain.Env.Port), certFile, keyFile); err != nil {
-		if !errors.Is(err, http.ErrServerClosed) {
-			log.Fatal(err)
-		}
-	}
+	app.Logger.Fatal(app.Start(fmt.Sprintf(":%d", domain.Env.Port)))
 }
