@@ -63,8 +63,20 @@ jobs:
           outputs: type=docker,dest=/tmp/image
 
       - name: Deepfactor scan
-        uses: silinternational/actions/deepfactor_scan_image
+        uses: silinternational/actions/deepfactor_scan_image@develop
         with:
           deepfactor_run_token: ${{ secrets.DF_RUN_TOKEN }}
           image: ${{ env.IMAGE_NAME }}
+        # continue-on-error: true
 
+      - name: Deploy
+        uses: silinternational/actions/ecs_deploy@develop
+        with:
+          image: ${{ env.IMAGE_NAME }}
+          cluster: appsdev-${{ steps.setup.outputs.environment }}
+          service: cover-api
+          tags: ${{ env.BRANCH_NAME }} ${{ steps.setup.outputs.timestamp }}
+          environment: ${{ steps.setup.outputs.environment }}
+          aws-region: ${{ vars.AWS_REGION }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
