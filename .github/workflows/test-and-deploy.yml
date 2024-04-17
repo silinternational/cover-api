@@ -63,15 +63,15 @@ jobs:
           outputs: type=docker,dest=/tmp/image
 
       - name: Deepfactor scan
-        uses: ./.github/workflows/deepfactor-scan-image.yml
+        uses: silinternational/actions/deepfactor_scan_image
         with:
           deepfactor_run_token: ${{ secrets.DF_RUN_TOKEN }}
           image: ${{ env.IMAGE_NAME }}
+        # continue-on-error: true
 
       - name: Deploy
-        uses: ./.github/workflows/ecs-deploy.yml
+        uses: silinternational/actions/ecs_deploy
         with:
-          deepfactor_run_token: ${{ secrets.DF_RUN_TOKEN }}
           image: ${{ env.IMAGE_NAME }}
           cluster: appsdev-${{ steps.setup.outputs.environment }}
           service: cover-api
