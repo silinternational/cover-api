@@ -39,8 +39,6 @@ jobs:
 #      - test
     outputs:
       image: ${{ steps.setup.outputs.image }}
-      timestamp: ${{ steps.setup.outputs.timestamp }}
-      environment: ${{ steps.setup.outputs.environment }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -48,7 +46,6 @@ jobs:
       - name: Setup
         id: setup
         run: |
-          echo "image=$IMAGE_NAME" >> $GITHUB_OUTPUT
           echo "timestamp=$(date +'%s')" >> $GITHUB_OUTPUT
           case "$BRANCH_NAME" in
           "main") echo "environment=prod" >> $GITHUB_OUTPUT ;;
@@ -65,30 +62,21 @@ jobs:
           tags: ${{ env.IMAGE_NAME }}
           outputs: type=docker,dest=/tmp/image
 
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
+      - name: Deepfactor scan
+        uses: ./.github/workflows/deepfactor-scan-image.yml
         with:
-          name: ${{ env.IMAGE_NAME }}
-          path: /tmp/image
+          deepfactor_run_token: ${{ secrets.DF_RUN_TOKEN }}
+          image: ${{ env.IMAGE_NAME }}
 
-  Scan:
-    name: Deepfactor scan
-    needs: build
-    uses: ./.github/workflows/deepfactor-scan-image.yml
-    secrets:
-      deepfactor_run_token: ${{ secrets.DF_RUN_TOKEN }}
-    with:
-      image: cover
-
-  Deploy:
-    name: ECS deploy
-    uses: ./.github/workflows/ecs-deploy.yml
-    needs: build
-    with:
-      cluster: appsdev-${{ needs.build.outputs.environment }}
-      service: cover-api
-      image: ${{ needs.build.outputs.image }}
-      tags: deepfactor ${{ needs.build.outputs.timestamp }}
-      environment: ${{ needs.build.outputs.environment }}
-      aws-region: ${{ vars.AWS_REGION }}
-    secrets: inherit
+      - name: Deploy
+        uses: ./.github/workflows/ecs-deploy.yml
+        with:
+          deepfactor_run_token: ${{ secrets.DF_RUN_TOKEN }}
+          image: ${{ env.IMAGE_NAME }}
+          cluster: appsdev-${{ steps.setup.outputs.environment }}
+          service: cover-api
+          tags: ${{ env.BRANCH_NAME }} ${{ steps.setup.outputs.timestamp }}
+          environment: ${{ steps.setup.outputs.environment }}
+          aws-region: ${{ vars.AWS_REGION }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
