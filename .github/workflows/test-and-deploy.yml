@@ -32,13 +32,15 @@ jobs:
 #      - name: Update api docs
 #        run: docker-compose -f actions-services.yml run --rm docs ./build-push-api-docs.sh
 
-  build-and-deploy:
+  build:
     name: Build and Deploy
 #    if: github.ref_name == 'main' || github.ref_name == 'develop'
 #    needs:
 #      - test
     outputs:
-      image: ${{ steps.push-image.outputs.image_to_deploy }}
+      image: ${{ steps.setup.outputs.image }}
+      timestamp: ${{ steps.setup.outputs.timestamp }}
+      environment: ${{ steps.setup.outputs.environment }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -46,6 +48,7 @@ jobs:
       - name: Setup
         id: setup
         run: |
+          echo "image=$IMAGE_NAME" >> $GITHUB_OUTPUT
           echo "timestamp=$(date +'%s')" >> $GITHUB_OUTPUT
           case "$BRANCH_NAME" in
           "main") echo "environment=prod" >> $GITHUB_OUTPUT ;;
@@ -62,20 +65,30 @@ jobs:
           tags: ${{ env.IMAGE_NAME }}
           outputs: type=docker,dest=/tmp/image
 
-      - name: Deepfactor scan
-        uses: ./.github/workflows/deepfactor-scan-image.yml
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
         with:
-          image: ${{ env.IMAGE_NAME }}
-        secrets:
-          deepfactor_run_token: ${{ secrets.DF_RUN_TOKEN }}
+          name: ${{ env.IMAGE_NAME }}
+          path: /tmp/image
 
-      - name: ECS deploy
-        uses: ./.github/workflows/ecs-deploy
-        with:
-          cluster: appsdev-${{ steps.setup.outputs.environment }}
-          service: cover-api
-          image: ${{ env.IMAGE_NAME }}
-          tags: ${{ env.BRANCH_NAME }} ${{ steps.setup.outputs.timestamp }}
-          environment: ${{ steps.setup.outputs.environment }}
-          aws-region: ${{ vars.AWS_REGION }}
-        secrets: inherit
+  Scan:
+    name: Deepfactor scan
+    needs: build
+    uses: ./.github/workflows/deepfactor-scan-image.yml
+    secrets:
+      deepfactor_run_token: ${{ secrets.DF_RUN_TOKEN }}
+    with:
+      image: cover
+
+  Deploy:
+    name: ECS deploy
+    uses: ./.github/workflows/ecs-deploy.yml
+    needs: build
+    with:
+      cluster: appsdev-${{ needs.build.outputs.environment }}
+      service: cover-api
+      image: ${{ needs.build.outputs.image }}
+      tags: deepfactor ${{ needs.build.outputs.timestamp }}
+      environment: ${{ needs.build.outputs.environment }}
+      aws-region: ${{ vars.AWS_REGION }}
+    secrets: inherit
