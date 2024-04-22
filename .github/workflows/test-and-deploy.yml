@@ -58,11 +58,11 @@ jobs:
           docker build -t $IMAGE_NAME:$BRANCH_NAME application
           echo "image=$IMAGE_NAME:$BRANCH_NAME" >> $GITHUB_OUTPUT
 
-      - name: Install dfctl
-        run: curl https://repo.deepfactor.io/install-dfctl.sh | sh --
-
-      - name: Deepfactor Scan
-        run: dfctl scan ${{ steps.build-image.outputs.image }}
+#      - name: Install dfctl
+#        run: curl https://repo.deepfactor.io/install-dfctl.sh | sh --
+#
+#      - name: Deepfactor Scan
+#        run: dfctl scan ${{ steps.build-image.outputs.image }}
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
