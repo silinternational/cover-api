@@ -1210,8 +1210,8 @@ func (i *Item) NewHistory(ctx context.Context, action string, fieldUpdate FieldU
 		ItemID:    nulls.NewUUID(i.ID),
 		UserID:    CurrentUser(ctx).ID,
 		FieldName: fieldUpdate.FieldName,
-		OldValue:  fmt.Sprintf("%s", fieldUpdate.OldValue),
-		NewValue:  fmt.Sprintf("%s", fieldUpdate.NewValue),
+		OldValue:  fieldUpdate.OldValue,
+		NewValue:  fieldUpdate.NewValue,
 	}
 }
 

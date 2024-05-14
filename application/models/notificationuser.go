@@ -2,7 +2,6 @@ package models
 
 import (
 	"errors"
-	"fmt"
 	"time"
 
 	"github.com/gobuffalo/nulls"
@@ -72,11 +71,11 @@ func (n *NotificationUser) Load(tx *pop.Connection) {
 }
 
 func (n *NotificationUsers) GetEmailsToSend(tx *pop.Connection) error {
-	q := fmt.Sprintf(`SELECT notification_users.*
+	q := `SELECT notification_users.*
   FROM notification_users LEFT JOIN notifications ON notification_users.notification_id = notifications.id
   WHERE notifications.body <> '' AND
      sent_at_utc IS NULL AND
-     send_after_utc < now()`) // postgresql appears to use UTC as the timezone for now()
+     send_after_utc < now()` // postgresql appears to use UTC as the timezone for now()
 
 	if err := tx.RawQuery(q).All(n); err != nil {
 		if domain.IsOtherThanNoRows(err) {

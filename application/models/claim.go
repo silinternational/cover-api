@@ -877,8 +877,8 @@ func (c *Claim) NewHistory(ctx context.Context, action string, fieldUpdate Field
 		ClaimID:   c.ID,
 		UserID:    CurrentUser(ctx).ID,
 		FieldName: fieldUpdate.FieldName,
-		OldValue:  fmt.Sprintf("%s", fieldUpdate.OldValue),
-		NewValue:  fmt.Sprintf("%s", fieldUpdate.NewValue),
+		OldValue:  fieldUpdate.OldValue,
+		NewValue:  fieldUpdate.NewValue,
 	}
 }
 
