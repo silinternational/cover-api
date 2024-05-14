@@ -356,7 +356,6 @@ func IsStringInSlice(needle string, haystack []string) bool {
 }
 
 func RandomString(n int, includeLetters string) string {
-	rand.Seed(time.Now().UnixNano())
 	if includeLetters == "" {
 		includeLetters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 	}
@@ -374,7 +373,6 @@ func RandomInsecureIntInRange(min, max int) int {
 	if min >= max {
 		panic("invalid parameters to RandomInsecureIntInRange: max of range must be greater than min.")
 	}
-	rand.Seed(time.Now().UnixNano())
 	return rand.Intn(max-min+1) + min // #nosec G404
 }
 
