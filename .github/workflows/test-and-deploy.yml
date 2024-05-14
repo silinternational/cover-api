@@ -23,14 +23,20 @@ jobs:
         with:
           go-version: '1.22'
 
+      - name: Change directory
+        run: cd application
+  
       # - name: Run go vet
-      #   run:  cd application && go vet ./... && cd ..
+      #   run:  go vet ./...
 
       - name: Run golangci-lint
         uses: golangci/golangci-lint-action@v6
         with:
           version: v1.58
 
+      - name: Change directory
+        run: cd ..
+  
       - name: Run unit tests
         run: docker-compose -f actions-services.yml run --rm app ./run-tests.sh
 
