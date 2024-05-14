@@ -81,8 +81,11 @@ func (s *Strikes) ConvertToAPI(tx *pop.Connection) api.Strikes {
 func (s *Strikes) RecentForPolicy(tx *pop.Connection, policyID uuid.UUID, cutOff time.Time) error {
 	yearBefore := cutOff.AddDate(0, -domain.Env.StrikeLifetimeMonths, 0)
 
-	if err := tx.Where("policy_id = ? AND created_at > ? AND created_at < ?",
-		policyID, yearBefore, cutOff).All(s); err != nil {
+	err := tx.Where("policy_id = ? AND created_at > ? AND created_at < ?",
+		policyID, yearBefore, cutOff).All(s)
+
+	if domain.IsOtherThanNoRows(err) {
+		return err
 	}
 
 	return nil
