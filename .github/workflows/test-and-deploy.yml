@@ -13,6 +13,35 @@ env:
   S3_PATH: ""
 
 jobs:
+  vet:
+    name: Vet
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+
+      - name: Run go vet
+        run:  cd application && go vet ./...
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+
+      - name: Run golangci-lint
+        uses: golangci/golangci-lint-action@v6
+        with:
+          version: v1.58
+          working-directory: application
+
   test:
     name: Test
     runs-on: ubuntu-latest
@@ -50,6 +79,8 @@ jobs:
     name: Build and Deploy
     if: github.ref_name == 'main' || github.ref_name == 'develop'
     needs:
+      - vet
+      - lint
       - test
     outputs:
       image: ${{ steps.push-image.outputs.image_to_deploy }}
