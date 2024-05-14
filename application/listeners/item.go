@@ -24,7 +24,7 @@ func itemSubmitted(e events.Event) {
 		log.Errorf(wrongStatusMsg, "itemSubmitted", item.CoverageStatus)
 	}
 
-	models.DB.Transaction(func(tx *pop.Connection) error {
+	_ = models.DB.Transaction(func(tx *pop.Connection) error {
 		messages.ItemSubmittedQueueMessage(tx, item)
 		messages.ItemPendingQueueMessage(tx, item)
 		return nil
@@ -41,7 +41,7 @@ func itemRevision(e events.Event) {
 		panic(fmt.Sprintf(wrongStatusMsg, "itemRevision", item.CoverageStatus))
 	}
 
-	models.DB.Transaction(func(tx *pop.Connection) error {
+	_ = models.DB.Transaction(func(tx *pop.Connection) error {
 		messages.ItemRevisionQueueMessage(tx, item)
 		return nil
 	})
@@ -58,7 +58,7 @@ func itemAutoApproved(e events.Event) {
 		return
 	}
 
-	models.DB.Transaction(func(tx *pop.Connection) error {
+	_ = models.DB.Transaction(func(tx *pop.Connection) error {
 		messages.ItemAutoApprovedQueueMessage(tx, item)
 		return nil
 	})
@@ -75,7 +75,7 @@ func itemApproved(e events.Event) {
 		return
 	}
 
-	models.DB.Transaction(func(tx *pop.Connection) error {
+	_ = models.DB.Transaction(func(tx *pop.Connection) error {
 		messages.ItemApprovedQueueMessage(tx, item)
 		return nil
 	})
@@ -92,7 +92,7 @@ func itemDenied(e events.Event) {
 		return
 	}
 
-	models.DB.Transaction(func(tx *pop.Connection) error {
+	_ = models.DB.Transaction(func(tx *pop.Connection) error {
 		messages.ItemDeniedQueueMessage(tx, item)
 		return nil
 	})

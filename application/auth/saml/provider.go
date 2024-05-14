@@ -235,14 +235,14 @@ func getRsaPrivateKey(privateKey, publicCert string) (*rsa.PrivateKey, error) {
 	return rsaKey, nil
 }
 
-func pemToBase64(pemStr string) (string, error) {
-	block, _ := pem.Decode([]byte(pemStr))
-	if block == nil {
-		return "", errors.New("input string is not PEM encoded")
-	}
+// func pemToBase64(pemStr string) (string, error) {
+// 	block, _ := pem.Decode([]byte(pemStr))
+// 	if block == nil {
+// 		return "", errors.New("input string is not PEM encoded")
+// 	}
 
-	return base64.StdEncoding.EncodeToString(block.Bytes), nil
-}
+// 	return base64.StdEncoding.EncodeToString(block.Bytes), nil
+// }
 
 // decodeKey decodes a key from either a PEM-encoded string or a base64 string
 func decodeKey(key, expectedType string) ([]byte, error) {

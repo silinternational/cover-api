@@ -165,7 +165,9 @@ func usersMeFilesDelete(c buffalo.Context) error {
 	}
 
 	user.PhotoFileID = nulls.UUID{}
-	user.Update(tx)
+	if err := user.Update(tx); err != nil {
+		return reportError(c, err)
+	}
 
 	return c.Render(http.StatusNoContent, nil)
 }
