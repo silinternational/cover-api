@@ -37,5 +37,4 @@ func resubmitInactivateJob() {
 	if err := SubmitDelayed(InactivateItems, delay, map[string]any{}); err != nil {
 		log.Error("error resubmitting inactivateItemsHandler:", err)
 	}
-	return
 }

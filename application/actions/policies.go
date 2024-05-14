@@ -366,7 +366,7 @@ func policiesStrikeCreate(c buffalo.Context) error {
 
 	var strikes models.Strikes
 	if err := strikes.RecentForPolicy(tx, policy.ID, soon); err != nil {
-		reportError(c, err)
+		return reportError(c, err)
 	}
 
 	return renderOk(c, strikes.ConvertToAPI(tx))

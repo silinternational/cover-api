@@ -1285,7 +1285,6 @@ func (ms *ModelSuite) TestClaim_UpdateByUser() {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			const message = "change all the things"
 			ctx := CreateTestContext(actor)
 			ctx.Set(domain.ContextKeyTx, ms.DB)
 			got := tt.claim.UpdateByUser(ctx)

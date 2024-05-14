@@ -17,7 +17,7 @@ func (as *ActionSuite) Test_StewardListRecent() {
 	fixtures = models.CreateClaimHistoryFixtures_RecentClaimStatusChanges(as.DB)
 	chFixes := fixtures.ClaimHistories
 
-	const tmFmt = "Jan _2 15:04:05.00"
+	// const tmFmt = "Jan _2 15:04:05.00"
 
 	// alias a couple users
 	steward := models.CreateAdminUsers(as.DB)[models.AppRoleSteward]

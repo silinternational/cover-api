@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/silinternational/cover-api/domain"
 	"github.com/silinternational/cover-api/models"
@@ -20,7 +19,7 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-var futureDate = time.Date(2222, 12, 31, 12, 59, 59, 59, time.UTC)
+// var futureDate = time.Date(2222, 12, 31, 12, 59, 59, 59, time.UTC)
 
 type ActionSuite struct {
 	suite.Suite

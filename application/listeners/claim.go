@@ -22,7 +22,7 @@ func claimReview1(e events.Event) {
 		panic(fmt.Sprintf(wrongStatusMsg, "claimReview1", claim.Status))
 	}
 
-	models.DB.Transaction(func(tx *pop.Connection) error {
+	_ = models.DB.Transaction(func(tx *pop.Connection) error {
 		messages.ClaimReview1QueueMessage(tx, claim)
 		return nil
 	})
@@ -38,7 +38,7 @@ func claimRevision(e events.Event) {
 		panic(fmt.Sprintf(wrongStatusMsg, "claimRevision", claim.Status))
 	}
 
-	models.DB.Transaction(func(tx *pop.Connection) error {
+	_ = models.DB.Transaction(func(tx *pop.Connection) error {
 		messages.ClaimRevisionQueueMessage(tx, claim)
 		return nil
 	})
@@ -54,7 +54,7 @@ func claimPreapproved(e events.Event) {
 		panic(fmt.Sprintf(wrongStatusMsg, "claimReceipt", claim.Status))
 	}
 
-	models.DB.Transaction(func(tx *pop.Connection) error {
+	_ = models.DB.Transaction(func(tx *pop.Connection) error {
 		messages.ClaimPreapprovedQueueMessage(tx, claim)
 		return nil
 	})
@@ -70,7 +70,7 @@ func claimReceipt(e events.Event) {
 		panic(fmt.Sprintf(wrongStatusMsg, "claimReceipt", claim.Status))
 	}
 
-	models.DB.Transaction(func(tx *pop.Connection) error {
+	_ = models.DB.Transaction(func(tx *pop.Connection) error {
 		messages.ClaimReceiptQueueMessage(tx, claim)
 		return nil
 	})
@@ -86,7 +86,7 @@ func claimReview2(e events.Event) {
 		panic(fmt.Sprintf(wrongStatusMsg, "claimReview2", claim.Status))
 	}
 
-	models.DB.Transaction(func(tx *pop.Connection) error {
+	_ = models.DB.Transaction(func(tx *pop.Connection) error {
 		messages.ClaimReview2QueueMessage(tx, claim)
 		return nil
 	})
@@ -102,7 +102,7 @@ func claimReview3(e events.Event) {
 		panic(fmt.Sprintf(wrongStatusMsg, "claimReview3", claim.Status))
 	}
 
-	models.DB.Transaction(func(tx *pop.Connection) error {
+	_ = models.DB.Transaction(func(tx *pop.Connection) error {
 		messages.ClaimReview3QueueMessage(tx, claim)
 		return nil
 	})
@@ -114,14 +114,14 @@ func claimApproved(e events.Event) {
 		return
 	}
 
-	models.DB.Transaction(func(tx *pop.Connection) error {
+	_ = models.DB.Transaction(func(tx *pop.Connection) error {
 		if err := claim.StopItemCoverage(tx); err != nil {
 			log.Errorf("error ending coverage in claimApproved for claim %s: %s", claim.ID.String(), err)
 		}
 		return nil
 	})
 
-	models.DB.Transaction(func(tx *pop.Connection) error {
+	_ = models.DB.Transaction(func(tx *pop.Connection) error {
 		messages.ClaimApprovedQueueMessage(tx, claim)
 		return nil
 	})
@@ -133,7 +133,7 @@ func claimDenied(e events.Event) {
 		return
 	}
 
-	models.DB.Transaction(func(tx *pop.Connection) error {
+	_ = models.DB.Transaction(func(tx *pop.Connection) error {
 		messages.ClaimDeniedQueueMessage(tx, claim)
 		return nil
 	})

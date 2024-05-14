@@ -254,8 +254,7 @@ func decodeKey(key, expectedType string) ([]byte, error) {
 		return block.Bytes, nil
 	}
 
-	var bytes []byte
-	bytes = make([]byte, base64.StdEncoding.DecodedLen(len(key)))
+	bytes := make([]byte, base64.StdEncoding.DecodedLen(len(key)))
 	n, err := base64.StdEncoding.Decode(bytes, []byte(key))
 	if err != nil {
 		return nil, fmt.Errorf("unable to decode base64: %w", err)

@@ -473,10 +473,7 @@ func TimeBetween(t1, t2 time.Time) string {
 }
 
 func IsProduction() bool {
-	if strings.HasPrefix(Env.GoEnv, "prod") {
-		return true
-	}
-	return false
+	return strings.HasPrefix(Env.GoEnv, "prod")
 }
 
 func checkSamlConfig(env *EnvStruct) {

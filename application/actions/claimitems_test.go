@@ -45,7 +45,8 @@ func (as *ActionSuite) Test_ClaimItemsUpdate() {
 	approvedClaimItem := approvedClaim.ClaimItems[0]
 
 	ctx := models.CreateTestContext(appAdmin)
-	approvedClaimItem.Update(ctx)
+	err := approvedClaimItem.Update(ctx)
+	as.NoError(err)
 
 	isRepairable := true
 	input := api.ClaimItemUpdateInput{

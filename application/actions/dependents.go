@@ -152,7 +152,6 @@ func dependentsDelete(c buffalo.Context) error {
 		return reportError(c, appErr)
 	}
 
-	dependent.Destroy(tx)
 	if err := dependent.Destroy(tx); err != nil {
 		return reportError(c, err)
 	}

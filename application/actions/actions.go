@@ -9,7 +9,6 @@ import (
 
 	"github.com/gobuffalo/buffalo"
 	"github.com/gobuffalo/buffalo/render"
-	"github.com/gofrs/uuid"
 
 	"github.com/silinternational/cover-api/api"
 	"github.com/silinternational/cover-api/domain"
@@ -105,26 +104,26 @@ func getExtras(c buffalo.Context) map[string]any {
 	return extras
 }
 
-func newExtra(c buffalo.Context, key string, e any) {
-	extras := getExtras(c)
-	extras[key] = e
-	c.Set(domain.ContextKeyExtras, extras)
-}
+// func newExtra(c buffalo.Context, key string, e any) {
+// 	extras := getExtras(c)
+// 	extras[key] = e
+// 	c.Set(domain.ContextKeyExtras, extras)
+// }
 
 func renderOk(c buffalo.Context, v any) error {
 	return c.Render(http.StatusOK, r.JSON(v))
 }
 
-func getUUIDFromParam(c buffalo.Context, param string) (uuid.UUID, error) {
-	s := c.Param(param)
-	id := uuid.FromStringOrNil(s)
-	if id == uuid.Nil {
-		newExtra(c, param, s)
-		err := fmt.Errorf("invalid %s provided: '%s'", param, s)
-		return uuid.UUID{}, api.NewAppError(err, api.ErrorMustBeAValidUUID, api.CategoryUser)
-	}
-	return id, nil
-}
+// func getUUIDFromParam(c buffalo.Context, param string) (uuid.UUID, error) {
+// 	s := c.Param(param)
+// 	id := uuid.FromStringOrNil(s)
+// 	if id == uuid.Nil {
+// 		newExtra(c, param, s)
+// 		err := fmt.Errorf("invalid %s provided: '%s'", param, s)
+// 		return uuid.UUID{}, api.NewAppError(err, api.ErrorMustBeAValidUUID, api.CategoryUser)
+// 	}
+// 	return id, nil
+// }
 
 // getClientIPAddress gets the client IP address from CF-Connecting-IP or RemoteAddr
 func getClientIPAddress(c buffalo.Context) (net.IP, error) {

@@ -103,7 +103,6 @@ func (ts *TestSuite) Test_SendQueuedNotifications() {
 		name      string
 		sendAfter time.Time
 		sentAt    nulls.Time
-		notnUser  models.NotificationUser
 	}
 
 	// The database truncates the time in the fractions of seconds somehow
