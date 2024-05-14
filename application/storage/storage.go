@@ -6,7 +6,7 @@ import (
 	// see commented out code at the end of function "rawEmail")
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/url"
 	"strings"
 	"time"
@@ -143,7 +143,7 @@ func GetFile(key string) ([]byte, error) {
 		return nil, fmt.Errorf("error reading file from S3: %w", err)
 	}
 
-	content, err := ioutil.ReadAll(output.Body)
+	content, err := io.ReadAll(output.Body)
 	if err != nil {
 		return nil, fmt.Errorf("error copying content into byte array: %w", err)
 	}

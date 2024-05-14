@@ -2,7 +2,7 @@ package actions
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 
 	"github.com/gobuffalo/buffalo"
 	"github.com/gobuffalo/buffalo/render"
@@ -55,7 +55,7 @@ func uploadHandler(c buffalo.Context) error {
 		return reportError(c, api.NewAppError(err, api.ErrorStoreFileTooLarge, api.CategoryUser))
 	}
 
-	content, err := ioutil.ReadAll(f)
+	content, err := io.ReadAll(f)
 	if err != nil {
 		err := fmt.Errorf("error reading uploaded file ... %v", err)
 		return reportError(c, api.NewAppError(err, api.ErrorUnableToReadFile, api.CategoryInternal))
