@@ -34,7 +34,7 @@ func userWelcome(e events.Event) {
 		return
 	}
 
-	models.DB.Transaction(func(tx *pop.Connection) error {
+	_ = models.DB.Transaction(func(tx *pop.Connection) error {
 		messages.UserWelcomeQueueMessage(tx, user)
 		return nil
 	})
