@@ -38,7 +38,7 @@ var eventTypes = map[string]func(event events.Event){
 }
 
 func notificationCreated(e events.Event) {
-	models.DB.Transaction(func(tx *pop.Connection) error {
+	_ = models.DB.Transaction(func(tx *pop.Connection) error {
 		messages.SendQueuedNotifications(tx)
 		return nil
 	})
