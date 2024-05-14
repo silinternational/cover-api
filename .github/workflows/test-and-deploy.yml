@@ -41,6 +41,7 @@ jobs:
         with:
           version: v1.58
           working-directory: application
+          args: --build-tags=development
 
   test:
     name: Test
