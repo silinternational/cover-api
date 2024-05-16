@@ -293,21 +293,29 @@ func EmailFromAddress(name *string) string {
 	return addr
 }
 
-// GetBearerTokenFromRequest obtains the token from an Authorization header beginning
+// GetBearerTokenFromRequest obtains the token from a cookie beginning
 // with "Bearer". If not found, an empty string is returned.
 func GetBearerTokenFromRequest(r *http.Request) string {
-	authorizationHeader := r.Header.Get("Authorization")
-	if authorizationHeader == "" {
+	cookie, err := r.Cookie("bearer-token")
+	if err != nil {
+		log.Error("failed to retrieve bearer token cookie:", err)
+		return ""
+	}
+
+	authorizationCookie := cookie.Value
+
+	if authorizationCookie == "" {
 		return ""
 	}
 
 	re := regexp.MustCompile(`^(?i)Bearer (.*)$`)
-	matches := re.FindSubmatch([]byte(authorizationHeader))
+	matches := re.FindStringSubmatch(authorizationCookie)
 	if len(matches) < 2 {
+		log.Error("failed to extract Bearer token from cookie")
 		return ""
 	}
 
-	return string(matches[1])
+	return matches[1]
 }
 
 // IsOtherThanNoRows returns false if the error is nil or is just reporting that there
