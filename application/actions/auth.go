@@ -176,6 +176,17 @@ func validateInviteOnLogin(c buffalo.Context, inviteCode string) *api.AppError {
 
 	return nil
 }
+func setAuthCookie(c buffalo.Context, token string) {
+	cookie := &http.Cookie{
+		Name:     "bearer-token", // Name of the cookie
+		Value:    token,          // The token value
+		Path:     "/",            // Path where the cookie is valid
+		HttpOnly: true,           // Prevents JavaScript from accessing the cookie
+		Secure:   false,          // Use secure cookie only over HTTPS
+		MaxAge:   3600,           // Cookie expiration time in seconds (1 hour)
+	}
+	http.SetCookie(c.Response(), cookie)
+}
 
 func authCallback(c buffalo.Context) error {
 	clientID, ok := c.Session().Get(ClientIDSessionKey).(string)
@@ -258,6 +269,9 @@ func authCallback(c buffalo.Context) error {
 	// set person on log context
 	log.SetUser(c, authUser.StaffID, user.GetName().String(), user.Email)
 
+	// Set the authentication token in a cookie
+	setAuthCookie(c, authUser.AccessToken)
+
 	return c.Redirect(302, getLoginSuccessRedirectURL(*authUser, returnTo))
 }
 
@@ -265,24 +279,26 @@ func authCallback(c buffalo.Context) error {
 func getLoginSuccessRedirectURL(authUser auth.User, returnTo string) string {
 	uiURL := domain.Env.UIURL
 
-	params := fmt.Sprintf("?%s=Bearer&%s=%s",
-		TokenTypeParam, AccessTokenParam, authUser.AccessToken)
-
 	// New Users go straight to the welcome page
 	if authUser.IsNew {
 		uiURL += "/welcome"
 		if len(returnTo) > 0 {
-			params += "&" + ReturnToParam + "=" + url.QueryEscape(returnTo)
+			params := "?" + ReturnToParam + "=" + url.QueryEscape(returnTo)
+			return uiURL + params
 		}
-		return uiURL + params
+		return uiURL
 	}
 
 	// Avoid two question marks in the params
-	if strings.Contains(returnTo, "?") && strings.HasPrefix(params, "?") {
-		params = "&" + params[1:]
+	if strings.Contains(returnTo, "?") {
+		return uiURL + returnTo
 	}
 
-	return uiURL + returnTo + params
+	if len(returnTo) > 0 {
+		returnTo = "?" + returnTo
+	}
+
+	return uiURL + returnTo
 }
 
 // swagger:operation GET /auth/logout Authentication AuthLogout
