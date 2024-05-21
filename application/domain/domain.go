@@ -7,7 +7,6 @@ import (
 	"math"
 	"math/rand"
 	"net/http"
-	"regexp"
 	"strings"
 	"sync"
 	"time"
@@ -301,21 +300,13 @@ func GetBearerTokenFromRequest(r *http.Request) string {
 		log.Error("failed to retrieve bearer token cookie:", err)
 		return ""
 	}
-
-	authorizationCookie := cookie.Value
-
-	if authorizationCookie == "" {
+	clientId, err := r.Cookie("seed")
+	if err != nil {
+		log.Error("failed to retrieve seed cookie:", err)
 		return ""
 	}
 
-	re := regexp.MustCompile(`^(?i)Bearer (.*)$`)
-	matches := re.FindStringSubmatch(authorizationCookie)
-	if len(matches) < 2 {
-		log.Error("failed to extract Bearer token from cookie")
-		return ""
-	}
-
-	return matches[1]
+	return clientId.Value + cookie.Value
 }
 
 // IsOtherThanNoRows returns false if the error is nil or is just reporting that there
