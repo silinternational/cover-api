@@ -14,15 +14,15 @@ import (
 
 func AuthN(next buffalo.Handler) buffalo.Handler {
 	return func(c buffalo.Context) error {
-		bearerToken := domain.GetBearerTokenFromRequest(c.Request())
-		if bearerToken == "" {
-			err := errors.New("no bearer token provided")
+		authToken := domain.GetCombinedTokenFromRequest(c.Request())
+		if authToken == "" {
+			err := errors.New("no access token provided")
 			return reportError(c, api.NewAppError(err, api.ErrorNotAuthorized, api.CategoryUnauthorized))
 		}
 
 		var userAccessToken models.UserAccessToken
-		if err := userAccessToken.FindByBearerToken(models.DB, bearerToken); err != nil {
-			err := errors.New("invalid bearer token")
+		if err := userAccessToken.FindByAccessToken(models.DB, authToken); err != nil {
+			err := errors.New("invalid access token")
 			return reportError(c, api.NewAppError(err, api.ErrorNotAuthorized, api.CategoryUnauthorized))
 		}
 
@@ -32,7 +32,7 @@ func AuthN(next buffalo.Handler) buffalo.Handler {
 		}
 
 		if isExpired {
-			err = errors.New("expired bearer token")
+			err = errors.New("expired access token")
 			return reportError(c, api.NewAppError(err, api.ErrorNotAuthorized, api.CategoryUnauthorized))
 		}
 

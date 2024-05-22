@@ -65,7 +65,7 @@ func (as *ActionSuite) Test_StewardListRecent() {
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
 			req := as.JSON(stewardPath + "/" + api.ResourceRecent)
-			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
+			req.Headers["Authorization"] = fmt.Sprintf("Access %s", tt.actor.Email)
 			req.Headers["content-type"] = domain.ContentJson
 			res := req.Get()
 

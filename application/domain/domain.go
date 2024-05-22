@@ -292,21 +292,22 @@ func EmailFromAddress(name *string) string {
 	return addr
 }
 
-// GetBearerTokenFromRequest obtains the token from a cookie beginning
-// with "Bearer". If not found, an empty string is returned.
-func GetBearerTokenFromRequest(r *http.Request) string {
-	cookie, err := r.Cookie("bearer-token")
+// GetCombinedTokenFromRequest obtains the token from a cookie in the request.
+// If not found, an empty string is returned.
+func GetCombinedTokenFromRequest(r *http.Request) string {
+	cookie, err := r.Cookie("access-token")
 	if err != nil {
-		log.Error("failed to retrieve bearer token cookie:", err)
+		log.Error("failed to retrieve access token cookie:", err)
 		return ""
 	}
-	clientId, err := r.Cookie("seed")
+
+	clientID, err := r.Cookie("client-id")
 	if err != nil {
 		log.Error("failed to retrieve seed cookie:", err)
 		return ""
 	}
 
-	return clientId.Value + cookie.Value
+	return clientID.Value + cookie.Value
 }
 
 // IsOtherThanNoRows returns false if the error is nil or is just reporting that there
@@ -478,6 +479,10 @@ func IsProduction() bool {
 		return true
 	}
 	return false
+}
+
+func IsDevelopment() bool {
+	return Env.GoEnv == EnvDevelopment
 }
 
 func checkSamlConfig(env *EnvStruct) {

@@ -63,10 +63,10 @@ func (u *UserAccessToken) ValidateUpdate(tx *pop.Connection) (*validate.Errors, 
 	return validate.NewErrors(), nil
 }
 
-// DeleteByBearerToken uses a sha256.Sum256 of the bearerToken to find which UserAccessToken to delete
+// DeleteByAccessToken uses a sha256.Sum256 of the accessToken to find which UserAccessToken to delete
 // returns an api.AppError
-func (u *UserAccessToken) DeleteByBearerToken(tx *pop.Connection, bearerToken string) error {
-	if appErr := u.FindByBearerToken(tx, bearerToken); appErr != nil {
+func (u *UserAccessToken) DeleteByAccessToken(tx *pop.Connection, token string) error {
+	if appErr := u.FindByAccessToken(tx, token); appErr != nil {
 		return appErr
 	}
 	if err := u.Destroy(tx); err != nil {
@@ -93,11 +93,11 @@ func (u *UserAccessToken) Destroy(tx *pop.Connection) error {
 	return tx.Destroy(u)
 }
 
-// FindByBearerToken uses a sha256.Sum256 of the bearerToken to find the corresponding UserAccessToken
+// FindByAccessToken uses a sha256.Sum256 of the accessToken to find the corresponding UserAccessToken
 // returns an api.AppError
-func (u *UserAccessToken) FindByBearerToken(tx *pop.Connection, bearerToken string) error {
-	if err := tx.Eager().Where("access_token = ?", HashClientIdAccessToken(bearerToken)).First(u); err != nil {
-		l := len(bearerToken)
+func (u *UserAccessToken) FindByAccessToken(tx *pop.Connection, token string) error {
+	if err := tx.Eager().Where("access_token = ?", HashClientIdAccessToken(token)).First(u); err != nil {
+		l := len(token)
 		if l > 5 {
 			l = 5
 		}
@@ -110,7 +110,7 @@ func (u *UserAccessToken) FindByBearerToken(tx *pop.Connection, bearerToken stri
 			Err:      err,
 			Key:      api.ErrorFindingAccessToken,
 			Category: api.CategoryUser,
-			Message:  fmt.Sprintf("failed to find access token '%s...'", bearerToken[0:l]),
+			Message:  fmt.Sprintf("failed to find access token '%s...'", token[0:l]),
 		}
 		return &appErr
 	}

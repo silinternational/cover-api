@@ -58,14 +58,6 @@
         ],
         "summary": "AuthLogin",
         "operationId": "AuthLogin",
-        "parameters": [
-          {
-            "description": "the user's client id",
-            "name": "client-id",
-            "in": "query",
-            "required": true
-          }
-        ],
         "responses": {
           "200": {
             "description": "returns a \"RedirectURL\" key with the saml idp url that has a saml request"
@@ -81,14 +73,6 @@
         ],
         "summary": "AuthLogout",
         "operationId": "AuthLogout",
-        "parameters": [
-          {
-            "description": "the user's bearer token",
-            "name": "token",
-            "in": "query",
-            "required": true
-          }
-        ],
         "responses": {
           "302": {
             "description": "redirect to UI"

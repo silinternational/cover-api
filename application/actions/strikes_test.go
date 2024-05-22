@@ -57,7 +57,7 @@ func (as *ActionSuite) Test_StrikesUpdate() {
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
 			req := as.JSON("%s/%s", strikesPath, tt.strike.ID.String())
-			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
+			req.Headers["Authorization"] = fmt.Sprintf("Access %s", tt.actor.Email)
 			res := req.Put(api.StrikeInput{Description: newDescription})
 
 			body := res.Body.String()
@@ -110,7 +110,7 @@ func (as *ActionSuite) Test_StrikesDelete() {
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
 			req := as.JSON("%s/%s", strikesPath, tt.strike.ID.String())
-			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
+			req.Headers["Authorization"] = fmt.Sprintf("Access %s", tt.actor.Email)
 			res := req.Delete()
 
 			body := res.Body.String()

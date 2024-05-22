@@ -73,7 +73,7 @@ func (as *ActionSuite) Test_ClaimsList() {
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
 			req := as.JSON("/claims" + tt.queryString)
-			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
+			req.Headers["Authorization"] = fmt.Sprintf("Access %s", tt.actor.Email)
 			req.Headers["content-type"] = domain.ContentJson
 			res := req.Get()
 
@@ -150,7 +150,7 @@ func (as *ActionSuite) Test_PoliciesClaimsList() {
 		as.T().Run(tt.name, func(t *testing.T) {
 			url := fmt.Sprintf("%s/%s%s", policiesPath, policy.ID, claimsPath)
 			req := as.JSON(url)
-			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
+			req.Headers["Authorization"] = fmt.Sprintf("Access %s", tt.actor.Email)
 			req.Headers["content-type"] = domain.ContentJson
 			res := req.Get()
 
@@ -232,7 +232,7 @@ func (as *ActionSuite) Test_ClaimsView() {
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
 			req := as.JSON("/claims/" + tt.claim.ID.String())
-			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
+			req.Headers["Authorization"] = fmt.Sprintf("Access %s", tt.actor.Email)
 			req.Headers["content-type"] = domain.ContentJson
 			res := req.Get()
 
@@ -345,7 +345,7 @@ func (as *ActionSuite) Test_ClaimsUpdate() {
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
 			req := as.JSON("/claims/" + tt.claim.ID.String())
-			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
+			req.Headers["Authorization"] = fmt.Sprintf("Access %s", tt.actor.Email)
 			req.Headers["content-type"] = domain.ContentJson
 			res := req.Put(tt.input)
 
@@ -457,7 +457,7 @@ func (as *ActionSuite) Test_ClaimsCreate() {
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
 			req := as.JSON(fmt.Sprintf("/policies/%s/claims", tt.policy.ID))
-			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
+			req.Headers["Authorization"] = fmt.Sprintf("Access %s", tt.actor.Email)
 			req.Headers["content-type"] = domain.ContentJson
 			res := req.Post(tt.input)
 
@@ -573,7 +573,7 @@ func (as *ActionSuite) Test_ClaimsItemsCreate() {
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
 			req := as.JSON(fmt.Sprintf("/%s/%s/%s", domain.TypeClaim, tt.claim.ID, domain.TypeItem))
-			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
+			req.Headers["Authorization"] = fmt.Sprintf("Access %s", tt.actor.Email)
 			req.Headers["content-type"] = domain.ContentJson
 
 			res := req.Post(tt.input)
@@ -660,7 +660,7 @@ func (as *ActionSuite) Test_ClaimsSubmit() {
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
 			req := as.JSON("/%s/%s/%s", domain.TypeClaim, tt.oldClaim.ID.String(), api.ResourceSubmit)
-			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
+			req.Headers["Authorization"] = fmt.Sprintf("Access %s", tt.actor.Email)
 			req.Headers["content-type"] = domain.ContentJson
 			res := req.Post(nil)
 
@@ -738,7 +738,7 @@ func (as *ActionSuite) Test_ClaimsRequestRevision() {
 		as.T().Run(tt.name, func(t *testing.T) {
 			req := as.JSON("/%s/%s/%s",
 				domain.TypeClaim, tt.oldClaim.ID.String(), api.ResourceRevision)
-			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
+			req.Headers["Authorization"] = fmt.Sprintf("Access %s", tt.actor.Email)
 			req.Headers["content-type"] = domain.ContentJson
 			const message = "change all of it"
 			res := req.Post(api.ClaimStatusInput{StatusReason: message})
@@ -818,7 +818,7 @@ func (as *ActionSuite) Test_ClaimsPreapprove() {
 		as.T().Run(tt.name, func(t *testing.T) {
 			req := as.JSON("/%s/%s/%s",
 				domain.TypeClaim, tt.oldClaim.ID.String(), api.ResourcePreapprove)
-			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
+			req.Headers["Authorization"] = fmt.Sprintf("Access %s", tt.actor.Email)
 			req.Headers["content-type"] = domain.ContentJson
 			res := req.Post(nil)
 
@@ -900,7 +900,7 @@ func (as *ActionSuite) Test_ClaimsReceipt() {
 		as.T().Run(tt.name, func(t *testing.T) {
 			req := as.JSON("/%s/%s/%s",
 				domain.TypeClaim, tt.oldClaim.ID.String(), api.ResourceReceipt)
-			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
+			req.Headers["Authorization"] = fmt.Sprintf("Access %s", tt.actor.Email)
 			req.Headers["content-type"] = domain.ContentJson
 			res := req.Post(api.ClaimStatusInput{StatusReason: tt.reason})
 
@@ -1034,7 +1034,7 @@ func (as *ActionSuite) Test_ClaimsApprove() {
 		as.T().Run(tt.name, func(t *testing.T) {
 			req := as.JSON("/%s/%s/%s",
 				domain.TypeClaim, tt.oldClaim.ID.String(), api.ResourceApprove)
-			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
+			req.Headers["Authorization"] = fmt.Sprintf("Access %s", tt.actor.Email)
 			req.Headers["content-type"] = domain.ContentJson
 			res := req.Post(nil)
 
@@ -1144,7 +1144,7 @@ func (as *ActionSuite) Test_ClaimsDeny() {
 		as.T().Run(tt.name, func(t *testing.T) {
 			req := as.JSON("/%s/%s/%s",
 				domain.TypeClaim, tt.oldClaim.ID.String(), api.ResourceDeny)
-			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
+			req.Headers["Authorization"] = fmt.Sprintf("Access %s", tt.actor.Email)
 			req.Headers["content-type"] = domain.ContentJson
 			const message = "change all of it"
 			res := req.Post(api.ClaimStatusInput{StatusReason: message})
@@ -1224,7 +1224,7 @@ func (as *ActionSuite) Test_ClaimsRemove() {
 		as.T().Run(tt.name, func(t *testing.T) {
 			req := as.JSON("/%s/%s",
 				domain.TypeClaim, tt.claim.ID.String())
-			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
+			req.Headers["Authorization"] = fmt.Sprintf("Access %s", tt.actor.Email)
 			req.Headers["content-type"] = domain.ContentJson
 			res := req.Delete()
 

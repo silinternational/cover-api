@@ -46,7 +46,7 @@ func (as *ActionSuite) Test_ItemCategoriesList() {
 	models.MustCreate(as.DB, &disabled)
 
 	req := as.JSON("/config/item-categories")
-	req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", fixtures.Policies[0].Members[0].Email)
+	req.Headers["Authorization"] = fmt.Sprintf("Access %s", fixtures.Policies[0].Members[0].Email)
 	req.Headers["content-type"] = domain.ContentJson
 	res := req.Get()
 

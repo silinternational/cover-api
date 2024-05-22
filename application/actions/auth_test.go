@@ -28,22 +28,22 @@ func (as *ActionSuite) Test_AuthLogin_Invite() {
 	}{
 		{
 			name: "Bad Invite Code",
-			queryParams: fmt.Sprintf("%s=123456&%s=badInviteCode",
-				ClientIDParam, InviteCodeParam),
+			queryParams: fmt.Sprintf("%s=badInviteCode",
+				InviteCodeParam),
 			wantStatus:   http.StatusBadRequest,
 			wantContains: string(api.ErrorProcessingAuthInviteCode),
 		},
 		{
 			name: "Invite Code not in DB",
-			queryParams: fmt.Sprintf("%s=123456&%s=%v",
-				ClientIDParam, InviteCodeParam, missingCode),
+			queryParams: fmt.Sprintf("%s=123456&%v",
+				InviteCodeParam, missingCode),
 			wantStatus:   http.StatusNotFound,
 			wantContains: string(api.ErrorProcessingAuthInviteCode),
 		},
 		{
 			name: "All Good",
-			queryParams: fmt.Sprintf("%s=123456&%s=%v",
-				ClientIDParam, InviteCodeParam, invite.ID),
+			queryParams: fmt.Sprintf("%s=123456&%v",
+				InviteCodeParam, invite.ID),
 			wantStatus:   http.StatusOK,
 			wantContains: `"RedirectURL":"` + domain.Env.SamlSsoURL,
 			wantCode:     invite.ID.String(),
@@ -51,7 +51,7 @@ func (as *ActionSuite) Test_AuthLogin_Invite() {
 	}
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
-			req := as.JSON("/auth/login?" + tt.queryParams)
+			req := as.JSON("/auth/login")
 			res := req.Post(nil)
 			body := res.Body.String()
 			as.Equal(tt.wantStatus, res.Code, "incorrect status code returned, body: %s", body)

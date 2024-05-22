@@ -71,7 +71,7 @@ func (as *ActionSuite) Test_DependentsList() {
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
 			req := as.JSON("/policies/" + tt.policy.ID.String() + "/dependents")
-			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
+			req.Headers["Authorization"] = fmt.Sprintf("Access %s", tt.actor.Email)
 			req.Headers["content-type"] = domain.ContentJson
 			res := req.Get()
 
@@ -213,7 +213,7 @@ func (as *ActionSuite) Test_DependentsCreate() {
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
 			req := as.JSON("/policies/" + tt.policy.ID.String() + "/dependents")
-			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
+			req.Headers["Authorization"] = fmt.Sprintf("Access %s", tt.actor.Email)
 			req.Headers["content-type"] = domain.ContentJson
 			res := req.Post(tt.reqBody)
 
@@ -289,7 +289,7 @@ func (as *ActionSuite) Test_DependentsUpdate() {
 			wantStatus: http.StatusUnauthorized,
 			wantInBody: []string{
 				api.ErrorNotAuthorized.String(),
-				"no bearer token provided",
+				"no access token provided",
 			},
 		},
 		{
@@ -345,7 +345,7 @@ func (as *ActionSuite) Test_DependentsUpdate() {
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
 			req := as.JSON("/%s/%s", domain.TypePolicyDependent, tt.oldDep.ID)
-			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
+			req.Headers["Authorization"] = fmt.Sprintf("Access %s", tt.actor.Email)
 			req.Headers["content-type"] = domain.ContentJson
 			res := req.Put(tt.input)
 
@@ -406,7 +406,7 @@ func (as *ActionSuite) Test_DependentsDelete() {
 			wantStatus: http.StatusUnauthorized,
 			wantInBody: []string{
 				api.ErrorNotAuthorized.String(),
-				"no bearer token provided",
+				"no access token provided",
 			},
 		},
 		{
@@ -434,7 +434,7 @@ func (as *ActionSuite) Test_DependentsDelete() {
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
 			req := as.JSON("/%s/%s", domain.TypePolicyDependent, tt.oldDep.ID)
-			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
+			req.Headers["Authorization"] = fmt.Sprintf("Access %s", tt.actor.Email)
 			req.Headers["content-type"] = domain.ContentJson
 			res := req.Delete()
 

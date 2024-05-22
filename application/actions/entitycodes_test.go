@@ -45,7 +45,7 @@ func (as *ActionSuite) Test_entityCodesList() {
 	}
 	for _, tt := range tests {
 		req := as.JSON(entityCodesPath)
-		req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
+		req.Headers["Authorization"] = fmt.Sprintf("Access %s", tt.actor.Email)
 		res := req.Get()
 		body := res.Body.Bytes()
 
@@ -112,7 +112,7 @@ func (as *ActionSuite) Test_entityCodesUpdate() {
 	}
 	for _, tt := range tests {
 		req := as.JSON("%s/%s", entityCodesPath, inactiveCode.ID)
-		req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
+		req.Headers["Authorization"] = fmt.Sprintf("Access %s", tt.actor.Email)
 		input := api.EntityCodeInput{
 			Active:        true,
 			IncomeAccount: "newacct",
@@ -174,7 +174,7 @@ func (as *ActionSuite) Test_entityCodesView() {
 	}
 	for _, tt := range tests {
 		req := as.JSON("%s/%s", entityCodesPath, inactiveCode.ID)
-		req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
+		req.Headers["Authorization"] = fmt.Sprintf("Access %s", tt.actor.Email)
 		res := req.Get()
 		body := res.Body.Bytes()
 
@@ -235,7 +235,7 @@ func (as *ActionSuite) Test_entityCodesCreate() {
 	}
 	for _, tt := range tests {
 		req := as.JSON("%s", entityCodesPath)
-		req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
+		req.Headers["Authorization"] = fmt.Sprintf("Access %s", tt.actor.Email)
 		res := req.Post(input)
 		body := res.Body.Bytes()
 

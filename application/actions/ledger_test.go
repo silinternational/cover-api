@@ -55,7 +55,7 @@ func (as *ActionSuite) Test_LedgerReportList() {
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
 			req := as.JSON(ledgerReportPath)
-			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
+			req.Headers["Authorization"] = fmt.Sprintf("Access %s", tt.actor.Email)
 			res := req.Get()
 
 			body := res.Body.String()
@@ -140,7 +140,7 @@ func (as *ActionSuite) Test_LedgerReportView() {
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
 			req := as.JSON(fmt.Sprintf("%s/%s", ledgerReportPath, tt.lrID))
-			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
+			req.Headers["Authorization"] = fmt.Sprintf("Access %s", tt.actor.Email)
 			res := req.Get()
 
 			body := res.Body.String()
@@ -209,7 +209,7 @@ func (as *ActionSuite) Test_LedgerReportCreate() {
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
 			req := as.JSON(ledgerReportPath)
-			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
+			req.Headers["Authorization"] = fmt.Sprintf("Access %s", tt.actor.Email)
 			res := req.Post(api.LedgerReportCreateInput{
 				Type: tt.reportType,
 				Date: time.Now().UTC().Format(domain.DateFormat),
@@ -281,7 +281,7 @@ func (as *ActionSuite) Test_LedgerReportReconcile() {
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
 			req := as.JSON(fmt.Sprintf("%s/%s", ledgerReportPath, lr.ID))
-			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
+			req.Headers["Authorization"] = fmt.Sprintf("Access %s", tt.actor.Email)
 			res := req.Put(nil)
 
 			body := res.Body.String()
@@ -349,7 +349,7 @@ func (as *ActionSuite) Test_LedgerAnnualProcess() {
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
 			req := as.JSON(ledgerReportPath + "/annual")
-			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
+			req.Headers["Authorization"] = fmt.Sprintf("Access %s", tt.actor.Email)
 			res := req.Post(nil)
 
 			body := res.Body.String()
@@ -407,7 +407,7 @@ func (as *ActionSuite) Test_LedgerAnnualRenewalStatus() {
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
 			req := as.JSON(ledgerReportPath + "/annual")
-			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
+			req.Headers["Authorization"] = fmt.Sprintf("Access %s", tt.actor.Email)
 			res := req.Get()
 			body := res.Body.Bytes()
 
@@ -496,7 +496,7 @@ func (as *ActionSuite) Test_LedgerMonthlyProcess() {
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
 			req := as.JSON(ledgerReportPath + "/monthly")
-			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
+			req.Headers["Authorization"] = fmt.Sprintf("Access %s", tt.actor.Email)
 			res := req.Post(nil)
 
 			body := res.Body.String()
@@ -553,7 +553,7 @@ func (as *ActionSuite) Test_LedgerMonthlyStatus() {
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
 			req := as.JSON(ledgerReportPath + "/monthly")
-			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
+			req.Headers["Authorization"] = fmt.Sprintf("Access %s", tt.actor.Email)
 			res := req.Get()
 
 			body := res.Body.String()
