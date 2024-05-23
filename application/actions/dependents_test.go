@@ -70,9 +70,7 @@ func (as *ActionSuite) Test_DependentsList() {
 
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
-			uat, uatErr := tt.actor.CreateAccessToken(as.DB)
-			as.NoError(uatErr)
-			as.Session.Set(AccessTokenSessionKey, uat.AccessToken)
+			as.SetAccessToken(tt.actor)
 			req := as.JSON("/policies/" + tt.policy.ID.String() + "/dependents")
 			req.Headers["content-type"] = domain.ContentJson
 			res := req.Get()
@@ -214,9 +212,7 @@ func (as *ActionSuite) Test_DependentsCreate() {
 
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
-			uat, uatErr := tt.actor.CreateAccessToken(as.DB)
-			as.NoError(uatErr)
-			as.Session.Set(AccessTokenSessionKey, uat.AccessToken)
+			as.SetAccessToken(tt.actor)
 			req := as.JSON("/policies/" + tt.policy.ID.String() + "/dependents")
 			req.Headers["content-type"] = domain.ContentJson
 			res := req.Post(tt.reqBody)
@@ -348,9 +344,7 @@ func (as *ActionSuite) Test_DependentsUpdate() {
 
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
-			uat, uatErr := tt.actor.CreateAccessToken(as.DB)
-			as.NoError(uatErr)
-			as.Session.Set(AccessTokenSessionKey, uat.AccessToken)
+			as.SetAccessToken(tt.actor)
 			req := as.JSON("/%s/%s", domain.TypePolicyDependent, tt.oldDep.ID)
 			req.Headers["content-type"] = domain.ContentJson
 			res := req.Put(tt.input)
@@ -439,9 +433,7 @@ func (as *ActionSuite) Test_DependentsDelete() {
 
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
-			uat, uatErr := tt.actor.CreateAccessToken(as.DB)
-			as.NoError(uatErr)
-			as.Session.Set(AccessTokenSessionKey, uat.AccessToken)
+			as.SetAccessToken(tt.actor)
 			req := as.JSON("/%s/%s", domain.TypePolicyDependent, tt.oldDep.ID)
 			req.Headers["content-type"] = domain.ContentJson
 			res := req.Delete()

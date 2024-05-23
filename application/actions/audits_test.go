@@ -52,9 +52,7 @@ func (as *ActionSuite) Test_auditsRun() {
 	}
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
-			uat, err := tt.actor.CreateAccessToken(as.DB)
-			as.NoError(err)
-			as.Session.Set(AccessTokenSessionKey, uat.AccessToken)
+			as.SetAccessToken(tt.actor)
 			req := as.JSON(auditsPath)
 			req.Headers["content-type"] = domain.ContentJson
 			res := req.Post(tt.input)

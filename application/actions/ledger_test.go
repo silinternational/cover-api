@@ -54,9 +54,7 @@ func (as *ActionSuite) Test_LedgerReportList() {
 
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
-			uat, err := tt.actor.CreateAccessToken(as.DB)
-			as.NoError(err)
-			as.Session.Set(AccessTokenSessionKey, uat.AccessToken)
+			as.SetAccessToken(tt.actor)
 			req := as.JSON(ledgerReportPath)
 			res := req.Get()
 
@@ -141,9 +139,7 @@ func (as *ActionSuite) Test_LedgerReportView() {
 
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
-			uat, err := tt.actor.CreateAccessToken(as.DB)
-			as.NoError(err)
-			as.Session.Set(AccessTokenSessionKey, uat.AccessToken)
+			as.SetAccessToken(tt.actor)
 			req := as.JSON(fmt.Sprintf("%s/%s", ledgerReportPath, tt.lrID))
 			res := req.Get()
 
@@ -212,9 +208,7 @@ func (as *ActionSuite) Test_LedgerReportCreate() {
 
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
-			uat, err := tt.actor.CreateAccessToken(as.DB)
-			as.NoError(err)
-			as.Session.Set(AccessTokenSessionKey, uat.AccessToken)
+			as.SetAccessToken(tt.actor)
 			req := as.JSON(ledgerReportPath)
 			res := req.Post(api.LedgerReportCreateInput{
 				Type: tt.reportType,
@@ -286,9 +280,7 @@ func (as *ActionSuite) Test_LedgerReportReconcile() {
 
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
-			uat, err := tt.actor.CreateAccessToken(as.DB)
-			as.NoError(err)
-			as.Session.Set(AccessTokenSessionKey, uat.AccessToken)
+			as.SetAccessToken(tt.actor)
 			req := as.JSON(fmt.Sprintf("%s/%s", ledgerReportPath, lr.ID))
 			res := req.Put(nil)
 
@@ -356,9 +348,7 @@ func (as *ActionSuite) Test_LedgerAnnualProcess() {
 
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
-			uat, err := tt.actor.CreateAccessToken(as.DB)
-			as.NoError(err)
-			as.Session.Set(AccessTokenSessionKey, uat.AccessToken)
+			as.SetAccessToken(tt.actor)
 			req := as.JSON(ledgerReportPath + "/annual")
 			res := req.Post(nil)
 
@@ -416,9 +406,7 @@ func (as *ActionSuite) Test_LedgerAnnualRenewalStatus() {
 
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
-			uat, err := tt.actor.CreateAccessToken(as.DB)
-			as.NoError(err)
-			as.Session.Set(AccessTokenSessionKey, uat.AccessToken)
+			as.SetAccessToken(tt.actor)
 			req := as.JSON(ledgerReportPath + "/annual")
 			res := req.Get()
 			body := res.Body.Bytes()
@@ -507,9 +495,7 @@ func (as *ActionSuite) Test_LedgerMonthlyProcess() {
 
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
-			uat, err := tt.actor.CreateAccessToken(as.DB)
-			as.NoError(err)
-			as.Session.Set(AccessTokenSessionKey, uat.AccessToken)
+			as.SetAccessToken(tt.actor)
 			req := as.JSON(ledgerReportPath + "/monthly")
 			res := req.Post(nil)
 
@@ -566,9 +552,7 @@ func (as *ActionSuite) Test_LedgerMonthlyStatus() {
 
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
-			uat, err := tt.actor.CreateAccessToken(as.DB)
-			as.NoError(err)
-			as.Session.Set(AccessTokenSessionKey, uat.AccessToken)
+			as.SetAccessToken(tt.actor)
 			req := as.JSON(ledgerReportPath + "/monthly")
 			res := req.Get()
 

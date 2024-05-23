@@ -55,9 +55,7 @@ func (as *ActionSuite) Test_StrikesUpdate() {
 
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
-			uat, err := tt.actor.CreateAccessToken(as.DB)
-			as.NoError(err)
-			as.Session.Set(AccessTokenSessionKey, uat.AccessToken)
+			as.SetAccessToken(tt.actor)
 			req := as.JSON("%s/%s", strikesPath, tt.strike.ID.String())
 			res := req.Put(api.StrikeInput{Description: newDescription})
 
@@ -110,9 +108,7 @@ func (as *ActionSuite) Test_StrikesDelete() {
 
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
-			uat, err := tt.actor.CreateAccessToken(as.DB)
-			as.NoError(err)
-			as.Session.Set(AccessTokenSessionKey, uat.AccessToken)
+			as.SetAccessToken(tt.actor)
 			req := as.JSON("%s/%s", strikesPath, tt.strike.ID.String())
 			res := req.Delete()
 
