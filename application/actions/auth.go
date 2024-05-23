@@ -23,11 +23,7 @@ import (
 
 const (
 	// http cookie access token
-	AccessToken = "access-token"
-
-	// http cookie and session key for Client ID
-	ClientIDCookie     = "client-id"
-	ClientIDSessionKey = "ClientID"
+	AccessTokenSessionKey = "AccessToken"
 
 	// http param for an auth invite code
 	InviteCodeParam      = "invite"
@@ -42,8 +38,6 @@ const (
 
 	// http param for token type
 	TokenTypeParam = "token-type"
-
-	sevenDays = 7 * 24 * time.Hour
 )
 
 var samlConfig = saml.Config{
@@ -72,19 +66,6 @@ var samlConfig = saml.Config{
 //	  '200':
 //	    description: returns a "RedirectURL" key with the saml idp url that has a saml request
 func authRequest(c buffalo.Context) error {
-	// Push the Client ID into the Session
-	// generate a random client ID
-	clientID := domain.GetUUID().String()
-	if clientID == "" {
-		appErr := api.AppError{
-			HttpStatus: http.StatusBadRequest,
-			Key:        api.ErrorMissingClientID,
-			Message:    ClientIDCookie + " is required to login",
-		}
-		return reportErrorAndClearSession(c, &appErr)
-	}
-
-	setClientIDCookie(c, clientID)
 
 	getOrSetReturnTo(c)
 
@@ -174,45 +155,8 @@ func validateInviteOnLogin(c buffalo.Context, inviteCode string) *api.AppError {
 
 	return nil
 }
-func setAccessTokenCookie(c buffalo.Context, token string) *http.Cookie {
-	cookie := &http.Cookie{
-		Name:     AccessToken,
-		Value:    token,
-		Path:     "/",
-		HttpOnly: true,
-		Secure:   !domain.IsDevelopment(),
-		MaxAge:   int(sevenDays),
-	}
-	http.SetCookie(c.Response(), cookie)
-
-	return cookie
-}
-
-func setClientIDCookie(c buffalo.Context, id string) *http.Cookie {
-	cookie := &http.Cookie{
-		Name:     ClientIDCookie,
-		Value:    id,
-		Path:     "/",
-		HttpOnly: true,
-		Secure:   !domain.IsDevelopment(),
-		MaxAge:   int(sevenDays),
-	}
-	http.SetCookie(c.Response(), cookie)
-
-	return cookie
-}
 
 func authCallback(c buffalo.Context) error {
-	cookie, err := c.Request().Cookie(ClientIDCookie)
-	if err != nil {
-		appError := api.AppError{
-			Key:        api.ErrorMissingSessionKey,
-			DebugMsg:   ClientIDSessionKey + " clientID entry is required to complete login",
-			HttpStatus: http.StatusFound,
-		}
-		return reportErrorAndClearSession(c, &appError)
-	}
-	clientID := cookie.Value
 
 	sp, err := saml.New(samlConfig)
 	if err != nil {
@@ -269,7 +213,7 @@ func authCallback(c buffalo.Context) error {
 	}
 	authUser.IsNew = isNew
 
-	uat, err := user.CreateAccessToken(tx, clientID)
+	uat, err := user.CreateAccessToken(tx)
 	if err != nil {
 		return reportErrorAndClearSession(c, &api.AppError{
 			HttpStatus: http.StatusInternalServerError,
@@ -285,7 +229,7 @@ func authCallback(c buffalo.Context) error {
 	log.SetUser(c, authUser.StaffID, user.GetName().String(), user.Email)
 
 	// Set the authentication token in a cookie
-	setAccessTokenCookie(c, authUser.AccessToken)
+	c.Session().Set(AccessTokenSessionKey, authUser.AccessToken)
 
 	return c.Redirect(302, getLoginSuccessRedirectURL(*authUser, returnTo))
 }
@@ -326,7 +270,10 @@ func getLoginSuccessRedirectURL(authUser auth.User, returnTo string) string {
 //	  '302':
 //	    description: redirect to UI
 func authDestroy(c buffalo.Context) error {
-	token := domain.GetCombinedTokenFromRequest(c.Request())
+	token, ok := c.Session().Get(AccessTokenSessionKey).(string)
+	if !ok {
+		log.Error("failed to retrieve access token from session")
+	}
 	if token == "" {
 		return reportErrorAndClearSession(c, &api.AppError{
 			HttpStatus: http.StatusBadRequest,

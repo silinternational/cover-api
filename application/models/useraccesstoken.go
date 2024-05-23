@@ -96,7 +96,7 @@ func (u *UserAccessToken) Destroy(tx *pop.Connection) error {
 // FindByAccessToken uses a sha256.Sum256 of the accessToken to find the corresponding UserAccessToken
 // returns an api.AppError
 func (u *UserAccessToken) FindByAccessToken(tx *pop.Connection, token string) error {
-	if err := tx.Eager().Where("access_token = ?", HashClientIdAccessToken(token)).First(u); err != nil {
+	if err := tx.Eager().Where("access_token = ?", HashAccessToken(token)).First(u); err != nil {
 		l := len(token)
 		if l > 5 {
 			l = 5
@@ -149,16 +149,16 @@ func (u *UserAccessToken) Update(tx *pop.Connection) error {
 }
 
 // InitAccessToken prepares a new value for the AccessToken field and the ExpiresAt field.
-func InitAccessToken(clientID string) UserAccessToken {
+func InitAccessToken() UserAccessToken {
 	token, _ := getRandomToken() // The init() function would have made sure there was no error
 
 	if domain.Env.GoEnv == domain.EnvDevelopment {
-		fmt.Printf("\n\nClientID+token: %s%s\n", clientID, token)
+		fmt.Printf("\n\ntoken: %s\n", token)
 	}
 
 	return UserAccessToken{
 		AccessToken: token,
-		TokenHash:   HashClientIdAccessToken(clientID + token),
+		TokenHash:   HashAccessToken(token),
 		ExpiresAt:   createAccessTokenExpiry(),
 	}
 }

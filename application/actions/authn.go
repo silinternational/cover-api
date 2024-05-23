@@ -14,14 +14,18 @@ import (
 
 func AuthN(next buffalo.Handler) buffalo.Handler {
 	return func(c buffalo.Context) error {
-		authToken := domain.GetCombinedTokenFromRequest(c.Request())
-		if authToken == "" {
+		accessToken, ok := c.Session().Get(AccessTokenSessionKey).(string)
+		if !ok {
+			log.Error("failed to retrieve access token from session")
+		}
+
+		if accessToken == "" {
 			err := errors.New("no access token provided")
 			return reportError(c, api.NewAppError(err, api.ErrorNotAuthorized, api.CategoryUnauthorized))
 		}
 
 		var userAccessToken models.UserAccessToken
-		if err := userAccessToken.FindByAccessToken(models.DB, authToken); err != nil {
+		if err := userAccessToken.FindByAccessToken(models.DB, accessToken); err != nil {
 			err := errors.New("invalid access token")
 			return reportError(c, api.NewAppError(err, api.ErrorNotAuthorized, api.CategoryUnauthorized))
 		}

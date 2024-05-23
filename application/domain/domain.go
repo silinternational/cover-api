@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"math"
 	"math/rand"
-	"net/http"
 	"strings"
 	"sync"
 	"time"
@@ -292,24 +291,6 @@ func EmailFromAddress(name *string) string {
 	return addr
 }
 
-// GetCombinedTokenFromRequest obtains the token from a cookie in the request.
-// If not found, an empty string is returned.
-func GetCombinedTokenFromRequest(r *http.Request) string {
-	cookie, err := r.Cookie("access-token")
-	if err != nil {
-		log.Error("failed to retrieve access token cookie:", err)
-		return ""
-	}
-
-	clientID, err := r.Cookie("client-id")
-	if err != nil {
-		log.Error("failed to retrieve seed cookie:", err)
-		return ""
-	}
-
-	return clientID.Value + cookie.Value
-}
-
 // IsOtherThanNoRows returns false if the error is nil or is just reporting that there
 // were no rows in the result set for a sql query.
 func IsOtherThanNoRows(err error) bool {
@@ -483,6 +464,10 @@ func IsProduction() bool {
 
 func IsDevelopment() bool {
 	return Env.GoEnv == EnvDevelopment
+}
+
+func IsTest() bool {
+	return Env.GoEnv == EnvTest
 }
 
 func checkSamlConfig(env *EnvStruct) {
