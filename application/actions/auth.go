@@ -29,9 +29,6 @@ const (
 	InviteCodeParam      = "invite"
 	InviteCodeSessionKey = "invite_code"
 
-	// logout http param for what is normally the access token
-	LogoutToken = "access-token"
-
 	// http param and session key for ReturnTo
 	ReturnToParam      = "return-to"
 	ReturnToSessionKey = "ReturnTo"
@@ -270,36 +267,6 @@ func getLoginSuccessRedirectURL(authUser auth.User, returnTo string) string {
 //	  '302':
 //	    description: redirect to UI
 func authDestroy(c buffalo.Context) error {
-	token, ok := c.Session().Get(AccessTokenSessionKey).(string)
-	if !ok {
-		log.Error("failed to retrieve access token from session")
-	}
-	if token == "" {
-		return reportErrorAndClearSession(c, &api.AppError{
-			HttpStatus: http.StatusBadRequest,
-			Key:        api.ErrorMissingLogoutToken,
-			Message:    LogoutToken + " is required to logout",
-		})
-	}
-
-	var uat models.UserAccessToken
-	tx := models.Tx(c)
-	if appErr := uat.FindByAccessToken(tx, token); appErr != nil {
-		return reportErrorAndClearSession(c, appErr)
-	}
-
-	authUser, err := uat.GetUser(tx)
-	if err != nil {
-		return reportErrorAndClearSession(c, &api.AppError{
-			HttpStatus: http.StatusInternalServerError,
-			Key:        api.ErrorAuthProvidersLogout,
-			Message:    err.Error(),
-		})
-	}
-
-	// set person on log context
-	log.SetUser(c, authUser.ID.String(), authUser.GetName().String(), authUser.Email)
-
 	sp, err := saml.New(samlConfig)
 	if err != nil {
 		return reportErrorAndClearSession(c, &api.AppError{
@@ -321,10 +288,6 @@ func authDestroy(c buffalo.Context) error {
 	redirectURL := domain.LogoutRedirectURL
 
 	if authResp.RedirectURL != "" {
-		var uat models.UserAccessToken
-		if appErr := uat.DeleteByAccessToken(tx, token); appErr != nil {
-			return reportErrorAndClearSession(c, appErr)
-		}
 		c.Session().Clear()
 		redirectURL = authResp.RedirectURL
 	}
