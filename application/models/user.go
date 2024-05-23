@@ -222,11 +222,6 @@ func (u *Users) FindSignators(tx *pop.Connection) {
 
 // CreateAccessToken - Create and store new UserAccessToken
 func (u *User) CreateAccessToken(tx *pop.Connection) (UserAccessToken, error) {
-	// if clientID == "" {
-	// 	return UserAccessToken{}, fmt.Errorf(
-	// 		"cannot create token with empty clientID for user %s %s", u.FirstName, u.LastName)
-	// }
-
 	uat := InitAccessToken()
 	uat.UserID = u.ID
 
