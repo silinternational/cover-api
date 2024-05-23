@@ -51,7 +51,7 @@ func (as *ActionSuite) Test_AuthLogin_Invite() {
 	}
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
-			req := as.JSON("/auth/login")
+			req := as.JSON("/auth/login?" + tt.queryParams)
 			res := req.Post(nil)
 			body := res.Body.String()
 			as.Equal(tt.wantStatus, res.Code, "incorrect status code returned, body: %s", body)
