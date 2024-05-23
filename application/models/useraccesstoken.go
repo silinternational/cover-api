@@ -152,10 +152,6 @@ func (u *UserAccessToken) Update(tx *pop.Connection) error {
 func InitAccessToken() UserAccessToken {
 	token, _ := getRandomToken() // The init() function would have made sure there was no error
 
-	if domain.Env.GoEnv == domain.EnvDevelopment {
-		fmt.Printf("\n\ntoken: %s\n", token)
-	}
-
 	return UserAccessToken{
 		AccessToken: token,
 		TokenHash:   HashAccessToken(token),

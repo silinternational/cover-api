@@ -462,14 +462,6 @@ func IsProduction() bool {
 	return false
 }
 
-func IsDevelopment() bool {
-	return Env.GoEnv == EnvDevelopment
-}
-
-func IsTest() bool {
-	return Env.GoEnv == EnvTest
-}
-
 func checkSamlConfig(env *EnvStruct) {
 	if env.GoEnv == EnvDevelopment || env.GoEnv == EnvTest {
 		return

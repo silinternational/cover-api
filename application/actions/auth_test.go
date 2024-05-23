@@ -27,23 +27,20 @@ func (as *ActionSuite) Test_AuthLogin_Invite() {
 		wantCode     string
 	}{
 		{
-			name: "Bad Invite Code",
-			queryParams: fmt.Sprintf("%s=badInviteCode",
-				InviteCodeParam),
+			name:         "Bad Invite Code",
+			queryParams:  fmt.Sprintf("%s=badInviteCode", InviteCodeParam),
 			wantStatus:   http.StatusBadRequest,
 			wantContains: string(api.ErrorProcessingAuthInviteCode),
 		},
 		{
-			name: "Invite Code not in DB",
-			queryParams: fmt.Sprintf("%s=%v",
-				InviteCodeParam, missingCode),
+			name:         "Invite Code not in DB",
+			queryParams:  fmt.Sprintf("%s=%v", InviteCodeParam, missingCode),
 			wantStatus:   http.StatusNotFound,
 			wantContains: string(api.ErrorProcessingAuthInviteCode),
 		},
 		{
-			name: "All Good",
-			queryParams: fmt.Sprintf("%s=%v",
-				InviteCodeParam, invite.ID),
+			name:         "All Good",
+			queryParams:  fmt.Sprintf("%s=%v", InviteCodeParam, invite.ID),
 			wantStatus:   http.StatusOK,
 			wantContains: `"RedirectURL":"` + domain.Env.SamlSsoURL,
 			wantCode:     invite.ID.String(),
