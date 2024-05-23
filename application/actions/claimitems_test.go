@@ -2,7 +2,6 @@ package actions
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"testing"
 
@@ -117,8 +116,10 @@ func (as *ActionSuite) Test_ClaimItemsUpdate() {
 
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
+			uat, err := tt.actor.CreateAccessToken(as.DB)
+			as.NoError(err)
+			as.Session.Set(AccessTokenSessionKey, uat.AccessToken)
 			req := as.JSON(claimItemsPath + "/" + tt.claimItem.ID.String())
-			req.Headers["Authorization"] = fmt.Sprintf("Access %s", tt.actor.Email)
 			req.Headers["content-type"] = domain.ContentJson
 			res := req.Put(tt.input)
 

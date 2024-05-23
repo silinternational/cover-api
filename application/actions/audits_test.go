@@ -1,7 +1,6 @@
 package actions
 
 import (
-	"fmt"
 	"net/http"
 	"testing"
 	"time"
@@ -53,8 +52,10 @@ func (as *ActionSuite) Test_auditsRun() {
 	}
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
+			uat, err := tt.actor.CreateAccessToken(as.DB)
+			as.NoError(err)
+			as.Session.Set(AccessTokenSessionKey, uat.AccessToken)
 			req := as.JSON(auditsPath)
-			req.Headers["Authorization"] = fmt.Sprintf("Access %s", tt.actor.Email)
 			req.Headers["content-type"] = domain.ContentJson
 			res := req.Post(tt.input)
 			body := res.Body.Bytes()

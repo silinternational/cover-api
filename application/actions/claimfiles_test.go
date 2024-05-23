@@ -84,10 +84,12 @@ func (as *ActionSuite) Test_ClaimFilesAttach() {
 	}
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
+			uat, err := tt.actor.CreateAccessToken(as.DB)
+			as.NoError(err)
+			as.Session.Set(AccessTokenSessionKey, uat.AccessToken)
 			claimID := tt.claim.ID
 			req := as.JSON("/%s/%s/%s",
 				domain.TypeClaim, claimID.String(), domain.TypeFile)
-			req.Headers["Authorization"] = fmt.Sprintf("Access %s", tt.actor.Email)
 			req.Headers["content-type"] = domain.ContentJson
 			res := req.Post(tt.request)
 
@@ -160,8 +162,10 @@ func (as *ActionSuite) Test_ClaimFilesDelete() {
 	}
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
+			uat, err := tt.actor.CreateAccessToken(as.DB)
+			as.NoError(err)
+			as.Session.Set(AccessTokenSessionKey, uat.AccessToken)
 			req := as.JSON("/%s/%s", domain.TypeClaimFile, tt.id.String())
-			req.Headers["Authorization"] = fmt.Sprintf("Access %s", tt.actor.Email)
 			req.Headers["content-type"] = domain.ContentJson
 			res := req.Delete()
 

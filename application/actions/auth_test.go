@@ -35,14 +35,14 @@ func (as *ActionSuite) Test_AuthLogin_Invite() {
 		},
 		{
 			name: "Invite Code not in DB",
-			queryParams: fmt.Sprintf("%s=123456&%v",
+			queryParams: fmt.Sprintf("%s=%v",
 				InviteCodeParam, missingCode),
 			wantStatus:   http.StatusNotFound,
 			wantContains: string(api.ErrorProcessingAuthInviteCode),
 		},
 		{
 			name: "All Good",
-			queryParams: fmt.Sprintf("%s=123456&%v",
+			queryParams: fmt.Sprintf("%s=%v",
 				InviteCodeParam, invite.ID),
 			wantStatus:   http.StatusOK,
 			wantContains: `"RedirectURL":"` + domain.Env.SamlSsoURL,

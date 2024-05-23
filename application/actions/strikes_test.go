@@ -1,7 +1,6 @@
 package actions
 
 import (
-	"fmt"
 	"net/http"
 	"testing"
 	"time"
@@ -56,8 +55,10 @@ func (as *ActionSuite) Test_StrikesUpdate() {
 
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
+			uat, err := tt.actor.CreateAccessToken(as.DB)
+			as.NoError(err)
+			as.Session.Set(AccessTokenSessionKey, uat.AccessToken)
 			req := as.JSON("%s/%s", strikesPath, tt.strike.ID.String())
-			req.Headers["Authorization"] = fmt.Sprintf("Access %s", tt.actor.Email)
 			res := req.Put(api.StrikeInput{Description: newDescription})
 
 			body := res.Body.String()
@@ -109,8 +110,10 @@ func (as *ActionSuite) Test_StrikesDelete() {
 
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
+			uat, err := tt.actor.CreateAccessToken(as.DB)
+			as.NoError(err)
+			as.Session.Set(AccessTokenSessionKey, uat.AccessToken)
 			req := as.JSON("%s/%s", strikesPath, tt.strike.ID.String())
-			req.Headers["Authorization"] = fmt.Sprintf("Access %s", tt.actor.Email)
 			res := req.Delete()
 
 			body := res.Body.String()
