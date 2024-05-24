@@ -86,8 +86,8 @@ func (u *User) Update(tx *pop.Connection) error {
 	return update(tx, u)
 }
 
-// HashClientIdAccessToken just returns a sha256.Sum256 of the input value
-func HashClientIdAccessToken(accessToken string) string {
+// HashAccessToken just returns a sha256.Sum256 of the input value
+func HashAccessToken(accessToken string) string {
 	return fmt.Sprintf("%x", sha256.Sum256([]byte(accessToken)))
 }
 
@@ -221,13 +221,12 @@ func (u *Users) FindSignators(tx *pop.Connection) {
 }
 
 // CreateAccessToken - Create and store new UserAccessToken
-func (u *User) CreateAccessToken(tx *pop.Connection, clientID string) (UserAccessToken, error) {
-	if clientID == "" {
-		return UserAccessToken{}, fmt.Errorf(
-			"cannot create token with empty clientID for user %s %s", u.FirstName, u.LastName)
+func (u *User) CreateAccessToken(tx *pop.Connection) (UserAccessToken, error) {
+	if u.ID == uuid.Nil {
+		log.Error("user must have an ID in CreateAccessToken")
+		return UserAccessToken{}, nil
 	}
-
-	uat := InitAccessToken(clientID)
+	uat := InitAccessToken()
 	uat.UserID = u.ID
 
 	if err := uat.Create(tx); err != nil {

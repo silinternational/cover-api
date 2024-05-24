@@ -56,9 +56,6 @@ const (
 	ErrorInviteExpired            = ErrorKey("ErrorInviteExpired")
 	ErrorLoadingAuthProvider      = ErrorKey("ErrorLoadingAuthProvider")
 	ErrorMissingAuthEmail         = ErrorKey("ErrorMissingAuthEmail")
-	ErrorMissingClientID          = ErrorKey("ErrorMissingClientID")
-	ErrorMissingLogoutToken       = ErrorKey("ErrorMissingLogoutToken")
-	ErrorMissingSessionClientID   = ErrorKey("ErrorMissingSessionClientID")
 	ErrorProcessingAuthInviteCode = ErrorKey("ErrorProcessingAuthInviteCode")
 	ErrorWithAuthUser             = ErrorKey("ErrorWithAuthUser")
 

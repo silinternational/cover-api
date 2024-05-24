@@ -1,7 +1,6 @@
 package actions
 
 import (
-	"fmt"
 	"net/http"
 	"testing"
 
@@ -64,8 +63,8 @@ func (as *ActionSuite) Test_StewardListRecent() {
 
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
+			as.SetAccessToken(tt.actor)
 			req := as.JSON(stewardPath + "/" + api.ResourceRecent)
-			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
 			req.Headers["content-type"] = domain.ContentJson
 			res := req.Get()
 

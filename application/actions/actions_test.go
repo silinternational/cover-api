@@ -124,3 +124,9 @@ func (as *ActionSuite) Test_robots() {
 	as.True(strings.HasPrefix(string(body), "User-agent"),
 		"incorrect response body:\n%s", body)
 }
+
+func (as *ActionSuite) SetAccessToken(actor models.User) {
+	uat, err := actor.CreateAccessToken(as.DB)
+	as.NoError(err)
+	as.Session.Set(AccessTokenSessionKey, uat.AccessToken)
+}

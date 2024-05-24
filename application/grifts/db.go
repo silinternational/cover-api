@@ -160,7 +160,7 @@ func createUserFixtures(tx *pop.Connection) ([]*models.User, error) {
 	for i := range fixUserTokens {
 		fixUserTokens[i].ID = domain.GetUUID()
 		fixUserTokens[i].UserID = fixUsers[i].ID
-		fixUserTokens[i].TokenHash = models.HashClientIdAccessToken(fixUsers[i].Email)
+		fixUserTokens[i].TokenHash = models.HashAccessToken(fixUsers[i].Email)
 		fixUserTokens[i].ExpiresAt = oneYearFromNow
 
 		err := tx.Create(&fixUserTokens[i])

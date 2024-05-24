@@ -75,8 +75,10 @@ func (as *ActionSuite) Test_usersMe() {
 
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
+			uat, err := tt.user.CreateAccessToken(as.DB)
+			as.NoError(err)
+			as.Session.Set(AccessTokenSessionKey, uat.AccessToken)
 			req := as.JSON("/users/me")
-			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.token)
 
 			res := req.Get()
 
@@ -126,7 +128,7 @@ func (as *ActionSuite) Test_UsersMeUpdate() {
 			wantStatus: http.StatusUnauthorized,
 			wantInBody: []string{
 				api.ErrorNotAuthorized.String(),
-				"no bearer token provided",
+				"no access token provided",
 			},
 		},
 		{
@@ -167,8 +169,8 @@ func (as *ActionSuite) Test_UsersMeUpdate() {
 
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
+			as.SetAccessToken(tt.actor)
 			req := as.JSON("/users/me")
-			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
 			req.Headers["content-type"] = domain.ContentJson
 			res := req.Put(tt.input)
 
@@ -258,8 +260,8 @@ func (as *ActionSuite) Test_UsersMeFilesAttach() {
 	}
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
+			as.SetAccessToken(tt.actor)
 			req := as.JSON("/users/me/files")
-			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
 			req.Headers["content-type"] = domain.ContentJson
 			res := req.Post(tt.input)
 
@@ -307,7 +309,9 @@ func (as *ActionSuite) Test_UsersMeFilesDelete() {
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
 			req := as.JSON("/users/me/files")
-			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", currentUser.Email)
+			uat, err := currentUser.CreateAccessToken(as.DB)
+			as.NoError(err)
+			as.Session.Set(AccessTokenSessionKey, uat.AccessToken)
 			req.Headers["content-type"] = domain.ContentJson
 			res := req.Delete()
 
