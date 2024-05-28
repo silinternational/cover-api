@@ -234,27 +234,17 @@ func authCallback(c buffalo.Context) error {
 // getLoginSuccessRedirectURL generates the URL for redirection after a successful login
 func getLoginSuccessRedirectURL(authUser auth.User, returnTo string) string {
 	uiURL := domain.Env.UIURL
+	params := ""
+	if len(returnTo) > 0 {
+		params = "?" + ReturnToParam + "=" + url.QueryEscape(returnTo)
+	}
 
 	// New Users go straight to the welcome page
 	if authUser.IsNew {
 		uiURL += "/welcome"
-		if len(returnTo) > 0 {
-			params := "?" + ReturnToParam + "=" + url.QueryEscape(returnTo)
-			return uiURL + params
-		}
-		return uiURL
 	}
 
-	// Avoid two question marks in the params
-	if strings.Contains(returnTo, "?") {
-		return uiURL + returnTo
-	}
-
-	if len(returnTo) > 0 {
-		returnTo = "?" + returnTo
-	}
-
-	return uiURL + returnTo
+	return uiURL + params
 }
 
 // swagger:operation GET /auth/logout Authentication AuthLogout
