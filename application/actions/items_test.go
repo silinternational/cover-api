@@ -92,8 +92,8 @@ func (as *ActionSuite) Test_ItemsList() {
 
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
+			as.SetAccessToken(tt.actor)
 			req := as.JSON("/%s/%s/%s", domain.TypePolicy, tt.policy.ID.String(), domain.TypeItem)
-			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
 			req.Headers["content-type"] = domain.ContentJson
 			res := req.Get()
 
@@ -169,7 +169,7 @@ func (as *ActionSuite) Test_ItemsCreate() {
 			wantStatus: http.StatusUnauthorized,
 			wantInBody: []string{
 				api.ErrorNotAuthorized.String(),
-				"no bearer token provided",
+				"no access token provided",
 			},
 		},
 		{
@@ -199,8 +199,8 @@ func (as *ActionSuite) Test_ItemsCreate() {
 
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
+			as.SetAccessToken(tt.actor)
 			req := as.JSON("/%s/%s/%s", domain.TypePolicy, tt.policy.ID.String(), domain.TypeItem)
-			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
 			req.Headers["content-type"] = domain.ContentJson
 			res := req.Post(tt.newItem)
 
@@ -257,7 +257,7 @@ func (as *ActionSuite) Test_ItemsSubmit() {
 			wantStatus: http.StatusUnauthorized,
 			wantInBody: []string{
 				api.ErrorNotAuthorized.String(),
-				"no bearer token provided",
+				"no access token provided",
 			},
 		},
 		{
@@ -300,8 +300,8 @@ func (as *ActionSuite) Test_ItemsSubmit() {
 
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
+			as.SetAccessToken(tt.actor)
 			req := as.JSON("/%s/%s/%s", domain.TypeItem, tt.oldItem.ID.String(), api.ResourceSubmit)
-			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
 			req.Headers["content-type"] = domain.ContentJson
 			res := req.Post(nil)
 
@@ -360,7 +360,7 @@ func (as *ActionSuite) Test_ItemsRevision() {
 			wantStatus: http.StatusUnauthorized,
 			wantInBody: []string{
 				api.ErrorNotAuthorized.String(),
-				"no bearer token provided",
+				"no access token provided",
 			},
 		},
 		{
@@ -414,8 +414,8 @@ func (as *ActionSuite) Test_ItemsRevision() {
 
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
+			as.SetAccessToken(tt.actor)
 			req := as.JSON("/%s/%s/%s", domain.TypeItem, tt.oldItem.ID.String(), api.ResourceRevision)
-			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
 			req.Headers["content-type"] = domain.ContentJson
 			res := req.Post(api.ItemStatusInput{StatusReason: tt.reason})
 
@@ -471,7 +471,7 @@ func (as *ActionSuite) Test_ItemsApprove() {
 			wantStatus: http.StatusUnauthorized,
 			wantInBody: []string{
 				api.ErrorNotAuthorized.String(),
-				"no bearer token provided",
+				"no access token provided",
 			},
 		},
 		{
@@ -504,8 +504,8 @@ func (as *ActionSuite) Test_ItemsApprove() {
 
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
+			as.SetAccessToken(tt.actor)
 			req := as.JSON("/%s/%s/%s", domain.TypeItem, tt.oldItem.ID.String(), api.ResourceApprove)
-			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
 			req.Headers["content-type"] = domain.ContentJson
 			res := req.Post(nil)
 
@@ -562,7 +562,7 @@ func (as *ActionSuite) Test_ItemsDeny() {
 			wantStatus: http.StatusUnauthorized,
 			wantInBody: []string{
 				api.ErrorNotAuthorized.String(),
-				"no bearer token provided",
+				"no access token provided",
 			},
 		},
 		{
@@ -606,8 +606,8 @@ func (as *ActionSuite) Test_ItemsDeny() {
 
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
+			as.SetAccessToken(tt.actor)
 			req := as.JSON("/%s/%s/%s", domain.TypeItem, tt.oldItem.ID.String(), api.ResourceDeny)
-			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
 			req.Headers["content-type"] = domain.ContentJson
 
 			res := req.Post(api.ItemStatusInput{StatusReason: tt.reason})
@@ -686,7 +686,7 @@ func (as *ActionSuite) Test_ItemsUpdate() {
 			wantStatus: http.StatusUnauthorized,
 			wantInBody: []string{
 				api.ErrorNotAuthorized.String(),
-				"no bearer token provided",
+				"no access token provided",
 			},
 		},
 		{
@@ -746,8 +746,8 @@ func (as *ActionSuite) Test_ItemsUpdate() {
 
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
+			as.SetAccessToken(tt.actor)
 			req := as.JSON("/items/%s", tt.oldItem.ID.String())
-			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
 			req.Headers["content-type"] = domain.ContentJson
 			res := req.Put(tt.newItem)
 
@@ -818,7 +818,7 @@ func (as *ActionSuite) Test_ItemsRemove() {
 			wantHTTPStatus: http.StatusUnauthorized,
 			wantInBody: []string{
 				api.ErrorNotAuthorized.String(),
-				"no bearer token provided",
+				"no access token provided",
 			},
 		},
 		{
@@ -861,8 +861,8 @@ func (as *ActionSuite) Test_ItemsRemove() {
 
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
+			as.SetAccessToken(tt.actor)
 			req := as.JSON("/%s/%s", domain.TypeItem, tt.item.ID.String())
-			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
 			req.Headers["content-type"] = domain.ContentJson
 			res := req.Delete()
 

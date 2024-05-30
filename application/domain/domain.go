@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"math"
 	"math/rand"
-	"net/http"
-	"regexp"
 	"strings"
 	"sync"
 	"time"
@@ -291,23 +289,6 @@ func EmailFromAddress(name *string) string {
 		return *name + " via " + addr
 	}
 	return addr
-}
-
-// GetBearerTokenFromRequest obtains the token from an Authorization header beginning
-// with "Bearer". If not found, an empty string is returned.
-func GetBearerTokenFromRequest(r *http.Request) string {
-	authorizationHeader := r.Header.Get("Authorization")
-	if authorizationHeader == "" {
-		return ""
-	}
-
-	re := regexp.MustCompile(`^(?i)Bearer (.*)$`)
-	matches := re.FindSubmatch([]byte(authorizationHeader))
-	if len(matches) < 2 {
-		return ""
-	}
-
-	return string(matches[1])
 }
 
 // IsOtherThanNoRows returns false if the error is nil or is just reporting that there

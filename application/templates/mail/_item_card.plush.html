@@ -80,8 +80,10 @@
 		<tr>
 			<td colspan="2"><%= accountablePerson %></td>
 		</tr>
+		<%= if ( policyType == "Household" ) { %>
 		<tr>
 			<td colspan="2">Household ID <%= householdID %></td>
 		</tr>
+		<% } %>
 	</table>
 </div>

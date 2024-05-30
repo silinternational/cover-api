@@ -2,7 +2,6 @@ package actions
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"strings"
 	"testing"
@@ -88,8 +87,8 @@ func (as *ActionSuite) Test_PoliciesList() {
 
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
+			as.SetAccessToken(tt.actor)
 			req := as.JSON("/policies" + tt.queryString)
-			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
 			req.Headers["content-type"] = domain.ContentJson
 			res := req.Get()
 
@@ -215,8 +214,8 @@ func (as *ActionSuite) Test_PoliciesView() {
 
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
+			as.SetAccessToken(tt.actor)
 			req := as.JSON("/policies/" + tt.policyID.String())
-			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
 			req.Headers["content-type"] = domain.ContentJson
 			res := req.Get()
 
@@ -293,8 +292,8 @@ func (as *ActionSuite) Test_PoliciesCreateTeam() {
 
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
+			as.SetAccessToken(tt.actor)
 			req := as.JSON("/policies")
-			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
 			req.Headers["content-type"] = domain.ContentJson
 			res := req.Post(tt.input)
 
@@ -388,8 +387,8 @@ func (as *ActionSuite) Test_PoliciesUpdate() {
 
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
+			as.SetAccessToken(tt.actor)
 			req := as.JSON("/policies/" + tt.policy.ID.String())
-			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
 			req.Headers["content-type"] = domain.ContentJson
 			res := req.Put(tt.update)
 
@@ -502,8 +501,8 @@ func (as *ActionSuite) Test_PoliciesListMembers() {
 
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
+			as.SetAccessToken(tt.actor)
 			req := as.JSON("/policies/" + tt.policyID + "/members")
-			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
 			req.Headers["content-type"] = domain.ContentJson
 			res := req.Get()
 
@@ -615,8 +614,8 @@ func (as *ActionSuite) Test_PoliciesInviteMember() {
 				Name:  tt.inviteeName,
 			}
 
+			as.SetAccessToken(tt.actor)
 			req := as.JSON("/policies/" + tt.policyID.String() + "/members")
-			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
 			req.Headers["content-type"] = domain.ContentJson
 			res := req.Post(input)
 
@@ -688,8 +687,8 @@ func (as *ActionSuite) Test_PolicyLedgerReportCreate() {
 
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
+			as.SetAccessToken(tt.actor)
 			req := as.JSON("%s/%s/ledger-reports", policiesPath, policy.ID.String())
-			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
 			res := req.Post(api.PolicyLedgerReportCreateInput{
 				Month: tt.month,
 				Year:  tt.year,
@@ -782,8 +781,8 @@ func (as *ActionSuite) Test_PolicyLedgerReportView() {
 
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
+			as.SetAccessToken(tt.actor)
 			req := as.JSON("%s/%s/ledger-reports?month=%d&year=%d", policiesPath, policy.ID.String(), tt.month, tt.year)
-			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
 			res := req.Get()
 
 			body := res.Body.String()
@@ -857,8 +856,8 @@ func (as *ActionSuite) Test_PolicyStrikesCreate() {
 
 	for _, tt := range tests {
 		as.T().Run(tt.name, func(t *testing.T) {
+			as.SetAccessToken(tt.actor)
 			req := as.JSON("%s/%s/%s", policiesPath, tt.policy.ID.String(), api.ResourceStrikes)
-			req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
 			res := req.Post(api.StrikeInput{Description: "New Strike"})
 
 			body := res.Body.String()

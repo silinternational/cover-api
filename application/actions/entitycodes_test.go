@@ -1,7 +1,6 @@
 package actions
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/silinternational/cover-api/api"
@@ -44,8 +43,9 @@ func (as *ActionSuite) Test_entityCodesList() {
 		},
 	}
 	for _, tt := range tests {
+		uat, _ := tt.actor.CreateAccessToken(as.DB)
+		as.Session.Set(AccessTokenSessionKey, uat.AccessToken)
 		req := as.JSON(entityCodesPath)
-		req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
 		res := req.Get()
 		body := res.Body.Bytes()
 
@@ -111,8 +111,9 @@ func (as *ActionSuite) Test_entityCodesUpdate() {
 		},
 	}
 	for _, tt := range tests {
+		uat, _ := tt.actor.CreateAccessToken(as.DB)
+		as.Session.Set(AccessTokenSessionKey, uat.AccessToken)
 		req := as.JSON("%s/%s", entityCodesPath, inactiveCode.ID)
-		req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
 		input := api.EntityCodeInput{
 			Active:        true,
 			IncomeAccount: "newacct",
@@ -173,8 +174,9 @@ func (as *ActionSuite) Test_entityCodesView() {
 		},
 	}
 	for _, tt := range tests {
+		uat, _ := tt.actor.CreateAccessToken(as.DB)
+		as.Session.Set(AccessTokenSessionKey, uat.AccessToken)
 		req := as.JSON("%s/%s", entityCodesPath, inactiveCode.ID)
-		req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
 		res := req.Get()
 		body := res.Body.Bytes()
 
@@ -234,8 +236,9 @@ func (as *ActionSuite) Test_entityCodesCreate() {
 		ParentEntity:  "XYZ",
 	}
 	for _, tt := range tests {
+		uat, _ := tt.actor.CreateAccessToken(as.DB)
+		as.Session.Set(AccessTokenSessionKey, uat.AccessToken)
 		req := as.JSON("%s", entityCodesPath)
-		req.Headers["Authorization"] = fmt.Sprintf("Bearer %s", tt.actor.Email)
 		res := req.Post(input)
 		body := res.Body.Bytes()
 
