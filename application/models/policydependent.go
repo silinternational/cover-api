@@ -67,11 +67,13 @@ func (p *PolicyDependent) Destroy(tx *pop.Connection) error {
 	return destroy(tx, p)
 }
 
-// RelatedItemNames returns a slice of the names of Items that are related to this dependent
+// RelatedItemNames returns a slice of the names of Items that are related to this dependent and not Inactive
 func (p *PolicyDependent) RelatedItemNames(tx *pop.Connection) []string {
 	names := []string{}
 	for _, item := range p.RelatedItems(tx) {
-		names = append(names, item.Name)
+		if item.CoverageStatus != api.ItemCoverageStatusInactive {
+			names = append(names, item.Name)
+		}
 	}
 	return names
 }
