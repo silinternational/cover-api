@@ -1485,7 +1485,11 @@ func (ms *ModelSuite) TestClaim_AddItem() {
 
 	fixtures := CreateItemFixtures(ms.DB, fixConfig)
 	claim := fixtures.Claims[0]
-	itemID := fixtures.Items[0].ID
+	otherClaim := fixtures.Claims[1]
+	item := fixtures.Items[0]
+	item.CoverageStatus = api.ItemCoverageStatusApproved
+	ms.NoError(ms.DB.Update(&item))
+	itemID := item.ID
 	otherItemID := fixtures.Items[1].ID
 
 	tests := []struct {
@@ -1502,6 +1506,14 @@ func (ms *ModelSuite) TestClaim_AddItem() {
 				ItemID: otherItemID,
 			},
 			wantErr: &api.AppError{Category: api.CategoryNotFound, Key: api.ErrorClaimItemCreateInvalidInput},
+		},
+		{
+			name:  "item not approved",
+			claim: otherClaim,
+			input: api.ClaimItemCreateInput{
+				ItemID: otherItemID,
+			},
+			wantErr: &api.AppError{Category: api.CategoryForbidden, Key: api.ErrorClaimStatus},
 		},
 		{
 			name:  "good input",

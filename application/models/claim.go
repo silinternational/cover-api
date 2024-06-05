@@ -401,6 +401,18 @@ func (c *Claim) AddItem(ctx context.Context, input api.ClaimItemCreateInput) (Cl
 		return ClaimItem{}, appErr
 	}
 
+	itemIsApproved := item.CoverageStatus == api.ItemCoverageStatusApproved
+	now := time.Now().UTC()
+	hasStarted := now.After(item.CoverageStartDate)
+	hasEnded := item.CoverageEndDate.Valid && now.Before(item.CoverageEndDate.Time)
+
+	itemIsActive := hasStarted && !hasEnded && itemIsApproved
+	log.Error("active: ", itemIsActive)
+	if !itemIsActive {
+		err := fmt.Errorf("claims cannot be created for policy items without coverage")
+		return ClaimItem{}, api.NewAppError(err, api.ErrorClaimStatus, api.CategoryForbidden)
+	}
+
 	claimItem, err := NewClaimItem(tx, input, item, *c)
 	if err != nil {
 		return claimItem, err
