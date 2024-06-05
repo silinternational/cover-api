@@ -380,11 +380,15 @@ func (as *ActionSuite) Test_DependentsDelete() {
 	fixtures := models.CreateItemFixtures(db, models.FixturesConfig{NumberOfPolicies: 2})
 	policies := fixtures.Policies
 	item := policies[0].Items[0]
+	inactiveItem := policies[1].Items[0]
+	inactiveItem.CoverageStatus = api.ItemCoverageStatusInactive
 
 	depFixtures := models.CreatePolicyDependentFixtures(db, policies[0], 2)
 	deletableDep := depFixtures.PolicyDependents[0]
 	lockedDep := depFixtures.PolicyDependents[1]
 
+	inactiveItem.PolicyDependentID = nulls.NewUUID(deletableDep.ID)
+	as.NoError(db.Update(&inactiveItem), "failed updating item fixture")
 	item.PolicyDependentID = nulls.NewUUID(lockedDep.ID)
 	as.NoError(db.Update(&item), "failed updating item fixture")
 
