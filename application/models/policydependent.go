@@ -71,7 +71,7 @@ func (p *PolicyDependent) Destroy(tx *pop.Connection) error {
 func (p *PolicyDependent) RelatedItemNames(tx *pop.Connection) []string {
 	names := []string{}
 	for _, item := range p.RelatedItems(tx) {
-		if item.CoverageStatus != api.ItemCoverageStatusInactive {
+		if item.CoverageStatus != api.ItemCoverageStatusInactive && item.CoverageStatus != api.ItemCoverageStatusDenied {
 			names = append(names, item.Name)
 		}
 	}
