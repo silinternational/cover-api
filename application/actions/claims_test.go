@@ -495,6 +495,8 @@ func (as *ActionSuite) Test_ClaimsItemsCreate() {
 
 	claim := fixtures.Policies[1].Claims[0]
 	item := fixtures.Policies[1].Items[1]
+	item.CoverageStatus = api.ItemCoverageStatusApproved
+	as.NoError(as.DB.Update(&item))
 	otherPolicyItem := fixtures.Policies[0].Items[0]
 
 	otherUser := fixtures.Policies[0].Members[0]
