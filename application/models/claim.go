@@ -407,7 +407,6 @@ func (c *Claim) AddItem(ctx context.Context, input api.ClaimItemCreateInput) (Cl
 	hasEnded := item.CoverageEndDate.Valid && now.Before(item.CoverageEndDate.Time)
 
 	itemIsActive := hasStarted && !hasEnded && itemIsApproved
-	log.Error("active: ", itemIsActive)
 	if !itemIsActive {
 		err := fmt.Errorf("claims cannot be created for policy items without coverage")
 		return ClaimItem{}, api.NewAppError(err, api.ErrorClaimStatus, api.CategoryForbidden)
