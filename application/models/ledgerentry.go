@@ -226,6 +226,11 @@ func (le *LedgerEntries) prepareReport(reportFormat, reportType string, date tim
 			balance -= int(l.Amount)
 		}
 
+		// don't include totals for Netsuite report
+		if reportFormat == fin.ReportFormatNetSuite {
+			continue
+		}
+
 		report.AppendToBatch(blockName, fin.Transaction{
 			Account:     account,
 			Amount:      api.Currency(balance),
