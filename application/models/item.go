@@ -69,6 +69,7 @@ type Item struct {
 	Category     ItemCategory `belongs_to:"item_categories" validate:"-"`
 	RiskCategory RiskCategory `belongs_to:"risk_categories" validate:"-"`
 	Policy       Policy       `belongs_to:"policies" validate:"-"`
+	PremiumRate  float64      `db:"-"`
 }
 
 // Validate gets run every time you call pop.ValidateAndSave, pop.ValidateAndCreate, or pop.ValidateAndUpdate
@@ -820,6 +821,7 @@ func (i *Item) ConvertToAPI(tx *pop.Connection) api.Item {
 		AnnualPremium:         i.CalculateAnnualPremium(tx),
 		MonthlyPremium:        i.CalculateMonthlyPremium(tx),
 		ProratedAnnualPremium: i.CalculateProratedPremium(tx, time.Now().UTC()),
+		PremiumRate:           math.Round(i.GetPremiumFactor(tx)*100) / 100,
 		CanBeDeleted:          i.canBeDeleted(tx),
 		CanBeUpdated:          !i.hasOpenClaim(tx),
 		CreatedAt:             i.CreatedAt,
@@ -929,13 +931,20 @@ func (i *Item) CalculateBillingPremium(tx *pop.Connection) api.Currency {
 // PremiumFactor, with the category's minimum premium applied
 func (i *Item) CalculateAnnualPremium(tx *pop.Connection) api.Currency {
 	i.LoadCategory(tx, false)
+	factor := i.GetPremiumFactor(tx)
+	premium := int(math.Round(float64(i.CoverageAmount) * factor))
+
+	return api.Currency(domain.Max(premium, i.Category.MinimumPremium))
+}
+
+// GetPremiumFactor returns the premium rate for the item's category
+func (i *Item) GetPremiumFactor(tx *pop.Connection) float64 {
+	i.LoadCategory(tx, false)
 	factor := domain.Env.PremiumFactor
 	if i.Category.PremiumFactor.Valid {
 		factor = i.Category.PremiumFactor.Float64
 	}
-	premium := int(math.Round(float64(i.CoverageAmount) * factor))
-
-	return api.Currency(domain.Max(premium, i.Category.MinimumPremium))
+	return factor
 }
 
 func (i *Item) CalculateProratedPremium(tx *pop.Connection, t time.Time) api.Currency {

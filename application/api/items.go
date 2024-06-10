@@ -118,6 +118,8 @@ type Item struct {
 
 	// Can the item be updated? Set to false if there is an active claim for the item.
 	CanBeUpdated bool `json:"can_be_updated"`
+
+	PremiumRate float64 `json:"premium_rate"`
 }
 
 // swagger:model

@@ -1504,6 +1504,7 @@ func (ms *ModelSuite) TestItem_ConvertToAPI() {
 	fixtures := CreateItemFixtures(ms.DB, FixturesConfig{DependentsPerPolicy: 1})
 	item := fixtures.Items[0]
 	item.CoverageEndDate = nulls.NewTime(time.Now().Add(domain.DurationDay * 365))
+	item.PremiumRate = .02
 	ms.NoError(item.SetAccountablePerson(ms.DB, fixtures.PolicyDependents[0].ID))
 
 	got := item.ConvertToAPI(ms.DB)
@@ -1541,6 +1542,7 @@ func (ms *ModelSuite) TestItem_ConvertToAPI() {
 		"AccountablePerson Country is not correct")
 	ms.True(got.CanBeUpdated, "CanBeUpdated is not correct")
 	ms.True(got.CanBeDeleted, "CanBeDeleted is not correct")
+	ms.Equal(item.PremiumRate, got.PremiumRate, "PremiumRate is not correct")
 }
 
 func (ms *ModelSuite) TestItem_hasOpenClaim() {
