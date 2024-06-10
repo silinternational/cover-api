@@ -2609,6 +2609,11 @@
           "format": "uuid4",
           "x-go-name": "PolicyID"
         },
+        "premium_rate": {
+          "type": "number",
+          "format": "double",
+          "x-go-name": "PremiumRate"
+        },
         "prorated_annual_premium": {
           "$ref": "#/definitions/Currency"
         },
