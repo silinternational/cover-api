@@ -10,8 +10,8 @@ import (
 )
 
 const (
-	netSuiteHeader                 = `"SystemSubsidiary","GroupID","TransactionID","TransactionDate","Description","DebitAccount","CreditAccount","InterCoAccount","Amount","Currency","Reference","ExchangeRate"` + "\n"
-	netSuiteTransactionRowTemplate = `MAP,,%d,%s,"%s","%s","%s",%s,%s,USD,"%s",` + "\n"
+	netSuiteHeader                 = `"SystemSubsidiary","GroupID","TransactionID","TransactionDate","Description","DebitAccount","CreditAccount","InterCoAccount","Amount","Currency","Reference","ExchangeRate","PaRCSCode"` + "\n"
+	netSuiteTransactionRowTemplate = `MAP,,%d,%s,"%s","%s","%s",%s,%s,USD,"%s",,%s` + "\n"
 )
 
 type NetSuite struct {
@@ -104,6 +104,13 @@ func (n *NetSuite) getReference(t Transaction) string {
 	return t.PolicyName
 }
 
+func (n *NetSuite) getPaRCSCode(t Transaction) string {
+	if t.PolicyType == api.PolicyTypeHousehold {
+		return "MC"
+	}
+	return ""
+}
+
 func (n *NetSuite) transactionRow(t Transaction, creditAccount string) []byte {
 	n.rowID++
 
@@ -117,6 +124,7 @@ func (n *NetSuite) transactionRow(t Transaction, creditAccount string) []byte {
 		t.CostCenter,                     // InterCoAccount
 		api.Currency(-t.Amount).String(), // Amount
 		n.getReference(t),                // Reference
+		n.getPaRCSCode(t),
 	)
 	return []byte(str)
 }
