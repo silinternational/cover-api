@@ -325,6 +325,11 @@ func (le *LedgerEntry) getItemName(tx *pop.Connection) string {
 	return cItem.Item.Name
 }
 
+func (le *LedgerEntry) GetItem(tx *pop.Connection) *Item {
+	le.LoadItem(tx, false)
+	return le.Item
+}
+
 func (le *LedgerEntry) getItemLocation(tx *pop.Connection) string {
 	if le.Item != nil {
 		loctn := le.Item.GetAccountablePersonLocation(tx)
@@ -455,6 +460,7 @@ func (le *LedgerEntry) ConvertToAPI(tx *pop.Connection) api.LedgerEntry {
 		DateEntered:      convertTimeToAPI(le.DateEntered),
 		CreatedAt:        le.CreatedAt,
 		UpdatedAt:        le.UpdatedAt,
+		PremiumRate:      le.GetItem(tx).PremiumRate,
 	}
 }
 

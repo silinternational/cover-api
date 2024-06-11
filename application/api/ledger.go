@@ -60,6 +60,7 @@ type LedgerTableEntry struct {
 	Date         time.Time `json:"date"`
 	AssignedTo   string    `json:"assigned_to"`
 	Location     string    `json:"location"`
+	PremiumRate  float64   `json:"premium_rate"`
 }
 
 // swagger:model
@@ -115,6 +116,8 @@ type LedgerEntry struct {
 
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
+
+	PremiumRate float64 `json:"premium_rate"`
 }
 
 // swagger:model

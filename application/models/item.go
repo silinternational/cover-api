@@ -934,7 +934,7 @@ func (i *Item) CalculateAnnualPremium(tx *pop.Connection) api.Currency {
 	factor := i.GetPremiumFactor(tx)
 	premium := int(math.Round(float64(i.CoverageAmount) * factor))
 
-	return api.Currency(domain.Max(premium, i.Category.MinimumPremium))
+	return api.Currency(max(premium, i.Category.MinimumPremium))
 }
 
 // GetPremiumFactor returns the premium rate for the item's category
