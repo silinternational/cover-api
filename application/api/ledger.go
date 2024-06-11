@@ -116,8 +116,6 @@ type LedgerEntry struct {
 
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
-
-	PremiumRate float64 `json:"premium_rate"`
 }
 
 // swagger:model

@@ -3143,6 +3143,11 @@
           "type": "string",
           "x-go-name": "Location"
         },
+        "premium_rate": {
+          "type": "number",
+          "format": "double",
+          "x-go-name": "PremiumRate"
+        },
         "status_after": {
           "type": "string",
           "x-go-name": "StatusAfter"
