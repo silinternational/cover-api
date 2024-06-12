@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/gobuffalo/nulls"
+	"github.com/gofrs/uuid"
 
 	"github.com/silinternational/cover-api/api"
 	"github.com/silinternational/cover-api/domain"
@@ -39,26 +40,15 @@ func (ms *ModelSuite) TestDestroyIfExpired() {
 	tx := ms.DB
 
 	fixturesConfig := FixturesConfig{
-		NumberOfPolicies: 1,
+		NumberOfPolicies: 2,
 	}
 	policyFixtures := CreatePolicyFixtures(tx, fixturesConfig)
 	policies := policyFixtures.Policies
+	pID := policies[0].ID
+	pID2 := policies[1].ID
 
-	createUniqueInvite := func(createdAt time.Time) PolicyUserInvite {
-		randomStr := randStr(5)
-		return PolicyUserInvite{
-			ID:           domain.GetUUID(),
-			PolicyID:     policies[0].ID,
-			Email:        "test_user" + randomStr + "@example.org",
-			InviteeName:  "Test User" + randomStr,
-			InviterName:  "Tester" + randomStr,
-			InviterEmail: "test" + randomStr + "@example.org",
-			CreatedAt:    createdAt,
-		}
-	}
-
-	countInvites := func() int {
-		count, err := tx.Where("policy_id = ?", policies[0].ID).Count(&PolicyUserInvite{})
+	countInvites := func(id uuid.UUID) int {
+		count, err := tx.Where("policy_id = ?", id).Count(&PolicyUserInvite{})
 		ms.NoError(err)
 		return count
 	}
@@ -74,19 +64,19 @@ func (ms *ModelSuite) TestDestroyIfExpired() {
 	}{
 		{
 			name:          "Invite not expired",
-			invite:        createUniqueInvite(now),
+			invite:        CreateUniqueInvite(now, pID),
 			expectedErr:   nil,
 			expectedCount: 1,
 		},
 		{
 			name:   "Invite expired",
-			invite: createUniqueInvite(cutoff.Add(-time.Hour)),
+			invite: CreateUniqueInvite(cutoff.Add(-time.Hour), pID2),
 			expectedErr: api.NewAppError(
 				errors.New("attempt to use expired invite, ID: "),
 				api.ErrorInviteExpired,
 				api.CategoryForbidden,
 			),
-			expectedCount: 0,
+			expectedCount: 1,
 		},
 	}
 
@@ -103,12 +93,7 @@ func (ms *ModelSuite) TestDestroyIfExpired() {
 				ms.NoError(err)
 			}
 
-			ms.Equal(tt.expectedCount, countInvites())
-
-			if tt.expectedCount == 1 {
-				err = tx.Destroy(&tt.invite)
-				ms.NoError(err)
-			}
+			ms.Equal(tt.expectedCount, countInvites(tt.invite.PolicyID))
 		})
 	}
 }

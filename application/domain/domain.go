@@ -114,6 +114,7 @@ const (
 	EventApiNotificationCreated = "api:notification:created"
 
 	EventApiPolicyUserInviteCreated = "api:policy:invite:created"
+	EventApiPolicyUserInviteExpired = "api:policy:invite:expired"
 )
 
 // redirect url for after logout
