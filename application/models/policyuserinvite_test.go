@@ -1,10 +1,12 @@
 package models
 
 import (
+	"errors"
 	"time"
 
 	"github.com/gobuffalo/nulls"
 
+	"github.com/silinternational/cover-api/api"
 	"github.com/silinternational/cover-api/domain"
 )
 
@@ -31,4 +33,81 @@ func (ms *ModelSuite) TestPolicyUserInvite_ConvertToAPI() {
 	got = invite.ConvertToAPI()
 
 	ms.Equal(now, *got.EmailSentAt, "EmailSentAt is not correct")
+}
+
+func (ms *ModelSuite) TestDestroyIfExpired() {
+	tx := ms.DB
+
+	fixturesConfig := FixturesConfig{
+		NumberOfPolicies: 1,
+	}
+	policyFixtures := CreatePolicyFixtures(tx, fixturesConfig)
+	policies := policyFixtures.Policies
+
+	createUniqueInvite := func(createdAt time.Time) PolicyUserInvite {
+		return PolicyUserInvite{
+			ID:           domain.GetUUID(),
+			PolicyID:     policies[0].ID,
+			Email:        "test_user@example.org",
+			InviteeName:  "Test User",
+			InviterName:  "Tester",
+			InviterEmail: "test@example.org",
+			CreatedAt:    createdAt,
+		}
+	}
+
+	countInvites := func() int {
+		count, err := tx.Count(&PolicyUserInvites{})
+		ms.NoError(err)
+		return count
+	}
+
+	now := time.Now().UTC()
+	cutoff := now.Add(time.Duration(-domain.Env.InviteLifetimeDays) * domain.DurationDay)
+
+	tests := []struct {
+		name          string
+		invite        PolicyUserInvite
+		expectedErr   error
+		expectedCount int
+	}{
+		{
+			name:          "Invite not expired",
+			invite:        createUniqueInvite(now),
+			expectedErr:   nil,
+			expectedCount: 1,
+		},
+		{
+			name:   "Invite expired",
+			invite: createUniqueInvite(cutoff.Add(-time.Hour)),
+			expectedErr: api.NewAppError(
+				errors.New("attempt to use expired invite, ID: "),
+				api.ErrorInviteExpired,
+				api.CategoryForbidden,
+			),
+			expectedCount: 0,
+		},
+	}
+
+	for _, tt := range tests {
+		ms.Run(tt.name, func() {
+			err := tx.Create(&tt.invite)
+			ms.NoError(err)
+
+			err = tt.invite.DestroyIfExpired(tx)
+			if tt.expectedErr != nil {
+				ms.Error(err)
+				ms.Contains(err.Error(), tt.expectedErr.Error())
+			} else {
+				ms.NoError(err)
+			}
+
+			ms.Equal(tt.expectedCount, countInvites())
+
+			if tt.expectedCount == 1 {
+				err = tx.Destroy(&tt.invite)
+				ms.NoError(err)
+			}
+		})
+	}
 }
