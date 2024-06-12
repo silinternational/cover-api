@@ -157,15 +157,22 @@ func (i *PolicyUserInvite) DestroyIfExpired(tx *pop.Connection) error {
 		return nil
 	}
 
-	if err := i.Destroy(tx); err != nil {
-		return fmt.Errorf("error destroying expired invite %w", err)
+	err := tx.Transaction(func(tx *pop.Connection) error {
+		if err := i.Destroy(tx); err != nil {
+			return fmt.Errorf("error destroying expired invite %w", err)
+		}
+		return nil
+	})
+
+	if err != nil {
+		return api.NewAppError(
+			fmt.Errorf("attempt to use expired invite, ID: %s, error: %v", i.ID.String(), err),
+			api.ErrorInviteExpired,
+			api.CategoryForbidden,
+		)
 	}
 
-	return api.NewAppError(
-		errors.New("attempt to use expired invite, ID: "+i.ID.String()),
-		api.ErrorInviteExpired,
-		api.CategoryForbidden,
-	)
+	return nil
 }
 
 func (i *PolicyUserInvite) ConvertToAPI() api.PolicyUserInvite {
