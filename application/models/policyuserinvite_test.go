@@ -45,19 +45,20 @@ func (ms *ModelSuite) TestDestroyIfExpired() {
 	policies := policyFixtures.Policies
 
 	createUniqueInvite := func(createdAt time.Time) PolicyUserInvite {
+		randomStr := randStr(5)
 		return PolicyUserInvite{
 			ID:           domain.GetUUID(),
 			PolicyID:     policies[0].ID,
-			Email:        "test_user@example.org",
-			InviteeName:  "Test User",
-			InviterName:  "Tester",
-			InviterEmail: "test@example.org",
+			Email:        "test_user" + randomStr + "@example.org",
+			InviteeName:  "Test User" + randomStr,
+			InviterName:  "Tester" + randomStr,
+			InviterEmail: "test" + randomStr + "@example.org",
 			CreatedAt:    createdAt,
 		}
 	}
 
 	countInvites := func() int {
-		count, err := tx.Count(&PolicyUserInvites{})
+		count, err := tx.Where("policy_id = ?", policies[0].ID).Count(&PolicyUserInvite{})
 		ms.NoError(err)
 		return count
 	}
