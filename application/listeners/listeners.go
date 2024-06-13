@@ -35,6 +35,7 @@ var eventTypes = map[string]func(event events.Event){
 	domain.EventApiClaimDenied:             claimDenied,
 	domain.EventApiNotificationCreated:     notificationCreated,
 	domain.EventApiPolicyUserInviteCreated: policyUserInviteCreated,
+	domain.EventApiPolicyUserInviteExpired: policyUserInviteExpired,
 }
 
 func notificationCreated(e events.Event) {

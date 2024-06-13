@@ -23,3 +23,17 @@ func policyUserInviteCreated(e events.Event) {
 		log.Error("error queuing policy user invite:", err)
 	}
 }
+
+func policyUserInviteExpired(e events.Event) {
+	var invite models.PolicyUserInvite
+	if err := findObject(e.Payload, &invite, e.Kind); err != nil {
+		return
+	}
+
+	err := models.DB.Transaction(func(tx *pop.Connection) error {
+		return invite.Destroy(tx)
+	})
+	if err != nil {
+		log.Error("error destroying expired policy user invite:", err)
+	}
+}

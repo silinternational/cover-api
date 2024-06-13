@@ -951,3 +951,16 @@ func AssertSameAppError(t *testing.T, expected api.AppError, actual error) {
 	require.Equal(t, expected.Category, appErr.Category,
 		"error category does not match, message: %s", actual.Error())
 }
+
+func CreateUniqueInvite(createdAt time.Time, id uuid.UUID) PolicyUserInvite {
+	randomStr := randStr(5)
+	return PolicyUserInvite{
+		ID:           domain.GetUUID(),
+		PolicyID:     id,
+		Email:        "test_user" + randomStr + "@example.org",
+		InviteeName:  "Test User" + randomStr,
+		InviterName:  "Tester" + randomStr,
+		InviterEmail: "test" + randomStr + "@example.org",
+		CreatedAt:    createdAt,
+	}
+}
