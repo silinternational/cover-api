@@ -12,7 +12,7 @@ import (
 	"github.com/silinternational/cover-api/notifications"
 )
 
-func (ts *TestSuite) TestPolicy_UserInviteSend() {
+func (ts *TestSuite) TestPolicyUser_InviteSend() {
 	t := ts.T()
 	db := ts.DB
 
