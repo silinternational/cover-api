@@ -82,7 +82,12 @@ func (ms *ModelSuite) TestDestroyIfExpired() {
 
 	for _, tt := range tests {
 		ms.Run(tt.name, func() {
-			err := tx.Create(&tt.invite)
+			eventDetected := false
+			deleteFn, err := RegisterEventDetector(domain.EventApiPolicyUserInviteExpired, &eventDetected)
+			ms.NoError(err)
+			defer deleteFn()
+
+			err = tx.Create(&tt.invite)
 			ms.NoError(err)
 
 			err = tt.invite.DestroyIfExpired(tx)
@@ -94,6 +99,12 @@ func (ms *ModelSuite) TestDestroyIfExpired() {
 			}
 
 			ms.Equal(tt.expectedCount, countInvites(tt.invite.PolicyID))
+
+			time.Sleep(time.Millisecond * 10)
+			isExpired := tt.invite.CreatedAt.Before(cutoff)
+			if isExpired {
+				ms.True(eventDetected)
+			}
 		})
 	}
 }
