@@ -12,7 +12,7 @@ import (
 	"github.com/silinternational/cover-api/notifications"
 )
 
-func (ts *TestSuite) Test_PolicyUserInviteSend() {
+func (ts *TestSuite) TestPolicyUser_InviteSend() {
 	t := ts.T()
 	db := ts.DB
 
@@ -66,7 +66,7 @@ func (ts *TestSuite) Test_PolicyUserInviteSend() {
 	}
 }
 
-func (ts *TestSuite) Test_PolicyUserInviteExpired() {
+func (ts *TestSuite) TestPolicyUser_InviteExpired() {
 	t := ts.T()
 	db := ts.DB
 

@@ -325,7 +325,6 @@ func (i *Item) SafeDeleteOrInactivate(ctx context.Context, now time.Time) error 
 	default:
 		panic(`invalid item status in SafeDeleteOrInactivate`)
 	}
-	return nil
 }
 
 // CreateCancellationCredit creates a credit for the refund of annual coverage if the
