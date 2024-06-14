@@ -15,3 +15,5 @@
   translation: The provided ID was not found in the system
 - id: Error.ErrorUniqueKeyViolation
   translation: The provided information cannot be reused
+- id: Error.ErrorInviteExpired
+  translation: The invite has expired
