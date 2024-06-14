@@ -145,7 +145,7 @@ func validateInviteOnLogin(c buffalo.Context, inviteCode string) *api.AppError {
 	}
 
 	if err := invite.DestroyIfExpired(tx); err != nil {
-		return &appErr
+		return err.(*api.AppError)
 	}
 
 	c.Session().Set(InviteCodeSessionKey, inviteCode)
