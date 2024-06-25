@@ -1,17 +1,13 @@
 <div>
 	<%= partial("mail/body_header", {
-		previewText: "Dear " + personFirstName + ", I regret to inform you that your claim on " + item.Name +
+		previewText: "I regret to inform you that the claim on " + item.Name +
 			" has been denied.",
 		title: "An Update on Your Coverage Request",
 	}) %>
 
 	<div style="max-width: 80ch;">
 		<p>
-			Dear <%= personFirstName %>,
-		</p>
-
-		<p>
-			I regret to inform you that your claim on <%= item.Name %> has been denied.
+			I regret to inform you that the claim on <%= item.Name %> has been denied.
 		</p>
 
 		<p>

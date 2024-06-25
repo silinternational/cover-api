@@ -1,15 +1,11 @@
 
 <div>
 	<%= partial("mail/body_header", {
-			previewText: "No action needed. Coverage is now active. Dear "+personFirstName+", "+item.Name+" has been approved for coverage.",
+			previewText: "No action needed. Coverage is now active. "+item.Name+" has been approved for coverage.",
 			title: "Coverage Approved",
 	}) %>
 
 	<div style="max-width: 80ch;">
-		<p>
-			Dear <%= personFirstName %>,
-		</p>
-
 		<p>
 			<%= item.Name %> has been approved for coverage and added to your <%= policyType %> policy.
 		</p>

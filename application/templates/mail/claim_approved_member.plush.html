@@ -1,17 +1,13 @@
 <div>
 	<%= partial("mail/body_header", {
-		previewText: "Dear " + personFirstName + ", Congratulations! We've approved the payout for your claim on " +
+		previewText: "Congratulations! We've approved the payout for the claim on " +
 			item.Name + ". You'll get a credit of " + totalPayout + " in your account by the end of this month.",
 		title: "Claim Approved",
 	}) %>
 
 	<div style="max-width: 80ch;">
 		<p>
-			Dear <%= personFirstName %>,
-		</p>
-
-		<p>
-			Congratulations! We've approved the payout for your claim on <%= item.Name %>. You'll get a credit of
+			Congratulations! We've approved the payout for the claim on <%= item.Name %>. You'll get a credit of
 			<%= totalPayout %> in your account by the end of this month.
 		</p>
 
