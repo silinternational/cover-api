@@ -1,18 +1,14 @@
 
 <div>
 	<%= partial("mail/body_header", {
-		previewText: "Dear "+personFirstName+", You recently requested coverage on "+
+		previewText: "Coverage was recently requested on "+
 			item.Name+", but we're not able to cover this item at this time.",
 		title: "Coverage Denied",
 	}) %>
 
 	<div style="max-width: 80ch;">
 		<p>
-			Dear <%= personFirstName %>,
-		</p>
-
-		<p>
-			You recently requested coverage on <%= item.Name %>, but we're not able to cover this item
+			Coverage was recently requested on <%= item.Name %>, but we're not able to cover this item
 			at this time.
 		</p>
 

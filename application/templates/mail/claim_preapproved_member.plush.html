@@ -1,18 +1,14 @@
 <div>
 	<%= partial("mail/body_header", {
-		previewText: "Upload a " + payoutOptionLower + " receipt to get reimbursed. " + personFirstName +
-		", I'm pleased to inform you that your claim for " + item.Name +
+		previewText: "Upload a " + payoutOptionLower + " receipt to get reimbursed. " +
+		"I'm pleased to inform you that the claim for " + item.Name +
 		" has been accepted.",
 		title: "Claim Approved for " + payoutOption,
 	}) %>
 
 	<div style="max-width: 80ch;">
 		<p>
-			Dear <%= personFirstName %>,
-		</p>
-
-		<p>
-			I'm pleased to inform you that your claim for <%= item.Name %> has been accepted, and you're approved to
+			I'm pleased to inform you that the claim for <%= item.Name %> has been accepted, and you're approved to
 			<%= if ( payoutOption == "Repair" ) { %>
 				repair it.
 			<% } else { %>
