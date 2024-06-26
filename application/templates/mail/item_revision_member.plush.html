@@ -1,18 +1,14 @@
 
 <div>
 	<%= partial("mail/body_header", {
-		previewText: "Dear "+personFirstName+", You recently requested coverage on "+
+		previewText: "Coverage has been requested for "+
 			item.Name+", but I need to clarify a few things on your request.",
 		title: "Coverage Application Needs Changes",
 	}) %>
 
 	<div style="max-width: 80ch;">
 		<p>
-			Dear <%= personFirstName %>,
-		</p>
-
-		<p>
-			You recently requested coverage on <%= item.Name %>, but I need to clarify a few things on your request.
+			Coverage has been requested for <%= item.Name %>, but I need to clarify a few things on your request.
 		</p>
 
 		<p>

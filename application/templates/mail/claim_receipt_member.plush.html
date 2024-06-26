@@ -1,15 +1,11 @@
 <div>
 	<%= partial("mail/body_header", {
-	previewText: personFirstName + ", Thank you for reporting your claim.  We hope to make this process as simple"+
+	previewText: "Thank you for reporting your claim.  We hope to make this process as simple"+
 		" as possible for you. To complete your claim on " + item.Name + ", we need a receipt.",
 	title: "Claim Needs Receipt",
 	}) %>
 
 	<div style="max-width: 80ch;">
-		<p>
-			Dear <%= personFirstName %>,
-		</p>
-
 		<p>
 			Thank you for reporting your claim. We hope to make this process as simple as possible for you.
 			To complete your claim on <%= item.Name %>, we need a receipt.

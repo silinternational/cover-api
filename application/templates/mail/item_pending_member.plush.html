@@ -1,6 +1,6 @@
 <div>
 	<%= partial("mail/body_header", {
-		previewText: "No action needed. Dear "+personFirstName+", You've applied to cover "
+		previewText: "No action needed. Coverage has been requested for "
 			+item.Name+". You'll have to wait a bit for the steward (me, "+
 			supportFirstName+") to approve coverage.",
 		title: "New Coverage",
@@ -9,10 +9,7 @@
 
 	<div style="max-width: 80ch;">
 		<p>
-			Dear <%= personFirstName %>,
-		</p>
-		<p>
-			You've applied to cover <%= item.Name %>. You'll have to wait a bit for the steward
+			Coverage has been requested for <%= item.Name %>. You'll have to wait a bit for the steward
 			(me, <%= supportFirstName %>) to approve coverage.  If and when I approve it, the
 			coverage will start on <%= coverageStartDate %>, and we'll charge you the premium,
 			which is prorated for the remainder of the year.
