@@ -14,6 +14,7 @@ import (
 
 	"github.com/silinternational/cover-api/api"
 	"github.com/silinternational/cover-api/domain"
+	"github.com/silinternational/cover-api/log"
 )
 
 const (
@@ -167,6 +168,12 @@ func (lr *LedgerReport) LoadPolicy(tx *pop.Connection, reload bool) {
 
 // NewLedgerReport creates a new report by querying the database according to the requested report type
 func NewLedgerReport(ctx context.Context, reportFormat, reportType string, date time.Time) (LedgerReport, error) {
+	log.WithFields(map[string]any{
+		"format": reportFormat,
+		"type":   reportType,
+		"date":   date,
+	}).Info("ledger report requested")
+
 	tx := Tx(ctx)
 
 	report := LedgerReport{Type: reportType}

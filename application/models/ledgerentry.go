@@ -13,6 +13,7 @@ import (
 	"github.com/silinternational/cover-api/api"
 	"github.com/silinternational/cover-api/domain"
 	"github.com/silinternational/cover-api/fin"
+	"github.com/silinternational/cover-api/log"
 )
 
 const (
@@ -123,10 +124,17 @@ func (le *LedgerEntry) Update(tx *pop.Connection) error {
 
 // AllNotEntered returns all the non-entered entries (date_entered is null) up to the given cutoff time.
 func (le *LedgerEntries) AllNotEntered(tx *pop.Connection, cutoff time.Time) error {
-	err := tx.Where("date_submitted < ? ", cutoff).
-		Where("date_entered IS NULL").All(le)
+	if err := tx.Where("date_submitted < ? ", cutoff).
+		Where("date_entered IS NULL").All(le); err != nil {
+		return appErrorFromDB(err, api.ErrorQueryFailure)
+	}
 
-	return appErrorFromDB(err, api.ErrorQueryFailure)
+	log.WithFields(map[string]any{
+		"cutoff_date":   cutoff,
+		"records_found": len(*le),
+	}).Info("LedgerEntries AllNotEntered")
+
+	return nil
 }
 
 func (le *LedgerEntries) ExportForPolicy() ([]byte, string) {
